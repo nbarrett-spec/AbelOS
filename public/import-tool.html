@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html><head>
+<title>Abel OS - Data Import Tool</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e5e5e5; max-width: 800px; margin: 40px auto; padding: 20px; }
+  h1 { color: #f59e0b; border-bottom: 2px solid #333; padding-bottom: 10px; }
+  .card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; margin: 20px 0; }
+  .card h3 { margin-top: 0; color: #60a5fa; }
+  input[type="file"] { margin: 10px 0; padding: 10px; background: #222; border: 1px solid #444; border-radius: 4px; color: #e5e5e5; cursor: pointer; display: block; width: 100%; }
+  button { background: #f59e0b; color: #000; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin: 5px; }
+  button:hover { background: #d97706; }
+  button:disabled { background: #555; color: #999; cursor: not-allowed; }
+  #log { background: #111; border: 1px solid #333; border-radius: 4px; padding: 15px; max-height: 500px; overflow-y: auto; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; }
+  .success { color: #22c55e; }
+  .error { color: #ef4444; }
+  .info { color: #60a5fa; }
+  .warn { color: #f59e0b; }
+  .progress { background: #222; border-radius: 4px; height: 8px; margin: 10px 0; }
+  .progress-bar { background: #f59e0b; height: 100%; border-radius: 4px; transition: width 0.3s; }
+</style>
+</head><body>
+<h1>Abel OS — Data Import Tool</h1>
+
+<div class="card">
+  <h3>1. Select Export File</h3>
+  <p style="color:#999;">Select a scraped export JSON file (bolt-tech-export.json, bpw-pulte-export.json, or hyphen-payments-export.json)</p>
+  <input type="file" id="fileInput" accept=".json,.tsv">
+  <div id="fileInfo" style="margin-top:10px;color:#999;"></div>
+</div>
+
+<div class="card">
+  <h3>2. Import</h3>
+  <button id="btnImport" disabled onclick="startImport()">Start Import</button>
+  <button id="btnClear" onclick="document.getElementById('log').textContent=''">Clear Log</button>
+  <div class="progress" id="progressWrap" style="display:none;"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+</div>
+
+<div class="card">
+  <h3>Import Log</h3>
+  <div id="log">Waiting for file selection...</div>
+</div>
+
+<script>
+let fileData = null;
+let endpoint = '';
+
+function log(msg, cls='') {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString();
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = time + ' | ' + msg + '\n';
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(pct) {
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  document.getElementById('log').textContent = '';
+  log('Reading file: ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)', 'info');
+
+  const text = await file.text();
+
+  // Auto-detect file type
+  if (file.name.includes('bolt')) {
+    endpoint = '/api/ops/import-bolt';
+  } else if (file.name.includes('bpw') || file.name.includes('pulte')) {
+    endpoint = '/api/ops/import-bpw';
+  } else if (file.name.includes('hyphen')) {
+    endpoint = '/api/ops/import-hyphen';
+  } else {
+    // Try to detect from content
+    try {
+      const d = JSON.parse(text);
+      if (d.workOrders) endpoint = '/api/ops/import-bolt';
+      else if (d.fpos || d.checks) endpoint = '/api/ops/import-bpw';
+      else if (d.payments) endpoint = '/api/ops/import-hyphen';
+      else endpoint = '/api/ops/import-bolt';
+    } catch { endpoint = '/api/ops/import-bolt'; }
+  }
+
+  try {
+    fileData = JSON.parse(text);
+    const info = Object.keys(fileData).map(k => {
+      if (Array.isArray(fileData[k])) return k + ': ' + fileData[k].length + ' items';
+      if (fileData[k]?.data) return k + ': ' + fileData[k].data.length + ' rows';
+      return k + ': ' + typeof fileData[k];
+    }).join('\n');
+
+    document.getElementById('fileInfo').textContent = info;
+    log('Parsed successfully. Detected endpoint: ' + endpoint, 'success');
+    log('Data summary:\n' + info, 'info');
+    document.getElementById('btnImport').disabled = false;
+  } catch (err) {
+    log('Parse error: ' + err.message, 'error');
+  }
+});
+
+async function postChunk(data, label) {
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) {
+      const text = await r.text();
+      log(label + ' — HTTP ' + r.status + ': ' + text.substring(0, 200), 'error');
+      return null;
+    }
+    return await r.json();
+  } catch (err) {
+    log(label + ' — Error: ' + err.message, 'error');
+    return null;
+  }
+}
+
+async function importBolt() {
+  const d = fileData;
+  let totalImported = 0, totalSkipped = 0, totalErrors = 0;
+
+  // Phase 1: Reference data
+  log('Phase 1: Reference data (customers, employees, crews, communities, floorplans)...', 'info');
+  const ref = await postChunk({
+    customers: d.customers || [],
+    employees: d.employees || [],
+    crews: d.crews || [],
+    communities: d.communities || [],
+    floorplans: d.floorplans || [],
+    woTypes: d.woTypes || [],
+  }, 'Reference data');
+
+  if (ref) {
+    for (const [k, v] of Object.entries(ref.results || {})) {
+      if (v.imported > 0 || v.skipped > 0) log('  ' + k + ': imported=' + v.imported + ' skipped=' + v.skipped, v.imported > 0 ? 'success' : '');
+      totalImported += v.imported || 0;
+      totalSkipped += v.skipped || 0;
+    }
+  }
+  setProgress(10);
+
+  // Phase 2: Jobs in chunks of 100
+  const jobs = d.jobs || [];
+  const jobChunk = 100;
+  log('Phase 2: ' + jobs.length + ' jobs in ' + Math.ceil(jobs.length/jobChunk) + ' chunks...', 'info');
+  for (let i = 0; i < jobs.length; i += jobChunk) {
+    const chunk = jobs.slice(i, i + jobChunk);
+    const n = Math.floor(i/jobChunk) + 1;
+    const total = Math.ceil(jobs.length/jobChunk);
+    const r = await postChunk({ jobs: chunk }, 'Jobs ' + n + '/' + total);
+    if (r) {
+      const jr = r.results?.jobs || {};
+      log('  Jobs ' + n + '/' + total + ': imported=' + jr.imported + ' skipped=' + jr.skipped + (jr.errors?.length ? ' errors=' + jr.errors.length : ''), jr.imported > 0 ? 'success' : '');
+      totalImported += jr.imported || 0;
+      totalSkipped += jr.skipped || 0;
+      if (jr.errors?.length) jr.errors.slice(0,2).forEach(e => log('    Error: ' + e, 'error'));
+    }
+    setProgress(10 + (i/jobs.length) * 30);
+  }
+  setProgress(40);
+
+  // Phase 3: Work orders in chunks of 150
+  const wos = d.workOrders || [];
+  const woChunk = 150;
+  log('Phase 3: ' + wos.length + ' work orders in ' + Math.ceil(wos.length/woChunk) + ' chunks...', 'info');
+  for (let i = 0; i < wos.length; i += woChunk) {
+    const chunk = wos.slice(i, i + woChunk);
+    const n = Math.floor(i/woChunk) + 1;
+    const total = Math.ceil(wos.length/woChunk);
+    const r = await postChunk({ workOrders: chunk }, 'WOs ' + n + '/' + total);
+    if (r) {
+      const wr = r.results?.workOrders || {};
+      log('  WOs ' + n + '/' + total + ': imported=' + wr.imported + ' skipped=' + wr.skipped + (wr.errors?.length ? ' errors=' + wr.errors.length : ''), wr.imported > 0 ? 'success' : '');
+      totalImported += wr.imported || 0;
+      totalSkipped += wr.skipped || 0;
+      if (wr.errors?.length) wr.errors.slice(0,2).forEach(e => log('    Error: ' + e, 'error'));
+    }
+    setProgress(40 + (i/wos.length) * 60);
+  }
+
+  setProgress(100);
+  log('=== BOLT IMPORT COMPLETE ===', 'success');
+  log('Total: imported=' + totalImported + ' skipped=' + totalSkipped, 'success');
+}
+
+async function importBpw() {
+  const d = fileData;
+  log('Sending all BPW data...', 'info');
+  const r = await postChunk(d, 'BPW import');
+  if (r) {
+    log('Results: ' + JSON.stringify(r.results, null, 2), 'success');
+  }
+  setProgress(100);
+  log('=== BPW IMPORT COMPLETE ===', 'success');
+}
+
+async function importHyphen() {
+  const d = fileData;
+  log('Sending Hyphen data...', 'info');
+  const r = await postChunk(d, 'Hyphen import');
+  if (r) {
+    log('Results: ' + JSON.stringify(r.results, null, 2), 'success');
+    if (r.summary) log('Summary: ' + JSON.stringify(r.summary, null, 2), 'info');
+  }
+  setProgress(100);
+  log('=== HYPHEN IMPORT COMPLETE ===', 'success');
+}
+
+async function startImport() {
+  document.getElementById('btnImport').disabled = true;
+  setProgress(0);
+  log('Starting import to ' + endpoint + '...', 'info');
+
+  try {
+    if (endpoint.includes('bolt')) await importBolt();
+    else if (endpoint.includes('bpw')) await importBpw();
+    else if (endpoint.includes('hyphen')) await importHyphen();
+    else log('Unknown endpoint: ' + endpoint, 'error');
+  } catch (err) {
+    log('Fatal error: ' + err.message, 'error');
+  }
+
+  document.getElementById('btnImport').disabled = false;
+}
+</script>
+</body></html>

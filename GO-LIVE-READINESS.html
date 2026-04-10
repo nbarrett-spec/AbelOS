@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abel Lumber AI Business Engine — Go-Live Readiness Report</title>
+<style>
+  :root { --navy: #1B4F72; --orange: #E67E22; --green: #27AE60; --red: #E74C3C; --gray: #7F8C8D; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #2c3e50; line-height: 1.6; background: #f8f9fa; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  .header { background: linear-gradient(135deg, var(--navy) 0%, #154360 100%); color: white; padding: 48px 40px; border-radius: 16px; margin-bottom: 32px; }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; }
+  .header p { opacity: 0.85; font-size: 1.1rem; }
+  .header .meta { margin-top: 16px; display: flex; gap: 32px; font-size: 0.9rem; opacity: 0.75; }
+  .section { background: white; border-radius: 12px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .section h2 { font-size: 1.35rem; color: var(--navy); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #eee; }
+  .section h3 { font-size: 1.05rem; color: #34495e; margin: 20px 0 10px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 20px 0; }
+  .stat-card { background: #f0f4f8; border-radius: 10px; padding: 20px; text-align: center; }
+  .stat-card .num { font-size: 2rem; font-weight: 800; color: var(--navy); }
+  .stat-card .label { font-size: 0.85rem; color: var(--gray); margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.92rem; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #f8f9fa; font-weight: 600; color: var(--navy); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-yellow { background: #fff3cd; color: #856404; }
+  .badge-red { background: #f8d7da; color: #721c24; }
+  .badge-blue { background: #d1ecf1; color: #0c5460; }
+  .badge-gray { background: #e2e3e5; color: #383d41; }
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; display: flex; align-items: flex-start; gap: 10px; }
+  .checklist li:last-child { border-bottom: none; }
+  .check { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-top: 2px; }
+  .check-done { background: var(--green); color: white; }
+  .check-warn { background: var(--orange); color: white; }
+  .check-fail { background: var(--red); color: white; }
+  .check-pending { background: #bdc3c7; color: white; }
+  .priority-box { border-left: 4px solid; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .priority-critical { border-color: var(--red); background: #fdf2f2; }
+  .priority-high { border-color: var(--orange); background: #fef9f0; }
+  .priority-medium { border-color: #3498db; background: #f0f7fd; }
+  .cmd { background: #1e1e1e; color: #d4d4d4; padding: 14px 18px; border-radius: 8px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 0.85rem; overflow-x: auto; margin: 8px 0; white-space: pre-wrap; }
+  .cmd .comment { color: #6a9955; }
+  .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 768px) { .cols-2, .stats-grid { grid-template-columns: 1fr; } }
+  .footer { text-align: center; padding: 32px; color: var(--gray); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Abel Lumber AI Business Engine</h1>
+  <p>Go-Live Readiness Report &amp; Deployment Guide</p>
+  <div class="meta">
+    <span>Prepared: March 30, 2026</span>
+    <span>Production URL: project-waqs0.vercel.app</span>
+    <span>Version: 1.0</span>
+  </div>
+</div>
+
+<!-- PLATFORM OVERVIEW -->
+<div class="section">
+  <h2>Platform Overview</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num">166</div><div class="label">Pages</div></div>
+    <div class="stat-card"><div class="num">681</div><div class="label">API Routes</div></div>
+    <div class="stat-card"><div class="num">53</div><div class="label">Database Models</div></div>
+    <div class="stat-card"><div class="num">62</div><div class="label">Ops Sections</div></div>
+    <div class="stat-card"><div class="num">34</div><div class="label">Components</div></div>
+    <div class="stat-card"><div class="num">10</div><div class="label">Migrations</div></div>
+  </div>
+  <p style="color: var(--gray); font-size: 0.9rem;">Full-stack Next.js 14 application with TypeScript, Prisma ORM, PostgreSQL (Neon serverless), deployed on Vercel. Covers operations, sales CRM, inventory, delivery, finance, pricing, AI-driven recommendations, homeowner portal, and 10+ integration endpoints.</p>
+</div>
+
+<!-- CRITICAL ACTIONS (DO FIRST) -->
+<div class="section">
+  <h2>Critical Pre-Launch Actions</h2>
+  <p style="margin-bottom: 16px; color: var(--gray);">Complete these in order before giving anyone production access.</p>
+
+  <div class="priority-box priority-critical">
+    <h3 style="margin-top:0; color: var(--red);">1. Fix Admin Login Password</h3>
+    <p>The admin account (n.barrett@abellumber.com) exists but the password hash doesn't match "Abel2026!". A one-time fix endpoint has been created.</p>
+    <p style="margin-top: 8px;"><strong>Steps:</strong></p>
+    <div class="cmd"><span class="comment"># After deploying, visit this URL once in your browser:</span>
+https://project-waqs0.vercel.app/api/ops/auth/fix-password?secret=AbelFixPwd2026
+
+<span class="comment"># You should see: { "success": true, "message": "Password reset successfully..." }</span>
+<span class="comment"># Then DELETE the file: src/app/api/ops/auth/fix-password/route.ts</span></div>
+  </div>
+
+  <div class="priority-box priority-critical">
+    <h3 style="margin-top:0; color: var(--red);">2. Rotate Exposed Secrets</h3>
+    <p>The .env file containing API keys was committed to version control. These secrets should be rotated immediately.</p>
+    <table>
+      <tr><th>Secret</th><th>Where to Rotate</th><th>Priority</th></tr>
+      <tr><td>DATABASE_URL password</td><td>Neon Dashboard → Settings → Reset Password</td><td><span class="badge badge-red">CRITICAL</span></td></tr>
+      <tr><td>JWT_SECRET</td><td>Generate new: <code>openssl rand -base64 48</code></td><td><span class="badge badge-red">CRITICAL</span></td></tr>
+      <tr><td>ANTHROPIC_API_KEY</td><td>console.anthropic.com → API Keys</td><td><span class="badge badge-yellow">HIGH</span></td></tr>
+    </table>
+    <p style="margin-top: 10px; font-size: 0.9rem;"><strong>After rotating:</strong> Update values in Vercel Dashboard → Settings → Environment Variables. Remove .env from git tracking with <code>git rm --cached .env</code>.</p>
+  </div>
+
+  <div class="priority-box priority-critical">
+    <h3 style="margin-top:0; color: var(--red);">3. Run Pending Database Migrations</h3>
+    <p>Three migration files need to be executed against the production database via the Neon SQL Editor.</p>
+    <table>
+      <tr><th>Migration</th><th>What It Does</th><th>Status</th></tr>
+      <tr><td>migration-v8-password-reset-and-cleanup.sql</td><td>StaffRoles table, password reset tokens, cleanup</td><td><span class="badge badge-yellow">PENDING</span></td></tr>
+      <tr><td>migration-v9-indexes.sql</td><td>44 performance indexes across all tables</td><td><span class="badge badge-yellow">PENDING</span></td></tr>
+      <tr><td>migration-v10-install-crew-pricing.sql</td><td>Subcontractor pricing columns (pricePerSqFt, pricingType)</td><td><span class="badge badge-yellow">PENDING</span></td></tr>
+    </table>
+    <div class="cmd"><span class="comment"># Run via Neon Console → SQL Editor</span>
+<span class="comment"># Project: delicate-waterfall-08422674</span>
+<span class="comment"># Branch: br-gentle-frog-anmxwz3l</span>
+<span class="comment"># Copy-paste each SQL file in order: v8 → v9 → v10</span></div>
+  </div>
+
+  <div class="priority-box priority-high">
+    <h3 style="margin-top:0; color: var(--orange);">4. Deploy Latest Code to Vercel</h3>
+    <p>All code changes from this session need to be pushed to trigger a Vercel deployment.</p>
+    <div class="cmd"><span class="comment"># From your Windows terminal, in the abel-builder-platform directory:</span>
+git add -A
+git commit -m "Production readiness: UX improvements, homeowner portal, crew pricing, AI recommendations"
+git push origin main
+
+<span class="comment"># Or force deploy:</span>
+npx vercel --prod</div>
+  </div>
+</div>
+
+<!-- ENVIRONMENT VARIABLES -->
+<div class="section">
+  <h2>Vercel Environment Variables</h2>
+  <p style="margin-bottom: 16px; color: var(--gray);">Set these in Vercel Dashboard → project-waqs0 → Settings → Environment Variables. All should be set for Production, Preview, and Development.</p>
+  <table>
+    <tr><th>Variable</th><th>Purpose</th><th>Status</th></tr>
+    <tr><td><code>DATABASE_URL</code></td><td>Neon PostgreSQL connection string</td><td><span class="badge badge-green">SET</span></td></tr>
+    <tr><td><code>JWT_SECRET</code></td><td>Session token signing key (min 32 chars)</td><td><span class="badge badge-green">SET</span></td></tr>
+    <tr><td><code>NEXT_PUBLIC_APP_URL</code></td><td>https://project-waqs0.vercel.app</td><td><span class="badge badge-yellow">VERIFY</span></td></tr>
+    <tr><td><code>NEXT_PUBLIC_APP_NAME</code></td><td>Abel Lumber</td><td><span class="badge badge-yellow">VERIFY</span></td></tr>
+    <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Claude AI for recommendations &amp; analysis</td><td><span class="badge badge-yellow">VERIFY</span></td></tr>
+    <tr><td><code>RESEND_API_KEY</code></td><td>Transactional email (quote follow-ups, notifications)</td><td><span class="badge badge-red">NEEDED</span></td></tr>
+    <tr><td><code>STRIPE_SECRET_KEY</code></td><td>Payment processing</td><td><span class="badge badge-red">NEEDED</span></td></tr>
+    <tr><td><code>STRIPE_WEBHOOK_SECRET</code></td><td>Stripe webhook verification</td><td><span class="badge badge-red">NEEDED</span></td></tr>
+    <tr><td><code>CRON_SECRET</code></td><td>Secures cron job endpoints</td><td><span class="badge badge-red">NEEDED</span></td></tr>
+  </table>
+
+  <h3>Cron Jobs (Vercel Cron)</h3>
+  <p>These need to be configured in <code>vercel.json</code> or Vercel Dashboard:</p>
+  <table>
+    <tr><th>Endpoint</th><th>Schedule</th><th>Purpose</th></tr>
+    <tr><td>/api/cron/quote-followups</td><td>0 9 * * 1-5 (9am M-F)</td><td>Auto-follow-up on stale quotes</td></tr>
+    <tr><td>/api/cron/agent-opportunities</td><td>0 14 * * 1-5 (2pm M-F)</td><td>AI opportunity discovery</td></tr>
+  </table>
+</div>
+
+<!-- INTEGRATION STATUS -->
+<div class="section">
+  <h2>Integration Status</h2>
+  <table>
+    <tr><th>Integration</th><th>Type</th><th>Status</th><th>Notes</th></tr>
+    <tr><td><strong>Neon PostgreSQL</strong></td><td>Database</td><td><span class="badge badge-green">LIVE</span></td><td>Serverless Postgres, connection pooling active</td></tr>
+    <tr><td><strong>Vercel</strong></td><td>Hosting</td><td><span class="badge badge-green">LIVE</span></td><td>project-waqs0.vercel.app, auto-deploy on push</td></tr>
+    <tr><td><strong>Anthropic Claude</strong></td><td>AI Engine</td><td><span class="badge badge-green">CONFIGURED</span></td><td>Powers predictive analytics, recommendations, email drafting</td></tr>
+    <tr><td><strong>Resend</strong></td><td>Email</td><td><span class="badge badge-yellow">NEEDS KEY</span></td><td>Quote follow-ups, notifications, homeowner invites</td></tr>
+    <tr><td><strong>Stripe</strong></td><td>Payments</td><td><span class="badge badge-yellow">NEEDS KEY</span></td><td>Online payments, webhooks for auto-reconciliation</td></tr>
+    <tr><td><strong>QuickBooks Desktop</strong></td><td>Accounting</td><td><span class="badge badge-blue">API READY</span></td><td>Sync queue built, needs QB Web Connector config</td></tr>
+    <tr><td><strong>InFlow Inventory</strong></td><td>Inventory</td><td><span class="badge badge-blue">API READY</span></td><td>Import endpoints built, needs API credentials</td></tr>
+    <tr><td><strong>ECI Bolt/Spruce</strong></td><td>ERP</td><td><span class="badge badge-blue">API READY</span></td><td>Import endpoints for pricing/products, needs config</td></tr>
+    <tr><td><strong>BuilderTrend</strong></td><td>Project Mgmt</td><td><span class="badge badge-blue">API READY</span></td><td>Project sync mapping, needs BT credentials</td></tr>
+    <tr><td><strong>Hyphen BuildPro/SupplyPro</strong></td><td>Supply Chain</td><td><span class="badge badge-blue">API READY</span></td><td>Procurement intelligence endpoints built</td></tr>
+    <tr><td><strong>Boise Cascade / BlueLinx</strong></td><td>Distributor</td><td><span class="badge badge-blue">API READY</span></td><td>Catalog sync and ordering endpoints</td></tr>
+    <tr><td><strong>Gmail / Google Workspace</strong></td><td>Communication</td><td><span class="badge badge-blue">API READY</span></td><td>Email parsing, builder comms logging</td></tr>
+  </table>
+</div>
+
+<!-- FEATURE MODULES -->
+<div class="section">
+  <h2>Feature Modules — Status</h2>
+  <div class="cols-2">
+    <div>
+      <h3>Core Operations</h3>
+      <ul class="checklist">
+        <li><span class="check check-done">&#10003;</span><span><strong>CEO Dashboard</strong> — KPIs, pipeline, payments, AI recommendations. All elements now clickable for drill-down.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Financial Dashboard</strong> — AR/AP, cash position, aging, builder health. Clickable cards to AR, AP, health pages.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Inventory Management</strong> — Stock levels, reorder alerts with "Create PO" quick actions. Low-stock panel prominent.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Order Management</strong> — Full pipeline from quote to delivery with status tracking.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Delivery Scheduling</strong> — Quick Dispatch panel with one-click status progression buttons.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Warehouse</strong> — Picking, loading, bin management.</span></li>
+      </ul>
+
+      <h3>Sales &amp; CRM</h3>
+      <ul class="checklist">
+        <li><span class="check check-done">&#10003;</span><span><strong>Sales CRM</strong> — Kanban + table views, Bids &amp; Quotes Tracker with stage progress bars and urgency indicators.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Quote Builder</strong> — Multi-line quotes, PDF generation, email delivery, follow-up tracking.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Pricing Engine</strong> — Builder-specific pricing, tier management. Accessible by PMs, Purchasing, and Management.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Revenue Intelligence</strong> — Predictive analytics, opportunity scoring.</span></li>
+      </ul>
+    </div>
+    <div>
+      <h3>People &amp; Service</h3>
+      <ul class="checklist">
+        <li><span class="check check-done">&#10003;</span><span><strong>Staff Management</strong> — Multi-role auth, department-based access, 10 role types.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Crew Management</strong> — Internal crews + subcontractors (DFW Door &amp; Trim etc) with per-sqft pricing per customer.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Homeowner Portal</strong> — Access code system (ABEL-XXXX-XXXX), upgrade selection for doors/trim/hardware + custom packages.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Builder Portal</strong> — Self-service ordering, account history, payment status.</span></li>
+      </ul>
+
+      <h3>AI &amp; Intelligence</h3>
+      <ul class="checklist">
+        <li><span class="check check-done">&#10003;</span><span><strong>AI Recommendations</strong> — Aggregates from predictive, inventory, cash-flow APIs. Click-to-approve on CEO dashboard.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Predictive Analytics</strong> — Stale quote detection, builder churn risk, demand forecasting.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Procurement Intelligence</strong> — Cost optimization, vendor analysis.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Cash Flow Optimizer</strong> — Working capital recommendations, collection prioritization.</span></li>
+      </ul>
+
+      <h3>Integrations &amp; Automation</h3>
+      <ul class="checklist">
+        <li><span class="check check-done">&#10003;</span><span><strong>Agent Hub</strong> — AI agent orchestration framework.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Automations</strong> — Workflow rules engine.</span></li>
+        <li><span class="check check-done">&#10003;</span><span><strong>Cron Jobs</strong> — Scheduled quote follow-ups and opportunity discovery.</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- USER ROLES -->
+<div class="section">
+  <h2>Staff Roles &amp; Access</h2>
+  <p style="margin-bottom: 12px; color: var(--gray);">Role-based access control with multi-role support. Staff can hold multiple roles simultaneously.</p>
+  <table>
+    <tr><th>Role</th><th>Access Scope</th><th>Typical Users</th></tr>
+    <tr><td><span class="badge badge-red">ADMIN</span></td><td>Full access to all modules, settings, staff management</td><td>Nate Barrett, owners</td></tr>
+    <tr><td><span class="badge badge-blue">MANAGER</span></td><td>Operations, finance, reports, staff oversight</td><td>Branch managers, ops leads</td></tr>
+    <tr><td><span class="badge badge-blue">PROJECT_MANAGER</span></td><td>Jobs, delivery, crews, pricing (read), quotes</td><td>PMs managing builder projects</td></tr>
+    <tr><td><span class="badge badge-blue">SALES_REP</span></td><td>CRM, quotes, outreach, builder accounts</td><td>Outside/inside sales</td></tr>
+    <tr><td><span class="badge badge-blue">PURCHASING</span></td><td>Inventory, vendors, POs, pricing, receiving</td><td>Purchasing agents</td></tr>
+    <tr><td><span class="badge badge-blue">WAREHOUSE</span></td><td>Inventory, picking, receiving, delivery dispatch</td><td>Warehouse staff, drivers</td></tr>
+    <tr><td><span class="badge badge-gray">INSTALLER</span></td><td>Assigned jobs, schedules, quality checks</td><td>Install crew leads</td></tr>
+    <tr><td><span class="badge badge-gray">ACCOUNTING</span></td><td>Finance, invoices, payments, collections, reports</td><td>Bookkeepers, AR/AP</td></tr>
+    <tr><td><span class="badge badge-gray">ESTIMATOR</span></td><td>Takeoffs, blueprints, quotes</td><td>Estimators</td></tr>
+    <tr><td><span class="badge badge-gray">VIEWER</span></td><td>Read-only dashboard access</td><td>Observers, interns</td></tr>
+  </table>
+</div>
+
+<!-- SECURITY -->
+<div class="section">
+  <h2>Security Posture</h2>
+  <div class="cols-2">
+    <div>
+      <h3>Implemented</h3>
+      <ul class="checklist">
+        <li><span class="check check-done">&#10003;</span><span>JWT-based authentication (jose library)</span></li>
+        <li><span class="check check-done">&#10003;</span><span>bcrypt password hashing (12 rounds)</span></li>
+        <li><span class="check check-done">&#10003;</span><span>Rate limiting on auth endpoints</span></li>
+        <li><span class="check check-done">&#10003;</span><span>Role-based API access control</span></li>
+        <li><span class="check check-done">&#10003;</span><span>CSRF protection via middleware</span></li>
+        <li><span class="check check-done">&#10003;</span><span>Security headers (HSTS, CSP, X-Frame-Options)</span></li>
+        <li><span class="check check-done">&#10003;</span><span>Parameterized SQL queries ($1, $2 positional params)</span></li>
+        <li><span class="check check-done">&#10003;</span><span>SSL/TLS on database connection</span></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Action Required</h3>
+      <ul class="checklist">
+        <li><span class="check check-fail">!</span><span><strong>Rotate secrets</strong> — DB password, JWT_SECRET, Anthropic key exposed in .env</span></li>
+        <li><span class="check check-fail">!</span><span><strong>Remove .env from git</strong> — Add to .gitignore, use <code>git rm --cached .env</code></span></li>
+        <li><span class="check check-warn">~</span><span><strong>Delete fix-password endpoint</strong> after use — temporary security hole</span></li>
+        <li><span class="check check-warn">~</span><span><strong>Add CRON_SECRET</strong> to protect scheduled job endpoints</span></li>
+        <li><span class="check check-warn">~</span><span><strong>Custom domain + SSL</strong> — Replace Vercel subdomain with abellumber.com (or similar)</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DATABASE -->
+<div class="section">
+  <h2>Database (Neon PostgreSQL)</h2>
+  <div class="cols-2">
+    <div>
+      <p><strong>Project:</strong> delicate-waterfall-08422674</p>
+      <p><strong>Branch:</strong> br-gentle-frog-anmxwz3l</p>
+      <p><strong>Region:</strong> us-east-1</p>
+      <p><strong>Connection:</strong> Pooled (recommended for serverless)</p>
+    </div>
+    <div>
+      <p><strong>Models:</strong> 53 tables</p>
+      <p><strong>Pending Migrations:</strong> 3 (v8, v9, v10)</p>
+      <p><strong>ORM:</strong> Prisma 5.14 (raw SQL mode)</p>
+      <p><strong>Indexes:</strong> 44 pending (migration-v9)</p>
+    </div>
+  </div>
+
+  <h3>53 Database Models</h3>
+  <p style="font-size: 0.9rem; color: var(--gray); line-height: 1.8;">
+    Builder, BuilderReferral, Project, Blueprint, Takeoff, TakeoffItem, Quote, QuoteItem, Order, OrderItem, OrderTemplate, OrderTemplateItem, Product, BomEntry, BuilderPricing, UpgradePath, HomeownerAccess, HomeownerSelection, Staff, Job, DecisionNote, Activity, Task, ScheduleEntry, Crew, CrewMember, Delivery, DeliveryTracking, Installation, QualityCheck, Vendor, VendorProduct, PurchaseOrder, PurchaseOrderItem, InventoryItem, Invoice, InvoiceItem, Payment, MaterialPick, Message, Conversation, ConversationParticipant, Notification, Deal, DealActivity, Contract, DocumentRequest, QBSyncQueue, SyncLog, IntegrationConfig, BTProjectMapping, CollectionRule, CollectionAction
+  </p>
+</div>
+
+<!-- DEPLOYMENT CHECKLIST -->
+<div class="section">
+  <h2>Deployment Checklist</h2>
+  <p style="margin-bottom: 16px; color: var(--gray);">Follow this sequence for a clean production deployment.</p>
+
+  <h3>Phase 1 — Database (Do First)</h3>
+  <ul class="checklist">
+    <li><span class="check check-pending">1</span><span>Open Neon Console → SQL Editor for project delicate-waterfall-08422674</span></li>
+    <li><span class="check check-pending">2</span><span>Run <code>migration-v8-password-reset-and-cleanup.sql</code> — creates StaffRoles table, password reset tokens</span></li>
+    <li><span class="check check-pending">3</span><span>Run <code>migration-v9-indexes.sql</code> — adds 44 performance indexes</span></li>
+    <li><span class="check check-pending">4</span><span>Run <code>migration-v10-install-crew-pricing.sql</code> — adds subcontractor pricing columns</span></li>
+    <li><span class="check check-pending">5</span><span>Rotate database password in Neon Settings, update DATABASE_URL in Vercel</span></li>
+  </ul>
+
+  <h3>Phase 2 — Secrets &amp; Config</h3>
+  <ul class="checklist">
+    <li><span class="check check-pending">1</span><span>Generate new JWT_SECRET: <code>openssl rand -base64 48</code></span></li>
+    <li><span class="check check-pending">2</span><span>Set all environment variables in Vercel Dashboard (see table above)</span></li>
+    <li><span class="check check-pending">3</span><span>Configure Resend account → get API key → set RESEND_API_KEY</span></li>
+    <li><span class="check check-pending">4</span><span>Configure Stripe account → get keys → set STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET</span></li>
+    <li><span class="check check-pending">5</span><span>Generate CRON_SECRET: <code>openssl rand -hex 32</code></span></li>
+  </ul>
+
+  <h3>Phase 3 — Code Deployment</h3>
+  <ul class="checklist">
+    <li><span class="check check-pending">1</span><span>Push code changes: <code>git add -A && git commit -m "Production readiness" && git push</code></span></li>
+    <li><span class="check check-pending">2</span><span>Verify Vercel build succeeds (check dashboard)</span></li>
+    <li><span class="check check-pending">3</span><span>Visit fix-password URL to reset admin password (see Critical Actions above)</span></li>
+    <li><span class="check check-pending">4</span><span>Test login at /ops/login with n.barrett@abellumber.com / Abel2026!</span></li>
+    <li><span class="check check-pending">5</span><span>Delete fix-password route, commit and push again</span></li>
+  </ul>
+
+  <h3>Phase 4 — Verification</h3>
+  <ul class="checklist">
+    <li><span class="check check-pending">1</span><span>Log in and verify CEO Dashboard loads with live data</span></li>
+    <li><span class="check check-pending">2</span><span>Test drill-down: click pipeline stage → orders page filters correctly</span></li>
+    <li><span class="check check-pending">3</span><span>Test inventory alerts: low stock items show "Create PO" button</span></li>
+    <li><span class="check check-pending">4</span><span>Test Sales CRM: Bids &amp; Quotes Tracker shows stage progression</span></li>
+    <li><span class="check check-pending">5</span><span>Test Delivery: Quick Dispatch panel shows active deliveries with status buttons</span></li>
+    <li><span class="check check-pending">6</span><span>Test Homeowner Access: create code → copy portal link → verify portal loads</span></li>
+    <li><span class="check check-pending">7</span><span>Test Pricing Engine: verify PM role can access /ops/pricing</span></li>
+    <li><span class="check check-pending">8</span><span>Create a test staff account for another role (e.g., WAREHOUSE) to verify access control</span></li>
+  </ul>
+</div>
+
+<!-- STAFF ONBOARDING -->
+<div class="section">
+  <h2>Staff Onboarding Plan (25-50 Employees)</h2>
+  <table>
+    <tr><th>Wave</th><th>Who</th><th>Roles</th><th>Focus</th></tr>
+    <tr><td><span class="badge badge-red">Week 1</span></td><td>Nate + Management (3-5)</td><td>ADMIN, MANAGER</td><td>Full platform walkthrough, data entry, config</td></tr>
+    <tr><td><span class="badge badge-yellow">Week 2</span></td><td>Sales Team (5-8)</td><td>SALES_REP</td><td>CRM, quotes, builder accounts, pricing lookup</td></tr>
+    <tr><td><span class="badge badge-blue">Week 3</span></td><td>Operations (8-12)</td><td>PROJECT_MANAGER, PURCHASING, ESTIMATOR</td><td>Orders, inventory, purchasing, takeoffs</td></tr>
+    <tr><td><span class="badge badge-gray">Week 4</span></td><td>Warehouse + Drivers (8-15)</td><td>WAREHOUSE, INSTALLER</td><td>Picking, delivery, install tracking</td></tr>
+    <tr><td><span class="badge badge-gray">Week 5</span></td><td>Accounting (2-4)</td><td>ACCOUNTING</td><td>Invoicing, payments, collections, finance reports</td></tr>
+  </table>
+</div>
+
+<!-- CHANGES THIS SESSION -->
+<div class="section">
+  <h2>Changes Made This Session</h2>
+  <table>
+    <tr><th>Area</th><th>Change</th><th>Files Modified/Created</th></tr>
+    <tr><td>CEO Dashboard</td><td>Made pipeline stages, orders, payments, metrics all clickable with drill-down links</td><td>src/app/ops/page.tsx</td></tr>
+    <tr><td>AI Recommendations</td><td>New component aggregating 3 data sources with click-to-approve cards on CEO dashboard</td><td>src/app/ops/components/AIRecommendations.tsx <span class="badge badge-green">NEW</span></td></tr>
+    <tr><td>Inventory</td><td>Added prominent Reorder Alerts panel with Create PO and View Details actions</td><td>src/app/ops/inventory/page.tsx</td></tr>
+    <tr><td>Sales CRM</td><td>Added Bids &amp; Quotes Tracker with stage progress bars, urgency indicators</td><td>src/app/ops/sales/page.tsx</td></tr>
+    <tr><td>Delivery</td><td>Added Quick Dispatch panel with one-click status progression</td><td>src/app/ops/delivery/page.tsx</td></tr>
+    <tr><td>Crew Pricing</td><td>Added pricePerSqFt, pricingType columns; subcontractor flag on Crew table</td><td>API route + page + migration SQL</td></tr>
+    <tr><td>Homeowner Portal</td><td>Full management page + API for access codes (ABEL-XXXX-XXXX), default room selections</td><td>src/app/ops/homeowner-access/page.tsx, API route <span class="badge badge-green">NEW</span></td></tr>
+    <tr><td>Admin Login</td><td>One-time password reset endpoint</td><td>src/app/api/ops/auth/fix-password/route.ts <span class="badge badge-green">NEW</span></td></tr>
+  </table>
+</div>
+
+<div class="footer">
+  <p><strong>Abel Lumber AI Business Engine</strong> — Built for DFW Market Dominance</p>
+  <p style="margin-top: 4px;">Prepared by AI Engineering Team &bull; March 30, 2026</p>
+</div>
+
+</div>
+</body>
+</html>

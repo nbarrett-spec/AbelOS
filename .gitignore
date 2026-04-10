@@ -1,0 +1,53 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files — NEVER commit secrets
+.env
+.env.*
+!.env.production.template
+!.env.production.example
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# uploads
+/uploads/*
+!/uploads/.gitkeep
+
+# prisma
+/prisma/migrations/
+
+# batch import data (not for public serving)
+/data/
+/public/so_batch_*.json
+/public/stock_batch_*.json
+/public/tmp_*.json
+
+.vercel
+.env*.local

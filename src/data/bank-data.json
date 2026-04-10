@@ -1,0 +1,96 @@
+{
+  "accounts": [
+    {
+      "id": "acc-1",
+      "name": "Primary Checking",
+      "institution": "Wells Fargo",
+      "accountType": "checking",
+      "currentBalance": 125000,
+      "lastUpdated": "2026-03-21T22:44:00.079Z"
+    },
+    {
+      "id": "acc-2",
+      "name": "Operating Savings",
+      "institution": "Wells Fargo",
+      "accountType": "savings",
+      "currentBalance": 250000,
+      "lastUpdated": "2026-03-21T22:44:00.079Z"
+    },
+    {
+      "id": "acc-3",
+      "name": "Line of Credit",
+      "institution": "Bank of America",
+      "accountType": "credit_line",
+      "currentBalance": 45000,
+      "creditLimit": 100000,
+      "lastUpdated": "2026-03-21T22:44:00.079Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "txn-1",
+      "date": "2026-03-20T22:44:00.079Z",
+      "description": "Invoice Payment - Boise Cascade",
+      "amount": 5200.5,
+      "category": "Materials",
+      "runningBalance": 124500,
+      "type": "debit"
+    },
+    {
+      "id": "txn-2",
+      "date": "2026-03-19T22:44:00.079Z",
+      "description": "Customer Payment - AMP Builders",
+      "amount": 8500,
+      "category": "Revenue",
+      "runningBalance": 129700.5,
+      "type": "credit"
+    },
+    {
+      "id": "txn-3",
+      "date": "2026-03-18T22:44:00.079Z",
+      "description": "Payroll",
+      "amount": 12000,
+      "category": "Payroll",
+      "runningBalance": 121200.5,
+      "type": "debit"
+    }
+  ],
+  "budgetAllocation": [
+    {
+      "category": "Payroll",
+      "budgeted": 50000,
+      "actual": 48200,
+      "variance": 1800
+    },
+    {
+      "category": "Materials/Inventory",
+      "budgeted": 80000,
+      "actual": 75600,
+      "variance": 4400
+    },
+    {
+      "category": "Equipment",
+      "budgeted": 15000,
+      "actual": 12500,
+      "variance": 2500
+    },
+    {
+      "category": "Insurance",
+      "budgeted": 8000,
+      "actual": 8000,
+      "variance": 0
+    },
+    {
+      "category": "Rent/Utilities",
+      "budgeted": 12000,
+      "actual": 11800,
+      "variance": 200
+    },
+    {
+      "category": "Other",
+      "budgeted": 5000,
+      "actual": 3200,
+      "variance": 1800
+    }
+  ]
+}

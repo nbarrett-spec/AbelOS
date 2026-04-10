@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/natha/OneDrive/Abel Lumber/abel-builder-platform/src/app -name middleware* -o -name layout.tsx -o -name layout.ts)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"$queryRaw\\\\|queryRaw\" \"C:/Users/natha/OneDrive/Abel Lumber/abel-builder-platform/src\" --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)"
+    ]
+  }
+}

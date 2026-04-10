@@ -1,0 +1,48 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && next build",
+  "installCommand": "npm install",
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/uploads/:path*", "destination": "/api/files/:path*" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/quote-followups",
+      "schedule": "0 9 * * 1-5"
+    },
+    {
+      "path": "/api/cron/agent-opportunities",
+      "schedule": "0 14 * * 1-5"
+    },
+    {
+      "path": "/api/cron/inflow-sync",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/bolt-sync",
+      "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/cron/hyphen-sync",
+      "schedule": "15 * * * *"
+    },
+    {
+      "path": "/api/cron/bpw-sync",
+      "schedule": "45 * * * *"
+    }
+  ]
+}

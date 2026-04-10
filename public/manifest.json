@@ -1,0 +1,49 @@
+{
+  "name": "Abel Builder Platform",
+  "short_name": "Abel Lumber",
+  "description": "AI-powered builder commerce platform for Abel Lumber",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1B4F72",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/images/logos/abel-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logos/abel-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Command Center",
+      "short_name": "Command",
+      "url": "/ops/command-center",
+      "description": "Agent Command Center",
+      "icons": [{ "src": "/images/logos/abel-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Builder Health",
+      "short_name": "Health",
+      "url": "/ops/builder-health",
+      "description": "Builder Health Dashboard",
+      "icons": [{ "src": "/images/logos/abel-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Deliveries",
+      "short_name": "Deliveries",
+      "url": "/ops/schedule",
+      "description": "Delivery Schedule",
+      "icons": [{ "src": "/images/logos/abel-logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

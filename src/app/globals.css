@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2.5 bg-abel-navy hover:bg-abel-navy-dark text-white font-medium rounded-xl transition shadow-sm;
+  }
+  .btn-accent {
+    @apply px-6 py-2.5 bg-abel-orange hover:bg-abel-orange-dark text-white font-medium rounded-xl transition shadow-sm;
+  }
+  .btn-outline {
+    @apply px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition;
+  }
+  .input {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-abel-navy/20 focus:border-abel-navy outline-none transition;
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  .card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+  }
+  /* Responsive table wrapper */
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+  }
+  .table-responsive table {
+    @apply min-w-[640px];
+  }
+}
+
+/*
+ * Dark mode overrides for common Tailwind patterns.
+ * Uses the :where() pseudo-class for zero specificity so these
+ * can be overridden by any component class if needed.
+ */
+html.dark {
+  color-scheme: dark;
+}
+
+/* Body override for dark mode */
+html.dark body {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+/* Background overrides */
+:where(html.dark) .bg-white    { background-color: #1f2937; }
+:where(html.dark) .bg-gray-50  { background-color: #111827; }
+:where(html.dark) .bg-gray-100 { background-color: #1f2937; }
+:where(html.dark) .bg-gray-200 { background-color: #374151; }
+:where(html.dark) .bg-blue-50  { background-color: #1e3a5f; }
+:where(html.dark) .bg-green-50 { background-color: #1a3a2a; }
+:where(html.dark) .bg-red-50   { background-color: #3a1a1a; }
+:where(html.dark) .bg-yellow-50 { background-color: #3a321a; }
+:where(html.dark) .bg-orange-50 { background-color: #3a2a1a; }
+
+/* Border overrides */
+:where(html.dark) .border-gray-200,
+:where(html.dark) .border-gray-100 { border-color: #374151; }
+:where(html.dark) .border-gray-300 { border-color: #4b5563; }
+:where(html.dark) .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #374151; }
+
+/* Text overrides */
+:where(html.dark) .text-gray-900 { color: #f3f4f6; }
+:where(html.dark) .text-gray-800 { color: #e5e7eb; }
+:where(html.dark) .text-gray-700 { color: #d1d5db; }
+:where(html.dark) .text-gray-600 { color: #9ca3af; }
+:where(html.dark) .text-gray-500 { color: #9ca3af; }
+:where(html.dark) .text-gray-400 { color: #6b7280; }
+:where(html.dark) .text-black { color: #f3f4f6; }
+
+/* Hover state overrides */
+:where(html.dark) .hover\:bg-gray-50:hover { background-color: #374151; }
+:where(html.dark) .hover\:bg-gray-100:hover { background-color: #374151; }
+
+/* Table overrides */
+:where(html.dark) thead { background-color: #1f2937; }
+:where(html.dark) tbody tr { border-color: #374151; }
+:where(html.dark) .even\:bg-gray-50:nth-child(even) { background-color: #1a2332; }
+
+/* Form elements */
+:where(html.dark) input,
+:where(html.dark) select,
+:where(html.dark) textarea {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f3f4f6;
+}
+
+/* Placeholder text */
+:where(html.dark) input::placeholder,
+:where(html.dark) textarea::placeholder {
+  color: #6b7280;
+}
+
+/* Card / panel overrides for inline styles */
+:where(html.dark) .card { background-color: #1f2937; border-color: #374151; }
+
+/* Shadow adjustment */
+:where(html.dark) .shadow-sm,
+:where(html.dark) .shadow-md,
+:where(html.dark) .shadow-lg,
+:where(html.dark) .shadow-xl {
+  --tw-shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Ring overrides */
+:where(html.dark) .ring-gray-200 { --tw-ring-color: #374151; }
+
+/* Scrollbar styling in dark mode */
+html.dark ::-webkit-scrollbar { background-color: #1f2937; }
+html.dark ::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
+html.dark ::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Make inline-styled ops pages responsive */
+  div[style*="padding: 32"] {
+    padding: 16px !important;
+  }
+  div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+  div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure tables scroll horizontally */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix messages layout on mobile */
+  .flex.gap-6 {
+    flex-direction: column;
+  }
+
+  /* Ensure modals and dropdowns don't overflow */
+  .absolute {
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* Stack filter buttons */
+  .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+}
+
+/* Touch-friendly targets */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  input, select, textarea {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+}
+
+/* Safe area for modern phones (notch, home bar) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .min-h-screen {
+    min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  nav {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Smooth scrolling for all pages */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Payment page mobile overrides */
+@media (max-width: 640px) {
+  div[style*="gridTemplateColumns: repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Stack payment row items on mobile */
+  div[style*="flex"][style*="gap: 16"] {
+    flex-wrap: wrap;
+  }
+}

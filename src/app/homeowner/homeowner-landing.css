@@ -1,0 +1,212 @@
+/* ─── LANDING PAGE ────────────────────────────────────────────── */
+
+.landing-container {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.landing-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+}
+
+.landing-header h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 2rem;
+  color: #1b4f72;
+  font-weight: 600;
+}
+
+.landing-header p {
+  margin: 0;
+  font-size: 1.125rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.landing-form {
+  margin: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.975rem;
+}
+
+.form-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: normal;
+}
+
+.token-input {
+  padding: 0.875rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.token-input:focus {
+  outline: none;
+  border-color: #1b4f72;
+  box-shadow: 0 0 0 3px rgba(27, 79, 114, 0.1);
+}
+
+.token-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  padding: 1rem;
+  background: #fee;
+  border-left: 4px solid #e74c3c;
+  color: #c0392b;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.submit-button {
+  padding: 0.875rem 1.5rem;
+  background: #e67e22;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  align-self: flex-start;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #d86d0f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.landing-footer {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.landing-footer h3 {
+  margin: 0 0 1rem 0;
+  color: #1b4f72;
+  font-size: 1.125rem;
+}
+
+.how-it-works {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.how-it-works li {
+  margin-bottom: 0.75rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.how-it-works strong {
+  color: #333;
+}
+
+.landing-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.info-card h4 {
+  margin: 0 0 0.75rem 0;
+  color: #1b4f72;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.info-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.info-card a {
+  color: #e67e22;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.info-card a:hover {
+  color: #d86d0f;
+}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .landing-container {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-info {
+    flex-direction: row;
+  }
+
+  .info-card {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-card {
+    padding: 1.5rem;
+  }
+
+  .landing-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .landing-header p {
+    font-size: 1rem;
+  }
+
+  .landing-info {
+    flex-direction: column;
+  }
+}
