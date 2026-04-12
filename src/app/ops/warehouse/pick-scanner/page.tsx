@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { useToast } from '@/contexts/ToastContext'
 
 const PICK_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
@@ -30,6 +31,7 @@ interface Job {
 }
 
 export default function PickScannerPage() {
+  const { addToast } = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
   const [selectedJobId, setSelectedJobId] = useState('')
   const [picks, setPicks] = useState<MaterialPick[]>([])
@@ -470,7 +472,7 @@ export default function PickScannerPage() {
                 }}
                 onClick={() => {
                   // In production, would update job status
-                  alert('All items verified! Job ready for next stage.')
+                  addToast({ type: 'success', title: 'Success', message: 'All items verified! Job ready for next stage.' })
                 }}
               >
                 ✓ All Items Verified — Mark Job Ready

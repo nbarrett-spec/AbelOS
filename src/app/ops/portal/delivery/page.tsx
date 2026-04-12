@@ -36,6 +36,7 @@ export default function DeliveryPortal() {
   const [crewAssignments, setCrewAssignments] = useState<Crew[]>([])
   const [activeRoutes, setActiveRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -66,6 +67,7 @@ export default function DeliveryPortal() {
         setActiveRoutes([])
       } catch (error) {
         console.error('Failed to load delivery data:', error)
+        setError('Failed to load data. Please try again.')
       } finally {
         setLoading(false)
       }
@@ -86,6 +88,18 @@ export default function DeliveryPortal() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3498DB]" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-4xl mb-4">⚠️</div>
+        <p className="text-gray-600 font-medium">{error}</p>
+        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+          Retry
+        </button>
       </div>
     )
   }

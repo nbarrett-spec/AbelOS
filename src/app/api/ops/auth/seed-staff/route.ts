@@ -10,6 +10,12 @@ export async function POST(request: NextRequest) {
     const guard = requireDevAdmin(request)
     if (guard) return guard
 
+    // SECURITY: Extra confirmation — only ADMIN role can seed staff
+    const staffRole = request.headers.get('x-staff-role')
+    if (staffRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
     const { staff } = await request.json()
 
     if (!staff || !Array.isArray(staff)) {

@@ -158,6 +158,14 @@ export default function ReceivingPage() {
     }))
   }
 
+  function getItemValidationError(item: LineItem, checkIn: ItemCheckIn): string | null {
+    const total = checkIn.receivedQty + checkIn.damagedQty
+    if (total > item.orderedQty) {
+      return `Received + Damaged cannot exceed ordered quantity (${item.orderedQty})`
+    }
+    return null
+  }
+
   function receiveAll() {
     if (!selectedPO) return
     const updated: Record<string, ItemCheckIn> = {}
@@ -180,6 +188,15 @@ export default function ReceivingPage() {
     if (!hasAnyReceived) {
       showToast('Please receive at least one item', 'error')
       return
+    }
+
+    // Validate no item exceeds ordered quantity
+    for (const item of selectedPO.items) {
+      const checkIn = checkIns[item.id]
+      if (checkIn && (checkIn.receivedQty + checkIn.damagedQty) > item.orderedQty) {
+        showToast(`Item "${item.productDescription}": received + damaged cannot exceed ordered quantity`, 'error')
+        return
+      }
     }
 
     setSubmitting(true)
@@ -651,20 +668,21 @@ export default function ReceivingPage() {
           const checkIn = checkIns[item.id] || { receivedQty: 0, damagedQty: 0 }
           const isComplete = checkIn.receivedQty >= item.remainingQty
           const isPartial = checkIn.receivedQty > 0 && !isComplete
+          const validationError = getItemValidationError(item, checkIn)
 
           return (
-            <div
-              key={item.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1.2fr',
-                gap: '16px',
-                padding: '16px',
-                borderBottom: idx < selectedPO.items.length - 1 ? '1px solid #f0f0f0' : 'none',
-                alignItems: 'center',
-                backgroundColor: isComplete ? '#F0FDF4' : isPartial ? '#FFFBEB' : 'white',
-              }}
-            >
+            <div key={item.id}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1.2fr',
+                  gap: '16px',
+                  padding: '16px',
+                  borderBottom: idx < selectedPO.items.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  alignItems: 'center',
+                  backgroundColor: validationError ? '#FEE2E2' : isComplete ? '#F0FDF4' : isPartial ? '#FFFBEB' : 'white',
+                }}
+              >
               {/* Product Description */}
               <div style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>
                 {item.productDescription}
@@ -744,6 +762,21 @@ export default function ReceivingPage() {
                   <div style={{ fontSize: '20px' }}>◐</div>
                 ) : null}
               </div>
+            </div>
+            {validationError && (
+              <div
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#FEE2E2',
+                  borderLeft: '4px solid #DC2626',
+                  color: '#DC2626',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                }}
+              >
+                ⚠ {validationError}
+              </div>
+            )}
             </div>
           )
         })}

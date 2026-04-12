@@ -173,6 +173,35 @@ export async function GET(request: NextRequest) {
       revenue: Number(m.revenue),
     }))
 
+    // Phase 2 data sources - query with try-catch for runtime tables
+    let dataSources = {
+      hyphenOrders: 0,
+      boltWorkOrders: 0,
+      bwpFieldPOs: 0,
+    }
+
+    try {
+      const [hyphenResult, boltResult, bwpResult] = await Promise.all([
+        prisma.$queryRawUnsafe<CountResult[]>(
+          'SELECT COUNT(*)::int as count FROM "HyphenOrder"'
+        ).catch(() => [{ count: 0 }]),
+        prisma.$queryRawUnsafe<CountResult[]>(
+          'SELECT COUNT(*)::int as count FROM "BoltWorkOrder"'
+        ).catch(() => [{ count: 0 }]),
+        prisma.$queryRawUnsafe<CountResult[]>(
+          'SELECT COUNT(*)::int as count FROM "BwpFieldPO"'
+        ).catch(() => [{ count: 0 }]),
+      ])
+
+      dataSources = {
+        hyphenOrders: hyphenResult?.[0]?.count || 0,
+        boltWorkOrders: boltResult?.[0]?.count || 0,
+        bwpFieldPOs: bwpResult?.[0]?.count || 0,
+      }
+    } catch (e) {
+      console.warn('Phase 2 data sources unavailable:', e)
+    }
+
     return NextResponse.json({
       builders: {
         total: builderCount,
@@ -211,6 +240,7 @@ export async function GET(request: NextRequest) {
         paymentStatus: o.paymentStatus,
         createdAt: o.createdAt,
       })),
+      dataSources,
     })
   } catch (error) {
     console.error('Dashboard stats error:', error)

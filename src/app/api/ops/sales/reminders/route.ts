@@ -114,12 +114,45 @@ export async function GET(request: NextRequest) {
       ownerName: deal.firstName && deal.lastName ? `${deal.firstName} ${deal.lastName}` : 'Unassigned',
     }))
 
+    // Combine all reminders into a single array for compatibility with sales dashboard
+    const allReminders = [
+      ...overdueFollowUpsMapped.map(f => ({
+        id: f.activityId,
+        type: 'Follow-up',
+        title: `Follow-up on ${f.companyName}`,
+        description: f.subject,
+        dueDate: f.followUpDate,
+        priority: 'HIGH',
+        relatedEntityId: f.dealId,
+      })),
+      ...staleDealsMapped.map(d => ({
+        id: d.id,
+        type: 'Stale Deal',
+        title: `No activity: ${d.dealNumber}`,
+        description: `${d.companyName} in ${d.stage} stage, no activity for ${d.daysSinceActivity} days`,
+        dueDate: new Date().toISOString(),
+        priority: 'MEDIUM',
+        relatedEntityId: d.id,
+      })),
+      ...closingSoonMapped.map(d => ({
+        id: d.id,
+        type: 'Closing Soon',
+        title: `Deal closing: ${d.dealNumber}`,
+        description: `${d.companyName} expected to close on ${new Date(d.expectedCloseDate).toLocaleDateString()}`,
+        dueDate: d.expectedCloseDate,
+        priority: 'HIGH',
+        relatedEntityId: d.id,
+      })),
+    ]
+
     return NextResponse.json(
       {
+        reminders: allReminders,
         staleDeals: staleDealsMapped,
         overdueFollowUps: overdueFollowUpsMapped,
         closingSoon: closingSoonMapped,
         summary: {
+          totalReminders: allReminders.length,
           staleDealsCount: staleDealsMapped.length,
           overdueFollowUpsCount: overdueFollowUpsMapped.length,
           closingSoonCount: closingSoonMapped.length,

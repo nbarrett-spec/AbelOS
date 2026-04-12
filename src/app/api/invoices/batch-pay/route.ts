@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,6 +82,9 @@ export async function POST(request: NextRequest) {
         invoice.total,
         invoice.id
       )
+
+      // Fire automation event (non-blocking)
+      fireAutomationEvent('INVOICE_PAID', invoice.id).catch(e => console.warn('[Automation] event fire failed:', e))
 
       totalAmount += amount
       paidCount++

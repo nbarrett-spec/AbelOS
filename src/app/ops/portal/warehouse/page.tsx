@@ -46,6 +46,7 @@ export default function WarehousePortal() {
   const [picks, setPicks] = useState<MaterialPick[]>([])
   const [qcChecks, setQcChecks] = useState<QCCheck[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Modal states
@@ -61,6 +62,8 @@ export default function WarehousePortal() {
 
   const fetchData = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const [dashRes, picksRes, qcRes] = await Promise.all([
         fetch('/api/ops/manufacturing/dashboard'),
         fetch('/api/ops/manufacturing/picks'),
@@ -81,6 +84,7 @@ export default function WarehousePortal() {
       }
     } catch (error) {
       console.error('Failed to load warehouse data:', error)
+      setError('Failed to load data. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -167,6 +171,18 @@ export default function WarehousePortal() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#27AE60]" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-4xl mb-4">⚠️</div>
+        <p className="text-gray-600 font-medium">{error}</p>
+        <button onClick={() => { setError(null); fetchData() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+          Retry
+        </button>
       </div>
     )
   }

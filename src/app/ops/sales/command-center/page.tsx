@@ -681,19 +681,19 @@ function HotLeadsSection({ leads, isLoading }: { leads: Lead[]; isLoading: boole
                         label="Call"
                         variant="secondary"
                         size="sm"
-                        onClick={() => console.log('Call:', lead.companyName)}
+                        onClick={() => {}}
                       />
                       <QuickActionButton
                         label="Email"
                         variant="secondary"
                         size="sm"
-                        onClick={() => console.log('Email:', lead.email)}
+                        onClick={() => {}}
                       />
                       <QuickActionButton
                         label="Deal"
                         variant="primary"
                         size="sm"
-                        onClick={() => console.log('Create deal:', lead.id)}
+                        onClick={() => {}}
                       />
                     </div>
                   </td>
@@ -1101,25 +1101,19 @@ function QuoteFollowUpSection({
                           label="Follow Up"
                           variant="primary"
                           size="sm"
-                          onClick={() =>
-                            console.log('Follow up:', quote.builderName)
-                          }
+                          onClick={() => {}}
                         />
                         <QuickActionButton
                           label="Won"
                           variant="secondary"
                           size="sm"
-                          onClick={() =>
-                            console.log('Mark won:', quote.builderName)
-                          }
+                          onClick={() => {}}
                         />
                         <QuickActionButton
                           label="Lost"
                           variant="danger"
                           size="sm"
-                          onClick={() =>
-                            console.log('Mark lost:', quote.builderName)
-                          }
+                          onClick={() => {}}
                         />
                       </div>
                     </td>
@@ -1308,7 +1302,7 @@ function AtRiskAccountsSection({
             </div>
 
             <button
-              onClick={() => console.log('Re-engage:', account.id)}
+              onClick={() => {}}
               style={{
                 width: '100%',
                 padding: '8px 12px',
@@ -1821,7 +1815,7 @@ export default function SalesCommandCenter() {
           count={data.leads.length}
           action={{
             label: 'View All',
-            onClick: () => console.log('View all leads'),
+            onClick: () => {},
           }}
         />
         <HotLeadsSection leads={data.leads} isLoading={isLoading} />
@@ -1834,7 +1828,7 @@ export default function SalesCommandCenter() {
           count={data.deals.length}
           action={{
             label: 'New Deal',
-            onClick: () => console.log('Create new deal'),
+            onClick: () => {},
           }}
         />
         <PipelineKanban deals={data.deals} isLoading={isLoading} />
@@ -1847,7 +1841,7 @@ export default function SalesCommandCenter() {
           count={data.quotes.filter((q) => q.status === 'SENT').length}
           action={{
             label: 'View All Quotes',
-            onClick: () => console.log('View all quotes'),
+            onClick: () => {},
           }}
         />
         <QuoteFollowUpSection quotes={data.quotes} isLoading={isLoading} />
@@ -1860,7 +1854,7 @@ export default function SalesCommandCenter() {
           count={data.churnRisks.length}
           action={{
             label: 'View Churn Report',
-            onClick: () => console.log('View churn report'),
+            onClick: () => {},
           }}
         />
         <AtRiskAccountsSection
@@ -1987,7 +1981,7 @@ export default function SalesCommandCenter() {
             </div>
 
             <button
-              onClick={() => console.log('View outreach details')}
+              onClick={() => {}}
               style={{
                 marginTop: '12px',
                 padding: '12px 16px',

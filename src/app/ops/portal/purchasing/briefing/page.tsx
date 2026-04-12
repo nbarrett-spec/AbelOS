@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/contexts/ToastContext'
 
 interface BriefingData {
   summary: {
@@ -57,6 +58,7 @@ interface BriefingData {
 
 export default function PurchasingBriefingPage() {
   const router = useRouter()
+  const { addToast } = useToast()
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [approvingId, setApprovingId] = useState<string | null>(null)
@@ -109,11 +111,11 @@ export default function PurchasingBriefingPage() {
           setBriefing(data)
         }
       } else {
-        alert('Failed to approve purchase order')
+        addToast({ type: 'error', title: 'Approval Failed', message: 'Failed to approve purchase order' })
       }
     } catch (error) {
       console.error('Error approving PO:', error)
-      alert('Error approving purchase order')
+      addToast({ type: 'error', title: 'Error', message: 'Error approving purchase order' })
     } finally {
       setApprovingId(null)
     }

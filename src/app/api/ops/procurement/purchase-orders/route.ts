@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/purchase-orders — List POs
@@ -133,6 +134,9 @@ export async function POST(request: NextRequest) {
       JOIN "Vendor" v ON po."vendorId" = v.id
       WHERE po.id = $1
     `, poId) as any[]
+
+    // Fire automation event (non-blocking)
+    fireAutomationEvent('PO_CREATED', poId).catch(e => console.warn('[Automation] event fire failed:', e))
 
     return NextResponse.json({ purchaseOrder: pos[0], poNumber: poNum }, { status: 201 })
   } catch (error) {

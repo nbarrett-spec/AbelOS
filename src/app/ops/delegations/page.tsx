@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 const REASONS = [
   { value: 'VACATION', label: 'Vacation', icon: '🏖️' },
@@ -38,6 +39,7 @@ interface Delegation {
 }
 
 export default function DelegationsPage() {
+  const { addToast } = useToast()
   const [delegations, setDelegations] = useState<Delegation[]>([])
   const [staffList, setStaffList] = useState<Staff[]>([])
   const [stats, setStats] = useState<any>({})
@@ -88,7 +90,7 @@ export default function DelegationsPage() {
       resetForm()
       loadData()
     } catch (e: any) {
-      alert(e.message)
+      addToast({ type: 'error', title: 'Creation Failed', message: e.message })
     } finally {
       setSaving(false)
     }

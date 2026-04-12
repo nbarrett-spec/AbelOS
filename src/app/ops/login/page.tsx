@@ -82,6 +82,8 @@ function StaffLoginInner() {
     }
   }
 
+  const showSessionExpiredBanner = redirect && redirect !== '/ops'
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -129,6 +131,35 @@ function StaffLoginInner() {
         height: '2px',
         background: 'linear-gradient(to right, #f59e0b, #f97316, #f59e0b)',
       }} />
+
+      {/* Session Expiry Banner */}
+      {showSessionExpiredBanner && (
+        <div style={{
+          position: 'absolute',
+          top: 20,
+          left: 0,
+          right: 0,
+          padding: '0 20px',
+          display: 'flex',
+          justifyContent: 'center',
+          zIndex: 20,
+        }}>
+          <div style={{
+            maxWidth: 420,
+            width: '100%',
+            padding: '12px 16px',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: 12,
+            color: '#fcd34d',
+            fontSize: 13,
+            fontWeight: 500,
+            textAlign: 'center',
+          }}>
+            Your session has expired. Please sign in again.
+          </div>
+        </div>
+      )}
 
       <div style={{
         width: '100%',

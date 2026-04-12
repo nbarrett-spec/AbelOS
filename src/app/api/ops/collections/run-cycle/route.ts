@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 /**
  * POST /api/ops/collections/run-cycle
@@ -227,6 +228,22 @@ export async function POST(request: NextRequest) {
       escalationsCreated,
       paymentPlansOffered,
     })
+
+    // Fire automation events for overdue invoices (non-blocking)
+    // This triggers any configured automation rules like "Invoice Overdue Escalation"
+    for (const invoice of overdueInvoices) {
+      fireAutomationEvent('INVOICE_OVERDUE', invoice.id, {
+        invoiceNumber: invoice.invoiceNumber,
+        builderId: invoice.builderId,
+        balanceDue: invoice.balanceDue,
+        daysOverdue: Math.floor(
+          (new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+        ),
+      }).catch(err => {
+        // Log but don't fail the collection cycle if automation events fail
+        console.error(`Failed to fire automation event for invoice ${invoice.id}:`, err)
+      })
+    }
 
     return NextResponse.json({
       message: 'Smart collection cycle completed',

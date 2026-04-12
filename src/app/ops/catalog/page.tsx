@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Category {
   id: string
@@ -44,6 +45,7 @@ interface Supplier {
 type Tab = 'categories' | 'suppliers'
 
 export default function CatalogManagementPage() {
+  const { addToast } = useToast()
   const [tab, setTab] = useState<Tab>('categories')
   const [categories, setCategories] = useState<Category[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -123,11 +125,12 @@ export default function CatalogManagementPage() {
         setShowNewCat(false)
         setNewCat({ name: '', slug: '', parentId: '', description: '', marginTarget: '0.35' })
         loadCategories()
+        addToast({ type: 'success', title: 'Category created', message: 'Product category created successfully' })
       } else {
-        alert('Error: ' + (data.error || 'Failed to create'))
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to create category' })
       }
     } catch (err) {
-      alert('Failed to create category')
+      addToast({ type: 'error', title: 'Error', message: 'Failed to create category' })
     }
   }
 
@@ -157,11 +160,12 @@ export default function CatalogManagementPage() {
         setShowNewSupplier(false)
         setNewSupplier({ name: '', code: '', type: 'DISTRIBUTOR', contactName: '', email: '', phone: '', website: '', city: '', state: 'TX', categories: '', paymentTerms: 'NET_30', leadTimeDays: '14', notes: '' })
         loadSuppliers()
+        addToast({ type: 'success', title: 'Supplier created', message: 'Supplier created successfully' })
       } else {
-        alert('Error: ' + (data.error || 'Failed to create'))
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to create supplier' })
       }
     } catch (err) {
-      alert('Failed to create supplier')
+      addToast({ type: 'error', title: 'Error', message: 'Failed to create supplier' })
     }
   }
 
@@ -171,15 +175,15 @@ export default function CatalogManagementPage() {
       const resp = await fetch('/api/ops/migrate/product-expansion', { method: 'POST' })
       const data = await resp.json()
       if (data.success) {
-        alert(`Migration complete: ${data.message}`)
+        addToast({ type: 'success', title: 'Migration complete', message: data.message })
         setMigrationRequired(false)
         loadCategories()
         loadSuppliers()
       } else {
-        alert('Migration had issues: ' + data.message)
+        addToast({ type: 'error', title: 'Migration failed', message: data.message })
       }
     } catch (err) {
-      alert('Migration failed')
+      addToast({ type: 'error', title: 'Error', message: 'Migration failed' })
     }
   }
 

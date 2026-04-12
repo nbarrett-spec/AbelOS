@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface DemandForecast {
   category: string
@@ -34,6 +35,7 @@ interface SupplierScore {
 type Tab = 'overview' | 'demand' | 'reorder' | 'bestbuy' | 'schedule' | 'suppliers' | 'health'
 
 export default function ProcurementIntelligencePage() {
+  const { addToast } = useToast()
   const [tab, setTab] = useState<Tab>('overview')
   const [loading, setLoading] = useState(false)
   const [setupDone, setSetupDone] = useState(false)
@@ -111,8 +113,8 @@ export default function ProcurementIntelligencePage() {
           items: po.items.map((i: any) => ({ productId: i.productId, sku: i.sku, productName: i.productName, quantity: i.suggestedQty, unitCost: i.unitCost })),
         }),
       })
-      if (res.ok) { const d = await res.json(); alert(`PO ${d.poNumber} created! Review it in Purchase Orders.`) }
-    } catch { alert('Failed to create PO') } finally { setCreatingPO(null) }
+      if (res.ok) { const d = await res.json(); addToast({ type: 'success', title: 'PO Created', message: `PO ${d.poNumber} created! Review it in Purchase Orders.` }) }
+    } catch { addToast({ type: 'error', title: 'Creation Failed', message: 'Failed to create PO' }) } finally { setCreatingPO(null) }
   }
 
   const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -224,7 +226,7 @@ export default function ProcurementIntelligencePage() {
                 <a href="/ops/vendors" style={{ padding: '10px 20px', background: '#1B4F72', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>Add Suppliers →</a>
                 <button onClick={async () => {
                   const res = await fetch('/api/ops/procurement/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'sync_products' }) })
-                  if (res.ok) { const d = await res.json(); alert(d.message); loadTab('overview') }
+                  if (res.ok) { const d = await res.json(); addToast({ type: 'success', title: 'Sync Complete', message: d.message }); loadTab('overview') }
                 }} style={{ padding: '10px 20px', background: '#E67E22', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
                   Sync Products to Inventory →
                 </button>

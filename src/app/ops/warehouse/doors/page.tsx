@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Door {
   id: string
@@ -47,6 +48,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 const STATUS_LABELS = ['PRODUCTION', 'QC_PASSED', 'STORED', 'STAGED', 'DELIVERED', 'INSTALLED']
 
 export default function DoorRegistryPage() {
+  const { addToast } = useToast()
   const [doors, setDoors] = useState<Door[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -104,12 +106,12 @@ export default function DoorRegistryPage() {
         setShowCreateModal(false)
         setSingleForm({ productId: '', orderId: '', jobId: '', nfcTagId: '' })
         fetchDoors()
-        alert(`Door created: ${data.serialNumber}`)
+        addToast({ type: 'success', title: 'Success', message: `Door created: ${data.serialNumber}` })
       } else {
-        alert(data.error || 'Failed to create door')
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to create door' })
       }
     } catch (e: any) {
-      alert(e.message)
+      addToast({ type: 'error', title: 'Error', message: e.message })
     } finally {
       setCreating(false)
     }
@@ -133,12 +135,12 @@ export default function DoorRegistryPage() {
         setShowOrderModal(false)
         setOrderForm({ orderId: '', jobId: '', manufacturedBy: '' })
         fetchDoors()
-        alert(`${data.created} doors created from order`)
+        addToast({ type: 'success', title: 'Success', message: `${data.created} doors created from order` })
       } else {
-        alert(data.error || 'Failed to create doors from order')
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to create doors from order' })
       }
     } catch (e: any) {
-      alert(e.message)
+      addToast({ type: 'error', title: 'Error', message: e.message })
     } finally {
       setCreating(false)
     }

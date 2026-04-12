@@ -11,6 +11,7 @@ interface StaffMember {
   role: string
   department: string
   title?: string
+  hourlyRate?: number
   active: boolean
   hireDate?: string
   status: 'Active' | 'Invited' | 'Needs Setup' | 'Deactivated'
@@ -526,7 +527,7 @@ export default function StaffManagementPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #1f2937' }}>
-                {['Name', 'Email', 'Role', 'Department', 'Status', 'Access', 'Actions'].map(h => (
+                {['Name', 'Email', 'Role', 'Department', 'Hourly Rate', 'Status', 'Access', 'Actions'].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -551,6 +552,9 @@ export default function StaffManagementPage() {
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: 13 }}>
                       {DEPARTMENTS.find(d => d.value === member.department)?.label || member.department}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#9ca3af' }}>
+                      {member.hourlyRate ? `$${member.hourlyRate.toFixed(2)}/hr` : '—'}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500, backgroundColor: statusStyle.bg, color: statusStyle.color }}>
@@ -586,7 +590,7 @@ export default function StaffManagementPage() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>No staff found</td></tr>
+                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>No staff found</td></tr>
               )}
             </tbody>
           </table>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useToast } from '@/contexts/ToastContext'
 
 interface QCJob {
   id: string
@@ -54,27 +55,79 @@ interface QCBriefing {
   defectSummary: DefectSummary[]
 }
 
+const QC_TYPES = [
+  { key: 'PRE_PRODUCTION', label: 'Pre-Production' },
+  { key: 'IN_PROCESS', label: 'In Process' },
+  { key: 'FINAL_UNIT', label: 'Final Unit' },
+  { key: 'PRE_DELIVERY', label: 'Pre-Delivery' },
+  { key: 'POST_INSTALL', label: 'Post-Install' },
+]
+
+const COMMON_DEFECTS = [
+  'DIMENSION_ERROR', 'MATERIAL_DEFECT', 'FINISH_ISSUE', 'ASSEMBLY_ERROR',
+  'COLOR_MISMATCH', 'HARDWARE_MISSING', 'DAMAGE_SCRATCH', 'WARPING',
+]
+
 export default function QCPortal() {
+  const { addToast } = useToast()
   const [briefing, setBriefing] = useState<QCBriefing | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showLogModal, setShowLogModal] = useState(false)
+  const [logForm, setLogForm] = useState({ jobId: '', checkType: 'FINAL_UNIT', result: 'PASS', notes: '', defectCodes: [] as string[] })
+  const [submittingLog, setSubmittingLog] = useState(false)
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await fetch('/api/ops/qc-briefing')
-        if (res.ok) {
-          const data = await res.json()
-          setBriefing(data)
-        }
-      } catch (error) {
-        console.error('Failed to load QC briefing:', error)
-      } finally {
-        setLoading(false)
+  const loadData = async () => {
+    try {
+      const res = await fetch('/api/ops/qc-briefing')
+      if (res.ok) {
+        const data = await res.json()
+        setBriefing(data)
       }
+    } catch (error) {
+      console.error('Failed to load QC briefing:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadData()
-  }, [])
+  useEffect(() => { loadData() }, [])
+
+  const handleLogInspection = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmittingLog(true)
+    try {
+      const res = await fetch('/api/ops/manufacturing/qc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...logForm,
+          jobId: logForm.jobId || null,
+        }),
+      })
+      if (res.ok) {
+        addToast({ type: 'success', title: 'Inspection Logged', message: `QC check recorded as ${logForm.result.replace('_', ' ')}` })
+        setShowLogModal(false)
+        setLogForm({ jobId: '', checkType: 'FINAL_UNIT', result: 'PASS', notes: '', defectCodes: [] })
+        loadData()
+      } else {
+        const err = await res.json()
+        addToast({ type: 'error', title: 'Error', message: err.error || 'Failed to log inspection' })
+      }
+    } catch (error) {
+      addToast({ type: 'error', title: 'Error', message: 'Failed to log inspection' })
+    } finally {
+      setSubmittingLog(false)
+    }
+  }
+
+  const toggleDefect = (code: string) => {
+    setLogForm(prev => ({
+      ...prev,
+      defectCodes: prev.defectCodes.includes(code)
+        ? prev.defectCodes.filter(c => c !== code)
+        : [...prev.defectCodes, code]
+    }))
+  }
 
   if (loading) {
     return (
@@ -133,15 +186,24 @@ export default function QCPortal() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowLogModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+          >
+            Log Result
+          </button>
           <Link
             href="/ops/portal/qc/queue"
             className="px-4 py-2 bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium"
           >
             + Start Inspection
           </Link>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-            Scan Job
-          </button>
+          <Link
+            href="/ops/manufacturing/qc"
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+          >
+            All Checks
+          </Link>
         </div>
       </div>
 
@@ -386,6 +448,101 @@ export default function QCPortal() {
               )
             })}
           </div>
+        </div>
+      )}
+      {/* Log Inspection Modal */}
+      {showLogModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <form onSubmit={handleLogInspection} className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="border-b p-6 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">Log QC Inspection</h2>
+              <button type="button" onClick={() => setShowLogModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Job Number or ID</label>
+                <input
+                  type="text"
+                  value={logForm.jobId}
+                  onChange={(e) => setLogForm({ ...logForm, jobId: e.target.value })}
+                  placeholder="Enter job number..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Check Type</label>
+                  <select
+                    value={logForm.checkType}
+                    onChange={(e) => setLogForm({ ...logForm, checkType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20"
+                  >
+                    {QC_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Result</label>
+                  <select
+                    value={logForm.result}
+                    onChange={(e) => setLogForm({ ...logForm, result: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20"
+                  >
+                    <option value="PASS">✅ Pass</option>
+                    <option value="FAIL">❌ Fail</option>
+                    <option value="CONDITIONAL_PASS">⚠️ Conditional Pass</option>
+                  </select>
+                </div>
+              </div>
+
+              {logForm.result !== 'PASS' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Defect Codes</label>
+                  <div className="flex flex-wrap gap-2">
+                    {COMMON_DEFECTS.map(code => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => toggleDefect(code)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          logForm.defectCodes.includes(code)
+                            ? 'bg-red-100 border-red-300 text-red-800'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {code.replace(/_/g, ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={logForm.notes}
+                  onChange={(e) => setLogForm({ ...logForm, notes: e.target.value })}
+                  placeholder="Inspection notes, observations..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowLogModal(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submittingLog}
+                className="px-4 py-2 text-sm bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] disabled:opacity-50 font-medium"
+              >
+                {submittingLog ? 'Logging...' : 'Log Inspection'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

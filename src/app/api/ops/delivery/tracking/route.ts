@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 /**
  * GET /api/ops/delivery/tracking
@@ -189,6 +190,8 @@ export async function POST(request: NextRequest) {
           completedAt: new Date(),
         },
       })
+      // Fire automation event (non-blocking)
+      fireAutomationEvent('DELIVERY_COMPLETE', deliveryId).catch(e => console.warn('[Automation] event fire failed:', e))
     }
 
     // Create notification for builder

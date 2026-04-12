@@ -1,8 +1,19 @@
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkStaffAuth } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Check authentication first
+  const authCheck = checkStaffAuth(request)
+  if (authCheck) return authCheck
+
+  // SECURITY: Only ADMIN can run diagnostic queries
+  const staffRole = request.headers.get('x-staff-role')
+  if (staffRole !== 'ADMIN') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
   try {
     const body = await request.json()
     if (body.seedKey !== 'abel-lumber-seed-2024') {

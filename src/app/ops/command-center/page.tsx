@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 const NAVY = '#1B4F72'
 const ORANGE = '#E67E22'
@@ -85,6 +86,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 export default function CommandCenterPage() {
+  const { addToast } = useToast()
   const [statusData, setStatusData] = useState<StatusData | null>(null)
   const [brief, setBrief] = useState<DailyBrief | null>(null)
   const [loading, setLoading] = useState(true)
@@ -187,7 +189,7 @@ export default function CommandCenterPage() {
       })
       if (res.ok) {
         const data = await res.json()
-        alert(`Intelligence refresh complete: ${data.successes}/${data.processed} builders updated`)
+        addToast({ type: 'success', title: 'Refresh Complete', message: `Intelligence refresh complete: ${data.successes}/${data.processed} builders updated` })
       }
     } catch (err) { console.error('Failed to refresh:', err) }
     setRefreshing(false)

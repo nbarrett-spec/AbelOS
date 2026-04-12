@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Job {
   id: string
@@ -45,12 +46,14 @@ interface Builder {
 }
 
 export default function PMPortal() {
+  const { addToast } = useToast()
   const [myJobs, setMyJobs] = useState<Job[]>([])
   const [upcomingDeliveries, setUpcomingDeliveries] = useState<Delivery[]>([])
   const [openTasks, setOpenTasks] = useState<Task[]>([])
   const [recentNotes, setRecentNotes] = useState<DecisionNote[]>([])
   const [topBuilders, setTopBuilders] = useState<Builder[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Modal states
   const [noteModal, setNoteModal] = useState<{ open: boolean; jobId?: string }>({ open: false })
@@ -66,72 +69,75 @@ export default function PMPortal() {
   const [taskDueDate, setTaskDueDate] = useState('')
   const [submittingNote, setSubmittingNote] = useState(false)
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const today = new Date()
-        const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-        const todayStr = today.toISOString().split('T')[0]
-        const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0]
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const today = new Date()
+      const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+      const todayStr = today.toISOString().split('T')[0]
+      const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0]
 
-        const [jobsRes, deliveriesRes, tasksRes, notesRes, buildersRes] = await Promise.all([
-          fetch('/api/ops/jobs?limit=10&status=CREATED,READINESS_CHECK,MATERIALS_LOCKED,IN_PRODUCTION,STAGED'),
-          fetch(`/api/ops/schedule?startDate=${todayStr}&endDate=${sevenDaysStr}&entryType=DELIVERY&limit=5`),
-          fetch('/api/ops/jobs?limit=10'),
-          fetch('/api/ops/jobs?limit=10'),
-          fetch('/api/ops/builders?limit=4&sortBy=createdAt&sortDir=desc'),
-        ])
+      const [jobsRes, deliveriesRes, tasksRes, notesRes, buildersRes] = await Promise.all([
+        fetch('/api/ops/jobs?limit=10&status=CREATED,READINESS_CHECK,MATERIALS_LOCKED,IN_PRODUCTION,STAGED'),
+        fetch(`/api/ops/schedule?startDate=${todayStr}&endDate=${sevenDaysStr}&entryType=DELIVERY&limit=5`),
+        fetch('/api/ops/jobs?limit=10'),
+        fetch('/api/ops/jobs?limit=10'),
+        fetch('/api/ops/builders?limit=4&sortBy=createdAt&sortDir=desc'),
+      ])
 
-        const [jobsData, deliveriesData, tasksData, notesData, buildersData] = await Promise.all([
-          jobsRes.ok ? jobsRes.json() : { jobs: [] },
-          deliveriesRes.ok ? deliveriesRes.json() : { entries: [] },
-          tasksRes.ok ? tasksRes.json() : { jobs: [] },
-          notesRes.ok ? notesRes.json() : { jobs: [] },
-          buildersRes.ok ? buildersRes.json() : { builders: [] },
-        ])
+      const [jobsData, deliveriesData, tasksData, notesData, buildersData] = await Promise.all([
+        jobsRes.ok ? jobsRes.json() : { jobs: [] },
+        deliveriesRes.ok ? deliveriesRes.json() : { entries: [] },
+        tasksRes.ok ? tasksRes.json() : { jobs: [] },
+        notesRes.ok ? notesRes.json() : { jobs: [] },
+        buildersRes.ok ? buildersRes.json() : { builders: [] },
+      ])
 
-        setMyJobs((jobsData.jobs || []).slice(0, 5))
-        setUpcomingDeliveries((deliveriesData.entries || []).slice(0, 5))
+      setMyJobs((jobsData.jobs || []).slice(0, 5))
+      setUpcomingDeliveries((deliveriesData.entries || []).slice(0, 5))
 
-        // Extract tasks from jobs
-        const allTasks: Task[] = []
-        ;(tasksData.jobs || []).forEach((job: any) => {
-          if (job.tasks) {
-            job.tasks.forEach((task: any) => {
-              if (task.status !== 'COMPLETE') {
-                allTasks.push(task)
-              }
-            })
-          }
-        })
-        setOpenTasks(allTasks.slice(0, 5))
+      // Extract tasks from jobs
+      const allTasks: Task[] = []
+      ;(tasksData.jobs || []).forEach((job: any) => {
+        if (job.tasks) {
+          job.tasks.forEach((task: any) => {
+            if (task.status !== 'COMPLETE') {
+              allTasks.push(task)
+            }
+          })
+        }
+      })
+      setOpenTasks(allTasks.slice(0, 5))
 
-        // Extract decision notes
-        const allNotes: DecisionNote[] = []
-        ;(notesData.jobs || []).forEach((job: any) => {
-          if (job.decisionNotes) {
-            job.decisionNotes.forEach((note: any) => {
-              allNotes.push({ ...note, job })
-            })
-          }
-        })
-        setRecentNotes(allNotes.slice(0, 5))
+      // Extract decision notes
+      const allNotes: DecisionNote[] = []
+      ;(notesData.jobs || []).forEach((job: any) => {
+        if (job.decisionNotes) {
+          job.decisionNotes.forEach((note: any) => {
+            allNotes.push({ ...note, job })
+          })
+        }
+      })
+      setRecentNotes(allNotes.slice(0, 5))
 
-        // Set top builders with real data
-        const builders = (buildersData.builders || []).map((builder: any) => ({
-          id: builder.id,
-          companyName: builder.companyName,
-          activeJobsCount: builder.activeJobsCount || 0,
-          ytdRevenue: builder.ytdRevenue || 0,
-        }))
-        setTopBuilders(builders.slice(0, 4))
-      } catch (error) {
-        console.error('Failed to load PM data:', error)
-      } finally {
-        setLoading(false)
-      }
+      // Set top builders with real data
+      const builders = (buildersData.builders || []).map((builder: any) => ({
+        id: builder.id,
+        companyName: builder.companyName,
+        activeJobsCount: builder.activeJobsCount || 0,
+        ytdRevenue: builder.ytdRevenue || 0,
+      }))
+      setTopBuilders(builders.slice(0, 4))
+    } catch (error) {
+      console.error('Failed to load PM data:', error)
+      setError('Failed to load data. Please try again.')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadData()
   }, [])
 
@@ -174,13 +180,13 @@ export default function PMPortal() {
         setNoteText('')
         setNoteJobId('')
         setNoteModal({ open: false })
-        alert('Note added successfully!')
+        addToast({ type: 'success', title: 'Note Added', message: 'Note added successfully' })
       } else {
-        alert('Failed to add note')
+        addToast({ type: 'error', title: 'Error', message: 'Failed to add note' })
       }
     } catch (error) {
       console.error('Failed to submit note:', error)
-      alert('Error adding note')
+      addToast({ type: 'error', title: 'Error', message: 'Error adding note' })
     } finally {
       setSubmittingNote(false)
     }
@@ -208,13 +214,13 @@ export default function PMPortal() {
         setNoteText('')
         setDecisionNoteJobId('')
         setDecisionNoteModal(false)
-        alert('Decision note added successfully!')
+        addToast({ type: 'success', title: 'Decision Recorded', message: 'Decision note added successfully' })
       } else {
-        alert('Failed to add decision note')
+        addToast({ type: 'error', title: 'Error', message: 'Failed to add decision note' })
       }
     } catch (error) {
       console.error('Failed to submit decision note:', error)
-      alert('Error adding decision note')
+      addToast({ type: 'error', title: 'Error', message: 'Error adding decision note' })
     } finally {
       setSubmittingNote(false)
     }
@@ -245,13 +251,13 @@ export default function PMPortal() {
         setTaskJobId('')
         setTaskPriority('MEDIUM')
         setTaskModal(false)
-        alert('Task created successfully!')
+        addToast({ type: 'success', title: 'Task Created', message: 'Task created successfully' })
       } else {
-        alert('Failed to create task')
+        addToast({ type: 'error', title: 'Error', message: 'Failed to create task' })
       }
     } catch (error) {
       console.error('Failed to submit task:', error)
-      alert('Error creating task')
+      addToast({ type: 'error', title: 'Error', message: 'Error creating task' })
     } finally {
       setSubmittingNote(false)
     }
@@ -261,6 +267,18 @@ export default function PMPortal() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-4xl mb-4">⚠️</div>
+        <p className="text-gray-600 font-medium">{error}</p>
+        <button onClick={() => { setError(null); loadData() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+          Retry
+        </button>
       </div>
     )
   }

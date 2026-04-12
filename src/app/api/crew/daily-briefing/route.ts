@@ -175,6 +175,21 @@ export async function GET(request: NextRequest) {
     const installationCount = stops.filter(s => s.type === 'INSTALLATION').length
     const completedCount = stops.filter(s => s.status === 'COMPLETED').length
 
+    // Calculate drive time based on number of stops
+    let estimatedDriveTime: string
+    const stopCount = stops.length
+    if (stopCount === 0) {
+      estimatedDriveTime = 'No stops scheduled'
+    } else if (stopCount === 1) {
+      estimatedDriveTime = '30-45 min'
+    } else if (stopCount === 2) {
+      estimatedDriveTime = '1-1.5 hours'
+    } else if (stopCount === 3) {
+      estimatedDriveTime = '1.5-2 hours'
+    } else {
+      estimatedDriveTime = `${stopCount * 0.5}-${stopCount * 0.75} hours`
+    }
+
     const briefing: DailyBriefing = {
       crewName,
       crewId,
@@ -182,7 +197,7 @@ export async function GET(request: NextRequest) {
       totalStops: stops.length,
       deliveries: deliveryCount,
       installations: installationCount,
-      estimatedDriveTime: '2-3 hours', // Placeholder
+      estimatedDriveTime,
       stops,
       allCompleted: completedCount === stops.length && stops.length > 0
     }

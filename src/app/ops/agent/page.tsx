@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Conversation {
   id: string; channel: string; status: string; subject: string;
@@ -26,6 +27,7 @@ interface Stats {
 }
 
 export default function AgentDashboard() {
+  const { addToast } = useToast()
   const [tab, setTab] = useState<'overview' | 'conversations' | 'schedule-requests'>('overview')
   const [stats, setStats] = useState<Stats | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -92,7 +94,7 @@ export default function AgentDashboard() {
   }, [tab, statusFilter, channelFilter, scrStatusFilter])
 
   async function handleScheduleAction(requestId: string, action: 'approve' | 'deny', notes?: string) {
-    if (!staffId) { alert('Staff session not found. Please log in again.'); return }
+    if (!staffId) { addToast({ type: 'error', title: 'Session Error', message: 'Staff session not found. Please log in again.' }); return }
     try {
       await fetch('/api/ops/agent', {
         method: 'POST',
@@ -107,7 +109,7 @@ export default function AgentDashboard() {
   }
 
   async function handleConvAction(conversationId: string, action: string) {
-    if (!staffId) { alert('Staff session not found. Please log in again.'); return }
+    if (!staffId) { addToast({ type: 'error', title: 'Session Error', message: 'Staff session not found. Please log in again.' }); return }
     try {
       await fetch('/api/ops/agent', {
         method: 'POST',

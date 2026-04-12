@@ -164,7 +164,22 @@ export default function HomeownerPortal() {
     )
   }
 
-  if (!data) return null
+  if (!data) {
+    return (
+      <div className="max-w-md mx-auto text-center py-20">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <h2 className="text-lg font-bold text-red-700 mb-2">Something went wrong</h2>
+          <p className="text-sm text-red-600 mb-4">Please try refreshing the page or contact Abel Lumber.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-sm text-[#1B4F72] font-medium hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const isLocked = selections.some(s => s.status === 'CONFIRMED' || s.status === 'LOCKED')
   const totalUpgradeCost = selections.reduce((sum, s) => sum + s.adderCost, 0)

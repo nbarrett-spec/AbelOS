@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface InventoryItem {
   id: string; sku: string; productName: string; category: string; location: string
@@ -16,6 +17,7 @@ interface Stats {
 }
 
 export default function InventoryPage() {
+  const { addToast } = useToast()
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,7 +55,7 @@ export default function InventoryPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'sync_products' }),
       })
-      if (res.ok) { const d = await res.json(); alert(d.message); fetchInventory() }
+      if (res.ok) { const d = await res.json(); addToast({ type: 'success', title: 'Sync Complete', message: d.message }); fetchInventory() }
     } catch (err) {
       console.error('[Inventory] Failed to sync products:', err)
     } finally { setSyncing(false) }

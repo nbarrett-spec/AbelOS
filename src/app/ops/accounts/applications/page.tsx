@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useToast } from '@/contexts/ToastContext'
 
 interface BuilderApplication {
   id: string
@@ -27,6 +28,7 @@ interface BuilderApplication {
 }
 
 export default function BuilderApplicationsPage() {
+  const { addToast } = useToast()
   const [apps, setApps] = useState<BuilderApplication[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('PENDING_APPROVAL')
@@ -85,13 +87,13 @@ export default function BuilderApplicationsPage() {
         setCounts(prev => ({ ...prev, pending: Math.max(0, prev.pending - 1), approved: prev.approved + 1 }))
         setExpandedId(null)
         setReviewNotes('')
-        alert(`Approved! Temp password: ${data.application?.tempPassword || 'AbelBuilder2026!'}`)
+        addToast({ type: 'info', title: 'Account Created', message: `Temp password: ${data.application?.tempPassword || 'AbelBuilder2026!'}`, duration: 10000 })
       } else {
-        alert('Error: ' + (data.error || 'Failed to approve'))
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to approve' })
       }
     } catch (err) {
       console.error('Approve error:', err)
-      alert('Failed to approve application')
+      addToast({ type: 'error', title: 'Error', message: 'Failed to approve application' })
     } finally {
       setActionId(null)
     }
@@ -99,7 +101,7 @@ export default function BuilderApplicationsPage() {
 
   async function handleReject(applicationId: string) {
     if (!reviewNotes.trim()) {
-      alert('Please provide a reason for rejection')
+      addToast({ type: 'warning', title: 'Validation Error', message: 'Please provide a reason for rejection' })
       return
     }
     setActionId(applicationId)
@@ -116,7 +118,7 @@ export default function BuilderApplicationsPage() {
         setShowRejectModal(null)
         setReviewNotes('')
       } else {
-        alert('Error: ' + (data.error || 'Failed to reject'))
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to reject' })
       }
     } catch (err) {
       console.error('Reject error:', err)

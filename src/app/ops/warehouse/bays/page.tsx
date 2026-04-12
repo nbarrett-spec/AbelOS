@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Bay {
   id: string
@@ -53,6 +54,7 @@ const ZONE_COLORS: Record<string, string> = {
 }
 
 export default function WarehouseBayMapPage() {
+  const { addToast } = useToast()
   const [bays, setBays] = useState<Bay[]>([])
   const [zones, setZones] = useState<ZoneSummary[]>([])
   const [selectedBay, setSelectedBay] = useState<Bay | null>(null)
@@ -116,10 +118,10 @@ export default function WarehouseBayMapPage() {
         setNewBay({ bayNumber: '', zone: 'MAIN', aisle: '', capacity: '20' })
         fetchBays()
       } else {
-        alert(data.error || 'Failed to create bay')
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to create bay' })
       }
     } catch (e: any) {
-      alert(e.message)
+      addToast({ type: 'error', title: 'Error', message: e.message })
     } finally {
       setCreating(false)
     }
@@ -147,10 +149,10 @@ export default function WarehouseBayMapPage() {
         setBulkForm({ zone: 'MAIN', prefix: '', startNum: '1', endNum: '10', capacity: '20', aisle: '' })
         fetchBays()
       } else {
-        alert(data.error || 'Failed to create bays')
+        addToast({ type: 'error', title: 'Error', message: data.error || 'Failed to create bays' })
       }
     } catch (e: any) {
-      alert(e.message)
+      addToast({ type: 'error', title: 'Error', message: e.message })
     } finally {
       setCreating(false)
     }

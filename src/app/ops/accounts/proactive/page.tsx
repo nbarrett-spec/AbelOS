@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface DashboardData {
@@ -485,6 +486,7 @@ const TABS = [
 ]
 
 export default function ProactiveAccountManagementPage() {
+  const { addToast } = useToast()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -510,7 +512,7 @@ export default function ProactiveAccountManagementPage() {
         body: JSON.stringify({ action: 'generate-triggers' }),
       })
       const result = await res.json()
-      alert(`Generated ${result.triggersCreated} review triggers`)
+      addToast({ type: 'success', title: 'Success', message: `Generated ${result.triggersCreated} review triggers` })
       if (activeTab === 'queue' || activeTab === 'dashboard') {
         const tab = TABS.find(t => t.id === activeTab)
         fetch(`/api/ops/accounts/proactive?report=${tab?.report}`)

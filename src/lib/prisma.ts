@@ -6,4 +6,6 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Cache in ALL environments — without this, every Vercel serverless invocation
+// creates a new PrismaClient, exhausting Neon's connection pool within seconds.
+globalForPrisma.prisma = prisma

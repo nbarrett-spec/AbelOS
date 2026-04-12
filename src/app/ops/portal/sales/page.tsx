@@ -40,6 +40,7 @@ export default function SalesPortal() {
   const [recentActivity, setRecentActivity] = useState<Activity[]>([])
   const [featuredBuilders, setFeaturedBuilders] = useState<Builder[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showActivityModal, setShowActivityModal] = useState(false)
   const [selectedFollowUpDealId, setSelectedFollowUpDealId] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -47,54 +48,57 @@ export default function SalesPortal() {
   const [activityNotes, setActivityNotes] = useState('')
   const [submittingActivity, setSubmittingActivity] = useState(false)
 
-  useEffect(() => {
-    async function loadData() {
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const briefingRes = await fetch('/api/ops/sales-briefing')
+      const briefingData = briefingRes.ok ? await briefingRes.json() : {}
+
+      // Extract deals and follow-ups from briefing data
+      setMyDeals((briefingData.closingThisWeek || []).slice(0, 5))
+      setFollowUps((briefingData.followUpsDue || []).slice(0, 5))
+
+      // Fetch recent activity from activity-log endpoint
       try {
-        const briefingRes = await fetch('/api/ops/sales-briefing')
-        const briefingData = briefingRes.ok ? await briefingRes.json() : {}
-
-        // Extract deals and follow-ups from briefing data
-        setMyDeals((briefingData.closingThisWeek || []).slice(0, 5))
-        setFollowUps((briefingData.followUpsDue || []).slice(0, 5))
-
-        // Fetch recent activity from activity-log endpoint
-        try {
-          const activityRes = await fetch('/api/ops/activity-log?limit=10&page=1')
-          if (activityRes.ok) {
-            const activityData = await activityRes.json()
-            setRecentActivity(
-              (activityData.items || []).map((item: any) => ({
-                id: item.id,
-                subject: item.subject || `${item.activityType} by ${item.staffName}`,
-                type: item.activityType,
-                dealId: item.jobId || '',
-                createdAt: item.createdAt,
-              }))
-            )
-          }
-        } catch (error) {
-          console.error('Failed to load activity:', error)
-          setRecentActivity([])
-        }
-
-        // Fetch featured builders from /api/ops/builders
-        try {
-          const buildersRes = await fetch('/api/ops/builders?limit=4&page=1&sortBy=createdAt&sortDir=desc')
-          if (buildersRes.ok) {
-            const buildersData = await buildersRes.json()
-            setFeaturedBuilders((buildersData.builders || []).slice(0, 4))
-          }
-        } catch (error) {
-          console.error('Failed to load builders:', error)
-          setFeaturedBuilders([])
+        const activityRes = await fetch('/api/ops/activity-log?limit=10&page=1')
+        if (activityRes.ok) {
+          const activityData = await activityRes.json()
+          setRecentActivity(
+            (activityData.items || []).map((item: any) => ({
+              id: item.id,
+              subject: item.subject || `${item.activityType} by ${item.staffName}`,
+              type: item.activityType,
+              dealId: item.jobId || '',
+              createdAt: item.createdAt,
+            }))
+          )
         }
       } catch (error) {
-        console.error('Failed to load sales data:', error)
-      } finally {
-        setLoading(false)
+        console.error('Failed to load activity:', error)
+        setRecentActivity([])
       }
-    }
 
+      // Fetch featured builders from /api/ops/builders
+      try {
+        const buildersRes = await fetch('/api/ops/builders?limit=4&page=1&sortBy=createdAt&sortDir=desc')
+        if (buildersRes.ok) {
+          const buildersData = await buildersRes.json()
+          setFeaturedBuilders((buildersData.builders || []).slice(0, 4))
+        }
+      } catch (error) {
+        console.error('Failed to load builders:', error)
+        setFeaturedBuilders([])
+      }
+    } catch (error) {
+      console.error('Failed to load sales data:', error)
+      setError('Failed to load data. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     loadData()
   }, [])
 
@@ -142,6 +146,18 @@ export default function SalesPortal() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-4xl mb-4">⚠️</div>
+        <p className="text-gray-600 font-medium">{error}</p>
+        <button onClick={() => { setError(null); loadData() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+          Retry
+        </button>
       </div>
     )
   }

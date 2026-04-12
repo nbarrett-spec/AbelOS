@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET  /api/ops/procurement/purchase-orders/[id] — PO detail with items
@@ -57,6 +58,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         SET "status" = 'APPROVED', "approvedById" = $1, "approvedAt" = NOW(), "updatedAt" = NOW()
         WHERE "id" = $2
       `, staffId, id)
+      // Fire automation event (non-blocking)
+      fireAutomationEvent('PO_APPROVED', id).catch(e => console.warn('[Automation] event fire failed:', e))
       return NextResponse.json({ success: true, message: 'PO approved' })
     }
 
@@ -129,6 +132,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             "updatedAt" = NOW()
         WHERE "id" = $3
       `, newStatus, staffId, id)
+
+      // Fire automation event for RECEIVED status (non-blocking)
+      if (fullyReceived) {
+        fireAutomationEvent('PO_RECEIVED', id).catch(e => console.warn('[Automation] event fire failed:', e))
+      }
 
       return NextResponse.json({ success: true, status: newStatus, fullyReceived })
     }

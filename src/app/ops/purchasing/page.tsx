@@ -19,6 +19,7 @@ export default function PurchaseOrdersPage() {
   const [orders, setOrders] = useState<PO[]>([])
   const [stats, setStats] = useState<POStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [search, setSearch] = useState('')
   const [expandedPO, setExpandedPO] = useState<string | null>(null)
@@ -29,6 +30,7 @@ export default function PurchaseOrdersPage() {
 
   const fetchPOs = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (statusFilter !== 'ALL') params.set('status', statusFilter)
@@ -37,6 +39,7 @@ export default function PurchaseOrdersPage() {
       if (res.ok) { const d = await res.json(); setOrders(d.orders || []); setStats(d.stats || null) }
     } catch (err) {
       console.error('[Purchasing] Failed to load purchase orders:', err)
+      setError('Failed to load data. Please try again.')
     } finally { setLoading(false) }
   }, [statusFilter, search])
 
@@ -85,6 +88,18 @@ export default function PurchaseOrdersPage() {
   }
 
   const STATUSES = ['ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'IN_TRANSIT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED']
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 20px' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+        <p style={{ color: '#6B7280', fontWeight: 500, marginBottom: 24 }}>{error}</p>
+        <button onClick={() => { setError(null); fetchPOs() }} style={{ padding: '10px 20px', background: '#1B4F72', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div>

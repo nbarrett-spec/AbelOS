@@ -16,9 +16,6 @@ import {
 } from '@/lib/agent-orchestrator'
 import { prisma } from '@/lib/prisma'
 
-// In-memory workflow store (for demo — in production, use database)
-const workflowStore: Map<string, any> = new Map()
-
 export async function GET(request: NextRequest) {
   const auth = await checkStaffAuth(request)
   if (!auth) {
@@ -26,10 +23,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Return recent workflows from store
-    const workflows = Array.from(workflowStore.values())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 20)
+    // Create table if it doesn't exist
+    await (prisma as any).$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "AgentWorkflow" (
+        "id" TEXT PRIMARY KEY,
+        "type" TEXT NOT NULL,
+        "status" TEXT DEFAULT 'RUNNING',
+        "params" JSONB DEFAULT '{}',
+        "result" JSONB DEFAULT '{}',
+        "error" TEXT,
+        "startedAt" TIMESTAMPTZ DEFAULT NOW(),
+        "completedAt" TIMESTAMPTZ,
+        "createdAt" TIMESTAMPTZ DEFAULT NOW()
+      )
+    `)
+
+    // Return recent workflows from database
+    const workflows = await (prisma as any).$queryRawUnsafe(
+      `SELECT * FROM "AgentWorkflow" ORDER BY "createdAt" DESC LIMIT 20`
+    )
 
     return NextResponse.json({
       success: true,
@@ -132,8 +144,19 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    // Store workflow
-    workflowStore.set(executedWorkflow.id, executedWorkflow)
+    // Store workflow in database
+    await (prisma as any).$executeRawUnsafe(
+      `INSERT INTO "AgentWorkflow" (id, type, status, params, result, error, "startedAt", "completedAt", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+      executedWorkflow.id,
+      workflowType,
+      executedWorkflow.status || 'RUNNING',
+      JSON.stringify(params),
+      JSON.stringify(executedWorkflow.result || {}),
+      executedWorkflow.error || null,
+      executedWorkflow.startedAt || new Date(),
+      executedWorkflow.completedAt || null
+    )
 
     return NextResponse.json({
       success: true,

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { canAccessRoute, type PortalOverrides } from '@/lib/permissions'
 import { NotificationBell } from './components/NotificationBell'
+import { GlobalSearch } from './components/GlobalSearch'
 import AICopilot from './components/AICopilot'
 import ThemeProvider from './components/ThemeProvider'
 import type { StaffRole } from '@/lib/permissions'
@@ -585,6 +586,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
             </h2>
           </div>
           <div className="flex items-center gap-3">
+            <GlobalSearch />
             <NotificationBell />
             <span className="text-xs hidden sm:inline" style={{ color: 'var(--text-secondary, #6b7280)' }}>
               {new Date().toLocaleDateString('en-US', {

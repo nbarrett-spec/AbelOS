@@ -29,9 +29,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if hourlyRate column exists
+    const columnExists: any[] = await (prisma as any).$queryRawUnsafe(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_name = 'Staff' AND column_name = 'hourlyRate'`
+    )
+
+    const hasHourlyRate = columnExists.length > 0
+
     // Get all staff with their onboarding status
-    const staff: any[] = await (prisma as any).$queryRawUnsafe(
-      `SELECT
+    const selectClause = hasHourlyRate
+      ? `SELECT
         id,
         "firstName",
         "lastName",
@@ -42,6 +50,7 @@ export async function GET(request: NextRequest) {
         title,
         active,
         "hireDate",
+        "hourlyRate",
         "inviteToken",
         "inviteTokenExpiry",
         "passwordHash",
@@ -53,7 +62,31 @@ export async function GET(request: NextRequest) {
         "updatedAt"
       FROM "Staff"
       ORDER BY "createdAt" DESC`
-    )
+      : `SELECT
+        id,
+        "firstName",
+        "lastName",
+        email,
+        phone,
+        role,
+        department,
+        title,
+        active,
+        "hireDate",
+        NULL as "hourlyRate",
+        "inviteToken",
+        "inviteTokenExpiry",
+        "passwordHash",
+        "handbookSignedAt",
+        "handbookVersion",
+        "passwordSetAt",
+        "portalOverrides",
+        "createdAt",
+        "updatedAt"
+      FROM "Staff"
+      ORDER BY "createdAt" DESC`
+
+    const staff: any[] = await (prisma as any).$queryRawUnsafe(selectClause)
 
     // Transform staff data to include status
     const enrichedStaff = staff.map((s: any) => {
@@ -77,6 +110,7 @@ export async function GET(request: NextRequest) {
         title: s.title,
         active: s.active,
         hireDate: s.hireDate,
+        hourlyRate: s.hourlyRate,
         status,
         handbookSignedAt: s.handbookSignedAt,
         handbookVersion: s.handbookVersion,

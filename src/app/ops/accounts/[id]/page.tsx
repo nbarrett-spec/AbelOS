@@ -104,8 +104,15 @@ export default function AccountDetailPage() {
   const params = useParams()
   const [builder, setBuilder] = useState<BuilderDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'activity' | 'pricing' | 'margins'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'activity' | 'comms' | 'pricing' | 'margins'>('overview')
   const [builderCashInsights, setBuilderCashInsights] = useState<any>(null)
+
+  // Communication logs
+  const [commLogs, setCommLogs] = useState<any[]>([])
+  const [commsLoading, setCommsLoading] = useState(false)
+  const [showNewCommModal, setShowNewCommModal] = useState(false)
+  const [commForm, setCommForm] = useState({ channel: 'EMAIL', subject: '', body: '', direction: 'OUTBOUND' })
+  const [commSubmitting, setCommSubmitting] = useState(false)
 
   // Edit modal
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -201,6 +208,56 @@ export default function AccountDetailPage() {
       loadMargins()
     }
   }, [activeTab])
+
+  // Load communication logs when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'comms' && commLogs.length === 0) {
+      loadCommLogs()
+    }
+  }, [activeTab])
+
+  async function loadCommLogs() {
+    if (!params.id) return
+    setCommsLoading(true)
+    try {
+      const resp = await fetch(`/api/ops/communication-logs?builderId=${params.id}&limit=50`)
+      const data = await resp.json()
+      setCommLogs(data.logs || [])
+    } catch (err) {
+      console.error('Failed to load comm logs:', err)
+    } finally {
+      setCommsLoading(false)
+    }
+  }
+
+  async function handleLogComm(e: React.FormEvent) {
+    e.preventDefault()
+    if (!commForm.subject || !params.id) return
+    setCommSubmitting(true)
+    try {
+      const resp = await fetch('/api/ops/communication-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          builderId: params.id,
+          channel: commForm.channel,
+          subject: commForm.subject,
+          body: commForm.body,
+          direction: commForm.direction,
+          status: 'SENT',
+        }),
+      })
+      if (resp.ok) {
+        setShowNewCommModal(false)
+        setCommForm({ channel: 'EMAIL', subject: '', body: '', direction: 'OUTBOUND' })
+        loadCommLogs()
+      }
+    } catch (err) {
+      console.error('Failed to log communication:', err)
+    } finally {
+      setCommSubmitting(false)
+    }
+  }
 
   async function loadActivities() {
     if (!params.id) return
@@ -500,6 +557,7 @@ export default function AccountDetailPage() {
           { key: 'overview', label: 'Overview' },
           { key: 'projects', label: `Projects (${builder._count.projects})` },
           { key: 'activity', label: 'Activity Log' },
+          { key: 'comms', label: 'Communications' },
           { key: 'pricing', label: `Custom Pricing (${builder._count.customPricing})` },
           { key: 'margins', label: 'Margin Targets' },
         ].map((tab) => (
@@ -735,6 +793,127 @@ export default function AccountDetailPage() {
         </div>
       )}
 
+      {activeTab === 'comms' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">Communication History</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowNewCommModal(true)}
+                className="px-3 py-1.5 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360]"
+              >
+                Log Communication
+              </button>
+              <Link
+                href={`/ops/communication-log?builderId=${params.id}`}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                View Full Log
+              </Link>
+            </div>
+          </div>
+
+          {commsLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1B4F72]" />
+            </div>
+          ) : commLogs.length === 0 ? (
+            <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
+              <p className="text-3xl mb-2">📧</p>
+              <p className="font-medium">No communications logged</p>
+              <p className="text-xs mt-2">Log emails, calls, and meetings with this builder</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {commLogs.map((log: any) => {
+                const channelIcons: Record<string, string> = {
+                  EMAIL: '📧', PHONE: '📞', TEXT: '💬', MEETING: '🤝', PORTAL: '🌐', OTHER: '📌'
+                }
+                return (
+                  <div key={log.id} className="bg-white rounded-xl border p-4">
+                    <div className="flex gap-3">
+                      <div className="text-2xl">{channelIcons[log.channel] || '📌'}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">{log.subject}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                {log.channel}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {log.direction === 'INBOUND' ? '← Inbound' : '→ Outbound'}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-400 whitespace-nowrap">
+                            {new Date(log.sentAt || log.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        {log.body && (
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{log.body}</p>
+                        )}
+                        {log.hasAttachments && (
+                          <p className="text-xs text-blue-600 mt-1">📎 Has attachments</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* New Communication Modal */}
+      {showNewCommModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <form onSubmit={handleLogComm} className="bg-white rounded-xl max-w-lg w-full">
+            <div className="border-b p-6 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">Log Communication</h2>
+              <button type="button" onClick={() => setShowNewCommModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+                  <select value={commForm.channel} onChange={(e) => setCommForm({ ...commForm, channel: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="EMAIL">Email</option>
+                    <option value="PHONE">Phone</option>
+                    <option value="TEXT">Text/SMS</option>
+                    <option value="MEETING">Meeting</option>
+                    <option value="PORTAL">Portal</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Direction</label>
+                  <select value={commForm.direction} onChange={(e) => setCommForm({ ...commForm, direction: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="OUTBOUND">Outbound (We sent)</option>
+                    <option value="INBOUND">Inbound (They sent)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <input type="text" value={commForm.subject} onChange={(e) => setCommForm({ ...commForm, subject: e.target.value })} placeholder="Call about delivery schedule..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Details</label>
+                <textarea value={commForm.body} onChange={(e) => setCommForm({ ...commForm, body: e.target.value })} placeholder="Summary of the communication..." rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none" />
+              </div>
+            </div>
+            <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowNewCommModal(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button type="submit" disabled={commSubmitting} className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50">
+                {commSubmitting ? 'Saving...' : 'Log Communication'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {activeTab === 'pricing' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -817,10 +996,10 @@ export default function AccountDetailPage() {
       {/* Edit Account Modal */}
       {editModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <form onSubmit={(e) => { e.preventDefault(); handleEditSubmit() }} className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">Edit Account</h2>
-              <button onClick={() => setEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 ✕
               </button>
             </div>
@@ -980,30 +1159,31 @@ export default function AccountDetailPage() {
 
             <div className="sticky bottom-0 bg-gray-50 border-t p-6 flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setEditModalOpen(false)}
                 className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                onClick={handleEditSubmit}
+                type="submit"
                 disabled={editLoading}
                 className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50"
               >
                 {editLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
       {/* Log Activity Modal */}
       {activityModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-xl w-full">
+          <form onSubmit={(e) => { e.preventDefault(); handleLogActivity() }} className="bg-white rounded-xl max-w-xl w-full">
             <div className="border-b p-6 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">Log Activity</h2>
-              <button onClick={() => setActivityModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setActivityModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 ✕
               </button>
             </div>
@@ -1070,32 +1250,33 @@ export default function AccountDetailPage() {
 
             <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setActivityModalOpen(false)}
                 className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                onClick={handleLogActivity}
+                type="submit"
                 disabled={activitySubmitLoading || !activityForm.subject}
                 className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50"
               >
                 {activitySubmitLoading ? 'Saving...' : 'Log Activity'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
       {/* Add/Edit Pricing Modal */}
       {addPricingOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-xl w-full">
+          <form onSubmit={(e) => { e.preventDefault(); handleAddOrUpdatePricing() }} className="bg-white rounded-xl max-w-xl w-full">
             <div className="border-b p-6 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingPricingId ? 'Edit Price' : 'Add Custom Price'}
               </h2>
-              <button onClick={() => setAddPricingOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setAddPricingOpen(false)} className="text-gray-400 hover:text-gray-600">
                 ✕
               </button>
             </div>
@@ -1184,6 +1365,7 @@ export default function AccountDetailPage() {
 
             <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => {
                   setAddPricingOpen(false)
                   setSelectedProduct(null)
@@ -1197,14 +1379,14 @@ export default function AccountDetailPage() {
                 Cancel
               </button>
               <button
-                onClick={handleAddOrUpdatePricing}
+                type="submit"
                 disabled={activitySubmitLoading || !selectedProduct || !customPrice}
                 className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50"
               >
                 {activitySubmitLoading ? 'Saving...' : editingPricingId ? 'Update Price' : 'Add Price'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

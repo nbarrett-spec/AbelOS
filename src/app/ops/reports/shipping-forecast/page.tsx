@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ShipDateGroup {
   shipDate: string
@@ -72,6 +73,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function ShippingForecastPage() {
+  const { addToast } = useToast()
   const [data, setData] = useState<ForecastData | null>(null)
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState('14')
@@ -102,7 +104,7 @@ export default function ShippingForecastPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Failed to download report. Please try again.')
+      addToast({ type: 'error', title: 'Download Failed', message: 'Failed to download report. Please try again.' })
     }
     setDownloading(false)
   }

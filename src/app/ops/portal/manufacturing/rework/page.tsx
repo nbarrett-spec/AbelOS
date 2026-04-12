@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/contexts/ToastContext'
 
 interface DefectCheck {
   id: string
@@ -59,6 +60,7 @@ interface ReworkData {
 
 export default function ReworkDefectTrackingPage() {
   const router = useRouter()
+  const { addToast } = useToast()
   const [data, setData] = useState<ReworkData | null>(null)
   const [loading, setLoading] = useState(true)
   const [sortColumn, setSortColumn] = useState<string>('createdAt')
@@ -106,11 +108,11 @@ export default function ReworkDefectTrackingPage() {
           setData(reworkData)
         }
       } else {
-        alert('Failed to mark as resolved. Please try again.')
+        addToast({ type: 'error', title: 'Update Failed', message: 'Failed to mark as resolved. Please try again.' })
       }
     } catch (error: any) {
       console.error('Error marking as resolved:', error)
-      alert('Error marking as resolved')
+      addToast({ type: 'error', title: 'Error', message: 'Error marking as resolved' })
     } finally {
       setMarkingResolved(null)
     }

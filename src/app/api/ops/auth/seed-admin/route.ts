@@ -3,11 +3,22 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { checkStaffAuth } from '@/lib/api-auth'
 
 // ONE-TIME seed endpoint — create the initial admin account
 // DELETE THIS FILE after use for security
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Check authentication first
+  const authCheck = checkStaffAuth(request)
+  if (authCheck) return authCheck
+
+  // SECURITY: Only ADMIN can seed admin accounts
+  const staffRole = request.headers.get('x-staff-role')
+  if (staffRole !== 'ADMIN') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
   try {
     const body = await request.json()
     const { seedKey } = body

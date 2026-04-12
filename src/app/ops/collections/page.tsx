@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface OverdueInvoice {
   id: string
@@ -43,6 +44,7 @@ const NAVY = '#1B4F72'
 const ORANGE = '#E67E22'
 
 export default function CollectionsPage() {
+  const { addToast } = useToast()
   const [summary, setSummary] = useState<SummaryStats | null>(null)
   const [invoices, setInvoices] = useState<OverdueInvoice[]>([])
   const [rules, setRules] = useState<CollectionRule[]>([])
@@ -98,14 +100,14 @@ export default function CollectionsPage() {
         }),
       })
       if (res.ok) {
-        alert(`${actionType} recorded successfully`)
+        addToast({ type: 'success', title: 'Action Recorded', message: `${actionType} recorded successfully` })
         loadCollectionsData()
       } else {
-        alert('Failed to record action')
+        addToast({ type: 'error', title: 'Error', message: 'Failed to record action' })
       }
     } catch (err) {
       console.error('Action error:', err)
-      alert('Error recording action')
+      addToast({ type: 'error', title: 'Error', message: 'Error recording action' })
     }
   }
 

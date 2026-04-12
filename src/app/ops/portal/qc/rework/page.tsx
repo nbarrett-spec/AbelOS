@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/contexts/ToastContext'
 
 interface FailedJob {
   id: string
@@ -19,6 +20,7 @@ interface QCBriefing {
 
 export default function QCReworkPage() {
   const router = useRouter()
+  const { addToast } = useToast()
   const [reworkQueue, setReworkQueue] = useState<FailedJob[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -58,11 +60,11 @@ export default function QCReworkPage() {
         // Navigate to QC queue with the job ID
         router.push(`/ops/portal/qc/queue?jobId=${job.id}`)
       } else {
-        alert('Failed to create re-inspection. Please try again.')
+        addToast({ type: 'error', title: 'Creation Failed', message: 'Failed to create re-inspection. Please try again.' })
       }
     } catch (error) {
       console.error('Error creating re-inspection:', error)
-      alert('Error creating re-inspection')
+      addToast({ type: 'error', title: 'Error', message: 'Error creating re-inspection' })
     }
   }
 
