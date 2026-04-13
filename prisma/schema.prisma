@@ -8,87 +8,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── BUILDER ACCOUNTS ────────────────────────────────────────────────
+
 model Builder {
-  id                    String                  @id @default(cuid())
-  companyName           String
-  contactName           String
-  email                 String                  @unique
-  passwordHash          String
-  phone                 String?
-  address               String?
-  city                  String?
-  state                 String?
-  zip                   String?
-  licenseNumber         String?
-  paymentTerm           PaymentTerm             @default(NET_15)
-  creditLimit           Float?
-  accountBalance        Float                   @default(0)
-  taxExempt             Boolean                 @default(false)
-  taxId                 String?
-  status                AccountStatus           @default(PENDING)
-  emailVerified         Boolean                 @default(false)
-  verifyToken           String?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  organizationId        String?
-  role                  BuilderRole             @default(PRIMARY)
-  source                LeadSource?
-  sourceDetail          String?
-  resetToken            String?
-  resetTokenExpiry      DateTime?               @db.Timestamp(6)
-  approvalStatus        String?                 @default("ACTIVE")
-  qbListId              String?
-  qbSyncedAt            DateTime?
-  segmentTag            String?                 @default("STANDARD")
-  lifetimeValue         Float?                  @default(0)
-  churnRisk             String?                 @default("LOW")
-  lastAnalyzedAt        DateTime?
-  divisionId            String?
-  pricingTier           String?                 @default("STANDARD")
-  notifyEmail           Boolean?                @default(true)
-  notifySms             Boolean?                @default(false)
-  notifyDeliveryUpdates Boolean?                @default(true)
-  notifyInvoiceReady    Boolean?                @default(true)
-  notifyPaymentReceived Boolean?                @default(true)
-  AccountCategoryMargin AccountCategoryMargin[]
-  AccountMarginTarget   AccountMarginTarget?
-  AgentConversation     AgentConversation[]
-  AgentEmailLog         AgentEmailLog[]
-  AgentSmsLog           AgentSmsLog[]
-  btProjectMappings     BTProjectMapping[]
-  Division              Division?               @relation(fields: [divisionId], references: [id])
-  BuilderOrganization   BuilderOrganization?    @relation(fields: [organizationId], references: [id])
-  BuilderBranding       BuilderBranding?
-  BuilderCatalog        BuilderCatalog[]
-  BuilderIntelligence   BuilderIntelligence?
-  customPricing         BuilderPricing[]
-  BuilderScheduleShare  BuilderScheduleShare[]
-  CommunicationLog      CommunicationLog[]
-  homeowners            HomeownerAccess[]
-  LienRelease           LienRelease[]
-  MessageReadReceipt    MessageReadReceipt[]
-  orders                Order[]
-  templates             OrderTemplate[]
-  projects              Project[]
-  ReorderSuggestion     ReorderSuggestion[]
-  SavedCart             SavedCart[]
-  ScheduleChangeRequest ScheduleChangeRequest[]
-  SubcontractorPricing  SubcontractorPricing[]
-  TradeReview           TradeReview[]
+  id            String  @id @default(cuid())
+  companyName   String
+  contactName   String
+  email         String  @unique
+  passwordHash  String
+  phone         String?
+  address       String?
+  city          String?
+  state         String?
+  zip           String?
+  licenseNumber String?
+
+  // Payment & pricing
+  paymentTerm    PaymentTerm @default(NET_15)
+  creditLimit    Float?
+  accountBalance Float       @default(0)
+  taxExempt      Boolean     @default(false)
+  taxId          String?
+
+  // Status
+  status        AccountStatus @default(PENDING)
+  emailVerified Boolean       @default(false)
+  verifyToken   String?
+
+  // Password reset
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
+  // QuickBooks Desktop integration
+  qbListId  String?   // Customer ListID in QB
+  qbSyncedAt DateTime? // Last sync timestamp
+
+  // Relationships
+  projects           Project[]
+  orders             Order[]
+  templates          OrderTemplate[]
+  customPricing      BuilderPricing[]
+  homeowners         HomeownerAccess[]
+  btProjectMappings  BTProjectMapping[]
+  referralsSent      BuilderReferral[] @relation("ReferrerReferrals")
+  referralsReceived  BuilderReferral[] @relation("ReferredBuilder")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([status])
-  @@index([createdAt])
-  @@index([divisionId])
-  @@index([organizationId])
-  @@index([resetToken])
-  @@index([pricingTier], map: "idx_builder_pricing_tier")
-  @@index([status, companyName], map: "idx_builder_status_company")
+  @@index([qbListId])
 }
 
+enum PaymentTerm {
+  PAY_AT_ORDER // 3% discount
+  PAY_ON_DELIVERY // Standard price
+  NET_15 // 1% premium
+  NET_30 // 2.5% premium
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+// ─── BUILDER REFERRALS ──────────────────────────────────────────────────
+
+model BuilderReferral {
+  id                String     @id @default(cuid())
+  referrerId        String
+  referrer          Builder    @relation("ReferrerReferrals", fields: [referrerId], references: [id], onDelete: Cascade)
+
+  // Referred builder info
+  referredCompany   String
+  referredContact   String
+  referredEmail     String
+  referredPhone     String
+  referralCode      String     @unique // ABEL-{lastName}-{random4}
+  notes             String?
+
+  // Status tracking
+  status            ReferralStatus @default(PENDING)
+  referredBuilderId String?
+  referredBuilder   Builder?   @relation("ReferredBuilder", fields: [referredBuilderId], references: [id], onDelete: SetNull)
+
+  // Credits
+  creditAmount      Float      @default(250)
+  referrerCredited  Boolean    @default(false)
+  referreeCredited  Boolean    @default(false)
+  creditedAt        DateTime?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([referrerId])
+  @@index([status])
+  @@index([referredBuilderId])
+}
+
+enum ReferralStatus {
+  PENDING        // Referral submitted, awaiting contact
+  CONTACTED      // Referred company has been contacted
+  SIGNED_UP      // Referred builder created an account
+  FIRST_ORDER    // Referred builder placed first order
+  CREDITED       // Both referrer and referee credited
+}
+
+// ─── PROJECTS & BLUEPRINTS ───────────────────────────────────────────
+
 model Project {
-  id          String            @id @default(cuid())
-  builderId   String
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Restrict)
+
   name        String
   jobAddress  String?
   city        String?
@@ -97,348 +132,447 @@ model Project {
   subdivision String?
   planName    String?
   sqFootage   Int?
-  status      ProjectStatus     @default(DRAFT)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  blueprints  Blueprint[]
-  FloorPlan   FloorPlan[]
-  homeowners  HomeownerAccess[]
-  builder     Builder           @relation(fields: [builderId], references: [id])
-  quotes      Quote[]
-  takeoffs    Takeoff[]
+
+  status ProjectStatus @default(DRAFT)
+
+  // Relationships
+  blueprints Blueprint[]
+  takeoffs   Takeoff[]
+  quotes     Quote[]
+  homeowners HomeownerAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([builderId])
   @@index([status])
-  @@index([createdAt])
+}
+
+enum ProjectStatus {
+  DRAFT
+  BLUEPRINT_UPLOADED
+  TAKEOFF_PENDING
+  TAKEOFF_COMPLETE
+  QUOTE_GENERATED
+  QUOTE_APPROVED
+  ORDERED
+  IN_PROGRESS
+  DELIVERED
+  COMPLETE
 }
 
 model Blueprint {
-  id               String           @id @default(cuid())
-  projectId        String
-  fileName         String
-  fileUrl          String
-  fileSize         Int
-  fileType         String
-  pageCount        Int?
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  fileType  String // pdf, png, jpg, dwg
+  pageCount Int?
+
+  // AI processing
   processedAt      DateTime?
   processingStatus ProcessingStatus @default(PENDING)
-  createdAt        DateTime         @default(now())
-  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  takeoffs         Takeoff[]
+
+  takeoffs Takeoff[]
+
+  createdAt DateTime @default(now())
 
   @@index([projectId])
-  @@index([processingStatus])
 }
 
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+// ─── AI TAKEOFF ──────────────────────────────────────────────────────
+
 model Takeoff {
-  id          String        @id @default(cuid())
+  id          String    @id @default(cuid())
   projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   blueprintId String
-  status      TakeoffStatus @default(PROCESSING)
-  confidence  Float?
-  rawResult   Json?
-  reviewedBy  String?
-  reviewedAt  DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  floorPlanId String?
-  quote       Quote?
-  blueprint   Blueprint     @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
-  FloorPlan   FloorPlan?    @relation(fields: [floorPlanId], references: [id], onUpdate: NoAction)
-  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  items       TakeoffItem[]
+  blueprint   Blueprint @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+
+  status     TakeoffStatus @default(PROCESSING)
+  confidence Float? // 0-1 overall confidence score
+
+  // AI results
+  rawResult  Json? // Full AI response
+  reviewedBy String? // Admin who reviewed
+  reviewedAt DateTime?
+
+  items TakeoffItem[]
+  quote Quote?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
-  @@index([blueprintId])
+}
+
+enum TakeoffStatus {
+  PROCESSING
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
 }
 
 model TakeoffItem {
-  id           String   @id @default(cuid())
-  takeoffId    String
-  category     String
-  description  String
-  location     String?
-  quantity     Int
-  productId    String?
-  confidence   Float?
-  aiNotes      String?
-  overridden   Boolean  @default(false)
-  originalDesc String?
-  createdAt    DateTime @default(now())
-  product      Product? @relation(fields: [productId], references: [id])
-  takeoff      Takeoff  @relation(fields: [takeoffId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  takeoffId String
+  takeoff   Takeoff @relation(fields: [takeoffId], references: [id], onDelete: Cascade)
+
+  // What was detected
+  category    String // Interior Door, Exterior Door, Trim, Hardware, etc.
+  description String // "2068 2-Panel Shaker Hollow Core LH"
+  location    String? // "Master Bedroom", "Hallway", etc.
+  quantity    Int
+
+  // Matched product
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  // AI confidence
+  confidence Float? // 0-1 per-item confidence
+  aiNotes    String? // AI reasoning
+
+  // Human overrides
+  overridden   Boolean @default(false)
+  originalDesc String? // What AI originally detected
+
+  createdAt DateTime @default(now())
 
   @@index([takeoffId])
 }
 
+// ─── QUOTES ──────────────────────────────────────────────────────────
+
 model Quote {
-  id                String      @id @default(cuid())
-  projectId         String
-  takeoffId         String      @unique
-  quoteNumber       String      @unique
-  version           Int         @default(1)
-  subtotal          Float
-  taxRate           Float       @default(0)
-  taxAmount         Float       @default(0)
-  termAdjustment    Float       @default(0)
-  total             Float
-  status            QuoteStatus @default(DRAFT)
-  validUntil        DateTime?
-  approvedAt        DateTime?
-  approvedBy        String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  signatureData     String?
-  rejectedAt        DateTime?   @db.Timestamp(6)
-  rejectionReason   String?
-  changeNotes       String?
-  aiOptimized       Boolean?    @default(false)
-  originalTotal     Float?
-  marginPercent     Float?
-  aiRecommendations Json?
-  floorPlanId       String?
-  notes             String?
-  order             Order?
-  FloorPlan         FloorPlan?  @relation(fields: [floorPlanId], references: [id], onUpdate: NoAction)
-  project           Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  takeoff           Takeoff     @relation(fields: [takeoffId], references: [id], onDelete: Cascade)
-  items             QuoteItem[]
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  takeoffId String  @unique
+  takeoff   Takeoff @relation(fields: [takeoffId], references: [id], onDelete: Cascade)
+
+  quoteNumber String @unique // ABL-2026-0001
+  version     Int    @default(1)
+
+  // Pricing
+  subtotal       Float
+  taxRate        Float @default(0)
+  taxAmount      Float @default(0)
+  termAdjustment Float @default(0) // Payment term premium/discount
+  total          Float
+
+  // Status
+  status     QuoteStatus @default(DRAFT)
+  validUntil DateTime?
+  approvedAt DateTime?
+  approvedBy String?
+
+  items QuoteItem[]
+  order Order?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
   @@index([quoteNumber])
-  @@index([status])
-  @@index([validUntil])
-  @@index([projectId, status], map: "idx_quote_project_status")
-  @@index([status, createdAt(sort: Desc)], map: "idx_quote_status_created")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+  ORDERED
 }
 
 model QuoteItem {
-  id            String  @id @default(cuid())
-  quoteId       String
-  productId     String
-  description   String
-  quantity      Int
-  unitPrice     Float
-  lineTotal     Float
-  isUpgrade     Boolean @default(false)
-  baseProductId String?
-  upgradeAdder  Float?
-  location      String?
-  sortOrder     Int     @default(0)
-  product       Product @relation(fields: [productId], references: [id])
-  quote         Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
-  @@index([quoteId])
-}
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
-model Order {
-  id                  String          @id @default(cuid())
-  builderId           String
-  quoteId             String?         @unique
-  orderNumber         String          @unique
-  poNumber            String?
-  subtotal            Float
-  taxAmount           Float           @default(0)
-  shippingCost        Float           @default(0)
-  total               Float
-  paymentTerm         PaymentTerm
-  paymentStatus       PaymentStatus   @default(PENDING)
-  paidAt              DateTime?
-  dueDate             DateTime?
-  status              OrderStatus     @default(RECEIVED)
-  deliveryDate        DateTime?
-  deliveryNotes       String?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  driverId            String?
-  deliveryConfirmedAt DateTime?       @db.Timestamp(6)
-  deliverySignature   String?
-  inflowOrderId       String?         @unique
-  trackingUpdates     Json?           @default("[]")
-  qbTxnId             String?
-  qbSyncedAt          DateTime?
-  inflowCustomerId    String?
-  jobs                Job[]
-  builder             Builder         @relation(fields: [builderId], references: [id])
-  quote               Quote?          @relation(fields: [quoteId], references: [id])
-  items               OrderItem[]
-  OrderTemplate       OrderTemplate[]
-
-  @@index([builderId])
-  @@index([orderNumber])
-  @@index([status])
-  @@index([builderId, status])
-  @@index([createdAt])
-  @@index([deliveryDate])
-  @@index([paymentStatus])
-  @@index([builderId, status], map: "idx_order_builder_status")
-  @@index([status, createdAt(sort: Desc)], map: "idx_order_status_created")
-}
-
-model OrderItem {
-  id          String  @id @default(cuid())
-  orderId     String
-  productId   String
   description String
   quantity    Int
   unitPrice   Float
   lineTotal   Float
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product @relation(fields: [productId], references: [id])
 
-  @@index([orderId])
-  @@index([productId])
+  // Upgrade tracking
+  isUpgrade     Boolean @default(false)
+  baseProductId String? // What it replaced
+  upgradeAdder  Float? // Additional cost over base
+
+  // Room/location
+  location String?
+
+  sortOrder Int @default(0)
+
+  @@index([quoteId])
 }
 
+// ─── ORDERS ──────────────────────────────────────────────────────────
+
+model Order {
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Restrict)
+  quoteId   String? @unique
+  quote     Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  orderNumber String  @unique // ORD-2026-0001
+  poNumber    String? // Builder's PO number
+
+  // Pricing
+  subtotal     Float
+  taxAmount    Float @default(0)
+  shippingCost Float @default(0)
+  total        Float
+
+  // Payment
+  paymentTerm   PaymentTerm
+  paymentStatus PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  dueDate       DateTime?
+
+  // Fulfillment
+  status        OrderStatus @default(RECEIVED)
+  deliveryDate  DateTime?
+  deliveryNotes String?
+
+  // InFlow sync
+  inflowOrderId    String? @unique
+  inflowCustomerId String?
+
+  items OrderItem[]
+  jobs  Job[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([builderId])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+enum OrderStatus {
+  RECEIVED
+  CONFIRMED
+  IN_PRODUCTION
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+  COMPLETE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  INVOICED
+  PAID
+  OVERDUE
+  REFUNDED
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  description String
+  quantity    Int
+  unitPrice   Float
+  lineTotal   Float
+
+  @@index([orderId])
+}
+
+// ─── ORDER TEMPLATES ─────────────────────────────────────────────────
+
 model OrderTemplate {
-  id            String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id            String  @id @default(cuid())
   builderId     String
+  builder       Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+
   name          String
   description   String?
-  sourceOrderId String?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @default(now()) @updatedAt
-  builder       Builder             @relation(fields: [builderId], references: [id], onDelete: Cascade)
-  Order         Order?              @relation(fields: [sourceOrderId], references: [id])
-  items         OrderTemplateItem[]
+  sourceOrderId String? // Original order this was created from
 
-  @@index([builderId], map: "idx_template_builder")
+  items OrderTemplateItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([builderId])
 }
 
 model OrderTemplateItem {
-  id         String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id         String  @id @default(cuid())
   templateId String
-  productId  String
-  quantity   Int           @default(1)
-  notes      String?
-  product    Product       @relation(fields: [productId], references: [id])
   template   OrderTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  @@index([templateId], map: "idx_templateitem_template")
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity Int
+  notes    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([templateId])
 }
 
+// ─── PRODUCT CATALOG ─────────────────────────────────────────────────
+
 model Product {
-  id              String              @id @default(cuid())
-  sku             String              @unique
-  name            String
-  description     String?
-  category        String
-  subcategory     String?
-  cost            Float
-  basePrice       Float
-  minMargin       Float               @default(0.25)
-  doorSize        String?
-  handing         String?
-  coreType        String?
-  panelStyle      String?
-  jambSize        String?
-  casingCode      String?
-  hardwareFinish  String?
-  material        String?
-  fireRating      String?
-  active          Boolean             @default(true)
-  inStock         Boolean             @default(true)
-  leadTimeDays    Int?
-  inflowId        String?
-  inflowCategory  String?
-  lastSyncedAt    DateTime?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  imageAlt        String?
-  imageUrl        String?
-  thumbnailUrl    String?
-  displayName     String?
-  laborCost       Float?              @default(0)
-  overheadCost    Float?              @default(0)
-  locationId      String?             @default("loc_abel_dfw")
-  categoryId      String?             @default("cat_doors")
-  supplierId      String?
-  supplierSku     String?
-  weight          Float?
-  dimensions      Json?               @default("{}")
-  minOrderQty     Int?                @default(1)
-  bomComponent    BomEntry[]          @relation("BomComponent")
-  bomParent       BomEntry[]          @relation("BomParent")
-  builderPrices   BuilderPricing[]
-  DoorIdentity    DoorIdentity[]
-  orderItems      OrderItem[]
-  templateItems   OrderTemplateItem[]
-  quoteItems      QuoteItem[]
-  SupplierProduct SupplierProduct[]
-  takeoffItems    TakeoffItem[]
-  upgradeFrom     UpgradePath[]       @relation("UpgradeFrom")
-  upgradeTo       UpgradePath[]       @relation("UpgradeTo")
+  id          String  @id @default(cuid())
+  sku         String  @unique
+  name        String
+  displayName String? // Customer-facing product name
+  description String?
+
+  // Classification
+  category    String // Interior Doors, Exterior Doors, Trim, Hardware
+  subcategory String? // Pre-Hung, Slab, Bifold, etc.
+
+  // Pricing
+  cost      Float // Abel's cost
+  basePrice Float // Standard retail/builder price
+  minMargin Float @default(0.25) // 25% floor
+
+  // Attributes (parsed from name)
+  doorSize       String? // "2068", "2868"
+  handing        String? // LH, RH, LHIS, RHIS
+  coreType       String? // Hollow, Solid
+  panelStyle     String? // 2-Panel, 6-Panel, Shaker, Flat
+  jambSize       String? // 4-9/16, 6-9/16
+  casingCode     String? // A-Col, C-322
+  hardwareFinish String? // SN, BLK, ORB
+  material       String? // Pine, MDF, Primed
+  fireRating     String? // 20min, 45min, 90min
+
+  // Images
+  imageUrl     String? // Primary product image URL
+  thumbnailUrl String? // Smaller thumbnail for lists/grids
+  imageAlt     String? // Alt text for accessibility
+
+  // Status
+  active       Boolean @default(true)
+  inStock      Boolean @default(true)
+  leadTimeDays Int?
+
+  // InFlow sync
+  inflowId       String?
+  inflowCategory String?
+  lastSyncedAt   DateTime?
+
+  // Relationships
+  takeoffItems     TakeoffItem[]
+  quoteItems       QuoteItem[]
+  orderItems       OrderItem[]
+  templateItems    OrderTemplateItem[]
+  bomParent        BomEntry[]       @relation("BomParent")
+  bomComponent     BomEntry[]       @relation("BomComponent")
+  builderPrices    BuilderPricing[]
+  upgradeFrom      UpgradePath[]    @relation("UpgradeFrom")
+  upgradeTo        UpgradePath[]    @relation("UpgradeTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sku])
   @@index([category])
   @@index([active])
-  @@index([lastSyncedAt])
-  @@index([active, name], map: "idx_product_active_name")
-  @@index([category, active], map: "idx_product_category_active")
-  @@index([categoryId], map: "idx_product_category_id")
 }
 
 model BomEntry {
-  id            String   @id @default(cuid())
-  parentId      String
-  componentId   String
-  quantity      Float    @default(1)
-  componentType String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-  component     Product  @relation("BomComponent", fields: [componentId], references: [id], onDelete: Cascade)
-  parent        Product  @relation("BomParent", fields: [parentId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  parentId    String
+  parent      Product @relation("BomParent", fields: [parentId], references: [id], onDelete: Cascade)
+  componentId String
+  component   Product @relation("BomComponent", fields: [componentId], references: [id], onDelete: Cascade)
 
-  @@unique([parentId, componentId])
+  quantity      Float   @default(1)
+  componentType String? // Slab, Jamb, Casing, Hinge, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([parentId])
 }
 
 model BuilderPricing {
-  id          String   @id @default(cuid())
-  builderId   String
-  productId   String
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
   customPrice Float
-  margin      Float?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  builder     Builder  @relation(fields: [builderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  margin      Float? // Calculated margin at this price
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([builderId, productId])
   @@index([builderId])
 }
 
 model UpgradePath {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   fromProductId String
+  fromProduct   Product @relation("UpgradeFrom", fields: [fromProductId], references: [id], onDelete: Cascade)
   toProductId   String
-  upgradeType   String
-  costDelta     Float
-  priceDelta    Float
-  description   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-  fromProduct   Product  @relation("UpgradeFrom", fields: [fromProductId], references: [id], onDelete: Cascade)
-  toProduct     Product  @relation("UpgradeTo", fields: [toProductId], references: [id], onDelete: Cascade)
+  toProduct     Product @relation("UpgradeTo", fields: [toProductId], references: [id], onDelete: Cascade)
+
+  upgradeType String // door_style, hardware, core, finish
+  costDelta   Float // Difference in cost
+  priceDelta  Float // Suggested price adder
+  description String? // "Upgrade from Hollow Core to Solid Core"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([fromProductId, toProductId])
 }
 
+// ─── HOMEOWNER PORTAL ────────────────────────────────────────────────
+
 model HomeownerAccess {
-  id          String               @id @default(cuid())
-  builderId   String
-  projectId   String
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Homeowner info
   name        String
   email       String
   phone       String?
-  accessToken String               @unique
-  active      Boolean              @default(true)
+  accessToken String  @unique // URL token for portal access
+
+  // Selection tracking
+  selections HomeownerSelection[]
+
+  // Status
+  active      Boolean   @default(true)
   expiresAt   DateTime?
   lastVisitAt DateTime?
-  createdAt   DateTime             @default(now())
-  builder     Builder              @relation(fields: [builderId], references: [id], onDelete: Cascade)
-  project     Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  selections  HomeownerSelection[]
+
+  createdAt DateTime @default(now())
 
   @@index([accessToken])
   @@index([projectId])
@@ -447,777 +581,1084 @@ model HomeownerAccess {
 model HomeownerSelection {
   id                String          @id @default(cuid())
   homeownerAccessId String
-  location          String
-  baseProductId     String
-  selectedProductId String
-  adderCost         Float
-  status            SelectionStatus @default(PENDING)
-  confirmedAt       DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
   homeownerAccess   HomeownerAccess @relation(fields: [homeownerAccessId], references: [id], onDelete: Cascade)
+
+  location          String // "Master Bedroom Door"
+  baseProductId     String // The default/base product
+  selectedProductId String // What the homeowner picked
+  adderCost         Float // Cost difference to homeowner
+
+  status      SelectionStatus @default(PENDING)
+  confirmedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+enum SelectionStatus {
+  PENDING
+  CONFIRMED
+  LOCKED
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PM / CRM / ERP MODULE
+// Based on Abel SOP frameworks & Module 2 Systems Training
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── STAFF & ROLES ──────────────────────────────────────────────────
+
 model Staff {
-  id                                                       String                    @id @default(cuid())
-  firstName                                                String
-  lastName                                                 String
-  email                                                    String                    @unique
-  passwordHash                                             String
-  phone                                                    String?
-  role                                                     StaffRole
-  department                                               Department
-  title                                                    String?
-  avatar                                                   String?
-  active                                                   Boolean                   @default(true)
-  hireDate                                                 DateTime?
-  hourlyRate                                               Float?
-  createdAt                                                DateTime                  @default(now())
-  updatedAt                                                DateTime                  @updatedAt
-  resetToken                                               String?
-  resetTokenExpiry                                         DateTime?
-  inviteToken                                              String?                   @unique @db.VarChar(255)
-  inviteTokenExpiry                                        DateTime?                 @db.Timestamp(6)
-  handbookSignedAt                                         DateTime?                 @db.Timestamp(6)
-  handbookVersion                                          String?                   @db.VarChar(50)
-  passwordSetAt                                            DateTime?                 @db.Timestamp(6)
-  mustChangePassword                                       Boolean?                  @default(false)
-  portalOverrides                                          Json?                     @default("{}")
-  locationId                                               String?                   @default("loc_abel_dfw")
-  roles                                                    String?
-  activities                                               Activity[]
-  AgentConversation                                        AgentConversation[]
-  contractsCreated                                         Contract[]                @relation("ContractCreator")
-  conversationsCreated                                     Conversation[]            @relation("ConversationCreator")
-  conversations                                            ConversationParticipant[] @relation("ConversationParticipants")
-  crewMembership                                           CrewMember[]
-  ownedDeals                                               Deal[]                    @relation("DealOwner")
-  dealActivities                                           DealActivity[]            @relation("DealActivities")
-  decisionNotes                                            DecisionNote[]
-  documentRequests                                         DocumentRequest[]         @relation("DocRequester")
-  FloorPlan                                                FloorPlan[]
-  Inspection                                               Inspection[]
-  invoicesCreated                                          Invoice[]
-  assignedJobs                                             Job[]                     @relation("AssignedPM")
-  Location_Location_managerIdToStaff                       Location[]                @relation("Location_managerIdToStaff")
-  messagesSent                                             Message[]                 @relation("MessagesSent")
-  MessageReadReceipt                                       MessageReadReceipt[]
-  notifications                                            Notification[]            @relation("StaffNotifications")
-  poApprovals                                              PurchaseOrder[]           @relation("POApprover")
-  purchaseOrders                                           PurchaseOrder[]           @relation("POCreator")
-  qualityChecks                                            QualityCheck[]
-  ScheduleChangeRequest                                    ScheduleChangeRequest[]
-  Location_Staff_locationIdToLocation                      Location?                 @relation("Staff_locationIdToLocation", fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  StaffPreferences                                         StaffPreferences?
-  StaffRoles                                               StaffRoles[]
-  TakeoffInquiry                                           TakeoffInquiry[]
-  tasks                                                    Task[]                    @relation("TaskAssignee")
-  tasksCreated                                             Task[]                    @relation("TaskCreator")
-  Trade                                                    Trade[]
-  TradeReview                                              TradeReview[]
-  WorkloadDelegation_WorkloadDelegation_createdByIdToStaff WorkloadDelegation[]      @relation("WorkloadDelegation_createdByIdToStaff")
-  WorkloadDelegation_WorkloadDelegation_delegateIdToStaff  WorkloadDelegation[]      @relation("WorkloadDelegation_delegateIdToStaff")
-  WorkloadDelegation_WorkloadDelegation_delegatorIdToStaff WorkloadDelegation[]      @relation("WorkloadDelegation_delegatorIdToStaff")
+  id           String     @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String     @unique
+  passwordHash String
+  phone        String?
+  role         StaffRole  // Primary role (backward compat)
+  roles        String?    // Comma-separated list of ALL roles (multi-role support): "ADMIN,MANAGER,PROJECT_MANAGER"
+  department   Department
+  title        String? // "Project Manager", "Manufacturing Lead", etc.
+  avatar       String? // Profile image URL
+  active       Boolean    @default(true)
+  hireDate     DateTime?
+
+  // Portal access overrides (JSON format): { "/ops/jobs": true, "/ops/finance": false }
+  // true = explicitly GRANT access (even if role doesn't have it)
+  // false = explicitly DENY access (even if role has it)
+  // missing = use role-based default
+  portalOverrides Json?    @default("{}")
+
+  // Relationships
+  assignedJobs         Job[]                     @relation("AssignedPM")
+  activities           Activity[]
+  tasks                Task[]                    @relation("TaskAssignee")
+  tasksCreated         Task[]                    @relation("TaskCreator")
+  crewMembership       CrewMember[]
+  decisionNotes        DecisionNote[]
+  purchaseOrders       PurchaseOrder[]           @relation("POCreator")
+  poApprovals          PurchaseOrder[]           @relation("POApprover")
+  invoicesCreated      Invoice[]
+  qualityChecks        QualityCheck[]
+  notifications        Notification[]            @relation("StaffNotifications")
+  conversations        ConversationParticipant[] @relation("ConversationParticipants")
+  messagesSent         Message[]                 @relation("MessagesSent")
+  conversationsCreated Conversation[]            @relation("ConversationCreator")
+
+  // Sales
+  ownedDeals           Deal[]                    @relation("DealOwner")
+  dealActivities       DealActivity[]            @relation("DealActivities")
+  contractsCreated     Contract[]                @relation("ContractCreator")
+  documentRequests     DocumentRequest[]         @relation("DocRequester")
+
+  // Compensation
+  hourlyRate Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([role])
   @@index([department])
-  @@index([active])
-  @@index([createdAt])
-  @@index([inviteToken])
-  @@index([roles])
 }
 
+enum StaffRole {
+  ADMIN // Full system access
+  MANAGER // Department manager
+  PROJECT_MANAGER // PM - runs accounts & jobs
+  ESTIMATOR // Pricing & takeoff review
+  SALES_REP // Account acquisition
+  PURCHASING // Vendor & PO management
+  WAREHOUSE_LEAD // Manufacturing floor lead
+  WAREHOUSE_TECH // Door line worker
+  DRIVER // Delivery crew
+  INSTALLER // Field install crew
+  QC_INSPECTOR // Quality control
+  ACCOUNTING // AR/AP/Invoicing
+  VIEWER // Read-only access
+}
+
+enum Department {
+  EXECUTIVE
+  SALES
+  ESTIMATING
+  OPERATIONS
+  MANUFACTURING
+  WAREHOUSE
+  DELIVERY
+  INSTALLATION
+  ACCOUNTING
+  PURCHASING
+}
+
+// ─── JOBS (Operational unit — links Quote/Order to field work) ───────
+// A "Job" is the ops-side representation of a project drop/delivery
+// Maps to ECI Bolt's job concept with Lot-Block-Community identifiers
+
 model Job {
-  id                    String                  @id @default(cuid())
-  jobNumber             String                  @unique
-  boltJobId             String?
-  inflowJobId           String?
-  bwpPoNumber           String?
-  orderId               String?
-  projectId             String?
-  lotBlock              String?
-  community             String?
-  builderName           String
-  builderContact        String?
-  jobAddress            String?
-  scopeType             ScopeType
-  dropPlan              String?
-  assignedPMId          String?
-  status                JobStatus               @default(CREATED)
-  readinessCheck        Boolean                 @default(false)
-  materialsLocked       Boolean                 @default(false)
-  loadConfirmed         Boolean                 @default(false)
-  scheduledDate         DateTime?
-  actualDate            DateTime?
-  completedAt           DateTime?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  communityId           String?
-  hyphenJobId           String?
-  hyphenScheduleId      String?
-  divisionId            String?
-  qcRequired            Boolean?                @default(true)
-  allMaterialsAllocated Boolean?                @default(false)
-  pickListGenerated     Boolean?                @default(false)
-  buildSheetNotes       String?
-  locationId            String?                 @default("loc_abel_dfw")
-  activities            Activity[]
-  btProjectMappings     BTProjectMapping[]
-  BuilderScheduleShare  BuilderScheduleShare[]
-  decisionNotes         DecisionNote[]
-  deliveries            Delivery[]
-  Inspection            Inspection[]
-  installations         Installation[]
-  assignedPM            Staff?                  @relation("AssignedPM", fields: [assignedPMId], references: [id])
-  Community             Community?              @relation(fields: [communityId], references: [id])
-  Division              Division?               @relation(fields: [divisionId], references: [id])
-  order                 Order?                  @relation(fields: [orderId], references: [id])
-  LienRelease           LienRelease[]
-  materialPicks         MaterialPick[]
-  qualityChecks         QualityCheck[]
-  ScheduleChangeRequest ScheduleChangeRequest[]
-  scheduleEntries       ScheduleEntry[]
-  ScheduleMilestone     ScheduleMilestone[]
-  tasks                 Task[]
-  TradeReview           TradeReview[]
+  id          String  @id @default(cuid())
+  jobNumber   String  @unique // e.g., "JOB-2026-0142"
+  boltJobId   String? // Cross-ref to ECI Bolt
+  inflowJobId String? // Cross-ref to InFlow
+
+  // Builder & project link
+  orderId   String?
+  order     Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  projectId String?
+  // Not adding direct Project relation to avoid circular deps; use orderId->quote->project
+
+  // Job identifiers (from Module 2 — Lot-Block system)
+  lotBlock       String? // "Lot 14 Block 3"
+  community      String? // "Canyon Ridge"
+  builderName    String // Denormalized for quick display
+  builderContact String?
+  jobAddress     String?
+  bwpPoNumber    String? // Builder's PO number
+
+  // Scope
+  scopeType ScopeType
+  dropPlan  String? // "Single Drop", "Staged", "Multi-Drop"
+
+  // Assignment
+  assignedPMId String?
+  assignedPM   Staff?  @relation("AssignedPM", fields: [assignedPMId], references: [id], onDelete: SetNull)
+
+  // Status tracking (from Module 2 T-72/T-48/T-24 workflow)
+  status          JobStatus @default(CREATED)
+  readinessCheck  Boolean   @default(false) // T-72 readiness confirmed
+  materialsLocked Boolean   @default(false) // T-48 materials locked
+  loadConfirmed   Boolean   @default(false) // T-24 truck loaded
+  scheduledDate   DateTime? // Target delivery/install date
+  actualDate      DateTime?
+  completedAt     DateTime?
+
+  // Relationships
+  decisionNotes      DecisionNote[]
+  scheduleEntries    ScheduleEntry[]
+  materialPicks      MaterialPick[]
+  qualityChecks      QualityCheck[]
+  deliveries         Delivery[]
+  installations      Installation[]
+  tasks              Task[]
+  activities         Activity[]
+  btProjectMappings  BTProjectMapping[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([assignedPMId])
   @@index([scheduledDate])
   @@index([builderName])
   @@index([community])
-  @@index([divisionId])
-  @@index([orderId])
-  @@index([projectId])
-  @@index([builderName, community], map: "idx_job_builder_community")
-  @@index([assignedPMId, status], map: "idx_job_pm_status")
-  @@index([status, scheduledDate], map: "idx_job_status_scheduled")
 }
 
+enum JobStatus {
+  CREATED
+  READINESS_CHECK // T-72: materials & specs being verified
+  MATERIALS_LOCKED // T-48: materials confirmed in InFlow
+  IN_PRODUCTION // Manufacturing/assembly
+  STAGED // Warehouse staging complete
+  LOADED // On truck
+  IN_TRANSIT // Delivery en route
+  DELIVERED // On site
+  INSTALLING // Install crew working
+  PUNCH_LIST // Fixes/touch-ups needed
+  COMPLETE // All work done
+  INVOICED // Invoice sent
+  CLOSED // Payment received, job archived
+}
+
+enum ScopeType {
+  DOORS_ONLY
+  TRIM_ONLY
+  DOORS_AND_TRIM
+  HARDWARE_ONLY
+  FULL_PACKAGE // Doors + trim + hardware + install
+  CUSTOM
+}
+
+// ─── DECISION NOTES (from Module 2 — ECI Bolt SOPs) ────────────────
+// Standardized communication log for each job with typed prefixes
+
 model DecisionNote {
-  id            String           @id @default(cuid())
-  jobId         String
-  authorId      String
-  noteType      DecisionNoteType
-  subject       String
-  body          String
-  priority      NotePriority     @default(NORMAL)
+  id       String @id @default(cuid())
+  jobId    String
+  job      Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  authorId String
+  author   Staff  @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  noteType DecisionNoteType
+  subject  String // Brief summary
+  body     String // Full note content (BLUF format)
+  priority NotePriority     @default(NORMAL)
+
+  // Linked artifacts
   attachmentUrl String?
   relatedTaskId String?
-  createdAt     DateTime         @default(now())
-  author        Staff            @relation(fields: [authorId], references: [id])
-  job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@index([jobId])
   @@index([noteType])
-  @@index([authorId])
-  @@index([createdAt])
-  @@index([priority])
-  @@index([jobId, createdAt(sort: Desc)], map: "idx_decisionnote_job_created")
 }
 
+enum DecisionNoteType {
+  READINESS // [READINESS] — T-72 check
+  LOCK // [LOCK] — Materials locked
+  ARRIVED // [ARRIVED] — Material arrived
+  COMPLETE // [COMPLETE] — Job completed
+  EXCEPTION // [EXCEPTION] — Issue found
+  ESCALATION // [ESCALATION] — Needs manager attention
+  APPROVAL // [APPROVAL] — Pricing/change approved
+  CLOSEOUT // [CLOSEOUT] — Job closing notes
+  GENERAL // General note
+}
+
+enum NotePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ─── ACTIVITIES (CRM interaction log) ───────────────────────────────
+
 model Activity {
-  id           String       @id @default(cuid())
-  staffId      String
-  builderId    String?
-  jobId        String?
+  id      String @id @default(cuid())
+  staffId String
+  staff   Staff  @relation(fields: [staffId], references: [id], onDelete: Restrict)
+
+  // Polymorphic link — activity can relate to a builder, job, or both
+  builderId String?
+  jobId     String?
+  job       Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
   activityType ActivityType
   subject      String
   notes        String?
-  outcome      String?
+  outcome      String? // "Left voicemail", "Agreed to NET_15", etc.
+
+  // Scheduling
   scheduledAt  DateTime?
   completedAt  DateTime?
   durationMins Int?
-  createdAt    DateTime     @default(now())
-  job          Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  staff        Staff        @relation(fields: [staffId], references: [id])
+
+  createdAt DateTime @default(now())
 
   @@index([builderId])
   @@index([jobId])
   @@index([staffId])
   @@index([activityType])
-  @@index([createdAt])
-  @@index([builderId, createdAt(sort: Desc)], map: "idx_activity_builder_created")
-  @@index([jobId, createdAt(sort: Desc)], map: "idx_activity_job_created")
 }
 
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  SITE_VISIT
+  TEXT_MESSAGE
+  NOTE
+  QUOTE_SENT
+  QUOTE_FOLLOW_UP
+  ISSUE_REPORTED
+  ISSUE_RESOLVED
+}
+
+// ─── TASKS (PM action items & follow-ups) ───────────────────────────
+
 model Task {
-  id          String       @id @default(cuid())
-  assigneeId  String
-  creatorId   String
-  jobId       String?
-  builderId   String?
+  id String @id @default(cuid())
+
+  // Assignment
+  assigneeId String
+  assignee   Staff  @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  creatorId  String
+  creator    Staff  @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+
+  // Context
+  jobId     String?
+  job       Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  builderId String?
+
+  // Task details
   title       String
   description String?
   priority    TaskPriority @default(MEDIUM)
   status      TaskStatus   @default(TODO)
   category    TaskCategory @default(GENERAL)
+
   dueDate     DateTime?
   completedAt DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  dealId      String?
-  createdById String?
-  assignee    Staff        @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  creator     Staff        @relation("TaskCreator", fields: [creatorId], references: [id])
-  job         Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([assigneeId])
   @@index([jobId])
   @@index([status])
   @@index([dueDate])
-  @@index([category])
-  @@index([createdAt])
-  @@index([creatorId])
-  @@index([assigneeId, status], map: "idx_task_assignee")
-  @@index([assigneeId, status], map: "idx_task_assignee_status")
-  @@index([dealId], map: "idx_task_deal")
-  @@index([jobId, status], map: "idx_task_job_status")
-  @@index([status, dueDate], map: "idx_task_status")
-  @@index([status, dueDate], map: "idx_task_status_due")
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+}
+
+enum TaskCategory {
+  GENERAL
+  READINESS_CHECK
+  MATERIAL_VERIFICATION
+  BUILDER_COMMUNICATION
+  CREW_DISPATCH
+  QUALITY_REVIEW
+  INVOICE_FOLLOW_UP
+  SCHEDULING
+  EXCEPTION_RESOLUTION
+}
+
+// ─── SCHEDULING & DISPATCH ──────────────────────────────────────────
+
 model ScheduleEntry {
-  id                    String                  @id @default(cuid())
-  jobId                 String
-  entryType             ScheduleType
-  title                 String
-  scheduledDate         DateTime
-  scheduledTime         String?
-  crewId                String?
-  status                ScheduleStatus          @default(TENTATIVE)
-  notes                 String?
-  startedAt             DateTime?
-  completedAt           DateTime?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  ScheduleChangeRequest ScheduleChangeRequest[]
-  crew                  Crew?                   @relation(fields: [crewId], references: [id])
-  job                   Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id    String @id @default(cuid())
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  entryType     ScheduleType
+  title         String
+  scheduledDate DateTime
+  scheduledTime String? // "8:00 AM", "Morning", "PM"
+
+  // Assignment
+  crewId String?
+  crew   Crew?   @relation(fields: [crewId], references: [id], onDelete: SetNull)
+
+  status ScheduleStatus @default(TENTATIVE)
+  notes  String?
+
+  // Actual timing
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([scheduledDate])
   @@index([crewId])
   @@index([status])
-  @@index([entryType])
-  @@index([jobId])
-  @@index([crewId, scheduledDate], map: "idx_schedule_crew_date")
-  @@index([scheduledDate, status], map: "idx_schedule_date_status")
 }
 
+enum ScheduleType {
+  DELIVERY
+  INSTALLATION
+  PICKUP
+  RETURN
+  INSPECTION
+  RESTOCKING
+}
+
+enum ScheduleStatus {
+  TENTATIVE // Planned but not confirmed
+  FIRM // Confirmed with crew & builder
+  IN_PROGRESS
+  COMPLETED
+  RESCHEDULED
+  CANCELLED
+}
+
+// ─── CREWS (Delivery & Install teams) ───────────────────────────────
+
 model Crew {
-  id                   String                 @id @default(cuid())
-  name                 String
-  crewType             CrewType
-  active               Boolean                @default(true)
-  vehicleId            String?
-  vehiclePlate         String?
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  isSubcontractor      Boolean                @default(false)
-  companyName          String?
-  contactPhone         String?
-  contactEmail         String?
-  members              CrewMember[]
-  deliveries           Delivery[]
-  installations        Installation[]
-  scheduleEntries      ScheduleEntry[]
-  SubcontractorPricing SubcontractorPricing[]
+  id       String   @id @default(cuid())
+  name     String // "Delivery Team A", "Install Crew - Sean"
+  crewType CrewType
+  active   Boolean  @default(true)
+
+  // Vehicle (for delivery crews)
+  vehicleId    String?
+  vehiclePlate String?
+
+  members         CrewMember[]
+  scheduleEntries ScheduleEntry[]
+  deliveries      Delivery[]
+  installations   Installation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum CrewType {
+  DELIVERY
+  INSTALLATION
+  DELIVERY_AND_INSTALL
 }
 
 model CrewMember {
-  id        String    @id @default(cuid())
-  crewId    String
-  staffId   String
-  role      String    @default("Member")
-  createdAt DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @default(now()) @updatedAt
-  crew      Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
-  staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  crewId  String
+  crew    Crew   @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  staffId String
+  staff   Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  role    String @default("Member") // "Lead", "Member", "Driver"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([crewId, staffId])
 }
 
+// ─── DELIVERIES (from Delivery Crew SOP) ────────────────────────────
+
 model Delivery {
-  id                    String                  @id @default(cuid())
-  jobId                 String
-  crewId                String?
-  deliveryNumber        String                  @unique
-  routeOrder            Int                     @default(0)
-  address               String
-  status                DeliveryStatus          @default(SCHEDULED)
-  departedAt            DateTime?
-  arrivedAt             DateTime?
-  completedAt           DateTime?
-  loadPhotos            String[]
-  sitePhotos            String[]
-  signedBy              String?
-  damageNotes           String?
-  returnItems           String?
-  notes                 String?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  crew                  Crew?                   @relation(fields: [crewId], references: [id])
-  job                   Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  tracking              DeliveryTracking[]
-  ScheduleChangeRequest ScheduleChangeRequest[]
+  id     String  @id @default(cuid())
+  jobId  String
+  job    Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  crewId String?
+  crew   Crew?   @relation(fields: [crewId], references: [id], onDelete: SetNull)
+
+  // Route
+  deliveryNumber String @unique // "DEL-2026-0089"
+  routeOrder     Int    @default(0)
+  address        String
+
+  // Execution
+  status      DeliveryStatus @default(SCHEDULED)
+  departedAt  DateTime?
+  arrivedAt   DateTime?
+  completedAt DateTime?
+
+  // Documentation (from SOP — photo requirements)
+  loadPhotos String[] // URLs to load confirmation photos
+  sitePhotos String[] // URLs to on-site drop photos
+  signedBy   String? // Who signed for delivery
+
+  // Issues
+  damageNotes String?
+  returnItems String? // Items refused or damaged
+
+  notes String?
+
+  // Tracking updates
+  tracking DeliveryTracking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([jobId])
   @@index([status])
-  @@index([createdAt])
-  @@index([crewId])
-  @@index([crewId, status], map: "idx_delivery_crew_status")
-  @@index([jobId, status], map: "idx_delivery_job_status")
 }
+
+enum DeliveryStatus {
+  SCHEDULED
+  LOADING
+  IN_TRANSIT
+  ARRIVED
+  UNLOADING
+  COMPLETE
+  PARTIAL_DELIVERY
+  REFUSED
+  RESCHEDULED
+}
+
+// ─── DELIVERY TRACKING (Real-time delivery status updates) ────────────
 
 model DeliveryTracking {
-  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  deliveryId String
-  status     String
-  location   String?
-  notes      String?
-  eta        DateTime?
-  updatedBy  String?
-  timestamp  DateTime  @default(now())
-  delivery   Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  deliveryId  String
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
 
-  @@index([deliveryId, timestamp], map: "idx_tracking_delivery")
-  @@index([status], map: "idx_tracking_status")
+  status      String   // PICKING, LOADED, DEPARTED, EN_ROUTE, NEARBY, ARRIVED, UNLOADING, COMPLETE
+  location    String?  // Current location/address
+  notes       String?  // Additional notes
+  eta         DateTime? // Estimated time of arrival
+  updatedBy   String   // Staff ID of who made the update
+
+  timestamp   DateTime @default(now())
+
+  @@index([deliveryId])
+  @@index([timestamp])
 }
 
+// ─── INSTALLATIONS (from PM SOP — field work tracking) ──────────────
+
 model Installation {
-  id            String             @id @default(cuid())
-  jobId         String
-  crewId        String?
-  installNumber String             @unique
-  scopeNotes    String?
+  id     String  @id @default(cuid())
+  jobId  String
+  job    Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  crewId String?
+  crew   Crew?   @relation(fields: [crewId], references: [id], onDelete: SetNull)
+
+  installNumber String  @unique // "INS-2026-0063"
+  scopeNotes    String? // What's being installed
+
   status        InstallationStatus @default(SCHEDULED)
   scheduledDate DateTime?
   startedAt     DateTime?
   completedAt   DateTime?
-  passedQC      Boolean            @default(false)
-  punchItems    String?
-  beforePhotos  String[]
-  afterPhotos   String[]
-  notes         String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  crew          Crew?              @relation(fields: [crewId], references: [id])
-  job           Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // Quality
+  passedQC   Boolean @default(false)
+  punchItems String? // Punch list items if any
+
+  // Documentation
+  beforePhotos String[]
+  afterPhotos  String[]
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([jobId])
   @@index([status])
-  @@index([createdAt])
-  @@index([crewId])
-  @@index([crewId, status], map: "idx_install_crew_status")
-  @@index([jobId, status], map: "idx_install_job_status")
 }
 
+enum InstallationStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETE
+  PUNCH_LIST
+  REWORK
+  CANCELLED
+}
+
+// ─── QUALITY CONTROL (from Manufacturing SOP) ───────────────────────
+
 model QualityCheck {
-  id             String   @id @default(cuid())
-  jobId          String?
-  inspectorId    String
-  checkType      QCType
-  result         QCResult
-  notes          String?
-  defectCodes    String[]
-  photos         String[]
-  createdAt      DateTime @default(now())
-  materialPickId String?
-  inspector      Staff    @relation(fields: [inspectorId], references: [id])
-  job            Job?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  jobId       String?
+  job         Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  inspectorId String
+  inspector   Staff   @relation(fields: [inspectorId], references: [id], onDelete: Restrict)
+
+  checkType   QCType
+  result      QCResult
+  notes       String?
+  defectCodes String[] // Standard defect codes
+
+  // Photos
+  photos String[]
+
+  createdAt DateTime @default(now())
 
   @@index([jobId])
   @@index([checkType])
 }
 
-model Vendor {
-  id                    String          @id @default(cuid())
-  name                  String
-  code                  String          @unique
-  contactName           String?
-  email                 String?
-  phone                 String?
-  address               String?
-  website               String?
-  accountNumber         String?
-  avgLeadDays           Int?
-  onTimeRate            Float?
-  active                Boolean         @default(true)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  paymentTerms          String?
-  minOrderValue         Float?          @default(0)
-  bulkDiscountThreshold Float?
-  bulkDiscountPercent   Float?
-  riskScore             Float?          @default(0)
-  creditLimit           Float?          @default(0)
-  creditUsed            Float?          @default(0)
-  creditHold            Boolean?        @default(false)
-  paymentTermDays       Int?            @default(30)
-  earlyPayDiscount      Float?          @default(0)
-  earlyPayDays          Int?            @default(0)
-  taxId                 String?
-  notes                 String?
-  inflowVendorId        String?         @unique
-  purchaseOrders        PurchaseOrder[]
-  vendorProducts        VendorProduct[]
-
-  @@index([code])
-  @@index([active])
+enum QCType {
+  PRE_PRODUCTION // Before assembly
+  IN_PROCESS // During manufacturing
+  FINAL_UNIT // After assembly, before staging
+  PRE_DELIVERY // Load check
+  POST_INSTALL // On-site quality
 }
 
+enum QCResult {
+  PASS
+  FAIL
+  CONDITIONAL_PASS // Minor issues noted but acceptable
+}
+
+// ─── PURCHASING & INVENTORY ─────────────────────────────────────────
+
+model Vendor {
+  id            String  @id @default(cuid())
+  name          String // "DW Distribution", "Boise Cascade"
+  code          String  @unique // "DW", "BC", "MASO"
+  contactName   String?
+  email         String?
+  phone         String?
+  address       String?
+  website       String?
+  accountNumber String? // Abel's account # with this vendor
+
+  // Performance
+  avgLeadDays Int?
+  onTimeRate  Float? // 0-1
+
+  active Boolean @default(true)
+
+  // InFlow sync
+  inflowVendorId String? @unique
+
+  purchaseOrders PurchaseOrder[]
+  vendorProducts VendorProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+}
+
+// Maps products to their vendor/supplier catalog entries
 model VendorProduct {
-  id           String   @id @default(cuid())
-  vendorId     String
-  productId    String
-  vendorSku    String
-  vendorName   String?
-  vendorCost   Float?
-  minOrderQty  Int      @default(1)
+  id        String @id @default(cuid())
+  vendorId  String
+  vendor    Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  productId String
+  // Not adding direct Product relation to keep migration clean
+
+  vendorSku    String // Vendor's own SKU
+  vendorName   String? // Vendor's product name
+  vendorCost   Float? // What we pay the vendor
+  minOrderQty  Int     @default(1)
   leadTimeDays Int?
-  preferred    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  preferred    Boolean @default(false) // Is this the preferred vendor for this product?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([vendorId, productId])
   @@index([productId])
 }
 
 model PurchaseOrder {
-  id                   String              @id @default(cuid())
-  poNumber             String              @unique
-  vendorId             String
-  createdById          String
-  approvedById         String?
-  status               POStatus            @default(DRAFT)
-  subtotal             Float               @default(0)
-  shippingCost         Float               @default(0)
-  total                Float               @default(0)
-  orderedAt            DateTime?
-  expectedDate         DateTime?
-  receivedAt           DateTime?
-  notes                String?
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  qbTxnId              String?
-  qbSyncedAt           DateTime?
-  aiGenerated          Boolean?            @default(false)
-  recommendationId     String?
-  consolidationGroupId String?
-  projectedLeadDays    Int?
-  actualLeadDays       Int?
-  savingsVsLastOrder   Float?              @default(0)
-  inflowId             String?             @unique
-  inflowVendorId       String?
-  approvedBy           Staff?              @relation("POApprover", fields: [approvedById], references: [id])
-  createdBy            Staff               @relation("POCreator", fields: [createdById], references: [id])
-  vendor               Vendor              @relation(fields: [vendorId], references: [id])
-  items                PurchaseOrderItem[]
+  id       String @id @default(cuid())
+  poNumber String @unique // "PO-2026-0451"
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  createdById  String
+  createdBy    Staff   @relation("POCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedById String?
+  approvedBy   Staff?  @relation("POApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  status       POStatus @default(DRAFT)
+  subtotal     Float    @default(0)
+  shippingCost Float    @default(0)
+  total        Float    @default(0)
+
+  // Dates
+  orderedAt    DateTime?
+  expectedDate DateTime? // Expected delivery from vendor
+  receivedAt   DateTime?
+
+  notes String?
+
+  // QuickBooks Desktop integration
+  qbTxnId String?   // Bill TxnID in QB
+  qbSyncedAt DateTime? // Last sync timestamp
+
+  // InFlow sync
+  inflowId       String? @unique
+  inflowVendorId String?
+
+  items PurchaseOrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([vendorId])
   @@index([status])
   @@index([qbTxnId])
-  @@index([createdAt])
-  @@index([createdById])
-  @@index([status, expectedDate], map: "idx_po_status_expected")
-  @@index([vendorId, status], map: "idx_po_vendor_status")
+}
+
+enum POStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SENT_TO_VENDOR
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
 }
 
 model PurchaseOrderItem {
   id              String        @id @default(cuid())
   purchaseOrderId String
-  productId       String?
-  vendorSku       String
-  description     String
-  quantity        Int
-  unitCost        Float
-  lineTotal       Float
-  receivedQty     Int           @default(0)
-  damagedQty      Int           @default(0)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @default(now()) @updatedAt
-  jobId           String?
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 
+  productId   String? // Link to Abel product if applicable
+  vendorSku   String
+  description String
+  quantity    Int
+  unitCost    Float
+  lineTotal   Float
+
+  // Receiving
+  receivedQty Int @default(0)
+  damagedQty  Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([purchaseOrderId])
-  @@index([jobId])
-  @@index([productId])
 }
 
+// ─── INVENTORY TRACKING ─────────────────────────────────────────────
+
 model InventoryItem {
-  id             String    @id @default(cuid())
-  productId      String    @unique
-  onHand         Int       @default(0)
-  committed      Int       @default(0)
-  onOrder        Int       @default(0)
-  available      Int       @default(0)
-  reorderPoint   Int       @default(0)
-  reorderQty     Int       @default(0)
-  warehouseZone  String?
-  binLocation    String?
+  id        String @id @default(cuid())
+  productId String @unique
+  // Product relation not added to keep migration simple; join by productId
+
+  // Denormalized product info (for fast queries without joins)
+  sku         String?
+  productName String?
+  category    String?
+
+  // Stock levels
+  onHand    Int @default(0)
+  committed Int @default(0) // Reserved for jobs
+  onOrder   Int @default(0) // On purchase orders
+  available Int @default(0) // onHand - committed
+
+  // Thresholds
+  reorderPoint Int @default(0)
+  reorderQty   Int @default(0)
+  safetyStock  Int @default(5)
+  maxStock     Int @default(200)
+
+  // Cost & usage tracking
+  unitCost      Float   @default(0)
+  avgDailyUsage Float   @default(0)
+  daysOfSupply  Float   @default(0)
+
+  // Location
+  warehouseZone String? // "A1", "B3", "Staging"
+  binLocation   String? // "Shelf 4 Row 2"
+  location      String  @default("MAIN_WAREHOUSE")
+
+  // Status
+  status String @default("IN_STOCK")
+
   lastCountedAt  DateTime?
   lastReceivedAt DateTime?
-  updatedAt      DateTime  @updatedAt
-  minStockLevel  Int?      @default(0)
-  sku            String?
-  productName    String?
-  category       String?
-  safetyStock    Int       @default(5)
-  maxStock       Int       @default(200)
-  unitCost       Float     @default(0)
-  avgDailyUsage  Float     @default(0)
-  daysOfSupply   Float     @default(0)
-  location       String    @default("MAIN_WAREHOUSE")
-  status         String    @default("IN_STOCK")
+
+  updatedAt DateTime @updatedAt
 
   @@index([productId])
   @@index([sku])
   @@index([category])
   @@index([status])
-  @@index([lastCountedAt])
-  @@index([warehouseZone])
-  @@index([category], map: "idx_inventory_category")
-  @@index([productId], map: "idx_inventory_product")
-  @@index([sku], map: "idx_inventory_sku")
-  @@index([status], map: "idx_inventory_status")
 }
 
+// ─── INVOICING & AR ─────────────────────────────────────────────────
+
 model Invoice {
-  id                 String             @id @default(cuid())
-  invoiceNumber      String             @unique
-  builderId          String
-  orderId            String?
-  jobId              String?
-  createdById        String
-  subtotal           Float
-  taxAmount          Float              @default(0)
-  total              Float
-  amountPaid         Float              @default(0)
-  balanceDue         Float
-  status             InvoiceStatus      @default(DRAFT)
-  paymentTerm        PaymentTerm
-  issuedAt           DateTime?
-  dueDate            DateTime?
-  paidAt             DateTime?
-  notes              String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  qbTxnId            String?
-  qbSyncedAt         DateTime?
-  qbSyncStatus       String?            @default("PENDING")
-  stripeSessionId    String?
-  stripePaymentUrl   String?
-  stripeCustomerId   String?
-  paymentPlanOffered Boolean            @default(false)
-  paymentPlanDetails Json?
-  collectionActions  CollectionAction[]
-  createdBy          Staff              @relation(fields: [createdById], references: [id])
+  id            String @id @default(cuid())
+  invoiceNumber String @unique // "INV-2026-1234"
+  builderId     String
+  // Builder relation not added to keep migration simple
+
+  orderId String?
+  jobId   String?
+
+  createdById String
+  createdBy   Staff  @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  // Amounts
+  subtotal   Float
+  taxAmount  Float @default(0)
+  total      Float
+  amountPaid Float @default(0)
+  balanceDue Float
+
+  // Status & payment
+  status      InvoiceStatus @default(DRAFT)
+  paymentTerm PaymentTerm
+  issuedAt    DateTime?
+  dueDate     DateTime?
+  paidAt      DateTime?
+
+  notes String?
+
+  // QuickBooks Desktop integration
+  qbTxnId String?   // Invoice TxnID in QB
+  qbSyncedAt DateTime? // Last sync timestamp
+  qbSyncStatus String? // PENDING, SYNCED, FAILED
+
   items              InvoiceItem[]
   payments           Payment[]
+  collectionActions  CollectionAction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([builderId])
   @@index([status])
   @@index([dueDate])
-  @@index([builderId, status])
-  @@index([createdById])
-  @@index([issuedAt])
-  @@index([orderId])
-  @@index([builderId], map: "idx_inv_builder")
-  @@index([createdAt], map: "idx_inv_created")
-  @@index([status], map: "idx_inv_status")
-  @@index([builderId, status], map: "idx_invoice_builder_status")
-  @@index([jobId], map: "idx_invoice_job")
-  @@index([status, dueDate], map: "idx_invoice_status_due")
+  @@index([qbTxnId])
+  @@index([qbSyncStatus])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+  WRITE_OFF
 }
 
 model InvoiceItem {
-  id          String  @id @default(cuid())
-  invoiceId   String
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   productId   String?
   description String
   quantity    Int
   unitPrice   Float
   lineTotal   Float
-  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  invoiceId       String
-  amount          Float
-  method          PaymentMethod
-  reference       String?
-  receivedAt      DateTime      @default(now())
-  notes           String?
-  builderId       String?
-  status          String        @default("PENDING")
-  referenceNumber String?
-  processedById   String?
-  processedAt     DateTime?
-  createdAt       DateTime?     @default(now())
-  invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount     Float
+  method     PaymentMethod
+  reference  String? // Check number, transaction ID
+  receivedAt DateTime      @default(now())
+  notes      String?
 
   @@index([invoiceId])
-  @@index([builderId], map: "idx_payment_builder")
-  @@index([invoiceId], map: "idx_payment_invoice")
-  @@index([status], map: "idx_payment_status")
 }
 
+enum PaymentMethod {
+  CHECK
+  ACH
+  WIRE
+  CREDIT_CARD
+  CASH
+  OTHER
+}
+
+// ─── MATERIAL PICKS (from InFlow SOP — Pre-Drop checks) ────────────
+
 model MaterialPick {
-  id              String     @id @default(cuid())
-  jobId           String
-  productId       String?
-  sku             String
-  description     String
-  quantity        Int
-  pickedQty       Int        @default(0)
-  status          PickStatus @default(PENDING)
-  zone            String?
-  pickedAt        DateTime?
-  verifiedAt      DateTime?
-  notes           String?
-  createdAt       DateTime   @default(now())
-  pickedById      String?
-  verifiedById    String?
-  orderItemId     String?
-  bomEntryId      String?
-  parentProductId String?
-  allocationId    String?
-  job             Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id    String @id @default(cuid())
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  productId   String?
+  sku         String
+  description String
+  quantity    Int
+  pickedQty   Int     @default(0)
+
+  status     PickStatus @default(PENDING)
+  zone       String? // Warehouse zone
+  pickedAt   DateTime?
+  verifiedAt DateTime?
+
+  notes String?
+
+  createdAt DateTime @default(now())
 
   @@index([jobId])
   @@index([status])
-  @@index([createdAt])
-  @@index([productId])
-  @@index([jobId, status], map: "idx_materialpick_job_status")
 }
+
+enum PickStatus {
+  PENDING
+  PICKING
+  PICKED
+  VERIFIED
+  SHORT // Not enough stock
+  SUBSTITUTED // Different product pulled
+}
+
+// ─── ENUMS FOR MESSAGING & NOTIFICATIONS ────────────────────────
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  CHANNEL
+  DEPARTMENT
+}
+
+enum NotificationType {
+  JOB_UPDATE
+  TASK_ASSIGNED
+  MESSAGE
+  PO_APPROVAL
+  DELIVERY_UPDATE
+  QC_ALERT
+  INVOICE_OVERDUE
+  SCHEDULE_CHANGE
+  SYSTEM
+}
+
+// ─── MESSAGING (Internal staff communication) ───────────────────
 
 model Message {
   id             String       @id @default(cuid())
   conversationId String
-  senderId       String
-  body           String
-  readBy         String[]
-  createdAt      DateTime     @default(now())
-  threadId       String?
-  mentions       Json?        @default("[]")
-  reactions      Json?        @default("[]")
-  isEdited       Boolean?     @default(false)
-  editedAt       DateTime?    @db.Timestamptz(6)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         Staff        @relation("MessagesSent", fields: [senderId], references: [id])
+  senderId       String
+  sender         Staff        @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
+
+  body   String
+  readBy String[] // Array of staff IDs who read it
+
+  createdAt DateTime @default(now())
 
   @@index([conversationId])
   @@index([senderId])
-  @@index([createdAt])
-  @@index([conversationId, createdAt(sort: Desc)], map: "idx_message_conv_created")
 }
 
 model Conversation {
-  id              String                    @id @default(cuid())
+  id              String           @id @default(cuid())
   type            ConversationType
-  name            String?
-  departmentScope String?
-  createdById     String
-  lastMessageAt   DateTime?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
-  createdBy       Staff                     @relation("ConversationCreator", fields: [createdById], references: [id])
-  participants    ConversationParticipant[]
-  messages        Message[]
+  name            String? // For groups/channels
+  departmentScope String? // Department name for department channels (e.g. "EXECUTIVE", "SALES")
+
+  createdById String
+  createdBy   Staff  @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  lastMessageAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
-  @@index([createdAt])
 }
 
 model ConversationParticipant {
   id             String       @id @default(cuid())
   conversationId String
-  staffId        String
-  joinedAt       DateTime     @default(now())
-  lastReadAt     DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  staffId        String
   staff          Staff        @relation("ConversationParticipants", fields: [staffId], references: [id], onDelete: Cascade)
+
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
 
   @@unique([conversationId, staffId])
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  staffId   String
-  type      NotificationType
-  title     String
-  body      String
-  link      String?
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  staff     Staff            @relation("StaffNotifications", fields: [staffId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  staffId String
+  staff   Staff  @relation("StaffNotifications", fields: [staffId], references: [id], onDelete: Cascade)
+
+  type  NotificationType
+  title String
+  body  String
+  link  String? // URL to navigate to
+  read  Boolean          @default(false)
+
+  createdAt DateTime @default(now())
 
   @@index([staffId])
   @@index([read])
   @@index([type])
-  @@index([staffId, read, createdAt(sort: Desc)], map: "idx_notification_staff")
-  @@index([staffId, createdAt(sort: Desc)], map: "idx_notification_staff_created")
-  @@index([staffId, read], map: "idx_notification_staff_read")
 }
 
+// ─── SALES PIPELINE & DEALS ─────────────────────────────────────────
+// Full CRM pipeline for sales reps to track prospects through to close
+
 model Deal {
-  id                String            @id @default(cuid())
-  dealNumber        String            @unique
-  companyName       String
-  contactName       String
-  contactEmail      String?
-  contactPhone      String?
-  address           String?
-  city              String?
-  state             String?
-  zip               String?
-  stage             DealStage         @default(PROSPECT)
-  probability       Int               @default(10)
-  dealValue         Float             @default(0)
-  source            DealSource        @default(OUTBOUND)
+  id         String @id @default(cuid())
+  dealNumber String @unique // e.g., "DEAL-2026-0042"
+
+  // Prospect / Builder info
+  companyName  String
+  contactName  String
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  city         String?
+  state        String?
+  zip          String?
+
+  // Pipeline
+  stage       DealStage    @default(PROSPECT)
+  probability Int          @default(10) // 0-100% win probability
+  dealValue   Float        @default(0) // Estimated annual revenue
+  source      DealSource   @default(OUTBOUND)
+
+  // Dates
   expectedCloseDate DateTime?
   actualCloseDate   DateTime?
   lostDate          DateTime?
   lostReason        String?
-  ownerId           String
-  builderId         String?
-  description       String?
-  notes             String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @default(now()) @updatedAt
-  contracts         Contract[]
-  owner             Staff             @relation("DealOwner", fields: [ownerId], references: [id])
-  activities        DealActivity[]
-  documentRequests  DocumentRequest[]
+
+  // Assignment
+  ownerId String
+  owner   Staff  @relation("DealOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  // Link to builder once converted
+  builderId String?
+
+  // Notes
+  description String? // What they build, territory, volume, etc.
+  notes       String?
+
+  // Relationships
+  activities     DealActivity[]
+  contracts      Contract[]
+  documentRequests DocumentRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([ownerId])
   @@index([stage])
   @@index([builderId])
   @@index([expectedCloseDate])
-  @@index([createdAt])
-  @@index([source])
-  @@index([ownerId, stage], map: "idx_deal_owner_stage")
-  @@index([stage, expectedCloseDate], map: "idx_deal_stage_close")
 }
 
+enum DealStage {
+  PROSPECT        // Initial lead — not yet contacted
+  DISCOVERY       // First contact made, gathering info
+  WALKTHROUGH     // Site walkthrough or showroom visit scheduled/done
+  BID_SUBMITTED   // Formal bid/proposal sent
+  BID_REVIEW      // Builder reviewing bid
+  NEGOTIATION     // Active negotiation on terms/pricing
+  WON             // Deal closed — moving to onboarding
+  LOST            // Deal lost to competitor or abandoned
+  ONBOARDED       // Builder fully set up on platform
+}
+
+enum DealSource {
+  OUTBOUND     // Rep cold outreach
+  REFERRAL     // Referred by existing builder
+  INBOUND      // Builder inquired via website/phone
+  TRADE_SHOW   // Met at trade show / event
+  REACTIVATION // Previous customer re-engagement
+}
+
+// ─── DEAL ACTIVITY LOG ──────────────────────────────────────────────
+
 model DealActivity {
-  id           String           @id @default(cuid())
-  dealId       String
-  staffId      String
-  type         DealActivityType
-  subject      String
-  notes        String?
-  outcome      String?
+  id     String @id @default(cuid())
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  staffId String
+  staff   Staff  @relation("DealActivities", fields: [staffId], references: [id], onDelete: Restrict)
+
+  type    DealActivityType
+  subject String
+  notes   String?
+  outcome String?
+
+  // Follow-up scheduling
   followUpDate DateTime?
-  followUpDone Boolean          @default(false)
-  createdAt    DateTime         @default(now())
-  deal         Deal             @relation(fields: [dealId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  staff        Staff            @relation("DealActivities", fields: [staffId], references: [id])
+  followUpDone Boolean   @default(false)
+
+  createdAt DateTime @default(now())
 
   @@index([dealId])
   @@index([staffId])
@@ -1225,224 +1666,357 @@ model DealActivity {
   @@index([followUpDate])
 }
 
+enum DealActivityType {
+  CALL
+  EMAIL
+  MEETING
+  SITE_VISIT
+  TEXT
+  NOTE
+  STAGE_CHANGE
+  BID_SENT
+  BID_REVISED
+  CONTRACT_SENT
+  CONTRACT_SIGNED
+  DOCUMENT_REQUESTED
+  DOCUMENT_RECEIVED
+  FOLLOW_UP
+}
+
+// ─── CONTRACTS ──────────────────────────────────────────────────────
+
 model Contract {
-  id                  String                @id @default(dbgenerated("(gen_random_uuid())::text"))
-  organizationId      String
-  contractNumber      String                @unique
-  title               String
-  description         String?
-  paymentTerm         PaymentTerm           @default(NET_30)
-  discountPercent     Float                 @default(0)
-  rebatePercent       Float                 @default(0)
-  status              ContractStatus        @default(DRAFT)
-  effectiveDate       DateTime?
-  expirationDate      DateTime?
-  signedAt            DateTime?
-  signedBy            String?
-  autoRenew           Boolean               @default(false)
-  notes               String?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @default(now()) @updatedAt
-  dealId              String?
-  builderId           String?
-  type                ContractType?         @default(SUPPLY_AGREEMENT)
-  creditLimit         Float?
-  estimatedAnnual     Float?
-  terms               String?
-  specialClauses      String?
-  startDate           DateTime?
-  endDate             DateTime?
-  sentDate            DateTime?
-  signedDate          DateTime?
-  expiresDate         DateTime?
-  createdById         String?
-  documentUrl         String?
-  templateUsed        String?
-  divisionId          String?
-  createdBy           Staff?                @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  deal                Deal?                 @relation(fields: [dealId], references: [id])
-  Division            Division?             @relation(fields: [divisionId], references: [id])
-  BuilderOrganization BuilderOrganization   @relation(fields: [organizationId], references: [id])
-  ContractPricingTier ContractPricingTier[]
+  id             String @id @default(cuid())
+  contractNumber String @unique // e.g., "CTR-2026-0015"
+
+  dealId    String?
+  deal      Deal?   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  builderId String?
+
+  // Contract details
+  title           String
+  type            ContractType     @default(SUPPLY_AGREEMENT)
+  status          ContractStatus   @default(DRAFT)
+
+  // Financial terms
+  paymentTerm     PaymentTerm?
+  creditLimit     Float?
+  estimatedAnnual Float?           // Estimated annual volume
+  discountPercent Float?           // Negotiated discount
+
+  // Content
+  terms           String?          // Contract terms text
+  specialClauses  String?          // Special conditions
+
+  // Dates
+  startDate       DateTime?
+  endDate         DateTime?
+  sentDate        DateTime?
+  signedDate      DateTime?
+  expiresDate     DateTime?
+
+  // People
+  createdById String?
+  createdBy   Staff?  @relation("ContractCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // File
+  documentUrl     String?          // Uploaded signed contract PDF
+  templateUsed    String?          // Which template was used
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([dealId])
   @@index([builderId])
   @@index([status])
   @@index([createdById])
-  @@index([divisionId])
-  @@index([organizationId])
-  @@index([startDate])
 }
 
+enum ContractType {
+  SUPPLY_AGREEMENT    // Standard supply agreement
+  MASTER_SERVICE      // Master service agreement
+  PRICING_AGREEMENT   // Custom pricing terms
+  NDA                 // Non-disclosure agreement
+  CREDIT_APPLICATION  // Credit application
+}
+
+enum ContractStatus {
+  DRAFT               // Being prepared
+  INTERNAL_REVIEW     // Internal review before sending
+  SENT                // Sent to builder for review
+  BUILDER_REVIEW      // Builder reviewing
+  REVISION_REQUESTED  // Builder requested changes
+  SIGNED              // Both parties signed
+  ACTIVE              // Currently active
+  EXPIRED             // Past end date
+  TERMINATED          // Early termination
+}
+
+// ─── DOCUMENT REQUESTS (COI, W-9, Credit Apps, etc.) ────────────────
+
 model DocumentRequest {
-  id            String                @id @default(cuid())
-  dealId        String?
-  builderId     String?
+  id        String @id @default(cuid())
+
+  dealId    String?
+  deal      Deal?   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  builderId String?
+
+  // What's needed
   documentType  DocumentType
   title         String
   description   String?
+
+  // Status tracking
   status        DocumentRequestStatus @default(PENDING)
+
+  // Who's involved
   requestedById String
-  fileUrl       String?
+  requestedBy   Staff  @relation("DocRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  // File tracking
+  fileUrl       String?     // Uploaded document URL
   fileName      String?
+
+  // Dates
   dueDate       DateTime?
   receivedDate  DateTime?
-  expiresDate   DateTime?
-  reminderSent  Boolean               @default(false)
+  expiresDate   DateTime?   // For COIs and other expiring docs
+
+  // Follow-up
+  reminderSent  Boolean @default(false)
   reminderDate  DateTime?
   notes         String?
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @default(now()) @updatedAt
-  deal          Deal?                 @relation(fields: [dealId], references: [id])
-  requestedBy   Staff                 @relation("DocRequester", fields: [requestedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([dealId])
   @@index([builderId])
   @@index([status])
   @@index([documentType])
   @@index([requestedById])
-  @@index([dueDate])
 }
 
+enum DocumentType {
+  COI                  // Certificate of Insurance
+  W9                   // W-9 Tax Form
+  CREDIT_APPLICATION   // Credit application
+  BUSINESS_LICENSE     // Business license
+  TAX_EXEMPT_CERT      // Tax exemption certificate
+  BOND                 // Surety bond
+  REFERENCES           // Trade/credit references
+  FINANCIAL_STATEMENT  // Financial statement
+  OTHER                // Custom document
+}
+
+enum DocumentRequestStatus {
+  PENDING     // Requested, not yet sent to builder
+  SENT        // Request sent to builder
+  RECEIVED    // Document received
+  APPROVED    // Document reviewed and approved
+  REJECTED    // Document rejected (needs resubmission)
+  EXPIRED     // Document has expired
+}
+
+// ─── QUICKBOOKS DESKTOP INTEGRATION ───────────────────────────────────────
+
 model QBSyncQueue {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  action      String
-  entityType  String
-  entityId    String
-  qbTxnId     String?
-  qbListId    String?
-  requestXml  String?
-  responseXml String?
-  payload     Json      @default("{}")
-  status      String    @default("QUEUED")
-  attempts    Int       @default(0)
-  maxAttempts Int       @default(3)
-  lastError   String?
-  processedAt DateTime?
-  createdAt   DateTime  @default(now())
+  id           String    @id @default(cuid())
+  action       String    // CUSTOMER_ADD, INVOICE_ADD, PO_ADD, PAYMENT_ADD
+  entityType   String    // BUILDER, INVOICE, PO, PAYMENT
+  entityId     String    // ID of the entity being synced
+  qbTxnId      String?   // QB Transaction ID (from response)
+  qbListId     String?   // QB List ID (from response)
+  requestXml   String?   // qbXML request sent to QB
+  responseXml  String?   // qbXML response from QB
+  payload      Json?     // Additional data needed for sync
+  status       String    @default("pending") // pending, processing, completed, failed
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  lastError    String?
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
 
   @@index([status])
-  @@index([entityType, status], map: "QBSyncQueue_entityType_idx")
-  @@index([status, createdAt], map: "idx_qbsync_status_created")
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
 }
 
 model SyncLog {
-  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  provider         String
-  syncType         String
-  direction        String
-  status           String
-  recordsProcessed Int       @default(0)
-  recordsCreated   Int       @default(0)
-  recordsUpdated   Int       @default(0)
-  recordsSkipped   Int       @default(0)
-  recordsFailed    Int       @default(0)
-  errorMessage     String?
-  errorDetails     Json?
-  startedAt        DateTime  @default(now())
-  completedAt      DateTime?
-  durationMs       Int?
-  integration      String    @default("QUICKBOOKS")
-  entity           String    @default("Invoice")
-  entityId         String?
-  details          Json?
-  error            String?
-  syncedAt         DateTime?
-  createdAt        DateTime  @default(now())
+  id              String    @id @default(cuid())
+  provider        String    // QUICKBOOKS_DESKTOP, INFLOW, etc.
+  syncType        String    // CUSTOMER_ADD, INVOICE_ADD, etc. or 'full'
+  direction       String    @default("PUSH") // PUSH, PULL, BIDIRECTIONAL
+  status          String    // SUCCESS, PARTIAL, FAILED
+  recordsProcessed Int      @default(0)
+  recordsCreated  Int       @default(0)
+  recordsUpdated  Int       @default(0)
+  recordsSkipped  Int       @default(0)
+  recordsFailed   Int       @default(0)
+  errorMessage    String?
+  startedAt       DateTime
+  completedAt     DateTime
+  durationMs      Int
+
+  createdAt DateTime @default(now())
 
   @@index([provider])
   @@index([status])
   @@index([startedAt])
-  @@index([completedAt(sort: Desc)])
-  @@index([syncType])
-  @@index([integration, status], map: "idx_synclog_integration")
+}
+
+// ─── INTEGRATION CONFIGURATION ────────────────────────────────────────────
+
+enum IntegrationProvider {
+  INFLOW
+  ECI_BOLT
+  GMAIL
+  HYPHEN
+  QUICKBOOKS_DESKTOP
+  BUILDERTREND
+}
+
+enum IntegrationStatus {
+  PENDING        // Not yet configured
+  CONFIGURING    // Config being tested
+  CONNECTED      // Successfully authenticated
+  DISCONNECTED   // Explicitly disconnected
+  ERROR          // Connection failed
 }
 
 model IntegrationConfig {
-  id               String              @id @default(dbgenerated("(gen_random_uuid())::text"))
-  provider         IntegrationProvider @unique
-  name             String
-  apiKey           String?
-  apiSecret        String?
-  accessToken      String?
-  refreshToken     String?
-  tokenExpiresAt   DateTime?
-  baseUrl          String?
-  companyId        String?
-  webhookSecret    String?
-  gmailWatchExpiry DateTime?
-  gmailHistoryId   String?
-  syncEnabled      Boolean             @default(true)
-  syncInterval     Int                 @default(300)
-  lastSyncAt       DateTime?
-  lastSyncStatus   String?
-  lastSyncError    String?
-  status           IntegrationStatus   @default(PENDING)
-  configuredById   String?
-  metadata         Json?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @default(now()) @updatedAt
+  id                String                @id @default(cuid())
+  provider          IntegrationProvider
+  name              String?
+  apiKey            String?               // OAuth2 client_id, API key, etc.
+  apiSecret         String?               // OAuth2 client_secret, API secret, etc.
+  accessToken       String?               // OAuth2 access token
+  refreshToken      String?               // OAuth2 refresh token
+  tokenExpiresAt    DateTime?             // Access token expiration
+  baseUrl           String?               // API base URL
+  companyId         String?               // Company/tenant ID in the external system
+  webhookSecret     String?               // Secret for webhook signature verification
+  syncEnabled       Boolean               @default(true)
+  syncInterval      Int                   @default(3600) // Seconds between auto-syncs
+  status            IntegrationStatus     @default(PENDING)
+  lastSyncAt        DateTime?
+  lastSyncStatus    String?               // SUCCESS, PARTIAL, FAILED
+  metadata          Json?                 // Provider-specific metadata
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
+  @@unique([provider])
   @@index([status])
+  @@index([lastSyncAt])
 }
+
+// ─── BUILDERTREND PROJECT MAPPING ────────────────────────────────────────
 
 model BTProjectMapping {
-  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  btProjectId    String    @unique(map: "BTProjectMapping_btProjectId_unique")
-  btProjectName  String?
-  btBuilderName  String?
-  btCommunity    String?
-  btLot          String?
-  btStatus       String?
-  btScheduleData Json?     @default("{}")
-  builderId      String?
-  projectId      String?
-  jobId          String?
-  lastSyncedAt   DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now()) @updatedAt
-  builder        Builder?  @relation(fields: [builderId], references: [id])
-  job            Job?      @relation(fields: [jobId], references: [id])
+  id                String     @id @default(cuid())
+
+  // BuilderTrend project info
+  btProjectId       String     @unique
+  btProjectName     String
+  btBuilderName     String?
+  btCommunity       String?
+  btLot             String?
+  btBlock           String?
+  btStatus          String     // ACTIVE, COMPLETED, ARCHIVED, etc.
+  btScheduleData    Json?      // Cached schedule data from BT
+
+  // Abel mapping
+  builderId         String?
+  builder           Builder?   @relation(fields: [builderId], references: [id], onDelete: SetNull)
+  projectId         String?
+  // Note: No direct Project relation to avoid circular dependencies; use through Order/Quote
+  jobId             String?
+  job               Job?       @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  // Sync tracking
+  lastSyncedAt      DateTime?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   @@index([builderId])
+  @@index([jobId])
+  @@index([btStatus])
+  @@index([lastSyncedAt])
 }
 
+// ─── COLLECTIONS WORKFLOW ───────────────────────────────────────
+
 model CollectionRule {
-  id           String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name         String
-  daysOverdue  Int
-  actionType   String
-  channel      String   @default("EMAIL")
-  templateBody String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  name          String
+  daysOverdue   Int      // Trigger this rule when invoice is X days overdue
+  actionType    String   // REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, PHONE_CALL, PAYMENT_PLAN
+  channel       String   // EMAIL, SMS, PHONE, LETTER
+  templateBody  String?  // Email template body
+  isActive      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([daysOverdue])
+  @@index([isActive])
 }
 
 model CollectionAction {
-  id                   String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  invoiceId            String
-  actionType           String
-  channel              String    @default("EMAIL")
-  sentAt               DateTime  @default(now())
-  sentBy               String?
-  notes                String?
-  response             String?
-  respondedAt          DateTime?
-  createdAt            DateTime  @default(now())
-  requiresApproval     Boolean   @default(false)
-  approvedAt           DateTime?
-  approvedBy           String?
-  toneUsed             String?
-  intelligenceSnapshot Json?
-  invoice              Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  @@index([createdAt])
-  @@index([invoiceId], map: "idx_collection_invoice")
-  @@index([actionType, sentAt], map: "idx_collection_type_sent")
+  actionType String   // REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, PHONE_CALL, PAYMENT_PLAN
+  channel    String   // EMAIL, SMS, PHONE, LETTER
+  sentAt     DateTime @default(now())
+  sentBy     String?  // Staff member ID who sent it
+  notes      String?  // Additional notes on the action taken
+  response   String?  // Builder's response if applicable
+  respondedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([actionType])
+  @@index([sentAt])
 }
 
+// ─── OUTREACH AUTOMATION ────────────────────────────────────────────
+// NOTE: Outreach tables (OutreachSequence, OutreachStep, OutreachEnrollment,
+// OutreachEnrollmentStep, OutreachTemplate) are created dynamically via
+// CREATE TABLE IF NOT EXISTS in the outreach-engine API route.
+// They use raw SQL ($queryRawUnsafe / $executeRawUnsafe) and are NOT
+// managed by Prisma migrations to avoid schema drift issues.
+
+// ─── NEW ENUMS FOR ADDITIONAL FEATURES ───────────────────────────────
+
+enum CategoryType {
+  CORE
+  EXTENDED
+  PREMIUM
+}
+
+enum BuilderRole {
+  PRIMARY
+  SECONDARY
+  CONTRACTOR
+}
+
+enum LeadSource {
+  REFERRAL
+  INBOUND
+  OUTBOUND
+  TRADE_SHOW
+  OTHER
+}
+
+// ─── NEW ACCOUNT MANAGEMENT MODELS ───────────────────────────────────
+
 model AccountCategoryMargin {
-  id           String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id           String       @id @default(cuid())
   builderId    String
   category     String
   categoryType CategoryType @default(CORE)
@@ -1450,41 +2024,41 @@ model AccountCategoryMargin {
   minMargin    Float        @default(0.15)
   notes        String?
   createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
   Builder      Builder      @relation(fields: [builderId], references: [id], onDelete: Cascade)
 
-  @@unique([builderId, category], map: "AccountCategoryMargin_builder_cat_key")
+  @@unique([builderId, category])
   @@index([builderId])
 }
 
 model AccountMarginTarget {
-  id                  String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id                  String   @id @default(cuid())
   builderId           String   @unique
   targetBlendedMargin Float    @default(0.30)
   notes               String?
   setById             String?
   createdAt           DateTime @default(now())
-  updatedAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
   Builder             Builder  @relation(fields: [builderId], references: [id], onDelete: Cascade)
 }
 
 model AccountReviewTrigger {
-  id          String    @id
+  id          String    @id @default(cuid())
   builderId   String
   triggerType String
   severity    String?   @default("MEDIUM")
   description String?
   isResolved  Boolean?  @default(false)
   resolvedBy  String?
-  resolvedAt  DateTime? @db.Timestamptz(6)
-  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
 
-  @@index([builderId], map: "idx_review_trigger_builder")
-  @@index([isResolved], map: "idx_review_trigger_resolved")
+  @@index([builderId])
+  @@index([isResolved])
 }
 
 model AccountTouchpoint {
-  id           String    @id
+  id           String    @id @default(cuid())
   builderId    String
   staffId      String?
   touchType    String
@@ -1492,23 +2066,23 @@ model AccountTouchpoint {
   subject      String?
   notes        String?
   outcome      String?
-  followUpDate DateTime? @db.Date
-  createdAt    DateTime? @default(now()) @db.Timestamptz(6)
+  followUpDate DateTime?
+  createdAt    DateTime  @default(now())
 
-  @@index([builderId], map: "idx_touchpoint_builder")
-  @@index([createdAt], map: "idx_touchpoint_date")
+  @@index([builderId])
+  @@index([createdAt])
 }
 
 model AgentConfig {
-  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id          String   @id @default(cuid())
   agentRole   String
   configKey   String
   configValue Json
   description String?
   updatedBy   String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@unique([agentRole, configKey], map: "AgentConfig_role_key_unique")
-  @@index([agentRole], map: "idx_agentconfig_role")
+  @@unique([agentRole, configKey])
+  @@index([agentRole])
 }
