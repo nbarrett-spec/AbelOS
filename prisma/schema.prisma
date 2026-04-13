@@ -53,6 +53,10 @@ model Builder {
   referralsSent      BuilderReferral[] @relation("ReferrerReferrals")
   referralsReceived  BuilderReferral[] @relation("ReferredBuilder")
 
+  // Account margin & review
+  categoryMargins    AccountCategoryMargin[]
+  marginTarget       AccountMarginTarget?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
