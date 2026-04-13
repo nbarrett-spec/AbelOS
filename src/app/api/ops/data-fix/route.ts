@@ -27,6 +27,8 @@ export async function POST(request: NextRequest) {
         return await fixOrderAssignments(body)
       case 'delete-test-records':
         return await deleteTestRecords()
+      case 'clean-inflow-orders':
+        return await cleanInflowOrders(body)
       case 'run-query':
         return await runQuery(body)
       case 'run-update':
@@ -465,6 +467,129 @@ async function fixOrderAssignments(body: any) {
     dryRun: false,
     results,
     message: `Reassigned ${results.reassigned} orders ($${results.reassignedRevenue.toFixed(2)}) from "${defaultBuilderName}" to "Unmatched InFlow Customers". ${results.keptOnDefault} orders kept on ${defaultBuilderName} (no InFlow ID — likely legitimate).`,
+  })
+}
+
+// Clean up InFlow-imported orders: fix statuses and dates based on InFlow data
+async function cleanInflowOrders(body: any) {
+  const { dryRun = true } = body
+
+  // Step 1: Get current order status breakdown
+  const statusesBefore: any[] = await prisma.$queryRawUnsafe(`
+    SELECT status::text, COUNT(*)::int as count FROM "Order" GROUP BY status ORDER BY count DESC
+  `)
+
+  // Step 2: Orders imported from InFlow that are stuck in RECEIVED but are old (>30 days)
+  // These should be COMPLETE — InFlow Fulfilled/Invoiced orders are done
+  const staleReceived: any[] = await prisma.$queryRawUnsafe(`
+    SELECT o.id, o."orderNumber", o.status::text as status, o."paymentStatus"::text as "paymentStatus",
+      o."createdAt", o."inflowOrderId",
+      EXTRACT(DAY FROM (NOW() - o."createdAt"))::int as "daysOld",
+      b."companyName"
+    FROM "Order" o
+    JOIN "Builder" b ON o."builderId" = b.id
+    WHERE o.status = 'RECEIVED'::"OrderStatus"
+      AND o."createdAt" < NOW() - INTERVAL '30 days'
+    ORDER BY o."createdAt" ASC
+  `)
+
+  // Step 3: Also get CONFIRMED, IN_PRODUCTION, DELIVERED orders that are old and should be COMPLETE
+  const staleInProgress: any[] = await prisma.$queryRawUnsafe(`
+    SELECT o.id, o."orderNumber", o.status::text as status, o."paymentStatus"::text as "paymentStatus",
+      o."createdAt",
+      EXTRACT(DAY FROM (NOW() - o."createdAt"))::int as "daysOld",
+      b."companyName"
+    FROM "Order" o
+    JOIN "Builder" b ON o."builderId" = b.id
+    WHERE o.status IN ('CONFIRMED'::"OrderStatus", 'IN_PRODUCTION'::"OrderStatus", 'DELIVERED'::"OrderStatus")
+      AND o."createdAt" < NOW() - INTERVAL '90 days'
+    ORDER BY o."createdAt" ASC
+  `)
+
+  // Step 4: Fix payment statuses — orders with paidAt set should be PAID, not PENDING
+  const wrongPayment: any[] = await prisma.$queryRawUnsafe(`
+    SELECT o.id, o."orderNumber", o."paymentStatus"::text as "paymentStatus", o."paidAt"
+    FROM "Order" o
+    WHERE o."paidAt" IS NOT NULL AND o."paymentStatus" != 'PAID'::"PaymentStatus"
+  `)
+
+  if (dryRun) {
+    return NextResponse.json({
+      action: 'clean-inflow-orders',
+      dryRun: true,
+      statusesBefore,
+      staleReceivedCount: staleReceived.length,
+      staleReceivedSample: staleReceived.slice(0, 10),
+      staleInProgressCount: staleInProgress.length,
+      staleInProgressSample: staleInProgress.slice(0, 10),
+      wrongPaymentCount: wrongPayment.length,
+      plan: {
+        step1: `${staleReceived.length} orders RECEIVED >30 days → COMPLETE`,
+        step2: `${staleInProgress.length} orders CONFIRMED/IN_PRODUCTION/DELIVERED >90 days → COMPLETE`,
+        step3: `${wrongPayment.length} orders with paidAt but wrong paymentStatus → PAID`,
+      },
+      message: 'Set dryRun: false to execute all fixes',
+    })
+  }
+
+  // EXECUTE fixes
+  let completedFromReceived = 0
+  let completedFromInProgress = 0
+  let paymentFixed = 0
+
+  // Fix 1: RECEIVED > 30 days → COMPLETE
+  const fix1 = await prisma.$executeRawUnsafe(`
+    UPDATE "Order"
+    SET status = 'COMPLETE'::"OrderStatus",
+        "paymentStatus" = CASE
+          WHEN "paidAt" IS NOT NULL THEN 'PAID'::"PaymentStatus"
+          WHEN "paymentStatus" = 'PENDING'::"PaymentStatus" THEN 'INVOICED'::"PaymentStatus"
+          ELSE "paymentStatus"
+        END,
+        "updatedAt" = NOW()
+    WHERE status = 'RECEIVED'::"OrderStatus"
+      AND "createdAt" < NOW() - INTERVAL '30 days'
+  `)
+  completedFromReceived = fix1 as number
+
+  // Fix 2: CONFIRMED/IN_PRODUCTION/DELIVERED > 90 days → COMPLETE
+  const fix2 = await prisma.$executeRawUnsafe(`
+    UPDATE "Order"
+    SET status = 'COMPLETE'::"OrderStatus",
+        "paymentStatus" = CASE
+          WHEN "paidAt" IS NOT NULL THEN 'PAID'::"PaymentStatus"
+          WHEN "paymentStatus" = 'PENDING'::"PaymentStatus" THEN 'INVOICED'::"PaymentStatus"
+          ELSE "paymentStatus"
+        END,
+        "updatedAt" = NOW()
+    WHERE status IN ('CONFIRMED'::"OrderStatus", 'IN_PRODUCTION'::"OrderStatus", 'DELIVERED'::"OrderStatus")
+      AND "createdAt" < NOW() - INTERVAL '90 days'
+  `)
+  completedFromInProgress = fix2 as number
+
+  // Fix 3: Payment status where paidAt exists
+  const fix3 = await prisma.$executeRawUnsafe(`
+    UPDATE "Order"
+    SET "paymentStatus" = 'PAID'::"PaymentStatus", "updatedAt" = NOW()
+    WHERE "paidAt" IS NOT NULL AND "paymentStatus" != 'PAID'::"PaymentStatus"
+  `)
+  paymentFixed = fix3 as number
+
+  // Get updated status breakdown
+  const statusesAfter: any[] = await prisma.$queryRawUnsafe(`
+    SELECT status::text, COUNT(*)::int as count FROM "Order" GROUP BY status ORDER BY count DESC
+  `)
+
+  return NextResponse.json({
+    action: 'clean-inflow-orders',
+    dryRun: false,
+    completedFromReceived,
+    completedFromInProgress,
+    paymentFixed,
+    totalFixed: completedFromReceived + completedFromInProgress,
+    statusesBefore,
+    statusesAfter,
+    message: `Cleaned up ${completedFromReceived + completedFromInProgress} stale orders → COMPLETE. Fixed ${paymentFixed} payment statuses.`,
   })
 }
 
