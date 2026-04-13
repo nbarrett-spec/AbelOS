@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
         id: d.id,
         type: 'Closing Soon',
         title: `Deal closing: ${d.dealNumber}`,
-        description: `${d.companyName} expected to close on ${new Date(d.expectedCloseDate).toLocaleDateString()}`,
+        description: `${d.companyName} expected to close on ${d.expectedCloseDate ? new Date(d.expectedCloseDate).toLocaleDateString() : 'TBD'}`,
         dueDate: d.expectedCloseDate,
         priority: 'HIGH',
         relatedEntityId: d.id,
