@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let executedWorkflow
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let executedWorkflow: any
 
     switch (workflowType) {
       case 'BLUEPRINT_TO_QUOTE':
