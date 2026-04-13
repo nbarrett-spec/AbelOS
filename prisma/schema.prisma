@@ -1512,5 +1512,3 @@ model AgentConfig {
   @@unique([agentRole, configKey], map: "AgentConfig_role_key_unique")
   @@index([agentRole], map: "idx_agentconfig_role")
 }
-
-model 
