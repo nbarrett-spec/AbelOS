@@ -19,6 +19,7 @@ export default function AdminLayout({
     { href: '/admin/products', label: 'Products', icon: '📦' },
     { href: '/admin/quotes', label: 'Quotes', icon: '📄' },
     { href: '/admin/crons', label: 'Cron Jobs', icon: '⏱️' },
+    { href: '/admin/hyphen', label: 'Hyphen', icon: '🔌' },
   ]
 
   return (
