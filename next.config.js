@@ -30,8 +30,8 @@ const nextConfig = {
       // Prevent MIME type sniffing
       { key: 'X-Content-Type-Options', value: 'nosniff' },
 
-      // Clickjacking protection (SAMEORIGIN allows framing by same-origin pages)
-      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      // Clickjacking protection — DENY to match middleware-level setting
+      { key: 'X-Frame-Options', value: 'DENY' },
 
       // Referrer Policy: only send referrer to same-origin requests
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
@@ -58,33 +58,24 @@ const nextConfig = {
       }]),
 
       // Content-Security-Policy
-      // In development: permissive to allow hot reload and dev tools
-      // In production: stricter but still allows Sentry and Vercel Analytics
+      // Next.js App Router inlines RSC payloads as <script> tags, so
+      // 'unsafe-inline' and 'unsafe-eval' are required in script-src.
+      // We keep the existing Neon allowlist for any client-side connections
+      // and add Sentry/Vercel Insights as additive improvements.
       {
         key: 'Content-Security-Policy',
-        value: isProduction
-          ? [
-              "default-src 'self'",
-              "script-src 'self' https://*.sentry.io https://*.vercel-insights.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.sentry.io https://*.vercel-insights.com https://*.ingest.sentry.io wss:",
-              "frame-ancestors 'self'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join('; ')
-          : [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.vercel-insights.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.sentry.io https://*.vercel-insights.com https://*.ingest.sentry.io wss:",
-              "frame-ancestors 'self'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join('; '),
+        value: [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.vercel-insights.com",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "img-src 'self' data: blob: https:",
+          "font-src 'self' data: https://fonts.gstatic.com",
+          "connect-src 'self' https://ep-aged-sun-ansm1q2l-pooler.c-6.us-east-1.aws.neon.tech https://*.neon.tech https://*.sentry.io https://*.ingest.sentry.io https://*.vercel-insights.com wss:",
+          "frame-src 'self'",
+          "frame-ancestors 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join('; '),
       },
     ]
 
