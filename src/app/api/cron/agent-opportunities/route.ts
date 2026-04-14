@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { detectAndQueueOpportunities } from '@/lib/agent-orchestrator'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
@@ -24,10 +25,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const runId = await startCronRun('agent-opportunities', 'schedule')
+  const startTime = Date.now()
+
   try {
     console.log('[Agent Cron] Starting opportunity detection...')
-
-    const startTime = Date.now()
 
     // Run opportunity detection
     await detectAndQueueOpportunities()
@@ -36,15 +38,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Agent Cron] Completed in ${duration}ms`)
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       message: 'Opportunity detection completed',
       duration_ms: duration,
       timestamp: new Date().toISOString(),
-    })
+    }
+    await finishCronRun(runId, 'SUCCESS', duration, { result: payload })
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('[Agent Cron] Error:', error)
-
+    await finishCronRun(runId, 'FAILURE', Date.now() - startTime, {
+      error: error instanceof Error ? error.message : String(error),
+    })
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',

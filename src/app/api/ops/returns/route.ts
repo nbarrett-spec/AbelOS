@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/returns
@@ -290,6 +291,8 @@ export async function POST(request: NextRequest) {
         await prisma.$queryRawUnsafe(updateInventoryQuery, item.quantity, item.productId)
       }
     }
+
+    await audit(request, 'CREATE', 'Return', returnId, { returnNumber, totalAmount, itemCount: items.length })
 
     return NextResponse.json(
       {

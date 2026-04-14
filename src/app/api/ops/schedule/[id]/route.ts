@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 interface RouteParams {
   params: {
@@ -251,6 +252,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       jobAddress: entry.job?.jobAddress,
     };
 
+    await audit(request, 'UPDATE', 'ScheduleEntry', id, { status, crewId })
+
     return NextResponse.json(enrichedEntry, { status: 200 });
   } catch (error) {
     console.error('PATCH /api/ops/schedule/[id] error:', error);
@@ -272,6 +275,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       `DELETE FROM "ScheduleEntry" WHERE "id" = $1`,
       id
     );
+
+    await audit(request, 'DELETE', 'ScheduleEntry', id, {})
 
     return NextResponse.json(
       { message: 'Schedule entry deleted successfully' },

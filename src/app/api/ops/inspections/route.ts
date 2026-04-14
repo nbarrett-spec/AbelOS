@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/inspections — List inspections with filters
 export async function GET(request: NextRequest) {
@@ -83,6 +84,9 @@ export async function POST(request: NextRequest) {
        RETURNING *`,
       templateId, jobId, inspectorId || null, scheduledDate ? new Date(scheduledDate) : null, notes || null
     )
+
+    const inspectionId = result[0]?.id
+    await audit(request, 'CREATE', 'Inspection', inspectionId, { templateId, jobId })
 
     return NextResponse.json({ inspection: result[0] }, { status: 201 })
   } catch (error: any) {

@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 
 interface AutomationAction {
   type:
@@ -63,9 +64,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const runId = await startCronRun('run-automations', 'schedule')
+  const startTime = Date.now()
+
   try {
     console.log('[Automation Cron] Starting automation execution...')
-    const startTime = Date.now()
 
     const stats = {
       rulesEvaluated: 0,
@@ -85,12 +88,14 @@ export async function GET(request: NextRequest) {
 
     if (!rules || rules.length === 0) {
       console.log('[Automation Cron] No enabled automation rules found')
-      return NextResponse.json({
+      const noRulesPayload = {
         success: true,
         message: 'No automation rules to run',
         stats,
         timestamp: new Date().toISOString(),
-      })
+      }
+      await finishCronRun(runId, 'SUCCESS', Date.now() - startTime, { result: noRulesPayload })
+      return NextResponse.json(noRulesPayload)
     }
 
     console.log(`[Automation Cron] Found ${rules.length} enabled rules`)
@@ -165,16 +170,23 @@ export async function GET(request: NextRequest) {
       `[Automation Cron] Completed in ${duration}ms: ${stats.rulesEvaluated} evaluated, ${stats.rulesTriggered} triggered, ${stats.actionsExecuted} actions`
     )
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       message: 'Automation execution completed',
       stats,
       duration_ms: duration,
       timestamp: new Date().toISOString(),
+    }
+    await finishCronRun(runId, stats.errors.length > 0 ? 'FAILURE' : 'SUCCESS', duration, {
+      result: payload,
+      error: stats.errors.length > 0 ? stats.errors.join('; ').slice(0, 4000) : undefined,
     })
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('[Automation Cron] Fatal error:', error)
-
+    await finishCronRun(runId, 'FAILURE', Date.now() - startTime, {
+      error: error instanceof Error ? error.message : String(error),
+    })
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',

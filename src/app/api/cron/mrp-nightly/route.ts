@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { runMrpProjection } from '@/lib/mrp'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 
 interface MrpNightlyResult {
   asOf: string
@@ -28,16 +29,18 @@ export async function GET(request: NextRequest) {
   if (!expectedSecret || cronSecret !== expectedSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  return runMrpNightly()
+  return runMrpNightly('schedule')
 }
 
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
-  return runMrpNightly()
+  return runMrpNightly('manual')
 }
 
-async function runMrpNightly(): Promise<NextResponse<MrpNightlyResult>> {
+async function runMrpNightly(triggeredBy: 'schedule' | 'manual' = 'schedule'): Promise<NextResponse<MrpNightlyResult>> {
+  const runId = await startCronRun('mrp-nightly', triggeredBy)
+  const started = Date.now()
   const result: MrpNightlyResult = {
     asOf: new Date().toISOString(),
     productsProjected: 0,
@@ -176,10 +179,18 @@ async function runMrpNightly(): Promise<NextResponse<MrpNightlyResult>> {
       }
     }
 
+    await finishCronRun(runId, result.errors.length > 0 ? 'FAILURE' : 'SUCCESS', Date.now() - started, {
+      result,
+      error: result.errors.length > 0 ? result.errors.join('; ') : undefined,
+    })
     return NextResponse.json(result)
   } catch (error: any) {
     console.error('[mrp-nightly] error:', error)
     result.errors.push(`fatal: ${error?.message || error}`)
+    await finishCronRun(runId, 'FAILURE', Date.now() - started, {
+      result,
+      error: error?.message || String(error),
+    })
     return NextResponse.json(result, { status: 500 })
   }
 }

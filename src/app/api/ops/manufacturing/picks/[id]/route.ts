@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { recomputeAvgDailyUsage } from '@/lib/mrp'
+import { audit } from '@/lib/audit'
 
 export async function PATCH(
   request: NextRequest,
@@ -64,6 +65,8 @@ export async function PATCH(
         console.warn('[picks PATCH] recomputeAvgDailyUsage failed:', mrpErr?.message)
       }
     }
+
+    await audit(request, 'UPDATE', 'MaterialPick', id, { status, pickedQty })
 
     return NextResponse.json(pick)
   } catch (error) {

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/sales/contracts — List contracts with filters
 export async function GET(request: NextRequest) {
@@ -139,6 +140,8 @@ export async function POST(request: NextRequest) {
     )
 
     contract.createdBy = creator[0] || { id: staffId }
+
+    await audit(request, 'CREATE', 'Contract', contract.id, { contractNumber: contract.contractNumber, title, type })
 
     return NextResponse.json(contract, { status: 201 })
   } catch (error: any) {

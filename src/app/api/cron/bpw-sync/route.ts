@@ -15,6 +15,7 @@ export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import { syncCommunities, syncJobs, syncSchedules } from '@/lib/integrations/bpw'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const runId = await startCronRun('bpw-sync', 'schedule')
   const results: any[] = []
   const startedAt = Date.now()
 
@@ -55,9 +57,14 @@ export async function GET(request: NextRequest) {
   const totalDuration = Date.now() - startedAt
   const hasErrors = results.some(r => r.status === 'FAILED')
 
-  return NextResponse.json({
+  const payload = {
     success: !hasErrors,
     durationMs: totalDuration,
     results,
+  }
+  await finishCronRun(runId, hasErrors ? 'FAILURE' : 'SUCCESS', totalDuration, {
+    result: payload,
+    error: hasErrors ? results.filter(r => r.status === 'FAILED').map(r => `${r.type}: ${r.error}`).join('; ') : undefined,
   })
+  return NextResponse.json(payload)
 }

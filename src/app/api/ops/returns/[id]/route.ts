@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/returns/[id]
@@ -247,6 +248,9 @@ export async function PATCH(
       `
       await prisma.$queryRawUnsafe(updateVendorQuery, newCredit, currentReturn.vendorId)
     }
+
+    const auditAction = status ? (status === 'CREDIT_ISSUED' ? 'CREDIT_ISSUED' : status === 'REJECTED' ? 'REJECT' : 'UPDATE') : 'UPDATE'
+    await audit(request, auditAction, 'Return', returnId, { previousStatus: currentReturn.status, newStatus: status || currentReturn.status, creditReceived })
 
     return NextResponse.json({
       ...updatedReturn,

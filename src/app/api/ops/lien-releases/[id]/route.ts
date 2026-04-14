@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // PATCH /api/ops/lien-releases/[id] — Update lien release (issue, sign, etc.)
 export async function PATCH(
@@ -47,6 +48,9 @@ export async function PATCH(
     if (result.length === 0) {
       return NextResponse.json({ error: 'Lien release not found' }, { status: 404 })
     }
+
+    const auditAction = status ? (status === 'SIGNED' ? 'SIGN' : status === 'ISSUED' ? 'ISSUE' : 'UPDATE') : 'UPDATE'
+    await audit(request, auditAction, 'LienRelease', params.id, { newStatus: status, amount, signedBy })
 
     return NextResponse.json({ release: result[0] })
   } catch (error: any) {

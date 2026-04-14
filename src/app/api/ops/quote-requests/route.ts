@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 interface QuoteRequestRecord {
   id: string
@@ -300,6 +301,9 @@ export async function PATCH(request: NextRequest) {
       ...params,
       id
     )
+
+    const auditAction = status && status !== oldStatus ? (status === 'ACCEPTED' ? 'ACCEPT' : status === 'DECLINED' ? 'DECLINE' : 'UPDATE') : 'UPDATE'
+    await audit(request, auditAction, 'QuoteRequest', id, { previousStatus: oldStatus, newStatus: status })
 
     // Create notification for builder if status changed
     if (status && status !== oldStatus) {

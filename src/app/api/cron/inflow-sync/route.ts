@@ -21,6 +21,7 @@ import {
   syncPurchaseOrders as syncInflowPurchaseOrders,
   syncSalesOrders as syncInflowSalesOrders,
 } from '@/lib/integrations/inflow'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest) {
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const runId = await startCronRun('inflow-sync', 'schedule')
+  const started = Date.now()
 
   try {
     console.log('[InFlow Sync] Starting scheduled sync...')
@@ -71,7 +75,7 @@ export async function GET(request: NextRequest) {
       `[InFlow Sync] Completed in ${duration}ms — ${summary.totalProcessed} records processed, ${summary.totalCreated} created, ${summary.totalUpdated} updated`
     )
 
-    return NextResponse.json({
+    const payload = {
       success: !summary.anyFailures,
       message: summary.anyFailures
         ? 'InFlow sync completed with errors'
@@ -80,10 +84,17 @@ export async function GET(request: NextRequest) {
       summary,
       results,
       timestamp: new Date().toISOString(),
+    }
+    await finishCronRun(runId, summary.anyFailures ? 'FAILURE' : 'SUCCESS', Date.now() - started, {
+      result: payload,
+      error: summary.anyFailures ? 'One or more InFlow sync operations failed' : undefined,
     })
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('[InFlow Sync] Error:', error)
-
+    await finishCronRun(runId, 'FAILURE', Date.now() - started, {
+      error: error instanceof Error ? error.message : String(error),
+    })
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',

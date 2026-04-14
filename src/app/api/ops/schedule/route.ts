@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -350,6 +351,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    await audit(request, 'CREATE', 'ScheduleEntry', entryId, { entryType, jobId, crewId })
 
     // Transform result
     const entry: any = {

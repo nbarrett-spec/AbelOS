@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/inspections/[id] — Get single inspection with template items
 export async function GET(
@@ -76,6 +77,8 @@ export async function PATCH(
     if (result.length === 0) {
       return NextResponse.json({ error: 'Inspection not found' }, { status: 404 })
     }
+
+    await audit(request, 'UPDATE', 'Inspection', params.id, { status, passRate })
 
     return NextResponse.json({ inspection: result[0] })
   } catch (error: any) {

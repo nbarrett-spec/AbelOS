@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // PUNCH ITEMS — Structured punch list CRUD
@@ -101,6 +102,8 @@ export async function POST(request: NextRequest) {
       dueDate ? new Date(dueDate) : null
     )
 
+    await audit(request, 'CREATE', 'PunchItem', id, { punchNumber, description, severity })
+
     return safeJson({ success: true, id, punchNumber })
   } catch (error: any) {
     console.error('[Punch Items POST]', error)
@@ -127,16 +130,19 @@ export async function PATCH(request: NextRequest) {
             "resolutionNotes" = $3, "updatedAt" = NOW()
         WHERE id = $1
       `, id, staffId, resolutionNotes || null)
+      await audit(request, 'UPDATE', 'PunchItem', id, { status: 'RESOLVED' })
     } else if (action === 'start') {
       await prisma.$executeRawUnsafe(`
         UPDATE "PunchItem" SET status = 'IN_PROGRESS', "updatedAt" = NOW() WHERE id = $1
       `, id)
+      await audit(request, 'UPDATE', 'PunchItem', id, { status: 'IN_PROGRESS' })
     } else if (action === 'reopen') {
       await prisma.$executeRawUnsafe(`
         UPDATE "PunchItem"
         SET status = 'OPEN', "resolvedAt" = NULL, "resolvedById" = NULL, "updatedAt" = NOW()
         WHERE id = $1
       `, id)
+      await audit(request, 'UPDATE', 'PunchItem', id, { status: 'OPEN' })
     } else if (action === 'update') {
       const updates: string[] = [`"updatedAt" = NOW()`]
       const params: any[] = [id]
@@ -146,6 +152,7 @@ export async function PATCH(request: NextRequest) {
       if (description) { updates.push(`description = $${pIdx}`); params.push(description); pIdx++ }
 
       await prisma.$executeRawUnsafe(`UPDATE "PunchItem" SET ${updates.join(', ')} WHERE id = $1`, ...params)
+      await audit(request, 'UPDATE', 'PunchItem', id, { severity, description })
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 import {
   sendQuoteFollowUpDay3,
   sendQuoteFollowUpDay7,
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  return processQuoteFollowups()
+  return processQuoteFollowups('schedule')
 }
 
 export async function POST(request: NextRequest) {
@@ -39,10 +40,12 @@ export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
-  return processQuoteFollowups()
+  return processQuoteFollowups('manual')
 }
 
-async function processQuoteFollowups(): Promise<NextResponse<FollowUpResult>> {
+async function processQuoteFollowups(triggeredBy: 'schedule' | 'manual' = 'schedule'): Promise<NextResponse<FollowUpResult>> {
+  const runId = await startCronRun('quote-followups', triggeredBy)
+  const startedMs = Date.now()
   const result: FollowUpResult = {
     processed: 0,
     day3Sent: 0,
@@ -167,10 +170,18 @@ async function processQuoteFollowups(): Promise<NextResponse<FollowUpResult>> {
       }
     }
 
+    await finishCronRun(runId, result.errors.length > 0 ? 'FAILURE' : 'SUCCESS', Date.now() - startedMs, {
+      result,
+      error: result.errors.length > 0 ? result.errors.join('; ') : undefined,
+    })
     return NextResponse.json(result)
   } catch (error: any) {
     console.error('Quote followup cron error:', error)
     result.errors.push(`Cron error: ${error.message}`)
+    await finishCronRun(runId, 'FAILURE', Date.now() - startedMs, {
+      result,
+      error: error?.message || String(error),
+    })
     return NextResponse.json(result, { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/lien-releases — List lien releases with filters
 export async function GET(request: NextRequest) {
@@ -94,7 +95,10 @@ export async function POST(request: NextRequest) {
       throughDate || null, notes || null
     )
 
-    return NextResponse.json({ release: result[0] }, { status: 201 })
+    const release = result[0]
+    await audit(request, 'CREATE', 'LienRelease', release.id, { amount, type, jobId })
+
+    return NextResponse.json({ release }, { status: 201 })
   } catch (error: any) {
     console.error('[LienReleases POST]', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

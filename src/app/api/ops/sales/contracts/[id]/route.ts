@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/sales/contracts/[id] — Single contract
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -180,6 +181,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
+    const auditAction = status ? (status === 'SIGNED' ? 'SIGN' : status === 'VOIDED' ? 'VOID' : 'UPDATE') : 'UPDATE'
+    await audit(request, auditAction, 'Contract', contractId, { newStatus: status, title })
+
     return NextResponse.json(contract)
   } catch (error: any) {
     console.error(error)
@@ -226,6 +230,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       `DELETE FROM "Contract" WHERE "id" = $1`,
       contractId
     )
+
+    await audit(request, 'DELETE', 'Contract', contractId, { previousStatus: contract.status })
 
     return NextResponse.json({ message: 'Contract deleted' })
   } catch (error: any) {

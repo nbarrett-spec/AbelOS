@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET  /api/ops/procurement/purchase-orders/[id] — PO detail with items
@@ -60,6 +61,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       `, staffId, id)
       // Fire automation event (non-blocking)
       fireAutomationEvent('PO_APPROVED', id).catch(e => console.warn('[Automation] event fire failed:', e))
+      await audit(request, 'APPROVE', 'PurchaseOrder', id, {})
       return NextResponse.json({ success: true, message: 'PO approved' })
     }
 
@@ -70,6 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         SET "status" = 'SENT', "updatedAt" = NOW()
         WHERE "id" = $1
       `, id)
+      await audit(request, 'SEND', 'PurchaseOrder', id, {})
       return NextResponse.json({ success: true, message: 'PO sent to supplier' })
     }
 
@@ -80,6 +83,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         SET "status" = 'IN_TRANSIT', "trackingNumber" = $1, "updatedAt" = NOW()
         WHERE "id" = $2
       `, body.trackingNumber || null, id)
+      await audit(request, 'UPDATE', 'PurchaseOrder', id, { status: 'IN_TRANSIT', trackingNumber: body.trackingNumber })
       return NextResponse.json({ success: true, message: 'PO marked in transit' })
     }
 
@@ -138,6 +142,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         fireAutomationEvent('PO_RECEIVED', id).catch(e => console.warn('[Automation] event fire failed:', e))
       }
 
+      await audit(request, 'RECEIVE', 'PurchaseOrder', id, { status: newStatus, fullyReceived, itemCount: (receivedItems || []).length })
+
       return NextResponse.json({ success: true, status: newStatus, fullyReceived })
     }
 
@@ -148,6 +154,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         SET "status" = 'CANCELLED', "updatedAt" = NOW(), "notes" = COALESCE("notes", '') || E'\nCancelled: ' || $1
         WHERE "id" = $2
       `, body.reason || 'No reason given', id)
+      await audit(request, 'CANCEL', 'PurchaseOrder', id, { reason: body.reason })
       return NextResponse.json({ success: true, message: 'PO cancelled' })
     }
 

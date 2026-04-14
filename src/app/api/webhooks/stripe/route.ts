@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyWebhookSignature } from '@/lib/stripe'
 import { notifyPaymentReceived } from '@/lib/notifications'
+import { ensureIdempotent, markWebhookProcessed, markWebhookFailed } from '@/lib/webhook'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/webhooks/stripe — Handle Stripe webhook events
@@ -31,6 +32,12 @@ export async function POST(request: NextRequest) {
   }
 
   const event = JSON.parse(body)
+
+  // ── Idempotency: Stripe guarantees event.id is unique per event ────
+  const idem = await ensureIdempotent('stripe', event.id, event.type)
+  if (idem.status === 'duplicate') {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
 
   try {
     switch (event.type) {
@@ -175,9 +182,11 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled Stripe event type: ${event.type}`)
     }
 
+    await markWebhookProcessed(idem.id)
     return NextResponse.json({ received: true })
   } catch (error: any) {
     console.error('Webhook processing error:', error)
+    await markWebhookFailed(idem.id, error?.message || String(error))
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

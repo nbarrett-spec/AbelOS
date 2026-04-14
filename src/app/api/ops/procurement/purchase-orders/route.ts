@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/purchase-orders — List POs
@@ -137,6 +138,8 @@ export async function POST(request: NextRequest) {
 
     // Fire automation event (non-blocking)
     fireAutomationEvent('PO_CREATED', poId).catch(e => console.warn('[Automation] event fire failed:', e))
+
+    await audit(request, 'CREATE', 'PurchaseOrder', poId, { poNumber: poNum, vendorId: supplierId, total, itemCount: items.length })
 
     return NextResponse.json({ purchaseOrder: pos[0], poNumber: poNum }, { status: 201 })
   } catch (error) {

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/takeoffs/[id] — Get full takeoff detail with items
 export async function GET(
@@ -105,6 +106,7 @@ export async function PATCH(
         `UPDATE "Takeoff" SET "status" = $1 WHERE "id" = $2 RETURNING *`,
         status, params.id
       )
+      await audit(request, 'UPDATE', 'Takeoff', params.id, { status })
       return NextResponse.json(result[0])
     }
 
@@ -156,6 +158,8 @@ export async function PATCH(
         item.product = products[0] || null
       }
 
+      await audit(request, 'UPDATE', 'TakeoffItem', itemId, { quantity, productId })
+
       return NextResponse.json(item)
     }
 
@@ -166,6 +170,7 @@ export async function PATCH(
         `DELETE FROM "TakeoffItem" WHERE "id" = $1`,
         itemId
       )
+      await audit(request, 'DELETE', 'TakeoffItem', itemId, {})
       return NextResponse.json({ success: true })
     }
 
@@ -188,6 +193,8 @@ export async function PATCH(
         )
         item.product = products[0] || null
       }
+
+      await audit(request, 'CREATE', 'TakeoffItem', item?.id, { category, description, quantity })
 
       return NextResponse.json(item)
     }
@@ -238,6 +245,8 @@ export async function PATCH(
 
         results.push(updatedItem)
       }
+
+      await audit(request, 'UPDATE', 'Takeoff', params.id, { itemCount: items.length })
 
       return NextResponse.json({ items: results })
     }

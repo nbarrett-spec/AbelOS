@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // CHANGE ORDERS — CRUD for change order workflow
@@ -88,6 +89,8 @@ export async function POST(request: NextRequest) {
       costImpact || 0, scheduleImpact || null
     )
 
+    await audit(request, 'CREATE', 'ChangeOrder', id, { changeNumber, reason, costImpact })
+
     return safeJson({ success: true, id, changeNumber })
   } catch (error: any) {
     console.error('[Change Orders POST]', error)
@@ -113,12 +116,14 @@ export async function PATCH(request: NextRequest) {
         SET status = 'SUBMITTED', "submittedAt" = NOW(), "updatedAt" = NOW()
         WHERE id = $1 AND status = 'DRAFT'
       `, id)
+      await audit(request, 'SUBMIT', 'ChangeOrder', id, {})
     } else if (action === 'approve') {
       await prisma.$executeRawUnsafe(`
         UPDATE "ChangeOrder"
         SET status = 'APPROVED', "approvedById" = $2, "approvedAt" = NOW(), "updatedAt" = NOW()
         WHERE id = $1 AND status = 'SUBMITTED'
       `, id, staffId)
+      await audit(request, 'APPROVE', 'ChangeOrder', id, {})
     } else if (action === 'reject') {
       await prisma.$executeRawUnsafe(`
         UPDATE "ChangeOrder"
@@ -126,12 +131,14 @@ export async function PATCH(request: NextRequest) {
             "rejectionReason" = $3, "updatedAt" = NOW()
         WHERE id = $1 AND status = 'SUBMITTED'
       `, id, staffId, rejectionReason || null)
+      await audit(request, 'REJECT', 'ChangeOrder', id, { reason: rejectionReason })
     } else if (action === 'builder_approve') {
       await prisma.$executeRawUnsafe(`
         UPDATE "ChangeOrder"
         SET "builderApproval" = true, "builderApprovedAt" = NOW(), "updatedAt" = NOW()
         WHERE id = $1
       `, id)
+      await audit(request, 'APPROVE', 'ChangeOrder', id, { builderApproved: true })
     } else if (action === 'update') {
       // Update draft fields
       const updates: string[] = [`"updatedAt" = NOW()`]
@@ -158,6 +165,7 @@ export async function PATCH(request: NextRequest) {
         `UPDATE "ChangeOrder" SET ${updates.join(', ')} WHERE id = $1`,
         ...params
       )
+      await audit(request, 'UPDATE', 'ChangeOrder', id, { costImpact })
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }

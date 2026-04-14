@@ -1,0 +1,236 @@
+import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+
+// ──────────────────────────────────────────────────────────────────────────
+// Cron run tracking.
+//
+// Every cron handler should wrap its work in withCronRun() so the /ops/crons
+// observability page can show last-run, last-result, and last-error for every
+// scheduled job. Pattern:
+//
+//   export async function GET(request: NextRequest) {
+//     // ... auth check ...
+//     return withCronRun('mrp-nightly', async () => {
+//       const result = await runMrpProjection(...)
+//       return NextResponse.json(result)
+//     })
+//   }
+//
+// The CronRun table is auto-created on first call (AuditLog pattern).
+// ──────────────────────────────────────────────────────────────────────────
+
+let tableEnsured = false
+
+async function ensureTable() {
+  if (tableEnsured) return
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "CronRun" (
+        "id" TEXT PRIMARY KEY,
+        "name" TEXT NOT NULL,
+        "status" TEXT NOT NULL DEFAULT 'RUNNING',
+        "startedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        "finishedAt" TIMESTAMPTZ,
+        "durationMs" INTEGER,
+        "result" JSONB,
+        "error" TEXT,
+        "triggeredBy" TEXT DEFAULT 'schedule'
+      )
+    `)
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_cronrun_name_started" ON "CronRun" ("name", "startedAt" DESC)
+    `)
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_cronrun_status" ON "CronRun" ("status")
+    `)
+    tableEnsured = true
+  } catch (e) {
+    tableEnsured = true
+  }
+}
+
+export type CronStatus = 'RUNNING' | 'SUCCESS' | 'FAILURE'
+
+export async function startCronRun(
+  name: string,
+  triggeredBy: 'schedule' | 'manual' = 'schedule'
+): Promise<string> {
+  try {
+    await ensureTable()
+    const id = 'cr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "CronRun" ("id", "name", "status", "startedAt", "triggeredBy")
+       VALUES ($1, $2, 'RUNNING', NOW(), $3)`,
+      id,
+      name,
+      triggeredBy
+    )
+    return id
+  } catch (e: any) {
+    logger.error('cron_run_start_failed', e, { name })
+    return ''
+  }
+}
+
+export async function finishCronRun(
+  id: string,
+  status: 'SUCCESS' | 'FAILURE',
+  durationMs: number,
+  payload: { result?: any; error?: string }
+) {
+  if (!id) return
+  try {
+    const resultJson = payload.result ? JSON.stringify(payload.result).slice(0, 20000) : null
+    await prisma.$executeRawUnsafe(
+      `UPDATE "CronRun"
+       SET "status" = $2,
+           "finishedAt" = NOW(),
+           "durationMs" = $3,
+           "result" = $4::jsonb,
+           "error" = $5
+       WHERE "id" = $1`,
+      id,
+      status,
+      Math.round(durationMs),
+      resultJson,
+      (payload.error || null)?.toString().slice(0, 4000) ?? null
+    )
+  } catch (e: any) {
+    logger.error('cron_run_finish_failed', e, { id, status })
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Higher-order wrapper: runs a cron handler function inside a tracked run.
+// The handler may return either a Response (NextResponse) or a plain object.
+//
+// On success: marks the run SUCCESS and records the JSON-serializable result.
+// On failure: marks the run FAILURE with the error message, then re-throws.
+// ──────────────────────────────────────────────────────────────────────────
+export async function withCronRun<T>(
+  name: string,
+  fn: () => Promise<T>,
+  opts: { triggeredBy?: 'schedule' | 'manual' } = {}
+): Promise<T> {
+  const runId = await startCronRun(name, opts.triggeredBy || 'schedule')
+  const started = Date.now()
+  try {
+    const result = await fn()
+
+    // If the result is a Response, we can't easily inspect its body without
+    // consuming it. Just mark success with a minimal snapshot.
+    if (result && typeof (result as any).json === 'function' && typeof (result as any).status === 'number') {
+      await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
+        result: { status: (result as any).status },
+      })
+    } else {
+      await finishCronRun(runId, 'SUCCESS', Date.now() - started, { result })
+    }
+    return result
+  } catch (err: any) {
+    await finishCronRun(runId, 'FAILURE', Date.now() - started, {
+      error: err?.message || String(err),
+    })
+    throw err
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Query helpers for the observability page.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface CronSummary {
+  name: string
+  schedule: string
+  lastRunAt: Date | null
+  lastStatus: CronStatus | null
+  lastDurationMs: number | null
+  lastError: string | null
+  successCount24h: number
+  failureCount24h: number
+}
+
+// Declared crons from vercel.json, kept in sync manually.
+export const REGISTERED_CRONS: Array<{ name: string; schedule: string; description: string }> = [
+  { name: 'quote-followups', schedule: '0 9 * * 1-5', description: 'Send follow-up emails on stale quotes' },
+  { name: 'agent-opportunities', schedule: '0 14 * * 1-5', description: 'AI agent opportunity scoring' },
+  { name: 'inflow-sync', schedule: '0 * * * *', description: 'Hourly InFlow inventory sync' },
+  { name: 'bolt-sync', schedule: '30 * * * *', description: 'Hourly Bolt inventory sync' },
+  { name: 'hyphen-sync', schedule: '15 * * * *', description: 'Hourly Hyphen BuildPro/SupplyPro sync' },
+  { name: 'bpw-sync', schedule: '45 * * * *', description: 'Hourly BPW sync' },
+  { name: 'run-automations', schedule: '0 8,13,17 * * 1-5', description: 'Run scheduled business automations' },
+  { name: 'mrp-nightly', schedule: '0 4 * * *', description: 'Nightly MRP projection + PO recommendations' },
+]
+
+export async function getCronSummaries(): Promise<CronSummary[]> {
+  try {
+    await ensureTable()
+    const rows = await prisma.$queryRawUnsafe<any[]>(`
+      WITH latest AS (
+        SELECT DISTINCT ON ("name")
+          "name", "status", "startedAt", "finishedAt", "durationMs", "error"
+        FROM "CronRun"
+        ORDER BY "name", "startedAt" DESC
+      ),
+      counts AS (
+        SELECT
+          "name",
+          COUNT(*) FILTER (WHERE "status" = 'SUCCESS' AND "startedAt" >= NOW() - INTERVAL '24 hours')::int AS "success24h",
+          COUNT(*) FILTER (WHERE "status" = 'FAILURE' AND "startedAt" >= NOW() - INTERVAL '24 hours')::int AS "failure24h"
+        FROM "CronRun"
+        GROUP BY "name"
+      )
+      SELECT
+        l.*,
+        COALESCE(c."success24h", 0) AS "success24h",
+        COALESCE(c."failure24h", 0) AS "failure24h"
+      FROM latest l
+      LEFT JOIN counts c USING ("name")
+    `)
+    const byName = new Map<string, any>(rows.map((r: any) => [r.name, r]))
+    return REGISTERED_CRONS.map((c) => {
+      const row = byName.get(c.name)
+      return {
+        name: c.name,
+        schedule: c.schedule,
+        lastRunAt: row?.startedAt || null,
+        lastStatus: (row?.status as CronStatus) || null,
+        lastDurationMs: row?.durationMs ?? null,
+        lastError: row?.error ?? null,
+        successCount24h: row?.success24h ?? 0,
+        failureCount24h: row?.failure24h ?? 0,
+      }
+    })
+  } catch (e: any) {
+    logger.error('cron_summary_read_failed', e)
+    return REGISTERED_CRONS.map((c) => ({
+      name: c.name,
+      schedule: c.schedule,
+      lastRunAt: null,
+      lastStatus: null,
+      lastDurationMs: null,
+      lastError: null,
+      successCount24h: 0,
+      failureCount24h: 0,
+    }))
+  }
+}
+
+export async function getCronRuns(name: string, limit = 20): Promise<any[]> {
+  try {
+    await ensureTable()
+    const rows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT "id", "name", "status", "startedAt", "finishedAt", "durationMs", "error", "triggeredBy"
+       FROM "CronRun"
+       WHERE "name" = $1
+       ORDER BY "startedAt" DESC
+       LIMIT $2`,
+      name,
+      limit
+    )
+    return rows
+  } catch (e: any) {
+    logger.error('cron_runs_read_failed', e, { name })
+    return []
+  }
+}

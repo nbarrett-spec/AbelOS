@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -171,6 +172,8 @@ export async function POST(request: NextRequest) {
       `, ...params)
       updated++
     }
+
+    await audit(request, 'UPDATE', 'MaterialPick', pickIds[0], { status: newStatus, count: updated })
 
     return NextResponse.json({
       success: true,
