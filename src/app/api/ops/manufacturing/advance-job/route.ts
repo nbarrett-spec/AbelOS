@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
       if (targetStatus === 'MATERIALS_LOCKED') {
         await allocateJobMaterials(jobId)
       } else if (
-        ['DELIVERED', 'COMPLETE', 'CLOSED', 'CANCELLED'].includes(targetStatus)
+        ['DELIVERED', 'COMPLETE', 'CLOSED'].includes(targetStatus)
       ) {
         await releaseJobMaterials(jobId)
       }

@@ -94,7 +94,7 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
     active_jobs AS (
       SELECT j."id" as job_id, j."orderId", j."scheduledDate"
       FROM "Job" j
-      WHERE j."status" NOT IN ('COMPLETE', 'CLOSED', 'CANCELLED')
+      WHERE j."status" NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')
         AND j."scheduledDate" IS NOT NULL
         AND j."orderId" IS NOT NULL
         AND j."scheduledDate" <= NOW() + ($1::int || ' days')::interval
@@ -249,7 +249,7 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
     `
     SELECT COUNT(*)::int as count
     FROM "Job"
-    WHERE "status" NOT IN ('COMPLETE', 'CLOSED', 'CANCELLED')
+    WHERE "status" NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')
       AND ("scheduledDate" IS NULL OR "orderId" IS NULL)
     `
   )

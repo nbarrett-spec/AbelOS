@@ -190,7 +190,7 @@ export async function PATCH(
         if (newStatus === 'MATERIALS_LOCKED') {
           await allocateJobMaterials(id)
         } else if (
-          ['DELIVERED', 'COMPLETE', 'CLOSED', 'CANCELLED'].includes(newStatus)
+          ['DELIVERED', 'COMPLETE', 'CLOSED'].includes(newStatus)
         ) {
           await releaseJobMaterials(id)
         }
