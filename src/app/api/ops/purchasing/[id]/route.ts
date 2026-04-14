@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
+import { defaultExpectedDateForPO } from '@/lib/mrp'
 
 interface RouteParams {
   params: {
@@ -156,6 +157,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         `UPDATE "PurchaseOrder" SET ${setClauses.join(', ')}, "updatedAt" = NOW() WHERE id = $1`,
         ...params_
       );
+    }
+
+    // ── MRP: backfill expectedDate from vendor lead time when PO is sent ──
+    if (status === 'SENT_TO_VENDOR' && expectedDate === undefined) {
+      try {
+        await defaultExpectedDateForPO(id)
+      } catch (mrpErr: any) {
+        console.warn('[purchasing PATCH] defaultExpectedDateForPO failed:', mrpErr?.message)
+      }
     }
 
     // Fetch updated PurchaseOrderItems for inventory processing

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { recomputeAvgDailyUsage } from '@/lib/mrp'
 
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -68,6 +69,15 @@ export async function POST(request: NextRequest) {
         pick.jobId,
         `SKU ${expectedSku} verified for pick ${pickId}`
       )
+
+      // ── MRP: refresh rolling avgDailyUsage ──
+      if (pick.productId) {
+        try {
+          await recomputeAvgDailyUsage(pick.productId)
+        } catch (mrpErr: any) {
+          console.warn('[pick-verify] recomputeAvgDailyUsage failed:', mrpErr?.message)
+        }
+      }
 
       return NextResponse.json({
         verified: true,

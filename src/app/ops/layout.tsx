@@ -208,6 +208,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/purchasing', label: 'Purchase Orders', icon: '🛒' },
       { href: '/ops/purchasing/optimize', label: 'Purchasing Optimizer', icon: '⚖️' },
       { href: '/ops/procurement-intelligence', label: 'AI Procurement Brain', icon: '🤖' },
+      { href: '/ops/mrp', label: 'MRP — Forward Demand', icon: '🎯' },
       { href: '/ops/vendors', label: 'Vendors', icon: '🏢' },
       { href: '/ops/receiving', label: 'Receiving', icon: '📥' },
       { href: '/ops/returns', label: 'Returns', icon: '🔄' },

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
 
 /**
  * POST /api/ops/manufacturing/advance-job
@@ -180,6 +181,19 @@ export async function POST(request: NextRequest) {
     await prisma.$executeRawUnsafe(`
       UPDATE "Job" SET ${updateFields.join(', ')} WHERE id = $1
     `, jobId)
+
+    // ── MRP: allocate / release inventory commitments based on transition ──
+    try {
+      if (targetStatus === 'MATERIALS_LOCKED') {
+        await allocateJobMaterials(jobId)
+      } else if (
+        ['DELIVERED', 'COMPLETE', 'CLOSED', 'CANCELLED'].includes(targetStatus)
+      ) {
+        await releaseJobMaterials(jobId)
+      }
+    } catch (mrpErr: any) {
+      console.warn('[advance-job] MRP allocation hook failed:', mrpErr?.message)
+    }
 
     // Create decision note for the transition
     await prisma.$executeRawUnsafe(`

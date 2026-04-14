@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
 
 export async function GET(
   request: NextRequest,
@@ -182,6 +183,21 @@ export async function PATCH(
     await prisma.$executeRawUnsafe(`
       UPDATE "Job" SET ${setClauses.join(', ')} WHERE "id" = $1
     `, id)
+
+    // ── MRP: allocate / release inventory commitments based on lifecycle ──
+    if (newStatus && newStatus !== currentJob.status) {
+      try {
+        if (newStatus === 'MATERIALS_LOCKED') {
+          await allocateJobMaterials(id)
+        } else if (
+          ['DELIVERED', 'COMPLETE', 'CLOSED', 'CANCELLED'].includes(newStatus)
+        ) {
+          await releaseJobMaterials(id)
+        }
+      } catch (mrpErr: any) {
+        console.warn('[Job PATCH] MRP allocation hook failed:', mrpErr?.message)
+      }
+    }
 
     // ── Auto-create Delivery when Job reaches LOADED/IN_TRANSIT ──
     if (newStatus && ['LOADED', 'IN_TRANSIT', 'STAGED'].includes(newStatus)) {

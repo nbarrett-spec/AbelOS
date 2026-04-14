@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { recomputeAvgDailyUsage } from '@/lib/mrp'
 
 export async function PATCH(
   request: NextRequest,
@@ -54,6 +55,15 @@ export async function PATCH(
 
     const picks: any = await prisma.$queryRawUnsafe(updateQuery, ...updateParams)
     const pick = picks[0] || null
+
+    // ── MRP: refresh rolling avgDailyUsage when consumption is recorded ──
+    if (pick?.productId && (status === 'PICKED' || status === 'VERIFIED')) {
+      try {
+        await recomputeAvgDailyUsage(pick.productId)
+      } catch (mrpErr: any) {
+        console.warn('[picks PATCH] recomputeAvgDailyUsage failed:', mrpErr?.message)
+      }
+    }
 
     return NextResponse.json(pick)
   } catch (error) {
