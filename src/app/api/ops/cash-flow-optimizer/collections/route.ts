@@ -9,7 +9,11 @@ export async function GET(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    // Get all outstanding invoices with builder info
+    // Get all outstanding invoices with builder info.
+    // NOTE: dueDate is DateTime? (timestamp). `CURRENT_DATE - timestamp` returns
+    // an interval, which marshals into JS as a non-numeric value and downstream
+    // arithmetic produces NaN → 500. We cast to date first so the subtraction
+    // produces an integer day count, and COALESCE to 0 for null due dates.
     const outstandingInvoices = await prisma.$queryRawUnsafe<any[]>(`
       SELECT
         i."id",
@@ -32,23 +36,29 @@ export async function GET(request: NextRequest) {
         b."creditLimit",
         b."accountBalance",
         b."status" as "builderStatus",
-        CURRENT_DATE - i."dueDate" as "daysOverdue"
+        COALESCE((CURRENT_DATE - i."dueDate"::date), 0)::int as "daysOverdue"
       FROM "Invoice" i
       JOIN "Builder" b ON i."builderId" = b."id"
       WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
-      ORDER BY i."dueDate" ASC
+      ORDER BY i."dueDate" ASC NULLS LAST
     `);
 
-    // Get payment history stats per builder
+    // Get payment history stats per builder.
+    // NOTE: EXTRACT(DAY FROM interval) returns only the day component of an
+    // interval, not the total days — so a 63-day interval returns 3. We use
+    // direct date subtraction to get the correct total day count.
     const paymentStats = await prisma.$queryRawUnsafe<any[]>(`
       SELECT
         b."id" as "builderId",
         COUNT(i."id")::int as "totalInvoices",
-        AVG(EXTRACT(DAY FROM (COALESCE(i."paidAt", CURRENT_TIMESTAMP) - i."issuedAt")))::int as "avgPaymentDays",
-        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(DAY FROM (COALESCE(i."paidAt", CURRENT_TIMESTAMP) - i."issuedAt")))::int as "medianPaymentDays",
-        SUM(CASE WHEN i."paidAt" <= i."dueDate" THEN 1 ELSE 0 END)::int as "onTimeCount"
+        COALESCE(AVG((COALESCE(i."paidAt"::date, CURRENT_DATE) - i."issuedAt"::date))::int, 0) as "avgPaymentDays",
+        COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY (COALESCE(i."paidAt"::date, CURRENT_DATE) - i."issuedAt"::date))::int, 0) as "medianPaymentDays",
+        COALESCE(SUM(CASE WHEN i."paidAt" IS NOT NULL AND i."dueDate" IS NOT NULL AND i."paidAt" <= i."dueDate" THEN 1 ELSE 0 END)::int, 0) as "onTimeCount"
       FROM "Builder" b
-      LEFT JOIN "Invoice" i ON b."id" = i."builderId" AND i."status"::text = 'PAID'
+      LEFT JOIN "Invoice" i
+        ON b."id" = i."builderId"
+        AND i."status"::text = 'PAID'
+        AND i."issuedAt" IS NOT NULL
       GROUP BY b."id"
     `);
 
