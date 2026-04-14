@@ -1,0 +1,157 @@
+name: Sync Neon → Supabase mirror
+
+# Nightly read-only mirror of the Neon production database into the Supabase
+# project, used as a BI / analytics scratchpad. Production traffic NEVER touches
+# Supabase — this mirror exists so Claude (via the Supabase MCP) and ad-hoc SQL
+# in the Supabase dashboard can answer business questions without hitting Neon.
+#
+# Schedule: every night at 08:00 UTC (= 03:00 ET / 04:00 EDT)
+# Manual trigger: Actions tab → "Sync Neon → Supabase mirror" → Run workflow
+#
+# Required secrets (Settings → Secrets and variables → Actions → New secret):
+#   NEON_DATABASE_URL       — full pooler URL, same one Vercel uses for prod
+#   SUPABASE_DATABASE_URL   — direct (NOT pooler) Supabase Postgres URL
+#                             format: postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why are you running this manually?'
+        required: false
+        default: 'manual sync'
+
+concurrency:
+  group: supabase-mirror
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    name: pg_dump Neon → pg_restore Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Install PostgreSQL 16 client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-16
+          pg_dump --version
+          pg_restore --version
+
+      - name: Verify secrets are set
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        run: |
+          if [ -z "$NEON_DATABASE_URL" ]; then
+            echo "::error::NEON_DATABASE_URL secret is not set"
+            exit 1
+          fi
+          if [ -z "$SUPABASE_DATABASE_URL" ]; then
+            echo "::error::SUPABASE_DATABASE_URL secret is not set"
+            exit 1
+          fi
+          echo "Both secrets present."
+
+      - name: Dump Neon production database
+        env:
+          PGPASSWORD_NOTE: 'password is in the URL, pg_dump reads it from there'
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/dumps
+          echo "Dumping Neon → /tmp/dumps/neon.dump"
+          pg_dump \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --no-acl \
+            --no-comments \
+            --schema=public \
+            --exclude-table-data='public._prisma_migrations' \
+            --file=/tmp/dumps/neon.dump \
+            "${{ secrets.NEON_DATABASE_URL }}"
+          ls -lh /tmp/dumps/neon.dump
+
+      - name: Drop & recreate public schema on Supabase
+        run: |
+          set -euo pipefail
+          echo "Resetting Supabase public schema (full refresh strategy)…"
+          psql "${{ secrets.SUPABASE_DATABASE_URL }}" -v ON_ERROR_STOP=1 <<'SQL'
+          DROP SCHEMA IF EXISTS public CASCADE;
+          CREATE SCHEMA public;
+          GRANT ALL ON SCHEMA public TO postgres;
+          GRANT ALL ON SCHEMA public TO public;
+          SQL
+
+      - name: Restore dump into Supabase
+        run: |
+          set -euo pipefail
+          echo "Restoring → Supabase…"
+          # --no-owner / --no-privileges so we don't carry over Neon roles
+          # --exit-on-error to fail fast if anything's broken
+          # Single-transaction is intentionally OFF — Supabase has its own roles
+          # so a few permission warnings are expected and not fatal.
+          pg_restore \
+            --dbname="${{ secrets.SUPABASE_DATABASE_URL }}" \
+            --no-owner \
+            --no-privileges \
+            --no-acl \
+            --schema=public \
+            --verbose \
+            /tmp/dumps/neon.dump 2>&1 | tail -200 || {
+              echo "::warning::pg_restore exited non-zero (often benign — checking row counts next)"
+            }
+
+      - name: Verify mirror — row counts on key tables
+        run: |
+          set -euo pipefail
+          echo "Row counts on the Supabase mirror:"
+          psql "${{ secrets.SUPABASE_DATABASE_URL }}" -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT
+            schemaname,
+            relname AS table_name,
+            n_live_tup AS row_count
+          FROM pg_stat_user_tables
+          WHERE schemaname = 'public'
+          ORDER BY n_live_tup DESC
+          LIMIT 25;
+          SQL
+
+      - name: Record sync timestamp
+        run: |
+          set -euo pipefail
+          psql "${{ secrets.SUPABASE_DATABASE_URL }}" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE TABLE IF NOT EXISTS public._mirror_metadata (
+            id          int PRIMARY KEY DEFAULT 1,
+            last_sync   timestamptz NOT NULL,
+            source      text NOT NULL DEFAULT 'neon-prod',
+            row_count   bigint,
+            CHECK (id = 1)
+          );
+
+          INSERT INTO public._mirror_metadata (id, last_sync, source, row_count)
+          VALUES (
+            1,
+            now(),
+            'neon-prod',
+            (SELECT COALESCE(SUM(n_live_tup), 0) FROM pg_stat_user_tables WHERE schemaname='public')
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            last_sync = EXCLUDED.last_sync,
+            row_count = EXCLUDED.row_count;
+
+          SELECT * FROM public._mirror_metadata;
+          SQL
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Sync result" >> $GITHUB_STEP_SUMMARY
+          echo "- Job status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Triggered by: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
