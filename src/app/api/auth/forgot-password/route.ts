@@ -4,9 +4,11 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { logger, getRequestId } from '@/lib/logger'
 
 // POST /api/auth/forgot-password — generate a reset token
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
   try {
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rl = await authLimiter.check(`reset-${ip}`)
@@ -68,11 +70,11 @@ export async function POST(request: NextRequest) {
 
       return successResponse
     } catch (dbError) {
-      console.error('Database error during forgot password:', dbError)
+      logger.error('forgot_password_db_error', dbError, { requestId })
       return successResponse // Still return success response to prevent enumeration
     }
   } catch (error: any) {
-    console.error('Forgot password error:', error)
+    logger.error('forgot_password_error', error, { requestId })
     return NextResponse.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 }

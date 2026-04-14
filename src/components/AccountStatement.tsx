@@ -218,6 +218,7 @@ export function AccountStatement() {
           }}
         >
           <button
+            type="button"
             onClick={() => handleExport('csv')}
             disabled={loading || !startDate || !endDate}
             style={{
@@ -238,6 +239,7 @@ export function AccountStatement() {
           </button>
 
           <button
+            type="button"
             onClick={() => handleExport('json')}
             disabled={loading || !startDate || !endDate}
             style={{

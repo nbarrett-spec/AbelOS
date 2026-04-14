@@ -10,6 +10,20 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'dev-secret-change-in-production'
 )
 
+/**
+ * Generate or retrieve request ID for distributed tracing
+ * Enables request tracking across logs and error monitoring (Sentry)
+ */
+function getOrCreateRequestId(request: NextRequest): string {
+  const existing = request.headers.get('x-request-id')
+  if (existing) {
+    return existing
+  }
+  // Generate a UUID using Web Crypto API
+  const uuid = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return uuid
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Builder (customer) routes
 // ──────────────────────────────────────────────────────────────────────────
@@ -25,17 +39,38 @@ const BUILDER_COOKIE = 'abel_session'
 // Public ops routes that don't need auth
 const opsPublicRoutes = ['/ops/login', '/ops/forgot-password', '/ops/reset-password', '/ops/setup-account']
 
-function addSecurityHeaders(response: NextResponse): NextResponse {
+/**
+ * Add security headers to response
+ * @deprecated Most headers are now set via next.config.js headers() function
+ * Kept here for additional middleware-level security headers
+ */
+function addSecurityHeaders(response: NextResponse, requestId?: string): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  if (requestId) {
+    response.headers.set('X-Request-ID', requestId)
+  }
+  return response
+}
+
+/**
+ * Add request ID to response and headers for distributed tracing
+ */
+function addRequestIdToResponse(response: NextResponse, requestId: string): NextResponse {
+  response.headers.set('X-Request-ID', requestId)
   return response
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ────────────────────────────────────────────────────────────────────
+  // REQUEST ID TRACKING — all routes
+  // ────────────────────────────────────────────────────────────────────
+  const requestId = getOrCreateRequestId(request)
 
   // ────────────────────────────────────────────────────────────────────
   // STAFF OPS ROUTES — /ops/*
@@ -45,14 +80,17 @@ export async function middleware(request: NextRequest) {
     if (opsPublicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
       // Setup-account should always be accessible (even if logged in — employee may be resetting)
       if (pathname.startsWith('/ops/setup-account')) {
-        return NextResponse.next()
+        const res = NextResponse.next()
+        return addRequestIdToResponse(res, requestId)
       }
       // If already logged in, redirect to main ops page (login, forgot-password)
       const staffCookie = request.cookies.get(STAFF_COOKIE)
       if (staffCookie) {
-        return NextResponse.redirect(new URL('/ops', request.url))
+        const res = NextResponse.redirect(new URL('/ops', request.url))
+        return addRequestIdToResponse(res, requestId)
       }
-      return NextResponse.next()
+      const res = NextResponse.next()
+      return addRequestIdToResponse(res, requestId)
     }
 
     // All other /ops routes require staff session
@@ -298,8 +336,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Add security headers to all matched responses
-  return addSecurityHeaders(NextResponse.next())
+  // Add security headers and request ID to all matched responses
+  const finalResponse = addSecurityHeaders(NextResponse.next(), requestId)
+  return addRequestIdToResponse(finalResponse, requestId)
 }
 
 export const config = {

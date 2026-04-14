@@ -10,6 +10,8 @@
  *   4. Verify your domain in Resend dashboard
  */
 
+import { logger } from './logger'
+
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Abel Lumber <noreply@abellumber.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://app.abellumber.com' : 'http://localhost:3000')
@@ -29,7 +31,7 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
 
   // If no API key, log warning and return failure so callers know email wasn't sent
   if (!RESEND_API_KEY) {
-    console.warn(`[email] RESEND_API_KEY not configured — email to ${to} NOT sent: "${subject}"`)
+    logger.warn('email_service_not_configured', { to, subject })
     return { success: false, error: 'Email service not configured (RESEND_API_KEY missing)' }
   }
 
@@ -52,13 +54,13 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
     const data = await res.json()
 
     if (!res.ok) {
-      console.error('Resend API error:', data)
+      logger.error('email_send_api_error', data, { to, subject })
       return { success: false, error: data.message || 'Email send failed' }
     }
 
     return { success: true, id: data.id }
   } catch (error: any) {
-    console.error('Email send error:', error)
+    logger.error('email_send_error', error, { to, subject })
     return { success: false, error: error.message }
   }
 }

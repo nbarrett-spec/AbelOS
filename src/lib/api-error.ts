@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { logger } from './logger'
 
 /**
  * Standard API error response helper.
@@ -9,7 +10,7 @@ export function apiError(error: unknown, context?: string) {
   const code = error instanceof Error && 'code' in error ? (error as any).code : undefined
 
   // Log with context
-  console.error(`[API Error]${context ? ` ${context}:` : ''}`, message)
+  logger.error(`api_error${context ? ': ' + context : ''}`, error)
 
   // Don't expose internal errors in production
   const isProduction = process.env.NODE_ENV === 'production'

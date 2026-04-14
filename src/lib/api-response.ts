@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { logger } from './logger'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Standardized API Response Helpers
@@ -35,11 +36,11 @@ export function apiSuccess(data: Record<string, any> = {}, status = 200) {
 
 /**
  * Wrap an async handler to catch unhandled errors and return a clean 500.
- * Logs to console.error with a prefix for easy searching.
+ * Logs with structured logger.
  */
 export function withErrorHandler(prefix: string, handler: () => Promise<NextResponse>): Promise<NextResponse> {
   return handler().catch((error: any) => {
-    console.error(`[${prefix}] Unhandled error:`, error?.message || error)
+    logger.error(`unhandled_error_in_${prefix}`, error)
     return apiError('Internal server error', { status: 500, details: error?.message })
   })
 }

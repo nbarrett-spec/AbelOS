@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 
-interface WorkflowAlert {
+export interface WorkflowAlert {
   id: string
   severity: 'HIGH' | 'MEDIUM' | 'LOW'
   title: string
@@ -12,6 +12,12 @@ interface WorkflowAlert {
   actionLabel: string
   count?: number
   timeframe?: string
+}
+
+export interface AlertsResponse {
+  alerts: WorkflowAlert[]
+  totalAlerts: number
+  criticalCount: number
 }
 
 export async function GET(request: NextRequest) {
@@ -194,16 +200,26 @@ export async function GET(request: NextRequest) {
       (a, b) => severityOrder[a.severity] - severityOrder[b.severity]
     )
 
-    return NextResponse.json({
+    const response: AlertsResponse = {
       alerts: alerts.slice(0, 10),
       totalAlerts: alerts.length,
       criticalCount: alerts.filter((a) => a.severity === 'HIGH').length,
+    }
+
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'private, max-age=60', // Cache for 1 minute
+      },
     })
   } catch (error) {
     console.error('Alerts generation error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate alerts', alerts: [] },
-      { status: 500 }
+      {
+        alerts: [],
+        totalAlerts: 0,
+        criticalCount: 0,
+      } as AlertsResponse,
+      { status: 200 } // Return 200 with empty data rather than 500
     )
   }
 }

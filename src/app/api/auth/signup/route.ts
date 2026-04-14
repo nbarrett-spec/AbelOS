@@ -4,8 +4,10 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword, createToken, setSessionCookie } from '@/lib/auth'
 import { signupSchema } from '@/lib/validations'
 import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { logger, getRequestId } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
   try {
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rl = await authLimiter.check(ip)
@@ -104,14 +106,14 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       )
     } catch (dbError) {
-      console.error('Database error during signup:', dbError)
+      logger.error('signup_db_error', dbError, { requestId })
       return NextResponse.json(
         { error: 'Failed to create account' },
         { status: 500 }
       )
     }
   } catch (error) {
-    console.error('Signup error:', error)
+    logger.error('signup_error', error, { requestId })
     return NextResponse.json(
       { error: 'Failed to create account' },
       { status: 500 }

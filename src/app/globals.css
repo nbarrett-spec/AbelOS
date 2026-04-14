@@ -12,6 +12,9 @@
 }
 
 @layer components {
+  /* ============================================
+     Base Button Variants (Core)
+     ============================================ */
   .btn-primary {
     @apply px-6 py-2.5 bg-abel-navy hover:bg-abel-navy-dark text-white font-medium rounded-xl transition shadow-sm;
   }
@@ -21,21 +24,241 @@
   .btn-outline {
     @apply px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition;
   }
+  /* Additional Button Variants */
+  .btn-ghost {
+    @apply px-6 py-2.5 text-gray-700 hover:bg-gray-100 rounded-xl transition;
+  }
+  .btn-danger {
+    @apply px-6 py-2.5 bg-danger-600 hover:bg-danger-700 text-white font-medium rounded-xl transition shadow-sm;
+  }
+  .btn-success {
+    @apply px-6 py-2.5 bg-success-600 hover:bg-success-700 text-white font-medium rounded-xl transition shadow-sm;
+  }
+  /* Button Size Variants */
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+  .btn-lg {
+    @apply px-8 py-3 text-lg;
+  }
+  .btn-xl {
+    @apply px-10 py-4 text-xl;
+  }
+
+  /* ============================================
+     Form Elements (Core)
+     ============================================ */
   .input {
     @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-abel-navy/20 focus:border-abel-navy outline-none transition;
   }
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1;
   }
+
+  /* ============================================
+     Card Variants
+     ============================================ */
   .card {
     @apply bg-white rounded-xl border border-gray-200 shadow-sm;
   }
-  /* Responsive table wrapper */
+  .card-elevated {
+    @apply bg-white rounded-xl border border-gray-200 shadow-elevation-3;
+  }
+  .card-glass {
+    @apply bg-white/80 backdrop-blur-md rounded-xl border border-white/40 shadow-glass;
+  }
+  .card-interactive {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm transition-all duration-base hover:shadow-elevation-2 hover:border-gray-300 hover:-translate-y-0.5;
+  }
+
+  /* ============================================
+     KPI Card (Dashboard)
+     ============================================ */
+  .kpi-card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-elevation-2 p-6 flex flex-col;
+  }
+  .kpi-card-title {
+    @apply text-sm font-medium text-gray-600 mb-2;
+  }
+  .kpi-card-value {
+    @apply text-3xl font-bold text-gray-900 mb-3;
+  }
+  .kpi-card-delta {
+    @apply text-sm flex items-center gap-1;
+  }
+
+  /* ============================================
+     Badges
+     ============================================ */
+  .badge {
+    @apply inline-flex items-center rounded-pill px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700;
+  }
+  .badge-success {
+    @apply bg-success-100 text-success-700;
+  }
+  .badge-warning {
+    @apply bg-warning-100 text-warning-700;
+  }
+  .badge-danger {
+    @apply bg-danger-100 text-danger-700;
+  }
+  .badge-info {
+    @apply bg-info-100 text-info-700;
+  }
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700;
+  }
+  .badge-brand {
+    @apply bg-abel-navy/10 text-abel-navy;
+  }
+
+  /* ============================================
+     Status Delta Indicators
+     ============================================ */
+  .stat-delta-up {
+    @apply flex items-center gap-1 text-success-600 font-medium;
+  }
+  .stat-delta-up::before {
+    content: '▲';
+  }
+  .stat-delta-down {
+    @apply flex items-center gap-1 text-danger-600 font-medium;
+  }
+  .stat-delta-down::before {
+    content: '▼';
+  }
+  .stat-delta-flat {
+    @apply flex items-center gap-1 text-gray-600 font-medium;
+  }
+  .stat-delta-flat::before {
+    content: '—';
+  }
+
+  /* ============================================
+     Skeleton Loader
+     ============================================ */
+  .skeleton {
+    @apply bg-gray-200 rounded-lg animate-shimmer;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0)
+    );
+    background-size: 1000px 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton {
+      animation: none;
+      background-image: none;
+      @apply bg-gray-200;
+    }
+  }
+
+  /* ============================================
+     Focus Ring Utility
+     ============================================ */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-abel-navy;
+  }
+  .focus-ring-danger {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger-500;
+  }
+  .focus-ring-success {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500;
+  }
+
+  /* ============================================
+     Typographic Utilities
+     ============================================ */
+  .section-heading {
+    @apply text-h2 font-bold text-gray-900 mb-4;
+  }
+  .eyebrow {
+    @apply text-overline text-gray-600;
+    text-transform: uppercase;
+  }
+
+  /* ============================================
+     Divider
+     ============================================ */
+  .divider {
+    @apply border-t border-gray-200;
+  }
+
+  /* ============================================
+     Pill Chip
+     ============================================ */
+  .pill {
+    @apply inline-flex items-center rounded-full px-4 py-2 text-sm font-medium bg-abel-navy text-white transition hover:bg-abel-navy-dark;
+  }
+
+  /* ============================================
+     Premium Table (Responsive)
+     ============================================ */
   .table-responsive {
     @apply overflow-x-auto -mx-4 sm:mx-0;
   }
   .table-responsive table {
     @apply min-w-[640px];
+  }
+  .table-premium {
+    @apply w-full text-sm border-collapse;
+  }
+  .table-premium thead {
+    @apply bg-gray-50 border-b border-gray-200;
+  }
+  .table-premium thead th {
+    @apply px-6 py-3 text-left font-semibold text-gray-700;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .table-premium tbody td {
+    @apply px-6 py-4 border-b border-gray-200;
+  }
+  .table-premium tbody tr {
+    @apply transition-colors duration-fast;
+  }
+  .table-premium tbody tr:hover {
+    @apply bg-gray-50;
+  }
+  /* Zebra striping (optional) */
+  .table-premium.zebra tbody tr:nth-child(even) {
+    @apply bg-gray-50;
+  }
+  .table-premium.zebra tbody tr:nth-child(even):hover {
+    @apply bg-gray-100;
+  }
+
+  /* ============================================
+     Scroll Shadow (Horizontal)
+     ============================================ */
+  .scroll-shadow {
+    position: relative;
+    overflow-x: auto;
+  }
+  .scroll-shadow::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
+    pointer-events: none;
+    z-index: 5;
+  }
+}
+
+/* ============================================
+   Animations with Reduced Motion Support
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -106,6 +329,56 @@ html.dark body {
 
 /* Card / panel overrides for inline styles */
 :where(html.dark) .card { background-color: #1f2937; border-color: #374151; }
+:where(html.dark) .card-elevated { background-color: #1f2937; border-color: #374151; }
+:where(html.dark) .card-glass { background-color: rgba(31, 41, 55, 0.8); border-color: rgba(255, 255, 255, 0.1); }
+:where(html.dark) .card-interactive { background-color: #1f2937; border-color: #374151; }
+
+/* KPI Card dark mode */
+:where(html.dark) .kpi-card { background-color: #1f2937; border-color: #374151; }
+:where(html.dark) .kpi-card-title { color: #9ca3af; }
+:where(html.dark) .kpi-card-value { color: #f3f4f6; }
+
+/* Button dark mode */
+:where(html.dark) .btn-ghost { color: #d1d5db; }
+:where(html.dark) .btn-ghost:hover { background-color: #374151; }
+:where(html.dark) .btn-outline { border-color: #4b5563; color: #d1d5db; }
+:where(html.dark) .btn-outline:hover { background-color: #374151; }
+
+/* Badge dark mode */
+:where(html.dark) .badge { background-color: #374151; color: #e5e7eb; }
+:where(html.dark) .badge-success { background-color: rgba(34, 197, 94, 0.15); color: #86efac; }
+:where(html.dark) .badge-warning { background-color: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+:where(html.dark) .badge-danger { background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+:where(html.dark) .badge-info { background-color: rgba(14, 165, 233, 0.15); color: #7dd3fc; }
+:where(html.dark) .badge-neutral { background-color: #374151; color: #e5e7eb; }
+:where(html.dark) .badge-brand { background-color: rgba(27, 79, 114, 0.3); color: #93c5fd; }
+
+/* Skeleton dark mode */
+:where(html.dark) .skeleton { background-color: #374151; }
+
+/* Pill dark mode */
+:where(html.dark) .pill { background-color: #1f2937; color: #f3f4f6; }
+:where(html.dark) .pill:hover { background-color: #374151; }
+
+/* Section heading dark mode */
+:where(html.dark) .section-heading { color: #f3f4f6; }
+:where(html.dark) .eyebrow { color: #9ca3af; }
+
+/* Divider dark mode */
+:where(html.dark) .divider { border-color: #374151; }
+
+/* Table Premium dark mode */
+:where(html.dark) .table-premium thead { background-color: #1f2937; border-color: #374151; }
+:where(html.dark) .table-premium thead th { color: #e5e7eb; }
+:where(html.dark) .table-premium tbody td { border-color: #374151; color: #d1d5db; }
+:where(html.dark) .table-premium tbody tr:hover { background-color: #374151; }
+:where(html.dark) .table-premium.zebra tbody tr:nth-child(even) { background-color: #111827; }
+:where(html.dark) .table-premium.zebra tbody tr:nth-child(even):hover { background-color: #374151; }
+
+/* Stat delta dark mode */
+:where(html.dark) .stat-delta-up { color: #86efac; }
+:where(html.dark) .stat-delta-down { color: #fca5a5; }
+:where(html.dark) .stat-delta-flat { color: #9ca3af; }
 
 /* Shadow adjustment */
 :where(html.dark) .shadow-sm,

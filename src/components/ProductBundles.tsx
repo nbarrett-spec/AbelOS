@@ -68,7 +68,9 @@ export default function ProductBundles() {
           setBundles(data.bundles || [])
         }
       } catch (err) {
-        console.error('Failed to fetch bundles:', err)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Failed to fetch bundles:', err)
+        }
       } finally {
         setLoading(false)
       }

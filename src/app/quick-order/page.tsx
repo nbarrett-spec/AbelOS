@@ -81,7 +81,9 @@ export default function QuickOrderPage() {
         setPastOrders(data.orders || [])
       }
     } catch (err) {
-      console.error('Failed to load orders:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to load orders:', err)
+      }
     } finally {
       setOrdersLoading(false)
     }
@@ -99,7 +101,9 @@ export default function QuickOrderPage() {
         setErrorMessage('Failed to reorder — please try again'); setTimeout(() => setErrorMessage(''), 5000)
       }
     } catch (err) {
-      console.error('Reorder error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Reorder error:', err)
+      }
       alert('Failed to reorder — please try again')
     } finally {
       setReorderingId(null)
@@ -121,7 +125,9 @@ export default function QuickOrderPage() {
         setShowDropdown(data.results?.length > 0)
       }
     } catch (err) {
-      console.error('Search error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Search error:', err)
+      }
     } finally {
       setSearchLoading(false)
     }
@@ -192,7 +198,9 @@ export default function QuickOrderPage() {
       setOrderItems([])
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (err) {
-      console.error('Cart error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Cart error:', err)
+      }
       setErrorMessage('Failed to add items to cart'); setTimeout(() => setErrorMessage(''), 5000)
     } finally {
       setIsSubmitting(false)
@@ -223,7 +231,9 @@ export default function QuickOrderPage() {
       setSaveTemplateMode(false)
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (err) {
-      console.error('Template error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Template error:', err)
+      }
       setErrorMessage('Failed to save template'); setTimeout(() => setErrorMessage(''), 5000)
     } finally {
       setIsSubmitting(false)

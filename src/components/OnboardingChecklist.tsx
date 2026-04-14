@@ -49,7 +49,9 @@ export default function OnboardingChecklist({ onClose }: OnboardingChecklistProp
         )
         setCompletedSteps(completed)
       } catch (err) {
-        console.error('Onboarding fetch error:', err)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Onboarding fetch error:', err)
+        }
         setError(err instanceof Error ? err.message : 'Failed to load')
       } finally {
         setLoading(false)
@@ -67,7 +69,9 @@ export default function OnboardingChecklist({ onClose }: OnboardingChecklistProp
         body: JSON.stringify({ stepId, dismissed: true })
       })
     } catch (err) {
-      console.error('Failed to dismiss step:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to dismiss step:', err)
+      }
     }
   }
 

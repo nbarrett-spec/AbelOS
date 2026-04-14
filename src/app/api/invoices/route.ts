@@ -2,11 +2,13 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger, getRequestId } from '@/lib/logger'
 
 /**
  * GET /api/invoices — List invoices for the current builder with payment history
  */
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request)
   try {
     const session = await getSession()
 
@@ -145,7 +147,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch invoices:', error)
+    logger.error('invoices_fetch_error', error, { requestId })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

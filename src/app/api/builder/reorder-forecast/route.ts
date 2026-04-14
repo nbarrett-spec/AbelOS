@@ -4,6 +4,42 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
+// Response type exports
+export interface UpcomingReorder {
+  productId: string;
+  sku: string;
+  name: string;
+  category: string;
+  avgIntervalDays: number;
+  lastOrderDate: Date;
+  predictedNextDate: Date;
+  daysUntilReorder: number;
+  avgQuantity: number;
+  avgSpend: number;
+  urgency: 'OVERDUE' | 'DUE_SOON' | 'UPCOMING' | 'LATER';
+}
+
+export interface SeasonalPattern {
+  month: number;
+  totalSpend: number;
+  orderCount: number;
+  topCategory: string;
+}
+
+export interface ReorderSummary {
+  productsTracked: number;
+  overdueCount: number;
+  dueSoonCount: number;
+  estimatedMonthlySpend: number;
+  estimatedNextMonthSpend: number;
+}
+
+export interface ReorderForecastResponse {
+  upcomingReorders: UpcomingReorder[];
+  seasonalPatterns: SeasonalPattern[];
+  reorderSummary: ReorderSummary;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated session
@@ -24,19 +60,33 @@ export async function GET(request: NextRequest) {
     // Fetch reorder summary stats
     const reorderSummary = await getReorderSummary(builderId, upcomingReorders)
 
-    return NextResponse.json(
-      {
-        upcomingReorders,
-        seasonalPatterns,
-        reorderSummary,
+    const response: ReorderForecastResponse = {
+      upcomingReorders,
+      seasonalPatterns,
+      reorderSummary,
+    }
+
+    return NextResponse.json(response, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, max-age=300', // Cache for 5 minutes
       },
-      { status: 200 }
-    )
+    })
   } catch (error) {
     console.error('Reorder forecast error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate reorder forecast' },
-      { status: 500 }
+      {
+        upcomingReorders: [],
+        seasonalPatterns: [],
+        reorderSummary: {
+          productsTracked: 0,
+          overdueCount: 0,
+          dueSoonCount: 0,
+          estimatedMonthlySpend: 0,
+          estimatedNextMonthSpend: 0,
+        },
+      } as ReorderForecastResponse,
+      { status: 200 } // Return 200 with empty data rather than 500
     )
   }
 }

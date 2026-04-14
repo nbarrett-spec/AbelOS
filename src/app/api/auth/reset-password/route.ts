@@ -2,9 +2,11 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { logger, getRequestId } from '@/lib/logger'
 
 // POST /api/auth/reset-password — validate token and set new password
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
   try {
     const { token, password } = await request.json()
 
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
       message: 'Password reset successfully. You can now sign in with your new password.',
     })
   } catch (error: any) {
-    console.error('Reset password error:', error)
+    logger.error('reset_password_error', error, { requestId })
     return NextResponse.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 }

@@ -51,7 +51,9 @@ function CrewHomeInner() {
           }
         }
       } catch (error) {
-        console.error('Failed to fetch crews:', error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Failed to fetch crews:', error);
+        }
       } finally {
         setLoading(false);
       }
@@ -74,7 +76,9 @@ function CrewHomeInner() {
           setSchedule(data);
         }
       } catch (error) {
-        console.error('Failed to fetch schedule:', error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Failed to fetch schedule:', error);
+        }
       }
     };
 
@@ -102,7 +106,9 @@ function CrewHomeInner() {
         ));
       }
     } catch (err) {
-      console.error('Failed to update status:', err);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to update status:', err);
+      }
     }
   };
 

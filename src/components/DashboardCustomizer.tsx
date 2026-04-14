@@ -66,12 +66,13 @@ export default function DashboardCustomizer({ widgets, onChange, onReset, onClos
         <h3 className="text-sm font-bold text-gray-900">Customize Dashboard</h3>
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={onReset}
             className="text-xs text-gray-500 hover:text-gray-700 underline"
           >
             Reset to defaults
           </button>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
         </div>
       </div>
       <p className="text-xs text-gray-500 mb-3">Toggle which sections appear on your dashboard.</p>

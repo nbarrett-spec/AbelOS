@@ -51,3 +51,16 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Claude Code / MCP config (contains API keys)
+.mcp.json
+.claude/skills/
+
+# Seed data (contains customer data, passwords, etc.)
+Abel_OS_Seed_Data.xlsx
+prisma/seed-log-*.json
+
+# Editor / agent backups
+*.bak
+*.orig
+*.swp

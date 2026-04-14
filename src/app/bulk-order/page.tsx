@@ -52,7 +52,9 @@ export default function BulkOrderPage() {
         setError('Failed to parse bulk order')
       }
     } catch (err) {
-      console.error('Parse error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Parse error:', err)
+      }
       setError('Error parsing bulk order')
     } finally {
       setLoading(false)
@@ -103,7 +105,9 @@ export default function BulkOrderPage() {
       setUnmatchedCount(0)
       // Optional: Navigate to cart or show success
     } catch (err) {
-      console.error('Add to cart error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Add to cart error:', err)
+      }
       setError('Failed to add items to cart')
     } finally {
       setAddingToCart(false)

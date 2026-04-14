@@ -124,7 +124,9 @@ export default function CatalogPage() {
           setHasPricing(!!d.hasPricing)
         }
       } catch (err) {
-        console.error('Catalog fetch error:', err)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Catalog fetch error:', err)
+        }
       } finally {
         setLoading(false)
       }

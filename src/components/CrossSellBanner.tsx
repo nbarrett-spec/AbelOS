@@ -45,7 +45,9 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
           setError('Failed to load recommendations')
         }
       } catch (err) {
-        console.error('CrossSellBanner fetch error:', err)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('CrossSellBanner fetch error:', err)
+        }
         setError('Error loading recommendations')
       } finally {
         setLoading(false)
@@ -72,7 +74,9 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
         // Optional: Show a brief success message or trigger a toast
       }
     } catch (err) {
-      console.error('Add to cart error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Add to cart error:', err)
+      }
     }
   }
 

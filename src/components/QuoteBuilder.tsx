@@ -204,7 +204,9 @@ export default function QuoteBuilder({
       // Save
       doc.save(`${quoteNumber}.pdf`)
     } catch (error: any) {
-      console.error('PDF download error:', error?.message || error, error?.stack)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('PDF download error:', error?.message || error, error?.stack)
+      }
       alert('Failed to generate PDF. Please try again.')
     } finally {
       setIsDownloading(false)

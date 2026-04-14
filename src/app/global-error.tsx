@@ -1,5 +1,8 @@
 'use client'
 
+// NOTE: global-error.tsx replaces the root layout, so it cannot rely on Tailwind
+// base styles. Inline styles are intentional here.
+
 import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 
@@ -12,6 +15,9 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     Sentry.captureException(error)
+    // Also log to console for local dev visibility
+    // eslint-disable-next-line no-console
+    console.error('[global-error]', error)
   }, [error])
 
   const handleReset = async () => {
@@ -21,6 +27,7 @@ export default function GlobalError({
         const cacheNames = await caches.keys()
         await Promise.all(cacheNames.map(name => caches.delete(name)))
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to clear caches:', e)
       }
     }
@@ -30,6 +37,7 @@ export default function GlobalError({
         const registrations = await navigator.serviceWorker.getRegistrations()
         await Promise.all(registrations.map(r => r.unregister()))
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to unregister SW:', e)
       }
     }
@@ -39,47 +47,68 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body style={{
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         margin: 0, minHeight: '100vh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f8f9fa', color: '#1f2937',
       }}>
-        <div style={{ textAlign: 'center', maxWidth: 480, padding: 32 }}>
+        <div style={{ textAlign: 'center', maxWidth: 520, padding: '32px 24px' }}>
           <div style={{
-            width: 64, height: 64, borderRadius: '50%',
+            width: 72, height: 72, borderRadius: '50%',
             backgroundColor: '#FEE2E2', color: '#DC2626',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, fontWeight: 700, margin: '0 auto 20px',
+            fontSize: 32, fontWeight: 700, margin: '0 auto 24px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
           }}>!</div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>
-            Abel Platform Error
-          </h2>
-          <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, lineHeight: 1.6 }}>
-            A rendering error occurred. This is usually caused by stale cached files.
-            Click below to clear caches and reload.
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#E67E22', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+            Abel Lumber
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', marginBottom: 12, margin: 0 }}>
+            Platform error
+          </h1>
+          <p style={{ fontSize: 14, color: '#6b7280', marginTop: 12, marginBottom: 20, lineHeight: 1.6 }}>
+            A rendering error occurred. This is usually caused by a stale cached file.
+            Try clearing your cache and reloading. If it keeps happening, email support with the error ID below.
+          </p>
+          {error.digest && (
+            <div style={{
+              display: 'inline-block', padding: '6px 12px',
+              background: '#f3f4f6', borderRadius: 6,
+              fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
+              fontSize: 12, color: '#4b5563', marginBottom: 20,
+            }}>
+              Error ID: {error.digest}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={handleReset}
               style={{
-                padding: '10px 24px', borderRadius: 8,
+                padding: '10px 22px', borderRadius: 10,
                 backgroundColor: '#1B4F72', color: 'white',
                 fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
               }}
             >
-              Clear Cache &amp; Retry
+              Clear cache &amp; retry
             </button>
             <button
               onClick={() => window.location.href = '/'}
               style={{
-                padding: '10px 24px', borderRadius: 8,
-                backgroundColor: '#E67E22', color: 'white',
-                fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
+                padding: '10px 22px', borderRadius: 10,
+                backgroundColor: 'white', color: '#374151',
+                fontSize: 14, fontWeight: 600,
+                border: '1px solid #d1d5db', cursor: 'pointer',
               }}
             >
-              Go Home
+              Go home
             </button>
           </div>
+          <p style={{ marginTop: 24, fontSize: 13, color: '#9ca3af' }}>
+            Support:{' '}
+            <a href="mailto:support@abellumber.com" style={{ color: '#1B4F72', textDecoration: 'none', fontWeight: 500 }}>
+              support@abellumber.com
+            </a>
+          </p>
         </div>
       </body>
     </html>

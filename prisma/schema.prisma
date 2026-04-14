@@ -218,6 +218,8 @@ model Takeoff {
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+  @@index([blueprintId])
+  @@index([status])
 }
 
 enum TakeoffStatus {
@@ -253,6 +255,8 @@ model TakeoffItem {
   createdAt DateTime @default(now())
 
   @@index([takeoffId])
+  @@index([productId])
+  @@index([category])
 }
 
 // ─── QUOTES ──────────────────────────────────────────────────────────
@@ -323,6 +327,7 @@ model QuoteItem {
   sortOrder Int @default(0)
 
   @@index([quoteId])
+  @@index([productId])
 }
 
 // ─── ORDERS ──────────────────────────────────────────────────────────
@@ -402,6 +407,7 @@ model OrderItem {
   lineTotal   Float
 
   @@index([orderId])
+  @@index([productId])
 }
 
 // ─── ORDER TEMPLATES ─────────────────────────────────────────────────
@@ -421,6 +427,7 @@ model OrderTemplate {
   updatedAt DateTime @updatedAt
 
   @@index([builderId])
+  @@index([sourceOrderId])
 }
 
 model OrderTemplateItem {
@@ -437,6 +444,7 @@ model OrderTemplateItem {
   createdAt DateTime @default(now())
 
   @@index([templateId])
+  @@index([productId])
 }
 
 // ─── PRODUCT CATALOG ─────────────────────────────────────────────────
@@ -516,6 +524,7 @@ model BomEntry {
   updatedAt DateTime @updatedAt
 
   @@index([parentId])
+  @@index([componentId])
 }
 
 model BuilderPricing {
@@ -533,6 +542,7 @@ model BuilderPricing {
 
   @@unique([builderId, productId])
   @@index([builderId])
+  @@index([productId])
 }
 
 model UpgradePath {
@@ -551,6 +561,8 @@ model UpgradePath {
   updatedAt DateTime @updatedAt
 
   @@unique([fromProductId, toProductId])
+  @@index([fromProductId])
+  @@index([toProductId])
 }
 
 // ─── HOMEOWNER PORTAL ────────────────────────────────────────────────
@@ -580,6 +592,9 @@ model HomeownerAccess {
 
   @@index([accessToken])
   @@index([projectId])
+  @@index([builderId])
+  @@index([email])
+  @@index([active])
 }
 
 model HomeownerSelection {
@@ -597,6 +612,9 @@ model HomeownerSelection {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([homeownerAccessId])
+  @@index([status])
 }
 
 enum SelectionStatus {
@@ -664,6 +682,7 @@ model Staff {
   @@index([email])
   @@index([role])
   @@index([department])
+  @@index([active])
 }
 
 enum StaffRole {
@@ -755,6 +774,7 @@ model Job {
   @@index([scheduledDate])
   @@index([builderName])
   @@index([community])
+  @@index([orderId])
 }
 
 enum JobStatus {
@@ -805,6 +825,8 @@ model DecisionNote {
 
   @@index([jobId])
   @@index([noteType])
+  @@index([authorId])
+  @@index([priority])
 }
 
 enum DecisionNoteType {
@@ -854,6 +876,7 @@ model Activity {
   @@index([jobId])
   @@index([staffId])
   @@index([activityType])
+  @@index([scheduledAt])
 }
 
 enum ActivityType {
@@ -902,6 +925,9 @@ model Task {
   @@index([jobId])
   @@index([status])
   @@index([dueDate])
+  @@index([creatorId])
+  @@index([builderId])
+  @@index([priority])
 }
 
 enum TaskPriority {
@@ -960,6 +986,7 @@ model ScheduleEntry {
   @@index([scheduledDate])
   @@index([crewId])
   @@index([status])
+  @@index([jobId])
 }
 
 enum ScheduleType {
@@ -999,6 +1026,8 @@ model Crew {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([active])
 }
 
 enum CrewType {
@@ -1019,6 +1048,8 @@ model CrewMember {
   updatedAt DateTime @updatedAt
 
   @@unique([crewId, staffId])
+  @@index([crewId])
+  @@index([staffId])
 }
 
 // ─── DELIVERIES (from Delivery Crew SOP) ────────────────────────────
@@ -1060,6 +1091,8 @@ model Delivery {
 
   @@index([jobId])
   @@index([status])
+  @@index([crewId])
+  @@index([deliveryNumber])
 }
 
 enum DeliveryStatus {
@@ -1091,6 +1124,7 @@ model DeliveryTracking {
 
   @@index([deliveryId])
   @@index([timestamp])
+  @@index([status])
 }
 
 // ─── INSTALLATIONS (from PM SOP — field work tracking) ──────────────
@@ -1125,6 +1159,8 @@ model Installation {
 
   @@index([jobId])
   @@index([status])
+  @@index([crewId])
+  @@index([installNumber])
 }
 
 enum InstallationStatus {
@@ -1157,6 +1193,8 @@ model QualityCheck {
 
   @@index([jobId])
   @@index([checkType])
+  @@index([inspectorId])
+  @@index([result])
 }
 
 enum QCType {
@@ -1202,6 +1240,8 @@ model Vendor {
   updatedAt DateTime @updatedAt
 
   @@index([code])
+  @@index([active])
+  @@index([inflowVendorId])
 }
 
 // Maps products to their vendor/supplier catalog entries
@@ -1224,6 +1264,8 @@ model VendorProduct {
 
   @@unique([vendorId, productId])
   @@index([productId])
+  @@index([vendorId])
+  @@index([preferred])
 }
 
 model PurchaseOrder {
@@ -1265,6 +1307,9 @@ model PurchaseOrder {
   @@index([vendorId])
   @@index([status])
   @@index([qbTxnId])
+  @@index([createdById])
+  @@index([approvedById])
+  @@index([orderedAt])
 }
 
 enum POStatus {
@@ -1297,6 +1342,7 @@ model PurchaseOrderItem {
   updatedAt DateTime @updatedAt
 
   @@index([purchaseOrderId])
+  @@index([productId])
 }
 
 // ─── INVENTORY TRACKING ─────────────────────────────────────────────
@@ -1345,6 +1391,8 @@ model InventoryItem {
   @@index([sku])
   @@index([category])
   @@index([status])
+  @@index([lastReceivedAt])
+  @@index([warehouseZone])
 }
 
 // ─── INVOICING & AR ─────────────────────────────────────────────────
@@ -1394,6 +1442,9 @@ model Invoice {
   @@index([dueDate])
   @@index([qbTxnId])
   @@index([qbSyncStatus])
+  @@index([createdById])
+  @@index([orderId])
+  @@index([issuedAt])
 }
 
 enum InvoiceStatus {
@@ -1419,6 +1470,7 @@ model InvoiceItem {
   lineTotal   Float
 
   @@index([invoiceId])
+  @@index([productId])
 }
 
 model Payment {
@@ -1433,6 +1485,8 @@ model Payment {
   notes      String?
 
   @@index([invoiceId])
+  @@index([receivedAt])
+  @@index([method])
 }
 
 enum PaymentMethod {
@@ -1468,6 +1522,9 @@ model MaterialPick {
 
   @@index([jobId])
   @@index([status])
+  @@index([productId])
+  @@index([pickedAt])
+  @@index([zone])
 }
 
 enum PickStatus {
@@ -1516,6 +1573,7 @@ model Message {
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([createdAt])
 }
 
 model Conversation {
@@ -1536,6 +1594,8 @@ model Conversation {
   updatedAt DateTime @updatedAt
 
   @@index([type])
+  @@index([createdById])
+  @@index([lastMessageAt])
 }
 
 model ConversationParticipant {
@@ -1549,6 +1609,8 @@ model ConversationParticipant {
   lastReadAt DateTime?
 
   @@unique([conversationId, staffId])
+  @@index([conversationId])
+  @@index([staffId])
 }
 
 model Notification {
@@ -1567,6 +1629,7 @@ model Notification {
   @@index([staffId])
   @@index([read])
   @@index([type])
+  @@index([createdAt])
 }
 
 // ─── SALES PIPELINE & DEALS ─────────────────────────────────────────
@@ -1621,6 +1684,9 @@ model Deal {
   @@index([stage])
   @@index([builderId])
   @@index([expectedCloseDate])
+  @@index([dealNumber])
+  @@index([source])
+  @@index([probability])
 }
 
 enum DealStage {
@@ -1668,6 +1734,8 @@ model DealActivity {
   @@index([staffId])
   @@index([type])
   @@index([followUpDate])
+  @@index([followUpDone])
+  @@index([createdAt])
 }
 
 enum DealActivityType {
@@ -1734,6 +1802,8 @@ model Contract {
   @@index([builderId])
   @@index([status])
   @@index([createdById])
+  @@index([contractNumber])
+  @@index([signedDate])
 }
 
 enum ContractType {
@@ -1799,6 +1869,9 @@ model DocumentRequest {
   @@index([status])
   @@index([documentType])
   @@index([requestedById])
+  @@index([dueDate])
+  @@index([expiresDate])
+  @@index([reminderSent])
 }
 
 enum DocumentType {
@@ -1845,6 +1918,8 @@ model QBSyncQueue {
   @@index([entityType])
   @@index([entityId])
   @@index([createdAt])
+  @@index([action])
+  @@index([attempts])
 }
 
 model SyncLog {
@@ -1868,6 +1943,8 @@ model SyncLog {
   @@index([provider])
   @@index([status])
   @@index([startedAt])
+  @@index([syncType])
+  @@index([completedAt])
 }
 
 // ─── INTEGRATION CONFIGURATION ────────────────────────────────────────────
@@ -1913,6 +1990,8 @@ model IntegrationConfig {
   @@unique([provider])
   @@index([status])
   @@index([lastSyncAt])
+  @@index([syncEnabled])
+  @@index([syncInterval])
 }
 
 // ─── BUILDERTREND PROJECT MAPPING ────────────────────────────────────────
@@ -1948,6 +2027,7 @@ model BTProjectMapping {
   @@index([jobId])
   @@index([btStatus])
   @@index([lastSyncedAt])
+  @@index([btProjectId])
 }
 
 // ─── COLLECTIONS WORKFLOW ───────────────────────────────────────
@@ -1966,6 +2046,7 @@ model CollectionRule {
 
   @@index([daysOverdue])
   @@index([isActive])
+  @@index([actionType])
 }
 
 model CollectionAction {
@@ -1986,6 +2067,8 @@ model CollectionAction {
   @@index([invoiceId])
   @@index([actionType])
   @@index([sentAt])
+  @@index([channel])
+  @@index([respondedAt])
 }
 
 // ─── OUTREACH AUTOMATION ────────────────────────────────────────────

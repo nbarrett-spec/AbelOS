@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { BarChart, Briefcase, TrendingUp, ShoppingCart, Users, Package, AlertCircle } from 'lucide-react'
 import { WorkflowAlerts } from './components/WorkflowAlerts'
 import { ActionQueue } from './components/ActionQueue'
 import { AIRecommendations } from './components/AIRecommendations'
 import { DonutChart, HBarChart, Sparkline, ProgressRing } from './components/Charts'
+import { ContextStrip } from './components/ContextStrip'
+import { AlertRail } from './components/AlertRail'
+import { KPICardElite } from './components/KPICardElite'
+import { ActivityFeed } from './components/ActivityFeed'
 
 interface DashboardData {
   builders: { total: number }
@@ -64,7 +69,6 @@ export default function OpsDashboard() {
 
         if (dashData) setData(dashData)
         if (catData.categories) {
-          // Map API response to dashboard format — use top-level categories with product counts
           const mapped: ProductCategoryStat[] = catData.categories
             .filter((c: any) => !c.parentId && c.liveProductCount > 0)
             .map((c: any) => ({ name: c.name, count: c.liveProductCount || c.productCount || 0 }))
@@ -83,104 +87,121 @@ export default function OpsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-abel-navy" />
       </div>
     )
   }
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
-  const fmtFull = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(n)
 
   const orders = data?.orders
   const pos = data?.purchaseOrders
 
+  const todayDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  // Mock alerts for demonstration
+  const systemAlerts = [
+    { id: 'al1', type: 'warning' as const, title: 'Low Inventory', count: 3, href: '/ops/inventory' },
+    { id: 'al2', type: 'critical' as const, title: 'Overdue AR', count: 2, href: '/ops/finance/ar' },
+    { id: 'al3', type: 'info' as const, title: 'Pending Approvals', count: 5, href: '/ops/orders' },
+  ]
+
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Operations Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Real-time overview of Abel Lumber operations
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/ops/jobs" className="px-3 py-1.5 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] transition-colors">
-            + New Job
-          </Link>
-          <button className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            Export Report
-          </button>
-        </div>
-      </div>
+      {/* Greeting + Context Strip */}
+      <ContextStrip
+        greeting="Welcome back to Operations"
+        currentDate={todayDate}
+        kpis={[
+          { label: 'Orders Open', value: orders?.active || 0, severity: 'neutral' },
+          { label: 'Deliveries Today', value: 0, severity: 'positive' },
+          { label: 'Revenue MTD', value: fmt(orders?.totalRevenue || 0), severity: 'positive' },
+          { label: 'Outstanding AR', value: fmt(orders?.pendingRevenue || 0), severity: 'warning' },
+        ]}
+      />
 
-      {/* Primary KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard
+      {/* Alert Rail */}
+      <AlertRail alerts={systemAlerts} />
+
+      {/* KPI Grid — 2x2 desktop, 1 mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICardElite
           label="Builder Accounts"
           value={data?.builders.total || 0}
-          sub={`${data?.products.total?.toLocaleString() || 0} products in catalog`}
-          color="blue"
+          color="navy"
+          context={`${data?.products.total?.toLocaleString() || 0} products`}
           href="/ops/accounts"
         />
-        <KPICard
+        <KPICardElite
           label="Sales Orders"
           value={orders?.total || 0}
-          sub={`${orders?.active || 0} active · ${orders?.completed || 0} fulfilled`}
           color="orange"
+          context={`${orders?.active || 0} active · ${orders?.completed || 0} fulfilled`}
+          delta={(orders?.active || 0) > 0 ? 5 : 0}
           href="/ops/orders"
         />
-        <KPICard
+        <KPICardElite
           label="Order Revenue"
           value={fmt(orders?.totalRevenue || 0)}
-          sub={`${fmt(orders?.paidRevenue || 0)} collected`}
           color="green"
+          context={`${fmt(orders?.paidRevenue || 0)} collected`}
           href="/ops/orders"
-          isString
         />
-        <KPICard
+        <KPICardElite
           label="Purchase Orders"
           value={pos?.total || 0}
-          sub={`${fmt(pos?.totalSpend || 0)} total spend`}
-          color="purple"
+          color="slate"
+          context={`${fmt(pos?.totalSpend || 0)} total spend`}
           href="/ops/purchasing"
         />
       </div>
 
-      {/* AI Recommendations - Click to Approve */}
-      <div className="bg-white rounded-xl border p-5">
+      {/* Top section: AI Recommendations */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🧠</span>
-            <h3 className="font-semibold text-gray-900">AI Recommendations</h3>
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-6 bg-gradient-to-b from-abel-orange to-abel-orange rounded-full" />
+            <h2 className="text-lg font-semibold text-gray-900">AI Recommendations</h2>
           </div>
-          <Link href="/ops/ai/predictive" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+          <Link href="/ops/ai/predictive" className="text-sm text-abel-navy hover:text-abel-orange transition-colors font-medium">
             View All →
           </Link>
         </div>
         <AIRecommendations />
       </div>
 
-      {/* Two-column layout: Order Pipeline + Recent Orders */}
+      {/* Two-column: Pipeline + Recent Orders */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Order Pipeline */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Order Pipeline</h3>
-            <Link href="/ops/orders" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <BarChart className="w-5 h-5 text-abel-navy" />
+              Order Pipeline
+            </h3>
+            <Link href="/ops/orders" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
               View All →
             </Link>
           </div>
           <OrderPipeline byStatus={orders?.byStatus || {}} />
         </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Recent Orders</h3>
-            <Link href="/ops/orders" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Package className="w-5 h-5 text-abel-orange" />
+              Recent Orders
+            </h3>
+            <Link href="/ops/orders" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
               All Orders →
             </Link>
           </div>
@@ -188,73 +209,70 @@ export default function OpsDashboard() {
         </div>
       </div>
 
-      {/* Three-column: Workflow Alerts / Payment Status / Quick Actions */}
+      {/* Three-column: Alerts + Payment + Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Workflow Alerts */}
-        <div className="bg-white rounded-xl border p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900">Workflow Alerts</h3>
-            <Link href="/ops/ai" className="text-xs text-[#1B4F72] hover:text-[#E67E22]">
-              AI Tools →
-            </Link>
-          </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-danger-500" />
+            Workflow Alerts
+          </h3>
           <WorkflowAlerts />
         </div>
 
-        {/* Payment Overview */}
-        <div className="bg-white rounded-xl border p-5">
-          <h3 className="font-semibold text-gray-900 mb-3">Payment Status</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Status</h3>
           <div className="space-y-3">
             <PaymentRow
               label="Paid"
               count={orders?.byPayment?.['PAID']?.count || 0}
               amount={orders?.paidRevenue || 0}
-              color="text-green-600"
+              color="text-success-600"
             />
             <PaymentRow
               label="Invoiced"
               count={orders?.byPayment?.['INVOICED']?.count || 0}
               amount={orders?.invoicedRevenue || 0}
-              color="text-blue-600"
+              color="text-info-600"
             />
             <PaymentRow
               label="Pending"
               count={orders?.byPayment?.['PENDING']?.count || 0}
               amount={orders?.pendingRevenue || 0}
-              color="text-amber-600"
+              color="text-warning-600"
             />
             <PaymentRow
               label="Overdue"
               count={orders?.byPayment?.['OVERDUE']?.count || 0}
               amount={orders?.byPayment?.['OVERDUE']?.revenue || 0}
-              color="text-red-600"
+              color="text-danger-600"
             />
           </div>
-          <Link
-            href="/ops/orders"
-            className="block mt-4 text-center text-sm text-[#1B4F72] hover:text-[#E67E22]"
-          >
+          <Link href="/ops/orders" className="block mt-4 text-center text-sm text-abel-navy hover:text-abel-orange font-medium">
             Manage Orders →
           </Link>
         </div>
 
-        {/* Today's Action Queue */}
-        <div className="bg-white rounded-xl border p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900">Today's Actions</h3>
-            <span className="text-xs text-gray-400">Auto-refreshed</span>
-          </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-abel-green" />
+              Today's Actions
+            </span>
+            <span className="text-xs text-gray-500 font-normal">Auto-refreshed</span>
+          </h3>
           <ActionQueue />
         </div>
       </div>
 
-      {/* Charts Row: Product Categories + Top Builders */}
+      {/* Product Catalog + Top Builders */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Product Category Breakdown */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Product Catalog</h3>
-            <Link href="/ops/products" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Package className="w-5 h-5 text-abel-slate" />
+              Product Catalog
+            </h3>
+            <Link href="/ops/products" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
               View All →
             </Link>
           </div>
@@ -263,7 +281,7 @@ export default function OpsDashboard() {
               data={productCategories.slice(0, 8).map((cat, i) => ({
                 label: cat.name,
                 value: cat.count,
-                color: ['#1B4F72', '#E67E22', '#27AE60', '#8E44AD', '#3498DB', '#E74C3C', '#D97706', '#06B6D4', '#9CA3AF'][i] || '#9CA3AF',
+                color: ['#1B4F72', '#E67E22', '#27AE60', '#8E44AD', '#3498DB', '#E74C3C', '#D97706', '#06B6D4'][i] || '#9CA3AF',
               }))}
               size={150}
               thickness={22}
@@ -275,11 +293,13 @@ export default function OpsDashboard() {
           )}
         </div>
 
-        {/* Top Builders */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Top Builders by Revenue</h3>
-            <Link href="/ops/accounts" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Users className="w-5 h-5 text-abel-orange" />
+              Top Builders
+            </h3>
+            <Link href="/ops/accounts" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
               All Accounts →
             </Link>
           </div>
@@ -298,17 +318,16 @@ export default function OpsDashboard() {
         </div>
       </div>
 
-      {/* Revenue Trend + Operations Health + PO Breakdown */}
+      {/* Revenue + Operations Health + PO Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Order Revenue */}
-        <div className="bg-white rounded-xl border p-5">
-          <h3 className="font-semibold text-gray-900 mb-2">Monthly Order Revenue</h3>
-          <p className="text-2xl font-bold text-gray-900">{fmt(orders?.totalRevenue || 0)}</p>
-          <p className="text-xs text-gray-500 mb-3">Total from {orders?.total || 0} orders</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Monthly Revenue</h3>
+          <p className="text-3xl font-bold text-abel-navy">{fmt(orders?.totalRevenue || 0)}</p>
+          <p className="text-xs text-gray-500 mb-4">From {orders?.total || 0} orders</p>
           {(orders?.monthlyTrend?.length || 0) > 0 ? (
             <>
               <Sparkline
-                data={orders!.monthlyTrend.map(m => m.revenue)}
+                data={orders!.monthlyTrend.map((m) => m.revenue)}
                 width={280}
                 height={60}
                 color="#1B4F72"
@@ -316,9 +335,7 @@ export default function OpsDashboard() {
                 showDots
               />
               <div className="flex justify-between mt-2">
-                <span className="text-[10px] text-gray-400">
-                  {orders!.monthlyTrend[0]?.month || ''}
-                </span>
+                <span className="text-[10px] text-gray-400">{orders!.monthlyTrend[0]?.month || ''}</span>
                 <span className="text-[10px] text-gray-400">
                   {orders!.monthlyTrend[orders!.monthlyTrend.length - 1]?.month || ''}
                 </span>
@@ -329,46 +346,44 @@ export default function OpsDashboard() {
           )}
         </div>
 
-        {/* Operations Health */}
-        <div className="bg-white rounded-xl border p-5">
-          <h3 className="font-semibold text-gray-900 mb-4">Operations Health</h3>
-          <div className="flex items-center justify-around">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ops Health</h3>
+          <div className="flex items-center justify-around mb-5">
             <ProgressRing
               value={orders?.total ? Math.round(((orders.completed) / orders.total) * 100) : 0}
               color="#27AE60"
-              label="Fulfillment Rate"
+              label="Fulfillment"
             />
             <ProgressRing
               value={orders?.totalRevenue ? Math.round((orders.paidRevenue / orders.totalRevenue) * 100) : 0}
               color="#1B4F72"
-              label="Collection Rate"
+              label="Collection"
             />
             <ProgressRing
               value={data?.products.total ? Math.min(Math.round((data.products.total / 3500) * 100), 100) : 0}
               color="#8E44AD"
-              label="Catalog Coverage"
+              label="Catalog"
             />
           </div>
-          <div className="mt-5 pt-4 border-t">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Key Metrics</h4>
+          <div className="pt-4 border-t">
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Key Metrics</p>
             <div className="grid grid-cols-2 gap-3">
-              <MetricItem label="Avg Order Value" value={fmtFull(orders?.total ? (orders.totalRevenue / orders.total) : 0)} href="/ops/orders" />
-              <MetricItem label="Active Orders" value={String(orders?.active || 0)} href="/ops/orders?status=active" />
-              <MetricItem label="Products" value={(data?.products.total || 0).toLocaleString()} href="/ops/products" />
-              <MetricItem label="PO Spend" value={fmt(pos?.totalSpend || 0)} href="/ops/purchasing" />
+              <MetricItem label="Avg Order" value={fmt(orders?.total ? orders.totalRevenue / orders.total : 0)} />
+              <MetricItem label="Active Orders" value={String(orders?.active || 0)} />
+              <MetricItem label="Products" value={(data?.products.total || 0).toLocaleString()} />
+              <MetricItem label="PO Spend" value={fmt(pos?.totalSpend || 0)} />
             </div>
           </div>
         </div>
 
-        {/* Monthly Order Volume */}
-        <div className="bg-white rounded-xl border p-5">
-          <h3 className="font-semibold text-gray-900 mb-2">Monthly Order Volume</h3>
-          <p className="text-2xl font-bold text-gray-900">{orders?.total || 0}</p>
-          <p className="text-xs text-gray-500 mb-3">Total orders processed</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Order Volume</h3>
+          <p className="text-3xl font-bold text-abel-orange">{orders?.total || 0}</p>
+          <p className="text-xs text-gray-500 mb-4">Total orders processed</p>
           {(orders?.monthlyTrend?.length || 0) > 0 ? (
             <>
               <Sparkline
-                data={orders!.monthlyTrend.map(m => m.count)}
+                data={orders!.monthlyTrend.map((m) => m.count)}
                 width={280}
                 height={60}
                 color="#E67E22"
@@ -376,9 +391,7 @@ export default function OpsDashboard() {
                 showDots
               />
               <div className="flex justify-between mt-2">
-                <span className="text-[10px] text-gray-400">
-                  {orders!.monthlyTrend[0]?.month || ''}
-                </span>
+                <span className="text-[10px] text-gray-400">{orders!.monthlyTrend[0]?.month || ''}</span>
                 <span className="text-[10px] text-gray-400">
                   {orders!.monthlyTrend[orders!.monthlyTrend.length - 1]?.month || ''}
                 </span>
@@ -389,79 +402,58 @@ export default function OpsDashboard() {
           )}
         </div>
       </div>
+
+      {/* Activity Feed */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <ShoppingCart className="w-5 h-5 text-abel-navy" />
+          Live Activity Feed
+        </h3>
+        <ActivityFeed />
+      </div>
     </div>
   )
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────
 
-function KPICard({
-  label, value, sub, color, href, isString,
-}: {
-  label: string; value: number | string; sub: string; color: string; href: string; isString?: boolean
-}) {
-  const colorMap: Record<string, string> = {
-    blue: 'border-l-[#1B4F72]',
-    orange: 'border-l-[#E67E22]',
-    green: 'border-l-[#27AE60]',
-    purple: 'border-l-[#8E44AD]',
-    red: 'border-l-[#E74C3C]',
-  }
-
-  return (
-    <Link href={href}>
-      <div className={`bg-white rounded-xl border border-l-4 ${colorMap[color] || colorMap.blue} p-4 hover:shadow-md transition-shadow cursor-pointer`}>
-        <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-1">
-          {isString ? value : typeof value === 'number' ? value.toLocaleString() : value}
-        </p>
-        <p className="text-xs text-gray-400 mt-1">{sub}</p>
-      </div>
-    </Link>
-  )
-}
-
 function OrderPipeline({ byStatus }: { byStatus: Record<string, { count: number; revenue: number }> }) {
   const stages = [
     { key: 'RECEIVED', label: 'Received', color: '#95A5A6' },
     { key: 'CONFIRMED', label: 'Confirmed', color: '#3498DB' },
-    { key: 'IN_PRODUCTION', label: 'In Production', color: '#E67E22' },
-    { key: 'READY_TO_SHIP', label: 'Ready to Ship', color: '#F39C12' },
+    { key: 'IN_PRODUCTION', label: 'Production', color: '#E67E22' },
+    { key: 'READY_TO_SHIP', label: 'Ready', color: '#F39C12' },
     { key: 'SHIPPED', label: 'Shipped', color: '#1ABC9C' },
     { key: 'DELIVERED', label: 'Delivered', color: '#2ECC71' },
     { key: 'COMPLETE', label: 'Complete', color: '#27AE60' },
   ]
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n)
 
   const totalOrders = stages.reduce((sum, s) => sum + (byStatus[s.key]?.count || 0), 0)
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {stages.map((stage) => {
         const count = byStatus[stage.key]?.count || 0
         const revenue = byStatus[stage.key]?.revenue || 0
         const pct = totalOrders > 0 ? (count / totalOrders) * 100 : 0
         return (
-          <Link key={stage.key} href={`/ops/orders?status=${stage.key}`} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-gray-50 transition-colors group">
-            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
-            <span className="text-sm text-gray-600 w-[110px] group-hover:text-[#1B4F72] group-hover:font-medium">{stage.label}</span>
-            <div className="flex-1 bg-gray-100 rounded-full h-2">
-              <div className="h-2 rounded-full transition-all" style={{ width: `${Math.max(pct, count > 0 ? 2 : 0)}%`, backgroundColor: stage.color }} />
+          <Link key={stage.key} href={`/ops/orders?status=${stage.key}`} className="block">
+            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
+              <span className="text-sm text-gray-600 w-[100px] group-hover:text-abel-navy group-hover:font-medium">{stage.label}</span>
+              <div className="flex-1 bg-gray-100 rounded-full h-2.5">
+                <div className="h-2.5 rounded-full transition-all" style={{ width: `${Math.max(pct, count > 0 ? 2 : 0)}%`, backgroundColor: stage.color }} />
+              </div>
+              <span className="text-xs text-gray-400 w-16 text-right hidden sm:inline">{count > 0 ? fmt(revenue) : ''}</span>
+              <span className={`text-sm font-semibold w-8 text-right ${count > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{count}</span>
             </div>
-            <span className="text-xs text-gray-400 w-20 text-right hidden sm:inline">{count > 0 ? fmt(revenue) : ''}</span>
-            <span className={`text-sm font-medium w-8 text-right ${count > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
-              {count}
-            </span>
           </Link>
         )
       })}
-      {totalOrders === 0 && (
-        <p className="text-xs text-gray-400 text-center pt-2">
-          No orders in the pipeline yet
-        </p>
-      )}
+      {totalOrders === 0 && <p className="text-xs text-gray-400 text-center pt-4">No orders in pipeline</p>}
     </div>
   )
 }
@@ -470,7 +462,7 @@ function RecentOrdersList({ orders }: { orders: DashboardData['recentOrders'] })
   if (orders.length === 0) {
     return (
       <div className="text-center text-gray-400 text-sm py-8">
-        <p className="text-3xl mb-2">📦</p>
+        <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p>No recent orders</p>
       </div>
     )
@@ -486,31 +478,23 @@ function RecentOrdersList({ orders }: { orders: DashboardData['recentOrders'] })
     COMPLETE: 'bg-emerald-100 text-emerald-700',
   }
 
-  const paymentIcons: Record<string, string> = {
-    PAID: '✅',
-    INVOICED: '📄',
-    PENDING: '⏳',
-    OVERDUE: '🔴',
-  }
-
   const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n)
 
   return (
     <div className="space-y-2">
       {orders.map((order) => (
-        <Link key={order.id} href={`/ops/orders/${order.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all cursor-pointer group">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#1B4F72]">{order.builderName}</p>
-              <span className="text-xs text-gray-400">{paymentIcons[order.paymentStatus] || ''}</span>
+        <Link key={order.id} href={`/ops/orders/${order.id}`} className="block">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-abel-navy">{order.builderName}</p>
+              <p className="text-xs text-gray-500">{order.orderNumber}</p>
             </div>
-            <p className="text-xs text-gray-500">{order.orderNumber}</p>
+            <span className="text-sm font-medium text-gray-900">{fmt(order.total)}</span>
+            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${statusColors[order.status] || 'bg-gray-100'}`}>
+              {order.status.replace(/_/g, ' ')}
+            </span>
           </div>
-          <span className="text-sm font-medium text-gray-900">{fmt(order.total)}</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>
-            {order.status.replace(/_/g, ' ')}
-          </span>
         </Link>
       ))}
     </div>
@@ -519,25 +503,26 @@ function RecentOrdersList({ orders }: { orders: DashboardData['recentOrders'] })
 
 function PaymentRow({ label, count, amount, color }: { label: string; count: number; amount: number; color: string }) {
   const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n)
 
   return (
-    <Link href={`/ops/orders?payment=${label.toUpperCase()}`} className="flex justify-between items-center p-1.5 rounded-lg hover:bg-gray-50 transition-colors group">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600 group-hover:text-[#1B4F72] group-hover:font-medium">{label}</span>
-        <span className="text-xs text-gray-400">({count})</span>
+    <Link href={`/ops/orders?payment=${label.toUpperCase()}`} className="block">
+      <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600 group-hover:text-abel-navy group-hover:font-medium">{label}</span>
+          <span className="text-xs text-gray-400">({count})</span>
+        </div>
+        <span className={`text-sm font-semibold ${color}`}>{fmt(amount)}</span>
       </div>
-      <span className={`text-sm font-semibold ${color}`}>{fmt(amount)}</span>
     </Link>
   )
 }
 
-function MetricItem({ label, value, href }: { label: string; value: string; href?: string }) {
-  const content = (
-    <div className={href ? "p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group" : ""}>
-      <p className={`text-xs text-gray-500 ${href ? 'group-hover:text-[#1B4F72]' : ''}`}>{label}</p>
-      <p className="text-sm font-semibold text-gray-900">{value}</p>
+function MetricItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-2 rounded-lg hover:bg-gray-50 transition-colors">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-sm font-semibold text-gray-900 mt-1">{value}</p>
     </div>
   )
-  return href ? <Link href={href}>{content}</Link> : content
 }

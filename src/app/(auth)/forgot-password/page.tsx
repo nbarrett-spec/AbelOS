@@ -18,12 +18,13 @@ export default function ForgotPasswordPage() {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       })
 
+      const data = await res.json().catch(() => ({}))
+
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Something went wrong')
+        throw new Error(data?.error || `Something went wrong (${res.status})`)
       }
 
       setSent(true)
@@ -63,7 +64,7 @@ export default function ForgotPasswordPage() {
           {sent ? (
             <div className="text-center">
               <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -74,9 +75,24 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-gray-400 mb-8">
                 The link will expire in 1 hour.
               </p>
-              <Link href="/login" className="btn-accent inline-block">
-                Back to Sign In
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/login" className="btn-accent inline-block">
+                  Back to Sign In
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => { setSent(false); setError('') }}
+                  className="btn-outline inline-block"
+                >
+                  Try a different email
+                </button>
+              </div>
+              <p className="mt-8 text-xs text-gray-400">
+                Didn&apos;t get the email? Check spam, or email{' '}
+                <a href="mailto:support@abellumber.com" className="text-abel-navy hover:underline">
+                  support@abellumber.com
+                </a>
+              </p>
             </div>
           ) : (
             <>
@@ -86,30 +102,42 @@ export default function ForgotPasswordPage() {
               </p>
 
               {error && (
-                <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100"
+                >
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <div>
-                  <label className="label">Email address</label>
+                  <label htmlFor="email" className="label">Email address</label>
                   <input
+                    id="email"
+                    name="email"
                     className="input"
                     type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                     placeholder="you@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    aria-required="true"
                     autoFocus
                   />
                 </div>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="btn-accent w-full disabled:opacity-50"
+                  disabled={loading || !email.trim()}
+                  className="btn-accent w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? 'Sending…' : 'Send Reset Link'}
                 </button>
               </form>
 

@@ -62,7 +62,9 @@ export default function GlobalSearch() {
         setSelectedIndex(0)
       }
     } catch (err) {
-      console.error('Search error:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Search error:', err)
+      }
     } finally {
       setLoading(false)
     }
@@ -231,6 +233,7 @@ export default function GlobalSearch() {
             <input
               ref={inputRef}
               type="text"
+              aria-label="Search products, orders, projects, or invoices"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search products, orders, projects, invoices..."
@@ -324,6 +327,7 @@ export default function GlobalSearch() {
                       const globalIdx = idx
                       return (
                         <button
+                          type="button"
                           key={`${result.type}-${result.label}-${idx}`}
                           onClick={() => handleResultClick(result)}
                           onMouseEnter={() => setSelectedIndex(globalIdx)}
@@ -408,6 +412,7 @@ export default function GlobalSearch() {
                       const globalIdx = groupedResults.products.length + idx
                       return (
                         <button
+                          type="button"
                           key={`${result.type}-${result.label}-${idx}`}
                           onClick={() => handleResultClick(result)}
                           onMouseEnter={() => setSelectedIndex(globalIdx)}
@@ -493,6 +498,7 @@ export default function GlobalSearch() {
                         groupedResults.products.length + groupedResults.orders.length + idx
                       return (
                         <button
+                          type="button"
                           key={`${result.type}-${result.label}-${idx}`}
                           onClick={() => handleResultClick(result)}
                           onMouseEnter={() => setSelectedIndex(globalIdx)}
@@ -579,6 +585,7 @@ export default function GlobalSearch() {
                         idx
                       return (
                         <button
+                          type="button"
                           key={`${result.type}-${result.label}-${idx}`}
                           onClick={() => handleResultClick(result)}
                           onMouseEnter={() => setSelectedIndex(globalIdx)}

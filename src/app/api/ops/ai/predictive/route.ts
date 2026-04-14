@@ -8,6 +8,58 @@ import { safeJson } from '@/lib/safe-json'
 // Revenue forecasting, demand prediction, seasonal patterns,
 // builder behavior prediction, cash flow projection
 
+// Response type exports
+export interface DashboardResponse {
+  report: 'dashboard';
+  generatedAt: string;
+  currentPeriod: Record<string, any>;
+  pipeline: Record<string, any>;
+  trajectory: Array<{ month: Date; revenue: number; orders: number }>;
+  growthRate: number;
+  projectedMonthEnd: number;
+}
+
+export interface RevenueForecastResponse {
+  report: 'revenue-forecast';
+  generatedAt: string;
+  historical: Array<any>;
+  forecast: Array<{ month: string; projected: number; optimistic: number; pessimistic: number; type: string }>;
+  model: { type: string; confidence: string; basedOn: string };
+}
+
+export interface DemandPredictionResponse {
+  report: 'demand-prediction';
+  generatedAt: string;
+  categoryForecasts: Array<any>;
+  topProducts: Array<any>;
+}
+
+export interface SeasonalPatternsResponse {
+  report: 'seasonal-patterns';
+  generatedAt: string;
+  dayOfWeek: Array<any>;
+  monthlyPattern: Array<any>;
+  hourOfDay: Array<any>;
+  quoteTiming: Record<string, any>;
+}
+
+export interface BuilderPredictionsResponse {
+  report: 'builder-predictions';
+  generatedAt: string;
+  predictions: Array<any>;
+  summary: { total: number; overdue: number; increasing: number; decreasing: number; stable: number };
+}
+
+export interface CashFlowProjectionResponse {
+  report: 'cash-flow';
+  generatedAt: string;
+  arProjection: Array<any>;
+  apProjection: Array<any>;
+  weeklyProjection: Array<any>;
+  totalAR: number;
+  totalAP: number;
+}
+
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
@@ -16,18 +68,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const report = searchParams.get('report') || 'dashboard';
 
-    switch (report) {
-      case 'dashboard': return await getDashboard();
-      case 'revenue-forecast': return await getRevenueForecast();
-      case 'demand-prediction': return await getDemandPrediction();
-      case 'seasonal-patterns': return await getSeasonalPatterns();
-      case 'builder-predictions': return await getBuilderPredictions();
-      case 'cash-flow': return await getCashFlowProjection();
-      default: return NextResponse.json({ error: 'Unknown report' }, { status: 400 });
-    }
+    const response = await (async () => {
+      switch (report) {
+        case 'dashboard': return await getDashboard();
+        case 'revenue-forecast': return await getRevenueForecast();
+        case 'demand-prediction': return await getDemandPrediction();
+        case 'seasonal-patterns': return await getSeasonalPatterns();
+        case 'builder-predictions': return await getBuilderPredictions();
+        case 'cash-flow': return await getCashFlowProjection();
+        default: return { error: 'Unknown report' };
+      }
+    })();
+
+    // Add caching headers
+    const headers = {
+      'Cache-Control': 'private, max-age=300', // Cache for 5 minutes
+    };
+
+    return safeJson(response, { headers });
   } catch (error: any) {
     console.error('Predictive analytics error:', error);
-    return safeJson({ error: 'Internal server error' }, { status: 500 });
+    return safeJson({ error: 'Internal server error' }, { status: 200 }); // Return 200 with error message
   }
 }
 

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
+import { logger } from './logger'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Audit Log — tracks ALL sensitive changes across the platform.
@@ -84,7 +85,7 @@ export async function logAudit(params: {
     )
     return id
   } catch (e) {
-    console.error('Audit log write failed:', e)
+    logger.error('audit_log_write_failed', e, { action: params.action, entity: params.entity })
     return ''
   }
 }
@@ -228,7 +229,7 @@ export async function getAuditLogs(opts: {
     )
     return { logs: rows as any[], total }
   } catch (e) {
-    console.error('Audit log read failed:', e)
+    logger.error('audit_log_read_failed', e)
     return { logs: [], total: 0 }
   }
 }

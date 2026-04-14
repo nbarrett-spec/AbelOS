@@ -158,7 +158,9 @@ export default function SalesDashboard() {
           // Follow-ups API may not have data yet
         }
       } catch (error) {
-        console.error('Failed to load dashboard data:', error)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Failed to load dashboard data:', error)
+        }
       } finally {
         setLoading(false)
       }

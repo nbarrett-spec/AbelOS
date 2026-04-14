@@ -2,8 +2,11 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit';
+import { logger, getRequestId } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
   try {
     // Get builder session
     const session = await getSession();
@@ -11,6 +14,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Rate limit password changes
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rl = await authLimiter.check(`password-change:${ip}:${session.builderId}`);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: getRateLimitHeaders(rl, 10) }
       );
     }
 
@@ -62,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Change password error:', error);
+    logger.error('change_password_error', error, { requestId });
 
     if (error instanceof SyntaxError) {
       return NextResponse.json(

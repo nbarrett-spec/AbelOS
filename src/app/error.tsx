@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 
 export default function Error({
   error,
@@ -11,64 +12,45 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('Unhandled error:', error)
+    // Ship to Sentry if present
+    if (typeof window !== 'undefined' && (window as any).Sentry?.captureException) {
+      (window as any).Sentry.captureException(error)
+    }
   }, [error])
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 32,
-      backgroundColor: '#f9fafb',
-    }}>
-      <div style={{ textAlign: 'center', maxWidth: 480 }}>
-        <div style={{
-          fontSize: 64,
-          marginBottom: 20,
-        }}>
-          ⚠️
+    <div className="min-h-[80vh] flex items-center justify-center px-6 py-16 bg-gray-50">
+      <div className="max-w-lg w-full text-center card p-8 sm:p-10">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-abel-orange/10 text-abel-orange mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
         </div>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>
-          Abel Lumber
-        </h1>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1f2937', marginBottom: 16 }}>
-          Something went wrong
-        </h2>
-        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, lineHeight: 1.5 }}>
-          An unexpected error occurred. Please try again or contact support if the problem persists.
+        <p className="text-sm font-semibold tracking-wider text-abel-orange uppercase mb-2">Abel Lumber</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Something went wrong</h1>
+        <p className="text-gray-600 mb-6 leading-relaxed">
+          We hit an unexpected error. The team has been notified. You can try again or head back to a known-good page.
         </p>
         {error.digest && (
-          <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16, fontFamily: 'monospace' }}>
+          <div className="inline-block px-3 py-1.5 bg-gray-100 rounded-md font-mono text-xs text-gray-600 mb-6">
             Error ID: {error.digest}
-          </p>
+          </div>
         )}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <button
-            onClick={reset}
-            style={{
-              padding: '10px 24px', borderRadius: 8,
-              backgroundColor: '#E67E22', color: 'white',
-              fontSize: 14, fontWeight: 600, border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            Try Again
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button onClick={reset} className="btn-accent">
+            Try again
           </button>
-          <a
-            href="/"
-            style={{
-              padding: '10px 24px', borderRadius: 8,
-              backgroundColor: '#1B4F72', color: 'white',
-              fontSize: 14, fontWeight: 600, border: 'none',
-              cursor: 'pointer',
-              textDecoration: 'none',
-              display: 'inline-block',
-            }}
-          >
-            Go Home
-          </a>
+          <Link href="/" className="btn-outline">
+            Go home
+          </Link>
         </div>
+        <p className="mt-6 text-sm text-gray-500">
+          Still broken? Email{' '}
+          <a href="mailto:support@abellumber.com" className="text-abel-navy hover:underline font-medium">
+            support@abellumber.com
+          </a>
+          {error.digest && ` with error ID above.`}
+        </p>
       </div>
     </div>
   )

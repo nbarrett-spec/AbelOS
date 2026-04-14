@@ -8,7 +8,9 @@ export default function PWARegister() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('SW registered:', registration.scope)
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('SW registered:', registration.scope)
+          }
 
           // Check for updates every 30 minutes
           setInterval(() => {
@@ -16,7 +18,9 @@ export default function PWARegister() {
           }, 30 * 60 * 1000)
         })
         .catch((err) => {
-          console.warn('SW registration failed:', err)
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('SW registration failed:', err)
+          }
         })
     }
   }, [])

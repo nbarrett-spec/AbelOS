@@ -6,9 +6,11 @@ import { sendOrderConfirmationEmail } from '@/lib/email'
 import { notifyOrderConfirmed } from '@/lib/notifications'
 import { apiLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
 import { checkCSRF } from '@/lib/security'
+import { logger, getRequestId } from '@/lib/logger'
 
 // GET /api/orders — List builder's orders
 export async function GET(request: NextRequest) {
+  const requestId = getRequestId(request)
   const session = await getSession()
   if (!session) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -30,13 +32,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ orders })
   } catch (error: any) {
-    console.error(error)
+    logger.error('orders_get_error', error, { requestId })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // POST /api/orders — Create order from quote
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
   // CSRF check
   if (!checkCSRF(request)) {
     return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
@@ -174,7 +177,7 @@ export async function POST(request: NextRequest) {
         jobAddress
       )
     } catch (jobErr: any) {
-      console.error('[Order POST] Auto-create Job failed:', jobErr?.message)
+      logger.warn('order_auto_create_job_failed', { msg: jobErr?.message, requestId })
       // Non-blocking — order is already created
     }
 

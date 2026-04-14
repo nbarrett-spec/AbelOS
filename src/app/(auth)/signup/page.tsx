@@ -1,8 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+function scorePassword(pw: string): { score: 0 | 1 | 2 | 3 | 4; label: string; color: string } {
+  if (!pw) return { score: 0, label: '', color: 'bg-gray-200' }
+  let score = 0
+  if (pw.length >= 8) score++
+  if (pw.length >= 12) score++
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++
+  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++
+  const bounded = Math.min(4, score) as 0 | 1 | 2 | 3 | 4
+  const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'] as const
+  const colors = ['bg-gray-200', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-green-500']
+  return { score: bounded, label: labels[bounded], color: colors[bounded] }
+}
 
 const PAYMENT_OPTIONS = [
   {
@@ -48,6 +61,12 @@ export default function SignupPage() {
   const [step, setStep] = useState(1)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [capsLockOn, setCapsLockOn] = useState(false)
+
+  const handleCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    setCapsLockOn(typeof e.getModifierState === 'function' && e.getModifierState('CapsLock'))
+  }
 
   const [form, setForm] = useState({
     companyName: '',
@@ -70,6 +89,8 @@ export default function SignupPage() {
     setForm((prev) => ({ ...prev, [field]: value }))
     setError('')
   }
+
+  const passwordStrength = useMemo(() => scorePassword(form.password), [form.password])
 
   const handleSubmit = async () => {
     if (form.password.length < 8) {
@@ -97,26 +118,26 @@ export default function SignupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          companyName: form.companyName,
-          contactName: form.contactName,
-          email: form.email,
-          phone: form.phone || undefined,
+          companyName: form.companyName.trim(),
+          contactName: form.contactName.trim(),
+          email: form.email.trim().toLowerCase(),
+          phone: form.phone.trim() || undefined,
           password: form.password,
           paymentTerm: form.paymentTerm,
-          licenseNumber: form.licenseNumber || undefined,
-          taxId: form.taxId || undefined,
+          licenseNumber: form.licenseNumber.trim() || undefined,
+          taxId: form.taxId.trim() || undefined,
           taxExempt: form.taxExempt,
-          address: form.address || undefined,
-          city: form.city || undefined,
+          address: form.address.trim() || undefined,
+          city: form.city.trim() || undefined,
           state: form.state || undefined,
-          zip: form.zip || undefined,
+          zip: form.zip.trim() || undefined,
         }),
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        throw new Error(data.error || 'Signup failed')
+        throw new Error(data?.error || `Signup failed (${res.status})`)
       }
 
       router.push('/dashboard')
@@ -176,7 +197,11 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100"
+            >
               {error}
             </div>
           )}
@@ -185,17 +210,28 @@ export default function SignupPage() {
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <label className="label">Company Name</label>
+                <label htmlFor="companyName" className="label">Company Name</label>
                 <input
+                  id="companyName"
+                  name="companyName"
+                  autoComplete="organization"
                   className="input"
                   placeholder="Your Building Company"
                   value={form.companyName}
                   onChange={(e) => updateForm('companyName', e.target.value)}
+                  required
+                  aria-required="true"
+                  autoFocus
                 />
               </div>
               <div>
-                <label className="label">Phone</label>
+                <label htmlFor="phone" className="label">Phone</label>
                 <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   className="input"
                   placeholder="(555) 123-4567"
                   value={form.phone}
@@ -221,43 +257,112 @@ export default function SignupPage() {
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <label className="label">Your Name</label>
+                <label htmlFor="contactName" className="label">Your Name</label>
                 <input
+                  id="contactName"
+                  name="contactName"
+                  autoComplete="name"
                   className="input"
                   placeholder="John Smith"
                   value={form.contactName}
                   onChange={(e) => updateForm('contactName', e.target.value)}
+                  required
+                  aria-required="true"
+                  autoFocus
                 />
               </div>
               <div>
-                <label className="label">Email</label>
+                <label htmlFor="email" className="label">Email</label>
                 <input
+                  id="email"
+                  name="email"
                   className="input"
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="john@yourcompany.com"
                   value={form.email}
                   onChange={(e) => updateForm('email', e.target.value)}
+                  required
+                  aria-required="true"
                 />
               </div>
               <div>
-                <label className="label">Password</label>
-                <input
-                  className="input"
-                  type="password"
-                  placeholder="Min. 8 chars, 1 uppercase, 1 number"
-                  value={form.password}
-                  onChange={(e) => updateForm('password', e.target.value)}
-                />
+                <label htmlFor="password" className="label">Password</label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    className="input pr-16"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    placeholder="Min. 8 chars, 1 uppercase, 1 number"
+                    value={form.password}
+                    onChange={(e) => updateForm('password', e.target.value)}
+                    onKeyUp={handleCapsLock}
+                    onKeyDown={handleCapsLock}
+                    required
+                    minLength={8}
+                    aria-required="true"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(s => !s)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    tabIndex={-1}
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-abel-orange transition text-sm font-medium"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {form.password.length > 0 && (
+                  <div className="mt-2" aria-live="polite">
+                    <div className="flex gap-1 h-1.5" aria-hidden="true">
+                      {[1, 2, 3, 4].map(i => (
+                        <div
+                          key={i}
+                          className={`flex-1 rounded-full transition-colors ${i <= passwordStrength.score ? passwordStrength.color : 'bg-gray-200'}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Strength: <span className="font-medium text-gray-700">{passwordStrength.label}</span>
+                    </p>
+                  </div>
+                )}
+                {capsLockOn && (
+                  <p className="mt-1.5 text-xs text-amber-600" aria-live="polite">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" />
+                    Caps Lock is on
+                  </p>
+                )}
               </div>
               <div>
-                <label className="label">Confirm Password</label>
+                <label htmlFor="confirmPassword" className="label">Confirm Password</label>
                 <input
+                  id="confirmPassword"
+                  name="confirmPassword"
                   className="input"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Re-enter password"
                   value={form.confirmPassword}
                   onChange={(e) => updateForm('confirmPassword', e.target.value)}
+                  onKeyUp={handleCapsLock}
+                  required
+                  minLength={8}
+                  aria-required="true"
+                  aria-invalid={form.confirmPassword.length > 0 && form.password !== form.confirmPassword}
                 />
+                {form.confirmPassword.length > 0 && form.password !== form.confirmPassword && (
+                  <p className="mt-1.5 text-xs text-red-600" aria-live="polite">
+                    Passwords don&apos;t match yet.
+                  </p>
+                )}
               </div>
               <div className="flex gap-3 mt-4">
                 <button onClick={() => setStep(1)} className="btn-outline flex-1">
@@ -287,8 +392,10 @@ export default function SignupPage() {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <label className="label">License Number (optional)</label>
+                <label htmlFor="licenseNumber" className="label">License Number (optional)</label>
                 <input
+                  id="licenseNumber"
+                  name="licenseNumber"
                   className="input"
                   placeholder="Your business license #"
                   value={form.licenseNumber}
@@ -296,8 +403,10 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label className="label">Tax ID (optional)</label>
+                <label htmlFor="taxId" className="label">Tax ID (optional)</label>
                 <input
+                  id="taxId"
+                  name="taxId"
                   className="input"
                   placeholder="Your Tax ID"
                   value={form.taxId}
@@ -317,8 +426,11 @@ export default function SignupPage() {
                 </label>
               </div>
               <div>
-                <label className="label">Street Address (optional)</label>
+                <label htmlFor="address" className="label">Street Address (optional)</label>
                 <input
+                  id="address"
+                  name="address"
+                  autoComplete="street-address"
                   className="input"
                   placeholder="123 Main St"
                   value={form.address}
@@ -327,8 +439,11 @@ export default function SignupPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">City (optional)</label>
+                  <label htmlFor="city" className="label">City (optional)</label>
                   <input
+                    id="city"
+                    name="city"
+                    autoComplete="address-level2"
                     className="input"
                     placeholder="Austin"
                     value={form.city}
@@ -336,8 +451,13 @@ export default function SignupPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">ZIP Code (optional)</label>
+                  <label htmlFor="zip" className="label">ZIP Code (optional)</label>
                   <input
+                    id="zip"
+                    name="zip"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    pattern="\d{5}(-\d{4})?"
                     className="input"
                     placeholder="78701"
                     value={form.zip}
@@ -346,8 +466,11 @@ export default function SignupPage() {
                 </div>
               </div>
               <div>
-                <label className="label">State (optional)</label>
+                <label htmlFor="state" className="label">State (optional)</label>
                 <select
+                  id="state"
+                  name="state"
+                  autoComplete="address-level1"
                   className="input"
                   value={form.state}
                   onChange={(e) => updateForm('state', e.target.value)}

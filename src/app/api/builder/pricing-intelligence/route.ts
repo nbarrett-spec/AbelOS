@@ -4,6 +4,59 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+// Response type exports
+export interface TierStatus {
+  currentTier: string;
+  totalSpend: number;
+  tierBenefits: Record<string, { minDiscount: number; maxDiscount: number }>;
+  nextTier: string | null;
+  spendNeededForNextTier: number;
+}
+
+export interface SavingsBreakdownItem {
+  month: string;
+  totalSpend: number;
+  basePriceTotal: number;
+  actualPaid: number;
+  savings: number;
+  savingsPercent: number;
+}
+
+export interface CategoryPricingItem {
+  category: string;
+  baseAvgPrice: number;
+  actualAvgPrice: number;
+  discountPercent: number;
+  totalSpent: number;
+  itemsOrdered: number;
+}
+
+export interface CustomDealItem {
+  productName: string;
+  sku: string;
+  basePrice: number;
+  customPrice: number;
+  savingsPerUnit: number;
+  unitsOrdered: number;
+  totalUnitSavings: number;
+}
+
+export interface TierComparisonItem {
+  tier: string;
+  estimatedCost: number;
+  actualCost: number;
+  estimatedSavings: number;
+  savingsPercent: number;
+}
+
+export interface PricingIntelligenceResponse {
+  tierStatus: TierStatus;
+  savingsBreakdown: SavingsBreakdownItem[];
+  categoryPricing: CategoryPricingItem[];
+  customDeals: CustomDealItem[];
+  tierComparison: TierComparisonItem[];
+}
+
 // Tier thresholds in dollars
 const TIER_THRESHOLDS = {
   STANDARD: 0,
@@ -97,18 +150,37 @@ export async function GET(request: NextRequest) {
     // Calculate tier comparison
     const tierComparison = calculateTierComparison(orders as any[], tierRuleRows as any[]);
 
-    return NextResponse.json({
+    const response: PricingIntelligenceResponse = {
       tierStatus,
       savingsBreakdown,
       categoryPricing,
       customDeals,
       tierComparison,
+    };
+
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'private, max-age=300', // Cache for 5 minutes
+      },
     });
   } catch (error) {
     console.error('Pricing intelligence error:', error);
     return NextResponse.json(
-      { error: 'Failed to calculate pricing intelligence' },
-      { status: 500 }
+      {
+        error: 'Failed to calculate pricing intelligence',
+        tierStatus: {
+          currentTier: 'UNKNOWN',
+          totalSpend: 0,
+          tierBenefits: {},
+          nextTier: null,
+          spendNeededForNextTier: 0,
+        },
+        savingsBreakdown: [],
+        categoryPricing: [],
+        customDeals: [],
+        tierComparison: [],
+      } as PricingIntelligenceResponse,
+      { status: 200 } // Return 200 with empty data rather than 500
     );
   }
 }

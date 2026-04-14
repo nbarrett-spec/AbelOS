@@ -4,8 +4,10 @@ import { prisma } from '@/lib/prisma'
 import { verifyPassword, createToken, setSessionCookie } from '@/lib/auth'
 import { loginSchema } from '@/lib/validations'
 import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { logger, getRequestId } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
   try {
     // Rate limit login attempts
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
@@ -76,11 +78,11 @@ export async function POST(request: NextRequest) {
         },
       })
     } catch (dbError) {
-      console.error('Database error during login:', dbError)
+      logger.error('login_db_error', dbError, { requestId })
       return NextResponse.json({ error: 'Login failed' }, { status: 500 })
     }
   } catch (error) {
-    console.error('Login error:', error)
+    logger.error('login_error', error, { requestId })
     return NextResponse.json({ error: 'Login failed' }, { status: 500 })
   }
 }

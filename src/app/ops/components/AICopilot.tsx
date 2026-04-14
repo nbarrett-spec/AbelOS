@@ -198,19 +198,28 @@ export default function AICopilot() {
     }))
   }, [])
 
-  // Render markdown-light formatting (bold, bullet lists, line breaks)
+  // Render markdown-light formatting (bold, bullet lists, line breaks).
+  // XSS-safe: escape HTML first, then apply a small whitelist of markdown -> tag conversions.
   const formatContent = (text: string) => {
-    return text.split('\n').map((line, i) => {
-      // Bold
-      let formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Bullet points
-      if (formatted.startsWith('• ') || formatted.startsWith('- ')) {
-        formatted = `<span class="ml-2">${formatted}</span>`
+    const lines = text.split('\n')
+    return lines.map((line, i) => {
+      // 1) Escape all HTML-significant characters from the source text.
+      let safe = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+      // 2) Apply bold markdown on the escaped string.
+      safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // 3) Indent bullet-style lines.
+      if (safe.startsWith('&bull; ') || safe.startsWith('• ') || safe.startsWith('- ')) {
+        safe = `<span class="ml-2">${safe}</span>`
       }
       return (
         <span key={i}>
-          <span dangerouslySetInnerHTML={{ __html: formatted }} />
-          {i < text.split('\n').length - 1 && <br />}
+          <span dangerouslySetInnerHTML={{ __html: safe }} />
+          {i < lines.length - 1 && <br />}
         </span>
       )
     })
