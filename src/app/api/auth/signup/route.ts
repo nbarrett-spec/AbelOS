@@ -3,20 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, createToken, setSessionCookie } from '@/lib/auth'
 import { signupSchema } from '@/lib/validations'
-import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logger, getRequestId } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   const requestId = getRequestId(request)
   try {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    const rl = await authLimiter.check(ip)
-    if (!rl.success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429, headers: getRateLimitHeaders(rl, 10) }
-      )
-    }
+    const limited = await checkRateLimit(request, authLimiter, 10, 'builder-signup')
+    if (limited) return limited
 
     const body = await request.json()
     const parsed = signupSchema.safeParse(body)

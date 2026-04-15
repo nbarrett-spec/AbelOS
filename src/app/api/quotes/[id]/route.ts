@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { sendOrderConfirmationEmail } from '@/lib/email'
-import { apiLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { sanitizeInput, isValidUUID, checkCSRF } from '@/lib/security'
 
 // GET /api/quotes/[id] — Get single quote detail
@@ -91,15 +91,9 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
   }
 
-  // Rate limit — 20 quote actions per minute
-  const ip = request.headers.get('x-forwarded-for') || 'unknown'
-  const rl = await apiLimiter.check(`quote-action:${ip}`)
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again shortly.' },
-      { status: 429, headers: getRateLimitHeaders(rl, 60) }
-    )
-  }
+  // Rate limit — logs RATE_LIMIT SecurityEvent on rejection.
+  const limited = await checkRateLimit(request, apiLimiter, 60, 'quote-action')
+  if (limited) return limited
 
   const session = await getSession()
   if (!session) {

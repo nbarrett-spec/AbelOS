@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { sendOrderConfirmationEmail } from '@/lib/email'
 import { notifyOrderConfirmed } from '@/lib/notifications'
-import { apiLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { checkCSRF } from '@/lib/security'
 import { logger, getRequestId } from '@/lib/logger'
 
@@ -45,15 +45,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
   }
 
-  // Rate limit order creation — 10 per minute
-  const ip = request.headers.get('x-forwarded-for') || 'unknown'
-  const rl = await apiLimiter.check(`order-create:${ip}`)
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again shortly.' },
-      { status: 429, headers: getRateLimitHeaders(rl, 60) }
-    )
-  }
+  // Rate limit order creation — logs RATE_LIMIT SecurityEvent on rejection.
+  const limited = await checkRateLimit(request, apiLimiter, 60, 'order-create')
+  if (limited) return limited
 
   const session = await getSession()
   if (!session) {

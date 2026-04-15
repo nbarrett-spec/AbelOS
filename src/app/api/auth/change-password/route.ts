@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit';
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
 import { logger, getRequestId } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -17,15 +17,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limit password changes
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    const rl = await authLimiter.check(`password-change:${ip}:${session.builderId}`);
-    if (!rl.success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429, headers: getRateLimitHeaders(rl, 10) }
-      );
-    }
+    // Rate limit password changes (per-session key so one attacker can't
+    // lock out a victim by flooding their builder id).
+    const limited = await checkRateLimit(
+      request,
+      authLimiter,
+      10,
+      `password-change:${session.builderId}`
+    );
+    if (limited) return limited;
 
     // Parse request body
     const body = await request.json();

@@ -3,21 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendPasswordResetEmail } from '@/lib/email'
-import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logger, getRequestId } from '@/lib/logger'
 
 // POST /api/auth/forgot-password — generate a reset token
 export async function POST(request: NextRequest) {
   const requestId = getRequestId(request)
   try {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    const rl = await authLimiter.check(`reset-${ip}`)
-    if (!rl.success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429, headers: getRateLimitHeaders(rl, 10) }
-      )
-    }
+    const limited = await checkRateLimit(request, authLimiter, 10, 'builder-reset')
+    if (limited) return limited
 
     const { email } = await request.json()
 
