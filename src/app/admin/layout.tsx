@@ -21,6 +21,7 @@ export default function AdminLayout({
     { href: '/admin/crons', label: 'Cron Jobs', icon: '⏱️' },
     { href: '/admin/hyphen', label: 'Hyphen', icon: '🔌' },
     { href: '/admin/webhooks', label: 'Webhooks', icon: '📬' },
+    { href: '/admin/errors', label: 'Errors', icon: '🐛' },
   ]
 
   return (
