@@ -38,6 +38,7 @@ interface AlertIncidentRow {
   lastSeenAt: string
   tickCount: number
   notifiedAt: string | null
+  escalationCount: number
 }
 
 interface AlertRollupRow {
@@ -445,14 +446,26 @@ export default function AlertHistoryPage() {
                               FIRING
                             </span>
                           )}
-                          {inc.peakSeverity === 'critical' && inc.notifiedAt && (
-                            <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-indigo-50 text-indigo-700 border-indigo-200"
-                              title={`Notification email sent ${fmtAbsDate(inc.notifiedAt)}`}
-                            >
-                              ✉ NOTIFIED
-                            </span>
-                          )}
+                          {inc.peakSeverity === 'critical' &&
+                            inc.notifiedAt &&
+                            inc.escalationCount === 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-indigo-50 text-indigo-700 border-indigo-200"
+                                title={`Notification email sent ${fmtAbsDate(inc.notifiedAt)}`}
+                              >
+                                ✉ NOTIFIED
+                              </span>
+                            )}
+                          {inc.peakSeverity === 'critical' &&
+                            inc.notifiedAt &&
+                            inc.escalationCount > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-orange-50 text-orange-700 border-orange-300"
+                                title={`Escalation #${inc.escalationCount} sent ${fmtAbsDate(inc.notifiedAt)} — re-notified because the incident has stayed open`}
+                              >
+                                ✉ ESCALATED ×{inc.escalationCount}
+                              </span>
+                            )}
                           {inc.peakSeverity === 'critical' && !inc.notifiedAt && isOpen && (
                             <span
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-gray-50 text-gray-500 border-gray-200"

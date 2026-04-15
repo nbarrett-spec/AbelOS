@@ -81,7 +81,8 @@ async function ensureAlertIncidentTable(): Promise<void> {
           "lastCount" INTEGER NOT NULL DEFAULT 0,
           "lastSeenAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           "tickCount" INTEGER NOT NULL DEFAULT 1,
-          "notifiedAt" TIMESTAMPTZ
+          "notifiedAt" TIMESTAMPTZ,
+          "escalationCount" INTEGER NOT NULL DEFAULT 0
         )
       `)
       // Backfill the notifiedAt column for existing tables created before
@@ -89,6 +90,14 @@ async function ensureAlertIncidentTable(): Promise<void> {
       // installs but adds the column on any deployment that pre-dates this.
       await prisma.$executeRawUnsafe(
         `ALTER TABLE "AlertIncident" ADD COLUMN IF NOT EXISTS "notifiedAt" TIMESTAMPTZ`
+      )
+      // Backfill escalationCount for tables that pre-date the escalation
+      // feature. Defaults to 0 for all existing rows, which means the next
+      // eligible tick treats already-notified incidents as having had
+      // "zero prior escalations" and starts the 1h clock from their
+      // existing notifiedAt — correct behavior.
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "AlertIncident" ADD COLUMN IF NOT EXISTS "escalationCount" INTEGER NOT NULL DEFAULT 0`
       )
       await prisma.$executeRawUnsafe(
         `CREATE INDEX IF NOT EXISTS "idx_alertincident_started" ON "AlertIncident" ("startedAt" DESC)`
@@ -341,6 +350,166 @@ async function clearNotified(incidentId: string): Promise<void> {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Escalation dispatch.
+//
+// Once an incident is opened and the initial notification has been sent
+// (notifiedAt stamped), dispatchCriticalNotifications runs a second pass
+// looking for open criticals where notifiedAt is older than 1 hour. For
+// each it atomically claims an escalation slot, sends a "[STILL FIRING]"
+// email, and bumps escalationCount + notifiedAt=NOW(). Capped at
+// ESCALATION_MAX_COUNT so a week-long incident doesn't turn into 168
+// emails.
+//
+// The claim is a single UPDATE ... RETURNING so concurrent Lambdas can't
+// double-send — only one wins the atomic increment. Lost racers get null
+// back from claimEscalation and skip the row.
+//
+// On total send failure we roll back escalationCount (but NOT notifiedAt)
+// so the row becomes eligible again in an hour, not immediately — one
+// missed escalation during a transient Resend outage is better than a
+// tight retry loop against a broken sender.
+// ──────────────────────────────────────────────────────────────────────────
+
+const ESCALATION_INTERVAL_HOURS = 1
+const ESCALATION_MAX_COUNT = 4
+
+interface EscalationClaim extends PendingIncident {
+  escalationCount: number
+}
+
+async function loadEscalationCandidateIds(): Promise<string[]> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id"
+       FROM "AlertIncident"
+       WHERE "endedAt" IS NULL
+         AND "peakSeverity" = 'critical'
+         AND "notifiedAt" IS NOT NULL
+         AND "notifiedAt" < NOW() - INTERVAL '${ESCALATION_INTERVAL_HOURS} hours'
+         AND "escalationCount" < ${ESCALATION_MAX_COUNT}
+       ORDER BY "startedAt" ASC
+       LIMIT 20`
+    )
+    return rows.map((r) => String(r.id))
+  } catch {
+    return []
+  }
+}
+
+async function claimEscalation(
+  incidentId: string
+): Promise<EscalationClaim | null> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `UPDATE "AlertIncident"
+       SET "escalationCount" = "escalationCount" + 1,
+           "notifiedAt" = NOW()
+       WHERE "id" = $1
+         AND "endedAt" IS NULL
+         AND "peakSeverity" = 'critical'
+         AND "notifiedAt" IS NOT NULL
+         AND "notifiedAt" < NOW() - INTERVAL '${ESCALATION_INTERVAL_HOURS} hours'
+         AND "escalationCount" < ${ESCALATION_MAX_COUNT}
+       RETURNING "id", "alertId", "title", "href", "description",
+                 "peakCount", "startedAt", "tickCount", "escalationCount"`,
+      incidentId
+    )
+    if (!rows.length) return null
+    const r = rows[0]
+    return {
+      id: String(r.id),
+      alertId: String(r.alertId),
+      title: String(r.title),
+      href: r.href ?? null,
+      description: r.description ?? null,
+      peakCount: Number(r.peakCount) || 0,
+      startedAt:
+        r.startedAt instanceof Date ? r.startedAt : new Date(String(r.startedAt)),
+      tickCount: Number(r.tickCount) || 1,
+      escalationCount: Number(r.escalationCount) || 1,
+    }
+  } catch {
+    return null
+  }
+}
+
+async function rollbackEscalation(incidentId: string): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "AlertIncident"
+       SET "escalationCount" = GREATEST("escalationCount" - 1, 0)
+       WHERE "id" = $1`,
+      incidentId
+    )
+  } catch {
+    // swallow — we'll just skip this escalation cycle
+  }
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 0) ms = 0
+  const totalMinutes = Math.floor(ms / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours >= 1) {
+    return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
+  }
+  return `${minutes}m`
+}
+
+function renderEscalationEmailHtml(
+  incident: PendingIncident,
+  escalationCount: number
+): string {
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://app.abellumber.com'
+      : 'http://localhost:3000')
+  const href = incident.href
+    ? incident.href.startsWith('http')
+      ? incident.href
+      : `${appUrl}${incident.href}`
+    : `${appUrl}/admin/alert-history`
+  const durationMs = Date.now() - incident.startedAt.getTime()
+  const duration = formatDuration(durationMs)
+  const started = incident.startedAt.toISOString()
+  const safeTitle = escapeHtml(incident.title)
+  const safeDesc = incident.description
+    ? escapeHtml(incident.description)
+    : '(no description)'
+  const safeAlertId = escapeHtml(incident.alertId)
+  const remaining = ESCALATION_MAX_COUNT - escalationCount
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:620px;margin:0 auto;padding:24px;background:#fff;">
+      <div style="background:#7c2d12;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;">
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">Escalation #${escalationCount} — still firing after ${duration}</div>
+        <div style="font-size:18px;font-weight:700;margin-top:4px;">${safeTitle}</div>
+      </div>
+      <div style="border:1px solid #fed7aa;border-top:none;border-radius:0 0 8px 8px;padding:20px;">
+        <table style="font-size:13px;width:100%;border-collapse:collapse;color:#374151;">
+          <tr><td style="padding:4px 0;color:#6b7280;width:130px;">Alert ID</td><td style="font-family:ui-monospace,monospace;">${safeAlertId}</td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Started</td><td>${started}</td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Open for</td><td><strong>${duration}</strong></td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Peak count</td><td>${incident.peakCount}</td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Escalations sent</td><td>${escalationCount} of ${ESCALATION_MAX_COUNT} max</td></tr>
+        </table>
+        <div style="margin-top:16px;padding:12px;background:#fff7ed;border-left:3px solid #ea580c;font-size:13px;color:#7c2d12;white-space:pre-wrap;">${safeDesc}</div>
+        <div style="margin-top:20px;">
+          <a href="${href}" style="display:inline-block;padding:10px 18px;background:#ea580c;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;">Open in Admin</a>
+        </div>
+        <div style="margin-top:16px;font-size:11px;color:#9ca3af;">
+          This is an escalation reminder because the incident has been open for more than ${escalationCount} hour${escalationCount === 1 ? '' : 's'} without closing.
+          ${remaining > 0
+            ? `You will receive up to ${remaining} more escalation${remaining === 1 ? '' : 's'} at 1h intervals until the incident closes or the cap is reached.`
+            : 'This was the final escalation — no further emails will be sent for this incident until it closes and re-opens.'}
+        </div>
+      </div>
+    </div>
+  `.trim()
+}
+
 function renderIncidentEmailHtml(incident: PendingIncident): string {
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -400,7 +569,8 @@ export async function dispatchCriticalNotifications(): Promise<void> {
     if (recipients.length === 0) {
       // No opt-in recipients. Still stamp any pending rows as "notified"
       // so that flipping the env var on later doesn't immediately email
-      // about every pre-existing open incident.
+      // about every pre-existing open incident. Escalations are skipped
+      // entirely in this branch — no point auto-escalating into the void.
       const pending = await loadPendingCriticalNotifications()
       for (const inc of pending) {
         await stampNotified(inc.id)
@@ -408,9 +578,8 @@ export async function dispatchCriticalNotifications(): Promise<void> {
       return
     }
 
+    // ── Pass 1: brand-new incidents (notifiedAt IS NULL) ─────────────────
     const pending = await loadPendingCriticalNotifications()
-    if (pending.length === 0) return
-
     for (const inc of pending) {
       // Stamp BEFORE sending so a Resend stall doesn't cause this loop to
       // send the same email twice from two concurrent Lambdas. If every
@@ -445,6 +614,54 @@ export async function dispatchCriticalNotifications(): Promise<void> {
         })
       }
     }
+
+    // ── Pass 2: escalations for stuck open incidents ─────────────────────
+    // Separate pass so a failure in the initial-send loop doesn't starve
+    // escalations, and vice versa. Candidates are selected with the same
+    // filter the atomic claim uses; the claim itself re-checks everything
+    // to win the race against concurrent Lambdas.
+    const candidateIds = await loadEscalationCandidateIds()
+    for (const id of candidateIds) {
+      const claim = await claimEscalation(id)
+      if (!claim) {
+        // Lost the race, or the row became ineligible (closed, muted into
+        // oblivion, etc.) between SELECT and UPDATE. Skip silently.
+        continue
+      }
+      const html = renderEscalationEmailHtml(claim, claim.escalationCount)
+      const durationMs = Date.now() - claim.startedAt.getTime()
+      const subject = `[STILL FIRING — ${formatDuration(durationMs)}] ${claim.title}`
+      let successCount = 0
+      for (const to of recipients) {
+        const result = await sendEmail({ to, subject, html })
+        if (result.success) {
+          successCount += 1
+        } else {
+          logger.warn('alert_escalation_send_failed', {
+            incidentId: claim.id,
+            alertId: claim.alertId,
+            escalationCount: claim.escalationCount,
+            to,
+            error: result.error,
+          })
+        }
+      }
+      if (successCount === 0) {
+        // Total failure — roll back the escalationCount so the row becomes
+        // eligible for retry in one hour (notifiedAt was bumped to NOW and
+        // we leave it there, so the hour cooldown still applies).
+        await rollbackEscalation(claim.id)
+      } else {
+        logger.info('alert_escalation_sent', {
+          incidentId: claim.id,
+          alertId: claim.alertId,
+          escalationCount: claim.escalationCount,
+          durationMs,
+          recipients: successCount,
+          total: recipients.length,
+        })
+      }
+    }
   } catch {
     // top-level guard — notification dispatch is best-effort
   }
@@ -470,6 +687,7 @@ export interface AlertIncidentRow {
   lastSeenAt: string
   tickCount: number
   notifiedAt: string | null
+  escalationCount: number
 }
 
 /**
@@ -500,7 +718,7 @@ export async function listRecentIncidents(
          "peakCount", "peakSeverity",
          "lastSeverity", "lastCount",
          "lastSeenAt", "tickCount",
-         "notifiedAt"
+         "notifiedAt", "escalationCount"
        FROM "AlertIncident"
        WHERE "startedAt" > NOW() - INTERVAL '${hours} hours'
           OR "endedAt" IS NULL
@@ -540,6 +758,7 @@ export async function listRecentIncidents(
           : r.notifiedAt instanceof Date
             ? r.notifiedAt.toISOString()
             : String(r.notifiedAt),
+      escalationCount: Number(r.escalationCount) || 0,
     }))
   } catch {
     return []
