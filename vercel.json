@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/uptime-probe",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/observability-gc",
+      "schedule": "0 3 * * *"
     }
   ]
 }

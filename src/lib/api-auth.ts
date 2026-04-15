@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStaffSession, StaffSessionPayload } from './staff-auth'
 import { canAccessAPI, StaffRole, parseRoles } from './permissions'
+import { logSecurityEvent } from './security-events'
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 // API Route Auth Helper (multi-role aware)
@@ -59,10 +68,25 @@ export async function requireStaffAuth(
     }
 
     // Check role-based access (multi-role: ANY role matches = allowed)
+    const pathname = new URL(request.url).pathname
     if (options?.allowedRoles && options.allowedRoles.length > 0) {
       const hasAdmin = allRoles.includes('ADMIN')
       const hasAllowedRole = allRoles.some(r => options.allowedRoles!.includes(r as StaffRole))
       if (!hasAdmin && !hasAllowedRole) {
+        logSecurityEvent({
+          kind: 'AUTH_FAIL',
+          path: pathname,
+          method: request.method,
+          ip: clientIp(request),
+          userAgent: request.headers.get('user-agent'),
+          requestId: request.headers.get('x-request-id'),
+          details: {
+            reason: 'insufficient_role',
+            staffId,
+            roles: allRoles,
+            requiredRoles: options.allowedRoles,
+          },
+        })
         return {
           session: null,
           error: NextResponse.json(
@@ -74,8 +98,20 @@ export async function requireStaffAuth(
     }
 
     // Auto-check API path access (multi-role aware)
-    const pathname = new URL(request.url).pathname
     if (!canAccessAPI(allRoles as StaffRole[], pathname)) {
+      logSecurityEvent({
+        kind: 'AUTH_FAIL',
+        path: pathname,
+        method: request.method,
+        ip: clientIp(request),
+        userAgent: request.headers.get('user-agent'),
+        requestId: request.headers.get('x-request-id'),
+        details: {
+          reason: 'path_not_allowed',
+          staffId,
+          roles: allRoles,
+        },
+      })
       return {
         session: null,
         error: NextResponse.json(
@@ -89,8 +125,18 @@ export async function requireStaffAuth(
   }
 
   // Fallback: read session from cookie directly (for cases where middleware didn't run)
+  const pathname = new URL(request.url).pathname
   const session = await getStaffSession()
   if (!session) {
+    logSecurityEvent({
+      kind: 'AUTH_FAIL',
+      path: pathname,
+      method: request.method,
+      ip: clientIp(request),
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: { reason: 'no_cookie_session' },
+    })
     return {
       session: null,
       error: NextResponse.json(
@@ -108,6 +154,20 @@ export async function requireStaffAuth(
     const hasAdmin = allRoles.includes('ADMIN')
     const hasAllowedRole = allRoles.some(r => options.allowedRoles!.includes(r as StaffRole))
     if (!hasAdmin && !hasAllowedRole) {
+      logSecurityEvent({
+        kind: 'AUTH_FAIL',
+        path: pathname,
+        method: request.method,
+        ip: clientIp(request),
+        userAgent: request.headers.get('user-agent'),
+        requestId: request.headers.get('x-request-id'),
+        details: {
+          reason: 'insufficient_role_cookie_path',
+          staffId: session.staffId,
+          roles: allRoles,
+          requiredRoles: options.allowedRoles,
+        },
+      })
       return {
         session: null,
         error: NextResponse.json(
@@ -184,18 +244,38 @@ export function checkStaffAuth(request: NextRequest): NextResponse | null {
   const staffRole = request.headers.get('x-staff-role')
   const staffRolesStr = request.headers.get('x-staff-roles')
   const staffId = request.headers.get('x-staff-id')
+  const { pathname } = new URL(request.url)
 
   if (!staffId || !staffRole) {
+    logSecurityEvent({
+      kind: 'AUTH_FAIL',
+      path: pathname,
+      method: request.method,
+      ip: clientIp(request),
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: { reason: 'no_session' },
+    })
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
   // Parse all roles
   const allRoles = parseRoles(staffRolesStr || staffRole) as StaffRole[]
 
-  // Get the pathname from the request URL
-  const { pathname } = new URL(request.url)
-
   if (!canAccessAPI(allRoles, pathname)) {
+    logSecurityEvent({
+      kind: 'AUTH_FAIL',
+      path: pathname,
+      method: request.method,
+      ip: clientIp(request),
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: {
+        reason: 'insufficient_permissions',
+        staffId,
+        roles: allRoles,
+      },
+    })
     return NextResponse.json(
       { error: 'Access denied. Insufficient permissions.' },
       { status: 403 }
