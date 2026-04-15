@@ -18,6 +18,7 @@ import { startCronRun, finishCronRun } from '@/lib/cron'
 //   SlowQueryLog  — 14 days   (N+1 hunts are short-lived)
 //   SecurityEvent — 60 days   (longer window for security forensics)
 //   CronRun       — 90 days   (one full quarter of scheduled-job history)
+//   AlertIncident — 90 days   (matches CronRun; flap history for a quarter)
 //   UptimeProbe   — pruned by the uptime-probe cron itself (30d)
 //
 // AuditLog is intentionally NOT pruned here — it's compliance data and
@@ -29,27 +30,48 @@ import { startCronRun, finishCronRun } from '@/lib/cron'
 // fresh DB doesn't fail the cron. Note that CronRun uses "startedAt" for
 // its time column, not "createdAt", so we use a timeCol field.
 //
+// AlertIncident carries an extraCondition so open incidents (endedAt IS
+// NULL) are never pruned — an incident that's been firing for 100 days
+// still deserves a row in the timeline, otherwise the "how long has this
+// been broken" view loses its answer the moment the cron runs.
+//
 // Runs once daily at 03:00 UTC — low-traffic window.
 // ──────────────────────────────────────────────────────────────────────────
 
-const RETENTION: Array<{ table: string; days: number; timeCol?: string }> = [
+const RETENTION: Array<{
+  table: string
+  days: number
+  timeCol?: string
+  extraCondition?: string
+}> = [
   { table: 'ClientError', days: 30 },
   { table: 'ServerError', days: 30 },
   { table: 'SlowQueryLog', days: 14 },
   { table: 'SecurityEvent', days: 60 },
   { table: 'CronRun', days: 90, timeCol: 'startedAt' },
+  {
+    table: 'AlertIncident',
+    days: 90,
+    timeCol: 'startedAt',
+    // Never prune an incident that is still firing — an alert that has
+    // been open for 100+ days absolutely needs to stay visible.
+    extraCondition: '"endedAt" IS NOT NULL',
+  },
 ]
 
 async function pruneTable(
   table: string,
   days: number,
-  timeCol: string = 'createdAt'
+  timeCol: string = 'createdAt',
+  extraCondition?: string
 ): Promise<{ table: string; deleted: number | null; error?: string }> {
   try {
-    // Raw SQL with identifier interpolation — table names and timeCol are
-    // hard-coded constants above, never user input, so no injection risk.
+    // Raw SQL with identifier interpolation — table names, timeCol, and
+    // extraCondition are hard-coded constants above, never user input, so
+    // no injection risk.
+    const extra = extraCondition ? ` AND ${extraCondition}` : ''
     const result = await prisma.$executeRawUnsafe(
-      `DELETE FROM "${table}" WHERE "${timeCol}" < NOW() - INTERVAL '${days} days'`
+      `DELETE FROM "${table}" WHERE "${timeCol}" < NOW() - INTERVAL '${days} days'${extra}`
     )
     return { table, deleted: typeof result === 'number' ? result : null }
   } catch (err: any) {
@@ -76,7 +98,9 @@ async function handle(request: NextRequest) {
 
   try {
     const results = await Promise.all(
-      RETENTION.map(({ table, days, timeCol }) => pruneTable(table, days, timeCol))
+      RETENTION.map(({ table, days, timeCol, extraCondition }) =>
+        pruneTable(table, days, timeCol, extraCondition)
+      )
     )
 
     const totalDeleted = results.reduce(
