@@ -24,6 +24,11 @@ interface CronRun {
   triggeredBy: string | null
 }
 
+interface CronDrift {
+  orphaned: Array<{ name: string; lastRunAt: string | null; runs24h: number }>
+  neverRun: Array<{ name: string; schedule: string }>
+}
+
 function fmtDate(iso: string | null): string {
   if (!iso) return '—'
   try {
@@ -59,6 +64,7 @@ function statusBadge(status: string | null): JSX.Element {
 
 export default function CronsPage() {
   const [crons, setCrons] = useState<CronSummary[]>([])
+  const [drift, setDrift] = useState<CronDrift | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [runs, setRuns] = useState<CronRun[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +78,7 @@ export default function CronsPage() {
       if (!res.ok) throw new Error(`Failed: ${res.status}`)
       const data = await res.json()
       setCrons(data.crons || [])
+      setDrift(data.drift || null)
       setError('')
     } catch (e: any) {
       setError(e?.message || 'Failed to load crons')
@@ -128,6 +135,52 @@ export default function CronsPage() {
       {error && (
         <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-700 text-sm">
           {error}
+        </div>
+      )}
+
+      {/* Drift banner — only shows when REGISTERED_CRONS disagrees with reality */}
+      {drift && (drift.orphaned.length > 0 || drift.neverRun.length > 0) && (
+        <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-sm">
+          <div className="font-semibold mb-2">⚠️ Cron registration drift detected</div>
+          {drift.orphaned.length > 0 && (
+            <div className="mb-2">
+              <div className="font-medium">
+                Firing but not registered in src/lib/cron.ts:
+              </div>
+              <ul className="mt-1 ml-4 list-disc">
+                {drift.orphaned.map((o) => (
+                  <li key={o.name}>
+                    <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">
+                      {o.name}
+                    </code>{' '}
+                    <span className="text-amber-700">
+                      — {o.runs24h} run{o.runs24h === 1 ? '' : 's'} in 24h, last{' '}
+                      {fmtDate(o.lastRunAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {drift.neverRun.length > 0 && (
+            <div>
+              <div className="font-medium">
+                Registered but never executed (check vercel.json):
+              </div>
+              <ul className="mt-1 ml-4 list-disc">
+                {drift.neverRun.map((n) => (
+                  <li key={n.name}>
+                    <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">
+                      {n.name}
+                    </code>{' '}
+                    <span className="text-amber-700 font-mono text-xs">
+                      {n.schedule}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

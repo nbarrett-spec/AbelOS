@@ -240,3 +240,60 @@ export async function getCronRuns(name: string, limit = 20): Promise<any[]> {
     return []
   }
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Cron drift detector.
+//
+// Catches two classes of drift:
+//   1. Orphaned — a cron name appears in CronRun but isn't in REGISTERED_CRONS
+//      (usually: added to vercel.json, forgot to register here → no row on
+//      /admin/crons).
+//   2. Stale — a cron IS in REGISTERED_CRONS but has never run
+//      (usually: registered here but forgot to add to vercel.json).
+//
+// Returns only drift; an empty result means everything lines up.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface CronDriftReport {
+  orphaned: Array<{ name: string; lastRunAt: Date | null; runs24h: number }>
+  neverRun: Array<{ name: string; schedule: string }>
+}
+
+export async function detectCronDrift(): Promise<CronDriftReport> {
+  try {
+    await ensureTable()
+    const rows = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT
+        "name",
+        MAX("startedAt") AS "lastRunAt",
+        COUNT(*) FILTER (WHERE "startedAt" >= NOW() - INTERVAL '24 hours')::int AS "runs24h"
+      FROM "CronRun"
+      GROUP BY "name"
+    `)
+
+    const registered = new Set(REGISTERED_CRONS.map((c) => c.name))
+    const seen = new Map<string, { lastRunAt: Date | null; runs24h: number }>()
+    for (const r of rows) {
+      seen.set(r.name, { lastRunAt: r.lastRunAt, runs24h: r.runs24h })
+    }
+
+    const orphaned: CronDriftReport['orphaned'] = []
+    for (const [name, stats] of seen.entries()) {
+      if (!registered.has(name)) {
+        orphaned.push({ name, lastRunAt: stats.lastRunAt, runs24h: stats.runs24h })
+      }
+    }
+
+    const neverRun: CronDriftReport['neverRun'] = []
+    for (const c of REGISTERED_CRONS) {
+      if (!seen.has(c.name)) {
+        neverRun.push({ name: c.name, schedule: c.schedule })
+      }
+    }
+
+    return { orphaned, neverRun }
+  } catch (e: any) {
+    logger.error('cron_drift_detect_failed', e)
+    return { orphaned: [], neverRun: [] }
+  }
+}

@@ -2,9 +2,9 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
-import { getCronSummaries, getCronRuns } from '@/lib/cron'
+import { getCronSummaries, getCronRuns, detectCronDrift } from '@/lib/cron'
 
-// GET /api/admin/crons              → summary of all registered crons
+// GET /api/admin/crons              → summary of all registered crons + drift
 // GET /api/admin/crons?name=mrp-nightly → recent runs for one cron
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -20,8 +20,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ name, runs })
     }
 
-    const summaries = await getCronSummaries()
-    return NextResponse.json({ crons: summaries })
+    const [summaries, drift] = await Promise.all([
+      getCronSummaries(),
+      detectCronDrift(),
+    ])
+    return NextResponse.json({ crons: summaries, drift })
   } catch (error: any) {
     console.error('[admin/crons] error:', error)
     return NextResponse.json({ error: error?.message || 'Failed to load cron data' }, { status: 500 })
