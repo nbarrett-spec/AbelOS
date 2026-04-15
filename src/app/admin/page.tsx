@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { SystemPulse } from '@/components/SystemPulse'
 
 interface Stats {
   totalBuilders: number
@@ -86,19 +87,24 @@ export default function AdminDashboard() {
         <p className="text-gray-600 mt-2">Overview of your Abel platform metrics</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, idx) => (
-          <div
-            key={idx}
-            className={`card p-6 border ${stat.color}`}
-          >
-            <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-            <p className={`text-3xl font-bold mt-2 ${stat.textColor}`}>
-              {stat.value}
-            </p>
-          </div>
-        ))}
+      {/* Stats + Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {statCards.map((stat, idx) => (
+            <div
+              key={idx}
+              className={`card p-6 border ${stat.color}`}
+            >
+              <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+              <p className={`text-3xl font-bold mt-2 ${stat.textColor}`}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="lg:col-span-1">
+          <SystemPulse />
+        </div>
       </div>
 
       {/* Recent Quotes Table */}
