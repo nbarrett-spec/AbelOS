@@ -244,12 +244,16 @@ export async function getCronRuns(name: string, limit = 20): Promise<any[]> {
 // ──────────────────────────────────────────────────────────────────────────
 // Cron drift detector.
 //
-// Catches two classes of drift:
+// Catches three classes of drift:
 //   1. Orphaned — a cron name appears in CronRun but isn't in REGISTERED_CRONS
 //      (usually: added to vercel.json, forgot to register here → no row on
 //      /admin/crons).
-//   2. Stale — a cron IS in REGISTERED_CRONS but has never run
+//   2. Never-run — a cron IS in REGISTERED_CRONS but has never run
 //      (usually: registered here but forgot to add to vercel.json).
+//   3. Stale — a cron that HAS run before but hasn't fired in well past its
+//      expected cadence (usually: vercel.json got mangled, cron secret rotated,
+//      or handler is hard-erroring before startCronRun). The really dangerous
+//      class — job looked healthy yesterday, silently stopped today.
 //
 // Returns only drift; an empty result means everything lines up.
 // ──────────────────────────────────────────────────────────────────────────
@@ -257,6 +261,46 @@ export async function getCronRuns(name: string, limit = 20): Promise<any[]> {
 export interface CronDriftReport {
   orphaned: Array<{ name: string; lastRunAt: Date | null; runs24h: number }>
   neverRun: Array<{ name: string; schedule: string }>
+  stale: Array<{ name: string; schedule: string; lastRunAt: Date; minutesSinceLastRun: number; expectedMaxGapMinutes: number }>
+}
+
+/**
+ * Translate a cron expression into a "worry threshold" — the number of minutes
+ * past which we should consider the job stale. 3× the cadence so a single
+ * skipped run isn't enough to alert (networks are flaky).
+ *
+ * Only handles the schedule shapes we actually use in vercel.json. Unknown
+ * shapes fall back to 48h so we never false-alarm on novel patterns.
+ */
+export function expectedMaxGapMinutes(schedule: string): number {
+  const parts = schedule.trim().split(/\s+/)
+  if (parts.length !== 5) return 60 * 48
+  const [minute, hour, _dom, _month, dow] = parts
+
+  // "*/N * * * *" — every N minutes
+  const everyN = /^\*\/(\d+)$/.exec(minute)
+  if (everyN && hour === '*') {
+    const n = parseInt(everyN[1], 10)
+    return Math.max(n * 3, 15)
+  }
+
+  // Weekday business-hours schedules (dow = 1-5) can sleep through the weekend.
+  // Give them a 3-day window so Monday-morning pages don't false-alarm.
+  if (dow.includes('1-5') || /MON|TUE|WED|THU|FRI/i.test(dow)) {
+    return 60 * 24 * 3
+  }
+
+  // Fixed-minute hourly: "N * * * *"
+  if (/^\d+$/.test(minute) && hour === '*') {
+    return 180
+  }
+
+  // Daily (numeric hour, dow=*): "N H * * *"
+  if (/^\d+$/.test(minute) && /^\d/.test(hour) && dow === '*') {
+    return 60 * 30
+  }
+
+  return 60 * 48
 }
 
 export async function detectCronDrift(): Promise<CronDriftReport> {
@@ -285,15 +329,32 @@ export async function detectCronDrift(): Promise<CronDriftReport> {
     }
 
     const neverRun: CronDriftReport['neverRun'] = []
+    const stale: CronDriftReport['stale'] = []
+    const now = Date.now()
     for (const c of REGISTERED_CRONS) {
-      if (!seen.has(c.name)) {
+      const row = seen.get(c.name)
+      if (!row) {
         neverRun.push({ name: c.name, schedule: c.schedule })
+        continue
+      }
+      if (!row.lastRunAt) continue
+      const lastRunAt = new Date(row.lastRunAt)
+      const minutesSinceLastRun = Math.round((now - lastRunAt.getTime()) / 60000)
+      const maxGap = expectedMaxGapMinutes(c.schedule)
+      if (minutesSinceLastRun > maxGap) {
+        stale.push({
+          name: c.name,
+          schedule: c.schedule,
+          lastRunAt,
+          minutesSinceLastRun,
+          expectedMaxGapMinutes: maxGap,
+        })
       }
     }
 
-    return { orphaned, neverRun }
+    return { orphaned, neverRun, stale }
   } catch (e: any) {
     logger.error('cron_drift_detect_failed', e)
-    return { orphaned: [], neverRun: [] }
+    return { orphaned: [], neverRun: [], stale: [] }
   }
 }

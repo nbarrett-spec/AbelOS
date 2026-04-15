@@ -4,6 +4,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { detectCronDrift } from '@/lib/cron'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/system-alerts — real-time platform health indicators.
@@ -174,6 +175,7 @@ export async function GET(request: NextRequest) {
     lowStockCount,
     rateLimitCount,
     authFailCount,
+    cronDrift,
   ] = await Promise.all([
     countClientErrorsLastHour(),
     countFailedCronsLast24h(),
@@ -182,7 +184,10 @@ export async function GET(request: NextRequest) {
     countLowStock(),
     countRateLimitRejectionsLast24h(),
     countAuthFailuresLast24h(),
+    detectCronDrift().catch(() => ({ orphaned: [], neverRun: [], stale: [] })),
   ])
+
+  const staleCronCount = cronDrift.stale.length
 
   const alerts: SystemAlert[] = []
 
@@ -208,6 +213,20 @@ export async function GET(request: NextRequest) {
       count: failedCronCount,
       href: '/admin/crons',
       description: 'Scheduled jobs that errored out',
+    })
+  }
+
+  // 2b. Stale crons — registered job stopped firing well past its cadence.
+  // This is a silent killer: the UI looks normal (no failures) but the job
+  // simply isn't running. Always at least 'warning', critical if multiple.
+  if (staleCronCount > 0) {
+    alerts.push({
+      id: 'stale-crons',
+      type: staleCronCount >= 2 ? 'critical' : 'warning',
+      title: 'Stale Crons',
+      count: staleCronCount,
+      href: '/admin/crons',
+      description: 'Scheduled jobs that stopped firing past their expected cadence',
     })
   }
 
@@ -280,6 +299,7 @@ export async function GET(request: NextRequest) {
       sources: {
         clientErrors: clientErrorCount,
         failedCrons: failedCronCount,
+        staleCrons: staleCronCount,
         deadLetterWebhooks: deadLetterCount,
         overdueAR: overdueARCount,
         lowStock: lowStockCount,

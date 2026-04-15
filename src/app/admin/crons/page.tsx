@@ -27,6 +27,19 @@ interface CronRun {
 interface CronDrift {
   orphaned: Array<{ name: string; lastRunAt: string | null; runs24h: number }>
   neverRun: Array<{ name: string; schedule: string }>
+  stale: Array<{
+    name: string
+    schedule: string
+    lastRunAt: string
+    minutesSinceLastRun: number
+    expectedMaxGapMinutes: number
+  }>
+}
+
+function fmtMinutes(mins: number): string {
+  if (mins < 60) return `${mins}m`
+  if (mins < 1440) return `${Math.round(mins / 60)}h`
+  return `${Math.round(mins / 1440)}d`
 }
 
 function fmtDate(iso: string | null): string {
@@ -139,9 +152,29 @@ export default function CronsPage() {
       )}
 
       {/* Drift banner — only shows when REGISTERED_CRONS disagrees with reality */}
-      {drift && (drift.orphaned.length > 0 || drift.neverRun.length > 0) && (
+      {drift && (drift.orphaned.length > 0 || drift.neverRun.length > 0 || drift.stale.length > 0) && (
         <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-sm">
           <div className="font-semibold mb-2">⚠️ Cron registration drift detected</div>
+          {drift.stale.length > 0 && (
+            <div className="mb-2">
+              <div className="font-medium text-red-800">
+                Stopped firing (stale past expected cadence):
+              </div>
+              <ul className="mt-1 ml-4 list-disc">
+                {drift.stale.map((s) => (
+                  <li key={s.name}>
+                    <code className="font-mono text-xs bg-red-100 px-1 py-0.5 rounded">
+                      {s.name}
+                    </code>{' '}
+                    <span className="text-red-700">
+                      — last ran {fmtMinutes(s.minutesSinceLastRun)} ago (expected every ≤
+                      {fmtMinutes(s.expectedMaxGapMinutes)})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {drift.orphaned.length > 0 && (
             <div className="mb-2">
               <div className="font-medium">
