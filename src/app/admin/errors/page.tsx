@@ -78,6 +78,23 @@ function initialSource(): ErrorSource {
   }
 }
 
+interface TraceRow {
+  source: 'client' | 'server'
+  id: string
+  createdAt: string
+  digest: string | null
+  scope: string | null
+  path: string | null
+  message: string | null
+}
+
+interface TraceState {
+  requestId: string
+  loading: boolean
+  rows: TraceRow[]
+  error: string | null
+}
+
 export default function AdminErrorsPage() {
   const [source, setSource] = useState<ErrorSource>(initialSource)
   const [errors, setErrors] = useState<ClientErrorRow[]>([])
@@ -88,6 +105,7 @@ export default function AdminErrorsPage() {
   const [sinceHours, setSinceHours] = useState<number>(24)
   const [selected, setSelected] = useState<ClientErrorRow | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  const [trace, setTrace] = useState<TraceState | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -131,6 +149,37 @@ export default function AdminErrorsPage() {
     if (!confirm(`Dismiss ALL errors with digest ${digest}?`)) return
     await fetch(`/api/admin/errors?source=${source}&digest=${digest}`, { method: 'DELETE' })
     await load()
+  }
+
+  // Cross-source trace: given a requestId, fetch every ClientError +
+  // ServerError row sharing it so a single failed request's full error
+  // chain can be viewed in one place. Handled as a separate state slot
+  // (trace) so the detail modal can still show the originally-selected
+  // row alongside the trace list.
+  async function loadTrace(requestId: string) {
+    setTrace({ requestId, loading: true, rows: [], error: null })
+    try {
+      const res = await fetch(
+        `/api/admin/request-trace?id=${encodeURIComponent(requestId)}`
+      )
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+      const data = await res.json()
+      setTrace({
+        requestId,
+        loading: false,
+        rows: Array.isArray(data.rows) ? data.rows : [],
+        error: null,
+      })
+    } catch (e: any) {
+      setTrace({
+        requestId,
+        loading: false,
+        rows: [],
+        error: e?.message || 'Failed to load trace',
+      })
+    }
   }
 
   const totalCount = stats.reduce((sum, s) => sum + s.count, 0)
@@ -365,11 +414,144 @@ export default function AdminErrorsPage() {
             <div className="flex-1 overflow-auto p-6 space-y-4">
               <Field label="Path" value={selected.path} mono />
               <Field label="Digest" value={selected.digest} mono />
-              <Field label="Request ID" value={selected.requestId} mono />
+              <div>
+                <div className="text-xs uppercase text-gray-500 font-semibold mb-1 flex items-center gap-2">
+                  <span>Request ID</span>
+                  {selected.requestId && (
+                    <button
+                      onClick={() => loadTrace(selected.requestId as string)}
+                      className="text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700"
+                      title="Find every ClientError and ServerError sharing this requestId"
+                    >
+                      Trace request →
+                    </button>
+                  )}
+                </div>
+                <div className="font-mono text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-200 break-all">
+                  {selected.requestId || '—'}
+                </div>
+              </div>
               <Field label="Message" value={selected.message} />
               <Field label="User Agent" value={selected.userAgent} mono small />
               <Field label="IP" value={selected.ipAddress} mono />
               <Field label="When" value={new Date(selected.createdAt).toLocaleString()} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cross-source request trace modal. Mounted on top of the detail
+          modal so the user can pop it open from a selected error and
+          still see where they came from when closing. */}
+      {trace && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]"
+          onClick={() => setTrace(null)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Request trace
+                </h2>
+                <div className="text-xs text-gray-500 font-mono mt-1 break-all">
+                  {trace.requestId}
+                </div>
+              </div>
+              <button
+                onClick={() => setTrace(null)}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              {trace.loading ? (
+                <div className="p-6 text-center text-gray-500 text-sm">
+                  Loading…
+                </div>
+              ) : trace.error ? (
+                <div className="p-6 text-center text-rose-600 text-sm">
+                  {trace.error}
+                </div>
+              ) : trace.rows.length === 0 ? (
+                <div className="p-6 text-center text-gray-500 text-sm">
+                  No rows share this requestId. The request may have left no
+                  trail in either ClientError or ServerError.
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase">
+                        Source
+                      </th>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase">
+                        When
+                      </th>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase">
+                        Scope
+                      </th>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase">
+                        Path
+                      </th>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 uppercase">
+                        Message
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {trace.rows.map((r) => (
+                      <tr key={`${r.source}:${r.id}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-2">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              r.source === 'server'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {r.source}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">
+                          {fmtDate(r.createdAt)}
+                        </td>
+                        <td className="px-4 py-2 text-xs text-gray-700 font-mono">
+                          {r.scope || '—'}
+                        </td>
+                        <td
+                          className="px-4 py-2 text-xs text-gray-600 font-mono max-w-xs truncate"
+                          title={r.path || ''}
+                        >
+                          {r.path || '—'}
+                        </td>
+                        <td
+                          className="px-4 py-2 text-gray-800 max-w-md truncate"
+                          title={r.message || ''}
+                        >
+                          {r.message || '(no message)'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex items-center justify-between">
+              <span>
+                {trace.rows.length} row{trace.rows.length === 1 ? '' : 's'} from
+                both ClientError and ServerError, oldest first
+              </span>
+              <button
+                onClick={() => setTrace(null)}
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
