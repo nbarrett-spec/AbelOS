@@ -159,18 +159,27 @@ export function getRateLimitHeaders(result: RateLimitResult, max: number) {
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { logSecurityEvent } from '@/lib/security-events'
 
-export function getClientKey(request: NextRequest, suffix?: string): string {
-  const ip =
+function getClientIp(request: NextRequest): string {
+  return (
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
     'unknown'
+  )
+}
+
+export function getClientKey(request: NextRequest, suffix?: string): string {
+  const ip = getClientIp(request)
   return suffix ? `${ip}:${suffix}` : ip
 }
 
 /**
  * One-call rate limit check. Returns a NextResponse if the limit is exceeded,
  * or null if the request is allowed through.
+ *
+ * On rejection, fire-and-forgets a RATE_LIMIT SecurityEvent so ops can see
+ * abuse patterns in /admin/health. Logging is non-blocking.
  */
 export async function checkRateLimit(
   request: NextRequest,
@@ -181,6 +190,20 @@ export async function checkRateLimit(
   const key = getClientKey(request, keySuffix)
   const result = await limiter.check(key)
   if (!result.success) {
+    const ip = getClientIp(request)
+    logSecurityEvent({
+      kind: 'RATE_LIMIT',
+      path: request.nextUrl?.pathname || null,
+      method: request.method,
+      ip,
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: {
+        keySuffix: keySuffix || null,
+        max,
+        resetInMs: result.resetIn,
+      },
+    })
     return NextResponse.json(
       { error: 'Too many requests. Please slow down and try again shortly.' },
       { status: 429, headers: getRateLimitHeaders(result, max) }

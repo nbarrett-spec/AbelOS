@@ -76,6 +76,28 @@ interface UptimePayload {
   note?: string
 }
 
+interface SecurityEventRow {
+  id: string
+  createdAt: string
+  kind: string
+  path: string | null
+  method: string | null
+  ip: string | null
+  userAgent: string | null
+  requestId: string | null
+  details: unknown
+}
+
+interface SecurityEventsPayload {
+  rows: SecurityEventRow[]
+  kindCounts: Array<{ kind: string; count: number }>
+  topIps: Array<{ ip: string; count: number; lastSeen: string }>
+  topPaths: Array<{ path: string; count: number }>
+  total: number
+  sinceHours: number
+  note?: string
+}
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString()
@@ -94,6 +116,7 @@ function durationClass(ms: number): string {
 export default function AdminHealthPage() {
   const [data, setData] = useState<SlowQueriesPayload | null>(null)
   const [uptime, setUptime] = useState<UptimePayload | null>(null)
+  const [security, setSecurity] = useState<SecurityEventsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [sinceHours, setSinceHours] = useState(24)
@@ -101,16 +124,20 @@ export default function AdminHealthPage() {
 
   const load = useCallback(async () => {
     try {
-      const [slowRes, upRes] = await Promise.all([
+      const [slowRes, upRes, secRes] = await Promise.all([
         fetch(`/api/admin/slow-queries?since=${sinceHours}`),
         fetch(`/api/admin/uptime?since=${sinceHours}`),
+        fetch(`/api/admin/security-events?since=${sinceHours}`),
       ])
       if (!slowRes.ok) throw new Error(`slow-queries HTTP ${slowRes.status}`)
       if (!upRes.ok) throw new Error(`uptime HTTP ${upRes.status}`)
+      if (!secRes.ok) throw new Error(`security-events HTTP ${secRes.status}`)
       const slowJson: SlowQueriesPayload = await slowRes.json()
       const upJson: UptimePayload = await upRes.json()
+      const secJson: SecurityEventsPayload = await secRes.json()
       setData(slowJson)
       setUptime(upJson)
+      setSecurity(secJson)
       setError('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load health data')
@@ -448,6 +475,155 @@ export default function AdminHealthPage() {
                     </td>
                     <td className={`py-3 px-4 text-right ${durationClass(r.durationMs)}`}>
                       {r.durationMs}ms
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Security events */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Security Events</h2>
+          <span className="text-xs text-gray-500">
+            {security?.total ?? 0} events in window
+          </span>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Rate-limit rejections and security-relevant events. Fire-and-forget
+          writes from route handlers — expect some undercount during traffic spikes.
+          {security?.note && (
+            <span className="text-amber-600 block mt-1">{security.note}</span>
+          )}
+        </p>
+
+        {security && security.kindCounts.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {security.kindCounts.map((k) => (
+              <div key={k.kind} className="bg-gray-50 rounded p-3">
+                <div className="text-xs text-gray-500 uppercase tracking-wider">
+                  {k.kind.replace('_', ' ')}
+                </div>
+                <div
+                  className={`text-2xl font-bold mt-1 ${
+                    k.kind === 'RATE_LIMIT'
+                      ? 'text-amber-600'
+                      : k.kind === 'CSRF'
+                      ? 'text-red-600'
+                      : 'text-gray-900'
+                  }`}
+                >
+                  {k.count}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {security && (security.topIps.length > 0 || security.topPaths.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                Top offending IPs
+              </div>
+              <div className="space-y-1">
+                {security.topIps.length === 0 ? (
+                  <div className="text-xs text-gray-400">None</div>
+                ) : (
+                  security.topIps.map((i) => (
+                    <div
+                      key={i.ip}
+                      className="flex items-center justify-between text-xs border-b border-gray-100 py-1.5"
+                    >
+                      <span className="font-mono text-gray-700">{i.ip}</span>
+                      <span className="font-semibold text-gray-900">{i.count}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                Top offending paths
+              </div>
+              <div className="space-y-1">
+                {security.topPaths.length === 0 ? (
+                  <div className="text-xs text-gray-400">None</div>
+                ) : (
+                  security.topPaths.map((p) => (
+                    <div
+                      key={p.path}
+                      className="flex items-center justify-between text-xs border-b border-gray-100 py-1.5"
+                    >
+                      <span className="font-mono text-gray-700 truncate pr-2">
+                        {p.path}
+                      </span>
+                      <span className="font-semibold text-gray-900">{p.count}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-gray-200">
+              <tr className="text-gray-600 font-semibold">
+                <th className="text-left py-3 px-4">Time</th>
+                <th className="text-left py-3 px-4">Kind</th>
+                <th className="text-left py-3 px-4">Method</th>
+                <th className="text-left py-3 px-4">Path</th>
+                <th className="text-left py-3 px-4">IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && !security ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-gray-400">
+                    Loading…
+                  </td>
+                </tr>
+              ) : !security || security.rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-gray-500">
+                    No security events — all quiet.
+                  </td>
+                </tr>
+              ) : (
+                security.rows.slice(0, 50).map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition"
+                  >
+                    <td className="py-3 px-4 text-gray-600 text-xs font-mono">
+                      {formatTime(r.createdAt)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                          r.kind === 'RATE_LIMIT'
+                            ? 'bg-amber-100 text-amber-800'
+                            : r.kind === 'CSRF'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {r.kind}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-xs">
+                      {r.method || '—'}
+                    </td>
+                    <td className="py-3 px-4 font-mono text-xs text-gray-600 truncate max-w-xs">
+                      {r.path || '—'}
+                    </td>
+                    <td className="py-3 px-4 font-mono text-xs text-gray-600">
+                      {r.ip || '—'}
                     </td>
                   </tr>
                 ))
