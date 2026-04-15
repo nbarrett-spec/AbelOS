@@ -9,11 +9,12 @@ import { prisma } from '@/lib/prisma'
 // GET /api/ops/system-alerts — real-time platform health indicators.
 //
 // Aggregates live signals from the tables shipped by recent P1 work:
-//   - ClientError (last hour): crashes in the browser
-//   - CronRun     (last 24h): failed scheduled jobs
-//   - WebhookEvent           : dead-lettered inbound webhooks
-//   - Order AR               : overdue invoices
-//   - Inventory              : items below reorder point (approximation)
+//   - ClientError   (last hour): crashes in the browser
+//   - CronRun       (last 24h): failed scheduled jobs
+//   - WebhookEvent             : dead-lettered inbound webhooks
+//   - Order AR                 : overdue invoices
+//   - Inventory                : items below reorder point (approximation)
+//   - SecurityEvent (last 24h): rate-limit rejections + auth failures
 //
 // Each alert is classified as 'critical', 'warning', or 'info' based on
 // count thresholds. The /ops AlertRail consumes this directly. Queries
@@ -99,12 +100,62 @@ async function countLowStock(): Promise<number> {
   }
 }
 
+async function countRateLimitRejectionsLast24h(): Promise<number> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS count
+       FROM "SecurityEvent"
+       WHERE "kind" = 'RATE_LIMIT'
+         AND "createdAt" > NOW() - INTERVAL '24 hours'`
+    )
+    return rows[0]?.count || 0
+  } catch {
+    return 0
+  }
+}
+
+async function countAuthFailuresLast24h(): Promise<number> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS count
+       FROM "SecurityEvent"
+       WHERE "kind" = 'AUTH_FAIL'
+         AND "createdAt" > NOW() - INTERVAL '24 hours'`
+    )
+    return rows[0]?.count || 0
+  } catch {
+    return 0
+  }
+}
+
 /**
  * Classify client-error severity by raw count in the last hour.
  * These thresholds are deliberately loud — a handful of errors is
  * noise; dozens of errors is a fire.
  */
 function classifyErrorRate(count: number): 'critical' | 'warning' | 'info' | null {
+  if (count >= 20) return 'critical'
+  if (count >= 5) return 'warning'
+  if (count >= 1) return 'info'
+  return null
+}
+
+/**
+ * Rate-limit abuse severity. Healthy baseline is a handful per day from
+ * aggressive browsers; dozens means someone is hammering us.
+ */
+function classifyRateLimit(count: number): 'critical' | 'warning' | 'info' | null {
+  if (count >= 50) return 'critical'
+  if (count >= 10) return 'warning'
+  if (count >= 1) return 'info'
+  return null
+}
+
+/**
+ * AUTH_FAIL severity. A few failures a day is normal (typos, stale cookies);
+ * a sustained spike means credential stuffing or a broken deploy.
+ */
+function classifyAuthFailures(count: number): 'critical' | 'warning' | 'info' | null {
   if (count >= 20) return 'critical'
   if (count >= 5) return 'warning'
   if (count >= 1) return 'info'
@@ -121,12 +172,16 @@ export async function GET(request: NextRequest) {
     deadLetterCount,
     overdueARCount,
     lowStockCount,
+    rateLimitCount,
+    authFailCount,
   ] = await Promise.all([
     countClientErrorsLastHour(),
     countFailedCronsLast24h(),
     countDeadLetterWebhooks(),
     countOverdueAR(),
     countLowStock(),
+    countRateLimitRejectionsLast24h(),
+    countAuthFailuresLast24h(),
   ])
 
   const alerts: SystemAlert[] = []
@@ -192,6 +247,32 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  // 6. Rate-limit rejections — someone hammering our APIs
+  const rateLimitSeverity = classifyRateLimit(rateLimitCount)
+  if (rateLimitSeverity) {
+    alerts.push({
+      id: 'rate-limit',
+      type: rateLimitSeverity,
+      title: 'Rate-Limit Rejections (24h)',
+      count: rateLimitCount,
+      href: '/admin/health',
+      description: 'Requests blocked by the rate limiter',
+    })
+  }
+
+  // 7. Auth failures — credential stuffing, typos, or stale sessions
+  const authFailSeverity = classifyAuthFailures(authFailCount)
+  if (authFailSeverity) {
+    alerts.push({
+      id: 'auth-failures',
+      type: authFailSeverity,
+      title: 'Auth Failures (24h)',
+      count: authFailCount,
+      href: '/admin/health',
+      description: 'Unauthenticated or unauthorized API access attempts',
+    })
+  }
+
   return NextResponse.json({
     alerts,
     meta: {
@@ -202,6 +283,8 @@ export async function GET(request: NextRequest) {
         deadLetterWebhooks: deadLetterCount,
         overdueAR: overdueARCount,
         lowStock: lowStockCount,
+        rateLimitRejections: rateLimitCount,
+        authFailures: authFailCount,
       },
     },
   })
