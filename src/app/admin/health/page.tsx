@@ -109,6 +109,22 @@ interface SecurityEventsPayload {
   note?: string
 }
 
+interface ErrorCountsTop {
+  key: string | null
+  count: number
+}
+
+interface ErrorCountsTile {
+  total: number
+  top: ErrorCountsTop[]
+}
+
+interface ErrorCountsPayload {
+  sinceHours: number
+  client: ErrorCountsTile
+  server: ErrorCountsTile
+}
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString()
@@ -128,6 +144,7 @@ export default function AdminHealthPage() {
   const [data, setData] = useState<SlowQueriesPayload | null>(null)
   const [uptime, setUptime] = useState<UptimePayload | null>(null)
   const [security, setSecurity] = useState<SecurityEventsPayload | null>(null)
+  const [errorCounts, setErrorCounts] = useState<ErrorCountsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [sinceHours, setSinceHours] = useState(24)
@@ -135,20 +152,24 @@ export default function AdminHealthPage() {
 
   const load = useCallback(async () => {
     try {
-      const [slowRes, upRes, secRes] = await Promise.all([
+      const [slowRes, upRes, secRes, errRes] = await Promise.all([
         fetch(`/api/admin/slow-queries?since=${sinceHours}`),
         fetch(`/api/admin/uptime?since=${sinceHours}`),
         fetch(`/api/admin/security-events?since=${sinceHours}`),
+        fetch(`/api/admin/error-counts?since=${sinceHours}`),
       ])
       if (!slowRes.ok) throw new Error(`slow-queries HTTP ${slowRes.status}`)
       if (!upRes.ok) throw new Error(`uptime HTTP ${upRes.status}`)
       if (!secRes.ok) throw new Error(`security-events HTTP ${secRes.status}`)
+      if (!errRes.ok) throw new Error(`error-counts HTTP ${errRes.status}`)
       const slowJson: SlowQueriesPayload = await slowRes.json()
       const upJson: UptimePayload = await upRes.json()
       const secJson: SecurityEventsPayload = await secRes.json()
+      const errJson: ErrorCountsPayload = await errRes.json()
       setData(slowJson)
       setUptime(upJson)
       setSecurity(secJson)
+      setErrorCounts(errJson)
       setError('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load health data')
@@ -362,6 +383,42 @@ export default function AdminHealthPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Error counts — client + server tiles, deep-link into /admin/errors */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Errors</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Rollup of <span className="font-mono">ClientError</span> beacons and{' '}
+              <span className="font-mono">ServerError</span> writes from{' '}
+              <span className="font-mono">logger.error()</span> in the selected window.
+            </p>
+          </div>
+          <Link
+            href="/admin/errors"
+            className="text-sm text-abel-navy underline hover:no-underline"
+          >
+            Drill down →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ErrorTile
+            label="Client"
+            sublabel="browser beacons (by scope)"
+            href="/admin/errors?source=client"
+            tile={errorCounts?.client}
+            loading={loading && !errorCounts}
+          />
+          <ErrorTile
+            label="Server"
+            sublabel="logger.error (by error class)"
+            href="/admin/errors?source=server"
+            tile={errorCounts?.server}
+            loading={loading && !errorCounts}
+          />
         </div>
       </div>
 
@@ -722,5 +779,71 @@ export default function AdminHealthPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function ErrorTile({
+  label,
+  sublabel,
+  href,
+  tile,
+  loading,
+}: {
+  label: string
+  sublabel: string
+  href: string
+  tile: ErrorCountsTile | undefined
+  loading: boolean
+}) {
+  const total = tile?.total ?? 0
+  const top = tile?.top ?? []
+  // Colour-code by raw count — mirrors the SystemPulse classifier thresholds
+  // (1 = info, 5 = warning, 20 = critical) so the two surfaces tell the
+  // same story at a glance.
+  const countClass =
+    total >= 20
+      ? 'text-red-600'
+      : total >= 5
+      ? 'text-amber-600'
+      : total >= 1
+      ? 'text-gray-900'
+      : 'text-green-600'
+
+  return (
+    <Link
+      href={href}
+      className="block bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-4 transition"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+            {label}
+          </div>
+          <div className="text-[11px] text-gray-400 mt-0.5">{sublabel}</div>
+        </div>
+        <div className={`text-4xl font-bold ${countClass}`}>
+          {loading ? '…' : total}
+        </div>
+      </div>
+      {top.length === 0 ? (
+        <div className="text-xs text-gray-400 italic">
+          {total === 0 ? 'Nothing is on fire.' : 'No grouping data.'}
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {top.map((t) => (
+            <div
+              key={t.key ?? 'unknown'}
+              className="flex items-center justify-between text-xs border-b border-gray-200 last:border-b-0 py-1"
+            >
+              <span className="font-mono text-gray-700 truncate pr-2">
+                {t.key ?? 'unknown'}
+              </span>
+              <span className="font-semibold text-gray-900">{t.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Link>
   )
 }
