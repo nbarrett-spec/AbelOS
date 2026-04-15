@@ -151,6 +151,9 @@ export interface CronSummary {
 }
 
 // Declared crons from vercel.json, kept in sync manually.
+// IMPORTANT: keep this list aligned with vercel.json "crons" — the /admin/crons
+// page shows "missing" for any cron that fires but isn't listed here, and
+// "stale" for any listed cron that hasn't run.
 export const REGISTERED_CRONS: Array<{ name: string; schedule: string; description: string }> = [
   { name: 'quote-followups', schedule: '0 9 * * 1-5', description: 'Send follow-up emails on stale quotes' },
   { name: 'agent-opportunities', schedule: '0 14 * * 1-5', description: 'AI agent opportunity scoring' },
@@ -160,6 +163,9 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'bpw-sync', schedule: '45 * * * *', description: 'Hourly BPW sync' },
   { name: 'run-automations', schedule: '0 8,13,17 * * 1-5', description: 'Run scheduled business automations' },
   { name: 'mrp-nightly', schedule: '0 4 * * *', description: 'Nightly MRP projection + PO recommendations' },
+  { name: 'webhook-retry', schedule: '*/5 * * * *', description: 'Retry dead-lettered outbound webhooks' },
+  { name: 'uptime-probe', schedule: '*/5 * * * *', description: 'Self-probe /api/health/ready and record uptime history' },
+  { name: 'observability-gc', schedule: '0 3 * * *', description: 'Prune ClientError / SlowQueryLog / SecurityEvent retention' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {
