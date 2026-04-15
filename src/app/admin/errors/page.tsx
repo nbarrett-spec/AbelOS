@@ -66,7 +66,10 @@ function scopeBadge(scope: string | null): JSX.Element {
   )
 }
 
+type ErrorSource = 'client' | 'server'
+
 export default function AdminErrorsPage() {
+  const [source, setSource] = useState<ErrorSource>('client')
   const [errors, setErrors] = useState<ClientErrorRow[]>([])
   const [stats, setStats] = useState<ScopeStat[]>([])
   const [topDigests, setTopDigests] = useState<TopDigest[]>([])
@@ -80,6 +83,7 @@ export default function AdminErrorsPage() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
+      params.set('source', source)
       if (scopeFilter) params.set('scope', scopeFilter)
       params.set('since', String(sinceHours))
       const res = await fetch(`/api/admin/errors?${params.toString()}`)
@@ -93,21 +97,29 @@ export default function AdminErrorsPage() {
     } finally {
       setLoading(false)
     }
-  }, [scopeFilter, sinceHours])
+  }, [source, scopeFilter, sinceHours])
 
   useEffect(() => {
     load()
   }, [load])
 
+  // Clear scope filter whenever the source flips — client scopes ("ops")
+  // aren't valid keys against server errNames ("TypeError") and vice versa,
+  // so leaving a stale filter in place returns zero rows and looks broken.
+  useEffect(() => {
+    setScopeFilter('')
+    setSelected(null)
+  }, [source])
+
   async function dismiss(id: string) {
     if (!confirm('Dismiss this error row?')) return
-    await fetch(`/api/admin/errors?id=${id}`, { method: 'DELETE' })
+    await fetch(`/api/admin/errors?source=${source}&id=${id}`, { method: 'DELETE' })
     await load()
   }
 
   async function dismissDigest(digest: string) {
     if (!confirm(`Dismiss ALL errors with digest ${digest}?`)) return
-    await fetch(`/api/admin/errors?digest=${digest}`, { method: 'DELETE' })
+    await fetch(`/api/admin/errors?source=${source}&digest=${digest}`, { method: 'DELETE' })
     await load()
   }
 
@@ -117,12 +129,38 @@ export default function AdminErrorsPage() {
     <div className="p-6 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Client Errors</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {source === 'server' ? 'Server Errors' : 'Client Errors'}
+          </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Unhandled React errors reported by the browser via the /api/client-errors beacon.
+            {source === 'server'
+              ? 'Server-side errors captured by logger.error() — API routes, crons, background jobs.'
+              : 'Unhandled React errors reported by the browser via the /api/client-errors beacon.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="inline-flex rounded border border-gray-300 overflow-hidden">
+            <button
+              onClick={() => setSource('client')}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                source === 'client'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Client
+            </button>
+            <button
+              onClick={() => setSource('server')}
+              className={`px-3 py-2 text-sm font-medium border-l border-gray-300 transition-colors ${
+                source === 'server'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Server
+            </button>
+          </div>
           <select
             value={sinceHours}
             onChange={(e) => setSinceHours(parseInt(e.target.value))}
