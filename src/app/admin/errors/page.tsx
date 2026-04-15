@@ -68,8 +68,18 @@ function scopeBadge(scope: string | null): JSX.Element {
 
 type ErrorSource = 'client' | 'server'
 
+function initialSource(): ErrorSource {
+  if (typeof window === 'undefined') return 'client'
+  try {
+    const param = new URLSearchParams(window.location.search).get('source')
+    return param === 'server' ? 'server' : 'client'
+  } catch {
+    return 'client'
+  }
+}
+
 export default function AdminErrorsPage() {
-  const [source, setSource] = useState<ErrorSource>('client')
+  const [source, setSource] = useState<ErrorSource>(initialSource)
   const [errors, setErrors] = useState<ClientErrorRow[]>([])
   const [stats, setStats] = useState<ScopeStat[]>([])
   const [topDigests, setTopDigests] = useState<TopDigest[]>([])

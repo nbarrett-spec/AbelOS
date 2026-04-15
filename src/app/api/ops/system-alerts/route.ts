@@ -11,6 +11,7 @@ import { detectCronDrift } from '@/lib/cron'
 //
 // Aggregates live signals from the tables shipped by recent P1 work:
 //   - ClientError   (last hour): crashes in the browser
+//   - ServerError   (last hour): server-side failures from logger.error
 //   - CronRun       (last 24h): failed scheduled jobs
 //   - CronRun drift            : stale crons that stopped firing
 //   - WebhookEvent             : dead-lettered inbound webhooks
@@ -38,6 +39,19 @@ async function countClientErrorsLastHour(): Promise<number> {
     const rows: any[] = await prisma.$queryRawUnsafe(
       `SELECT COUNT(*)::int AS count
        FROM "ClientError"
+       WHERE "createdAt" > NOW() - INTERVAL '1 hour'`
+    )
+    return rows[0]?.count || 0
+  } catch {
+    return 0
+  }
+}
+
+async function countServerErrorsLastHour(): Promise<number> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS count
+       FROM "ServerError"
        WHERE "createdAt" > NOW() - INTERVAL '1 hour'`
     )
     return rows[0]?.count || 0
@@ -238,6 +252,7 @@ export async function GET(request: NextRequest) {
 
   const [
     clientErrorCount,
+    serverErrorCount,
     failedCronCount,
     deadLetterCount,
     retryBacklogCount,
@@ -249,6 +264,7 @@ export async function GET(request: NextRequest) {
     cronDrift,
   ] = await Promise.all([
     countClientErrorsLastHour(),
+    countServerErrorsLastHour(),
     countFailedCronsLast24h(),
     countDeadLetterWebhooks(),
     countRetryBacklogWebhooks(),
@@ -272,8 +288,23 @@ export async function GET(request: NextRequest) {
       type: errorSeverity,
       title: 'Browser Errors (1h)',
       count: clientErrorCount,
-      href: '/admin/errors',
+      href: '/admin/errors?source=client',
       description: 'Unhandled React errors reported by the browser',
+    })
+  }
+
+  // 1b. Server-side error rate (logger.error writes → ServerError table).
+  // Reuses the client classifier — a 20/hour burst on the server is the
+  // same "something is obviously broken" signal as on the client.
+  const serverErrorSeverity = classifyErrorRate(serverErrorCount)
+  if (serverErrorSeverity) {
+    alerts.push({
+      id: 'server-errors',
+      type: serverErrorSeverity,
+      title: 'Server Errors (1h)',
+      count: serverErrorCount,
+      href: '/admin/errors?source=server',
+      description: 'API route, cron, and background job failures from logger.error',
     })
   }
 
@@ -399,6 +430,7 @@ export async function GET(request: NextRequest) {
       cacheTtlSeconds: CACHE_TTL_MS / 1000,
       sources: {
         clientErrors: clientErrorCount,
+        serverErrors: serverErrorCount,
         failedCrons: failedCronCount,
         staleCrons: staleCronCount,
         deadLetterWebhooks: deadLetterCount,
