@@ -234,6 +234,12 @@ export default function AdminHealthPage() {
             <option value={72}>Last 3 days</option>
             <option value={168}>Last 7 days</option>
           </select>
+          <Link
+            href="/admin/timeline"
+            className="text-sm text-abel-navy hover:text-abel-navy/80 font-medium px-3 py-1.5 border border-abel-navy/30 rounded hover:bg-abel-navy/5"
+          >
+            Timeline →
+          </Link>
           <button
             onClick={load}
             className="text-sm text-white bg-abel-navy hover:bg-abel-navy/90 px-3 py-1.5 rounded"
