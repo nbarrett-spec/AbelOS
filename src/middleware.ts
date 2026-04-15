@@ -64,6 +64,27 @@ function addRequestIdToResponse(response: NextResponse, requestId: string): Next
   return response
 }
 
+/**
+ * Wrap any NextResponse (next, redirect, json) with the request ID header so
+ * every branch of the middleware propagates tracing consistently. Safe to call
+ * on responses we didn't originate.
+ */
+function withRequestId(response: NextResponse, requestId: string): NextResponse {
+  response.headers.set('X-Request-ID', requestId)
+  return response
+}
+
+/**
+ * Build a new Headers object that forwards the incoming request headers plus
+ * an x-request-id header, so downstream route handlers can read it without
+ * repeating header-manipulation boilerplate.
+ */
+function forwardWithRequestId(request: NextRequest, requestId: string): Headers {
+  const headers = new Headers(request.headers)
+  headers.set('x-request-id', requestId)
+  return headers
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -98,7 +119,7 @@ export async function middleware(request: NextRequest) {
     if (!staffCookie) {
       const loginUrl = new URL('/ops/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
+      return withRequestId(NextResponse.redirect(loginUrl), requestId)
     }
 
     // Verify the JWT is valid (basic check — role checks happen at page/API level)
@@ -110,10 +131,13 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname)
       const response = NextResponse.redirect(loginUrl)
       response.cookies.delete(STAFF_COOKIE)
-      return response
+      return withRequestId(response, requestId)
     }
 
-    return NextResponse.next()
+    return withRequestId(
+      NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
+      requestId
+    )
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -126,24 +150,24 @@ export async function middleware(request: NextRequest) {
       if (staffCookie) {
         try {
           await jwtVerify(staffCookie.value, JWT_SECRET)
-          return NextResponse.redirect(new URL('/sales', request.url))
+          return withRequestId(NextResponse.redirect(new URL('/sales', request.url)), requestId)
         } catch {
           // Invalid token, let them see login
         }
       }
-      return NextResponse.next()
+      return withRequestId(NextResponse.next(), requestId)
     }
 
     // All other /sales routes require staff session
     const staffCookie = request.cookies.get(STAFF_COOKIE)
     if (!staffCookie) {
-      return NextResponse.redirect(new URL('/sales/login', request.url))
+      return withRequestId(NextResponse.redirect(new URL('/sales/login', request.url)), requestId)
     }
 
     try {
       const { payload } = await jwtVerify(staffCookie.value, JWT_SECRET)
       // Attach staff info to headers for the sales portal pages
-      const requestHeaders = new Headers(request.headers)
+      const requestHeaders = forwardWithRequestId(request, requestId)
       requestHeaders.set('x-staff-id', payload.staffId as string)
       requestHeaders.set('x-staff-role', payload.role as string)
       requestHeaders.set('x-staff-roles', (payload.roles as string) || (payload.role as string))
@@ -151,12 +175,15 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-staff-email', payload.email as string)
       requestHeaders.set('x-staff-firstname', (payload.firstName as string) || '')
       requestHeaders.set('x-staff-lastname', (payload.lastName as string) || '')
-      return NextResponse.next({ request: { headers: requestHeaders } })
+      return withRequestId(
+        NextResponse.next({ request: { headers: requestHeaders } }),
+        requestId
+      )
     } catch {
       const loginUrl = new URL('/sales/login', request.url)
       const response = NextResponse.redirect(loginUrl)
       response.cookies.delete(STAFF_COOKIE)
-      return response
+      return withRequestId(response, requestId)
     }
   }
 
@@ -165,7 +192,10 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────────────────
   // Webhook endpoints are public (InFlow, Gmail Pub/Sub, Hyphen)
   if (pathname.startsWith('/api/webhooks')) {
-    return NextResponse.next()
+    return withRequestId(
+      NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
+      requestId
+    )
   }
 
   // ────────────────────────────────────────────────────────────────
@@ -188,16 +218,16 @@ export async function middleware(request: NextRequest) {
           const isDev = originHost.startsWith('localhost') || originHost.startsWith('127.0.0.1')
           const hostIsDev = host?.startsWith('localhost') || host?.startsWith('127.0.0.1')
           if (!(isDev && hostIsDev)) {
-            return NextResponse.json(
-              { error: 'CSRF validation failed' },
-              { status: 403 }
+            return withRequestId(
+              NextResponse.json({ error: 'CSRF validation failed' }, { status: 403 }),
+              requestId
             )
           }
         }
       } catch {
-        return NextResponse.json(
-          { error: 'Invalid origin header' },
-          { status: 403 }
+        return withRequestId(
+          NextResponse.json({ error: 'Invalid origin header' }, { status: 403 }),
+          requestId
         )
       }
     }
@@ -208,22 +238,25 @@ export async function middleware(request: NextRequest) {
     // Auth endpoints and handbook are public
     if ((pathname.startsWith('/api/ops/auth') && !pathname.startsWith('/api/ops/auth/permissions')) ||
         pathname === '/api/ops/handbook') {
-      return NextResponse.next()
+      return withRequestId(
+        NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
+        requestId
+      )
     }
 
     // All other API ops routes need a valid staff session
     const staffCookie = request.cookies.get(STAFF_COOKIE)
     if (!staffCookie) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+      return withRequestId(
+        NextResponse.json({ error: 'Authentication required' }, { status: 401 }),
+        requestId
       )
     }
 
     try {
       const { payload } = await jwtVerify(staffCookie.value, JWT_SECRET)
       // Attach staff info to request headers for downstream use
-      const requestHeaders = new Headers(request.headers)
+      const requestHeaders = forwardWithRequestId(request, requestId)
       requestHeaders.set('x-staff-id', payload.staffId as string)
       requestHeaders.set('x-staff-role', payload.role as string)
       requestHeaders.set('x-staff-roles', (payload.roles as string) || (payload.role as string))
@@ -232,15 +265,14 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-staff-firstname', (payload.firstName as string) || '')
       requestHeaders.set('x-staff-lastname', (payload.lastName as string) || '')
 
-      return addSecurityHeaders(NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      }))
+      return addSecurityHeaders(
+        NextResponse.next({ request: { headers: requestHeaders } }),
+        requestId
+      )
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid or expired session' },
-        { status: 401 }
+      return withRequestId(
+        NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 }),
+        requestId
       )
     }
   }
@@ -261,7 +293,7 @@ export async function middleware(request: NextRequest) {
       if (token === agentApiKey) {
         const agentRole = request.headers.get('x-agent-role') || 'COORDINATOR'
         const agentName = request.headers.get('x-agent-name') || 'Abel Agent'
-        const requestHeaders = new Headers(request.headers)
+        const requestHeaders = forwardWithRequestId(request, requestId)
         requestHeaders.set('x-staff-id', `agent-${agentRole.toLowerCase()}`)
         requestHeaders.set('x-staff-role', 'ADMIN')
         requestHeaders.set('x-staff-roles', 'ADMIN')
@@ -271,28 +303,32 @@ export async function middleware(request: NextRequest) {
         requestHeaders.set('x-staff-lastname', '')
         requestHeaders.set('x-agent-authenticated', 'true')
 
-        return addSecurityHeaders(NextResponse.next({
-          request: { headers: requestHeaders },
-        }))
+        return addSecurityHeaders(
+          NextResponse.next({ request: { headers: requestHeaders } }),
+          requestId
+        )
       }
-      return NextResponse.json(
-        { error: 'Invalid API key' },
-        { status: 401 }
+      return withRequestId(
+        NextResponse.json({ error: 'Invalid API key' }, { status: 401 }),
+        requestId
       )
     }
 
     // Method 2: Staff cookie auth (web dashboard)
     const staffCookie = request.cookies.get(STAFF_COOKIE)
     if (!staffCookie) {
-      return NextResponse.json(
-        { error: 'Authentication required. Provide Bearer API key or staff session.' },
-        { status: 401 }
+      return withRequestId(
+        NextResponse.json(
+          { error: 'Authentication required. Provide Bearer API key or staff session.' },
+          { status: 401 }
+        ),
+        requestId
       )
     }
 
     try {
       const { payload } = await jwtVerify(staffCookie.value, JWT_SECRET)
-      const requestHeaders = new Headers(request.headers)
+      const requestHeaders = forwardWithRequestId(request, requestId)
       requestHeaders.set('x-staff-id', payload.staffId as string)
       requestHeaders.set('x-staff-role', payload.role as string)
       requestHeaders.set('x-staff-roles', (payload.roles as string) || (payload.role as string))
@@ -301,15 +337,14 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-staff-firstname', (payload.firstName as string) || '')
       requestHeaders.set('x-staff-lastname', (payload.lastName as string) || '')
 
-      return addSecurityHeaders(NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      }))
+      return addSecurityHeaders(
+        NextResponse.next({ request: { headers: requestHeaders } }),
+        requestId
+      )
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid or expired session' },
-        { status: 401 }
+      return withRequestId(
+        NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 }),
+        requestId
       )
     }
   }
