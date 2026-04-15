@@ -37,6 +37,7 @@ interface AlertIncidentRow {
   lastCount: number
   lastSeenAt: string
   tickCount: number
+  notifiedAt: string | null
 }
 
 interface AlertRollupRow {
@@ -328,6 +329,22 @@ export default function AlertHistoryPage() {
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-700">
                               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                               FIRING
+                            </span>
+                          )}
+                          {inc.peakSeverity === 'critical' && inc.notifiedAt && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-indigo-50 text-indigo-700 border-indigo-200"
+                              title={`Notification email sent ${fmtAbsDate(inc.notifiedAt)}`}
+                            >
+                              ✉ NOTIFIED
+                            </span>
+                          )}
+                          {inc.peakSeverity === 'critical' && !inc.notifiedAt && isOpen && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-gray-50 text-gray-500 border-gray-200"
+                              title="Pending notification dispatch (or ALERT_NOTIFY_EMAILS unset)"
+                            >
+                              ✉ PENDING
                             </span>
                           )}
                           <span className="font-semibold text-gray-900">

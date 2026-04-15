@@ -456,6 +456,7 @@ export interface AlertIncidentRow {
   lastCount: number
   lastSeenAt: string
   tickCount: number
+  notifiedAt: string | null
 }
 
 /**
@@ -485,7 +486,8 @@ export async function listRecentIncidents(
          END AS "durationSeconds",
          "peakCount", "peakSeverity",
          "lastSeverity", "lastCount",
-         "lastSeenAt", "tickCount"
+         "lastSeenAt", "tickCount",
+         "notifiedAt"
        FROM "AlertIncident"
        WHERE "startedAt" > NOW() - INTERVAL '${hours} hours'
           OR "endedAt" IS NULL
@@ -519,6 +521,12 @@ export async function listRecentIncidents(
           ? r.lastSeenAt.toISOString()
           : String(r.lastSeenAt),
       tickCount: r.tickCount,
+      notifiedAt:
+        r.notifiedAt == null
+          ? null
+          : r.notifiedAt instanceof Date
+            ? r.notifiedAt.toISOString()
+            : String(r.notifiedAt),
     }))
   } catch {
     return []
