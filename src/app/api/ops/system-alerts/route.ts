@@ -20,6 +20,7 @@ import { snapshotAlerts } from '@/lib/alert-history'
 //   - Order AR                 : overdue invoices
 //   - Inventory                : items below reorder point (approximation)
 //   - SecurityEvent (last 24h): rate-limit rejections + auth failures
+//   - UptimeProbe   (last hour): failed probes and elevated DB p95
 //
 // Each alert is classified as 'critical', 'warning', or 'info' based on
 // count thresholds. The /ops AlertRail consumes this directly. Queries
@@ -184,6 +185,47 @@ async function countSlowQueriesLastHour(): Promise<number> {
 }
 
 /**
+ * Uptime probe health for the last hour. Combines two signals in one
+ * query to keep the round-trips low:
+ *   - failed:   probes where status <> 'ready' (the "are we up at all?"
+ *               signal — uptime-probe hits /api/health every 5 min).
+ *   - total:    total probes in window, lets us compute a failure ratio
+ *               rather than a raw count — if the cron ran 12 times and 4
+ *               failed, that's a different fire than 4 failures across
+ *               100 probes.
+ *   - p95DbMs:  95th percentile of dbMs over the last hour. If the DB
+ *               is slow but not broken, the probe still reports 'ready',
+ *               so this is the leading indicator that uptime pct doesn't
+ *               catch. PERCENTILE_DISC returns the nearest actual value.
+ *
+ * All three come from one scan so we don't double-hit the table.
+ */
+async function getUptimeProbeHealthLastHour(): Promise<{
+  failed: number
+  total: number
+  p95DbMs: number | null
+}> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         COUNT(*)::int AS total,
+         SUM(CASE WHEN "status" <> 'ready' THEN 1 ELSE 0 END)::int AS failed,
+         PERCENTILE_DISC(0.95) WITHIN GROUP (ORDER BY "dbMs") AS p95_db_ms
+       FROM "UptimeProbe"
+       WHERE "createdAt" > NOW() - INTERVAL '1 hour'`
+    )
+    const row = rows[0] || {}
+    return {
+      failed: row.failed || 0,
+      total: row.total || 0,
+      p95DbMs: row.p95_db_ms != null ? Number(row.p95_db_ms) : null,
+    }
+  } catch {
+    return { failed: 0, total: 0, p95DbMs: null }
+  }
+}
+
+/**
  * Classify client-error severity by raw count in the last hour.
  * These thresholds are deliberately loud — a handful of errors is
  * noise; dozens of errors is a fire.
@@ -228,6 +270,45 @@ function classifySlowQueries(count: number): 'critical' | 'warning' | 'info' | n
   return null
 }
 
+/**
+ * Uptime-probe failure severity. The probe runs every 5 minutes, so the
+ * expected count per hour is ~12. We classify on raw failures rather than
+ * ratio because even a single failure in a 5-probe window means we were
+ * actually down, which matters more than the denominator. Thresholds:
+ *   1      → info  (single blip, likely a transient provider glitch)
+ *   2      → warning (10+ minutes of not-ready, worth eyeballs)
+ *   3+     → critical (15+ minutes of not-ready, something is broken)
+ * Total<1 is also returned as null — if the probe itself stopped running,
+ * the stale-cron alert is the right signal, not this one.
+ */
+function classifyUptimeFailures(
+  failed: number,
+  total: number
+): 'critical' | 'warning' | 'info' | null {
+  if (total === 0) return null
+  if (failed >= 3) return 'critical'
+  if (failed >= 2) return 'warning'
+  if (failed >= 1) return 'info'
+  return null
+}
+
+/**
+ * DB p95 latency severity. The uptime probe records dbMs for each probe;
+ * over a healthy hour it should stay under 100ms on Neon. When it climbs
+ * above 500ms p95 we're trending into "users will notice", above 1500ms
+ * the DB is effectively unresponsive even though the probes still count
+ * as 'ready'. This catches slowdowns that the failure classifier misses.
+ */
+function classifyDbLatency(
+  p95Ms: number | null
+): 'critical' | 'warning' | 'info' | null {
+  if (p95Ms == null) return null
+  if (p95Ms >= 1500) return 'critical'
+  if (p95Ms >= 500) return 'warning'
+  if (p95Ms >= 200) return 'info'
+  return null
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // In-memory cache — 10-second TTL.
 //
@@ -262,6 +343,7 @@ export async function GET(request: NextRequest) {
     rateLimitCount,
     authFailCount,
     slowQueryCount,
+    uptimeHealth,
     cronDrift,
   ] = await Promise.all([
     countClientErrorsLastHour(),
@@ -274,6 +356,7 @@ export async function GET(request: NextRequest) {
     countRateLimitRejectionsLast24h(),
     countAuthFailuresLast24h(),
     countSlowQueriesLastHour(),
+    getUptimeProbeHealthLastHour(),
     detectCronDrift().catch(() => ({ orphaned: [], neverRun: [], stale: [] })),
   ])
 
@@ -424,6 +507,41 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  // 9. Uptime probe failures — /api/health said not_ready. This is the
+  // "are we actually online?" signal. The classifier returns null when
+  // the probe itself hasn't run, so a broken probe cron surfaces via the
+  // stale-cron alert above instead of masking itself as "no failures".
+  const uptimeFailSeverity = classifyUptimeFailures(
+    uptimeHealth.failed,
+    uptimeHealth.total
+  )
+  if (uptimeFailSeverity) {
+    alerts.push({
+      id: 'uptime-failures',
+      type: uptimeFailSeverity,
+      title: 'Uptime Probe Failures (1h)',
+      count: uptimeHealth.failed,
+      href: '/admin/health',
+      description: `${uptimeHealth.failed}/${uptimeHealth.total} probes reported not_ready`,
+    })
+  }
+
+  // 10. DB latency p95 — uptime probe measured the round-trip time and
+  // the 95th percentile has climbed. This catches slowdowns that don't
+  // break the probe outright but will definitely be felt by users. Uses
+  // rounded milliseconds as the "count" so the alert row reads naturally.
+  const dbLatencySeverity = classifyDbLatency(uptimeHealth.p95DbMs)
+  if (dbLatencySeverity && uptimeHealth.p95DbMs != null) {
+    alerts.push({
+      id: 'db-latency',
+      type: dbLatencySeverity,
+      title: 'DB Latency p95 (1h)',
+      count: Math.round(uptimeHealth.p95DbMs),
+      href: '/admin/health',
+      description: 'Database round-trip p95 measured by the uptime probe (ms)',
+    })
+  }
+
   const payload = {
     alerts,
     meta: {
@@ -441,6 +559,9 @@ export async function GET(request: NextRequest) {
         rateLimitRejections: rateLimitCount,
         authFailures: authFailCount,
         slowQueries: slowQueryCount,
+        uptimeFailures: uptimeHealth.failed,
+        uptimeProbes: uptimeHealth.total,
+        dbP95Ms: uptimeHealth.p95DbMs,
       },
     },
   }
