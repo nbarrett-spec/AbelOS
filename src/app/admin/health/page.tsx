@@ -41,6 +41,41 @@ interface SlowQueriesPayload {
   note?: string
 }
 
+interface UptimeBucket {
+  bucketStart: number
+  total: number
+  ready: number
+  avgDbMs: number | null
+}
+
+interface UptimeSummary {
+  total: number
+  ready: number
+  notReady: number
+  uptimePct: number
+  avgDbMs: number | null
+  p95DbMs: number | null
+  latestStatus: string | null
+}
+
+interface UptimePayload {
+  summary: UptimeSummary
+  rows: Array<{
+    id: string
+    createdAt: string
+    status: string
+    totalMs: number
+    dbMs: number | null
+    dbOk: boolean
+    envOk: boolean
+    error: string | null
+  }>
+  buckets: UptimeBucket[]
+  sinceHours: number
+  bucketHours: number
+  note?: string
+}
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString()
@@ -58,6 +93,7 @@ function durationClass(ms: number): string {
 
 export default function AdminHealthPage() {
   const [data, setData] = useState<SlowQueriesPayload | null>(null)
+  const [uptime, setUptime] = useState<UptimePayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [sinceHours, setSinceHours] = useState(24)
@@ -65,13 +101,19 @@ export default function AdminHealthPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/slow-queries?since=${sinceHours}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json: SlowQueriesPayload = await res.json()
-      setData(json)
+      const [slowRes, upRes] = await Promise.all([
+        fetch(`/api/admin/slow-queries?since=${sinceHours}`),
+        fetch(`/api/admin/uptime?since=${sinceHours}`),
+      ])
+      if (!slowRes.ok) throw new Error(`slow-queries HTTP ${slowRes.status}`)
+      if (!upRes.ok) throw new Error(`uptime HTTP ${upRes.status}`)
+      const slowJson: SlowQueriesPayload = await slowRes.json()
+      const upJson: UptimePayload = await upRes.json()
+      setData(slowJson)
+      setUptime(upJson)
       setError('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load slow queries')
+      setError(err instanceof Error ? err.message : 'Failed to load health data')
     } finally {
       setLoading(false)
       setLastRefresh(new Date())
@@ -118,6 +160,122 @@ export default function AdminHealthPage() {
             Refresh
           </button>
         </div>
+      </div>
+
+      {/* Uptime summary row */}
+      <div className="card p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Uptime</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Probed every 5 minutes by <span className="font-mono">/api/cron/uptime-probe</span>.
+              {uptime?.note && <span className="text-amber-600"> {uptime.note}</span>}
+            </p>
+          </div>
+          <div
+            className={`text-xs font-semibold px-3 py-1 rounded-full ${
+              uptime?.summary.latestStatus === 'ready'
+                ? 'bg-green-100 text-green-800'
+                : uptime?.summary.latestStatus === 'not_ready'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {uptime?.summary.latestStatus ?? 'unknown'}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gray-50 rounded p-4">
+            <div className="text-xs text-gray-500 uppercase tracking-wider">Uptime</div>
+            <div
+              className={`text-3xl font-bold mt-1 ${
+                (uptime?.summary.uptimePct ?? 0) >= 99.9
+                  ? 'text-green-600'
+                  : (uptime?.summary.uptimePct ?? 0) >= 99
+                  ? 'text-amber-600'
+                  : 'text-red-600'
+              }`}
+            >
+              {uptime?.summary.uptimePct != null
+                ? `${uptime.summary.uptimePct.toFixed(2)}%`
+                : '—'}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              {uptime?.summary.total ?? 0} probes
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded p-4">
+            <div className="text-xs text-gray-500 uppercase tracking-wider">
+              Failed probes
+            </div>
+            <div
+              className={`text-3xl font-bold mt-1 ${
+                (uptime?.summary.notReady ?? 0) === 0
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}
+            >
+              {uptime?.summary.notReady ?? 0}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">in window</div>
+          </div>
+          <div className="bg-gray-50 rounded p-4">
+            <div className="text-xs text-gray-500 uppercase tracking-wider">
+              Avg DB latency
+            </div>
+            <div className="text-3xl font-bold mt-1 text-gray-900">
+              {uptime?.summary.avgDbMs != null ? `${uptime.summary.avgDbMs}ms` : '—'}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">SELECT 1 round-trip</div>
+          </div>
+          <div className="bg-gray-50 rounded p-4">
+            <div className="text-xs text-gray-500 uppercase tracking-wider">
+              p95 DB latency
+            </div>
+            <div
+              className={`text-3xl font-bold mt-1 ${
+                (uptime?.summary.p95DbMs ?? 0) >= 500
+                  ? 'text-red-600'
+                  : (uptime?.summary.p95DbMs ?? 0) >= 200
+                  ? 'text-amber-600'
+                  : 'text-gray-900'
+              }`}
+            >
+              {uptime?.summary.p95DbMs != null ? `${uptime.summary.p95DbMs}ms` : '—'}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">95th percentile</div>
+          </div>
+        </div>
+
+        {/* Bucket sparkline */}
+        {uptime && uptime.buckets.length > 0 && (
+          <div className="mt-6">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+              Per-bucket uptime ({uptime.bucketHours}h buckets)
+            </div>
+            <div className="flex items-end gap-0.5 h-16">
+              {uptime.buckets.map((b) => {
+                const pct = b.total > 0 ? (b.ready / b.total) * 100 : 0
+                const color =
+                  pct >= 99.9
+                    ? 'bg-green-500'
+                    : pct >= 99
+                    ? 'bg-amber-500'
+                    : pct > 0
+                    ? 'bg-red-500'
+                    : 'bg-gray-300'
+                return (
+                  <div
+                    key={b.bucketStart}
+                    className={`flex-1 ${color} rounded-sm`}
+                    style={{ height: `${Math.max(pct, 5)}%` }}
+                    title={`${new Date(b.bucketStart).toLocaleString()} — ${pct.toFixed(1)}% (${b.ready}/${b.total})${b.avgDbMs != null ? ` · ${b.avgDbMs}ms avg` : ''}`}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top row: SystemPulse + threshold banner */}
