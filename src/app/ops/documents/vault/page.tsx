@@ -692,7 +692,13 @@ export default function DocumentVaultPage() {
               {detailDoc.mimeType.startsWith('image/') && (
                 <div className="border rounded-lg overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/api/ops/documents/vault/${detailDoc.id}?mode=download`} alt={detailDoc.fileName} className="w-full" />
+                  <img
+                    src={`/api/ops/documents/vault/${detailDoc.id}?mode=download`}
+                    alt={detailDoc.fileName}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full"
+                  />
                 </div>
               )}
 

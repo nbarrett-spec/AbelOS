@@ -168,7 +168,18 @@ export default function ProductDetailPage() {
         {/* Image */}
         <div className="bg-white rounded-2xl border p-8 flex items-center justify-center min-h-[320px]">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.imageAlt || product.name} className="max-w-full max-h-80 object-contain" />
+            // External product image (InFlow / S3) — next/image would require
+            // adding remotePatterns for every supplier CDN. Use <img> with
+            // explicit dimensions + async decoding for CLS and perf.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt={product.imageAlt || product.name}
+              width={320}
+              height={320}
+              decoding="async"
+              className="max-w-full max-h-80 object-contain"
+            />
           ) : (
             <div className="text-center text-gray-400">
               <div className="text-6xl mb-2">🚪</div>

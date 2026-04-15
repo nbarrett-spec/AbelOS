@@ -404,9 +404,16 @@ export default function BlueprintUploadPage() {
                   {/* Preview / Icon */}
                   <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {f.preview ? (
+                      // Blob URL from FileReader — next/image would need the
+                      // loader disabled; raw img is the right call here.
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={f.preview}
                         alt=""
+                        width={56}
+                        height={56}
+                        decoding="async"
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                     ) : (

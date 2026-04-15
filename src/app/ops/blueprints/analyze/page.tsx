@@ -216,9 +216,12 @@ export default function BlueprintAnalyzePage() {
           <div className="space-y-4">
             {/* Preview */}
             <div className="relative">
+              {/* Blob URL from client-side upload — raw img is correct here */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={uploadedFile.preview}
                 alt="Blueprint preview"
+                decoding="async"
                 className="max-h-96 mx-auto rounded-lg border border-gray-200"
               />
             </div>

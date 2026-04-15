@@ -243,7 +243,13 @@ export default function BrandingPage() {
                 transition: 'all 0.2s'
               }}>
                 {settings.logoUrl ? (
-                  <img src={settings.logoUrl} alt="Logo" style={{ maxHeight: '100px', maxWidth: '100%' }} />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={settings.logoUrl}
+                    alt="Logo"
+                    decoding="async"
+                    style={{ maxHeight: '100px', maxWidth: '100%' }}
+                  />
                 ) : (
                   <span style={{ color: settings.theme === 'light' ? '#9ca3af' : '#6b7280' }}>
                     Click to upload or paste URL
@@ -622,9 +628,11 @@ export default function BrandingPage() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 {settings.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={settings.logoUrl}
                     alt="Logo"
+                    decoding="async"
                     style={{ maxHeight: '50px', maxWidth: '100px' }}
                   />
                 )}
