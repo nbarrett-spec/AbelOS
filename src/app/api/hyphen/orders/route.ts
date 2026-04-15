@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateHyphenRequest, recordHyphenEvent } from '@/lib/hyphen/auth'
+import { processHyphenOrderEvent } from '@/lib/hyphen/processor'
 import { logger } from '@/lib/logger'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -11,10 +12,15 @@ import { logger } from '@/lib/logger'
 // purchase orders here authenticated with a Bearer token issued by
 // /api/hyphen/oauth/token.
 //
-// Phase 1: This route validates auth, persists the raw envelope to
-// HyphenOrderEvent for replay/inspection, and returns 200. The Phase 2
-// upgrade will add the SPConnect → Abel Order schema mapping (header,
-// builder, supplier, billing, shipping, task, job, items, summary).
+// Flow:
+//   1. Authenticate (Bearer token from /api/hyphen/oauth/token)
+//   2. Persist raw envelope to HyphenOrderEvent (status=RECEIVED)
+//   3. Run SPConnect → Abel Order mapper (processHyphenOrderEvent)
+//   4. Ack to Hyphen with mapping result in additionalInfo
+//
+// On mapping failure we still return HTTP 200 — the envelope is persisted
+// and an operator can fix aliases and reprocess via /admin/hyphen. A 500
+// would cause Hyphen to retry, which wouldn't help anything.
 // ──────────────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   const ctx = await authenticateHyphenRequest(request)
@@ -58,16 +64,52 @@ export async function POST(request: NextRequest) {
     return errorResponse(500, 'Failed to record inbound order')
   }
 
-  // Phase 2 mapping happens here. For now we ack the message so Hyphen
-  // doesn't retry while we build the mapper.
+  // Phase 2: run the mapper synchronously. We already persisted the envelope
+  // above, so even if this throws we have the raw payload for replay.
+  let processResult: Awaited<ReturnType<typeof processHyphenOrderEvent>> | null = null
+  try {
+    processResult = await processHyphenOrderEvent(eventId)
+  } catch (e: any) {
+    logger.error('hyphen_order_process_threw', e, { eventId })
+    // Fall through to the ack — the event is still in HyphenOrderEvent and
+    // can be reprocessed from /admin/hyphen.
+  }
+
+  if (processResult?.ok) {
+    return NextResponse.json(
+      {
+        message: 'Order received and mapped to Abel order',
+        additionalInfo: {
+          eventId,
+          builderOrderNumber,
+          externalId,
+          status: 'PROCESSED',
+          mappedOrderId: processResult.orderId,
+          orderNumber: processResult.orderNumber,
+          warnings: processResult.warnings,
+        },
+      },
+      { status: 200 }
+    )
+  }
+
+  // Mapping failed, or the processor threw before returning a result. Still
+  // return 200 — we kept the envelope and an operator will handle it.
   return NextResponse.json(
     {
-      message: 'Order received and queued for processing',
+      message: processResult
+        ? 'Order received but mapping failed — operator intervention required'
+        : 'Order received and queued for processing',
       additionalInfo: {
         eventId,
         builderOrderNumber,
         externalId,
-        status: 'RECEIVED',
+        status: processResult ? 'FAILED' : 'RECEIVED',
+        mappingError: processResult?.errorMessage,
+        errorCode: processResult?.errorCode,
+        unresolvedBuilder: processResult?.ok === false ? processResult.unresolvedBuilder : undefined,
+        unresolvedSkus: processResult?.ok === false ? processResult.unresolvedSkus : undefined,
+        warnings: processResult?.warnings,
       },
     },
     { status: 200 }
