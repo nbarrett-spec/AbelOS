@@ -213,9 +213,28 @@ function classifySlowQueries(count: number): 'critical' | 'warning' | 'info' | n
   return null
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// In-memory cache — 10-second TTL.
+//
+// SystemPulse polls every 30s and /ops page-loads hit this endpoint too,
+// so with two admin tabs open we'd run 10 queries every 15s. A 10-second
+// TTL cuts that in half without making the ops feed feel stale (humans
+// aren't refreshing fast enough to care).
+//
+// The cache is a module-level variable so it lives as long as the Lambda
+// warm-start. On a cold boot it rebuilds from scratch — correct behaviour.
+// ──────────────────────────────────────────────────────────────────────────
+
+const CACHE_TTL_MS = 10_000
+let cachedPayload: { body: any; expires: number } | null = null
+
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  if (cachedPayload && cachedPayload.expires > Date.now()) {
+    return NextResponse.json(cachedPayload.body)
+  }
 
   const [
     clientErrorCount,
@@ -373,10 +392,11 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  return NextResponse.json({
+  const payload = {
     alerts,
     meta: {
       generatedAt: new Date().toISOString(),
+      cacheTtlSeconds: CACHE_TTL_MS / 1000,
       sources: {
         clientErrors: clientErrorCount,
         failedCrons: failedCronCount,
@@ -390,5 +410,8 @@ export async function GET(request: NextRequest) {
         slowQueries: slowQueryCount,
       },
     },
-  })
+  }
+
+  cachedPayload = { body: payload, expires: Date.now() + CACHE_TTL_MS }
+  return NextResponse.json(payload)
 }
