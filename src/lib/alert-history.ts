@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma'
+import { sendEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Alert history — persist fire / clear transitions of the live alerts that
@@ -77,9 +79,16 @@ async function ensureAlertIncidentTable(): Promise<void> {
           "lastSeverity" TEXT NOT NULL,
           "lastCount" INTEGER NOT NULL DEFAULT 0,
           "lastSeenAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          "tickCount" INTEGER NOT NULL DEFAULT 1
+          "tickCount" INTEGER NOT NULL DEFAULT 1,
+          "notifiedAt" TIMESTAMPTZ
         )
       `)
+      // Backfill the notifiedAt column for existing tables created before
+      // the notification feature. IF NOT EXISTS makes this a no-op on new
+      // installs but adds the column on any deployment that pre-dates this.
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "AlertIncident" ADD COLUMN IF NOT EXISTS "notifiedAt" TIMESTAMPTZ`
+      )
       await prisma.$executeRawUnsafe(
         `CREATE INDEX IF NOT EXISTS "idx_alertincident_started" ON "AlertIncident" ("startedAt" DESC)`
       )
@@ -216,9 +225,215 @@ export async function snapshotAlerts(current: CurrentAlert[]): Promise<void> {
         // swallow
       }
     }
+
+    // 3. Notify recipients about open critical incidents that haven't been
+    //    notified yet. Runs after the upsert loop so any freshly-inserted or
+    //    freshly-escalated-to-critical row is visible. Best-effort — if the
+    //    email send fails, notifiedAt stays NULL and we'll retry next tick.
+    await dispatchCriticalNotifications()
   } catch {
     // top-level guard — snapshotAlerts is fire-and-forget, never let
     // anything bubble up to the caller.
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Critical alert notification dispatch.
+//
+// Invariants:
+//   - We only email when peakSeverity='critical' on an OPEN incident.
+//   - notifiedAt is stamped BEFORE attempting to send so a transient Resend
+//     failure doesn't turn into an email storm. If send fails we CLEAR
+//     notifiedAt back to NULL so the next tick retries. This trades a
+//     possible duplicate email (if the clear succeeds but a later tick
+//     tries again) for zero risk of spamming an outage — the cure is
+//     worse than the disease on the other side.
+//   - Warning/info incidents never email. The dashboard banner is enough.
+//   - Configured via ALERT_NOTIFY_EMAILS (comma-separated). If unset,
+//     dispatch is a no-op. Rows still get stamped as "notified" so that
+//     flipping the env var on later doesn't immediately fire emails for
+//     every already-open incident.
+// ──────────────────────────────────────────────────────────────────────────
+
+function parseRecipients(): string[] {
+  const raw = process.env.ALERT_NOTIFY_EMAILS || ''
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && s.includes('@'))
+}
+
+interface PendingIncident {
+  id: string
+  alertId: string
+  title: string
+  href: string | null
+  description: string | null
+  peakCount: number
+  startedAt: Date
+  tickCount: number
+}
+
+async function loadPendingCriticalNotifications(): Promise<PendingIncident[]> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id", "alertId", "title", "href", "description",
+              "peakCount", "startedAt", "tickCount"
+       FROM "AlertIncident"
+       WHERE "endedAt" IS NULL
+         AND "peakSeverity" = 'critical'
+         AND "notifiedAt" IS NULL
+       ORDER BY "startedAt" ASC
+       LIMIT 20`
+    )
+    return rows.map((r) => ({
+      id: String(r.id),
+      alertId: String(r.alertId),
+      title: String(r.title),
+      href: r.href ?? null,
+      description: r.description ?? null,
+      peakCount: Number(r.peakCount) || 0,
+      startedAt:
+        r.startedAt instanceof Date ? r.startedAt : new Date(String(r.startedAt)),
+      tickCount: Number(r.tickCount) || 1,
+    }))
+  } catch {
+    return []
+  }
+}
+
+async function stampNotified(incidentId: string): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "AlertIncident"
+       SET "notifiedAt" = NOW()
+       WHERE "id" = $1 AND "notifiedAt" IS NULL`,
+      incidentId
+    )
+  } catch {
+    // swallow — next tick will try again
+  }
+}
+
+async function clearNotified(incidentId: string): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "AlertIncident"
+       SET "notifiedAt" = NULL
+       WHERE "id" = $1`,
+      incidentId
+    )
+  } catch {
+    // swallow
+  }
+}
+
+function renderIncidentEmailHtml(incident: PendingIncident): string {
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://app.abellumber.com'
+      : 'http://localhost:3000')
+  const href = incident.href
+    ? incident.href.startsWith('http')
+      ? incident.href
+      : `${appUrl}${incident.href}`
+    : `${appUrl}/admin/alert-history`
+  const started = incident.startedAt.toISOString()
+  const safeTitle = escapeHtml(incident.title)
+  const safeDesc = incident.description
+    ? escapeHtml(incident.description)
+    : '(no description)'
+  const safeAlertId = escapeHtml(incident.alertId)
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:620px;margin:0 auto;padding:24px;background:#fff;">
+      <div style="background:#991b1b;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;">
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">Critical incident opened</div>
+        <div style="font-size:18px;font-weight:700;margin-top:4px;">${safeTitle}</div>
+      </div>
+      <div style="border:1px solid #fecaca;border-top:none;border-radius:0 0 8px 8px;padding:20px;">
+        <table style="font-size:13px;width:100%;border-collapse:collapse;color:#374151;">
+          <tr><td style="padding:4px 0;color:#6b7280;width:130px;">Alert ID</td><td style="font-family:ui-monospace,monospace;">${safeAlertId}</td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Started</td><td>${started}</td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Peak count</td><td>${incident.peakCount}</td></tr>
+          <tr><td style="padding:4px 0;color:#6b7280;">Ticks so far</td><td>${incident.tickCount}</td></tr>
+        </table>
+        <div style="margin-top:16px;padding:12px;background:#fef2f2;border-left:3px solid #dc2626;font-size:13px;color:#7f1d1d;white-space:pre-wrap;">${safeDesc}</div>
+        <div style="margin-top:20px;">
+          <a href="${href}" style="display:inline-block;padding:10px 18px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;">Open in Admin</a>
+        </div>
+        <div style="margin-top:16px;font-size:11px;color:#9ca3af;">
+          You're receiving this because your email is on ALERT_NOTIFY_EMAILS.
+          This notification fires once per incident — you will not receive
+          further emails until the incident closes and re-opens.
+        </div>
+      </div>
+    </div>
+  `.trim()
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export async function dispatchCriticalNotifications(): Promise<void> {
+  try {
+    const recipients = parseRecipients()
+    if (recipients.length === 0) {
+      // No opt-in recipients. Still stamp any pending rows as "notified"
+      // so that flipping the env var on later doesn't immediately email
+      // about every pre-existing open incident.
+      const pending = await loadPendingCriticalNotifications()
+      for (const inc of pending) {
+        await stampNotified(inc.id)
+      }
+      return
+    }
+
+    const pending = await loadPendingCriticalNotifications()
+    if (pending.length === 0) return
+
+    for (const inc of pending) {
+      // Stamp BEFORE sending so a Resend stall doesn't cause this loop to
+      // send the same email twice from two concurrent Lambdas. If every
+      // recipient fails we roll back the stamp so the next tick retries;
+      // partial failure (some OK, some not) is left stamped — we'd rather
+      // miss one address than duplicate-notify the ones who did get through.
+      await stampNotified(inc.id)
+      const html = renderIncidentEmailHtml(inc)
+      const subject = `[CRITICAL] ${inc.title}`
+      let successCount = 0
+      for (const to of recipients) {
+        const result = await sendEmail({ to, subject, html })
+        if (result.success) {
+          successCount += 1
+        } else {
+          logger.warn('alert_notify_send_failed', {
+            incidentId: inc.id,
+            alertId: inc.alertId,
+            to,
+            error: result.error,
+          })
+        }
+      }
+      if (successCount === 0) {
+        await clearNotified(inc.id)
+      } else {
+        logger.info('alert_notify_sent', {
+          incidentId: inc.id,
+          alertId: inc.alertId,
+          recipients: successCount,
+          total: recipients.length,
+        })
+      }
+    }
+  } catch {
+    // top-level guard — notification dispatch is best-effort
   }
 }
 

@@ -53,6 +53,14 @@ const envSchema = z.object({
     .optional()
     .describe('From email address for Resend (e.g., Abel Lumber <noreply@abellumber.com>)'),
 
+  // Observability alerts (optional)
+  ALERT_NOTIFY_EMAILS: z
+    .string()
+    .optional()
+    .describe(
+      'Comma-separated list of recipient emails for critical incident notifications (e.g., "ops@abellumber.com,nate@abellumber.com")'
+    ),
+
   // Payments (optional, Stripe)
   STRIPE_SECRET_KEY: z
     .string()
