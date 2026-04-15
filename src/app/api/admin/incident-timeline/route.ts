@@ -25,6 +25,16 @@ import { prisma } from '@/lib/prisma'
 //   5. SecurityEvent        kind=security_event  severity=warning
 //   6. UptimeProbe (!=ok)   kind=uptime_failure  severity=error
 //   7. WebhookEvent (DLQ)   kind=webhook_dead    severity=error
+//   8. AlertIncident        kind=alert_fire      severity=peak (critical
+//                                                 → error, warning →
+//                                                 warning, info → info)
+//
+// The alert_fire source is meta-observability: a single event for each
+// time an alert transitioned from cleared to firing, positioned on the
+// timeline at startedAt. This gives you the "system interpretation" of
+// the raw events alongside the raw events themselves, so an incident
+// investigation doesn't have to cross-reference /admin/alert-history in
+// a separate tab.
 //
 // Query filters:
 //   ?since=24     hours back, 1..720 (default 24)
@@ -40,6 +50,7 @@ type IncidentKind =
   | 'security_event'
   | 'uptime_failure'
   | 'webhook_dead'
+  | 'alert_fire'
 
 type IncidentSeverity = 'error' | 'warning' | 'info'
 
@@ -64,6 +75,7 @@ const ALL_KINDS: IncidentKind[] = [
   'security_event',
   'uptime_failure',
   'webhook_dead',
+  'alert_fire',
 ]
 
 function clampStr(s: unknown, max: number): string | null {
@@ -300,6 +312,79 @@ async function fetchWebhookDeadLetters(
   }
 }
 
+async function fetchAlertFires(
+  sinceHours: number,
+  limit: number
+): Promise<IncidentEvent[]> {
+  try {
+    // Anchor on startedAt so each incident contributes a single event at
+    // the moment it first started firing. durationSeconds is computed in
+    // SQL the same way /api/admin/alert-history computes it, so a row
+    // that's still firing shows "firing for Xs" rather than a null.
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id", "alertId", "title", "description", "href",
+              "startedAt", "endedAt", "peakSeverity", "peakCount", "tickCount",
+              CASE
+                WHEN "endedAt" IS NOT NULL
+                  THEN EXTRACT(EPOCH FROM ("endedAt" - "startedAt"))
+                ELSE EXTRACT(EPOCH FROM (NOW() - "startedAt"))
+              END AS "durationSeconds"
+       FROM "AlertIncident"
+       WHERE "startedAt" > NOW() - INTERVAL '${sinceHours} hours'
+       ORDER BY "startedAt" DESC
+       LIMIT $1`,
+      limit
+    )
+    return rows.map((r) => {
+      // Map alert peakSeverity onto timeline severity. critical is the
+      // only one that earns 'error'; warning stays warning; info/success
+      // degrade to info so a transient info-level alert doesn't scream.
+      const sev: IncidentSeverity =
+        r.peakSeverity === 'critical'
+          ? 'error'
+          : r.peakSeverity === 'warning'
+            ? 'warning'
+            : 'info'
+      const isOpen = r.endedAt == null
+      const durSec =
+        r.durationSeconds != null ? Math.round(Number(r.durationSeconds)) : null
+      const durStr =
+        durSec == null
+          ? ''
+          : durSec < 60
+            ? ` (${durSec}s)`
+            : durSec < 3600
+              ? ` (${Math.floor(durSec / 60)}m)`
+              : ` (${Math.floor(durSec / 3600)}h${
+                  Math.floor((durSec % 3600) / 60)
+                    ? ` ${Math.floor((durSec % 3600) / 60)}m`
+                    : ''
+                })`
+      return {
+        id: `ai:${r.id}`,
+        timestamp: toIso(r.startedAt),
+        kind: 'alert_fire' as const,
+        severity: sev,
+        title: `Alert fired: ${r.title}${isOpen ? ' (firing)' : durStr}`,
+        detail:
+          clampStr(r.description, 300) ||
+          `peak ${r.peakCount} over ${r.tickCount} tick${r.tickCount === 1 ? '' : 's'}`,
+        href: r.href || '/admin/alert-history',
+        source: { table: 'AlertIncident', id: String(r.id) },
+        meta: {
+          alertId: r.alertId,
+          peakSeverity: r.peakSeverity,
+          peakCount: r.peakCount,
+          isOpen,
+          durationSeconds: durSec,
+        },
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
@@ -338,6 +423,7 @@ export async function GET(request: NextRequest) {
     securityEvents,
     uptimeFailures,
     webhookDeadLetters,
+    alertFires,
   ] = await Promise.all([
     allowed.has('server_error')
       ? fetchServerErrors(sinceHours, perSourceLimit)
@@ -360,6 +446,9 @@ export async function GET(request: NextRequest) {
     allowed.has('webhook_dead')
       ? fetchWebhookDeadLetters(sinceHours, perSourceLimit)
       : Promise.resolve([] as IncidentEvent[]),
+    allowed.has('alert_fire')
+      ? fetchAlertFires(sinceHours, perSourceLimit)
+      : Promise.resolve([] as IncidentEvent[]),
   ])
 
   const merged: IncidentEvent[] = [
@@ -370,6 +459,7 @@ export async function GET(request: NextRequest) {
     ...securityEvents,
     ...uptimeFailures,
     ...webhookDeadLetters,
+    ...alertFires,
   ]
 
   // Reverse chronological — newest incidents bubble to the top.
@@ -392,6 +482,7 @@ export async function GET(request: NextRequest) {
     security_event: 0,
     uptime_failure: 0,
     webhook_dead: 0,
+    alert_fire: 0,
   }
   for (const e of merged) counts[e.kind] += 1
 

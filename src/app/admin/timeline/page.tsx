@@ -26,6 +26,7 @@ type IncidentKind =
   | 'security_event'
   | 'uptime_failure'
   | 'webhook_dead'
+  | 'alert_fire'
 
 type IncidentSeverity = 'error' | 'warning' | 'info'
 
@@ -95,6 +96,12 @@ const KIND_META: Record<
     dotClass: 'bg-pink-500',
     icon: '✉',
   },
+  alert_fire: {
+    label: 'Alert Fire',
+    chipClass: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    dotClass: 'bg-indigo-500',
+    icon: '🔔',
+  },
 }
 
 const ALL_KINDS: IncidentKind[] = [
@@ -105,6 +112,7 @@ const ALL_KINDS: IncidentKind[] = [
   'security_event',
   'uptime_failure',
   'webhook_dead',
+  'alert_fire',
 ]
 
 const TIME_RANGES: Array<{ label: string; hours: number }> = [
