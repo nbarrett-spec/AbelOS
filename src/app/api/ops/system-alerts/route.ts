@@ -12,7 +12,9 @@ import { detectCronDrift } from '@/lib/cron'
 // Aggregates live signals from the tables shipped by recent P1 work:
 //   - ClientError   (last hour): crashes in the browser
 //   - CronRun       (last 24h): failed scheduled jobs
+//   - CronRun drift            : stale crons that stopped firing
 //   - WebhookEvent             : dead-lettered inbound webhooks
+//   - WebhookEvent             : FAILED retry backlog (leading indicator)
 //   - Order AR                 : overdue invoices
 //   - Inventory                : items below reorder point (approximation)
 //   - SecurityEvent (last 24h): rate-limit rejections + auth failures
@@ -63,6 +65,25 @@ async function countDeadLetterWebhooks(): Promise<number> {
       `SELECT COUNT(*)::int AS count
        FROM "WebhookEvent"
        WHERE "status" = 'DEAD_LETTER'`
+    )
+    return rows[0]?.count || 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Count FAILED webhooks that are piling up waiting for retry. This is the
+ * leading indicator — if it climbs while DEAD_LETTER stays flat, the retry
+ * worker is keeping up. If it climbs AND DEAD_LETTER climbs, something
+ * downstream is truly broken and needs eyeballs.
+ */
+async function countRetryBacklogWebhooks(): Promise<number> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS count
+       FROM "WebhookEvent"
+       WHERE "status" = 'FAILED'`
     )
     return rows[0]?.count || 0
   } catch {
@@ -171,6 +192,7 @@ export async function GET(request: NextRequest) {
     clientErrorCount,
     failedCronCount,
     deadLetterCount,
+    retryBacklogCount,
     overdueARCount,
     lowStockCount,
     rateLimitCount,
@@ -180,6 +202,7 @@ export async function GET(request: NextRequest) {
     countClientErrorsLastHour(),
     countFailedCronsLast24h(),
     countDeadLetterWebhooks(),
+    countRetryBacklogWebhooks(),
     countOverdueAR(),
     countLowStock(),
     countRateLimitRejectionsLast24h(),
@@ -242,6 +265,20 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  // 3b. Retry backlog — FAILED webhooks waiting on the next retry window.
+  // Healthy state is a handful (transient provider blips); a growing pile
+  // means the retry worker isn't keeping up or a downstream is hard down.
+  if (retryBacklogCount >= 10) {
+    alerts.push({
+      id: 'retry-backlog',
+      type: retryBacklogCount >= 50 ? 'critical' : 'warning',
+      title: 'Webhook Retry Backlog',
+      count: retryBacklogCount,
+      href: '/admin/webhooks',
+      description: 'FAILED webhooks queued for retry — leading indicator before dead-letter',
+    })
+  }
+
   // 4. Overdue AR — money the company is owed
   if (overdueARCount > 0) {
     alerts.push({
@@ -301,6 +338,7 @@ export async function GET(request: NextRequest) {
         failedCrons: failedCronCount,
         staleCrons: staleCronCount,
         deadLetterWebhooks: deadLetterCount,
+        retryBacklogWebhooks: retryBacklogCount,
         overdueAR: overdueARCount,
         lowStock: lowStockCount,
         rateLimitRejections: rateLimitCount,
