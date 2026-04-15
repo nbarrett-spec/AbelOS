@@ -102,6 +102,60 @@ export async function GET(request: NextRequest) {
       count,
     }))
 
+    // ──────────────────────────────────────────────────────────────
+    // Time-series buckets for sparkline rendering on /admin/health.
+    // Bucket size auto-scales with the query window so a 1h view has
+    // 5-minute resolution and a 7-day view has hourly resolution.
+    // ──────────────────────────────────────────────────────────────
+    let bucketMinutes = 60
+    if (sinceHours <= 1) bucketMinutes = 5
+    else if (sinceHours <= 6) bucketMinutes = 15
+    else if (sinceHours <= 24) bucketMinutes = 60
+    else if (sinceHours <= 72) bucketMinutes = 180
+    else bucketMinutes = 360
+
+    const bucketMs = bucketMinutes * 60 * 1000
+    const now = Date.now()
+    const windowStart = now - sinceHours * 60 * 60 * 1000
+    const firstBucket = Math.floor(windowStart / bucketMs) * bucketMs
+    const bucketCount = Math.ceil((now - firstBucket) / bucketMs)
+
+    const bucketMap = new Map<
+      number,
+      {
+        bucketStart: string
+        RATE_LIMIT: number
+        CSRF: number
+        AUTH_FAIL: number
+        SUSPICIOUS: number
+        total: number
+      }
+    >()
+    for (let i = 0; i < bucketCount; i++) {
+      const t = firstBucket + i * bucketMs
+      bucketMap.set(t, {
+        bucketStart: new Date(t).toISOString(),
+        RATE_LIMIT: 0,
+        CSRF: 0,
+        AUTH_FAIL: 0,
+        SUSPICIOUS: 0,
+        total: 0,
+      })
+    }
+    for (const r of rows) {
+      const t = Math.floor(new Date(r.createdAt).getTime() / bucketMs) * bucketMs
+      const entry = bucketMap.get(t)
+      if (!entry) continue
+      entry.total += 1
+      if (r.kind === 'RATE_LIMIT') entry.RATE_LIMIT += 1
+      else if (r.kind === 'CSRF') entry.CSRF += 1
+      else if (r.kind === 'AUTH_FAIL') entry.AUTH_FAIL += 1
+      else if (r.kind === 'SUSPICIOUS') entry.SUSPICIOUS += 1
+    }
+    const buckets = Array.from(bucketMap.values()).sort((a, b) =>
+      a.bucketStart.localeCompare(b.bucketStart)
+    )
+
     return NextResponse.json({
       rows,
       kindCounts,
@@ -109,6 +163,8 @@ export async function GET(request: NextRequest) {
       topPaths,
       total: rows.length,
       sinceHours,
+      bucketMinutes,
+      buckets,
     })
   } catch (err: any) {
     if (err?.message?.includes('SecurityEvent') || err?.code === '42P01') {
@@ -119,6 +175,8 @@ export async function GET(request: NextRequest) {
         topPaths: [],
         total: 0,
         sinceHours,
+        bucketMinutes: 60,
+        buckets: [],
         note: 'SecurityEvent table not yet populated',
       })
     }

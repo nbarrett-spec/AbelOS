@@ -88,6 +88,15 @@ interface SecurityEventRow {
   details: unknown
 }
 
+interface SecurityBucket {
+  bucketStart: string
+  RATE_LIMIT: number
+  CSRF: number
+  AUTH_FAIL: number
+  SUSPICIOUS: number
+  total: number
+}
+
 interface SecurityEventsPayload {
   rows: SecurityEventRow[]
   kindCounts: Array<{ kind: string; count: number }>
@@ -95,6 +104,8 @@ interface SecurityEventsPayload {
   topPaths: Array<{ path: string; count: number }>
   total: number
   sinceHours: number
+  bucketMinutes?: number
+  buckets?: SecurityBucket[]
   note?: string
 }
 
@@ -513,6 +524,8 @@ export default function AdminHealthPage() {
                       ? 'text-amber-600'
                       : k.kind === 'CSRF'
                       ? 'text-red-600'
+                      : k.kind === 'AUTH_FAIL'
+                      ? 'text-rose-600'
                       : 'text-gray-900'
                   }`}
                 >
@@ -520,6 +533,82 @@ export default function AdminHealthPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {security && security.buckets && security.buckets.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                Events over time
+                {security.bucketMinutes
+                  ? ` (${security.bucketMinutes}m buckets)`
+                  : ''}
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 bg-amber-500 rounded-sm" />
+                  rate limit
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 bg-rose-500 rounded-sm" />
+                  auth fail
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 bg-red-600 rounded-sm" />
+                  csrf
+                </span>
+              </div>
+            </div>
+            {(() => {
+              const maxCount = Math.max(
+                1,
+                ...security.buckets.map((b) => b.total)
+              )
+              return (
+                <div className="flex items-end gap-[2px] h-20 bg-gray-50 rounded p-2">
+                  {security.buckets.map((b) => {
+                    const totalHeight = (b.total / maxCount) * 100
+                    const rateH = b.total > 0 ? (b.RATE_LIMIT / b.total) * totalHeight : 0
+                    const authH = b.total > 0 ? (b.AUTH_FAIL / b.total) * totalHeight : 0
+                    const csrfH = b.total > 0 ? (b.CSRF / b.total) * totalHeight : 0
+                    const susH = b.total > 0 ? (b.SUSPICIOUS / b.total) * totalHeight : 0
+                    return (
+                      <div
+                        key={b.bucketStart}
+                        className="flex-1 flex flex-col-reverse justify-start min-w-0"
+                        title={`${new Date(b.bucketStart).toLocaleString()}\nrate limit: ${b.RATE_LIMIT}\nauth fail: ${b.AUTH_FAIL}\ncsrf: ${b.CSRF}\nsuspicious: ${b.SUSPICIOUS}`}
+                      >
+                        {rateH > 0 && (
+                          <div
+                            className="bg-amber-500 w-full"
+                            style={{ height: `${rateH}%` }}
+                          />
+                        )}
+                        {authH > 0 && (
+                          <div
+                            className="bg-rose-500 w-full"
+                            style={{ height: `${authH}%` }}
+                          />
+                        )}
+                        {csrfH > 0 && (
+                          <div
+                            className="bg-red-600 w-full"
+                            style={{ height: `${csrfH}%` }}
+                          />
+                        )}
+                        {susH > 0 && (
+                          <div
+                            className="bg-gray-500 w-full"
+                            style={{ height: `${susH}%` }}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         )}
 
