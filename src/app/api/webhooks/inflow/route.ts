@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       body.id ||
       request.headers.get('x-event-id') ||
       `${eventType}:${JSON.stringify(body.data || body).length}:${Date.now()}`
-    const idem = await ensureIdempotent('inflow', eventId, eventType)
+    const idem = await ensureIdempotent('inflow', eventId, eventType, body)
     if (idem.status === 'duplicate') {
       return NextResponse.json({ received: true, duplicate: true })
     }

@@ -73,7 +73,11 @@ export async function POST(request: NextRequest) {
     // ── Idempotency ──────────────────────────────────────────────────
     // historyId can repeat across retries. Combine with messageId if present.
     const eventId = message.messageId || `${emailAddress}:${historyId}`
-    const idem = await ensureIdempotent('gmail', eventId, 'push_notification')
+    const idem = await ensureIdempotent('gmail', eventId, 'push_notification', {
+      emailAddress,
+      historyId,
+      messageId: message.messageId,
+    })
     if (idem.status === 'duplicate') {
       return NextResponse.json({ received: true, duplicate: true })
     }

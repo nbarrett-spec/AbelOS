@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/mrp-nightly",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/webhook-retry",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
