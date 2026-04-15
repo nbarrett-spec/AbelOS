@@ -151,6 +151,24 @@ async function countAuthFailuresLast24h(): Promise<number> {
 }
 
 /**
+ * Count slow queries in the last hour. Short window on purpose — slow
+ * queries tend to hit in bursts when a hot query drifts, and a 24h window
+ * would hide a fresh regression under yesterday's baseline noise.
+ */
+async function countSlowQueriesLastHour(): Promise<number> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS count
+       FROM "SlowQueryLog"
+       WHERE "createdAt" > NOW() - INTERVAL '1 hour'`
+    )
+    return rows[0]?.count || 0
+  } catch {
+    return 0
+  }
+}
+
+/**
  * Classify client-error severity by raw count in the last hour.
  * These thresholds are deliberately loud — a handful of errors is
  * noise; dozens of errors is a fire.
@@ -184,6 +202,17 @@ function classifyAuthFailures(count: number): 'critical' | 'warning' | 'info' | 
   return null
 }
 
+/**
+ * Slow-query severity. A single slow query is noise; a burst in one hour
+ * means a hot query regressed or the DB is under pressure.
+ */
+function classifySlowQueries(count: number): 'critical' | 'warning' | 'info' | null {
+  if (count >= 100) return 'critical'
+  if (count >= 25) return 'warning'
+  if (count >= 5) return 'info'
+  return null
+}
+
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
@@ -197,6 +226,7 @@ export async function GET(request: NextRequest) {
     lowStockCount,
     rateLimitCount,
     authFailCount,
+    slowQueryCount,
     cronDrift,
   ] = await Promise.all([
     countClientErrorsLastHour(),
@@ -207,6 +237,7 @@ export async function GET(request: NextRequest) {
     countLowStock(),
     countRateLimitRejectionsLast24h(),
     countAuthFailuresLast24h(),
+    countSlowQueriesLastHour(),
     detectCronDrift().catch(() => ({ orphaned: [], neverRun: [], stale: [] })),
   ])
 
@@ -329,6 +360,19 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  // 8. Slow-query burst — something is dragging the DB
+  const slowQuerySeverity = classifySlowQueries(slowQueryCount)
+  if (slowQuerySeverity) {
+    alerts.push({
+      id: 'slow-queries',
+      type: slowQuerySeverity,
+      title: 'Slow Queries (1h)',
+      count: slowQueryCount,
+      href: '/admin/health',
+      description: 'Prisma queries exceeding the slow-query threshold',
+    })
+  }
+
   return NextResponse.json({
     alerts,
     meta: {
@@ -343,6 +387,7 @@ export async function GET(request: NextRequest) {
         lowStock: lowStockCount,
         rateLimitRejections: rateLimitCount,
         authFailures: authFailCount,
+        slowQueries: slowQueryCount,
       },
     },
   })
