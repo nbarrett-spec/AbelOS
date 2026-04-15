@@ -49,22 +49,33 @@ interface ProductCategoryStat {
   count: number
 }
 
+interface SystemAlert {
+  id: string
+  type: 'critical' | 'warning' | 'info' | 'success'
+  title: string
+  count: number
+  href: string
+}
+
 export default function OpsDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [productCategories, setProductCategories] = useState<ProductCategoryStat[]>([])
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadAll() {
       try {
-        const [dashResp, catResp] = await Promise.all([
+        const [dashResp, catResp, alertsResp] = await Promise.all([
           fetch('/api/ops/dashboard'),
           fetch('/api/ops/product-categories'),
+          fetch('/api/ops/system-alerts'),
         ])
 
-        const [dashData, catData] = await Promise.all([
+        const [dashData, catData, alertsData] = await Promise.all([
           dashResp.ok ? dashResp.json() : null,
           catResp.ok ? catResp.json() : { categories: [] },
+          alertsResp.ok ? alertsResp.json() : { alerts: [] },
         ])
 
         if (dashData) setData(dashData)
@@ -74,6 +85,9 @@ export default function OpsDashboard() {
             .map((c: any) => ({ name: c.name, count: c.liveProductCount || c.productCount || 0 }))
             .sort((a: ProductCategoryStat, b: ProductCategoryStat) => b.count - a.count)
           setProductCategories(mapped)
+        }
+        if (alertsData?.alerts) {
+          setSystemAlerts(alertsData.alerts)
         }
       } catch (err) {
         console.error('Failed to load dashboard:', err)
@@ -108,13 +122,6 @@ export default function OpsDashboard() {
     month: 'long',
     day: 'numeric',
   })
-
-  // Mock alerts for demonstration
-  const systemAlerts = [
-    { id: 'al1', type: 'warning' as const, title: 'Low Inventory', count: 3, href: '/ops/inventory' },
-    { id: 'al2', type: 'critical' as const, title: 'Overdue AR', count: 2, href: '/ops/finance/ar' },
-    { id: 'al3', type: 'info' as const, title: 'Pending Approvals', count: 5, href: '/ops/orders' },
-  ]
 
   return (
     <div className="space-y-6">
