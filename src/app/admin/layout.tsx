@@ -22,6 +22,7 @@ export default function AdminLayout({
     { href: '/admin/hyphen', label: 'Hyphen', icon: '🔌' },
     { href: '/admin/webhooks', label: 'Webhooks', icon: '📬' },
     { href: '/admin/errors', label: 'Errors', icon: '🐛' },
+    { href: '/admin/health', label: 'Health', icon: '💓' },
   ]
 
   return (
