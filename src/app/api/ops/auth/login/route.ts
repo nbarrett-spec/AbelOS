@@ -7,23 +7,26 @@ import {
   setStaffSessionCookie,
   StaffSessionPayload,
 } from '@/lib/staff-auth'
-import { authLimiter, getRateLimitHeaders } from '@/lib/rate-limit'
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { logSecurityEvent } from '@/lib/security-events'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/auth/login — Staff login
 // ──────────────────────────────────────────────────────────────────────────
 
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    const rateResult = await authLimiter.check(ip)
-    if (!rateResult.success) {
-      return NextResponse.json(
-        { error: 'Too many login attempts. Please try again later.' },
-        { status: 429, headers: getRateLimitHeaders(rateResult, 10) }
-      )
-    }
+    // Rate limiting — logs RATE_LIMIT SecurityEvent on rejection.
+    const limited = await checkRateLimit(request, authLimiter, 10, 'staff-login')
+    if (limited) return limited
 
     const body = await request.json()
     const { email, password } = body
@@ -50,6 +53,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (!staff) {
+      logSecurityEvent({
+        kind: 'AUTH_FAIL',
+        path: '/api/ops/auth/login',
+        method: 'POST',
+        ip: clientIp(request),
+        userAgent: request.headers.get('user-agent'),
+        requestId: request.headers.get('x-request-id'),
+        details: {
+          reason: 'unknown_email',
+          emailPrefix: String(email).slice(0, 2),
+        },
+      })
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -58,6 +73,15 @@ export async function POST(request: NextRequest) {
 
     // Check if account is active
     if (!staff.active) {
+      logSecurityEvent({
+        kind: 'AUTH_FAIL',
+        path: '/api/ops/auth/login',
+        method: 'POST',
+        ip: clientIp(request),
+        userAgent: request.headers.get('user-agent'),
+        requestId: request.headers.get('x-request-id'),
+        details: { reason: 'inactive_account', staffId: staff.id },
+      })
       return NextResponse.json(
         { error: 'Account is deactivated. Contact your administrator.' },
         { status: 403 }
@@ -67,6 +91,15 @@ export async function POST(request: NextRequest) {
     // Verify password
     const valid = await verifyPassword(password, staff.passwordHash)
     if (!valid) {
+      logSecurityEvent({
+        kind: 'AUTH_FAIL',
+        path: '/api/ops/auth/login',
+        method: 'POST',
+        ip: clientIp(request),
+        userAgent: request.headers.get('user-agent'),
+        requestId: request.headers.get('x-request-id'),
+        details: { reason: 'bad_password', staffId: staff.id },
+      })
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
