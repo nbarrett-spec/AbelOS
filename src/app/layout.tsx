@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
@@ -91,6 +92,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Pull the request ID set by middleware so client-side error beacons
+  // can include it and correlate back to server logs.
+  const requestId = headers().get('x-request-id') || ''
+
   return (
     <html lang="en">
       <head>
@@ -98,6 +103,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Abel OS" />
+        {requestId && <meta name="x-request-id" content={requestId} />}
       </head>
       <body className="min-h-screen bg-white text-gray-900 transition-colors">
         <a

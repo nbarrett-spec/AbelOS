@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const limitParam = `$${params.length}`
 
     const errors: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id", "digest", "scope", "path", "message", "userAgent", "ipAddress", "createdAt"
+      `SELECT "id", "digest", "scope", "path", "message", "userAgent", "ipAddress", "requestId", "createdAt"
        FROM "ClientError"
        WHERE ${whereSql}
        ORDER BY "createdAt" DESC

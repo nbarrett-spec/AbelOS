@@ -15,6 +15,24 @@ export interface ClientErrorReport {
   scope?: string          // 'admin' | 'ops' | 'crew' | 'dashboard' | ...
   path?: string           // window.location.pathname
   userAgent?: string
+  requestId?: string      // x-request-id from the page's initial server render
+}
+
+/**
+ * Read the x-request-id meta tag injected by RootLayout. This is the
+ * middleware-generated request ID for the page's initial render, letting
+ * us correlate a client-side error back to the originating server trace.
+ * For SPA navigations the ID goes stale but still points at the last
+ * page the user actually fetched from the server.
+ */
+function readRequestIdFromMeta(): string | undefined {
+  try {
+    const el = document.querySelector('meta[name="x-request-id"]')
+    const content = el?.getAttribute('content')
+    return content ? content.slice(0, 100) : undefined
+  } catch {
+    return undefined
+  }
 }
 
 export function logClientError(scope: string, error: Error & { digest?: string }): void {
@@ -28,6 +46,7 @@ export function logClientError(scope: string, error: Error & { digest?: string }
       scope,
       path: window.location.pathname + window.location.search,
       userAgent: navigator.userAgent?.slice(0, 500),
+      requestId: readRequestIdFromMeta(),
     }
 
     const body = JSON.stringify(payload)

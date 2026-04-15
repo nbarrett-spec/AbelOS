@@ -29,8 +29,13 @@ async function ensureTable() {
         "stack" TEXT,
         "userAgent" TEXT,
         "ipAddress" TEXT,
+        "requestId" TEXT,
         "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
+    `)
+    // Backfill column on existing deployments — ALTER is idempotent
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "ClientError" ADD COLUMN IF NOT EXISTS "requestId" TEXT
     `)
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS "idx_clienterror_created" ON "ClientError" ("createdAt" DESC)
@@ -40,6 +45,9 @@ async function ensureTable() {
     `)
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS "idx_clienterror_digest" ON "ClientError" ("digest")
+    `)
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_clienterror_request" ON "ClientError" ("requestId")
     `)
     tableEnsured = true
   } catch {
@@ -77,9 +85,16 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-real-ip') ||
       null
 
+    // Prefer the requestId the client captured from its page-render meta
+    // tag (tracks the original server request). Fall back to the beacon's
+    // own inbound header (tracks the beacon POST itself).
+    const requestId =
+      clamp(body.requestId, 100) ||
+      clamp(request.headers.get('x-request-id'), 100)
+
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "ClientError" ("id", "digest", "scope", "path", "message", "stack", "userAgent", "ipAddress", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+      `INSERT INTO "ClientError" ("id", "digest", "scope", "path", "message", "stack", "userAgent", "ipAddress", "requestId", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
       id,
       clamp(body.digest, 100),
       clamp(body.scope, 50),
@@ -87,7 +102,8 @@ export async function POST(request: NextRequest) {
       clamp(body.message, 2000),
       clamp(body.stack, 4000),
       clamp(body.userAgent, 500),
-      ip
+      ip,
+      requestId
     )
 
     // sendBeacon ignores the response, but return 204 for fetch fallback

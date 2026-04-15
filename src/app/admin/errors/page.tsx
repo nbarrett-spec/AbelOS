@@ -10,6 +10,7 @@ interface ClientErrorRow {
   message: string | null
   userAgent: string | null
   ipAddress: string | null
+  requestId: string | null
   createdAt: string
 }
 
@@ -316,6 +317,7 @@ export default function AdminErrorsPage() {
             <div className="flex-1 overflow-auto p-6 space-y-4">
               <Field label="Path" value={selected.path} mono />
               <Field label="Digest" value={selected.digest} mono />
+              <Field label="Request ID" value={selected.requestId} mono />
               <Field label="Message" value={selected.message} />
               <Field label="User Agent" value={selected.userAgent} mono small />
               <Field label="IP" value={selected.ipAddress} mono />
