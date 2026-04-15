@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { logClientError } from '@/lib/client-error-log'
 
 export default function OpsError({
   error,
@@ -17,6 +18,7 @@ export default function OpsError({
     if (typeof window !== 'undefined' && (window as any).Sentry?.captureException) {
       ;(window as any).Sentry.captureException(error)
     }
+    logClientError('ops', error)
   }, [error])
 
   return (

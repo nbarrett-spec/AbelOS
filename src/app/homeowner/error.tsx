@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { logClientError } from '@/lib/client-error-log'
 
 export default function HomeownerError({
   error,
@@ -17,6 +18,7 @@ export default function HomeownerError({
     if (typeof window !== 'undefined' && (window as any).Sentry?.captureException) {
       ;(window as any).Sentry.captureException(error)
     }
+    logClientError('homeowner', error)
   }, [error])
 
   return (

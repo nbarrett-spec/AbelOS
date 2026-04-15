@@ -5,6 +5,7 @@
 
 import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
+import { logClientError } from '@/lib/client-error-log'
 
 export default function GlobalError({
   error,
@@ -18,6 +19,9 @@ export default function GlobalError({
     // Also log to console for local dev visibility
     // eslint-disable-next-line no-console
     console.error('[global-error]', error)
+    // Ship to internal beacon — global-error means the root layout crashed,
+    // so we want an authoritative record even if Sentry isn't wired up.
+    logClientError('global', error)
   }, [error])
 
   const handleReset = async () => {

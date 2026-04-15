@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { logClientError } from '@/lib/client-error-log'
 
 export default function Error({
   error,
@@ -16,6 +17,8 @@ export default function Error({
     if (typeof window !== 'undefined' && (window as any).Sentry?.captureException) {
       (window as any).Sentry.captureException(error)
     }
+    // Ship to internal beacon — always have a record
+    logClientError('root', error)
   }, [error])
 
   return (
