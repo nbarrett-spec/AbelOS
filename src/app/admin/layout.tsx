@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import CriticalAlertBanner from '@/components/CriticalAlertBanner'
 
 export default function AdminLayout({
   children,
@@ -23,11 +24,14 @@ export default function AdminLayout({
     { href: '/admin/webhooks', label: 'Webhooks', icon: '📬' },
     { href: '/admin/errors', label: 'Errors', icon: '🐛' },
     { href: '/admin/health', label: 'Health', icon: '💓' },
+    { href: '/admin/timeline', label: 'Timeline', icon: '📈' },
+    { href: '/admin/alert-history', label: 'Alert Log', icon: '🔔' },
   ]
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <CriticalAlertBanner />
       <div className="flex">
         {/* Sidebar */}
         <aside
