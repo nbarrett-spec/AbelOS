@@ -29,11 +29,17 @@ const REQUIRED_ENV_VARS = [
   'NEXT_PUBLIC_APP_URL',
 ] as const
 
-// Env vars that SHOULD be present but won't block traffic.
+// Env vars that SHOULD be present but won't block traffic. These are the
+// integrations that cause silent "feature just stopped working" bugs if a
+// key gets rotated out — we want the readiness endpoint to surface that
+// even though it doesn't 503.
 const OPTIONAL_ENV_VARS = [
   'STRIPE_SECRET_KEY',
   'STRIPE_WEBHOOK_SECRET',
-  'SENDGRID_API_KEY',
+  'RESEND_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
   'CRON_SECRET',
 ] as const
 
