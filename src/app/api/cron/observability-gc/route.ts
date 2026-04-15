@@ -13,33 +13,41 @@ import { startCronRun, finishCronRun } from '@/lib/cron'
 // a performance problem of their own. Retention windows are tuned for
 // "useful diagnostic window without drowning us in rows":
 //
-//   ClientError   — 30 days (enough to triage regression trends)
-//   SlowQueryLog  — 14 days (N+1 hunts are short-lived)
-//   SecurityEvent — 60 days (longer window for security forensics)
+//   ClientError   — 30 days   (enough to triage regression trends)
+//   SlowQueryLog  — 14 days   (N+1 hunts are short-lived)
+//   SecurityEvent — 60 days   (longer window for security forensics)
+//   CronRun       — 90 days   (one full quarter of scheduled-job history)
 //   UptimeProbe   — pruned by the uptime-probe cron itself (30d)
+//
+// AuditLog is intentionally NOT pruned here — it's compliance data and
+// retention requires explicit business approval; growing it forever is
+// the safer default.
 //
 // All deletes are indexed on "createdAt" DESC so even a million-row table
 // prunes in milliseconds per table. Missing tables are swallowed so a
-// fresh DB doesn't fail the cron.
+// fresh DB doesn't fail the cron. Note that CronRun uses "startedAt" for
+// its time column, not "createdAt", so we use a timeCol field.
 //
 // Runs once daily at 03:00 UTC — low-traffic window.
 // ──────────────────────────────────────────────────────────────────────────
 
-const RETENTION: Array<{ table: string; days: number }> = [
+const RETENTION: Array<{ table: string; days: number; timeCol?: string }> = [
   { table: 'ClientError', days: 30 },
   { table: 'SlowQueryLog', days: 14 },
   { table: 'SecurityEvent', days: 60 },
+  { table: 'CronRun', days: 90, timeCol: 'startedAt' },
 ]
 
 async function pruneTable(
   table: string,
-  days: number
+  days: number,
+  timeCol: string = 'createdAt'
 ): Promise<{ table: string; deleted: number | null; error?: string }> {
   try {
-    // Raw SQL with identifier interpolation — table names are hard-coded
-    // constants above, never user input, so no injection risk.
+    // Raw SQL with identifier interpolation — table names and timeCol are
+    // hard-coded constants above, never user input, so no injection risk.
     const result = await prisma.$executeRawUnsafe(
-      `DELETE FROM "${table}" WHERE "createdAt" < NOW() - INTERVAL '${days} days'`
+      `DELETE FROM "${table}" WHERE "${timeCol}" < NOW() - INTERVAL '${days} days'`
     )
     return { table, deleted: typeof result === 'number' ? result : null }
   } catch (err: any) {
@@ -66,7 +74,7 @@ async function handle(request: NextRequest) {
 
   try {
     const results = await Promise.all(
-      RETENTION.map(({ table, days }) => pruneTable(table, days))
+      RETENTION.map(({ table, days, timeCol }) => pruneTable(table, days, timeCol))
     )
 
     const totalDeleted = results.reduce(
