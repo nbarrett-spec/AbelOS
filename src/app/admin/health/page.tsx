@@ -22,6 +22,8 @@ interface SlowQueryRow {
   operation: string
   durationMs: number
   thresholdMs: number
+  digest: string | null
+  sqlSample: string | null
 }
 
 interface TopOffender {
@@ -33,9 +35,22 @@ interface TopOffender {
   totalMs: number
 }
 
+interface TopDigest {
+  digest: string
+  model: string
+  operation: string
+  sqlSample: string | null
+  count: number
+  maxMs: number
+  avgMs: number
+  totalMs: number
+  lastSeen: string
+}
+
 interface SlowQueriesPayload {
   rows: SlowQueryRow[]
   topOffenders: TopOffender[]
+  topDigests: TopDigest[]
   sinceHours: number
   thresholdMs: number
   note?: string
@@ -510,6 +525,70 @@ export default function AdminHealthPage() {
           </table>
         </div>
       </div>
+
+      {/* Top SQL digests — the raw-query collapse. Each row here is a
+          unique SQL template (string / numeric literals replaced with ?).
+          This is the view that matters for raw queries where the standard
+          model+operation grouping flattens everything to "raw.$executeRawUnsafe". */}
+      {data && data.topDigests && data.topDigests.length > 0 && (
+        <div className="card p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Top SQL Digests</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Grouped by normalized SQL template (parameters stripped). The best
+            view for hunting hot raw queries that would otherwise all collapse
+            to <span className="font-mono">raw.$executeRawUnsafe</span>.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-gray-200">
+                <tr className="text-gray-600 font-semibold">
+                  <th className="text-left py-3 px-4">Digest</th>
+                  <th className="text-left py-3 px-4">Sample SQL</th>
+                  <th className="text-right py-3 px-4">Count</th>
+                  <th className="text-right py-3 px-4">Avg</th>
+                  <th className="text-right py-3 px-4">Max</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.topDigests.map((d, idx) => (
+                  <tr
+                    key={d.digest}
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition ${
+                      idx === 0 ? 'bg-amber-50/40' : ''
+                    }`}
+                  >
+                    <td className="py-3 px-4 font-mono text-xs text-gray-500 align-top">
+                      {d.digest}
+                      <div className="text-[10px] text-gray-400 font-normal mt-0.5">
+                        {d.model}.{d.operation}
+                      </div>
+                    </td>
+                    <td
+                      className="py-3 px-4 font-mono text-xs text-gray-700 max-w-md truncate"
+                      title={d.sqlSample || ''}
+                    >
+                      {d.sqlSample || (
+                        <span className="text-gray-400 italic">
+                          (no sample — non-raw query)
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right font-semibold">
+                      {d.count}
+                    </td>
+                    <td className={`py-3 px-4 text-right ${durationClass(d.avgMs)}`}>
+                      {d.avgMs}ms
+                    </td>
+                    <td className={`py-3 px-4 text-right ${durationClass(d.maxMs)}`}>
+                      {d.maxMs}ms
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Recent events */}
       <div className="card p-6">

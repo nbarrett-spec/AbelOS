@@ -23,6 +23,20 @@ interface SlowQueryRow {
   operation: string
   durationMs: number
   thresholdMs: number
+  digest: string | null
+  sqlSample: string | null
+}
+
+interface TopDigest {
+  digest: string
+  model: string
+  operation: string
+  sqlSample: string | null
+  count: number
+  maxMs: number
+  avgMs: number
+  totalMs: number
+  lastSeen: string
 }
 
 export async function GET(request: NextRequest) {
@@ -55,7 +69,7 @@ export async function GET(request: NextRequest) {
     const limitParam = `$${params.length}`
 
     const rows: SlowQueryRow[] = await prisma.$queryRawUnsafe(
-      `SELECT "id", "createdAt", "model", "operation", "durationMs", "thresholdMs"
+      `SELECT "id", "createdAt", "model", "operation", "durationMs", "thresholdMs", "digest", "sqlSample"
        FROM "SlowQueryLog"
        WHERE ${whereSql}
        ORDER BY "createdAt" DESC
@@ -96,9 +110,56 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 20)
 
+    // Aggregate by digest — this is the critical grouping for raw queries,
+    // which would otherwise all collapse to a single "raw.$executeRawUnsafe"
+    // row in topOffenders. Each digest pins down a specific SQL template
+    // (parameters stripped) so ops can see which raw query is actually hot.
+    //
+    // Done in SQL rather than in-memory so we can use the real database's
+    // MAX(createdAt) without loading every row in the window. MIN(sqlSample)
+    // is a cheap way to get one representative sample per digest.
+    let topDigests: TopDigest[] = []
+    try {
+      const digestRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "digest",
+                MIN("model") AS "model",
+                MIN("operation") AS "operation",
+                MIN("sqlSample") AS "sqlSample",
+                COUNT(*)::int AS "count",
+                MAX("durationMs")::int AS "maxMs",
+                SUM("durationMs")::int AS "totalMs",
+                MAX("createdAt") AS "lastSeen"
+         FROM "SlowQueryLog"
+         WHERE "createdAt" > NOW() - INTERVAL '${sinceHours} hours'
+           AND "digest" IS NOT NULL
+         GROUP BY "digest"
+         ORDER BY "count" DESC, "maxMs" DESC
+         LIMIT 20`
+      )
+      topDigests = digestRows.map((r) => ({
+        digest: r.digest,
+        model: r.model,
+        operation: r.operation,
+        sqlSample: r.sqlSample,
+        count: r.count,
+        maxMs: r.maxMs,
+        totalMs: r.totalMs,
+        avgMs: Math.round(r.totalMs / Math.max(r.count, 1)),
+        lastSeen:
+          r.lastSeen instanceof Date
+            ? r.lastSeen.toISOString()
+            : String(r.lastSeen),
+      }))
+    } catch {
+      // Digest column may not exist yet on a freshly-upgraded DB where the
+      // ALTER TABLE hasn't run. Leave topDigests empty and the UI degrades
+      // to showing just topOffenders.
+    }
+
     return NextResponse.json({
       rows,
       topOffenders,
+      topDigests,
       sinceHours,
       thresholdMs: rows[0]?.thresholdMs || 500,
     })
