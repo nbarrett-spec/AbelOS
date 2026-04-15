@@ -177,6 +177,20 @@ export const logger = {
 
   error: (msg: string, err?: unknown, ctx?: LogContext) => {
     log('error', msg, err, ctx);
+    // Fire-and-forget persistence to the ServerError table so /admin/errors
+    // can show server-side failures the same way it shows client beacons.
+    //
+    // Dynamic import is deliberate — prisma.ts imports this logger for slow-
+    // query warnings, and server-errors.ts imports prisma. A static import
+    // here would create a load-time cycle (prisma → logger → server-errors
+    // → prisma) where server-errors sees a partially-initialized prisma.
+    // Deferring to runtime breaks the cycle because the first logger.error
+    // call happens long after all three modules have finished initializing.
+    import('@/lib/server-errors')
+      .then((m) => m.recordServerError(msg, err, ctx))
+      .catch(() => {
+        // swallow — persistence must never break the logger itself
+      });
   },
 };
 

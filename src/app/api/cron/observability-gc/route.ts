@@ -14,6 +14,7 @@ import { startCronRun, finishCronRun } from '@/lib/cron'
 // "useful diagnostic window without drowning us in rows":
 //
 //   ClientError   — 30 days   (enough to triage regression trends)
+//   ServerError   — 30 days   (matches ClientError window)
 //   SlowQueryLog  — 14 days   (N+1 hunts are short-lived)
 //   SecurityEvent — 60 days   (longer window for security forensics)
 //   CronRun       — 90 days   (one full quarter of scheduled-job history)
@@ -33,6 +34,7 @@ import { startCronRun, finishCronRun } from '@/lib/cron'
 
 const RETENTION: Array<{ table: string; days: number; timeCol?: string }> = [
   { table: 'ClientError', days: 30 },
+  { table: 'ServerError', days: 30 },
   { table: 'SlowQueryLog', days: 14 },
   { table: 'SecurityEvent', days: 60 },
   { table: 'CronRun', days: 90, timeCol: 'startedAt' },
