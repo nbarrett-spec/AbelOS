@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { detectCronDrift } from '@/lib/cron'
+import { snapshotAlerts } from '@/lib/alert-history'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/system-alerts — real-time platform health indicators.
@@ -445,5 +446,12 @@ export async function GET(request: NextRequest) {
   }
 
   cachedPayload = { body: payload, expires: Date.now() + CACHE_TTL_MS }
+
+  // Fire-and-forget: persist fire/clear transitions into AlertIncident so
+  // /admin/alert-history can show "when did this start and how long did it
+  // fire for?" Intentionally NOT awaited — the hot path doesn't wait on
+  // history writes, and errors inside snapshotAlerts are swallowed.
+  void snapshotAlerts(alerts)
+
   return NextResponse.json(payload)
 }

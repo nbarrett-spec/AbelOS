@@ -240,6 +240,12 @@ export default function AdminHealthPage() {
           >
             Timeline →
           </Link>
+          <Link
+            href="/admin/alert-history"
+            className="text-sm text-abel-navy hover:text-abel-navy/80 font-medium px-3 py-1.5 border border-abel-navy/30 rounded hover:bg-abel-navy/5"
+          >
+            Alert history →
+          </Link>
           <button
             onClick={load}
             className="text-sm text-white bg-abel-navy hover:bg-abel-navy/90 px-3 py-1.5 rounded"
