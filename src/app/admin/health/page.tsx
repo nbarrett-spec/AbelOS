@@ -114,13 +114,20 @@ interface ErrorCountsTop {
   count: number
 }
 
+interface ErrorCountsBucket {
+  bucketStart: string
+  count: number
+}
+
 interface ErrorCountsTile {
   total: number
   top: ErrorCountsTop[]
+  buckets: ErrorCountsBucket[]
 }
 
 interface ErrorCountsPayload {
   sinceHours: number
+  bucketMinutes: number
   client: ErrorCountsTile
   server: ErrorCountsTile
 }
@@ -395,6 +402,14 @@ export default function AdminHealthPage() {
               Rollup of <span className="font-mono">ClientError</span> beacons and{' '}
               <span className="font-mono">ServerError</span> writes from{' '}
               <span className="font-mono">logger.error()</span> in the selected window.
+              {errorCounts?.bucketMinutes ? (
+                <span className="text-gray-400">
+                  {' '}· {errorCounts.bucketMinutes < 60
+                    ? `${errorCounts.bucketMinutes}m`
+                    : `${errorCounts.bucketMinutes / 60}h`}{' '}
+                  buckets
+                </span>
+              ) : null}
             </p>
           </div>
           <Link
@@ -411,6 +426,7 @@ export default function AdminHealthPage() {
             href="/admin/errors?source=client"
             tile={errorCounts?.client}
             loading={loading && !errorCounts}
+            barColor="bg-blue-500"
           />
           <ErrorTile
             label="Server"
@@ -418,6 +434,7 @@ export default function AdminHealthPage() {
             href="/admin/errors?source=server"
             tile={errorCounts?.server}
             loading={loading && !errorCounts}
+            barColor="bg-rose-500"
           />
         </div>
       </div>
@@ -788,15 +805,18 @@ function ErrorTile({
   href,
   tile,
   loading,
+  barColor,
 }: {
   label: string
   sublabel: string
   href: string
   tile: ErrorCountsTile | undefined
   loading: boolean
+  barColor: string
 }) {
   const total = tile?.total ?? 0
   const top = tile?.top ?? []
+  const buckets = tile?.buckets ?? []
   // Colour-code by raw count — mirrors the SystemPulse classifier thresholds
   // (1 = info, 5 = warning, 20 = critical) so the two surfaces tell the
   // same story at a glance.
@@ -808,6 +828,8 @@ function ErrorTile({
       : total >= 1
       ? 'text-gray-900'
       : 'text-green-600'
+
+  const maxBucket = Math.max(1, ...buckets.map((b) => b.count))
 
   return (
     <Link
@@ -825,6 +847,26 @@ function ErrorTile({
           {loading ? '…' : total}
         </div>
       </div>
+
+      {/* Sparkline — sparse buckets keep the height telling the "spike vs.
+          drip" story at a glance. Skipped entirely when the tile is empty
+          (no rows = no shape worth drawing). */}
+      {buckets.length > 0 && (
+        <div className="flex items-end gap-[2px] h-10 mb-3">
+          {buckets.map((b) => {
+            const pct = (b.count / maxBucket) * 100
+            return (
+              <div
+                key={b.bucketStart}
+                className={`flex-1 ${barColor} rounded-sm min-h-[2px]`}
+                style={{ height: `${Math.max(pct, 2)}%` }}
+                title={`${new Date(b.bucketStart).toLocaleString()} — ${b.count}`}
+              />
+            )
+          })}
+        </div>
+      )}
+
       {top.length === 0 ? (
         <div className="text-xs text-gray-400 italic">
           {total === 0 ? 'Nothing is on fire.' : 'No grouping data.'}
