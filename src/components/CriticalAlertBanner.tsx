@@ -30,6 +30,8 @@ interface SystemAlert {
   count: number
   href: string
   description?: string
+  muted?: boolean
+  mutedUntil?: string
 }
 
 interface AlertPayload {
@@ -110,8 +112,10 @@ export default function CriticalAlertBanner() {
   }, [])
 
   // Filter to critical + warning only. Info is too chatty for a shell banner.
+  // Muted alerts are also skipped — the whole point of the mute is to stop
+  // the banner from crying wolf about a known issue.
   const loud = alerts.filter(
-    (a) => a.type === 'critical' || a.type === 'warning'
+    (a) => (a.type === 'critical' || a.type === 'warning') && !a.muted
   )
   const criticalCount = loud.filter((a) => a.type === 'critical').length
   const isDismissed = dismissedUntil > now

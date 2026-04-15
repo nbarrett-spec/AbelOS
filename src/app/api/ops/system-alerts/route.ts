@@ -6,6 +6,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { detectCronDrift } from '@/lib/cron'
 import { snapshotAlerts } from '@/lib/alert-history'
+import { getActiveMutes } from '@/lib/alert-mutes'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/system-alerts — real-time platform health indicators.
@@ -34,6 +35,12 @@ interface SystemAlert {
   count: number
   href: string
   description?: string
+  // Decorated by the GET handler after the fact — an alert whose id is in
+  // the active AlertMute table gets muted=true and mutedUntil set. The UI
+  // uses these to render a "muted" section and skip from the banner.
+  muted?: boolean
+  mutedUntil?: string
+  muteReason?: string | null
 }
 
 async function countClientErrorsLastHour(): Promise<number> {
@@ -542,11 +549,28 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  // Decorate each alert with mute state. We pull the mutes after computing
+  // the alerts array (rather than filtering source queries) so the UI can
+  // still see "this alert WOULD be firing" — just rendered in a muted bin.
+  const mutes = await getActiveMutes()
+  if (mutes.size > 0) {
+    for (const a of alerts) {
+      const m = mutes.get(a.id)
+      if (!m) continue
+      a.muted = true
+      a.mutedUntil = m.mutedUntil
+      a.muteReason = m.reason ?? null
+    }
+  }
+  const mutedCount = alerts.reduce((n, a) => n + (a.muted ? 1 : 0), 0)
+
   const payload = {
     alerts,
     meta: {
       generatedAt: new Date().toISOString(),
       cacheTtlSeconds: CACHE_TTL_MS / 1000,
+      mutedAlerts: mutedCount,
+      activeMutes: mutes.size,
       sources: {
         clientErrors: clientErrorCount,
         serverErrors: serverErrorCount,

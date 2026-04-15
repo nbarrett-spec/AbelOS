@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { getActiveMuteIds } from '@/lib/alert-mutes'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Alert history — persist fire / clear transitions of the live alerts that
@@ -152,12 +153,24 @@ export async function snapshotAlerts(current: CurrentAlert[]): Promise<void> {
     await ensureAlertIncidentTable()
 
     const openByAlertId = await loadOpenIncidents()
-    const currentIds = new Set(current.map((a) => a.id))
+    const mutedIds = await getActiveMuteIds()
+    // Treat muted alerts as "not currently firing" for the purpose of the
+    // close loop — but we also skip them in the upsert loop below so
+    // existing open incidents for newly-muted alerts naturally close on
+    // this tick. That matches operator intuition: muting an alert should
+    // visually quiet the banner on the next refresh.
+    const currentIds = new Set(
+      current.filter((a) => !mutedIds.has(a.id)).map((a) => a.id)
+    )
 
     // 1. Upsert current alerts.
     for (const alert of current) {
       // success alerts never fire history — they're the absence of a problem.
       if (alert.type === 'success') continue
+      // Muted alerts never get persisted. Any already-open incident with
+      // this alertId will fall through to the close loop below because
+      // currentIds doesn't contain it.
+      if (mutedIds.has(alert.id)) continue
 
       const existing = openByAlertId.get(alert.id)
       if (!existing) {

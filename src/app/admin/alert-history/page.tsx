@@ -119,11 +119,45 @@ function fmtAbsDate(iso: string): string {
   }
 }
 
+interface ActiveMute {
+  alertId: string
+  mutedUntil: string
+  reason: string | null
+  mutedBy: string | null
+}
+
 export default function AlertHistoryPage() {
   const [data, setData] = useState<Payload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sinceHours, setSinceHours] = useState(24)
+  // Map of alertId → active mute. Loaded alongside the history and
+  // refreshed whenever the user fires mute/unmute so the UI updates
+  // without a full reload. Rendered as a 🔇 chip in the rollup table.
+  const [muteMap, setMuteMap] = useState<Map<string, ActiveMute>>(new Map())
+  const [muteTarget, setMuteTarget] = useState<{ alertId: string; title: string } | null>(null)
+  const [muteBusy, setMuteBusy] = useState(false)
+
+  const loadMutes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/alert-mute?since=168')
+      if (!res.ok) return
+      const payload = await res.json()
+      const m = new Map<string, ActiveMute>()
+      const now = new Date().toISOString()
+      for (const row of payload.mutes || []) {
+        // Only index currently-active mutes. Expired rows are fine in the
+        // response (we want them visible in an audit view later) but
+        // shouldn't paint a chip on the rollup row.
+        if (row.mutedUntil > now) {
+          m.set(row.alertId, row)
+        }
+      }
+      setMuteMap(m)
+    } catch {
+      // silent — mute state is a nice-to-have on this page
+    }
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -135,17 +169,55 @@ export default function AlertHistoryPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const payload = (await res.json()) as Payload
       setData(payload)
+      // Fire-and-forget mute refresh; don't block the history render.
+      void loadMutes()
     } catch (e: any) {
       setError(e?.message || 'Failed to load')
       setData(null)
     } finally {
       setLoading(false)
     }
-  }, [sinceHours])
+  }, [sinceHours, loadMutes])
 
   useEffect(() => {
     load()
   }, [load])
+
+  async function submitMute(durationHours: number, reason: string) {
+    if (!muteTarget) return
+    setMuteBusy(true)
+    try {
+      const res = await fetch('/api/admin/alert-mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alertId: muteTarget.alertId,
+          durationHours,
+          reason: reason || undefined,
+        }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await loadMutes()
+      setMuteTarget(null)
+    } catch (e: any) {
+      alert(`Mute failed: ${e?.message || 'unknown error'}`)
+    } finally {
+      setMuteBusy(false)
+    }
+  }
+
+  async function unmute(alertId: string) {
+    try {
+      const res = await fetch(
+        `/api/admin/alert-mute?alertId=${encodeURIComponent(alertId)}`,
+        { method: 'DELETE' }
+      )
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await loadMutes()
+    } catch (e: any) {
+      alert(`Unmute failed: ${e?.message || 'unknown error'}`)
+    }
+  }
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-6">
@@ -226,18 +298,30 @@ export default function AlertHistoryPage() {
                   <th className="py-2 pr-3">Max count</th>
                   <th className="py-2 pr-3">Total time firing</th>
                   <th className="py-2 pr-3">Most recent</th>
+                  <th className="py-2 pr-3">Mute</th>
                 </tr>
               </thead>
               <tbody>
                 {data?.rollups.map((r) => {
                   const sev = SEVERITY_CLASSES[r.worstSeverity]
+                  const mute = muteMap.get(r.alertId)
                   return (
                     <tr
                       key={r.alertId}
                       className="border-b border-gray-100 hover:bg-gray-50"
                     >
                       <td className="py-2 pr-3">
-                        <div className="font-medium text-gray-900">{r.title}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-gray-900">{r.title}</div>
+                          {mute && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded border bg-slate-100 text-slate-700 border-slate-300"
+                              title={`Muted until ${fmtAbsDate(mute.mutedUntil)}${mute.reason ? ` — ${mute.reason}` : ''}`}
+                            >
+                              🔇 MUTED
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-400 font-mono">
                           {r.alertId}
                         </div>
@@ -271,6 +355,26 @@ export default function AlertHistoryPage() {
                       <td className="py-2 pr-3 text-gray-500 text-xs">
                         {fmtRelTime(r.mostRecent)}
                       </td>
+                      <td className="py-2 pr-3">
+                        {mute ? (
+                          <button
+                            onClick={() => unmute(r.alertId)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            title={`Muted until ${fmtAbsDate(mute.mutedUntil)}`}
+                          >
+                            Unmute
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              setMuteTarget({ alertId: r.alertId, title: r.title })
+                            }
+                            className="text-xs text-gray-500 hover:text-gray-900 font-medium"
+                          >
+                            Mute…
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   )
                 })}
@@ -279,6 +383,16 @@ export default function AlertHistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Mute modal */}
+      {muteTarget && (
+        <MuteModal
+          target={muteTarget}
+          busy={muteBusy}
+          onCancel={() => setMuteTarget(null)}
+          onSubmit={submitMute}
+        />
+      )}
 
       {/* Incident timeline — one row per fire→clear window */}
       <div className="card p-6">
@@ -390,6 +504,119 @@ export default function AlertHistoryPage() {
             })}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// MuteModal
+//
+// A small focused dialog that asks "how long and why?" and posts to
+// /api/admin/alert-mute. Quick-pick durations cover the common cases
+// (1h during a vendor incident, 4h for a rolling deploy, 24h when you
+// know you'll fix it tomorrow, 7d when you're triaging a noisy alert
+// that needs re-tuning). Reason is optional but strongly encouraged
+// because the admin-history audit view shows it back.
+// ──────────────────────────────────────────────────────────────────────────
+
+function MuteModal({
+  target,
+  busy,
+  onCancel,
+  onSubmit,
+}: {
+  target: { alertId: string; title: string }
+  busy: boolean
+  onCancel: () => void
+  onSubmit: (durationHours: number, reason: string) => void
+}) {
+  const [hours, setHours] = useState(4)
+  const [reason, setReason] = useState('')
+
+  const PRESETS: Array<{ label: string; hours: number }> = [
+    { label: '1 hour', hours: 1 },
+    { label: '4 hours', hours: 4 },
+    { label: '12 hours', hours: 12 },
+    { label: '24 hours', hours: 24 },
+    { label: '7 days', hours: 168 },
+  ]
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-md w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 border-b border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900">Mute alert</h3>
+          <div className="mt-1 text-sm text-gray-600 truncate">{target.title}</div>
+          <div className="text-xs text-gray-400 font-mono mt-0.5 truncate">
+            {target.alertId}
+          </div>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              Duration
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.hours}
+                  type="button"
+                  onClick={() => setHours(p.hours)}
+                  className={`px-3 py-1.5 text-sm rounded border font-medium ${
+                    hours === p.hours
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              Reason (optional but recommended)
+            </label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. vendor outage, rolling deploy, scheduled maintenance"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              maxLength={500}
+            />
+          </div>
+          <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-3">
+            While muted, this alert won't appear in the banner, won't fire
+            a notification email, and won't open a new incident row. It
+            will resume automatically when the mute expires.
+          </div>
+        </div>
+        <div className="p-5 border-t border-gray-200 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onSubmit(hours, reason)}
+            disabled={busy}
+            className="px-4 py-2 text-sm font-medium text-white bg-abel-navy rounded hover:bg-abel-navy/90 disabled:opacity-50"
+          >
+            {busy ? 'Muting…' : `Mute for ${PRESETS.find((p) => p.hours === hours)?.label || `${hours}h`}`}
+          </button>
+        </div>
       </div>
     </div>
   )

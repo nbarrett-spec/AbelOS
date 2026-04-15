@@ -57,6 +57,16 @@ const RETENTION: Array<{
     // been open for 100+ days absolutely needs to stay visible.
     extraCondition: '"endedAt" IS NOT NULL',
   },
+  {
+    // Expired mute rows get pruned after 14 days so the audit trail of
+    // "what we muted last week" sticks around long enough for a
+    // retrospective but doesn't accumulate forever. Active mutes
+    // (mutedUntil > NOW()) are protected by the extraCondition.
+    table: 'AlertMute',
+    days: 14,
+    timeCol: 'createdAt',
+    extraCondition: '"mutedUntil" < NOW()',
+  },
 ]
 
 async function pruneTable(
