@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
 import { sendQuoteRequestConfirmationEmail } from '@/lib/email'
+import { publicFormLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 interface QuoteRequestRecord {
   id: string
@@ -74,6 +75,9 @@ async function ensureQuoteRequestTable() {
  * Header: x-builder-id (builderId)
  */
 export async function POST(request: NextRequest) {
+  const limited = await checkRateLimit(request, publicFormLimiter, 5, 'quote-request')
+  if (limited) return limited
+
   try {
     await ensureQuoteRequestTable()
 

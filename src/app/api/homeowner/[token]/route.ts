@@ -1,11 +1,15 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { tokenEndpointLimiter, checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { token: string } }
 ) {
+  const limited = await checkRateLimit(request, tokenEndpointLimiter, 20, 'homeowner-token')
+  if (limited) return limited
+
   try {
     const token = params.token;
 

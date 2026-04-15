@@ -1,11 +1,15 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publicFormLimiter, checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { token: string } }
 ) {
+  const limited = await checkRateLimit(request, publicFormLimiter, 5, 'homeowner-confirm')
+  if (limited) return limited
+
   try {
     const token = params.token;
 

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
+import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 interface BundleItem {
   id: string
@@ -73,6 +74,9 @@ const BUNDLE_CONFIGS = [
 ]
 
 export async function GET(request: NextRequest) {
+  const limited = await checkRateLimit(request, apiLimiter, 60, 'catalog-bundles')
+  if (limited) return limited
+
   try {
     // Check auth
     let builderId: string | null = null

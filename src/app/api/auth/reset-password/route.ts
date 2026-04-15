@@ -3,9 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { logger, getRequestId } from '@/lib/logger'
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 // POST /api/auth/reset-password — validate token and set new password
 export async function POST(request: NextRequest) {
+  // Rate limit by IP — stops token brute-force and mass-reset abuse
+  const limited = await checkRateLimit(request, authLimiter, 10, 'reset-password')
+  if (limited) return limited
+
   const requestId = getRequestId(request)
   try {
     const { token, password } = await request.json()

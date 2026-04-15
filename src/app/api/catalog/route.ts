@@ -3,8 +3,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { mapCategory, PRODUCT_TAXONOMY } from '@/lib/product-categories'
+import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
+  const limited = await checkRateLimit(request, apiLimiter, 60, 'catalog')
+  if (limited) return limited
+
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''

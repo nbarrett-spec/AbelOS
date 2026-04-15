@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { issueHyphenAccessToken, parseBasicAuth, HYPHEN_TOKEN_TTL_SECONDS } from '@/lib/hyphen/auth'
+import { oauthLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/hyphen/oauth/token
@@ -30,6 +31,11 @@ import { issueHyphenAccessToken, parseBasicAuth, HYPHEN_TOKEN_TTL_SECONDS } from
 //   { "error": "invalid_client", "error_description": "..." }
 // ──────────────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
+  // Rate limit by IP to prevent credential brute-force. A legitimate Hyphen
+  // integration mints ~1 token/hour, so 30/min is generous.
+  const limited = await checkRateLimit(request, oauthLimiter, 30, 'hyphen-oauth')
+  if (limited) return limited
+
   const contentType = request.headers.get('content-type') || ''
   let grantType: string | undefined
   let scope: string | undefined

@@ -2,9 +2,13 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 // POST /api/ops/auth/reset-password — validate token and set new password for staff
 export async function POST(request: NextRequest) {
+  const limited = await checkRateLimit(request, authLimiter, 10, 'ops-reset-password')
+  if (limited) return limited
+
   try {
     const { token, password } = await request.json()
 

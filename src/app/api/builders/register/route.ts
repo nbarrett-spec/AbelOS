@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { sendApplicationReceivedEmail } from '@/lib/email'
+import { publicFormLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 // Validation helper
 function validateEmail(email: string): boolean {
@@ -12,6 +13,9 @@ function validateEmail(email: string): boolean {
 
 // POST /api/builders/register — Public builder self-registration
 export async function POST(request: NextRequest) {
+  const limited = await checkRateLimit(request, publicFormLimiter, 5, 'builder-register')
+  if (limited) return limited
+
   try {
     const body = await request.json()
 

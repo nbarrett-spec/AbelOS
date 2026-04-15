@@ -135,6 +135,9 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
 export const authLimiter = createRateLimiter({ windowMs: 60_000, max: 10 })    // 10 login attempts/min
 export const apiLimiter = createRateLimiter({ windowMs: 60_000, max: 60 })     // 60 requests/min
 export const syncLimiter = createRateLimiter({ windowMs: 300_000, max: 5 })    // 5 syncs per 5 min
+export const publicFormLimiter = createRateLimiter({ windowMs: 60_000, max: 5 })  // 5 form submits/min
+export const oauthLimiter = createRateLimiter({ windowMs: 60_000, max: 30 })   // 30 token mints/min
+export const tokenEndpointLimiter = createRateLimiter({ windowMs: 60_000, max: 20 }) // 20 lookups/min
 
 // ── Headers helper (unchanged) ──────────────────────────────────────
 
@@ -144,4 +147,44 @@ export function getRateLimitHeaders(result: RateLimitResult, max: number) {
     'X-RateLimit-Remaining': String(result.remaining),
     'X-RateLimit-Reset': String(Math.ceil(result.resetIn / 1000)),
   }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Convenience wrapper for route handlers
+//
+// Example:
+//   const limited = await checkRateLimit(request, authLimiter, 10, 'login')
+//   if (limited) return limited
+// ──────────────────────────────────────────────────────────────────────────
+
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+
+export function getClientKey(request: NextRequest, suffix?: string): string {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  return suffix ? `${ip}:${suffix}` : ip
+}
+
+/**
+ * One-call rate limit check. Returns a NextResponse if the limit is exceeded,
+ * or null if the request is allowed through.
+ */
+export async function checkRateLimit(
+  request: NextRequest,
+  limiter: RateLimiter,
+  max: number,
+  keySuffix?: string
+): Promise<NextResponse | null> {
+  const key = getClientKey(request, keySuffix)
+  const result = await limiter.check(key)
+  if (!result.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please slow down and try again shortly.' },
+      { status: 429, headers: getRateLimitHeaders(result, max) }
+    )
+  }
+  return null
 }

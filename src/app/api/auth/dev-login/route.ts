@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createToken, setSessionCookie } from '@/lib/auth'
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 /**
  * DEV-ONLY: Test login endpoint that bypasses password verification.
@@ -9,9 +10,21 @@ import { createToken, setSessionCookie } from '@/lib/auth'
  * POST /api/auth/dev-login
  * Body: { email: string } — or empty to auto-pick the first active builder
  *
- * ⚠️  REMOVE BEFORE PRODUCTION DEPLOYMENT
+ * Hard-gated on NODE_ENV !== 'production' (returns 404 in prod) AND
+ * rate-limited with authLimiter as defense-in-depth if the env check is
+ * ever bypassed or misconfigured.
  */
+function isDevEnv(): boolean {
+  return process.env.NODE_ENV !== 'production'
+}
+
 export async function POST(request: NextRequest) {
+  if (!isDevEnv()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  const limited = await checkRateLimit(request, authLimiter, 10, 'dev-login')
+  if (limited) return limited
+
   try {
     const body = await request.json().catch(() => ({}))
     const email = body.email || null
@@ -82,9 +95,12 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/auth/dev-login
- * Lists all builders in the database for easy testing.
+ * Lists all builders in the database for easy testing. Dev-only.
  */
 export async function GET() {
+  if (!isDevEnv()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   try {
     const builders: any[] = await prisma.$queryRawUnsafe(
       `SELECT id, email, "companyName", "contactName", "pricingTier", status, "paymentTerm",
