@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { detectCronDrift } from '@/lib/cron'
 import { snapshotAlerts } from '@/lib/alert-history'
 import { getActiveMutes } from '@/lib/alert-mutes'
+import { getSloAlerts } from '@/lib/slo'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/system-alerts — real-time platform health indicators.
@@ -352,6 +353,7 @@ export async function GET(request: NextRequest) {
     slowQueryCount,
     uptimeHealth,
     cronDrift,
+    sloAlerts,
   ] = await Promise.all([
     countClientErrorsLastHour(),
     countServerErrorsLastHour(),
@@ -365,6 +367,7 @@ export async function GET(request: NextRequest) {
     countSlowQueriesLastHour(),
     getUptimeProbeHealthLastHour(),
     detectCronDrift().catch(() => ({ orphaned: [], neverRun: [], stale: [] })),
+    getSloAlerts().catch(() => []),
   ])
 
   const staleCronCount = cronDrift.stale.length
@@ -547,6 +550,13 @@ export async function GET(request: NextRequest) {
       href: '/admin/health',
       description: 'Database round-trip p95 measured by the uptime probe (ms)',
     })
+  }
+
+  // 11. SLO budget alerts — warning when budget is burning fast, critical
+  // when it's nearly exhausted. These feed the same incident/notification
+  // pipeline as every other alert.
+  for (const sloAlert of sloAlerts) {
+    alerts.push(sloAlert)
   }
 
   // Decorate each alert with mute state. We pull the mutes after computing

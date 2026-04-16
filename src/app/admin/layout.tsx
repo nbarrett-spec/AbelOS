@@ -26,6 +26,7 @@ export default function AdminLayout({
     { href: '/admin/health', label: 'Health', icon: '💓' },
     { href: '/admin/timeline', label: 'Timeline', icon: '📈' },
     { href: '/admin/alert-history', label: 'Alert Log', icon: '🔔' },
+    { href: '/admin/slo', label: 'SLOs', icon: '🎯' },
   ]
 
   return (
