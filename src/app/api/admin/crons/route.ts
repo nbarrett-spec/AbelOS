@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { getCronSummaries, getCronRuns, detectCronDrift } from '@/lib/cron'
 
 // GET /api/admin/crons              → summary of all registered crons + drift
 // GET /api/admin/crons?name=mrp-nightly → recent runs for one cron
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   const { searchParams } = new URL(request.url)

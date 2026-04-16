@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 
 // ─── Product Description Generator ─────────────────────────────────
 // Generates human-readable descriptions from product name + attributes
@@ -87,7 +87,7 @@ function generateDescription(product: any): string {
 // POST: Enrich all products with generated descriptions
 export async function POST(request: NextRequest) {
   // SECURITY: Require staff auth
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   try {
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
 
 // GET: Check enrichment status
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   try {

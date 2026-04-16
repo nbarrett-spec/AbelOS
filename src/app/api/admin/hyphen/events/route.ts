@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { listHyphenEvents } from '@/lib/hyphen/auth'
 
 // GET /api/admin/hyphen/events?kind=order&status=RECEIVED&limit=50
 
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   const { searchParams } = new URL(request.url)

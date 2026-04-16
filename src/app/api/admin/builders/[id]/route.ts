@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(
@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     // Require staff authentication (not just any session)
-    const authError = checkStaffAuth(request)
+    const authError = await checkStaffAuthWithFallback(request)
     if (authError) return authError
 
     const { id } = params
@@ -121,7 +121,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   // SECURITY: Require STAFF auth (not builder) to modify builder accounts
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   try {

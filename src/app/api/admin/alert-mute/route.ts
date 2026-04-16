@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { muteAlert, unmuteAlert, listMutes } from '@/lib/alert-mutes'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -11,14 +11,14 @@ import { muteAlert, unmuteAlert, listMutes } from '@/lib/alert-mutes'
 // POST   — upsert a mute { alertId, durationHours, reason?, mutedBy? }
 // DELETE — clear a mute, ?alertId=<id>
 //
-// All three verbs are staff-gated via checkStaffAuth. The library in
+// All three verbs are staff-gated via checkStaffAuthWithFallback. The library in
 // src/lib/alert-mutes.ts handles validation, clamping duration to a
 // sensible 5min..7d range, and swallowing DB errors back to structured
 // ok/error responses.
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   const { searchParams } = new URL(request.url)
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   let body: any
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   const { searchParams } = new URL(request.url)
