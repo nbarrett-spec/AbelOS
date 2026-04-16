@@ -341,6 +341,53 @@ export async function middleware(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────────────────
+  // ADMIN API ROUTES — /api/admin/*
+  // Staff cookie auth (same pattern as /api/ops). These endpoints use
+  // checkStaffAuth() which reads x-staff-id / x-staff-role headers.
+  // Without this block the headers are never set and every admin API
+  // call returns 401 "Not authenticated".
+  // ────────────────────────────────────────────────────────────────────
+  if (pathname.startsWith('/api/admin')) {
+    const staffCookie = request.cookies.get(STAFF_COOKIE)
+    if (!staffCookie) {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'missing_staff_cookie',
+        scope: 'admin_api',
+      })
+      return withRequestId(
+        NextResponse.json({ error: 'Authentication required' }, { status: 401 }),
+        requestId
+      )
+    }
+
+    try {
+      const { payload } = await jwtVerify(staffCookie.value, JWT_SECRET)
+      const requestHeaders = forwardWithRequestId(request, requestId)
+      requestHeaders.set('x-staff-id', payload.staffId as string)
+      requestHeaders.set('x-staff-role', payload.role as string)
+      requestHeaders.set('x-staff-roles', (payload.roles as string) || (payload.role as string))
+      requestHeaders.set('x-staff-department', payload.department as string)
+      requestHeaders.set('x-staff-email', payload.email as string)
+      requestHeaders.set('x-staff-firstname', (payload.firstName as string) || '')
+      requestHeaders.set('x-staff-lastname', (payload.lastName as string) || '')
+
+      return addSecurityHeaders(
+        NextResponse.next({ request: { headers: requestHeaders } }),
+        requestId
+      )
+    } catch {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'invalid_or_expired_jwt',
+        scope: 'admin_api',
+      })
+      return withRequestId(
+        NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 }),
+        requestId
+      )
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
   // AGENT HUB API ROUTES — /api/agent-hub/*
   // Supports TWO auth methods:
   //   1. Bearer API key (for NUC agent cluster)
