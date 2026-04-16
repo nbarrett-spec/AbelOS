@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   try {

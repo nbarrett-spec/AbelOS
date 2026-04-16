@@ -284,3 +284,58 @@ export function checkStaffAuth(request: NextRequest): NextResponse | null {
 
   return null // Authorized
 }
+
+/**
+ * Async version of checkStaffAuth with cookie fallback.
+ * Use for routes where middleware may not inject x-staff-* headers
+ * (e.g. /api/admin/*). Tries headers first, then falls back to
+ * reading the staff session cookie directly.
+ */
+export async function checkStaffAuthWithFallback(request: NextRequest): Promise<NextResponse | null> {
+  // ── Primary path: trust headers set by middleware ──
+  const staffRole = request.headers.get('x-staff-role')
+  const staffId = request.headers.get('x-staff-id')
+  if (staffId && staffRole) {
+    return checkStaffAuth(request)
+  }
+
+  // ── Fallback: read cookie directly ──
+  const { pathname } = new URL(request.url)
+  const session = await getStaffSession()
+  if (!session) {
+    logSecurityEvent({
+      kind: 'AUTH_FAIL',
+      path: pathname,
+      method: request.method,
+      ip: clientIp(request),
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: { reason: 'no_session_cookie_fallback' },
+    })
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
+  const allRoles = parseRoles(session.roles || session.role) as StaffRole[]
+
+  if (!canAccessAPI(allRoles, pathname)) {
+    logSecurityEvent({
+      kind: 'AUTH_FAIL',
+      path: pathname,
+      method: request.method,
+      ip: clientIp(request),
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: {
+        reason: 'insufficient_permissions_cookie',
+        staffId: session.staffId,
+        roles: allRoles,
+      },
+    })
+    return NextResponse.json(
+      { error: 'Access denied. Insufficient permissions.' },
+      { status: 403 }
+    )
+  }
+
+  return null // Authorized via cookie fallback
+}

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { sendEmail } from '@/lib/email'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ function escapeHtml(s: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   const recipients = parseRecipients()
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 // GET is a dry-run that tells the caller what WOULD happen without
 // actually sending. Useful for verifying configuration during setup.
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   const recipients = parseRecipients()

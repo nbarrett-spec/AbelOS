@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { getHyphenEventPayload, reprocessHyphenOrderEvent } from '@/lib/hyphen/processor'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   try {
@@ -35,7 +35,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
   let body: any = {}
