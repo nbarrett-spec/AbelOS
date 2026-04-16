@@ -85,6 +85,45 @@ function forwardWithRequestId(request: NextRequest, requestId: string): Headers 
   return headers
 }
 
+/**
+ * Fire-and-forget security event log from Edge middleware.
+ * Emits structured console.warn (visible in Vercel logs immediately)
+ * and POSTs to the internal logging endpoint for DB persistence.
+ */
+function logSecurityEventFromEdge(
+  request: NextRequest,
+  requestId: string,
+  kind: string,
+  details?: Record<string, unknown>
+): void {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.ip || null
+  const payload = {
+    kind,
+    path: request.nextUrl.pathname,
+    method: request.method,
+    ip,
+    userAgent: request.headers.get('user-agent'),
+    requestId,
+    details: details || null,
+  }
+
+  // 1) Structured log for Vercel's log drain (immediate)
+  console.warn(JSON.stringify({ level: 'warn', msg: 'security_event', ...payload }))
+
+  // 2) POST to internal endpoint for DB persistence (fire-and-forget)
+  const secret = process.env.INTERNAL_LOG_SECRET
+  if (secret) {
+    const url = new URL('/api/internal/security-event', request.url)
+    fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, secret }),
+    }).catch(() => {
+      // swallow — never delay a rejection response for logging
+    })
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -203,6 +242,13 @@ export async function middleware(request: NextRequest) {
   // (Skip for agent-hub routes with Bearer auth — server-to-server)
   // ────────────────────────────────────────────────────────────────
   if (pathname.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    // Skip CSRF for internal logging endpoints (middleware → itself, secret-authed)
+    if (pathname.startsWith('/api/internal/')) {
+      return withRequestId(
+        NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
+        requestId
+      )
+    }
     // Skip CSRF for agent-hub Bearer token requests (server-to-server, no browser origin)
     const authHeader = request.headers.get('authorization')
     if (pathname.startsWith('/api/agent-hub') && authHeader?.startsWith('Bearer ')) {
@@ -218,6 +264,11 @@ export async function middleware(request: NextRequest) {
           const isDev = originHost.startsWith('localhost') || originHost.startsWith('127.0.0.1')
           const hostIsDev = host?.startsWith('localhost') || host?.startsWith('127.0.0.1')
           if (!(isDev && hostIsDev)) {
+            logSecurityEventFromEdge(request, requestId, 'CSRF', {
+              origin,
+              host,
+              reason: 'origin_mismatch',
+            })
             return withRequestId(
               NextResponse.json({ error: 'CSRF validation failed' }, { status: 403 }),
               requestId
@@ -225,6 +276,10 @@ export async function middleware(request: NextRequest) {
           }
         }
       } catch {
+        logSecurityEventFromEdge(request, requestId, 'CSRF', {
+          origin: request.headers.get('origin'),
+          reason: 'invalid_origin_header',
+        })
         return withRequestId(
           NextResponse.json({ error: 'Invalid origin header' }, { status: 403 }),
           requestId
@@ -247,6 +302,10 @@ export async function middleware(request: NextRequest) {
     // All other API ops routes need a valid staff session
     const staffCookie = request.cookies.get(STAFF_COOKIE)
     if (!staffCookie) {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'missing_staff_cookie',
+        scope: 'ops_api',
+      })
       return withRequestId(
         NextResponse.json({ error: 'Authentication required' }, { status: 401 }),
         requestId
@@ -270,6 +329,10 @@ export async function middleware(request: NextRequest) {
         requestId
       )
     } catch {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'invalid_or_expired_jwt',
+        scope: 'ops_api',
+      })
       return withRequestId(
         NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 }),
         requestId
@@ -308,6 +371,10 @@ export async function middleware(request: NextRequest) {
           requestId
         )
       }
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'invalid_agent_api_key',
+        scope: 'agent_hub',
+      })
       return withRequestId(
         NextResponse.json({ error: 'Invalid API key' }, { status: 401 }),
         requestId
@@ -317,6 +384,10 @@ export async function middleware(request: NextRequest) {
     // Method 2: Staff cookie auth (web dashboard)
     const staffCookie = request.cookies.get(STAFF_COOKIE)
     if (!staffCookie) {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'missing_credentials',
+        scope: 'agent_hub',
+      })
       return withRequestId(
         NextResponse.json(
           { error: 'Authentication required. Provide Bearer API key or staff session.' },
@@ -342,6 +413,10 @@ export async function middleware(request: NextRequest) {
         requestId
       )
     } catch {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'invalid_or_expired_jwt',
+        scope: 'agent_hub',
+      })
       return withRequestId(
         NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 }),
         requestId
