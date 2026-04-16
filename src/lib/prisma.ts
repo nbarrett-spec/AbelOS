@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import crypto from 'crypto'
 import { logger } from '@/lib/logger'
+import { recordQuery } from '@/lib/query-counter'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Prisma client — singleton with slow-query logging + persistence.
@@ -184,13 +185,15 @@ function createClient(): PrismaClient {
   return base.$extends({
     query: {
       async $allOperations({ operation, model, args, query }) {
+        const modelName = model || 'raw'
+        // Track per-request query counts for N+1 detection (no-op outside withQueryCounting)
+        recordQuery(modelName, operation)
         const started = Date.now()
         try {
           return await query(args)
         } finally {
           const duration = Date.now() - started
           if (duration >= SLOW_QUERY_MS) {
-            const modelName = model || 'raw'
             const { digest, sqlSample } = computeDigest(modelName, operation, args)
             logger.warn('slow_prisma_query', {
               model: modelName,

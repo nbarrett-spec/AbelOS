@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
 import { safeJson } from '@/lib/safe-json'
+import { startCronRun, finishCronRun } from '@/lib/cron'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface ProcessResult {
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function processOutreach() {
+  const runId = await startCronRun('process-outreach', 'schedule')
+  const started = Date.now()
   const result: ProcessResult = {
     processed: 0,
     autoSent: 0,
@@ -180,10 +183,12 @@ async function processOutreach() {
       result.repliedFound++
     }
 
+    await finishCronRun(runId, 'SUCCESS', Date.now() - started, { result })
     return safeJson(result)
   } catch (error: any) {
     console.error('Outreach cron error:', error)
     result.errors.push(`Fatal: ${error.message}`)
+    await finishCronRun(runId, 'FAILURE', Date.now() - started, { error: error.message })
     return safeJson(result, { status: 500 })
   }
 }

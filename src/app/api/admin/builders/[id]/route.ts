@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(

@@ -166,6 +166,7 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'webhook-retry', schedule: '*/5 * * * *', description: 'Retry dead-lettered outbound webhooks' },
   { name: 'uptime-probe', schedule: '*/5 * * * *', description: 'Self-probe /api/health/ready and record uptime history' },
   { name: 'observability-gc', schedule: '0 3 * * *', description: 'Prune ClientError / SlowQueryLog / SecurityEvent retention' },
+  { name: 'process-outreach', schedule: '*/10 * * * *', description: 'Process due outreach enrollment steps (auto-send + semi-auto review)' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

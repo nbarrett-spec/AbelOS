@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Best-effort attribution for the email body. checkStaffAuth has already
+  // Best-effort attribution for the email body. checkStaffAuthWithFallback has already
   // vouched that this is a staff caller; pick whichever header is present.
   const requestedBy =
     request.headers.get('x-user-email') ||

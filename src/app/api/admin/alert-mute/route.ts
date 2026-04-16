@@ -11,7 +11,7 @@ import { muteAlert, unmuteAlert, listMutes } from '@/lib/alert-mutes'
 // POST   — upsert a mute { alertId, durationHours, reason?, mutedBy? }
 // DELETE — clear a mute, ?alertId=<id>
 //
-// All three verbs are staff-gated via checkStaffAuth. The library in
+// All three verbs are staff-gated via checkStaffAuthWithFallback. The library in
 // src/lib/alert-mutes.ts handles validation, clamping duration to a
 // sensible 5min..7d range, and swallowing DB errors back to structured
 // ok/error responses.
