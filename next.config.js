@@ -6,7 +6,8 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true, // TODO: enable once lint errors are fixed
+    ignoreDuringBuilds: false, // Lint errors now caught at build time
+    dirs: ['src/app/api', 'src/lib'], // Focus on backend — pages have too many warnings for now
   },
   // Suppress useSearchParams() Suspense boundary warnings during build
   experimental: {
