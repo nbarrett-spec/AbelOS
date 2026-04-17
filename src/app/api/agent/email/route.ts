@@ -2,15 +2,57 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { processMessage } from '@/lib/agent'
+import {
+  verifyHmacSignature,
+  verifyBearerToken,
+  ensureIdempotent,
+  markWebhookProcessed,
+  markWebhookFailed,
+} from '@/lib/webhook'
 
 // POST: Inbound email webhook (SendGrid/Mailgun/generic compatible)
+//
+// Authentication: HMAC signature in "x-sendgrid-signature" / "x-mailgun-signature"
+// header, or shared secret in "x-webhook-secret" header. Falls back to
+// EMAIL_WEBHOOK_SECRET env var.
+//
+// Idempotency: keyed off messageId from the email provider.
 export async function POST(request: NextRequest) {
+  // ── Auth ──────────────────────────────────────────────────────────────
+  const rawBody = await request.text()
+  const hmacHeader =
+    request.headers.get('x-sendgrid-signature') ||
+    request.headers.get('x-mailgun-signature')
+  const sharedSecretHeader = request.headers.get('x-webhook-secret')
+  const webhookSecret = process.env.EMAIL_WEBHOOK_SECRET
+
+  let authenticated = false
+  if (hmacHeader && webhookSecret) {
+    authenticated = verifyHmacSignature(rawBody, hmacHeader, webhookSecret)
+  }
+  if (!authenticated && sharedSecretHeader && webhookSecret) {
+    authenticated = verifyBearerToken(sharedSecretHeader, webhookSecret)
+  }
+  if (!authenticated && !webhookSecret && process.env.NODE_ENV !== 'production') {
+    authenticated = true // dev mode — no secret configured
+  }
+  if (!authenticated) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const body = await request.json()
+    const body = JSON.parse(rawBody)
     const { from, to, subject, text, messageId } = body
 
     if (!from || !text) {
       return NextResponse.json({ error: 'from and text required' }, { status: 400 })
+    }
+
+    // ── Idempotency ────────────────────────────────────────────────────
+    const eventId = messageId || `email:${from}:${Date.now()}`
+    const idem = await ensureIdempotent('email-agent', eventId, 'inbound_email', body)
+    if (idem.status === 'duplicate') {
+      return NextResponse.json({ received: true, duplicate: true })
     }
 
     // Extract email address from "Name <email>" format
@@ -73,6 +115,8 @@ export async function POST(request: NextRequest) {
       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, 'OUTBOUND', 'QUEUED')
     `, result.conversationId, builderId, 'support@abellumber.com', fromEmail, replySubject, replyBody)
 
+    await markWebhookProcessed(idem.id)
+
     return NextResponse.json({
       success: true,
       conversationId: result.conversationId,
@@ -81,6 +125,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Email webhook error:', error)
+    await markWebhookFailed(idem?.id, error?.message || String(error))
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

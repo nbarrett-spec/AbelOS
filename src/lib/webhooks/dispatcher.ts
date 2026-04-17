@@ -2,6 +2,7 @@ import { processStripeEvent } from '@/lib/webhooks/stripe-processor'
 import { handleInflowWebhook } from '@/lib/integrations/inflow'
 import { handleWebhook as handleHyphenWebhook } from '@/lib/integrations/hyphen'
 import { handlePushNotification } from '@/lib/integrations/gmail'
+import { processWebhookPayload as processBTWebhook } from '@/lib/integrations/buildertrend'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Provider-specific payload replay.
@@ -51,6 +52,19 @@ export async function replayWebhookPayload(
       await handlePushNotification(historyId)
       return
     }
+
+    case 'buildertrend': {
+      await processBTWebhook(payload)
+      return
+    }
+
+    // Agent email and SMS webhooks store enough context to re-process,
+    // but replaying them would re-trigger the AI agent pipeline and
+    // potentially double-reply. For now we only allow manual replay
+    // from admin UI where the operator can confirm the action.
+    case 'email-agent':
+    case 'sms-agent':
+      throw new Error(`${provider} events cannot be auto-replayed — use manual intervention from admin`)
 
     default:
       throw new Error(`No replay handler registered for provider: ${provider}`)

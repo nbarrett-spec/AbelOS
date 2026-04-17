@@ -2,12 +2,17 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { safeJson } from '@/lib/safe-json'
-import {
 import { audit } from '@/lib/audit'
+import {
   verifyWebhookSignature,
   processWebhookPayload,
   type BTWebhookPayload,
 } from '@/lib/integrations/buildertrend'
+import {
+  ensureIdempotent,
+  markWebhookProcessed,
+  markWebhookFailed,
+} from '@/lib/webhook'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/integrations/buildertrend/webhook
@@ -19,71 +24,60 @@ import { audit } from '@/lib/audit'
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // Read raw body once for both signature check and JSON parse
+  const body = await request.text()
+
+  // Extract signature from headers
+  const signature = request.headers.get('x-buildertrend-signature') || ''
+
+  // Verify webhook signature
   try {
-    // Audit log
-    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
-
-    // Get the raw body for signature verification
-    const body = await request.text()
-
-    // Extract signature from headers
-    const signature = request.headers.get('x-buildertrend-signature') || ''
-
-    // Verify webhook signature
     const isValid = await verifyWebhookSignature(body, signature)
-
     if (!isValid) {
       console.warn('Invalid BuilderTrend webhook signature')
-      return safeJson(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      )
+      return safeJson({ error: 'Invalid signature' }, { status: 401 })
     }
-
-    // Parse payload
-    let payload: BTWebhookPayload
-    try {
-      payload = JSON.parse(body)
-    } catch (err) {
-      return safeJson(
-        { error: 'Invalid JSON payload' },
-        { status: 400 }
-      )
+  } catch (e: any) {
+    console.warn('BuilderTrend webhook verification error:', e.message)
+    if (process.env.NODE_ENV === 'production') {
+      return safeJson({ error: 'Webhook verification failed' }, { status: 401 })
     }
+  }
 
-    // Log webhook for audit
-    try {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "Activity"
-         ("jobId", "type", "title", "description", "metadata")
-         SELECT NULL, 'WEBHOOK'::"ActivityType", $1, $2, $3`,
-        `BuilderTrend Webhook: ${payload.event}`,
-        `Project ${payload.projectId}: ${payload.event}`,
-        JSON.stringify(payload)
-      )
-    } catch (logErr) {
-      console.error('Failed to log webhook activity:', logErr)
-      // Continue processing even if logging fails
-    }
+  // Parse payload
+  let payload: BTWebhookPayload
+  try {
+    payload = JSON.parse(body)
+  } catch (err) {
+    return safeJson({ error: 'Invalid JSON payload' }, { status: 400 })
+  }
 
-    // Process the webhook asynchronously to avoid timeout
-    // In production, this should be queued to a job processor
-    processWebhookPayload(payload)
-      .catch(err => {
-        console.error('Error processing webhook payload:', err)
-      })
+  // Audit log
+  audit(request, 'CREATE', 'Integration', undefined, { method: 'POST', event: payload.event }).catch(() => {})
 
-    // Return 202 Accepted immediately
+  // ── Idempotency ────────────────────────────────────────────────────
+  const eventId =
+    payload.eventId ||
+    payload.id ||
+    request.headers.get('x-event-id') ||
+    `${payload.event}:${payload.projectId}:${Date.now()}`
+  const idem = await ensureIdempotent('buildertrend', eventId, payload.event, payload)
+  if (idem.status === 'duplicate') {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
+  try {
+    await processWebhookPayload(payload)
+    await markWebhookProcessed(idem.id)
+
     return NextResponse.json(
       { acknowledged: true, event: payload.event },
       { status: 202 }
     )
   } catch (error: any) {
-    console.error('Error in BuilderTrend webhook handler:', error)
-    return safeJson(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Error processing BuilderTrend webhook:', error)
+    await markWebhookFailed(idem.id, error?.message || String(error))
+    return safeJson({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
