@@ -115,7 +115,26 @@ export async function POST(request: NextRequest) {
   let errors = 0
   const results: any[] = []
 
-  // Ensure Gmail sync columns exist (safe to run multiple times)
+  // Ensure Gmail sync columns and enum values exist (safe to run multiple times)
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        -- Add SYNCED to CommLogStatus enum if it doesn't exist
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum
+          WHERE enumlabel = 'SYNCED'
+            AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'CommLogStatus')
+        ) THEN
+          ALTER TYPE "CommLogStatus" ADD VALUE 'SYNCED';
+        END IF;
+      END
+      $$;
+    `)
+  } catch (e) {
+    // Enum value may already exist — that's fine
+  }
+
   try {
     await prisma.$executeRawUnsafe(`
       DO $$
