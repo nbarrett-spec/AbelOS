@@ -5,26 +5,34 @@ import { checkStaffAuth } from '@/lib/api-auth'
 
 /**
  * POST /api/ops/auth/run-migrations
- * Runs all pending database migrations (v8, v9, v10, manufacturing)
- * TEMPORARY — delete after running
+ *
+ * RETIRED — All migrations (v8, v9, v10, manufacturing, v12) have been
+ * applied to production. This endpoint is permanently disabled.
+ *
+ * Migration history preserved below for reference. If you need to run
+ * new migrations, use prisma migrate or a new versioned endpoint.
  */
-export async function POST(request: NextRequest) {
-  // SECURITY: Check authentication first
-  const authCheck = checkStaffAuth(request)
-  if (authCheck) return authCheck
+export async function POST(_request: NextRequest) {
+  return NextResponse.json(
+    {
+      error: 'This migration endpoint has been retired. All migrations have been applied.',
+      migrationsApplied: ['v8-password-reset-staff-roles', 'v9-performance-indexes', 'v10-subcontractor-pricing', 'manufacturing-allocations-bom', 'v12-payment-status-backfill'],
+    },
+    { status: 410 }
+  )
+}
 
-  // SECURITY: Only ADMIN can run migrations
-  const staffRole = request.headers.get('x-staff-role')
-  if (staffRole !== 'ADMIN') {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-  }
-
-  try {
-    const body = await request.json()
-    const { seedKey } = body
-    if (seedKey !== 'abel-lumber-seed-2024') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ARCHIVED MIGRATION CODE — preserved as documentation of schema changes.
+ * All statements below used IF NOT EXISTS / ADD COLUMN IF NOT EXISTS and
+ * are safe to re-run but no longer needed.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+function _archivedMigrations() {
+  /* eslint-disable */
+  // @ts-nocheck
+  const _neverRuns = false
+  if (_neverRuns) {
 
     const results: { step: string; status: string; error?: string }[] = []
 
@@ -361,4 +369,5 @@ export async function POST(request: NextRequest) {
     console.error('Migration error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-}
+  } // end if (_neverRuns)
+} // end _archivedMigrations
