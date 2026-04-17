@@ -3,10 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getStaffSession } from '@/lib/staff-auth'
 import bcrypt from 'bcryptjs'
+import { audit } from '@/lib/audit'
 
 // PATCH /api/ops/auth/profile — Update staff profile (own profile only)
 export async function PATCH(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Auth', undefined, { method: 'PATCH' }).catch(() => {})
+
     const session = await getStaffSession()
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -61,6 +65,9 @@ export async function PATCH(request: NextRequest) {
 // POST /api/ops/auth/profile — Change staff password
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Auth', undefined, { method: 'POST' }).catch(() => {})
+
     const session = await getStaffSession()
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })

@@ -15,6 +15,7 @@ import {
   executeReorderOpportunityWorkflow,
 } from '@/lib/agent-orchestrator'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const auth = await checkStaffAuth(request)
@@ -64,6 +65,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Agent', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { workflow: workflowType, params } = body
 

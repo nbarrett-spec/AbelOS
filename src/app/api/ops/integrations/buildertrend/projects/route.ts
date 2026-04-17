@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/integrations/buildertrend/projects
@@ -90,6 +91,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { btProjectId, builderId, projectId, jobId } = body
 
@@ -204,6 +208,9 @@ export async function PUT(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Integration', undefined, { method: 'PUT' }).catch(() => {})
+
     const body = await request.json()
     const { id, builderId, projectId, jobId } = body
 
@@ -337,6 +344,9 @@ export async function DELETE(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Integration', undefined, { method: 'DELETE' }).catch(() => {})
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

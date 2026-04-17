@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import crypto from 'crypto'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // GET: Download or view a single document

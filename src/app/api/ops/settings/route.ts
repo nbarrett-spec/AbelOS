@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // Default settings returned if table is empty or doesn't exist
 const DEFAULT_SETTINGS = {
@@ -85,6 +86,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Settings', undefined, { method: 'POST' }).catch(() => {})
+
     // Staff auth check: must be ADMIN role
     const staffId = request.headers.get('x-staff-id')
     const staffRole = request.headers.get('x-staff-role')

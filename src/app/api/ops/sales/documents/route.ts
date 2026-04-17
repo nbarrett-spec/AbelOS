@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/sales/documents — List document requests with filters
 export async function GET(request: NextRequest) {
@@ -92,6 +93,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Sales', undefined, { method: 'POST' }).catch(() => {})
+
     const staffId = request.headers.get('x-staff-id')
     if (!staffId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

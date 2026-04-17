@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/manufacturing/advance-job
@@ -26,6 +27,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Manufacturing', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { jobId, targetStatus, overrideReason } = body
     const staffId = request.headers.get('x-staff-id') || 'system'

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 // Auth check via headers (consistent with other ops API routes)
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Accounting AI Assistant — Real-time financial context for Dawn

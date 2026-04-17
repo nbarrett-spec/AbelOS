@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/floor-plans/[id] — Get a single floor plan
 export async function GET(
@@ -64,6 +65,9 @@ export async function PATCH(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'FloorPlan', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { label, notes, active } = body
 
@@ -121,6 +125,9 @@ export async function DELETE(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'FloorPlan', undefined, { method: 'DELETE' }).catch(() => {})
+
     await prisma.$executeRawUnsafe(
       `UPDATE "FloorPlan" SET "active" = false, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $1`,
       params.id

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 // Dynamic Pricing Engine
 // Manages pricing rules, optimization stats, and margin analysis
@@ -189,6 +190,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'RevenueIntelligence', undefined, { method: 'POST' }).catch(() => {})
+
     await seedDefaultRules();
 
     let body: any = {};

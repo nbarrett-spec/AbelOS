@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/mrp/setup
@@ -28,6 +29,9 @@ export async function POST(_request: NextRequest) {
 
   for (const [name, sql] of statements) {
     try {
+    // Audit log
+    audit(request, 'CREATE', 'Mrp', undefined, { method: 'POST' }).catch(() => {})
+
       await prisma.$executeRawUnsafe(sql)
       created.push(name)
     } catch (err: any) {

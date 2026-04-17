@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/cash-flow-optimizer/setup
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
   const results = { tablesCreated: [] as string[], indexesCreated: [] as string[], columnsAdded: [] as string[], errors: [] as string[] };
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'CashFlowOptimizer', undefined, { method: 'POST' }).catch(() => {})
+
     // 1. CollectionAction - AI-prioritized collection tasks
     try {
       await prisma.$executeRawUnsafe(`

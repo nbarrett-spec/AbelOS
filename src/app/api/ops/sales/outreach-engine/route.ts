@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import crypto from 'crypto'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // OUTREACH SEQUENCE AUTOMATION ENGINE
@@ -843,6 +844,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Sales', undefined, { method: 'POST' }).catch(() => {})
+
     await ensureTables()
 
     const body = await request.json()

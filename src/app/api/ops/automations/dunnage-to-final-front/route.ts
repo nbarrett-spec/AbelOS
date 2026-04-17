@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // /api/ops/automations/dunnage-to-final-front
@@ -117,6 +118,9 @@ export async function POST(request: NextRequest) {
 
   let body: { jobId?: string; jobIds?: string[]; autoAssign?: boolean } = {}
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Automations', undefined, { method: 'POST' }).catch(() => {})
+
     body = await request.json()
   } catch {
     return safeJson({ error: 'Request body required with jobId or jobIds' }, { status: 400 })

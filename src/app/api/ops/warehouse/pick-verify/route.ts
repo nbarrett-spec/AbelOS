@@ -3,12 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { recomputeAvgDailyUsage } from '@/lib/mrp'
+import { audit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Warehouse', undefined, { method: 'POST' }).catch(() => {})
+
     const { pickId, scannedSku } = await request.json()
 
     if (!pickId || !scannedSku) {

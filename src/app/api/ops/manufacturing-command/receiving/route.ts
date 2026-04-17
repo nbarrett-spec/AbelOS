@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 interface AuthHeaders {
   staffId?: string
@@ -194,6 +195,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Receiving', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { poId, action } = body
 

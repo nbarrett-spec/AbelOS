@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/trades/[id]/reviews — Get reviews for a trade
 export async function GET(
@@ -40,6 +41,9 @@ export async function POST(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Trades', undefined, { method: 'POST' }).catch(() => {})
+
     const { rating, quality, reliability, communication, comment, jobId } = await request.json()
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'Rating 1-5 is required' }, { status: 400 })

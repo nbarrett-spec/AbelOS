@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/suppliers/[id] — Get supplier detail
@@ -45,6 +46,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Procurement', undefined, { method: 'PATCH' }).catch(() => {})
+
     const { id } = params
     const body = await request.json()
 

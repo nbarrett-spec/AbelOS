@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function GET(
   request: NextRequest,
@@ -60,6 +61,9 @@ export async function POST(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Job', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json();
     const { noteType, subject, body: noteBody, priority, authorId } = body;
 

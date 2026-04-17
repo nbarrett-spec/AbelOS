@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // /api/ops/integrations/quickbooks/setup
@@ -91,6 +92,9 @@ export async function POST(request: NextRequest) {
 
   let body: Record<string, any> = {}
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     body = await request.json()
   } catch {
     // Empty body is fine — we'll use defaults

@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // In-memory workflow store (imported from main route)
 const workflowStore = new Map()
@@ -52,6 +53,9 @@ export async function PATCH(
   }
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Agent', undefined, { method: 'PATCH' }).catch(() => {})
+
     const { id } = await params
     const body = await request.json()
     const { action } = body

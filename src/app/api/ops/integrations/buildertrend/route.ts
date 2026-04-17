@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import {
+import { audit } from '@/lib/audit'
   getBuilderTrendConfig,
   getBuilderTrendClient,
   syncProjects,
@@ -125,6 +126,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { action, baseUrl, clientId, clientSecret } = body
 

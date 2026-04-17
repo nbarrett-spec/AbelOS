@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 interface RouteParams {
   params: {
@@ -154,6 +155,9 @@ export async function POST(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Message', undefined, { method: 'POST' }).catch(() => {})
+
     const { conversationId } = params
     const body = await request.json()
     const { senderId, body: messageBody } = body

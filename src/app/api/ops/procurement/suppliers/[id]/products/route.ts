@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/suppliers/[id]/products — List supplier products
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Procurement', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { productId, sku, productName, category, unitCost, moq, leadTimeDays, packSize, notes } = body
 

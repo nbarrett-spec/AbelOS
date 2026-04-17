@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 // Vendor Intelligence Dashboard & Scorecard Recalculation
 // Comprehensive vendor performance analytics, scoring algorithms, and risk assessment
@@ -258,6 +259,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'ProcurementIntelligence', undefined, { method: 'POST' }).catch(() => {})
+
     let action = 'recalculate-scores';
     try {
       const body = await request.json();

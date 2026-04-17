@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { BlueprintAnalysis } from '@/lib/blueprint-ai'
 import { Prisma } from '@prisma/client'
+import { audit } from '@/lib/audit'
 
 interface GenerateTakeoffRequest {
   blueprintId: string
@@ -34,6 +35,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Blueprints', undefined, { method: 'POST' }).catch(() => {})
+
     const body: GenerateTakeoffRequest = await request.json()
 
     if (!body.blueprintId || !body.analysis) {

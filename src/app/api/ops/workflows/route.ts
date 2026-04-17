@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { executeWorkflows, getWorkflowDefinitions, WORKFLOW_DEFINITIONS } from '@/lib/workflows'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // Helper to get staff info from headers
 function getStaffFromHeaders(headers: Headers) {
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Workflows', undefined, { method: 'POST' }).catch(() => {})
+
     const staff = getStaffFromHeaders(request.headers)
 
     // Admin-only check

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 interface EmailQueueItem {
   id: string
@@ -116,6 +117,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Email', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { to, subject, body: emailBody, templateId, scheduledFor, dealId, staffId: bodyStaffId } = body
 
@@ -205,6 +209,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Email', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { id, status, lastError } = body
 

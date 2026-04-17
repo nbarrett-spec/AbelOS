@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { randomUUID } from 'crypto'
+import { audit } from '@/lib/audit'
 
 // Activity Type enum values for validation
 const VALID_ACTIVITY_TYPES = [
@@ -147,6 +148,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'ActivityLog', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const {
       staffId,

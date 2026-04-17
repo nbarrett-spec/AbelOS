@@ -5,6 +5,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { createNotification } from '@/lib/notifications'
 import bcrypt from 'bcryptjs'
 import { sendApplicationApprovedEmail } from '@/lib/email'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/builders/applications — List pending applications (staff only)
 export async function GET(request: NextRequest) {
@@ -73,6 +74,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Builder', undefined, { method: 'PATCH' }).catch(() => {})
+
     // Get staff ID from header
     const staffId = request.headers.get('x-staff-id')
     if (!staffId) {

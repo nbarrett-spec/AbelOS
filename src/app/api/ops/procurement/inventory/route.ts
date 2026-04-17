@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/inventory — List inventory with alerts
@@ -85,6 +86,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Procurement', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
 
     if (body.action === 'sync_products') {
@@ -123,6 +127,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Procurement', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { id, onHand, committed, onOrder, reorderPoint, reorderQty, safetyStock, maxStock, avgDailyUsage } = body
 

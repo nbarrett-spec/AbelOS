@@ -5,6 +5,7 @@ import path from 'path'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const ALLOWED_TYPES = [
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
   const staffId = request.headers.get('x-staff-id')
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'FloorPlan', undefined, { method: 'POST' }).catch(() => {})
+
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const projectId = formData.get('projectId') as string | null

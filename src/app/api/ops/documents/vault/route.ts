@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import crypto from 'crypto'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // DOCUMENT VAULT API
@@ -231,6 +232,9 @@ export async function POST(request: NextRequest) {
 // ──────────────────────────────────────────────────────────────────
 async function handleFileUpload(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Documents', undefined, { method: 'POST' }).catch(() => {})
+
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
     const file = formData.get('file') as File | null

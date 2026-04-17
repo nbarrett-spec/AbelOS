@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { defaultExpectedDateForPO } from '@/lib/mrp'
+import { audit } from '@/lib/audit'
 
 interface RouteParams {
   params: {
@@ -100,6 +101,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'PurchaseOrder', undefined, { method: 'PATCH' }).catch(() => {})
+
     const { id } = params;
     const body = await request.json();
 

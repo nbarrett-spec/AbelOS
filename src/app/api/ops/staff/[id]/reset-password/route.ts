@@ -4,6 +4,7 @@ import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/staff/[id]/reset-password — Admin resets a staff member's password
 export async function POST(
@@ -14,6 +15,9 @@ export async function POST(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
+
     const staffId = params.id
 
     // Check the target staff member exists

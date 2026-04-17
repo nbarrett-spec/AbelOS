@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // Ops-side pricing — staff auth via cookie (no builder session needed)
 export async function GET(
@@ -90,6 +91,9 @@ export async function POST(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Account', undefined, { method: 'POST' }).catch(() => {})
+
     const { id } = params
     const body = await request.json()
     const { productId, customPrice } = body
@@ -245,6 +249,9 @@ export async function PATCH(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Account', undefined, { method: 'PATCH' }).catch(() => {})
+
     const { id } = params
     const body = await request.json()
     const { pricingId, customPrice } = body

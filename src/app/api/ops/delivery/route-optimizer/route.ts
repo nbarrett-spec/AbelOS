@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 // Delivery Route Optimizer API
 // GET: Calculate optimized route for a given date with cost analysis and toll recommendations

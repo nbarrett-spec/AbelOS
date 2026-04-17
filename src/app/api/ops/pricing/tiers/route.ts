@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 // GET: List all pricing tiers with their rules and builder counts
 export async function GET(request: NextRequest) {
@@ -60,6 +61,9 @@ export async function GET(request: NextRequest) {
 // POST: Create a new tier or update tier rules
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Pricing', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { action } = body
 

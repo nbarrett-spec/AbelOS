@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/accounts/[id]/margins
 // Returns margin targets, category breakdowns, and actual performance
@@ -157,6 +158,9 @@ export async function POST(
   const builderId = params.id
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Account', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { targetBlendedMargin, categories, notes } = body
 

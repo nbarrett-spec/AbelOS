@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/delivery/tracking
@@ -121,6 +122,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Delivery', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { deliveryId, status, location, notes, eta } = body
 

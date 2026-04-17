@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // Marketing Automation & Campaign Management API
 // Campaign tracking, builder segmentation, drip sequences, engagement analytics
@@ -82,6 +83,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Marketing', undefined, { method: 'POST' }).catch(() => {})
+
     await ensureTables();
     const body = await request.json();
     const { action } = body;

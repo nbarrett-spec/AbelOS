@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // DELETE /api/ops/inventory/allocations/[id]
@@ -15,6 +16,9 @@ export async function DELETE(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Inventory', undefined, { method: 'DELETE' }).catch(() => {})
+
     const allocationId = params.id
 
     if (!allocationId) {

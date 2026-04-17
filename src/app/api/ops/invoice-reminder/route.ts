@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { sendBuilderNotification } from '@/lib/notifications'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // SEND INVOICE PAYMENT REMINDER TO BUILDER
@@ -17,6 +18,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'InvoiceReminder', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { invoiceId, builderName } = body
 

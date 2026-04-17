@@ -3,12 +3,16 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Delegation', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { status, endDate, notes, scope, reason } = body
     const id = params.id
@@ -50,6 +54,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Delegation', undefined, { method: 'DELETE' }).catch(() => {})
+
     const result = await prisma.$queryRawUnsafe<any[]>(
       `UPDATE "WorkloadDelegation" SET status = 'CANCELLED', "updatedAt" = NOW() WHERE id = $1 RETURNING id`,
       params.id

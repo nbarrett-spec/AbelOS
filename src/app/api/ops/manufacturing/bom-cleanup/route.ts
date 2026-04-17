@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/manufacturing/bom-cleanup
@@ -15,6 +16,9 @@ export async function POST(request: NextRequest) {
   const results: { step: string; status: string; detail?: string; error?: string }[] = []
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Manufacturing', undefined, { method: 'POST' }).catch(() => {})
+
     // Step 1: Count total entries before
     const beforeCount: any[] = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*)::int as count FROM "BomEntry"

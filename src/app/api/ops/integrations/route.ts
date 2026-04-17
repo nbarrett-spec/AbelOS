@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { testConnection as testInflowConnection, syncProducts as syncInflowProducts, syncInventory as syncInflowInventory, syncPurchaseOrders as syncInflowPurchaseOrders, syncSalesOrders as syncInflowSalesOrders } from '@/lib/integrations/inflow'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/integrations — List all integration configs and status
 export async function GET(request: NextRequest) {
@@ -47,6 +48,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { provider, action, ...config } = body
 

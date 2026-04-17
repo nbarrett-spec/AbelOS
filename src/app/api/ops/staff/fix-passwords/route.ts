@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
+import { audit } from '@/lib/audit'
 
 // Extract role from header
 function getStaffRole(request: NextRequest): string | null {
@@ -15,6 +16,9 @@ function getStaffRole(request: NextRequest): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
+
     const role = getStaffRole(request)
     if (role !== 'ADMIN') {
       return NextResponse.json(

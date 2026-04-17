@@ -17,6 +17,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { sendInviteEmail } from '@/lib/email'
 import { randomBytes } from 'crypto'
+import { audit } from '@/lib/audit'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'
 
@@ -27,6 +28,9 @@ export async function POST(request: NextRequest) {
   const dryRun = request.nextUrl.searchParams.get('dryRun') === 'true'
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
+
     // Find all active staff without a password (never set up their account)
     // or with an expired/null invite token
     const uninvited: any[] = await prisma.$queryRawUnsafe(

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 interface AllocationResult {
   orderItemId: string
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Inventory', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { orderId } = body
     const staffId = request.headers.get('x-staff-id') || 'unknown'

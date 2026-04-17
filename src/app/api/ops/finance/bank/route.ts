@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { parseRoles, type StaffRole } from '@/lib/permissions'
+import { audit } from '@/lib/audit'
 
 // Bank data is highly sensitive — restrict to ADMIN, MANAGER, ACCOUNTING only
 const BANK_ACCESS_ROLES: StaffRole[] = ['ADMIN', 'MANAGER', 'ACCOUNTING']
@@ -175,6 +176,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Finance', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const data = readBankData()
 
@@ -223,6 +227,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Finance', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const data = readBankData()
 

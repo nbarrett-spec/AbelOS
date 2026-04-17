@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/revenue-intelligence/setup
@@ -84,6 +85,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'RevenueIntelligence', undefined, { method: 'POST' }).catch(() => {})
+
     const authError = checkStaffAuth(request);
     if (authError) return authError;
 

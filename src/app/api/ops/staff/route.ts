@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/staff-auth'
 import { randomUUID } from 'crypto'
 import { sendInviteEmail } from '@/lib/email'
+import { audit } from '@/lib/audit'
 
 // Extract role from header (middleware sets x-staff-role)
 function getStaffRole(request: NextRequest): string | null {
@@ -139,6 +140,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
+
     const role = getStaffRole(request)
     if (!hasRequiredRole(role)) {
       return NextResponse.json(

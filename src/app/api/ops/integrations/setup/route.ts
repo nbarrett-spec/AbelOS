@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/integrations/setup — Add new integration providers & tables
 export async function POST(request: NextRequest) {
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
   const results: string[] = [];
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     // 1. Add new provider values to IntegrationProvider enum
     // Whitelist of allowed enum values (ALTER TYPE ADD VALUE does not support $1 placeholders)
     const ALLOWED_PROVIDERS = new Set(['QUICKBOOKS_DESKTOP', 'BUILDERTREND', 'BOISE_CASCADE']);

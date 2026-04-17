@@ -5,6 +5,7 @@ import { sendMessage, buildSystemPrompt, type ClaudeMessage } from '@/lib/claude
 import { getToolsForRoles, executeTool } from '@/lib/claude-tools'
 import { parseRoles, canViewOperationalFinancials } from '@/lib/permissions'
 import type { StaffRole } from '@/lib/permissions'
+import { audit } from '@/lib/audit'
 
 interface ChatRequest {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Ai', undefined, { method: 'POST' }).catch(() => {})
+
     // Extract staff info from headers (set by middleware)
     const staffId = request.headers.get('x-staff-id') || ''
     const staffRole = request.headers.get('x-staff-role') || 'VIEWER'

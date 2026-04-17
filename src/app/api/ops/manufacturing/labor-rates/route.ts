@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // Labor & Overhead Rate Management
 // Sets laborCost and overheadCost on Products by category, using rates derived from payroll analysis
@@ -46,6 +47,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Manufacturing', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { rates, dryRun } = body
 

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import {
+import { audit } from '@/lib/audit'
   batchImport,
   getPriceAlerts,
   getBatchHistory
@@ -145,6 +146,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     // Parse request body
     let csvContent: string | null = null
     const contentType = request.headers.get('content-type') || ''

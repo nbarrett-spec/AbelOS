@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import {
+import { audit } from '@/lib/audit'
   generateAuthenticationResponse,
   generateSendRequestXmlResponse,
   generateReceiveResponseXmlResponse,
@@ -35,6 +36,9 @@ const QBWC_PASSWORD = process.env.QBWC_PASSWORD || ''
 
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     const soapBody = await request.text()
 
     // Extract SOAP method from body

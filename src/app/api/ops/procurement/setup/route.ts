@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/procurement/setup — Create all procurement tables
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Procurement', undefined, { method: 'POST' }).catch(() => {})
+
     // ── Supplier table ──────────────────────────────────────────────────
     await prisma.$queryRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "Supplier" (

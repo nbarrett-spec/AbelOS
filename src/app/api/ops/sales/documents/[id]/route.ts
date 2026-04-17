@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/sales/documents/[id] — Single document request
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -53,6 +54,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Sales', undefined, { method: 'PUT' }).catch(() => {})
+
     const docId = params.id
     const body = await request.json()
     const { status, fileUrl, fileName, notes, receivedDate, expiresDate, reminderDate, reminderSent } = body
@@ -158,6 +162,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Sales', undefined, { method: 'DELETE' }).catch(() => {})
+
     const docId = params.id
     const staffId = request.headers.get('x-staff-id')
 

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/locations — List all locations
 export async function GET(request: NextRequest) {
@@ -32,6 +33,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Locations', undefined, { method: 'POST' }).catch(() => {})
+
     const { name, code, type, address, city, state, zip, phone, managerId, timezone } = await request.json()
     if (!name || !code) {
       return NextResponse.json({ error: 'name and code are required' }, { status: 400 })

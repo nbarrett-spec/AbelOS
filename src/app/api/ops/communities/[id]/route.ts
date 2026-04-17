@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────
 // GET /api/ops/communities/[id] — Full community picture
@@ -152,6 +153,9 @@ export async function PATCH(
   const { id } = params
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Community', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const allowedFields = [
       'name', 'code', 'address', 'city', 'state', 'zip', 'county',

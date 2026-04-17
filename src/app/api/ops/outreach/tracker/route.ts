@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // Cold Outreach & Prospecting Tracker API
 // Track outreach to potential new builders, manage prospect pipeline,
@@ -78,6 +79,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Outreach', undefined, { method: 'POST' }).catch(() => {})
+
     await ensureTables();
     const body = await request.json();
     const { action } = body;

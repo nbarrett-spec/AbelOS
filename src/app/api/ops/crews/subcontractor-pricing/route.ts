@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -113,6 +114,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Crew', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const {
       crewId,
@@ -210,6 +214,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Crew', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -333,6 +340,9 @@ export async function DELETE(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Crew', undefined, { method: 'DELETE' }).catch(() => {})
+
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')
 

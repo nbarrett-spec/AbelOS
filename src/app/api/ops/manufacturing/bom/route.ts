@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/manufacturing/bom — List BOMs for a parent product
@@ -136,6 +137,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Manufacturing', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { parentId, componentId, quantity, componentType } = body
 
@@ -226,6 +230,9 @@ export async function DELETE(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Manufacturing', undefined, { method: 'DELETE' }).catch(() => {})
+
     const body = await request.json()
     const { bomEntryId, parentId, componentId } = body
 

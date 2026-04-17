@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getStaffSession } from '@/lib/staff-auth'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/builder-messages — List all builder messages for ops staff
 export async function GET(request: NextRequest) {
@@ -74,6 +75,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'BuilderMessage', undefined, { method: 'PATCH' }).catch(() => {})
+
     const session = await getStaffSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

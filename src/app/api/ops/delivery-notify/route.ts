@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { notifyDeliveryStatusChange } from '@/lib/notifications'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // BUILDER DELIVERY NOTIFICATION TRIGGER
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'DeliveryNotify', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { deliveryId, status, reason, newDate } = body
 

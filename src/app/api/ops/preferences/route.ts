@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 const DEFAULT_PREFERENCES = {
   theme: 'system',
@@ -50,6 +51,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Preferences', undefined, { method: 'PATCH' }).catch(() => {})
+
     const staffId = request.headers.get('x-staff-id')
     if (!staffId) {
       return NextResponse.json({ error: 'No staff ID' }, { status: 400 })

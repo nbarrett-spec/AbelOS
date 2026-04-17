@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/trades — List trades with search and filters
 export async function GET(request: NextRequest) {
@@ -78,6 +79,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Trades', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const {
       companyName, tradeType, contactName, email, phone, website,

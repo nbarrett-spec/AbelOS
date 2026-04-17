@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -103,6 +104,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Delegation', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const staffId = request.headers.get('x-staff-id')!
     const { delegatorId, delegateId, startDate, endDate, reason, scope, notes } = body

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { safeJson } from '@/lib/safe-json'
 import {
+import { audit } from '@/lib/audit'
   verifyWebhookSignature,
   processWebhookPayload,
   type BTWebhookPayload,
@@ -19,6 +20,9 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     // Get the raw body for signature verification
     const body = await request.text()
 

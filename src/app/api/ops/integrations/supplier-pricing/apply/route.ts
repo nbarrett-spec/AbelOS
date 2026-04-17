@@ -4,6 +4,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { batchApply } from '@/lib/integrations/boise-cascade'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/integrations/supplier-pricing/apply
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Integration', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { updateIds, action, appliedById } = body
 

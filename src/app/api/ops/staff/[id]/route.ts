@@ -6,6 +6,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/staff-auth'
 import { randomUUID } from 'crypto'
 import { sendInviteEmail, sendStaffPasswordResetEmail } from '@/lib/email'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/staff/[id] — Get single staff member with roles
@@ -97,6 +98,9 @@ export async function PATCH(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Staff', undefined, { method: 'PATCH' }).catch(() => {})
+
     const { id } = params
     const body = await request.json()
 
@@ -310,6 +314,9 @@ export async function POST(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
+
     const { id } = params
     const body = await request.json()
     const { action } = body

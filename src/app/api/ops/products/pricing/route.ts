@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * Simple CSV parser that handles quoted fields with commas and newlines
@@ -375,6 +376,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Product', undefined, { method: 'POST' }).catch(() => {})
+
     const csvMap = loadCSVPricing()
 
     const zeroProducts: any[] = await prisma.$queryRawUnsafe(

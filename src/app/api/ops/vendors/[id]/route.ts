@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Type Definitions
@@ -235,6 +236,9 @@ export async function PATCH(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Vendor', undefined, { method: 'PATCH' }).catch(() => {})
+
     const { id } = params
     const body = await request.json()
 
@@ -494,6 +498,9 @@ export async function DELETE(
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'DELETE', 'Vendor', undefined, { method: 'DELETE' }).catch(() => {})
+
     const { id } = params
 
     // Check if vendor exists

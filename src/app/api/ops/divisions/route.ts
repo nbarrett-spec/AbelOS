@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const authResponse = checkStaffAuth(request)
@@ -77,6 +78,9 @@ export async function POST(request: NextRequest) {
   if (authResponse !== null) return authResponse
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Divisions', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
 
     // Validate required fields
@@ -178,6 +182,9 @@ export async function PATCH(request: NextRequest) {
   if (authResponse !== null) return authResponse
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Divisions', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
 
     if (!body.id) {

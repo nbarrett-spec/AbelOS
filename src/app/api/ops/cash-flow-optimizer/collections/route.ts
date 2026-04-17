@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
 import { safeJson } from '@/lib/safe-json';
+import { audit } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request);
@@ -221,6 +222,9 @@ export async function POST(request: NextRequest) {
 
   let body: any;
   try {
+    // Audit log
+    audit(request, 'CREATE', 'CashFlowOptimizer', undefined, { method: 'POST' }).catch(() => {})
+
     body = await request.json();
   } catch {
     return safeJson({ error: 'Invalid JSON body' }, { status: 400 });

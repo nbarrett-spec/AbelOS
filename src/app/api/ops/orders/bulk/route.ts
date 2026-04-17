@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // PATCH /api/ops/orders/bulk — Bulk update order statuses
 export async function PATCH(request: NextRequest) {
@@ -9,6 +10,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Order', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { orderIds, status, notes } = body
 

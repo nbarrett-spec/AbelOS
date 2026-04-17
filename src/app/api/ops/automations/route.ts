@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET  /api/ops/automations — List all automation rules
@@ -84,6 +85,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Automations', undefined, { method: 'POST' }).catch(() => {})
+
     const body = await request.json()
     const { name, description, trigger, conditions, actions, roles, frequency } = body
     const staffId = request.headers.get('x-staff-id')
@@ -112,6 +116,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Automations', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { id, enabled, name, description, trigger, conditions, actions, roles, frequency } = body
 

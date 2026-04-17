@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ============================================================================
 // SUPPLIER IMAGE MAP
@@ -933,6 +934,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Product', undefined, { method: 'POST' }).catch(() => {})
+
     const products = await prisma.$queryRawUnsafe<Array<{ id: string; name: string; category: string }>>(
       'SELECT "id", "name", "category" FROM "Product" WHERE "active" = true'
     )
@@ -1014,6 +1018,9 @@ export async function PATCH(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'UPDATE', 'Product', undefined, { method: 'PATCH' }).catch(() => {})
+
     const body = await request.json()
     const { updates } = body as {
       updates: Array<{

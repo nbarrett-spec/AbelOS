@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { analyzeBlueprint, BlueprintAnalysis } from '@/lib/blueprint-ai'
+import { audit } from '@/lib/audit'
 
 interface AnalyzeRequest {
   blueprintId?: string
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
   if (authError) return authError
 
   try {
+    // Audit log
+    audit(request, 'CREATE', 'Blueprints', undefined, { method: 'POST' }).catch(() => {})
+
     const body: AnalyzeRequest = await request.json()
 
     if (!body.blueprintId && (!body.imageBase64 || !body.mediaType)) {
