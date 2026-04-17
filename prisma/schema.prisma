@@ -486,8 +486,8 @@ model QuoteItem {
   quoteId String
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId String?  // Nullable for custom line items (delivery fees, misc charges, etc.)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   description String
   quantity    Int

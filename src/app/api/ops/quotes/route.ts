@@ -18,6 +18,11 @@ export async function GET(request: NextRequest) {
       `ALTER TABLE "Quote" ADD COLUMN IF NOT EXISTS "version" INT DEFAULT 1`,
       `ALTER TABLE "QuoteItem" ADD COLUMN IF NOT EXISTS "location" TEXT`,
       `ALTER TABLE "QuoteItem" ADD COLUMN IF NOT EXISTS "sortOrder" INT DEFAULT 0`,
+      // Allow custom line items that aren't tied to a catalog product
+      `ALTER TABLE "QuoteItem" ALTER COLUMN "productId" DROP NOT NULL`,
+      // Clean up any PLACEHOLDER products — reassign their quote items to NULL first
+      `UPDATE "QuoteItem" SET "productId" = NULL WHERE "productId" IN (SELECT id FROM "Product" WHERE sku = 'PLACEHOLDER')`,
+      `DELETE FROM "Product" WHERE sku = 'PLACEHOLDER'`,
     ]
     for (const sql of schemaMigrations) {
       try { await prisma.$executeRawUnsafe(sql) }
@@ -260,23 +265,6 @@ export async function POST(request: NextRequest) {
     const termAdjustment = subtotal * (mult - 1)
     const total = subtotal + termAdjustment
 
-    // Get or create placeholder product
-    const placeholderQuery = `SELECT "id" FROM "Product" WHERE "sku" = 'PLACEHOLDER' LIMIT 1`
-    const placeholderResult = await prisma.$queryRawUnsafe<{ id: string }[]>(placeholderQuery)
-    let placeholderId = placeholderResult[0]?.id
-
-    if (!placeholderId) {
-      const placeholderId_new = `prod_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-      const now = new Date().toISOString()
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "Product" ("id", "sku", "name", "category", "cost", "basePrice", "createdAt", "updatedAt")
-         VALUES ($1, 'PLACEHOLDER', 'Placeholder Product', 'General', 0, 0, $2::timestamptz, $3::timestamptz)
-         ON CONFLICT DO NOTHING`,
-        placeholderId_new, now, now
-      )
-      placeholderId = placeholderId_new
-    }
-
     // Create quote
     const quoteId = `qte_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
     const validUntil = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString()
@@ -298,14 +286,13 @@ export async function POST(request: NextRequest) {
     )
     const createdQuote = quoteResult[0]
 
-    // Create quote items
+    // Create quote items — productId is nullable for custom line items
     for (const item of quoteItems) {
       const itemId = `qi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-      const productId = item.productId || placeholderId
       await prisma.$executeRawUnsafe(
         `INSERT INTO "QuoteItem" ("id", "quoteId", "productId", "description", "quantity", "unitPrice", "lineTotal", "location", "sortOrder", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11::timestamptz)`,
-        itemId, quoteId, productId, item.description || 'Line item', item.quantity || 1, item.unitPrice || 0, item.lineTotal, item.location || null, item.sortOrder, now, now
+        itemId, quoteId, item.productId || null, item.description || 'Line item', item.quantity || 1, item.unitPrice || 0, item.lineTotal, item.location || null, item.sortOrder, now, now
       )
     }
 
@@ -405,32 +392,14 @@ export async function PATCH(request: NextRequest) {
       termAdjustment = subtotal * (mult - 1)
       total = subtotal + termAdjustment
 
-      // Get or create placeholder product
-      const placeholderQuery = `SELECT "id" FROM "Product" WHERE "sku" = 'PLACEHOLDER' LIMIT 1`
-      const placeholderResult = await prisma.$queryRawUnsafe<{ id: string }[]>(placeholderQuery)
-      let placeholderId = placeholderResult[0]?.id
-
-      if (!placeholderId) {
-        const placeholderId_new = `prod_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-        const now = new Date().toISOString()
-        await prisma.$executeRawUnsafe(
-          `INSERT INTO "Product" ("id", "sku", "name", "category", "cost", "basePrice", "createdAt", "updatedAt")
-           VALUES ($1, 'PLACEHOLDER', 'Placeholder Product', 'General', 0, 0, $2::timestamptz, $3::timestamptz)
-           ON CONFLICT DO NOTHING`,
-          placeholderId_new, now, now
-        )
-        placeholderId = placeholderId_new
-      }
-
-      // Insert new items
+      // Insert new items — productId is nullable for custom line items
       const now = new Date().toISOString()
       for (const item of quoteItems) {
         const itemId = `qi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-        const productId = item.productId || placeholderId
         await prisma.$executeRawUnsafe(
           `INSERT INTO "QuoteItem" ("id", "quoteId", "productId", "description", "quantity", "unitPrice", "lineTotal", "location", "sortOrder", "createdAt", "updatedAt")
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11::timestamptz)`,
-          itemId, id, productId, item.description || 'Line item', item.quantity || 1, item.unitPrice || 0, item.lineTotal, item.location || null, item.sortOrder, now, now
+          itemId, id, item.productId || null, item.description || 'Line item', item.quantity || 1, item.unitPrice || 0, item.lineTotal, item.location || null, item.sortOrder, now, now
         )
       }
     }
