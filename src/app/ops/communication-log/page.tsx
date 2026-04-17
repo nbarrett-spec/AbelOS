@@ -1,6 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+
+// ──────────────────────────────────────────────────────────────────────────
+// Customer Communication Log
+//
+// Unified view of all builder/supplier communications:
+//   • Gmail auto-sync (pulls emails via API → CommunicationLog table)
+//   • Manual entry for calls, texts, in-person meetings
+//   • Channel filtering, search, builder association
+//   • Expandable detail view with AI summary
+// ──────────────────────────────────────────────────────────────────────────
 
 interface CommLog {
   id: string
@@ -10,32 +21,46 @@ interface CommLog {
   body?: string
   fromAddress?: string
   toAddresses: string[]
+  ccAddresses?: string[]
   sentAt?: string
   duration?: number
   hasAttachments: boolean
   attachmentCount: number
   status: string
   aiSummary?: string
+  gmailMessageId?: string
+  gmailThreadId?: string
   builder?: { id: string; companyName: string; contactName: string }
   organization?: { id: string; name: string }
   attachments: { id: string; fileName: string; fileType: string; fileSize?: number }[]
 }
 
-const CHANNEL_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
-  EMAIL: { icon: '📧', label: 'Email', color: '#3B82F6' },
-  PHONE: { icon: '📞', label: 'Phone', color: '#10B981' },
-  TEXT: { icon: '💬', label: 'Text', color: '#8B5CF6' },
-  IN_PERSON: { icon: '🤝', label: 'In Person', color: '#F59E0B' },
-  VIDEO_CALL: { icon: '📹', label: 'Video Call', color: '#EC4899' },
-  HYPHEN_NOTIFICATION: { icon: '🔗', label: 'Hyphen', color: '#E67E22' },
-  SYSTEM: { icon: '🤖', label: 'System', color: '#6B7280' },
+const CHANNEL_CONFIG: Record<string, { icon: string; label: string; color: string; bg: string }> = {
+  EMAIL: { icon: '📧', label: 'Email', color: '#3B82F6', bg: '#EFF6FF' },
+  PHONE: { icon: '📞', label: 'Phone', color: '#10B981', bg: '#ECFDF5' },
+  TEXT: { icon: '💬', label: 'Text', color: '#8B5CF6', bg: '#F5F3FF' },
+  IN_PERSON: { icon: '🤝', label: 'In Person', color: '#F59E0B', bg: '#FFFBEB' },
+  VIDEO_CALL: { icon: '📹', label: 'Video Call', color: '#EC4899', bg: '#FDF2F8' },
+  HYPHEN_NOTIFICATION: { icon: '🔗', label: 'Hyphen', color: '#E67E22', bg: '#FFF7ED' },
+  SYSTEM: { icon: '🤖', label: 'System', color: '#6B7280', bg: '#F3F4F6' },
 }
 
-const DIRECTION_ICONS: Record<string, string> = {
-  INBOUND: '↙️',
-  OUTBOUND: '↗️',
-  INTERNAL: '🔄',
+const DIRECTION_CONFIG: Record<string, { icon: string; label: string }> = {
+  INBOUND: { icon: '↙️', label: 'Inbound' },
+  OUTBOUND: { icon: '↗️', label: 'Outbound' },
+  INTERNAL: { icon: '🔄', label: 'Internal' },
 }
+
+// Abel Lumber Gmail accounts
+const GMAIL_ACCOUNTS = [
+  'n.barrett@abellumber.com',
+  'c.vinson@abellumber.com',
+  'dalton@abellumber.com',
+  'thomas.robinson@abellumber.com',
+  'brittney.werner@abellumber.com',
+  'dawn.meehan@abellumber.com',
+  'clint@abellumber.com',
+]
 
 export default function CommunicationLogPage() {
   const [logs, setLogs] = useState<CommLog[]>([])
@@ -43,16 +68,35 @@ export default function CommunicationLogPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [channelFilter, setChannelFilter] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [showLogForm, setShowLogForm] = useState(false)
-  const [logForm, setLogForm] = useState({ channel: 'PHONE', direction: 'OUTBOUND', subject: '', body: '', fromAddress: '', toAddresses: '' })
+  const [showGmailSync, setShowGmailSync] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<{ totalSynced: number; lastSync: string | null; todaySynced: number } | null>(null)
+  const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number; errors: number } | null>(null)
+  const [logForm, setLogForm] = useState({
+    channel: 'PHONE',
+    direction: 'OUTBOUND',
+    subject: '',
+    body: '',
+    fromAddress: '',
+    toAddresses: '',
+    builderId: '',
+    duration: '',
+  })
 
   useEffect(() => {
     fetchLogs()
   }, [page, channelFilter])
 
+  useEffect(() => {
+    fetchSyncStatus()
+  }, [])
+
   async function fetchLogs() {
     try {
+      setLoading(true)
       const params = new URLSearchParams({ page: String(page), limit: '25' })
       if (channelFilter) params.set('channel', channelFilter)
       const res = await fetch(`/api/ops/communication-logs?${params}`)
@@ -66,6 +110,56 @@ export default function CommunicationLogPage() {
     }
   }
 
+  async function fetchSyncStatus() {
+    try {
+      const res = await fetch('/api/ops/communication-logs/gmail-sync')
+      if (res.ok) {
+        const data = await res.json()
+        setSyncStatus(data)
+      }
+    } catch {
+      // Gmail sync may not be set up yet
+    }
+  }
+
+  async function handleGmailSync(query: string, label: string) {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      // Fetch emails from Gmail via our API proxy
+      // The frontend calls the Gmail search, then sends results to our sync endpoint
+      const gmailRes = await fetch('/api/ops/communication-logs/gmail-fetch?' + new URLSearchParams({ query }))
+
+      // If the proxy doesn't exist yet, fall back to a message
+      if (!gmailRes.ok) {
+        // We'll sync via the manual approach — user can trigger from the Gmail sync panel
+        setSyncResult({ synced: 0, skipped: 0, errors: 1 })
+        return
+      }
+
+      const gmailData = await gmailRes.json()
+
+      // Send to our sync endpoint
+      const syncRes = await fetch('/api/ops/communication-logs/gmail-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails: gmailData.emails || [] }),
+      })
+
+      if (syncRes.ok) {
+        const result = await syncRes.json()
+        setSyncResult(result)
+        fetchLogs()
+        fetchSyncStatus()
+      }
+    } catch (err) {
+      console.error('Gmail sync error:', err)
+      setSyncResult({ synced: 0, skipped: 0, errors: 1 })
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   async function handleLogSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
@@ -75,226 +169,503 @@ export default function CommunicationLogPage() {
         body: JSON.stringify({
           ...logForm,
           toAddresses: logForm.toAddresses ? logForm.toAddresses.split(',').map(a => a.trim()) : [],
+          duration: logForm.duration ? parseInt(logForm.duration) : null,
         }),
       })
       setShowLogForm(false)
-      setLogForm({ channel: 'PHONE', direction: 'OUTBOUND', subject: '', body: '', fromAddress: '', toAddresses: '' })
+      setLogForm({ channel: 'PHONE', direction: 'OUTBOUND', subject: '', body: '', fromAddress: '', toAddresses: '', builderId: '', duration: '' })
       fetchLogs()
     } catch (err) {
       console.error('Log create error:', err)
     }
   }
 
+  const filteredLogs = searchQuery
+    ? logs.filter(
+        (l) =>
+          l.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          l.fromAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          l.body?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          l.builder?.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : logs
+
   return (
-    <div style={{ padding: 32, maxWidth: 1200 }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937' }}>Communication Log</h1>
-          <p style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
-            All builder and supplier communications — emails synced from Gmail, calls, texts, and Hyphen notifications
-          </p>
+      <div className="bg-[#1e3a5f] text-white px-8 py-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <span>📧</span> Communication Log
+            </h1>
+            <p className="text-blue-200 mt-2">
+              All builder & supplier communications — Gmail auto-sync, calls, texts, meetings
+              {syncStatus && (
+                <span className="ml-3 text-blue-300">
+                  • {syncStatus.totalSynced} emails synced
+                  {syncStatus.todaySynced > 0 && ` • ${syncStatus.todaySynced} today`}
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowGmailSync(!showGmailSync)}
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+            >
+              <span>📧</span> Gmail Sync
+            </button>
+            <button
+              onClick={() => setShowLogForm(!showLogForm)}
+              className="bg-[#e67e22] hover:bg-[#d35400] text-white px-4 py-2 rounded-lg text-sm font-medium"
+            >
+              + Log Communication
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setShowLogForm(!showLogForm)}
-          style={{ padding: '10px 20px', backgroundColor: '#1B4F72', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-        >
-          + Log Communication
-        </button>
       </div>
 
-      {/* Channel Filters */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        <button
-          onClick={() => setChannelFilter('')}
-          style={{
-            padding: '6px 14px', borderRadius: 20, border: 'none',
-            backgroundColor: !channelFilter ? '#1B4F72' : '#f3f4f6',
-            color: !channelFilter ? 'white' : '#374151',
-            fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          All
-        </button>
-        {Object.entries(CHANNEL_CONFIG).map(([key, cfg]) => (
-          <button
-            key={key}
-            onClick={() => setChannelFilter(channelFilter === key ? '' : key)}
-            style={{
-              padding: '6px 14px', borderRadius: 20, border: 'none',
-              backgroundColor: channelFilter === key ? cfg.color : '#f3f4f6',
-              color: channelFilter === key ? 'white' : '#374151',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            {cfg.icon} {cfg.label}
-          </button>
-        ))}
-      </div>
+      <div className="max-w-7xl mx-auto px-8 py-6">
+        {/* Gmail Sync Panel */}
+        {showGmailSync && (
+          <div className="bg-white rounded-xl border border-blue-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-xl">📧</div>
+                <div>
+                  <h3 className="font-bold text-[#1e3a5f]">Gmail Sync</h3>
+                  <p className="text-xs text-gray-500">
+                    Auto-import emails from Abel Lumber Gmail accounts into the communication log
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowGmailSync(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
 
-      {/* Log Form */}
-      {showLogForm && (
-        <form onSubmit={handleLogSubmit} style={{
-          padding: 20, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 16
-        }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Log a Communication</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Channel</label>
-              <select style={inputStyle} value={logForm.channel} onChange={e => setLogForm({...logForm, channel: e.target.value})}>
-                {Object.entries(CHANNEL_CONFIG).filter(([k]) => k !== 'HYPHEN_NOTIFICATION' && k !== 'SYSTEM').map(([k, v]) => (
-                  <option key={k} value={k}>{v.icon} {v.label}</option>
+            {/* Connected Accounts */}
+            <div className="mb-4">
+              <h4 className="text-xs font-semibold text-gray-500 mb-2">CONNECTED ACCOUNTS</h4>
+              <div className="flex flex-wrap gap-2">
+                {GMAIL_ACCOUNTS.map((email) => (
+                  <span key={email} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+                    {email}
+                  </span>
                 ))}
-              </select>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-2">
+                Manage accounts at{' '}
+                <a
+                  href="https://admin.google.com/u/2/ac/users"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  Google Admin Console
+                </a>
+              </p>
             </div>
-            <div>
-              <label style={labelStyle}>Direction</label>
-              <select style={inputStyle} value={logForm.direction} onChange={e => setLogForm({...logForm, direction: e.target.value})}>
-                <option value="OUTBOUND">Outbound</option>
-                <option value="INBOUND">Inbound</option>
-                <option value="INTERNAL">Internal</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Subject</label>
-              <input style={inputStyle} value={logForm.subject} onChange={e => setLogForm({...logForm, subject: e.target.value})} placeholder="Call about Canyon Ridge delivery" />
-            </div>
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <label style={labelStyle}>Notes / Summary</label>
-            <textarea
-              style={{ ...inputStyle, minHeight: 80 }}
-              value={logForm.body}
-              onChange={e => setLogForm({...logForm, body: e.target.value})}
-              placeholder="Discussed delivery schedule for Lot 14..."
-            />
-          </div>
-          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-            <button type="submit" style={{ padding: '8px 20px', backgroundColor: '#1B4F72', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
-              Save Log
-            </button>
-            <button type="button" onClick={() => setShowLogForm(false)} style={{ padding: '8px 20px', backgroundColor: '#f3f4f6', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
 
-      {/* Log Entries */}
-      {loading ? (
-        <p style={{ color: '#9ca3af', textAlign: 'center', padding: 40 }}>Loading communication logs...</p>
-      ) : logs.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>
-          <p style={{ fontSize: 48 }}>📧</p>
-          <p style={{ fontSize: 16, marginTop: 8 }}>No communication logs yet</p>
-          <p style={{ fontSize: 13 }}>Connect Gmail to auto-sync emails, or manually log calls and meetings</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {logs.map(log => {
-            const channelCfg = CHANNEL_CONFIG[log.channel] || CHANNEL_CONFIG.SYSTEM
-            const isExpanded = expanded === log.id
-
-            return (
-              <div
-                key={log.id}
-                style={{
-                  padding: '14px 20px',
-                  backgroundColor: 'white',
-                  borderRadius: 10,
-                  border: '1px solid #e5e7eb',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setExpanded(isExpanded ? null : log.id)}
+            {/* Sync Actions */}
+            <div className="grid grid-cols-4 gap-3">
+              <button
+                onClick={() => handleGmailSync('newer_than:1d', "Today's Emails")}
+                disabled={syncing}
+                className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 text-center transition-colors disabled:opacity-50"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 18 }}>{channelCfg.icon}</span>
-                    <span style={{ fontSize: 14 }}>{DIRECTION_ICONS[log.direction]}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
+                <div className="text-lg mb-1">📥</div>
+                <div className="text-xs font-semibold text-blue-700">Sync Today</div>
+                <div className="text-[10px] text-gray-500">Last 24 hours</div>
+              </button>
+              <button
+                onClick={() => handleGmailSync('newer_than:7d', "This Week's Emails")}
+                disabled={syncing}
+                className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 text-center transition-colors disabled:opacity-50"
+              >
+                <div className="text-lg mb-1">📧</div>
+                <div className="text-xs font-semibold text-blue-700">Sync Week</div>
+                <div className="text-[10px] text-gray-500">Last 7 days</div>
+              </button>
+              <button
+                onClick={() => handleGmailSync('newer_than:30d', "This Month's Emails")}
+                disabled={syncing}
+                className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 text-center transition-colors disabled:opacity-50"
+              >
+                <div className="text-lg mb-1">📬</div>
+                <div className="text-xs font-semibold text-blue-700">Sync Month</div>
+                <div className="text-[10px] text-gray-500">Last 30 days</div>
+              </button>
+              <button
+                onClick={() => handleGmailSync('has:attachment newer_than:7d', 'Emails with Attachments')}
+                disabled={syncing}
+                className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 text-center transition-colors disabled:opacity-50"
+              >
+                <div className="text-lg mb-1">📎</div>
+                <div className="text-xs font-semibold text-blue-700">With Attachments</div>
+                <div className="text-[10px] text-gray-500">Last 7 days</div>
+              </button>
+            </div>
+
+            {/* Sync Status */}
+            {syncing && (
+              <div className="mt-4 flex items-center gap-3 bg-blue-50 rounded-lg p-3">
+                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-blue-700">Syncing emails from Gmail...</span>
+              </div>
+            )}
+            {syncResult && !syncing && (
+              <div className="mt-4 bg-green-50 rounded-lg p-3 flex items-center gap-3">
+                <span className="text-green-600">✓</span>
+                <span className="text-sm text-green-800">
+                  Synced {syncResult.synced} new emails, {syncResult.skipped} already existed
+                  {syncResult.errors > 0 && `, ${syncResult.errors} errors`}
+                </span>
+              </div>
+            )}
+
+            {syncStatus?.lastSync && (
+              <p className="text-[10px] text-gray-400 mt-3">
+                Last sync: {new Date(syncStatus.lastSync).toLocaleString()}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Manual Log Form */}
+        {showLogForm && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-[#1e3a5f]">Log a Communication</h3>
+              <button onClick={() => setShowLogForm(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleLogSubmit}>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Channel</label>
+                  <select
+                    value={logForm.channel}
+                    onChange={(e) => setLogForm({ ...logForm, channel: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    {Object.entries(CHANNEL_CONFIG)
+                      .filter(([k]) => k !== 'HYPHEN_NOTIFICATION' && k !== 'SYSTEM')
+                      .map(([k, v]) => (
+                        <option key={k} value={k}>
+                          {v.icon} {v.label}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Direction</label>
+                  <select
+                    value={logForm.direction}
+                    onChange={(e) => setLogForm({ ...logForm, direction: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="OUTBOUND">↗️ Outbound</option>
+                    <option value="INBOUND">↙️ Inbound</option>
+                    <option value="INTERNAL">🔄 Internal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Subject</label>
+                  <input
+                    value={logForm.subject}
+                    onChange={(e) => setLogForm({ ...logForm, subject: e.target.value })}
+                    placeholder="Call about Canyon Ridge delivery"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Duration (min)</label>
+                  <input
+                    type="number"
+                    value={logForm.duration}
+                    onChange={(e) => setLogForm({ ...logForm, duration: e.target.value })}
+                    placeholder="15"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">From</label>
+                  <input
+                    value={logForm.fromAddress}
+                    onChange={(e) => setLogForm({ ...logForm, fromAddress: e.target.value })}
+                    placeholder="n.barrett@abellumber.com"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">To (comma-separated)</label>
+                  <input
+                    value={logForm.toAddresses}
+                    onChange={(e) => setLogForm({ ...logForm, toAddresses: e.target.value })}
+                    placeholder="builder@example.com, pm@example.com"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Notes / Summary</label>
+                <textarea
+                  value={logForm.body}
+                  onChange={(e) => setLogForm({ ...logForm, body: e.target.value })}
+                  placeholder="Discussed delivery schedule for Lot 14, builder confirmed Tuesday morning window..."
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="submit"
+                  className="bg-[#1B4F72] hover:bg-[#163d5c] text-white px-5 py-2 rounded-lg text-sm font-semibold"
+                >
+                  Save Communication
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLogForm(false)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Filter Bar */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+          <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by subject, sender, builder, content..."
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent"
+              />
+              <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            {/* Channel Filters */}
+            <div className="flex gap-1.5 flex-wrap">
+              <button
+                onClick={() => setChannelFilter('')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  !channelFilter ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                All
+              </button>
+              {Object.entries(CHANNEL_CONFIG).map(([key, cfg]) => (
+                <button
+                  key={key}
+                  onClick={() => setChannelFilter(channelFilter === key ? '' : key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                    channelFilter === key ? 'text-white' : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                  style={channelFilter === key ? { backgroundColor: cfg.color } : { backgroundColor: '#F3F4F6' }}
+                >
+                  {cfg.icon} {cfg.label}
+                </button>
+              ))}
+            </div>
+
+            <span className="text-xs text-gray-400 ml-auto">{total} total</span>
+          </div>
+        </div>
+
+        {/* Communication Entries */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
+            <div className="text-5xl mb-4">📧</div>
+            <h3 className="font-bold text-[#1e3a5f] mb-2">No Communication Logs Yet</h3>
+            <p className="text-sm text-gray-500 max-w-md mx-auto">
+              Click "Gmail Sync" to auto-import emails, or "Log Communication" to manually record calls, texts, and meetings.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredLogs.map((log) => {
+              const channelCfg = CHANNEL_CONFIG[log.channel] || CHANNEL_CONFIG.SYSTEM
+              const dirCfg = DIRECTION_CONFIG[log.direction] || DIRECTION_CONFIG.OUTBOUND
+              const isExpanded = expanded === log.id
+
+              return (
+                <div
+                  key={log.id}
+                  className={`bg-white rounded-xl border transition-all cursor-pointer ${
+                    isExpanded ? 'border-[#1B4F72] shadow-md' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setExpanded(isExpanded ? null : log.id)}
+                >
+                  <div className="px-5 py-3.5 flex items-center gap-4">
+                    {/* Channel Icon */}
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                      style={{ backgroundColor: channelCfg.bg }}
+                    >
+                      {channelCfg.icon}
+                    </div>
+
+                    {/* Direction */}
+                    <span className="text-sm flex-shrink-0">{dirCfg.icon}</span>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-800 truncate">
                           {log.subject || `${channelCfg.label} — ${log.fromAddress || 'Unknown'}`}
                         </span>
                         {log.hasAttachments && (
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>📎 {log.attachmentCount}</span>
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">📎 {log.attachmentCount}</span>
+                        )}
+                        {log.gmailMessageId && (
+                          <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
+                            Gmail
+                          </span>
+                        )}
+                        {log.status === 'SYNCED' && (
+                          <span className="text-[9px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
+                            Auto-synced
+                          </span>
                         )}
                       </div>
-                      <p style={{ fontSize: 12, color: '#6b7280', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {log.builder ? `${log.builder.companyName} (${log.builder.contactName})` :
-                         log.organization ? log.organization.name :
-                         log.fromAddress || ''}
-                        {log.body && !isExpanded ? ` — ${log.body.substring(0, 80)}...` : ''}
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {log.builder
+                          ? `${log.builder.companyName} (${log.builder.contactName})`
+                          : log.organization
+                          ? log.organization.name
+                          : log.fromAddress || ''}
+                        {log.body && !isExpanded ? ` — ${log.body.substring(0, 100)}` : ''}
+                      </p>
+                    </div>
+
+                    {/* Right Side */}
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <span
+                        className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        style={{ backgroundColor: channelCfg.bg, color: channelCfg.color }}
+                      >
+                        {channelCfg.label}
+                      </span>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        {log.sentAt
+                          ? new Date(log.sentAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })
+                          : ''}
                       </p>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: 12,
-                      backgroundColor: channelCfg.color + '15',
-                      color: channelCfg.color,
-                      fontSize: 11,
-                      fontWeight: 600,
-                    }}>
-                      {channelCfg.label}
-                    </span>
-                    <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                      {log.sentAt ? new Date(log.sentAt).toLocaleString() : ''}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Expanded Content */}
-                {isExpanded && log.body && (
-                  <div style={{
-                    marginTop: 12,
-                    paddingTop: 12,
-                    borderTop: '1px solid #f3f4f6',
-                    fontSize: 13,
-                    color: '#374151',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                  }}>
-                    {log.fromAddress && <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>From: {log.fromAddress}</p>}
-                    {log.toAddresses?.length > 0 && <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>To: {log.toAddresses.join(', ')}</p>}
-                    {log.body}
-                    {log.aiSummary && (
-                      <div style={{ marginTop: 12, padding: 10, backgroundColor: '#f0f9ff', borderRadius: 6, fontSize: 12 }}>
-                        <strong>AI Summary:</strong> {log.aiSummary}
+                  {/* Expanded Content */}
+                  {isExpanded && (
+                    <div className="px-5 pb-4 border-t border-gray-100 pt-3">
+                      <div className="text-xs text-gray-500 space-y-1 mb-3">
+                        {log.fromAddress && (
+                          <p>
+                            <span className="font-semibold text-gray-600">From:</span> {log.fromAddress}
+                          </p>
+                        )}
+                        {log.toAddresses?.length > 0 && (
+                          <p>
+                            <span className="font-semibold text-gray-600">To:</span>{' '}
+                            {log.toAddresses.join(', ')}
+                          </p>
+                        )}
+                        {log.ccAddresses && log.ccAddresses.length > 0 && (
+                          <p>
+                            <span className="font-semibold text-gray-600">CC:</span>{' '}
+                            {log.ccAddresses.join(', ')}
+                          </p>
+                        )}
+                        {log.duration && (
+                          <p>
+                            <span className="font-semibold text-gray-600">Duration:</span> {log.duration} min
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+                      {log.body && (
+                        <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-4 max-h-80 overflow-y-auto">
+                          {log.body}
+                        </div>
+                      )}
+                      {log.aiSummary && (
+                        <div className="mt-3 bg-blue-50 rounded-lg p-3 text-xs">
+                          <span className="font-semibold text-blue-700">AI Summary:</span>{' '}
+                          <span className="text-blue-800">{log.aiSummary}</span>
+                        </div>
+                      )}
+                      {log.attachments?.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs font-semibold text-gray-600 mb-1">Attachments:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {log.attachments.map((att) => (
+                              <span key={att.id} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                📎 {att.fileName}
+                                {att.fileSize && ` (${(att.fileSize / 1024).toFixed(0)}KB)`}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {log.builder && (
+                        <div className="mt-3">
+                          <Link
+                            href={`/ops/accounts/${log.builder.id}`}
+                            className="text-xs text-[#1B4F72] hover:underline font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View Builder: {log.builder.companyName} →
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
-      {/* Pagination */}
-      {total > 25 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage(p => p - 1)}
-            style={{ padding: '6px 16px', borderRadius: 6, border: '1px solid #d1d5db', backgroundColor: 'white', cursor: 'pointer', fontSize: 13 }}
-          >
-            Previous
-          </button>
-          <span style={{ padding: '6px 12px', fontSize: 13, color: '#6b7280' }}>Page {page} of {Math.ceil(total / 25)}</span>
-          <button
-            disabled={page >= Math.ceil(total / 25)}
-            onClick={() => setPage(p => p + 1)}
-            style={{ padding: '6px 16px', borderRadius: 6, border: '1px solid #d1d5db', backgroundColor: 'white', cursor: 'pointer', fontSize: 13 }}
-          >
-            Next
-          </button>
-        </div>
-      )}
+        {/* Pagination */}
+        {total > 25 && (
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+            >
+              ← Previous
+            </button>
+            <span className="text-sm text-gray-500">
+              Page {page} of {Math.ceil(total / 25)}
+            </span>
+            <button
+              disabled={page >= Math.ceil(total / 25)}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+            >
+              Next →
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
-
-const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4 }
-const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }
