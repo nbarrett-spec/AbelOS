@@ -12,7 +12,10 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:seed-real": "tsx prisma/seed-real-data.ts"
+    "db:seed-real": "tsx prisma/seed-real-data.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
