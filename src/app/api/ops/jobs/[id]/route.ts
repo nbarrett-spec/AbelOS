@@ -229,6 +229,63 @@ export async function PATCH(
       }
     }
 
+    // ── Auto-trigger dunnage→final front when job reaches FINAL_FRONT / FINISHING / TRIM_COMPLETE ──
+    if (newStatus && ['FINAL_FRONT', 'FINISHING', 'TRIM_COMPLETE'].includes(newStatus)) {
+      try {
+        // Check for dunnage doors on this job
+        const dunnageItems: any[] = await prisma.$queryRawUnsafe(`
+          SELECT soli."id", soli."productName", soli."quantity", so."soNumber"
+          FROM "SalesOrderLineItem" soli
+          JOIN "SalesOrder" so ON so."id" = soli."salesOrderId"
+          WHERE so."jobId" = $1
+          AND (LOWER(soli."productName") LIKE '%dunnage%' OR LOWER(soli."description") LIKE '%dunnage%')
+        `, id)
+
+        if (dunnageItems.length > 0) {
+          // Check idempotency — skip if final front tasks already exist
+          const existingFF: any[] = await prisma.$queryRawUnsafe(`
+            SELECT "id" FROM "Task"
+            WHERE "jobId" = $1
+            AND (LOWER("title") LIKE '%final front%' OR LOWER("title") LIKE '%dunnage swap%' OR LOWER("title") LIKE '%dunnage pickup%')
+            LIMIT 1
+          `, id)
+
+          if (existingFF.length === 0) {
+            const jobInfo: any[] = await prisma.$queryRawUnsafe(
+              `SELECT "jobNumber", "jobAddress", "builderName" FROM "Job" WHERE "id" = $1`, id
+            )
+            const job = jobInfo[0] || {}
+
+            // Create pickup task
+            await prisma.$executeRawUnsafe(`
+              INSERT INTO "Task" ("id", "assigneeId", "creatorId", "jobId", "title", "description",
+                "category", "priority", "status", "dueDate", "createdAt", "updatedAt")
+              VALUES (gen_random_uuid()::text, $1, $1, $2, $3, $4, 'DELIVERY', 'HIGH', 'TODO',
+                NOW() + INTERVAL '3 days', NOW(), NOW())
+            `, staffId, id,
+              `Dunnage Door Pickup — ${job.jobNumber || id}`,
+              `AUTO-TRIGGERED: Pick up ${dunnageItems.length} dunnage door(s) from ${job.jobAddress || 'jobsite'}.`
+            )
+
+            // Create install task
+            await prisma.$executeRawUnsafe(`
+              INSERT INTO "Task" ("id", "assigneeId", "creatorId", "jobId", "title", "description",
+                "category", "priority", "status", "dueDate", "createdAt", "updatedAt")
+              VALUES (gen_random_uuid()::text, $1, $1, $2, $3, $4, 'INSTALLATION', 'HIGH', 'TODO',
+                NOW() + INTERVAL '5 days', NOW(), NOW())
+            `, staffId, id,
+              `Final Front Door — Deliver & Install — ${job.jobNumber || id}`,
+              `AUTO-TRIGGERED: Deliver and install final front door at ${job.jobAddress || 'jobsite'}. Builder: ${job.builderName || 'N/A'}.`
+            )
+
+            console.log(`[Job PATCH] Auto-triggered dunnage→final front for job ${id} (${dunnageItems.length} dunnage doors)`)
+          }
+        }
+      } catch (ffErr: any) {
+        console.warn('[Job PATCH] Dunnage auto-trigger failed:', ffErr?.message)
+      }
+    }
+
     // Re-fetch via GET logic (simplified)
     const updatedRows: any[] = await prisma.$queryRawUnsafe(`
       SELECT j.*, j."status"::text AS "status", j."scopeType"::text AS "scopeType",
