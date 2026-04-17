@@ -117,13 +117,17 @@ Be conservative with confidence scores. If you cannot clearly see door dimension
 Focus on accuracy over completeness.`;
 
 /**
- * Parse a blueprint image using Claude Vision API
+ * Parse a blueprint image or multi-page PDF using Claude Vision API
  * Accepts either:
  * - imageBase64: raw base64-encoded image data + mediaType
  * - imageUrl: public HTTPS URL to image
+ * - document: base64-encoded PDF (supports multi-page blueprints)
  */
 export async function analyzeBlueprint(
-  imageSource: { type: 'base64'; data: string; mediaType: string } | { type: 'url'; url: string }
+  imageSource:
+    | { type: 'base64'; data: string; mediaType: string }
+    | { type: 'url'; url: string }
+    | { type: 'document'; data: string; mediaType: string; pageCount?: number }
 ): Promise<{ analysis: BlueprintAnalysis; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -131,7 +135,7 @@ export async function analyzeBlueprint(
   }
 
   try {
-    // Build image content based on source type
+    // Build content block based on source type
     let imageContent: Record<string, unknown>
     if (imageSource.type === 'url') {
       imageContent = {
@@ -139,6 +143,16 @@ export async function analyzeBlueprint(
         source: {
           type: 'url',
           url: imageSource.url,
+        },
+      }
+    } else if (imageSource.type === 'document') {
+      // Multi-page PDF: send as a document block so all pages are analyzed
+      imageContent = {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: imageSource.mediaType,
+          data: imageSource.data,
         },
       }
     } else {
@@ -247,7 +261,7 @@ export async function analyzeBlueprint(
 
 /**
  * Convert base64 image data to format suitable for API
- * Handles PNG, JPG, PDF (first page), and DWG formats
+ * Handles PNG, JPG, PDF (all pages via document block), and DWG formats
  */
 export async function imageToBase64(
   fileBuffer: Buffer,

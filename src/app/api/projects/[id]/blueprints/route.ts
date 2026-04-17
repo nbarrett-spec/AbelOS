@@ -9,6 +9,33 @@ interface FileUploadRequest {
 }
 
 /**
+ * Extract page count from a PDF buffer by scanning for /Count entries
+ * in the page tree. Falls back to counting /Type /Page occurrences.
+ */
+function extractPdfPageCount(buffer: Buffer): number {
+  const text = buffer.toString('latin1')
+
+  // Method 1: Look for /Type /Pages with /Count N (the page tree root)
+  // Match patterns like "/Type /Pages ... /Count 12" or "/Type/Pages.../Count 12"
+  const pagesPattern = /\/Type\s*\/Pages[^>]*\/Count\s+(\d+)/g
+  let maxCount = 0
+  let match: RegExpExecArray | null
+  while ((match = pagesPattern.exec(text)) !== null) {
+    const count = parseInt(match[1], 10)
+    if (count > maxCount) maxCount = count
+  }
+
+  if (maxCount > 0) return maxCount
+
+  // Method 2: Count individual /Type /Page occurrences (not /Pages)
+  const pageMatches = text.match(/\/Type\s*\/Page(?!\s*s)\b/g)
+  if (pageMatches && pageMatches.length > 0) return pageMatches.length
+
+  // Fallback: assume at least 1 page
+  return 1
+}
+
+/**
  * GET /api/projects/[id]/blueprints
  *
  * List all blueprints for a project
@@ -112,12 +139,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Upload file to cloud storage (e.g., S3, R2, etc.)
     // For now, we'll assume file is stored and return a URL
     // In production, integrate with your storage service
-    const fileBuffer = await file.arrayBuffer()
-    const base64Data = Buffer.from(fileBuffer).toString('base64')
+    const fileBuffer = Buffer.from(await file.arrayBuffer())
+    const base64Data = fileBuffer.toString('base64')
 
     // Generate a temporary/persistent URL for the file
     // This would typically be done by your storage provider
     const fileUrl = `data:${file.type};base64,${base64Data.substring(0, 100)}...` // Placeholder
+
+    // Extract page count for PDFs
+    const isPdf = file.type === 'application/pdf'
+    const pageCount = isPdf ? extractPdfPageCount(fileBuffer) : 1
 
     // Create blueprint record in DB
     const blueprint = await prisma.blueprint.create({
@@ -126,9 +157,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         fileName: file.name,
         fileUrl,
         fileSize: file.size,
-        fileType: file.type === 'application/pdf' ? 'pdf' : file.name.endsWith('.png') ? 'png' : 'jpg',
+        fileType: isPdf ? 'pdf' : file.name.endsWith('.png') ? 'png' : 'jpg',
         processingStatus: 'PENDING',
-        pageCount: file.type === 'application/pdf' ? 1 : undefined, // TODO: extract page count from PDF
+        pageCount,
       },
     })
 
