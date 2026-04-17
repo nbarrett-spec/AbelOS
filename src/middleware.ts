@@ -251,8 +251,11 @@ export async function middleware(request: NextRequest) {
     }
     // Skip CSRF for agent-hub Bearer token requests (server-to-server, no browser origin)
     const authHeader = request.headers.get('authorization')
-    if (pathname.startsWith('/api/agent-hub') && authHeader?.startsWith('Bearer ')) {
-      // CSRF not applicable for API key auth — validated in agent-hub section
+    // Skip CSRF for Gmail sync API key auth (Google Apps Script, no browser origin)
+    const gmailSyncApiKey = request.headers.get('x-api-key')
+    if ((pathname.startsWith('/api/agent-hub') && authHeader?.startsWith('Bearer ')) ||
+        (pathname === '/api/ops/communication-logs/gmail-sync' && gmailSyncApiKey)) {
+      // CSRF not applicable for API key auth — validated in route handler
     } else {
     const origin = request.headers.get('origin')
     const host = request.headers.get('host')
@@ -297,6 +300,18 @@ export async function middleware(request: NextRequest) {
         NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
         requestId
       )
+    }
+
+    // Gmail sync endpoint supports API key auth (for Google Apps Script service-to-service calls)
+    // The route handler validates the x-api-key header itself
+    if (pathname === '/api/ops/communication-logs/gmail-sync') {
+      const apiKey = request.headers.get('x-api-key')
+      if (apiKey) {
+        return withRequestId(
+          NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
+          requestId
+        )
+      }
     }
 
     // All other API ops routes need a valid staff session
