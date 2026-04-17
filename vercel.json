@@ -67,6 +67,10 @@
     {
       "path": "/api/cron/process-outreach",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/gmail-sync",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

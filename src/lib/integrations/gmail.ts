@@ -1,15 +1,324 @@
 // ──────────────────────────────────────────────────────────────────────────
 // Gmail / Google Workspace — Integration
-// OAuth2 auth, Pub/Sub for real-time notifications
+// Supports two auth modes:
+//   1. Service Account with domain-wide delegation (production — all 6 mailboxes)
+//   2. OAuth2 per-user refresh tokens (legacy/manual)
 // Maps emails to CRM communication logs automatically
 // Domain: abellumber.com (Google Workspace)
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
 import type { GmailMessage, GmailWatchResponse, SyncResult } from './types'
+import * as crypto from 'crypto'
 
 const GOOGLE_API = 'https://www.googleapis.com/gmail/v1'
 const GOOGLE_OAUTH = 'https://oauth2.googleapis.com/token'
+const GOOGLE_ADMIN_API = 'https://admin.googleapis.com/admin/directory/v1'
+
+// ─── Service Account Auth (Domain-Wide Delegation) ──────────────────
+
+interface ServiceAccountKey {
+  type: string
+  project_id: string
+  private_key_id: string
+  private_key: string
+  client_email: string
+  client_id: string
+  auth_uri: string
+  token_uri: string
+}
+
+// Cache tokens per-user to avoid re-signing JWTs on every API call
+const tokenCache = new Map<string, { token: string; expiresAt: number }>()
+
+/**
+ * Load the service account key from env var.
+ * Set GOOGLE_SERVICE_ACCOUNT_KEY to the full JSON string,
+ * or GOOGLE_SERVICE_ACCOUNT_KEY_PATH to the file path.
+ */
+function getServiceAccountKey(): ServiceAccountKey | null {
+  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
+  if (keyJson) {
+    try { return JSON.parse(keyJson) } catch { return null }
+  }
+  // Fallback: read from file path (for NUC / Docker deployments)
+  const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH
+  if (keyPath) {
+    try {
+      const fs = require('fs')
+      return JSON.parse(fs.readFileSync(keyPath, 'utf8'))
+    } catch { return null }
+  }
+  return null
+}
+
+/**
+ * Create a signed JWT for Google service account auth.
+ * Impersonates `userEmail` via domain-wide delegation.
+ */
+function createServiceAccountJwt(
+  key: ServiceAccountKey,
+  scopes: string[],
+  userEmail: string
+): string {
+  const now = Math.floor(Date.now() / 1000)
+  const header = { alg: 'RS256', typ: 'JWT' }
+  const payload = {
+    iss: key.client_email,
+    sub: userEmail, // Impersonate this user
+    scope: scopes.join(' '),
+    aud: key.token_uri,
+    iat: now,
+    exp: now + 3600, // 1 hour
+  }
+
+  const encode = (obj: object) =>
+    Buffer.from(JSON.stringify(obj)).toString('base64url')
+
+  const headerB64 = encode(header)
+  const payloadB64 = encode(payload)
+  const signingInput = `${headerB64}.${payloadB64}`
+
+  const signature = crypto
+    .createSign('RSA-SHA256')
+    .update(signingInput)
+    .sign(key.private_key, 'base64url')
+
+  return `${signingInput}.${signature}`
+}
+
+/**
+ * Get an access token for a specific user via service account impersonation.
+ * Caches tokens for up to 50 minutes.
+ */
+async function getServiceAccountToken(
+  userEmail: string,
+  scopes: string[] = ['https://www.googleapis.com/auth/gmail.readonly']
+): Promise<string | null> {
+  const cacheKey = `${userEmail}:${scopes.join(',')}`
+  const cached = tokenCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) {
+    return cached.token
+  }
+
+  const key = getServiceAccountKey()
+  if (!key) return null
+
+  try {
+    const jwt = createServiceAccountJwt(key, scopes, userEmail)
+    const response = await fetch(key.token_uri, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }),
+    })
+
+    if (!response.ok) {
+      const text = await response.text()
+      console.error(`Service account token exchange failed for ${userEmail}:`, text)
+      return null
+    }
+
+    const data = await response.json()
+    tokenCache.set(cacheKey, {
+      token: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000,
+    })
+    return data.access_token
+  } catch (err) {
+    console.error('Service account JWT exchange error:', err)
+    return null
+  }
+}
+
+/**
+ * List all users in the abellumber.com Google Workspace domain.
+ * Requires Admin SDK Directory API + admin.directory.user.readonly scope.
+ * The `sub` user must be a Workspace admin (e.g. nate@abellumber.com).
+ */
+export async function listDomainUsers(
+  adminEmail: string = 'n.barrett@abellumber.com'
+): Promise<string[]> {
+  const token = await getServiceAccountToken(adminEmail, [
+    'https://www.googleapis.com/auth/admin.directory.user.readonly',
+  ])
+  if (!token) return []
+
+  try {
+    const response = await fetch(
+      `${GOOGLE_ADMIN_API}/users?domain=abellumber.com&maxResults=100`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    if (!response.ok) {
+      console.error('Admin API error:', await response.text())
+      return []
+    }
+    const data = await response.json()
+    return (data.users || []).map((u: any) => u.primaryEmail as string)
+  } catch (err) {
+    console.error('List domain users error:', err)
+    return []
+  }
+}
+
+/**
+ * Sync emails for ALL domain users via service account delegation.
+ * This is the main production sync function called by the cron.
+ */
+export async function syncAllAccounts(
+  maxPerAccount: number = 50,
+  query: string = 'newer_than:1d'
+): Promise<SyncResult> {
+  const startedAt = new Date()
+  let totalCreated = 0, totalSkipped = 0, totalFailed = 0
+
+  const key = getServiceAccountKey()
+  if (!key) {
+    return {
+      provider: 'GMAIL', syncType: 'multi-account', direction: 'PULL',
+      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
+      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+      errorMessage: 'Service account key not configured (set GOOGLE_SERVICE_ACCOUNT_KEY)',
+      startedAt, completedAt: new Date(),
+      durationMs: Date.now() - startedAt.getTime(),
+    }
+  }
+
+  // Get all users in the domain
+  const users = await listDomainUsers()
+  if (users.length === 0) {
+    return {
+      provider: 'GMAIL', syncType: 'multi-account', direction: 'PULL',
+      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
+      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+      errorMessage: 'No domain users found — check Admin SDK scope and admin email',
+      startedAt, completedAt: new Date(),
+      durationMs: Date.now() - startedAt.getTime(),
+    }
+  }
+
+  console.log(`[Gmail Sync] Found ${users.length} domain users: ${users.join(', ')}`)
+
+  for (const userEmail of users) {
+    try {
+      const token = await getServiceAccountToken(userEmail)
+      if (!token) {
+        console.warn(`[Gmail Sync] Could not get token for ${userEmail}, skipping`)
+        totalFailed++
+        continue
+      }
+
+      // List messages matching query
+      const listUrl = `${GOOGLE_API}/users/me/messages?maxResults=${maxPerAccount}&q=${encodeURIComponent(query)}`
+      const listResponse = await fetch(listUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (!listResponse.ok) {
+        console.warn(`[Gmail Sync] List failed for ${userEmail}: ${listResponse.status}`)
+        totalFailed++
+        continue
+      }
+
+      const listData = await listResponse.json()
+      const messageIds: string[] = (listData.messages || []).map((m: any) => m.id)
+
+      for (const msgId of messageIds) {
+        try {
+          // Check for duplicate
+          const existing = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT "id" FROM "CommunicationLog" WHERE "gmailMessageId" = $1 LIMIT 1`,
+            msgId
+          )
+          if (existing.length > 0) { totalSkipped++; continue }
+
+          // Fetch full message
+          const msgResponse = await fetch(
+            `${GOOGLE_API}/users/me/messages/${msgId}?format=full`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          if (!msgResponse.ok) { totalFailed++; continue }
+
+          const msg = await msgResponse.json()
+          const parsed = parseGmailMessage(msg)
+          const match = await matchEmailToContact(parsed.from, parsed.to)
+
+          const direction = parsed.from.includes('@abellumber.com') ? 'OUTBOUND' : 'INBOUND'
+
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "CommunicationLog" (
+              "channel", "direction", "subject", "body", "bodyHtml", "fromAddress",
+              "toAddresses", "ccAddresses", "sentAt", "status",
+              "hasAttachments", "attachmentCount", "gmailMessageId", "gmailThreadId",
+              "builderId", "organizationId", "staffId", "syncAccount"
+            ) VALUES (
+              'EMAIL'::"CommChannel", $1::"CommDirection", $2, $3, $4, $5,
+              $6::text[], $7::text[], $8, 'SYNCED'::"CommLogStatus",
+              $9, $10, $11, $12, $13, $14, $15, $16
+            )`,
+            direction,
+            parsed.subject || '(No Subject)',
+            parsed.body || null,
+            parsed.bodyHtml || null,
+            parsed.from,
+            `{${parsed.to.map(a => `"${a}"`).join(',')}}`,
+            `{${parsed.cc.map(a => `"${a}"`).join(',')}}`,
+            parsed.date ? new Date(parsed.date) : new Date(),
+            parsed.hasAttachments,
+            parsed.attachments.length,
+            parsed.id,
+            parsed.threadId,
+            match.builderId,
+            match.organizationId,
+            match.staffId,
+            userEmail
+          )
+          totalCreated++
+        } catch (err) {
+          totalFailed++
+          console.error(`[Gmail Sync] Message ${msgId} error for ${userEmail}:`, err)
+        }
+      }
+    } catch (err) {
+      totalFailed++
+      console.error(`[Gmail Sync] Account ${userEmail} error:`, err)
+    }
+  }
+
+  const completedAt = new Date()
+  const result: SyncResult = {
+    provider: 'GMAIL', syncType: 'multi-account', direction: 'PULL',
+    status: totalFailed > 0 ? (totalCreated > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
+    recordsProcessed: totalCreated + totalSkipped + totalFailed,
+    recordsCreated: totalCreated, recordsUpdated: 0,
+    recordsSkipped: totalSkipped, recordsFailed: totalFailed,
+    startedAt, completedAt,
+    durationMs: completedAt.getTime() - startedAt.getTime(),
+  }
+
+  // Log sync result
+  try {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SyncLog" (provider, "syncType", direction, status,
+       "recordsProcessed", "recordsCreated", "recordsUpdated", "recordsSkipped", "recordsFailed",
+       "startedAt", "completedAt", "durationMs", "errorMessage")
+      VALUES ($1::"IntegrationProvider", $2, $3::"SyncDirection", $4::"SyncStatus",
+       $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      'GMAIL', 'multi-account', 'PULL', result.status,
+      result.recordsProcessed, result.recordsCreated, result.recordsUpdated,
+      result.recordsSkipped, result.recordsFailed,
+      result.startedAt, result.completedAt, result.durationMs,
+      result.errorMessage || null
+    )
+  } catch (logErr) {
+    console.error('[Gmail Sync] Failed to write SyncLog:', logErr)
+  }
+
+  console.log(`[Gmail Sync] Complete: ${totalCreated} created, ${totalSkipped} skipped, ${totalFailed} failed across ${users.length} accounts`)
+  return result
+}
 
 interface GmailConfig {
   accessToken: string
