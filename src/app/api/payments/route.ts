@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const customerId = await getOrCreateCustomer(session.builderId, invoice.email, invoice.companyName)
 
     // Create Checkout Session
-    const origin = request.headers.get('origin') || 'http://localhost:3000'
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'
     const { url, sessionId } = await createCheckoutSession({
       amount: balance,
       invoiceNumber: invoice.invoiceNumber,

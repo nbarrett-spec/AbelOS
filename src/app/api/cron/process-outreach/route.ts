@@ -81,7 +81,7 @@ async function processOutreach() {
 
         if (step.sequenceMode === 'AUTO') {
           // Send email
-          const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ops/email`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
             body: JSON.stringify({ to: step.email, subject, body: bodyHtml, staffId: 'system' }),
