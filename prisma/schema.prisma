@@ -23,6 +23,14 @@ model Builder {
   zip           String?
   licenseNumber String?
 
+  // Two-tier builder classification
+  // PRODUCTION = national/regional (Toll, DR Horton) — has communities underneath
+  // CUSTOM     = custom home builders — all features centered on builder profile
+  builderType   BuilderType @default(CUSTOM)
+  territory     String?   // Geographic territory / market
+  annualVolume  Int?      // Estimated annual door units
+  website       String?
+
   // Payment & pricing
   paymentTerm    PaymentTerm @default(NET_15)
   creditLimit    Float?
@@ -57,12 +65,22 @@ model Builder {
   categoryMargins    AccountCategoryMargin[]
   marginTarget       AccountMarginTarget?
 
+  // Community structure (production builders)
+  communities        Community[]
+  contacts           BuilderContact[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([status])
   @@index([qbListId])
+  @@index([builderType])
+}
+
+enum BuilderType {
+  PRODUCTION // National/regional builder with communities (Toll, DR Horton, Lennar)
+  CUSTOM     // Custom home builder — no community structure
 }
 
 enum PaymentTerm {
@@ -77,6 +95,166 @@ enum AccountStatus {
   ACTIVE
   SUSPENDED
   CLOSED
+}
+
+// ─── BUILDER COMMUNITIES (Two-Tier Architecture) ────────────────────────
+// Production builders (Toll, DR Horton) have Communities underneath.
+// Each Community has its own contacts, tasks, comm logs, sales orders,
+// performance metrics, blueprints, and pricing — a full picture per community.
+// Custom builders skip this layer; everything hangs off the Builder directly.
+
+model Community {
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+
+  name       String   // "Canyon Ridge Estates", "Sunset Mesa Phase 2"
+  code       String?  // Short code: "CRE", "SMP2"
+  address    String?
+  city       String?
+  state      String?
+  zip        String?
+  county     String?
+
+  // Scope
+  totalLots   Int      @default(0)
+  activeLots  Int      @default(0)
+  phase       String?  // "Phase 1", "Phase 2A"
+  status      CommunityStatus @default(ACTIVE)
+
+  // Division (some builders organize by division → community)
+  division    String?  // "Dallas Division", "Houston Metro"
+
+  // Performance
+  avgOrderValue Float?  // Rolling avg order $
+  totalRevenue  Float?  @default(0)
+  totalOrders   Int?    @default(0)
+
+  // Notes
+  notes       String?
+
+  // Bolt integration
+  boltId      String?  // Cross-ref to ECI Bolt community
+
+  // Relationships
+  contacts    CommunityContact[]
+  floorPlans  CommunityFloorPlan[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([builderId, name])
+  @@index([builderId])
+  @@index([status])
+  @@index([city, state])
+  @@index([boltId])
+}
+
+enum CommunityStatus {
+  PLANNING    // Pre-development
+  ACTIVE      // Lots being built / orders flowing
+  WINDING_DOWN // Last lots being completed
+  CLOSED      // All lots complete, no more orders
+}
+
+// ─── BUILDER CONTACTS (people at the builder org) ───────────────────────
+// A contact can be org-level (custom builders) or community-level (production)
+
+model BuilderContact {
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+
+  // Optional community link — if set, this contact is community-specific
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+
+  firstName    String
+  lastName     String
+  email        String?
+  phone        String?
+  mobile       String?
+  title        String?  // "Purchasing Manager", "Super", "Division VP"
+  role         ContactRole @default(OTHER)
+
+  isPrimary    Boolean @default(false) // Primary contact for this builder or community
+  receivesPO   Boolean @default(false) // Gets PO/order notifications
+  receivesInvoice Boolean @default(false) // Gets invoice copies
+
+  notes        String?
+  active       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([builderId])
+  @@index([communityId])
+  @@index([email])
+  @@index([role])
+}
+
+enum ContactRole {
+  OWNER           // Builder company owner
+  DIVISION_VP     // Division VP (production builders)
+  PURCHASING      // Purchasing / procurement
+  SUPERINTENDENT  // Field superintendent
+  PROJECT_MANAGER // PM on the builder side
+  ESTIMATOR       // Builder's estimator
+  ACCOUNTS_PAYABLE // AP contact
+  OTHER
+}
+
+// ─── COMMUNITY FLOOR PLANS ──────────────────────────────────────────────
+// Production builders have standard floor plans per community
+
+model CommunityFloorPlan {
+  id          String  @id @default(cuid())
+  communityId String
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  name         String   // "The Aspen", "Plan 2450"
+  planNumber   String?  // Builder's plan number
+  sqFootage    Int?
+  bedrooms     Int?
+  bathrooms    Float?   // 2.5 etc
+  stories      Int?     @default(1)
+  garageType   String?  // "2-car attached", "3-car"
+
+  // Door package
+  interiorDoorCount Int?
+  exteriorDoorCount Int?
+  basePackagePrice  Float?  // Standard door package price
+
+  // Takeoff reference
+  blueprintUrl  String?  // Link to stored blueprint
+  takeoffNotes  String?
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([communityId, name])
+  @@index([communityId])
+}
+
+// ─── COMMUNITY NOTES ────────────────────────────────────────────────────
+// Linked notes for community-level context (delivery preferences, site rules, etc.)
+
+model CommunityNote {
+  id          String  @id @default(cuid())
+  communityId String
+
+  authorId    String  // Staff who wrote it
+  category    String  @default("GENERAL") // GENERAL, DELIVERY, SITE_ACCESS, QUALITY, PRICING
+  content     String
+  pinned      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([communityId])
+  @@index([category])
 }
 
 // ─── BUILDER REFERRALS ──────────────────────────────────────────────────
@@ -732,7 +910,8 @@ model Job {
 
   // Job identifiers (from Module 2 — Lot-Block system)
   lotBlock       String? // "Lot 14 Block 3"
-  community      String? // "Canyon Ridge"
+  community      String? // "Canyon Ridge" (denormalized for quick display)
+  communityId    String? // FK to Community table (if production builder)
   builderName    String // Denormalized for quick display
   builderContact String?
   jobAddress     String?
@@ -774,6 +953,7 @@ model Job {
   @@index([scheduledDate])
   @@index([builderName])
   @@index([community])
+  @@index([communityId])
   @@index([orderId])
 }
 
@@ -855,10 +1035,11 @@ model Activity {
   staffId String
   staff   Staff  @relation(fields: [staffId], references: [id], onDelete: Restrict)
 
-  // Polymorphic link — activity can relate to a builder, job, or both
-  builderId String?
-  jobId     String?
-  job       Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  // Polymorphic link — activity can relate to a builder, community, job, or combo
+  builderId   String?
+  communityId String? // Link to community for production builders
+  jobId       String?
+  job         Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   activityType ActivityType
   subject      String
@@ -873,6 +1054,7 @@ model Activity {
   createdAt DateTime @default(now())
 
   @@index([builderId])
+  @@index([communityId])
   @@index([jobId])
   @@index([staffId])
   @@index([activityType])
@@ -904,9 +1086,10 @@ model Task {
   creator    Staff  @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Restrict)
 
   // Context
-  jobId     String?
-  job       Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  builderId String?
+  jobId       String?
+  job         Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  builderId   String?
+  communityId String? // Link to community for production builders
 
   // Task details
   title       String
@@ -927,6 +1110,7 @@ model Task {
   @@index([dueDate])
   @@index([creatorId])
   @@index([builderId])
+  @@index([communityId])
   @@index([priority])
 }
 

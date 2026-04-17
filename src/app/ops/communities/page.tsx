@@ -398,9 +398,11 @@ export default function CommunitiesPage() {
 
                   {/* Community Name */}
                   <div style={{ marginBottom: '12px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1B4F72', marginBottom: '4px' }}>
-                      {community.name}
-                    </h3>
+                    <Link href={`/ops/communities/${community.id}`} style={{ textDecoration: 'none' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1B4F72', marginBottom: '4px', cursor: 'pointer' }}>
+                        {community.name}
+                      </h3>
+                    </Link>
                   </div>
 
                   {/* Location */}

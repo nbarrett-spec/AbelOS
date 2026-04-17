@@ -21,7 +21,8 @@ export async function GET(
       `SELECT
         id, "companyName", "contactName", email, phone, address, city, state, zip,
         "licenseNumber", "paymentTerm", "creditLimit", "taxExempt", "taxId", status,
-        "accountBalance", "pricingTier", "createdAt", "updatedAt"
+        "accountBalance", "pricingTier", "builderType", "territory", "annualVolume", "website",
+        "createdAt", "updatedAt"
       FROM "Builder"
       WHERE id = $1`,
       id
@@ -149,6 +150,10 @@ export async function PATCH(
       taxExempt,
       status,
       pricingTier,
+      builderType,
+      territory,
+      annualVolume,
+      website,
     } = body
 
     if (paymentTerm) {
@@ -259,6 +264,26 @@ export async function PATCH(
       queryParams.push(pricingTier)
       paramIndex++
     }
+    if (builderType !== undefined) {
+      setClauses.push(`"builderType" = $${paramIndex}::"BuilderType"`)
+      queryParams.push(builderType)
+      paramIndex++
+    }
+    if (territory !== undefined) {
+      setClauses.push(`"territory" = $${paramIndex}`)
+      queryParams.push(territory)
+      paramIndex++
+    }
+    if (annualVolume !== undefined) {
+      setClauses.push(`"annualVolume" = $${paramIndex}`)
+      queryParams.push(annualVolume)
+      paramIndex++
+    }
+    if (website !== undefined) {
+      setClauses.push(`"website" = $${paramIndex}`)
+      queryParams.push(website)
+      paramIndex++
+    }
 
     // Always update updatedAt
     setClauses.push(`"updatedAt" = NOW()`)
@@ -287,7 +312,7 @@ export async function PATCH(
     }
 
     // Execute update
-    const query = `UPDATE "Builder" SET ${setClauses.join(', ')} WHERE id = $1 RETURNING id, "companyName", "contactName", email, phone, address, city, state, zip, "licenseNumber", "paymentTerm", "creditLimit", "taxExempt", status, "pricingTier", "updatedAt"`
+    const query = `UPDATE "Builder" SET ${setClauses.join(', ')} WHERE id = $1 RETURNING id, "companyName", "contactName", email, phone, address, city, state, zip, "licenseNumber", "paymentTerm", "creditLimit", "taxExempt", status, "pricingTier", "builderType", "territory", "annualVolume", "website", "updatedAt"`
 
     const updatedBuilders = await prisma.$queryRawUnsafe<any[]>(query, ...queryParams)
 

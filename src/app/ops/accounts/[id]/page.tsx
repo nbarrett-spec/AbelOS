@@ -15,6 +15,10 @@ interface BuilderDetail {
   state: string | null
   zip: string | null
   licenseNumber: string | null
+  builderType: string | null  // PRODUCTION | CUSTOM
+  territory: string | null
+  annualVolume: number | null
+  website: string | null
   paymentTerm: string
   creditLimit: number | null
   accountBalance: number
@@ -104,8 +108,14 @@ export default function AccountDetailPage() {
   const params = useParams()
   const [builder, setBuilder] = useState<BuilderDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'activity' | 'comms' | 'pricing' | 'margins'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'activity' | 'comms' | 'pricing' | 'margins' | 'communities' | 'contacts'>('overview')
   const [builderCashInsights, setBuilderCashInsights] = useState<any>(null)
+
+  // Communities & contacts (production builders)
+  const [communities, setCommunities] = useState<any[]>([])
+  const [communitiesLoading, setCommunitiesLoading] = useState(false)
+  const [builderContacts, setBuilderContacts] = useState<any[]>([])
+  const [contactsLoading, setContactsLoading] = useState(false)
 
   // Communication logs
   const [commLogs, setCommLogs] = useState<any[]>([])
@@ -215,6 +225,48 @@ export default function AccountDetailPage() {
       loadCommLogs()
     }
   }, [activeTab])
+
+  // Load communities when tab becomes active (production builders)
+  useEffect(() => {
+    if (activeTab === 'communities' && communities.length === 0 && builder?.id) {
+      loadCommunities()
+    }
+  }, [activeTab, builder?.id])
+
+  // Load contacts when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'contacts' && builderContacts.length === 0 && builder?.id) {
+      loadContacts()
+    }
+  }, [activeTab, builder?.id])
+
+  async function loadCommunities() {
+    if (!builder?.id) return
+    setCommunitiesLoading(true)
+    try {
+      const resp = await fetch(`/api/ops/communities?builderId=${builder.id}`)
+      const data = await resp.json()
+      setCommunities(data.communities || [])
+    } catch (err) {
+      console.error('Failed to load communities:', err)
+    } finally {
+      setCommunitiesLoading(false)
+    }
+  }
+
+  async function loadContacts() {
+    if (!builder?.id) return
+    setContactsLoading(true)
+    try {
+      const resp = await fetch(`/api/ops/contacts?builderId=${builder.id}`)
+      const data = await resp.json()
+      setBuilderContacts(data.contacts || [])
+    } catch (err) {
+      console.error('Failed to load contacts:', err)
+    } finally {
+      setContactsLoading(false)
+    }
+  }
 
   async function loadCommLogs() {
     if (!params.id) return
@@ -509,6 +561,16 @@ export default function AccountDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {builder.builderType === 'PRODUCTION' && (
+              <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">
+                Production
+              </span>
+            )}
+            {builder.builderType === 'CUSTOM' && (
+              <span className="text-xs px-3 py-1 rounded-full bg-amber-50 text-amber-700">
+                Custom
+              </span>
+            )}
             <span
               className={`text-xs px-3 py-1 rounded-full ${
                 builder.status === 'ACTIVE'
@@ -552,10 +614,15 @@ export default function AccountDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 border-b overflow-x-auto">
         {[
           { key: 'overview', label: 'Overview' },
           { key: 'projects', label: `Projects (${builder._count.projects})` },
+          // Show Communities tab for production builders (or any builder with communities)
+          ...((builder as any).builderType === 'PRODUCTION' || communities.length > 0
+            ? [{ key: 'communities', label: `Communities${communities.length > 0 ? ` (${communities.length})` : ''}` }]
+            : []),
+          { key: 'contacts', label: 'Contacts' },
           { key: 'activity', label: 'Activity Log' },
           { key: 'comms', label: 'Communications' },
           { key: 'pricing', label: `Custom Pricing (${builder._count.customPricing})` },
@@ -565,7 +632,7 @@ export default function AccountDetailPage() {
             ref={tab.key === 'activity' ? activityTabRef : null}
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`px-4 py-2.5 text-sm transition-colors border-b-2 ${
+            className={`px-4 py-2.5 text-sm transition-colors border-b-2 whitespace-nowrap ${
               activeTab === tab.key
                 ? 'text-[#1B4F72] border-[#1B4F72] font-medium'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1642,6 +1709,121 @@ export default function AccountDetailPage() {
           ) : (
             <div className="text-center text-gray-400 text-sm py-12">
               Failed to load margin data
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========== COMMUNITIES TAB ========== */}
+      {activeTab === 'communities' && (
+        <div className="space-y-4">
+          {communitiesLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+            </div>
+          ) : communities.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl border">
+              <p className="text-gray-500 mb-2">No communities yet for this builder.</p>
+              <p className="text-sm text-gray-400">Communities are used to organize production builders (Toll, DR Horton, etc.) by subdivision or development.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {communities.map((c: any) => (
+                <Link
+                  key={c.id}
+                  href={`/ops/communities/${c.id}`}
+                  className="bg-white rounded-xl border p-5 hover:border-[#1B4F72] hover:shadow-sm transition-all group"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 group-hover:text-[#1B4F72]">{c.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {[c.city, c.state].filter(Boolean).join(', ')}
+                        {c.division && <span> &middot; {c.division}</span>}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      c.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                      c.status === 'PLANNING' ? 'bg-purple-100 text-purple-700' :
+                      c.status === 'WINDING_DOWN' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {(c.status || 'ACTIVE').replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">{c.totalLots || 0}</div>
+                      <div className="text-xs text-gray-400">Lots</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-blue-600">{c.jobCount || 0}</div>
+                      <div className="text-xs text-gray-400">Jobs</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-green-600">{c.contactCount || 0}</div>
+                      <div className="text-xs text-gray-400">Contacts</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-orange-600">{c.openTaskCount || 0}</div>
+                      <div className="text-xs text-gray-400">Tasks</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========== CONTACTS TAB ========== */}
+      {activeTab === 'contacts' && (
+        <div className="space-y-4">
+          {contactsLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+            </div>
+          ) : builderContacts.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl border">
+              <p className="text-gray-500">No contacts on file for this builder.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Community</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Phone</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Flags</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {builderContacts.map((c: any) => (
+                    <tr key={c.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">
+                          {c.firstName} {c.lastName}
+                          {c.isPrimary && (
+                            <span className="ml-1.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Primary</span>
+                          )}
+                        </div>
+                        {c.title && <div className="text-xs text-gray-500">{c.title}</div>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{(c.role || '').replace(/_/g, ' ')}</td>
+                      <td className="px-4 py-3 text-gray-600">{c.communityName || 'Org-level'}</td>
+                      <td className="px-4 py-3 text-blue-600">{c.email || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">{c.phone || c.mobile || '—'}</td>
+                      <td className="px-4 py-3">
+                        {c.receivesPO && <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded mr-1">PO</span>}
+                        {c.receivesInvoice && <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded">Invoice</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
