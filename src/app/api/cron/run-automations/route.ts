@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    console.log('[Automation Cron] Starting automation execution...')
+    // console.log('[Automation Cron] Starting automation execution...')
 
     const stats = {
       rulesEvaluated: 0,
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     )
 
     if (!rules || rules.length === 0) {
-      console.log('[Automation Cron] No enabled automation rules found')
+      // console.log('[Automation Cron] No enabled automation rules found')
       const noRulesPayload = {
         success: true,
         message: 'No automation rules to run',
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(noRulesPayload)
     }
 
-    console.log(`[Automation Cron] Found ${rules.length} enabled rules`)
+    // console.log(`[Automation Cron] Found ${rules.length} enabled rules`)
 
     // Check each rule
     for (const rule of rules) {
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
         // Check frequency constraint
         if (!shouldExecuteRule(rule)) {
-          console.log(
+          // console.log(
             `[Automation Cron] Rule ${rule.id} skipped due to frequency (last run: ${rule.lastRunAt})`
           )
           continue
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
     }
 
     const duration = Date.now() - startTime
-    console.log(
+    // console.log(
       `[Automation Cron] Completed in ${duration}ms: ${stats.rulesEvaluated} evaluated, ${stats.rulesTriggered} triggered, ${stats.actionsExecuted} actions`
     )
 
@@ -217,28 +217,28 @@ async function checkTrigger(rule: AutomationRule): Promise<TriggerMatch | null> 
     switch (rule.trigger) {
       case 'DAILY_MORNING':
         if (hour >= 7 && hour < 9) {
-          console.log(`[Automation Cron] DAILY_MORNING trigger matched for rule ${rule.id}`)
+          // console.log(`[Automation Cron] DAILY_MORNING trigger matched for rule ${rule.id}`)
           return { trigger: 'DAILY_MORNING', entityIds: ['daily-morning'] }
         }
         break
 
       case 'DAILY_EVENING':
         if (hour >= 16 && hour < 18) {
-          console.log(`[Automation Cron] DAILY_EVENING trigger matched for rule ${rule.id}`)
+          // console.log(`[Automation Cron] DAILY_EVENING trigger matched for rule ${rule.id}`)
           return { trigger: 'DAILY_EVENING', entityIds: ['daily-evening'] }
         }
         break
 
       case 'WEEKLY_MONDAY':
         if (day === 1 && hour >= 7 && hour < 9) {
-          console.log(`[Automation Cron] WEEKLY_MONDAY trigger matched for rule ${rule.id}`)
+          // console.log(`[Automation Cron] WEEKLY_MONDAY trigger matched for rule ${rule.id}`)
           return { trigger: 'WEEKLY_MONDAY', entityIds: ['weekly-monday'] }
         }
         break
 
       case 'MONTHLY_FIRST':
         if (dateOfMonth >= 1 && dateOfMonth <= 3 && hour >= 7 && hour < 9) {
-          console.log(`[Automation Cron] MONTHLY_FIRST trigger matched for rule ${rule.id}`)
+          // console.log(`[Automation Cron] MONTHLY_FIRST trigger matched for rule ${rule.id}`)
           return { trigger: 'MONTHLY_FIRST', entityIds: ['monthly-first'] }
         }
         break
@@ -301,7 +301,7 @@ async function checkInvoiceOverdue(rule: AutomationRule): Promise<TriggerMatch |
     )
 
     if (invoices && invoices.length > 0) {
-      console.log(`[Automation Cron] Found ${invoices.length} overdue invoices`)
+      // console.log(`[Automation Cron] Found ${invoices.length} overdue invoices`)
       return {
         trigger: 'INVOICE_OVERDUE',
         entityIds: invoices.map((i) => i.id),
@@ -326,7 +326,7 @@ async function checkInventoryLow(rule: AutomationRule): Promise<TriggerMatch | n
     )
 
     if (items && items.length > 0) {
-      console.log(`[Automation Cron] Found ${items.length} low inventory items`)
+      // console.log(`[Automation Cron] Found ${items.length} low inventory items`)
       return {
         trigger: 'INVENTORY_LOW',
         entityIds: items.map((i) => i.id),
@@ -351,7 +351,7 @@ async function checkInventoryOut(rule: AutomationRule): Promise<TriggerMatch | n
     )
 
     if (items && items.length > 0) {
-      console.log(`[Automation Cron] Found ${items.length} out of stock items`)
+      // console.log(`[Automation Cron] Found ${items.length} out of stock items`)
       return {
         trigger: 'INVENTORY_OUT',
         entityIds: items.map((i) => i.id),
@@ -377,7 +377,7 @@ async function checkPOOverdue(rule: AutomationRule): Promise<TriggerMatch | null
     )
 
     if (pos && pos.length > 0) {
-      console.log(`[Automation Cron] Found ${pos.length} overdue purchase orders`)
+      // console.log(`[Automation Cron] Found ${pos.length} overdue purchase orders`)
       return {
         trigger: 'PO_OVERDUE',
         entityIds: pos.map((p) => p.id),
@@ -403,7 +403,7 @@ async function checkQuoteExpired(rule: AutomationRule): Promise<TriggerMatch | n
     )
 
     if (quotes && quotes.length > 0) {
-      console.log(`[Automation Cron] Found ${quotes.length} expired quotes`)
+      // console.log(`[Automation Cron] Found ${quotes.length} expired quotes`)
       return {
         trigger: 'QUOTE_EXPIRED',
         entityIds: quotes.map((q) => q.id),
@@ -428,7 +428,7 @@ async function checkOrderCreated(rule: AutomationRule): Promise<TriggerMatch | n
     )
 
     if (orders && orders.length > 0) {
-      console.log(`[Automation Cron] Found ${orders.length} orders created in last hour`)
+      // console.log(`[Automation Cron] Found ${orders.length} orders created in last hour`)
       return {
         trigger: 'ORDER_CREATED',
         entityIds: orders.map((o) => o.id),
@@ -492,7 +492,7 @@ async function executeActions(
 
         case 'SEND_EMAIL':
           // Just log for now - templates not set up per automation
-          console.log(`[Automation Cron] Email action deferred: ${action.payload?.template || 'unnamed'}`)
+          // console.log(`[Automation Cron] Email action deferred: ${action.payload?.template || 'unnamed'}`)
           count++
           break
 
@@ -508,7 +508,7 @@ async function executeActions(
 
         case 'UPDATE_STATUS':
           // Skip - too dangerous without specific logic
-          console.log('[Automation Cron] UPDATE_STATUS action skipped (requires specific logic)')
+          // console.log('[Automation Cron] UPDATE_STATUS action skipped (requires specific logic)')
           break
 
         case 'AI_ANALYZE':
@@ -516,7 +516,7 @@ async function executeActions(
         case 'AI_GENERATE_PO':
         case 'AI_DEMAND_FORECAST':
         case 'AI_REORDER_CHECK':
-          console.log(`[Automation Cron] ${action.type} action deferred (AI integration pending)`)
+          // console.log(`[Automation Cron] ${action.type} action deferred (AI integration pending)`)
           break
 
         default:
@@ -551,7 +551,7 @@ async function processNotification(action: AutomationAction): Promise<void> {
     message
   )
 
-  console.log(`[Automation Cron] Notification sent to staff ${staffId}`)
+  // console.log(`[Automation Cron] Notification sent to staff ${staffId}`)
 }
 
 /**
@@ -584,7 +584,7 @@ async function processCreateTask(action: AutomationAction): Promise<void> {
     createdById
   )
 
-  console.log(`[Automation Cron] Task created for ${assignedToId}`)
+  // console.log(`[Automation Cron] Task created for ${assignedToId}`)
 }
 
 /**
@@ -611,7 +611,7 @@ async function processAuditLog(action: AutomationAction): Promise<void> {
     notes || 'Automated by automation rule'
   )
 
-  console.log(`[Automation Cron] Audit log created for ${subject}`)
+  // console.log(`[Automation Cron] Audit log created for ${subject}`)
 }
 
 /**

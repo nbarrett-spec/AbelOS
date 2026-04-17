@@ -941,7 +941,7 @@ export async function POST(request: NextRequest) {
       'SELECT "id", "name", "category" FROM "Product" WHERE "active" = true'
     )
 
-    console.log(`Processing ${products.length} products for image mapping...`)
+    // console.log(`Processing ${products.length} products for image mapping...`)
 
     let mapped = 0
     let noMatch = 0
@@ -979,7 +979,7 @@ export async function POST(request: NextRequest) {
       applied += batch.length
     }
 
-    console.log(`Image mapping complete: ${applied} updated, ${noMatch} no match`)
+    // console.log(`Image mapping complete: ${applied} updated, ${noMatch} no match`)
 
     const totalWithImagesResult = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
       'SELECT COUNT(*)::int as count FROM "Product" WHERE "active" = true AND "imageUrl" IS NOT NULL'

@@ -67,7 +67,7 @@ export async function fireAutomationEvent(
   let actionsExecuted = 0
 
   try {
-    console.log(`[Automation] Fire event: ${trigger}, entityId: ${entityId}`)
+    // console.log(`[Automation] Fire event: ${trigger}, entityId: ${entityId}`)
 
     // Query all enabled rules matching this trigger
     const rules = await prisma.$queryRawUnsafe<AutomationRule[]>(
@@ -79,23 +79,23 @@ export async function fireAutomationEvent(
     )
 
     if (!rules || rules.length === 0) {
-      console.log(`[Automation] No rules found for trigger: ${trigger}`)
+      // console.log(`[Automation] No rules found for trigger: ${trigger}`)
       return { rulesTriggered: 0, actionsExecuted: 0, errors: [] }
     }
 
-    console.log(`[Automation] Found ${rules.length} matching rules`)
+    // console.log(`[Automation] Found ${rules.length} matching rules`)
 
     for (const rule of rules) {
       try {
         // Check frequency constraints
         if (!shouldExecuteRule(rule)) {
-          console.log(`[Automation] Rule ${rule.id} skipped due to frequency constraint`)
+          // console.log(`[Automation] Rule ${rule.id} skipped due to frequency constraint`)
           continue
         }
 
         // Check conditions if they exist
         if (rule.conditions && !evaluateConditions(rule.conditions, context)) {
-          console.log(`[Automation] Rule ${rule.id} conditions not met`)
+          // console.log(`[Automation] Rule ${rule.id} conditions not met`)
           continue
         }
 
@@ -150,7 +150,7 @@ export async function fireAutomationEvent(
     }
 
     const duration = Date.now() - startTime
-    console.log(
+    // console.log(
       `[Automation] Completed in ${duration}ms: ${rulesTriggered} rules, ${actionsExecuted} actions`
     )
 
@@ -243,7 +243,7 @@ async function executeActions(
 
         case 'SEND_EMAIL':
           // Just log for now - templates not set up per automation
-          console.log(`[Automation] Email action deferred: ${action.payload?.template || 'unnamed'}`)
+          // console.log(`[Automation] Email action deferred: ${action.payload?.template || 'unnamed'}`)
           executed.push(action.type)
           count++
           break
@@ -262,7 +262,7 @@ async function executeActions(
 
         case 'UPDATE_STATUS':
           // Skip for now - too dangerous without specific logic
-          console.log('[Automation] UPDATE_STATUS action deferred (requires specific logic)')
+          // console.log('[Automation] UPDATE_STATUS action deferred (requires specific logic)')
           break
 
         case 'AI_ANALYZE':
@@ -270,7 +270,7 @@ async function executeActions(
         case 'AI_GENERATE_PO':
         case 'AI_DEMAND_FORECAST':
         case 'AI_REORDER_CHECK':
-          console.log(`[Automation] ${action.type} action deferred (AI integration pending)`)
+          // console.log(`[Automation] ${action.type} action deferred (AI integration pending)`)
           break
 
         default:
@@ -309,7 +309,7 @@ async function processNotification(
       message
     )
 
-    console.log(`[Automation] Notification sent to staff ${staffId}`)
+    // console.log(`[Automation] Notification sent to staff ${staffId}`)
   } catch (error) {
     console.error('[Automation] Error sending notification:', error)
     throw error
@@ -356,7 +356,7 @@ async function processCreateTask(
       creatorId
     )
 
-    console.log(`[Automation] Task created for ${assignedToId}`)
+    // console.log(`[Automation] Task created for ${assignedToId}`)
   } catch (error) {
     console.error('[Automation] Error creating task:', error)
     throw error
@@ -391,7 +391,7 @@ async function processAuditLog(
       notes || `Automated by rule: ${metadata.ruleName}`
     )
 
-    console.log(`[Automation] Audit log created for ${subject}`)
+    // console.log(`[Automation] Audit log created for ${subject}`)
   } catch (error) {
     console.error('[Automation] Error logging audit:', error)
     throw error

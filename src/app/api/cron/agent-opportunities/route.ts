@@ -29,14 +29,14 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    console.log('[Agent Cron] Starting opportunity detection...')
+    // console.log('[Agent Cron] Starting opportunity detection...')
 
     // Run opportunity detection
     await detectAndQueueOpportunities()
 
     const duration = Date.now() - startTime
 
-    console.log(`[Agent Cron] Completed in ${duration}ms`)
+    // console.log(`[Agent Cron] Completed in ${duration}ms`)
 
     const payload = {
       success: true,

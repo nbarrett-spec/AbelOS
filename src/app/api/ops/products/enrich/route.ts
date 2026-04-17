@@ -703,7 +703,7 @@ export async function POST(request: NextRequest) {
 
     const allProducts = await prisma.$queryRawUnsafe(sql, ...params)
 
-    console.log(`Enriching ${(allProducts as any[]).length} products...`)
+    // console.log(`Enriching ${(allProducts as any[]).length} products...`)
 
     // Generate enrichments
     const enrichments: EnrichmentResult[] = []
@@ -768,7 +768,7 @@ export async function POST(request: NextRequest) {
     let updateCount = 0
     if (!dryRun) {
       updateCount = await batchUpdateProducts(updates)
-      console.log(`Updated ${updateCount} products with descriptions`)
+      // console.log(`Updated ${updateCount} products with descriptions`)
 
       // Update displayName via raw SQL (column added outside Prisma migration)
       const displayNameBatchSize = 50
@@ -783,7 +783,7 @@ export async function POST(request: NextRequest) {
         )
         await Promise.all(promises)
       }
-      console.log(`Updated ${enrichments.length} products with displayNames`)
+      // console.log(`Updated ${enrichments.length} products with displayNames`)
     }
 
     // Summary by category

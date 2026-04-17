@@ -142,7 +142,7 @@ export function logAuditEvent(entry: AuditLogEntry): void {
   }
 
   // In development, log to console
-  console.log(`[AUDIT] ${timestamp} | ${entry.action} | ${entry.entityType} | staff:${entry.staffId} | ${entry.details || ''}`)
+  // console.log(`[AUDIT] ${timestamp} | ${entry.action} | ${entry.entityType} | staff:${entry.staffId} | ${entry.details || ''}`)
 
   // In production, this would write to an audit log table
   // TODO: Write to AuditLog table when in production

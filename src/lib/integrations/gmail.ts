@@ -199,7 +199,7 @@ export async function syncAllAccounts(
     }
   }
 
-  console.log(`[Gmail Sync] Found ${users.length} domain users: ${users.join(', ')}`)
+  // console.log(`[Gmail Sync] Found ${users.length} domain users: ${users.join(', ')}`)
 
   for (const userEmail of users) {
     try {
@@ -316,7 +316,7 @@ export async function syncAllAccounts(
     console.error('[Gmail Sync] Failed to write SyncLog:', logErr)
   }
 
-  console.log(`[Gmail Sync] Complete: ${totalCreated} created, ${totalSkipped} skipped, ${totalFailed} failed across ${users.length} accounts`)
+  // console.log(`[Gmail Sync] Complete: ${totalCreated} created, ${totalSkipped} skipped, ${totalFailed} failed across ${users.length} accounts`)
   return result
 }
 

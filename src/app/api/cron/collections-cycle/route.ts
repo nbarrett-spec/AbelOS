@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   const started = Date.now()
 
   try {
-    console.log('[Collections Cycle] Starting daily collection run...')
+    // console.log('[Collections Cycle] Starting daily collection run...')
 
     // Fetch all active collection rules
     const rules: any[] = await prisma.$queryRawUnsafe(`
@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     }
 
-    console.log(
+    // console.log(
       `[Collections Cycle] Done in ${duration}ms — ${overdueInvoices.length} invoices, ${actionsCreated} actions, ${escalationsCreated} escalations, ${paymentPlansOffered} plans`
     )
 

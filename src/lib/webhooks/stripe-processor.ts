@@ -26,7 +26,7 @@ export async function processStripeEvent(event: any): Promise<void> {
         break
       }
 
-      console.log(`Payment received: Invoice ${invoiceNumber}, Amount: $${amountPaid}`)
+      // console.log(`Payment received: Invoice ${invoiceNumber}, Amount: $${amountPaid}`)
 
       // Update invoice: add payment amount, update status
       await prisma.$queryRawUnsafe(`
@@ -109,7 +109,7 @@ export async function processStripeEvent(event: any): Promise<void> {
       const session = event.data.object
       const invoiceId = session.metadata?.invoiceId
       if (invoiceId) {
-        console.log(`Checkout session expired for invoice ${invoiceId}`)
+        // console.log(`Checkout session expired for invoice ${invoiceId}`)
         try {
           await prisma.$queryRawUnsafe(`
             UPDATE "Invoice"
@@ -148,6 +148,6 @@ export async function processStripeEvent(event: any): Promise<void> {
     }
 
     default:
-      console.log(`Unhandled Stripe event type: ${event.type}`)
+      // console.log(`Unhandled Stripe event type: ${event.type}`)
   }
 }

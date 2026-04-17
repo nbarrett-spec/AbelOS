@@ -573,7 +573,7 @@ export async function notifyDeliveryStatusChange(
       link: '/dashboard/deliveries',
     })
 
-    console.log(`[DELIVERY NOTIFICATION] ${newStatus} → ${r.email}: ${event.title(dn)}`)
+    // console.log(`[DELIVERY NOTIFICATION] ${newStatus} → ${r.email}: ${event.title(dn)}`)
     return { sent: result.success }
   } catch (e: any) {
     console.error('[DELIVERY NOTIFICATION ERROR]', e.message)

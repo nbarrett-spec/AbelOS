@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
       // Note: In a real implementation, you would create a builder notification
       // For now, we log it. The actual notification system would depend on
       // how builder notifications are handled in your system.
-      console.log('Builder notification would be sent:', {
+      // console.log('Builder notification would be sent:', {
         builderId,
         builderEmail,
         title: notificationTitle,

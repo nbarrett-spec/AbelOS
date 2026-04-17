@@ -278,7 +278,7 @@ export async function PATCH(
               `AUTO-TRIGGERED: Deliver and install final front door at ${job.jobAddress || 'jobsite'}. Builder: ${job.builderName || 'N/A'}.`
             )
 
-            console.log(`[Job PATCH] Auto-triggered dunnage→final front for job ${id} (${dunnageItems.length} dunnage doors)`)
+            // console.log(`[Job PATCH] Auto-triggered dunnage→final front for job ${id} (${dunnageItems.length} dunnage doors)`)
           }
         }
       } catch (ffErr: any) {

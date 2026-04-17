@@ -36,28 +36,28 @@ export async function GET(request: NextRequest) {
   const started = Date.now()
 
   try {
-    console.log('[InFlow Sync] Starting scheduled sync...')
+    // console.log('[InFlow Sync] Starting scheduled sync...')
 
     const startTime = Date.now()
     const results = []
 
     // Sync products first (creates/updates product records)
-    console.log('[InFlow Sync] Syncing products...')
+    // console.log('[InFlow Sync] Syncing products...')
     const productResult = await syncInflowProducts()
     results.push(productResult)
 
     // Sync inventory levels (updates quantities on existing products)
-    console.log('[InFlow Sync] Syncing inventory...')
+    // console.log('[InFlow Sync] Syncing inventory...')
     const inventoryResult = await syncInflowInventory()
     results.push(inventoryResult)
 
     // Sync purchase orders
-    console.log('[InFlow Sync] Syncing purchase orders...')
+    // console.log('[InFlow Sync] Syncing purchase orders...')
     const poResult = await syncInflowPurchaseOrders()
     results.push(poResult)
 
     // Sync sales orders
-    console.log('[InFlow Sync] Syncing sales orders...')
+    // console.log('[InFlow Sync] Syncing sales orders...')
     const soResult = await syncInflowSalesOrders()
     results.push(soResult)
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       anyFailures: results.some(r => r.status === 'FAILED'),
     }
 
-    console.log(
+    // console.log(
       `[InFlow Sync] Completed in ${duration}ms — ${summary.totalProcessed} records processed, ${summary.totalCreated} created, ${summary.totalUpdated} updated`
     )
 

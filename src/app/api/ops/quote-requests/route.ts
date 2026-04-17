@@ -70,7 +70,7 @@ async function ensureQuoteRequestTable() {
     `
   } catch (e) {
     // Table likely already exists
-    console.log('QuoteRequest table check:', e)
+    // console.log('QuoteRequest table check:', e)
   }
 }
 

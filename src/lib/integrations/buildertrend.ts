@@ -660,14 +660,14 @@ export async function processWebhookPayload(payload: BTWebhookPayload): Promise<
       )
 
       if (mappings.length === 0) {
-        console.log(`No mapping found for BT project ${payload.projectId}`)
+        // console.log(`No mapping found for BT project ${payload.projectId}`)
         return
       }
 
       const mapping = mappings[0]
 
       if (!mapping.jobId) {
-        console.log(`Mapping exists but no jobId attached for BT project ${payload.projectId}`)
+        // console.log(`Mapping exists but no jobId attached for BT project ${payload.projectId}`)
         return
       }
 

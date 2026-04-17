@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (e) {
       // Invoice might not exist, continue
-      console.log('Invoice not found or error updating balance:', e)
+      // console.log('Invoice not found or error updating balance:', e)
     }
 
     // Fetch and return created payment
