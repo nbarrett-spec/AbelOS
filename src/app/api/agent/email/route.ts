@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  let idem: any = null
   try {
     const body = JSON.parse(rawBody)
     const { from, to, subject, text, messageId } = body
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // ── Idempotency ────────────────────────────────────────────────────
     const eventId = messageId || `email:${from}:${Date.now()}`
-    const idem = await ensureIdempotent('email-agent', eventId, 'inbound_email', body)
+    idem = await ensureIdempotent('email-agent', eventId, 'inbound_email', body)
     if (idem.status === 'duplicate') {
       return NextResponse.json({ received: true, duplicate: true })
     }
