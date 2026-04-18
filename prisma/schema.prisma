@@ -137,7 +137,7 @@ model Community {
   boltId      String?  // Cross-ref to ECI Bolt community
 
   // Relationships
-  contacts    CommunityContact[]
+  contacts    BuilderContact[]
   floorPlans  CommunityFloorPlan[]
 
   createdAt DateTime @default(now())
