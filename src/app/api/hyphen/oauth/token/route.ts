@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json(
     {
-      service: 'Abel OS — Hyphen SPConnect OAuth 2.0',
+      service: 'Aegis — Hyphen SPConnect OAuth 2.0',
       grant_types_supported: ['client_credentials'],
       token_endpoint: '/api/hyphen/oauth/token',
     },

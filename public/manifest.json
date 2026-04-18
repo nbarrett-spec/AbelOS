@@ -1,7 +1,7 @@
 {
-  "name": "Abel Builder Platform",
-  "short_name": "Abel Lumber",
-  "description": "AI-powered builder commerce platform for Abel Lumber",
+  "name": "Aegis — Abel Lumber",
+  "short_name": "Aegis",
+  "description": "AI-powered builder commerce platform by Abel Lumber",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

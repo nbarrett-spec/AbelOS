@@ -786,11 +786,11 @@ function GPSTrackerSetup() {
         'Driver safety scoring & dash cam option',
         'ELD compliance (HOS)',
         'Geofencing & alerts',
-        'Open API for Abel OS integration',
+        'Open API for Aegis integration',
         'Route replay & breadcrumb trails',
       ],
       cons: ['Higher monthly cost', 'Annual contract typical'],
-      integration: 'REST API — can push location updates to Abel OS every 30 seconds',
+      integration: 'REST API — can push location updates to Aegis every 30 seconds',
       recommended: true,
     },
     {
@@ -806,7 +806,7 @@ function GPSTrackerSetup() {
         'Low monthly cost',
       ],
       cons: ['No engine diagnostics', 'Professional install needed', 'Basic API'],
-      integration: 'Webhook-based — sends location events that Abel OS can consume',
+      integration: 'Webhook-based — sends location events that Aegis can consume',
       recommended: false,
     },
     {
@@ -822,7 +822,7 @@ function GPSTrackerSetup() {
         'Self-install OBD-II plug',
       ],
       cons: ['3-minute update intervals (not real-time)', 'Limited API', 'No driver ID'],
-      integration: 'CSV export — manual import or scrape via Abel OS scheduled job',
+      integration: 'CSV export — manual import or scrape via Aegis scheduled job',
       recommended: false,
     },
     {
@@ -838,7 +838,7 @@ function GPSTrackerSetup() {
         'No installation needed',
       ],
       cons: ['No engine diagnostics', 'Limited fleet management features', 'No open API'],
-      integration: 'Manual — view in their app, no direct Abel OS integration yet',
+      integration: 'Manual — view in their app, no direct Aegis integration yet',
       recommended: false,
     },
     {
@@ -855,7 +855,7 @@ function GPSTrackerSetup() {
         'Driver app with navigation',
       ],
       cons: ['Premium pricing', 'Overkill if no DOT requirements'],
-      integration: 'REST API — full integration possible with Abel OS',
+      integration: 'REST API — full integration possible with Aegis',
       recommended: false,
     },
   ]
@@ -868,7 +868,7 @@ function GPSTrackerSetup() {
         <p className="text-blue-100 text-sm leading-relaxed">
           For a building materials delivery fleet, we recommend <strong>Samsara</strong> for the best
           integration capabilities, or <strong>GPS Trackit</strong> for a budget-friendly option.
-          Both support real-time tracking with API integration into Abel OS.
+          Both support real-time tracking with API integration into Aegis.
         </p>
         <div className="mt-4 flex gap-4 text-sm">
           <div className="bg-white/10 rounded-lg px-4 py-2">
@@ -937,7 +937,7 @@ function GPSTrackerSetup() {
                 </ul>
               </div>
               <div>
-                <h5 className="text-xs font-bold text-[#1B4F72] mb-2">Abel OS Integration</h5>
+                <h5 className="text-xs font-bold text-[#1B4F72] mb-2">Aegis Integration</h5>
                 <p className="text-xs text-gray-600">{tracker.integration}</p>
               </div>
             </div>
@@ -947,7 +947,7 @@ function GPSTrackerSetup() {
 
       {/* Integration Architecture */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-bold text-[#1e3a5f] mb-4">How GPS Integration Works with Abel OS</h3>
+        <h3 className="font-bold text-[#1e3a5f] mb-4">How GPS Integration Works with Aegis</h3>
         <div className="grid grid-cols-4 gap-4 text-center">
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-2xl mb-2">📡</div>
@@ -962,11 +962,11 @@ function GPSTrackerSetup() {
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-2xl mb-2">🔗</div>
             <div className="text-xs font-bold text-gray-700">Webhook/API</div>
-            <div className="text-[10px] text-gray-500 mt-1">Pushes events to Abel OS</div>
+            <div className="text-[10px] text-gray-500 mt-1">Pushes events to Aegis</div>
           </div>
           <div className="bg-[#1B4F72]/10 rounded-lg p-4 border border-[#1B4F72]/20">
             <div className="text-2xl mb-2">🖥️</div>
-            <div className="text-xs font-bold text-[#1B4F72]">Abel OS</div>
+            <div className="text-xs font-bold text-[#1B4F72]">Aegis</div>
             <div className="text-[10px] text-gray-500 mt-1">Shows on Fleet Hub map</div>
           </div>
         </div>

@@ -103,7 +103,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
     const encoded = encodeURIComponent(address)
     const resp = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
-      { headers: { 'User-Agent': 'AbelOS-LiveMap/1.0' } }
+      { headers: { 'User-Agent': 'Aegis-LiveMap/1.0' } }
     )
     const results = await resp.json()
     if (results.length > 0) {
@@ -273,7 +273,7 @@ export default function LiveMapPage() {
     if (!mapReady || !mapContainerRef.current || mapRef.current) return
 
     const map = L.map(mapContainerRef.current, {
-      center: [33.45, -112.07], // Phoenix metro area default
+      center: [32.78, -96.80], // DFW metro area
       zoom: 10,
       zoomControl: false,
     })

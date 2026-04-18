@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Abel OS — Abel Lumber',
-    short_name: 'Abel OS',
+    name: 'Aegis — Abel Lumber',
+    short_name: 'Aegis',
     description:
       'AI-powered blueprint analysis and instant quotes for builders. Upload your plans, get accurate material takeoffs in minutes.',
     start_url: '/',

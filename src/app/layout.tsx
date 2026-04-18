@@ -16,10 +16,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://app.abellumber.com'),
   title: {
-    default: 'Abel OS | AI Blueprint Intelligence for Builders',
-    template: '%s | Abel OS',
+    default: 'Aegis | AI Blueprint Intelligence for Builders',
+    template: '%s | Aegis',
   },
-  description: 'Abel OS delivers AI-powered blueprint analysis and instant material quotes for builders. Upload your plans, get accurate takeoffs and pricing in minutes.',
+  description: 'Aegis delivers AI-powered blueprint analysis and instant material quotes for builders. Upload your plans, get accurate takeoffs and pricing in minutes.',
   keywords: [
     'blueprint analysis',
     'construction quotes',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     'AI construction',
     'Abel Lumber',
   ],
-  applicationName: 'Abel OS',
+  applicationName: 'Aegis',
   authors: [{ name: 'Abel Lumber' }],
   creator: 'Abel Lumber',
   publisher: 'Abel Lumber',
@@ -39,16 +39,16 @@ export const metadata: Metadata = {
     address: false,
   },
   openGraph: {
-    title: 'Abel OS | AI Blueprint Intelligence for Builders',
+    title: 'Aegis | AI Blueprint Intelligence for Builders',
     description: 'Upload a blueprint, get a quote in minutes. AI-powered material takeoffs and instant pricing.',
     url: 'https://app.abellumber.com',
-    siteName: 'Abel OS',
+    siteName: 'Aegis',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Abel OS - AI Blueprint Intelligence',
+        alt: 'Aegis - AI Blueprint Intelligence',
         type: 'image/png',
       },
     ],
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Abel OS | AI Blueprint Intelligence for Builders',
+    title: 'Aegis | AI Blueprint Intelligence for Builders',
     description: 'Upload a blueprint, get a quote in minutes.',
     images: ['/twitter-image'],
   },
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Abel OS',
+    title: 'Aegis',
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -102,7 +102,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/images/logos/abel-logo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Abel OS" />
+        <meta name="apple-mobile-web-app-title" content="Aegis" />
         {requestId && <meta name="x-request-id" content={requestId} />}
       </head>
       <body className="min-h-screen bg-white text-gray-900 transition-colors">

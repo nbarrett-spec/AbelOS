@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     'admin (unknown)'
 
   const html = renderTestHtml(requestedBy)
-  const subject = '[TEST] Abel OS alert notification smoke test'
+  const subject = '[TEST] Aegis alert notification smoke test'
 
   const sent: Array<{ to: string; ok: true; id?: string }> = []
   const failed: Array<{ to: string; ok: false; error: string }> = []

@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Abel Lumber Builder Platform API
+  title: Aegis API — Abel Lumber
   description: |
-    The Abel OS Builder Platform Core API for builders and staff.
+    The Aegis Builder Platform Core API for builders and staff.
 
     **Authentication Methods:**
     - **Builder Auth**: `abel_session` httpOnly cookie (set via POST /api/auth/login)

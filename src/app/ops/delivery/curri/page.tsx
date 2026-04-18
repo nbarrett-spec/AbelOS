@@ -217,14 +217,14 @@ function BookingTab() {
             <CheckItem label="Specify materials and weight estimate" />
             <CheckItem label="Note any special requirements (crane, forklift)" />
             <CheckItem label="Get Curri booking ID after booking" />
-            <CheckItem label="Log the booking in Abel OS (Tracking tab)" />
+            <CheckItem label="Log the booking in Aegis (Tracking tab)" />
           </div>
         </div>
       </div>
 
       {/* Log a Curri Booking */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-bold text-[#1e3a5f] mb-4">Log a Curri Booking in Abel OS</h3>
+        <h3 className="font-bold text-[#1e3a5f] mb-4">Log a Curri Booking in Aegis</h3>
         <p className="text-sm text-gray-600 mb-4">
           After booking on Curri, log it here so we can track third-party vs in-house delivery metrics.
         </p>

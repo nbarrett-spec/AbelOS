@@ -62,7 +62,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
     const encoded = encodeURIComponent(address)
     const resp = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
-      { headers: { 'User-Agent': 'AbelOS-JobMap/1.0' } }
+      { headers: { 'User-Agent': 'Aegis-JobMap/1.0' } }
     )
     const results = await resp.json()
     if (results.length > 0) {

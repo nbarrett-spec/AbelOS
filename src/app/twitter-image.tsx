@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Abel OS - AI Blueprint Intelligence for Builders'
+export const alt = 'Aegis - AI Blueprint Intelligence for Builders'
 export const size = {
   width: 1200,
   height: 630,
@@ -55,7 +55,7 @@ export default function TwitterImage() {
             lineHeight: '1.1',
           }}
         >
-          Abel OS
+          Aegis
         </h1>
 
         {/* Subtitle */}
