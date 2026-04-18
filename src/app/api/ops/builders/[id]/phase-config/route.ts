@@ -79,7 +79,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
 
       const configs = await prisma.$transaction(
-        templates.map((t) =>
+        templates.map((t: any) =>
           prisma.builderPhaseConfig.upsert({
             where: { builderId_name: { builderId: params.id, name: t.name } },
             create: {

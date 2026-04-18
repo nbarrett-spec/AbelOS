@@ -49,7 +49,7 @@ export async function GET(
       )
     }
 
-    // Get messages with pagination
+    // Get messages with pagination — supports both staff and builder senders
     const messages = await prisma.$queryRawUnsafe<any[]>(
       `
       SELECT
@@ -57,14 +57,18 @@ export async function GET(
         m.body,
         m."createdAt",
         m."readBy",
+        m."senderType",
+        m."builderSenderId",
         s.id as "senderId",
         s."firstName",
         s."lastName",
         s.role,
         s.department,
-        s.avatar
+        s.avatar,
+        b."companyName" as "builderSenderName"
       FROM "Message" m
-      JOIN "Staff" s ON m."senderId" = s.id
+      LEFT JOIN "Staff" s ON m."senderId" = s.id
+      LEFT JOIN "Builder" b ON m."builderSenderId" = b.id
       WHERE m."conversationId" = $1
       ORDER BY m."createdAt" ASC
       OFFSET $2
@@ -114,20 +118,23 @@ export async function GET(
 
     const totalCount = countResult[0]?.count || 0
 
-    // Map messages to response format
+    // Map messages to response format — handle both staff and builder senders
     const mappedMessages = messages.map((m: any) => ({
       id: m.id,
       body: m.body,
       createdAt: m.createdAt,
       readBy: m.readBy || [],
-      sender: {
+      senderType: m.senderType || 'STAFF',
+      builderSenderId: m.builderSenderId || null,
+      builderSenderName: m.builderSenderName || null,
+      sender: m.senderId ? {
         id: m.senderId,
         firstName: m.firstName,
         lastName: m.lastName,
         role: m.role,
         department: m.department,
         avatar: m.avatar,
-      },
+      } : null,
     }))
 
     return NextResponse.json({

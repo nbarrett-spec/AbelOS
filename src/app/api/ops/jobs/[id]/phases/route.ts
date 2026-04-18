@@ -25,9 +25,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     // Calculate totals
-    const totalExpected = phases.reduce((sum, p) => sum + (p.expectedAmount || 0), 0)
-    const totalActual = phases.reduce((sum, p) => sum + (p.actualAmount || 0), 0)
-    const completedCount = phases.filter((p) => ['INVOICED', 'PAID'].includes(p.status)).length
+    const totalExpected = phases.reduce((sum: any, p: any) => sum + (p.expectedAmount || 0), 0)
+    const totalActual = phases.reduce((sum: any, p: any) => sum + (p.actualAmount || 0), 0)
+    const completedCount = phases.filter((p: any) => ['INVOICED', 'PAID'].includes(p.status)).length
 
     return NextResponse.json({
       job: { id: job.id, jobNumber: job.jobNumber, builderName: job.builderName },
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
 
       if (configs.length > 0) {
-        phaseSource = configs.map((c) => ({
+        phaseSource = configs.map((c: any) => ({
           templateId: c.templateId,
           configId: c.id,
           name: c.name,
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         orderBy: { sortOrder: 'asc' },
       })
 
-      phaseSource = templates.map((t) => ({
+      phaseSource = templates.map((t: any) => ({
         templateId: t.id,
         configId: null,
         name: t.name,
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await audit(request, 'JOB_PHASES_INITIALIZED', 'Job', params.id, {
       phaseCount: phases.length,
       jobTotal: total,
-      phases: phases.map((p) => ({ name: p.name, expectedAmount: p.expectedAmount })),
+      phases: phases.map((p: any) => ({ name: p.name, expectedAmount: p.expectedAmount })),
     })
 
     return NextResponse.json({ phases }, { status: 201 })

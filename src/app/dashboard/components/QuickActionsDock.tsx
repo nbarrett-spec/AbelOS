@@ -52,9 +52,9 @@ const ACTIONS: QuickAction[] = [
     hoverBg: 'group-hover:bg-cyan-50 dark:group-hover:bg-cyan-950/20',
   },
   {
-    href: '/dashboard/messages',
+    href: '/dashboard/chat',
     icon: <MessageSquare className="w-5 h-5" />,
-    label: 'Messages',
+    label: 'Chat',
     color: 'text-violet-600 dark:text-violet-400',
     hoverBg: 'group-hover:bg-violet-50 dark:group-hover:bg-violet-950/20',
   },

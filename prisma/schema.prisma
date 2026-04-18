@@ -72,6 +72,10 @@ model Builder {
   // Job phase configuration
   phaseConfigs       BuilderPhaseConfig[]
 
+  // Unified messaging
+  chatConversations  Conversation[]  @relation("BuilderConversations")
+  chatMessagesSent   Message[]       @relation("BuilderMessagesSent")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1733,6 +1737,7 @@ enum ConversationType {
   GROUP
   CHANNEL
   DEPARTMENT
+  BUILDER_SUPPORT  // Builder-to-staff conversations
 }
 
 enum NotificationType {
@@ -1756,16 +1761,26 @@ model Message {
   id             String       @id @default(cuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String
-  sender         Staff        @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
+
+  // Staff sender (null if builder sent the message)
+  senderId       String?
+  sender         Staff?       @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
+
+  // Builder sender (null if staff sent the message)
+  builderSenderId String?
+  builderSender   Builder?    @relation("BuilderMessagesSent", fields: [builderSenderId], references: [id], onDelete: Restrict)
+
+  senderType  String   @default("STAFF") // "STAFF" or "BUILDER"
 
   body   String
   readBy String[] // Array of staff IDs who read it
+  readByBuilder Boolean @default(false)
 
   createdAt DateTime @default(now())
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([builderSenderId])
   @@index([createdAt])
 }
 
@@ -1775,13 +1790,19 @@ model Conversation {
   name            String? // For groups/channels
   departmentScope String? // Department name for department channels (e.g. "EXECUTIVE", "SALES")
 
-  createdById String
-  createdBy   Staff  @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById String?
+  createdBy   Staff?  @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  // Builder support thread link (BUILDER_SUPPORT type only)
+  builderId   String?
+  builder     Builder? @relation("BuilderConversations", fields: [builderId], references: [id], onDelete: Cascade)
+  subject     String?  // Thread subject for builder support
 
   participants ConversationParticipant[]
   messages     Message[]
 
   lastMessageAt DateTime?
+  lastMessagePreview String? // Short preview of last message
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1789,6 +1810,7 @@ model Conversation {
   @@index([type])
   @@index([createdById])
   @@index([lastMessageAt])
+  @@index([builderId])
 }
 
 model ConversationParticipant {

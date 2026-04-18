@@ -85,11 +85,11 @@ export async function PUT(request: NextRequest) {
     })
 
     const incomingNames = new Set(phases.map((p: { name: string }) => p.name))
-    const missingRequired = existingRequired.filter((r) => !incomingNames.has(r.name))
+    const missingRequired = existingRequired.filter((r: any) => !incomingNames.has(r.name))
 
     if (missingRequired.length > 0) {
       return NextResponse.json(
-        { error: `Cannot remove required phases: ${missingRequired.map((r) => r.name).join(', ')}` },
+        { error: `Cannot remove required phases: ${missingRequired.map((r: any) => r.name).join(', ')}` },
         { status: 400 }
       )
     }

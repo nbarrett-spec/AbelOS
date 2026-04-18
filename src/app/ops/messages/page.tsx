@@ -65,8 +65,10 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [messageBody, setMessageBody] = useState('')
-  const [activeTab, setActiveTab] = useState<'dms' | 'groups' | 'channels'>('channels')
+  const [activeTab, setActiveTab] = useState<'dms' | 'groups' | 'channels' | 'builders'>('channels')
   const [showNewConversation, setShowNewConversation] = useState(false)
+  const [builderConversations, setBuilderConversations] = useState<Conversation[]>([])
+  const [isBuilderThread, setIsBuilderThread] = useState(false)
   const [staffList, setStaffList] = useState<StaffMember[]>([])
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([])
   const [newConversationName, setNewConversationName] = useState('')
@@ -139,6 +141,35 @@ export default function MessagesPage() {
 
     loadChannels()
   }, [])
+
+  // Load builder support conversations
+  useEffect(() => {
+    if (!currentUserId) return
+    async function loadBuilderConversations() {
+      try {
+        const response = await fetch(`/api/ops/builder-chat?staffId=${currentUserId}`)
+        if (response.ok) {
+          const data = await response.json()
+          const mapped = (data.conversations || []).map((c: any) => ({
+            id: c.id,
+            name: c.builderName || c.name || 'Builder Thread',
+            participantCount: c.participantCount || 0,
+            type: 'BUILDER_SUPPORT',
+            lastMessage: c.lastMessagePreview || null,
+            lastMessageTime: c.lastMessageAt || null,
+            unreadCount: c.unreadCount || 0,
+            lastMessageSender: c.lastMessageSender || null,
+          }))
+          setBuilderConversations(mapped)
+        }
+      } catch (error) {
+        console.error('Failed to load builder conversations:', error)
+      }
+    }
+    loadBuilderConversations()
+    const interval = setInterval(loadBuilderConversations, 15000)
+    return () => clearInterval(interval)
+  }, [currentUserId])
 
   // Load staff list for new conversation modal
   useEffect(() => {
@@ -223,6 +254,43 @@ export default function MessagesPage() {
     if (!messageBody.trim() || !selectedConversation || !currentUserId) return
 
     try {
+      // Builder thread uses different API
+      if (isBuilderThread) {
+        const response = await fetch('/api/ops/builder-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationId: selectedConversation,
+            staffId: currentUserId,
+            message: messageBody,
+          }),
+        })
+        if (response.ok) {
+          setMessageBody('')
+          // Reload builder thread messages via the standard messages endpoint
+          const messagesResponse = await fetch(
+            `/api/ops/messages/${selectedConversation}?staffId=${currentUserId}`
+          )
+          if (messagesResponse.ok) {
+            const data = await messagesResponse.json()
+            const mapped = (data.messages || []).map((m: any) => ({
+              id: m.id,
+              senderId: m.sender?.id || m.builderSenderId || '',
+              senderName: m.senderType === 'BUILDER'
+                ? (m.builderSenderName || 'Builder')
+                : (m.sender ? `${m.sender.firstName} ${m.sender.lastName}` : 'Unknown'),
+              senderRole: m.senderType === 'BUILDER' ? 'BUILDER' : (m.sender?.role || ''),
+              senderDepartment: m.senderType === 'BUILDER' ? '' : (m.sender?.department || ''),
+              body: m.body,
+              timestamp: m.createdAt,
+              conversationId: selectedConversation,
+            }))
+            setMessages(mapped)
+          }
+        }
+        return
+      }
+
       const response = await fetch(
         `/api/ops/messages/${selectedConversation}`,
         {
@@ -321,7 +389,8 @@ export default function MessagesPage() {
   }
 
   const selectedConvData = conversations.find(c => c.id === selectedConversation) ||
-    departmentChannels.find(c => c.id === selectedConversation)
+    departmentChannels.find(c => c.id === selectedConversation) ||
+    builderConversations.find(c => c.id === selectedConversation)
 
   if (!staff) {
     return (
@@ -354,6 +423,7 @@ export default function MessagesPage() {
               { id: 'dms', label: 'Direct Messages' },
               { id: 'groups', label: 'Groups' },
               { id: 'channels', label: 'Channels' },
+              { id: 'builders', label: 'Builders' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -371,7 +441,51 @@ export default function MessagesPage() {
 
           {/* Conversations/Channels list */}
           <div className="flex-1 overflow-y-auto">
-            {activeTab === 'channels' ? (
+            {activeTab === 'builders' ? (
+              // Builder support conversations
+              builderConversations.length === 0 ? (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  No builder conversations
+                </div>
+              ) : (
+                builderConversations.map(conv => (
+                  <button
+                    key={conv.id}
+                    onClick={() => { setSelectedConversation(conv.id); setIsBuilderThread(true) }}
+                    className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                      selectedConversation === conv.id ? 'bg-orange-50' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm truncate flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#E67E22] shrink-0" />
+                          {conv.name}
+                        </h3>
+                        {conv.lastMessage && (
+                          <p className="text-xs text-gray-600 truncate mt-1">
+                            {conv.lastMessage}
+                          </p>
+                        )}
+                      </div>
+                      {conv.unreadCount > 0 && (
+                        <span className="px-2 py-1 bg-[#E67E22] text-white rounded-full text-xs font-bold flex-shrink-0">
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    {conv.lastMessageTime && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(conv.lastMessageTime).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    )}
+                  </button>
+                ))
+              )
+            ) : activeTab === 'channels' ? (
               // Department channels
               departmentChannels.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 text-sm">
@@ -381,7 +495,7 @@ export default function MessagesPage() {
                 departmentChannels.map(channel => (
                   <button
                     key={channel.id}
-                    onClick={() => setSelectedConversation(channel.id)}
+                    onClick={() => { setSelectedConversation(channel.id); setIsBuilderThread(false) }}
                     className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                       selectedConversation === channel.id ? 'bg-orange-50' : ''
                     }`}
@@ -414,7 +528,7 @@ export default function MessagesPage() {
                 filteredConversations.map(conv => (
                   <button
                     key={conv.id}
-                    onClick={() => setSelectedConversation(conv.id)}
+                    onClick={() => { setSelectedConversation(conv.id); setIsBuilderThread(false) }}
                     className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                       selectedConversation === conv.id ? 'bg-orange-50' : ''
                     }`}

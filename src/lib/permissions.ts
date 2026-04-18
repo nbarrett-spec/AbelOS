@@ -321,6 +321,7 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Messaging — everyone
   '/api/ops/messages': ALL_ROLES,
+  '/api/ops/builder-chat': ALL_ROLES,
   '/api/ops/notifications': ALL_ROLES,
 
   // Sales APIs — PM added
