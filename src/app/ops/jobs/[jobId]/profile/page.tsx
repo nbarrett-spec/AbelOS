@@ -178,7 +178,7 @@ export default function JobProfilePage() {
                 }`}
                 style={{
                   backgroundColor: past || current ? sc?.color || '#ccc' : '#e5e7eb',
-                  ringColor: current ? sc?.color : undefined,
+                  ...(current && sc?.color ? { '--tw-ring-color': sc.color } as any : {}),
                 }}
                 title={sc?.label || s}
               />
