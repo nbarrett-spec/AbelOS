@@ -69,6 +69,9 @@ model Builder {
   communities        Community[]
   contacts           BuilderContact[]
 
+  // Job phase configuration
+  phaseConfigs       BuilderPhaseConfig[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -946,6 +949,7 @@ model Job {
   tasks              Task[]
   activities         Activity[]
   btProjectMappings  BTProjectMapping[]
+  phases             JobPhase[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2512,4 +2516,135 @@ model AgentConfig {
 
   @@unique([agentRole, configKey])
   @@index([agentRole])
+}
+
+// ── Job Phase System ──────────────────────────────────────────────────────
+// Configurable billing phases per builder. Ops sets defaults by builder type,
+// builders can customize. Each job gets phase instances that track progress
+// and optionally trigger invoices.
+
+enum PhaseAmountType {
+  PERCENTAGE // Phase = X% of total job value
+  FIXED      // Phase = specific dollar amount
+  MILESTONE  // No dollar amount — just a status checkpoint
+}
+
+enum PhaseStatus {
+  PENDING      // Not yet started
+  ACTIVE       // Currently in progress
+  READY        // Work complete, awaiting invoice
+  INVOICED     // Invoice generated for this phase
+  PAID         // Phase invoice fully paid
+  SKIPPED      // Phase was skipped for this job
+}
+
+// Default phase templates — ops defines these per builder type
+model JobPhaseTemplate {
+  id          String   @id @default(cuid())
+  name        String   // "Exterior", "Interior Trim 1", "Final Front"
+  description String?
+
+  // Who this template applies to by default
+  builderType BuilderType // PRODUCTION or CUSTOM
+
+  // Ordering
+  sortOrder   Int      @default(0) // Display and workflow order
+
+  // Amount defaults
+  amountType  PhaseAmountType @default(MILESTONE)
+  percentage  Float?   // If PERCENTAGE: e.g., 30.0 = 30%
+  fixedAmount Float?   // If FIXED: dollar amount
+
+  // Flags
+  isDefault   Boolean  @default(true) // Included by default for new jobs
+  isRequired  Boolean  @default(false) // Can't be skipped/removed
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  builderConfigs BuilderPhaseConfig[]
+  jobPhases      JobPhase[]
+
+  @@unique([builderType, name])
+  @@index([builderType])
+  @@index([sortOrder])
+}
+
+// Per-builder phase customization — overrides template defaults
+model BuilderPhaseConfig {
+  id        String @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+
+  // Links to a template (optional — builders can also create custom phases)
+  templateId String?
+  template   JobPhaseTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  // Phase definition (overrides template if set)
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  amountType  PhaseAmountType @default(MILESTONE)
+  percentage  Float?
+  fixedAmount Float?
+
+  isActive    Boolean  @default(true) // Builder can deactivate phases they don't use
+  isRequired  Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  jobPhases   JobPhase[]
+
+  @@unique([builderId, name])
+  @@index([builderId])
+  @@index([templateId])
+}
+
+// Actual phase instance on a specific job
+model JobPhase {
+  id    String @id @default(cuid())
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // Origin — which template/config created this phase
+  templateId String?
+  template   JobPhaseTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  configId   String?
+  config     BuilderPhaseConfig? @relation(fields: [configId], references: [id], onDelete: SetNull)
+
+  // Phase details
+  name        String   // "Exterior", "Interior Trim 1", etc.
+  sortOrder   Int      @default(0)
+  status      PhaseStatus @default(PENDING)
+
+  // Amount tracking (resolved at job creation from template/config)
+  amountType    PhaseAmountType @default(MILESTONE)
+  percentage    Float?   // Original percentage
+  expectedAmount Float?  // Resolved dollar amount (% * job total, or fixed)
+  actualAmount   Float?  // What was actually invoiced
+
+  // Invoice link
+  invoiceId   String?  // Invoice generated for this phase
+
+  // Timestamps
+  startedAt   DateTime?
+  completedAt DateTime?
+  invoicedAt  DateTime?
+  skippedAt   DateTime?
+  skippedBy   String?  // Staff who skipped it
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([jobId, name])
+  @@index([jobId])
+  @@index([status])
+  @@index([invoiceId])
+  @@index([templateId])
+  @@index([configId])
 }
