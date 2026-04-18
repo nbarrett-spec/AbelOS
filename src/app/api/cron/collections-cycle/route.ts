@@ -221,8 +221,8 @@ export async function GET(request: NextRequest) {
     }
 
     // console.log(
-      `[Collections Cycle] Done in ${duration}ms — ${overdueInvoices.length} invoices, ${actionsCreated} actions, ${escalationsCreated} escalations, ${paymentPlansOffered} plans`
-    )
+    //   `[Collections Cycle] Done in ${duration}ms — ${overdueInvoices.length} invoices, ${actionsCreated} actions, ${escalationsCreated} escalations, ${paymentPlansOffered} plans`
+    // )
 
     await finishCronRun(runId, 'SUCCESS', duration, { result: payload })
     return NextResponse.json(payload)

@@ -151,8 +151,8 @@ export async function fireAutomationEvent(
 
     const duration = Date.now() - startTime
     // console.log(
-      `[Automation] Completed in ${duration}ms: ${rulesTriggered} rules, ${actionsExecuted} actions`
-    )
+    //   `[Automation] Completed in ${duration}ms: ${rulesTriggered} rules, ${actionsExecuted} actions`
+    // )
 
     return { rulesTriggered, actionsExecuted, errors }
   } catch (error) {

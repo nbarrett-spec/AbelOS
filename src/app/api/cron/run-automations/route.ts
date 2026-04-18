@@ -114,8 +114,8 @@ export async function GET(request: NextRequest) {
         // Check frequency constraint
         if (!shouldExecuteRule(rule)) {
           // console.log(
-            `[Automation Cron] Rule ${rule.id} skipped due to frequency (last run: ${rule.lastRunAt})`
-          )
+          //   `[Automation Cron] Rule ${rule.id} skipped due to frequency (last run: ${rule.lastRunAt})`
+          // )
           continue
         }
 
@@ -167,8 +167,8 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     // console.log(
-      `[Automation Cron] Completed in ${duration}ms: ${stats.rulesEvaluated} evaluated, ${stats.rulesTriggered} triggered, ${stats.actionsExecuted} actions`
-    )
+    //   `[Automation Cron] Completed in ${duration}ms: ${stats.rulesEvaluated} evaluated, ${stats.rulesTriggered} triggered, ${stats.actionsExecuted} actions`
+    // )
 
     const payload = {
       success: true,

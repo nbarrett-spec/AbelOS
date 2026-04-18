@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
     }
 
     // console.log(
-      `[InFlow Sync] Completed in ${duration}ms — ${summary.totalProcessed} records processed, ${summary.totalCreated} created, ${summary.totalUpdated} updated`
-    )
+    //   `[InFlow Sync] Completed in ${duration}ms — ${summary.totalProcessed} records processed, ${summary.totalCreated} created, ${summary.totalUpdated} updated`
+    // )
 
     const payload = {
       success: !summary.anyFailures,
