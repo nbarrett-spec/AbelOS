@@ -33,7 +33,7 @@ async function _archivedMigrations() {
   // @ts-nocheck
   const _neverRuns = false
   if (_neverRuns) {
-
+    try {
     const results: { step: string; status: string; error?: string }[] = []
 
     const runStep = async (name: string, sql: string) => {

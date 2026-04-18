@@ -237,11 +237,11 @@ export async function POST(request: NextRequest) {
       // For now, we log it. The actual notification system would depend on
       // how builder notifications are handled in your system.
       // console.log('Builder notification would be sent:', {
-        builderId,
-        builderEmail,
-        title: notificationTitle,
-        body: notificationBody,
-      })
+      //   builderId,
+      //   builderEmail,
+      //   title: notificationTitle,
+      //   body: notificationBody,
+      // })
     }
 
     return NextResponse.json({
