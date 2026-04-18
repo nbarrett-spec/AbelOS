@@ -88,7 +88,7 @@ export default function HeroSection({ firstName = 'Builder', ytdSavings }: HeroS
                 variant="accent"
                 size="lg"
                 icon={<ArrowRight className="w-4.5 h-4.5" />}
-                iconPosition="right"
+
                 className="w-full sm:w-auto shadow-lg shadow-abel-orange/25 hover:shadow-xl hover:shadow-abel-orange/30"
               >
                 Start an Order
