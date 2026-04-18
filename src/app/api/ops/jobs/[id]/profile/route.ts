@@ -85,7 +85,7 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
         },
         scheduleEntries: {
-          orderBy: { date: 'asc' },
+          orderBy: { scheduledDate: 'asc' },
         },
         decisionNotes: {
           orderBy: { createdAt: 'desc' },
