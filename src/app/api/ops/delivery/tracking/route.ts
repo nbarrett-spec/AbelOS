@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { audit } from '@/lib/audit'
+import { checkStaffWriteLimit } from '@/lib/rate-limit'
 
 /**
  * GET /api/ops/delivery/tracking
@@ -120,6 +121,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+  const rateLimited = await checkStaffWriteLimit(request, 'delivery-tracking')
+  if (rateLimited) return rateLimited
 
   try {
     // Audit log
@@ -128,9 +131,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { deliveryId, status, location, notes, eta } = body
 
-    if (!deliveryId || !status) {
+    if (!deliveryId || typeof deliveryId !== 'string') {
+      return NextResponse.json({ error: 'deliveryId is required (string)' }, { status: 400 })
+    }
+    const validStatuses = ['PICKING', 'LOADED', 'DEPARTED', 'EN_ROUTE', 'NEARBY', 'ARRIVED', 'UNLOADING', 'COMPLETE']
+    if (!status || !validStatuses.includes(status)) {
       return NextResponse.json(
-        { error: 'deliveryId and status are required' },
+        { error: `status must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
       )
     }

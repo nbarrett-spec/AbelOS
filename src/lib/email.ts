@@ -868,3 +868,113 @@ export async function sendApplicationApprovedEmail(params: {
     `),
   })
 }
+
+// ─── TEMPLATE REGISTRY ──────────────────────────────────────────────────────
+// Central registry of all email templates with metadata for admin/ops preview.
+
+export interface EmailTemplateInfo {
+  key: string
+  name: string
+  description: string
+  category: 'auth' | 'sales' | 'ops' | 'billing' | 'warranty' | 'onboarding'
+  requiredParams: string[]
+}
+
+export const EMAIL_TEMPLATE_REGISTRY: EmailTemplateInfo[] = [
+  { key: 'password_reset', name: 'Password Reset', description: 'Builder password reset link', category: 'auth', requiredParams: ['to', 'name', 'resetUrl'] },
+  { key: 'invite', name: 'Builder Invite', description: 'New builder account invite', category: 'onboarding', requiredParams: ['to', 'companyName', 'inviteUrl'] },
+  { key: 'staff_password_reset', name: 'Staff Password Reset', description: 'Staff password reset link', category: 'auth', requiredParams: ['to', 'name', 'resetUrl'] },
+  { key: 'quote_ready', name: 'Quote Ready', description: 'Notification that a new quote is available', category: 'sales', requiredParams: ['to', 'builderName', 'quoteNumber', 'total', 'expiresAt'] },
+  { key: 'order_confirmation', name: 'Order Confirmation', description: 'Order placed confirmation with details', category: 'sales', requiredParams: ['to', 'builderName', 'orderNumber', 'total'] },
+  { key: 'quote_request_confirmation', name: 'Quote Request Received', description: 'Acknowledgment that a quote request was submitted', category: 'sales', requiredParams: ['to', 'builderName', 'projectName'] },
+  { key: 'invoice', name: 'Invoice', description: 'Invoice notification with payment link', category: 'billing', requiredParams: ['to', 'builderName', 'invoiceNumber', 'total', 'dueDate'] },
+  { key: 'warranty_update', name: 'Warranty Update', description: 'Warranty claim status change', category: 'warranty', requiredParams: ['to', 'builderName', 'claimNumber', 'status'] },
+  { key: 'order_status', name: 'Order Status Update', description: 'Order status change notification', category: 'ops', requiredParams: ['to', 'builderName', 'orderNumber', 'status'] },
+  { key: 'warranty_claim_confirmation', name: 'Warranty Claim Filed', description: 'Confirmation that a warranty claim was received', category: 'warranty', requiredParams: ['to', 'builderName', 'claimNumber'] },
+  { key: 'quote_followup_day3', name: 'Quote Follow-Up (Day 3)', description: '3-day quote reminder', category: 'sales', requiredParams: ['to', 'builderName', 'quoteNumber', 'total'] },
+  { key: 'quote_followup_day7', name: 'Quote Follow-Up (Day 7)', description: '7-day quote final reminder', category: 'sales', requiredParams: ['to', 'builderName', 'quoteNumber', 'total'] },
+  { key: 'quote_expiring', name: 'Quote Expiring', description: 'Quote about to expire notification', category: 'sales', requiredParams: ['to', 'builderName', 'quoteNumber', 'expiresAt'] },
+  { key: 'application_received', name: 'Application Received', description: 'Builder application acknowledgment', category: 'onboarding', requiredParams: ['to', 'companyName', 'contactName'] },
+  { key: 'application_approved', name: 'Application Approved', description: 'Builder application approval with login instructions', category: 'onboarding', requiredParams: ['to', 'companyName', 'contactName'] },
+]
+
+/**
+ * Generate a preview of an email template with sample data (for admin preview).
+ * Returns the rendered HTML without sending.
+ */
+export function previewTemplate(templateKey: string): string | null {
+  const sampleData: Record<string, any> = {
+    to: 'preview@example.com',
+    name: 'John Smith',
+    companyName: 'DFW Custom Homes',
+    builderName: 'DFW Custom Homes',
+    contactName: 'John Smith',
+    resetUrl: `${APP_URL}/reset-password?token=PREVIEW_TOKEN`,
+    inviteUrl: `${APP_URL}/signup?invite=PREVIEW_TOKEN`,
+    quoteNumber: 'Q-2026-0042',
+    orderNumber: 'ORD-2026-0105',
+    invoiceNumber: 'INV-2026-0089',
+    claimNumber: 'WC-2026-0007',
+    total: 8750.00,
+    expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+    dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+    status: 'IN_PRODUCTION',
+    projectName: 'Lakewood Estates Phase 2',
+  }
+
+  const templates: Record<string, () => string> = {
+    password_reset: () => wrap(`
+      <h2 style="color: #1B4F72; margin-top: 0;">Reset Your Password</h2>
+      <p>Hi ${sampleData.name},</p>
+      <p>Click below to reset your password. This link expires in 1 hour.</p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${sampleData.resetUrl}" style="background-color: #E67E22; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Reset Password
+        </a>
+      </div>
+    `),
+    quote_ready: () => wrap(`
+      <h2 style="color: #1B4F72; margin-top: 0;">Your Quote Is Ready</h2>
+      <p>Hi ${sampleData.builderName},</p>
+      <p>Quote <strong>${sampleData.quoteNumber}</strong> is ready for your review.</p>
+      <p style="font-size: 24px; font-weight: bold; color: #1B4F72;">$${sampleData.total.toLocaleString()}</p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard/quotes" style="background-color: #E67E22; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          View Quote
+        </a>
+      </div>
+    `),
+    order_confirmation: () => wrap(`
+      <h2 style="color: #1B4F72; margin-top: 0;">Order Confirmed</h2>
+      <p>Hi ${sampleData.builderName},</p>
+      <p>Your order <strong>${sampleData.orderNumber}</strong> has been received and confirmed.</p>
+      <p style="font-size: 24px; font-weight: bold; color: #1B4F72;">$${sampleData.total.toLocaleString()}</p>
+    `),
+    invoice: () => wrap(`
+      <h2 style="color: #1B4F72; margin-top: 0;">Invoice ${sampleData.invoiceNumber}</h2>
+      <p>Hi ${sampleData.builderName},</p>
+      <p>A new invoice for <strong>$${sampleData.total.toLocaleString()}</strong> is ready.</p>
+      <p>Due: ${new Date(sampleData.dueDate).toLocaleDateString()}</p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard/payments" style="background-color: #E67E22; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Pay Now
+        </a>
+      </div>
+    `),
+  }
+
+  const generator = templates[templateKey]
+  return generator ? generator() : null
+}
+
+/**
+ * Get all templates by category.
+ */
+export function getTemplatesByCategory(): Record<string, EmailTemplateInfo[]> {
+  const grouped: Record<string, EmailTemplateInfo[]> = {}
+  for (const tmpl of EMAIL_TEMPLATE_REGISTRY) {
+    if (!grouped[tmpl.category]) grouped[tmpl.category] = []
+    grouped[tmpl.category].push(tmpl)
+  }
+  return grouped
+}

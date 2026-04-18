@@ -91,9 +91,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { invoiceId } = await request.json()
-    if (!invoiceId) {
-      return NextResponse.json({ error: 'invoiceId required' }, { status: 400 })
+    const body = await request.json()
+    const { invoiceId } = body
+    if (!invoiceId || typeof invoiceId !== 'string' || invoiceId.trim().length === 0) {
+      return NextResponse.json({ error: 'invoiceId required (non-empty string)' }, { status: 400 })
     }
 
     // Fetch the invoice

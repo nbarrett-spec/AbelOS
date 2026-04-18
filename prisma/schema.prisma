@@ -556,7 +556,9 @@ enum OrderStatus {
   RECEIVED
   CONFIRMED
   IN_PRODUCTION
+  AWAITING_MATERIAL   // Some items not in stock — watching for arrival
   READY_TO_SHIP
+  PARTIAL_SHIPPED     // Shipped with missing items on backorder
   SHIPPED
   DELIVERED
   COMPLETE
@@ -1738,6 +1740,9 @@ enum NotificationType {
   QC_ALERT
   INVOICE_OVERDUE
   SCHEDULE_CHANGE
+  MATERIAL_ARRIVAL    // Watched material has arrived at warehouse
+  BACKORDER_UPDATE    // Backorder status change
+  OUTREACH_REVIEW     // Outreach step ready for review
   SYSTEM
 }
 
@@ -2342,6 +2347,157 @@ model AccountTouchpoint {
 
   @@index([builderId])
   @@index([createdAt])
+}
+
+// ─── BUILDER APPLICATIONS (Self-registration flow) ──────────────────
+
+model BuilderApplication {
+  id              String @id @default(cuid())
+  builderId       String?
+  referenceNumber String @unique // "APP1A2B3C4D"
+  companyName     String
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  businessLicense String?
+  taxId           String?
+  estimatedAnnualVolume String?
+  referralSource  String?
+  notes           String?
+
+  status          String @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED
+
+  // Review
+  reviewedById    String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([contactEmail])
+  @@index([builderId])
+  @@index([createdAt])
+}
+
+// ─── VEHICLE GPS TRACKING ────────────────────────────────────────────
+
+model VehicleLocation {
+  id        String @id @default(cuid())
+  crewId    String
+  vehicleId String? // License plate or fleet ID
+
+  // GPS position
+  latitude  Float
+  longitude Float
+  heading   Float?   // Compass bearing 0-360
+  speed     Float?   // MPH
+
+  // Context
+  status    String   @default("IDLE") // IDLE, EN_ROUTE, AT_STOP, RETURNING
+  address   String?  // Reverse-geocoded address (optional)
+
+  // Link to active delivery (if any)
+  activeDeliveryId String?
+
+  timestamp DateTime @default(now())
+
+  @@index([crewId])
+  @@index([vehicleId])
+  @@index([timestamp])
+  @@index([activeDeliveryId])
+}
+
+// ─── MATERIAL WATCH (Tracks items awaiting stock for orders) ────────
+
+model MaterialWatch {
+  id        String @id @default(cuid())
+  orderId   String
+  orderItemId String?
+  productId String
+  jobId     String?
+
+  // What we're waiting for
+  sku         String
+  productName String
+  qtyNeeded   Int
+  qtyAvailable Int @default(0)
+
+  // Status
+  status    String @default("AWAITING") // AWAITING, PARTIAL, ARRIVED, CANCELLED
+
+  // Notification tracking
+  notifiedSalesRep Boolean @default(false)
+  notifiedOps      Boolean @default(false)
+  arrivedAt        DateTime?
+
+  // Who to notify
+  salesRepId String?
+  createdById String?
+
+  // PO link (which PO is bringing this material)
+  purchaseOrderId String?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([status])
+  @@index([purchaseOrderId])
+  @@index([salesRepId])
+  @@index([jobId])
+}
+
+// ─── BACKORDER TRACKER (Partial shipments + follow-up delivery) ─────
+
+model BackorderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  orderItemId String?
+  deliveryId  String?  // Original delivery that went out partial
+  productId String
+
+  // Item details
+  sku         String
+  productName String
+  qtyOrdered  Int
+  qtyShipped  Int    @default(0)
+  qtyBackordered Int @default(0)
+
+  // Tracking
+  status    String @default("BACKORDERED") // BACKORDERED, MATERIAL_ARRIVED, SCHEDULED, DELIVERED, CANCELLED
+
+  // Follow-up delivery
+  followUpDeliveryId String?  // New delivery created when material arrives
+  scheduledDeliveryDate DateTime?
+
+  // Material arrival
+  materialArrivedAt DateTime?
+  purchaseOrderId   String?
+
+  // Builder visibility
+  builderNotified Boolean @default(false)
+  builderNotifiedAt DateTime?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([deliveryId])
+  @@index([productId])
+  @@index([status])
+  @@index([purchaseOrderId])
+  @@index([followUpDeliveryId])
 }
 
 model AgentConfig {

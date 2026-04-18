@@ -3,12 +3,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { canAccessRoute, type PortalOverrides } from '@/lib/permissions'
 import { NotificationBell } from './components/NotificationBell'
 import { GlobalSearch } from './components/GlobalSearch'
 import AICopilot from './components/AICopilot'
 import ThemeProvider from './components/ThemeProvider'
+import Avatar from '@/components/ui/Avatar'
+import Badge from '@/components/ui/Badge'
+import Tooltip from '@/components/ui/Tooltip'
 import type { StaffRole } from '@/lib/permissions'
 import {
   BarChart3, Briefcase, Truck, Settings, TrendingUp, Wrench, Calendar, HardHat, Target, FileText,
@@ -17,7 +20,10 @@ import {
   Factory, Cog, CheckCircle, Banknote, Printer, Smartphone, Scale, Bot, Download, Map,
   Heart, Sparkles, Zap, Handshake, Link2, TreePine, Archive, FolderOpen, Users, User,
   MessageSquare, MailOpen, Bell, Wallet, Landmark, Sun, ChevronLeft, ChevronRight,
+  PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown,
 } from 'lucide-react'
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface NavItem {
   href: string
@@ -31,75 +37,32 @@ interface NavSection {
   items: NavItem[]
 }
 
+// ── Icon Map ───────────────────────────────────────────────────────────────
+
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  '📊': BarChart3,
-  '👔': Briefcase,
-  '🚚': Truck,
-  '⚙️': Settings,
-  '📈': TrendingUp,
-  '🔧': Wrench,
-  '📅': Calendar,
-  '👷': HardHat,
-  '🎯': Target,
-  '📝': FileText,
-  '📄': File,
-  '📋': ClipboardList,
-  '💰': DollarSign,
-  '🧠': Brain,
-  '📧': Mail,
-  '📣': Megaphone,
-  '📞': Phone,
-  '🏗️': Building2,
-  '📨': Inbox,
-  '🏢': Building,
-  '🏘️': Home,
-  '💲': CircleDollarSign,
-  '🛒': ShoppingCart,
-  '🔄': RefreshCw,
-  '🔍': Search,
-  '📐': Ruler,
-  '📦': Package,
-  '🛡️': Shield,
-  '📜': ScrollText,
-  '🏭': Factory,
-  '🔩': Cog,
-  '✅': CheckCircle,
-  '💵': Banknote,
-  '🖨️': Printer,
-  '📱': Smartphone,
-  '⚖️': Scale,
-  '🤖': Bot,
-  '📥': Download,
-  '🗺️': Map,
-  '❤️': Heart,
-  '🔮': Sparkles,
-  '⚡': Zap,
-  '🤝': Handshake,
-  '🔗': Link2,
-  '🌲': TreePine,
-  '🗄️': Archive,
-  '📁': FolderOpen,
-  '👥': Users,
-  '👤': User,
-  '💬': MessageSquare,
-  '📩': MailOpen,
-  '🔔': Bell,
-  '💸': Wallet,
-  '🏦': Landmark,
-  '☀️': Sun,
+  '📊': BarChart3, '👔': Briefcase, '🚚': Truck, '⚙️': Settings, '📈': TrendingUp,
+  '🔧': Wrench, '📅': Calendar, '👷': HardHat, '🎯': Target, '📝': FileText,
+  '📄': File, '📋': ClipboardList, '💰': DollarSign, '🧠': Brain, '📧': Mail,
+  '📣': Megaphone, '📞': Phone, '🏗️': Building2, '📨': Inbox, '🏢': Building,
+  '🏘️': Home, '💲': CircleDollarSign, '🛒': ShoppingCart, '🔄': RefreshCw,
+  '🔍': Search, '📐': Ruler, '📦': Package, '🛡️': Shield, '📜': ScrollText,
+  '🏭': Factory, '🔩': Cog, '✅': CheckCircle, '💵': Banknote, '🖨️': Printer,
+  '📱': Smartphone, '⚖️': Scale, '🤖': Bot, '📥': Download, '🗺️': Map,
+  '❤️': Heart, '🔮': Sparkles, '⚡': Zap, '🤝': Handshake, '🔗': Link2,
+  '🌲': TreePine, '🗄️': Archive, '📁': FolderOpen, '👥': Users, '👤': User,
+  '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark,
+  '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck,
 }
+
+// ── Navigation Sections ────────────────────────────────────────────────────
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    label: 'OVERVIEW',
-    id: 'overview',
-    items: [
-      { href: '/ops', label: 'Dashboard', icon: '📊' },
-    ],
+    label: 'OVERVIEW', id: 'overview',
+    items: [{ href: '/ops', label: 'Dashboard', icon: '📊' }],
   },
   {
-    label: 'EXECUTIVE',
-    id: 'executive',
+    label: 'EXECUTIVE', id: 'executive',
     items: [
       { href: '/ops/executive', label: 'CEO Dashboard', icon: '👔' },
       { href: '/ops/kpis', label: 'KPIs', icon: '📊' },
@@ -110,8 +73,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'JOBS & PROJECTS',
-    id: 'jobs',
+    label: 'JOBS & PROJECTS', id: 'jobs',
     items: [
       { href: '/ops/jobs', label: 'Job Pipeline', icon: '🔧' },
       { href: '/ops/schedule', label: 'Schedule & Dispatch', icon: '📅' },
@@ -121,8 +83,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'SALES PIPELINE',
-    id: 'sales',
+    label: 'SALES PIPELINE', id: 'sales',
     items: [
       { href: '/ops/sales', label: 'Sales Dashboard', icon: '🎯' },
       { href: '/ops/sales/reports', label: 'Sales Reports', icon: '📊' },
@@ -137,8 +98,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'GROWTH ENGINE',
-    id: 'growth',
+    label: 'GROWTH ENGINE', id: 'growth',
     items: [
       { href: '/ops/growth/leads', label: 'Lead Scoring & CLV', icon: '🎯' },
       { href: '/ops/growth/permits', label: 'Permit Pipeline', icon: '🗺️' },
@@ -149,8 +109,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'ACCOUNTS & ORDERS',
-    id: 'accounts',
+    label: 'ACCOUNTS & ORDERS', id: 'accounts',
     items: [
       { href: '/ops/accounts', label: 'Builder Accounts', icon: '🏗️' },
       { href: '/ops/accounts/applications', label: 'Builder Applications', icon: '📨' },
@@ -168,16 +127,14 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'WARRANTY',
-    id: 'warranty',
+    label: 'WARRANTY', id: 'warranty',
     items: [
       { href: '/ops/warranty', label: 'Warranty Claims', icon: '🛡️' },
       { href: '/ops/warranty/policies', label: 'Warranty Policies', icon: '📜' },
     ],
   },
   {
-    label: 'MANUFACTURING',
-    id: 'manufacturing',
+    label: 'MANUFACTURING', id: 'manufacturing',
     items: [
       { href: '/ops/manufacturing', label: 'Manufacturing Dashboard', icon: '🏭' },
       { href: '/ops/manufacturing/build-sheet', label: 'Build Sheet', icon: '📝' },
@@ -191,16 +148,14 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'WAREHOUSE & NFC',
-    id: 'warehouse-nfc',
+    label: 'WAREHOUSE & NFC', id: 'warehouse-nfc',
     items: [
       { href: '/ops/warehouse/bays', label: 'Bay Map', icon: '🏭' },
       { href: '/ops/warehouse/doors', label: 'Door Registry', icon: '📱' },
     ],
   },
   {
-    label: 'SUPPLY CHAIN',
-    id: 'supply-chain',
+    label: 'SUPPLY CHAIN', id: 'supply-chain',
     items: [
       { href: '/ops/inventory', label: 'Inventory', icon: '📦' },
       { href: '/ops/inventory/intelligence', label: 'Inventory Intelligence', icon: '🧠' },
@@ -221,8 +176,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'FINANCE',
-    id: 'finance',
+    label: 'FINANCE', id: 'finance',
     items: [
       { href: '/ops/finance', label: 'Financial Dashboard', icon: '💰' },
       { href: '/ops/finance/ar', label: 'Accounts Receivable', icon: '📊' },
@@ -235,8 +189,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'COMMUNICATION',
-    id: 'communication',
+    label: 'COMMUNICATION', id: 'communication',
     items: [
       { href: '/ops/agent', label: 'AI Agent Dashboard', icon: '🤖' },
       { href: '/ops/messages', label: 'Messages', icon: '💬' },
@@ -246,8 +199,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'AI OPERATIONS BRAIN',
-    id: 'ai-brain',
+    label: 'AI OPERATIONS BRAIN', id: 'ai-brain',
     items: [
       { href: '/ops/ai/health', label: 'Business Health', icon: '❤️' },
       { href: '/ops/ai/predictive', label: 'Predictive Analytics', icon: '🔮' },
@@ -256,8 +208,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'CUSTOMER VALUE',
-    id: 'customer-value',
+    label: 'CUSTOMER VALUE', id: 'customer-value',
     items: [
       { href: '/ops/portal/builder-intel', label: 'Builder Intelligence', icon: '🔍' },
       { href: '/ops/warranty/automation', label: 'Warranty Automation', icon: '🛡️' },
@@ -266,8 +217,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'INTEGRATIONS',
-    id: 'integrations',
+    label: 'INTEGRATIONS', id: 'integrations',
     items: [
       { href: '/ops/integrations', label: 'Integration Hub', icon: '🔗' },
       { href: '/ops/integrations/quickbooks', label: 'QuickBooks Desktop', icon: '💰' },
@@ -278,8 +228,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'DEPARTMENT PORTALS',
-    id: 'portals',
+    label: 'DEPARTMENT PORTALS', id: 'portals',
     items: [
       { href: '/ops/portal', label: 'Portal Hub', icon: '🏢' },
       { href: '/ops/portal/pm', label: 'PM Portal', icon: '📋' },
@@ -306,16 +255,14 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'RESOURCES',
-    id: 'resources',
+    label: 'RESOURCES', id: 'resources',
     items: [
       { href: '/ops/documents/vault', label: 'Document Vault', icon: '🗄️' },
       { href: '/ops/documents', label: 'Document Library', icon: '📁' },
     ],
   },
   {
-    label: 'ADMIN',
-    id: 'admin',
+    label: 'ADMIN', id: 'admin',
     items: [
       { href: '/ops/staff', label: 'Staff Management', icon: '👥' },
       { href: '/ops/locations', label: 'Locations', icon: '🏢' },
@@ -330,19 +277,11 @@ const NAV_SECTIONS: NavSection[] = [
 ]
 
 const ROLE_DISPLAY: Record<string, string> = {
-  ADMIN: 'Admin',
-  MANAGER: 'Manager',
-  PROJECT_MANAGER: 'Project Manager',
-  ESTIMATOR: 'Estimator',
-  SALES_REP: 'Sales Rep',
-  PURCHASING: 'Purchasing',
-  WAREHOUSE_LEAD: 'Warehouse Lead',
-  WAREHOUSE_TECH: 'Warehouse Tech',
-  DRIVER: 'Driver',
-  INSTALLER: 'Installer',
-  QC_INSPECTOR: 'QC Inspector',
-  ACCOUNTING: 'Accounting',
-  VIEWER: 'Viewer',
+  ADMIN: 'Admin', MANAGER: 'Manager', PROJECT_MANAGER: 'Project Manager',
+  ESTIMATOR: 'Estimator', SALES_REP: 'Sales Rep', PURCHASING: 'Purchasing',
+  WAREHOUSE_LEAD: 'Warehouse Lead', WAREHOUSE_TECH: 'Warehouse Tech',
+  DRIVER: 'Driver', INSTALLER: 'Installer', QC_INSPECTOR: 'QC Inspector',
+  ACCOUNTING: 'Accounting', VIEWER: 'Viewer',
 }
 
 interface StaffUser {
@@ -357,6 +296,82 @@ interface StaffUser {
   portalOverrides?: PortalOverrides
 }
 
+// ── Collapsible Section ────────────────────────────────────────────────────
+
+function SidebarSection({
+  section,
+  pathname,
+  collapsed,
+  onNavigate,
+}: {
+  section: NavSection
+  pathname: string
+  collapsed: boolean
+  onNavigate: () => void
+}) {
+  const hasActive = section.items.some((item) =>
+    item.href === '/ops' ? pathname === '/ops' : pathname.startsWith(item.href)
+  )
+  const [open, setOpen] = useState(hasActive)
+
+  return (
+    <div className="mb-0.5">
+      {!collapsed && (
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between px-4 py-2 text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-[0.12em] hover:text-gray-300 transition-colors"
+        >
+          <span>{section.label}</span>
+          <ChevronDown
+            className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}
+          />
+        </button>
+      )}
+      {(open || collapsed) && (
+        <div className={`${collapsed ? 'space-y-0.5 px-1.5' : 'space-y-px px-2'}`}>
+          {section.items.map((item) => {
+            const isActive =
+              item.href === '/ops'
+                ? pathname === '/ops'
+                : pathname.startsWith(item.href)
+            const IconComponent = ICON_MAP[item.icon] || BarChart3
+
+            const linkContent = (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 group ${
+                  isActive
+                    ? 'bg-abel-orange/15 text-abel-orange dark:text-abel-orange-light border-l-[3px] border-abel-orange ml-0 pl-[9px]'
+                    : 'text-gray-400 hover:text-white hover:bg-white/[0.04] border-l-[3px] border-transparent'
+                }`}
+              >
+                <IconComponent
+                  className={`w-4 h-4 shrink-0 ${
+                    isActive ? 'text-abel-orange' : 'text-gray-500 group-hover:text-gray-300'
+                  }`}
+                />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </Link>
+            )
+
+            return collapsed ? (
+              <Tooltip key={item.href} content={item.label} side="right" delay={100}>
+                {linkContent}
+              </Tooltip>
+            ) : (
+              <div key={item.href}>{linkContent}</div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main Layout ────────────────────────────────────────────────────────────
+
 export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
@@ -364,12 +379,38 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const [staff, setStaff] = useState<StaffUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
-  const isAuthPage = pathname === '/ops/login' || pathname === '/ops/forgot-password' || pathname === '/ops/reset-password'
-  const isLoginPage = isAuthPage
+  const isAuthPage =
+    pathname === '/ops/login' ||
+    pathname === '/ops/forgot-password' ||
+    pathname === '/ops/reset-password'
+
+  // Close user menu on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    if (showUserMenu) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showUserMenu])
+
+  // Keyboard shortcut: Cmd+B to toggle sidebar
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault()
+        setCollapsed((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const fetchSession = useCallback(async () => {
-    if (isLoginPage) {
+    if (isAuthPage) {
       setLoading(false)
       return
     }
@@ -387,30 +428,28 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [isLoginPage])
+  }, [isAuthPage])
 
   useEffect(() => {
     fetchSession()
   }, [fetchSession])
 
-  if (isLoginPage) {
-    return <>{children}</>
-  }
+  if (isAuthPage) return <>{children}</>
 
-  const staffRoles = staff?.roles?.length ? staff.roles as StaffRole[] : (staff ? [staff.role as StaffRole] : [])
+  const staffRoles = staff?.roles?.length
+    ? (staff.roles as StaffRole[])
+    : staff
+      ? [staff.role as StaffRole]
+      : []
   const staffOverrides = staff?.portalOverrides || null
   const visibleSections = staff
-    ? NAV_SECTIONS.map((section: NavSection) => ({
+    ? NAV_SECTIONS.map((section) => ({
         ...section,
-        items: section.items.filter((item: NavItem) =>
+        items: section.items.filter((item) =>
           canAccessRoute(staffRoles, item.href, staffOverrides)
         ),
-      })).filter((section: NavSection) => section.items.length > 0)
+      })).filter((section) => section.items.length > 0)
     : []
-
-  const initials = staff
-    ? `${staff.firstName[0]}${staff.lastName[0]}`.toUpperCase()
-    : '...'
 
   async function handleLogout() {
     await fetch('/api/ops/auth/logout', { method: 'POST' })
@@ -419,205 +458,229 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <div className="flex min-h-screen bg-white text-gray-900">
-        {/* Accent line */}
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-abel-orange via-abel-orange to-abel-navy z-50" />
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+        {/* ── Top accent bar ─────────────────────────────────── */}
+        <div className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-abel-orange via-abel-orange to-abel-navy z-[60]" />
 
-        {/* Mobile overlay */}
+        {/* ── Mobile overlay ─────────────────────────────────── */}
         {mobileOpen && (
           <div
-            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden animate-[fadeIn_150ms_ease-out]"
             onClick={() => setMobileOpen(false)}
           />
         )}
 
-        {/* Elite Sidebar */}
+        {/* ── Sidebar ────────────────────────────────────────── */}
         <aside
           className={`${
-            collapsed ? 'lg:w-20' : 'lg:w-72'
-          } fixed lg:static inset-y-0 left-0 z-50 w-72 text-white transition-all duration-300 ease-out flex flex-col border-r border-gray-800 bg-gray-950 ${
+            collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[17rem]'
+          } fixed lg:static inset-y-0 left-0 z-50 w-[17rem] transition-all duration-300 ease-out flex flex-col border-r border-gray-800/80 bg-gray-950 ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
-          {/* Header */}
-          <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-            {!collapsed && (
-              <div className="flex flex-col gap-1">
-                <Image
-                  src="/images/logos/abel-logo.png"
-                  alt="Abel Logo"
-                  width={100}
-                  height={32}
-                  className="h-8 w-auto"
-                />
-                <p className="text-xs text-gray-500">Operations</p>
+          {/* Sidebar header */}
+          <div className="h-[3.75rem] px-4 flex items-center justify-between border-b border-gray-800/60 shrink-0">
+            {!collapsed ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-abel-orange flex items-center justify-center">
+                  <TreePine className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white leading-none">Abel Lumber</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">Operations</p>
+                </div>
               </div>
-            )}
-            {collapsed && (
+            ) : (
               <div className="flex-1 flex justify-center">
-                <Image
-                  src="/images/logos/abel-logo.png"
-                  alt="Abel Logo"
-                  width={80}
-                  height={24}
-                  className="h-6 w-auto"
-                />
+                <div className="w-8 h-8 rounded-lg bg-abel-orange flex items-center justify-center">
+                  <TreePine className="w-4 h-4 text-white" />
+                </div>
               </div>
             )}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="text-gray-600 hover:text-gray-300 p-1 transition-colors"
+              className="hidden lg:flex p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
               aria-label="Toggle sidebar"
             >
-              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
             </button>
           </div>
 
           {/* User card */}
-          {!collapsed && staff && (
-            <div className="px-4 py-3 border-b border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-abel-orange to-abel-navy text-white text-sm flex items-center justify-center font-bold flex-shrink-0">
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{staff.firstName} {staff.lastName}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {staffRoles.slice(0, 2).map((r: string) => (
-                      <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">
-                        {ROLE_DISPLAY[r] || r}
-                      </span>
-                    ))}
+          {staff && (
+            <div className={`border-b border-gray-800/60 shrink-0 ${collapsed ? 'px-2 py-3' : 'px-4 py-3'}`}>
+              {collapsed ? (
+                <Tooltip content={`${staff.firstName} ${staff.lastName}`} side="right">
+                  <div className="flex justify-center">
+                    <Avatar name={`${staff.firstName} ${staff.lastName}`} size="sm" status="online" />
+                  </div>
+                </Tooltip>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Avatar name={`${staff.firstName} ${staff.lastName}`} size="md" status="online" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-white truncate">
+                      {staff.firstName} {staff.lastName}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {staffRoles.slice(0, 2).map((r) => (
+                        <Badge key={r} variant="neutral" size="xs" className="!bg-gray-800 !text-gray-400">
+                          {ROLE_DISPLAY[r] || r}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
             {loading ? (
-              <div className="px-4 py-8 text-center text-xs text-gray-600">Loading...</div>
+              <div className="px-4 py-8 space-y-3 animate-pulse">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-3 rounded bg-gray-800 mx-2" style={{ width: `${60 + i * 5}%` }} />
+                ))}
+              </div>
             ) : (
-              visibleSections.map((section: NavSection) => (
-                <div key={section.id}>
-                  {!collapsed && (
-                    <div className="px-4 py-2.5 text-[11px] font-bold text-gray-600 uppercase tracking-widest">
-                      {section.label}
-                    </div>
-                  )}
-                  {section.items.map((item: NavItem) => {
-                    const isActive =
-                      item.href === '/ops'
-                        ? pathname === '/ops'
-                        : pathname.startsWith(item.href)
-                    const IconComponent = ICON_MAP[item.icon] || BarChart3
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-abel-orange/20 to-abel-orange/10 text-abel-orange border-l-2 border-abel-orange'
-                            : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                        }`}
-                      >
-                        <IconComponent className="w-4 h-4 flex-shrink-0" />
-                        {!collapsed && <span className="font-medium truncate">{item.label}</span>}
-                      </Link>
-                    )
-                  })}
-                </div>
+              visibleSections.map((section) => (
+                <SidebarSection
+                  key={section.id}
+                  section={section}
+                  pathname={pathname}
+                  collapsed={collapsed}
+                  onNavigate={() => setMobileOpen(false)}
+                />
               ))
             )}
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-800">
-            {!collapsed && (
-              <div className="space-y-2">
+          {/* Sidebar footer */}
+          <div className="p-3 border-t border-gray-800/60 shrink-0 space-y-1">
+            {!collapsed ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-white/[0.04] transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Builder View
+                </Link>
                 {staff && (
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left text-xs text-gray-500 hover:text-red-400 transition-colors font-medium"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-colors w-full text-left"
                   >
+                    <LogOut className="w-3.5 h-3.5" />
                     Sign Out
                   </button>
                 )}
-                <Link
-                  href="/dashboard"
-                  className="block text-xs text-gray-500 hover:text-gray-300 transition-colors font-medium"
-                >
-                  Builder View
-                </Link>
-              </div>
+              </>
+            ) : (
+              <>
+                <Tooltip content="Builder View" side="right">
+                  <Link href="/dashboard" className="flex justify-center p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors">
+                    <ExternalLink className="w-4 h-4" />
+                  </Link>
+                </Tooltip>
+                {staff && (
+                  <Tooltip content="Sign Out" side="right">
+                    <button
+                      onClick={handleLogout}
+                      className="flex justify-center p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-colors w-full"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+                )}
+              </>
             )}
           </div>
         </aside>
 
-        {/* Main content */}
+        {/* ── Main content area ──────────────────────────────── */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="border-b border-gray-200 px-4 sm:px-8 py-4 flex items-center justify-between bg-white">
-            <div className="flex items-center gap-4">
+          <header className="h-[3.75rem] border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 flex items-center justify-between bg-white dark:bg-gray-900 shrink-0">
+            <div className="flex items-center gap-3">
+              {/* Mobile hamburger */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Toggle sidebar"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Abel Operations</h2>
-              </div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Abel Operations</h2>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <GlobalSearch />
               <NotificationBell />
-              <span className="text-xs hidden sm:inline text-gray-500 font-medium">
-                {new Date().toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
+
+              {/* Date */}
+              <span className="text-xs hidden md:inline text-gray-400 dark:text-gray-500 font-medium tabular-nums">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </span>
 
-              {/* User menu */}
-              <div className="relative">
+              {/* Separator */}
+              <div className="hidden sm:block w-px h-6 bg-gray-200 dark:bg-gray-700" />
+
+              {/* User avatar menu */}
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-abel-orange to-abel-navy text-white text-sm flex items-center justify-center font-bold hover:opacity-90 transition-opacity"
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-abel-navy/30 rounded-full"
+                  aria-label="User menu"
                 >
-                  {initials}
+                  <Avatar
+                    name={staff ? `${staff.firstName} ${staff.lastName}` : ''}
+                    size="sm"
+                  />
                 </button>
+
+                {/* Dropdown */}
                 {showUserMenu && staff && (
-                  <div className="absolute right-0 top-12 w-60 rounded-xl shadow-elevation-5 py-2 z-50 bg-white border border-gray-200">
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-sm font-semibold text-gray-900">
+                  <div className="absolute right-0 top-11 w-64 rounded-xl shadow-elevation-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 z-50 animate-[slideDown_150ms_ease-out] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">
                         {staff.firstName} {staff.lastName}
                       </p>
-                      <p className="text-xs text-gray-600 mt-1">{staff.email}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{staff.email}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {staffRoles.map((r: string) => (
-                          <span
-                            key={r}
-                            className="text-[10px] px-2 py-1 rounded-full font-medium bg-abel-navy/10 text-abel-navy"
-                          >
-                            {ROLE_DISPLAY[r] || r}
-                          </span>
+                        {staffRoles.map((r) => (
+                          <Badge key={r} variant="brand" size="xs">{ROLE_DISPLAY[r] || r}</Badge>
                         ))}
                       </div>
                     </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
-                    >
-                      Sign Out
-                    </button>
+                    <div className="py-1">
+                      <Link
+                        href="/ops/profile"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <User className="w-4 h-4 text-gray-400" />
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/ops/settings"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-gray-400" />
+                        Settings
+                      </Link>
+                    </div>
+                    <div className="border-t border-gray-100 dark:border-gray-800 py-1">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors w-full text-left"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -625,8 +688,10 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Content area */}
-          <div className="flex-1 overflow-auto bg-white">
-            <div className="p-6 lg:p-8 max-w-7xl mx-auto">{children}</div>
+          <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-950">
+            <div className="p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
+              {children}
+            </div>
           </div>
         </main>
 

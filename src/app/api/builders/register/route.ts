@@ -1,9 +1,39 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { hashPassword } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
 import { sendApplicationReceivedEmail } from '@/lib/email'
 import { publicFormLimiter, checkRateLimit } from '@/lib/rate-limit'
+
+// Self-healing: ensure BuilderApplication table exists
+let tableEnsured = false
+async function ensureApplicationTable() {
+  if (tableEnsured) return
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "BuilderApplication" (
+        "id" TEXT PRIMARY KEY,
+        "builderId" TEXT,
+        "referenceNumber" TEXT UNIQUE NOT NULL,
+        "companyName" TEXT NOT NULL,
+        "contactName" TEXT NOT NULL,
+        "contactEmail" TEXT NOT NULL,
+        "contactPhone" TEXT,
+        "address" TEXT, "city" TEXT, "state" TEXT, "zip" TEXT,
+        "businessLicense" TEXT, "taxId" TEXT,
+        "estimatedAnnualVolume" TEXT, "referralSource" TEXT, "notes" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'PENDING_APPROVAL',
+        "reviewedById" TEXT, "reviewedAt" TIMESTAMPTZ, "reviewNotes" TEXT,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `)
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "BuilderApplication_status_idx" ON "BuilderApplication" ("status")`)
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "BuilderApplication_contactEmail_idx" ON "BuilderApplication" ("contactEmail")`)
+    tableEnsured = true
+  } catch { tableEnsured = true }
+}
 
 // Validation helper
 function validateEmail(email: string): boolean {
@@ -17,6 +47,7 @@ export async function POST(request: NextRequest) {
   if (limited) return limited
 
   try {
+    await ensureApplicationTable()
     const body = await request.json()
 
     // Validate required fields
@@ -55,7 +86,10 @@ export async function POST(request: NextRequest) {
     const refNumber = 'APP' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8).toUpperCase()
 
     // Insert into Builder table with PENDING_APPROVAL status
+    // Hash a random password — builders can't log in until approved and given credentials
     const builderId = 'bld' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+    const randomPassword = crypto.randomUUID() + crypto.randomUUID()
+    const passwordHash = await hashPassword(randomPassword)
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO "Builder" ("id", "companyName", "contactName", "email", "passwordHash", "phone", "address", "city", "state", "zip", "taxId", "licenseNumber", "status", "paymentTerm", "accountBalance", "taxExempt", "emailVerified", "createdAt", "updatedAt")
@@ -64,7 +98,7 @@ export async function POST(request: NextRequest) {
       companyName,
       contactName,
       contactEmail,
-      'pending_hash_placeholder',
+      passwordHash,
       contactPhone || null,
       address || null,
       city || null,

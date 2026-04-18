@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { LogIn, ArrowRight, AlertCircle, TreePine } from 'lucide-react'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,21 +15,17 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [capsLockOn, setCapsLockOn] = useState(false)
   const emailRef = useRef<HTMLInputElement | null>(null)
 
-  // Auto-focus the email field on mount, prefill from ?email= query if present
   useEffect(() => {
     const prefill = searchParams?.get('email')
     if (prefill) setEmail(prefill)
-    // delay focus slightly so autofill has a chance first
     const t = setTimeout(() => emailRef.current?.focus(), 50)
     return () => clearTimeout(t)
   }, [searchParams])
 
   const handleCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // getModifierState returns true when Caps Lock is currently enabled
     setCapsLockOn(typeof e.getModifierState === 'function' && e.getModifierState('CapsLock'))
   }
 
@@ -43,12 +42,8 @@ export default function LoginPage() {
       })
 
       const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || `Login failed (${res.status})`)
 
-      if (!res.ok) {
-        throw new Error(data?.error || `Login failed (${res.status})`)
-      }
-
-      // Honor ?next=… redirect (e.g. deep-link that forced login)
       const next = searchParams?.get('next')
       router.push(next && next.startsWith('/') ? next : '/dashboard')
     } catch (err) {
@@ -59,181 +54,225 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Animated gradient orb background */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
-      <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-amber-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000" />
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* ── Left panel: immersive brand experience ─────────────────── */}
+      <div className="hidden lg:flex lg:w-[55%] relative bg-abel-navy overflow-hidden">
+        {/* Layered background */}
+        <div className="absolute inset-0">
+          {/* Gradient base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0d2840] via-abel-navy to-[#1a3a5c]" />
 
-      {/* Login Card */}
-      <div className="relative w-full max-w-md">
-        <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 shadow-2xl">
+          {/* Subtle grid pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+              backgroundSize: '60px 60px',
+            }}
+          />
+
+          {/* Warm glow from bottom-right */}
+          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-abel-orange/15 rounded-full blur-[120px]" />
+          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-abel-navy-light/20 rounded-full blur-[100px]" />
+
+          {/* Floating wood grain lines */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grain" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+                <path d="M0 20 Q50 15 100 22 Q150 30 200 18" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 60 Q40 55 90 65 Q140 70 200 58" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 100 Q60 95 110 105 Q160 110 200 98" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 140 Q30 135 80 145 Q130 150 200 138" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 180 Q50 175 100 185 Q150 190 200 178" stroke="white" strokeWidth="0.5" fill="none" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grain)" />
+          </svg>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
           {/* Logo */}
-          <div className="mb-8">
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-2xl font-bold text-white">Abel Lumber</h2>
-              <span className="text-sm text-amber-400 font-medium">Builder Platform</span>
+          <div className="animate-enter">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-abel-orange flex items-center justify-center">
+                <TreePine className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white tracking-tight">Abel Lumber</span>
             </div>
           </div>
 
-          {/* Heading */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>
-            <p className="text-gray-400 text-sm">
-              Access your projects, quotes, and orders
+          {/* Hero copy */}
+          <div className="max-w-md">
+            <h1 className="animate-enter animate-enter-delay-1 text-4xl xl:text-5xl font-bold text-white leading-[1.1] tracking-tight">
+              Built for the
+              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-abel-orange to-abel-orange-light">
+                builders who
+              </span>
+              <span className="block mt-1">build Texas.</span>
+            </h1>
+            <p className="animate-enter animate-enter-delay-2 mt-6 text-lg text-white/60 leading-relaxed max-w-sm">
+              Manage orders, track deliveries, and grow your business — all in one place.
+            </p>
+
+            {/* Stats strip */}
+            <div className="animate-enter animate-enter-delay-3 mt-10 flex gap-8">
+              {[
+                { value: '2,400+', label: 'Orders managed' },
+                { value: '150+', label: 'Active builders' },
+                { value: '99.9%', label: 'Uptime' },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <div className="text-sm text-white/40 mt-0.5">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="animate-enter animate-enter-delay-4 text-sm text-white/30">
+            Door & Trim Specialists &middot; Gainesville, TX
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right panel: login form ────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 sm:p-10">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden mb-10 animate-enter">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-abel-navy flex items-center justify-center">
+                <TreePine className="w-4.5 h-4.5 text-white" />
+              </div>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Abel Lumber</span>
+            </div>
+          </div>
+
+          {/* Form header */}
+          <div className="animate-enter animate-enter-delay-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+              Welcome back
+            </h2>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              Sign in to access your projects and orders
             </p>
           </div>
 
-          {/* Error State */}
+          {/* Error */}
           {error && (
             <div
               role="alert"
               aria-live="polite"
-              className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"
+              className="mt-6 flex items-start gap-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-xl px-4 py-3.5 animate-[slideDown_200ms_ease-out]"
             >
-              <p className="text-red-400 text-sm">{error}</p>
+              <AlertCircle className="w-5 h-5 text-danger-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-danger-700 dark:text-danger-400">{error}</p>
             </div>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-5" noValidate>
-            {/* Email Input */}
+          {/* Form */}
+          <form onSubmit={handleLogin} className="mt-8 space-y-5 animate-enter animate-enter-delay-2" noValidate>
+            <Input
+              ref={emailRef}
+              label="Email address"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              aria-required="true"
+              size="lg"
+            />
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email address
-              </label>
-              <input
-                ref={emailRef}
-                id="email"
-                name="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+              <Input
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyUp={handleCapsLock}
+                onKeyDown={handleCapsLock}
                 required
                 aria-required="true"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all duration-200"
+                size="lg"
               />
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyUp={handleCapsLock}
-                  onKeyDown={handleCapsLock}
-                  required
-                  aria-required="true"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all duration-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  aria-pressed={showPassword}
-                  tabIndex={-1}
-                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-amber-400 transition"
-                >
-                  {showPassword ? (
-                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.066 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L9.88 9.88" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
               {capsLockOn && (
-                <p className="mt-1.5 text-xs text-amber-400" aria-live="polite">
-                  <span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1.5 align-middle" />
+                <p className="mt-1.5 text-xs text-warning-600 dark:text-warning-400 flex items-center gap-1.5" aria-live="polite">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning-500 animate-pulse" />
                   Caps Lock is on
                 </p>
               )}
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center gap-2 cursor-pointer group">
+            {/* Remember + Forgot */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer group select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded bg-gray-800 border border-gray-700 checked:bg-amber-500 checked:border-amber-500 focus:ring-1 focus:ring-amber-500/20 cursor-pointer accent-amber-500"
+                  className="w-4 h-4 rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-abel-navy focus:ring-abel-navy/30 cursor-pointer transition"
                 />
-                <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                   Remember me
                 </span>
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-gray-400 hover:text-amber-400 transition-colors duration-200"
+                className="text-sm font-medium text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark dark:hover:text-white transition-colors"
               >
                 Forgot password?
               </Link>
             </div>
 
-            {/* Submit Button */}
-            <button
+            {/* Submit */}
+            <Button
               type="submit"
-              disabled={loading || !email || !password}
-              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-amber-500/30 disabled:hover:scale-100 disabled:shadow-none mt-2"
+              variant="accent"
+              size="lg"
+              fullWidth
+              loading={loading}
+              disabled={!email || !password}
+              icon={!loading ? <LogIn className="w-4.5 h-4.5" /> : undefined}
+              className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-abel-orange/20 hover:shadow-xl hover:shadow-abel-orange/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Signing in…
-                </span>
-              ) : (
-                'Sign In'
-              )}
-            </button>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
           </form>
 
-          {/* Sign Up Link */}
-          <p className="mt-8 text-center text-sm text-gray-400">
-            Don&apos;t have an account?{' '}
+          {/* Divider */}
+          <div className="animate-enter animate-enter-delay-3 mt-8 flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">New to Abel Lumber?</span>
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+          </div>
+
+          {/* Sign up */}
+          <div className="animate-enter animate-enter-delay-4 mt-6">
             <Link
-              href="/signup"
-              className="text-amber-400 font-medium hover:text-amber-300 transition-colors duration-200"
+              href="/apply"
+              className="group flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
             >
-              Create one free
+              Apply for a builder account
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
+          </div>
+
+          {/* Footer */}
+          <p className="animate-enter animate-enter-delay-5 mt-10 text-center text-xs text-gray-400 dark:text-gray-500">
+            By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
       </div>
-
-      {/* CSS for blob animation */}
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-      `}</style>
     </div>
   )
 }

@@ -139,6 +139,11 @@ export const publicFormLimiter = createRateLimiter({ windowMs: 60_000, max: 5 })
 export const oauthLimiter = createRateLimiter({ windowMs: 60_000, max: 30 })   // 30 token mints/min
 export const tokenEndpointLimiter = createRateLimiter({ windowMs: 60_000, max: 20 }) // 20 lookups/min
 
+// Authenticated staff write operations (orders, invoices, deliveries, etc.)
+export const staffWriteLimiter = createRateLimiter({ windowMs: 60_000, max: 30 })  // 30 writes/min per staff
+// Builder-facing write operations (payments, portal actions)
+export const builderWriteLimiter = createRateLimiter({ windowMs: 60_000, max: 15 })  // 15 writes/min per builder
+
 // ── Headers helper (unchanged) ──────────────────────────────────────
 
 export function getRateLimitHeaders(result: RateLimitResult, max: number) {
@@ -172,6 +177,47 @@ function getClientIp(request: NextRequest): string {
 export function getClientKey(request: NextRequest, suffix?: string): string {
   const ip = getClientIp(request)
   return suffix ? `${ip}:${suffix}` : ip
+}
+
+/**
+ * Rate-limit key using staff or builder identity (more precise than IP).
+ * Falls back to IP if no identity header is present.
+ */
+export function getAuthenticatedKey(request: NextRequest, suffix?: string): string {
+  const identity =
+    request.headers.get('x-staff-id') ||
+    request.headers.get('x-builder-id') ||
+    getClientIp(request)
+  return suffix ? `${identity}:${suffix}` : identity
+}
+
+/**
+ * Convenience: rate limit an authenticated staff write operation.
+ * Uses staff ID as the key so limits are per-user, not per-IP.
+ */
+export async function checkStaffWriteLimit(
+  request: NextRequest,
+  routeLabel: string
+): Promise<NextResponse | null> {
+  const key = getAuthenticatedKey(request, routeLabel)
+  const result = await staffWriteLimiter.check(key)
+  if (!result.success) {
+    const ip = getClientIp(request)
+    logSecurityEvent({
+      kind: 'RATE_LIMIT',
+      path: request.nextUrl?.pathname || null,
+      method: request.method,
+      ip,
+      userAgent: request.headers.get('user-agent'),
+      requestId: request.headers.get('x-request-id'),
+      details: { keySuffix: routeLabel, max: 30, resetInMs: result.resetIn, type: 'staff_write' },
+    })
+    return NextResponse.json(
+      { error: 'Too many write requests. Please slow down.' },
+      { status: 429, headers: getRateLimitHeaders(result, 30) }
+    )
+  }
+  return null
 }
 
 /**

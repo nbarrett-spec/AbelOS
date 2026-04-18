@@ -1,104 +1,86 @@
 'use client'
 
 import Link from 'next/link'
-import { Zap, TrendingUp, AlertCircle } from 'lucide-react'
-
-interface Insight {
-  id: string
-  icon: 'zap' | 'trending' | 'alert'
-  title: string
-  description: string
-}
+import { Sparkles, TrendingUp, AlertCircle, Zap, ArrowRight } from 'lucide-react'
+import Card from '@/components/ui/Card'
+import Badge from '@/components/ui/Badge'
 
 interface InsightsStripProps {
-  insights: Insight[]
+  insights: Array<{ id: string; icon: string; title: string; description: string }>
   ytdSavings: number
   reorderCount: number
 }
 
-const iconMap = {
-  zap: <Zap className="w-5 h-5" />,
-  trending: <TrendingUp className="w-5 h-5" />,
-  alert: <AlertCircle className="w-5 h-5" />,
-}
-
-export default function InsightsStrip({
-  insights,
-  ytdSavings,
-  reorderCount,
-}: InsightsStripProps) {
-  if (insights.length === 0 && ytdSavings === 0) return null
+export default function InsightsStrip({ insights, ytdSavings, reorderCount }: InsightsStripProps) {
+  if (insights.length === 0 && ytdSavings === 0 && reorderCount === 0) return null
 
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900/50 dark:to-blue-950/30 border border-slate-200/50 dark:border-slate-800/50 p-6 backdrop-blur-sm">
+    <Card variant="glass" padding="none" rounded="2xl" className="overflow-hidden animate-enter animate-enter-delay-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">✨</span>
+      <div className="px-6 py-4 border-b border-gray-100/50 dark:border-gray-800/50 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-abel-orange/10 to-amber-100/50 dark:from-abel-orange/20 dark:to-amber-900/20 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-abel-orange" />
+          </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Insights</h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">AI-powered recommendations for your business</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Smart Insights</h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">AI-powered recommendations</p>
           </div>
         </div>
         <Link
           href="/dashboard/intelligence"
-          className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors whitespace-nowrap"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark dark:hover:text-white transition-colors group"
         >
-          View All →
+          View All
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
 
-      {/* Insights Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Cards */}
+      <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Reorder Alerts */}
-        <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-4 transition-all hover:border-blue-200 dark:hover:border-blue-800/50 hover:shadow-sm">
+        <div className="group bg-white dark:bg-gray-900/60 rounded-xl border border-gray-200/60 dark:border-gray-800/60 p-4 transition-all hover:border-danger-200 dark:hover:border-danger-800/50 hover:shadow-sm">
           <div className="flex items-start justify-between mb-3">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400">
-              {iconMap.alert}
-            </span>
+            <div className="w-8 h-8 rounded-lg bg-danger-50 dark:bg-danger-900/30 flex items-center justify-center text-danger-500">
+              <AlertCircle className="w-4 h-4" />
+            </div>
             {reorderCount > 0 && (
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400">
-                {reorderCount}
-              </span>
+              <Badge variant="danger" size="sm">{reorderCount}</Badge>
             )}
           </div>
           <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Reorder Alerts</h4>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
             {reorderCount > 0
-              ? `You have ${reorderCount} item${reorderCount !== 1 ? 's' : ''} due for reorder based on your patterns`
+              ? `${reorderCount} item${reorderCount !== 1 ? 's' : ''} due for reorder based on your purchasing patterns`
               : 'All your stock levels are looking good'}
           </p>
         </div>
 
         {/* Savings */}
         {ytdSavings > 0 && (
-          <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-4 transition-all hover:border-emerald-200 dark:hover:border-emerald-800/50 hover:shadow-sm">
-            <div className="flex items-start justify-between mb-3">
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400">
-                {iconMap.trending}
-              </span>
+          <div className="group bg-white dark:bg-gray-900/60 rounded-xl border border-gray-200/60 dark:border-gray-800/60 p-4 transition-all hover:border-success-200 dark:hover:border-success-800/50 hover:shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-success-50 dark:bg-success-900/30 flex items-center justify-center text-success-500 mb-3">
+              <TrendingUp className="w-4 h-4" />
             </div>
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">YTD Savings</h4>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">
+            <p className="text-2xl font-bold text-success-600 dark:text-success-400 mb-1 tracking-tight">
               ${(ytdSavings / 1000).toFixed(1)}k
             </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">through tiered pricing</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">through tiered pricing</p>
           </div>
         )}
 
-        {/* Price Updates */}
-        <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/50 dark:border-slate-700/50 p-4 transition-all hover:border-amber-200 dark:hover:border-amber-800/50 hover:shadow-sm">
-          <div className="flex items-start justify-between mb-3">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400">
-              {iconMap.zap}
-            </span>
+        {/* Price Intelligence */}
+        <div className="group bg-white dark:bg-gray-900/60 rounded-xl border border-gray-200/60 dark:border-gray-800/60 p-4 transition-all hover:border-warning-200 dark:hover:border-warning-800/50 hover:shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-warning-50 dark:bg-warning-900/30 flex items-center justify-center text-warning-500 mb-3">
+            <Zap className="w-4 h-4" />
           </div>
           <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Price Intelligence</h4>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            Monitor lumber prices in real-time and get alerts on favorable moves
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            Real-time lumber price monitoring with alerts on favorable market moves
           </p>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

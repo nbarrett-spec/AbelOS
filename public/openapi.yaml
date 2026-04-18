@@ -1,0 +1,1316 @@
+openapi: 3.0.3
+info:
+  title: Abel Lumber Builder Platform API
+  description: |
+    The Abel OS Builder Platform Core API for builders and staff.
+
+    **Authentication Methods:**
+    - **Builder Auth**: `abel_session` httpOnly cookie (set via POST /api/auth/login)
+    - **Staff Auth**: Headers `x-staff-id`, `x-staff-role`, `x-staff-email` (set by middleware)
+
+    **Rate Limiting**:
+    - Standard auth endpoints: 10 requests/minute per IP
+    - Public endpoints: 5 requests/minute per IP
+    - Response headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+    **Standard Error Response**:
+    ```json
+    {
+      "error": "error_code",
+      "message": "optional detailed message"
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: Abel Lumber Platform Team
+    url: https://app.abellumber.com
+servers:
+  - url: https://app.abellumber.com/api
+    description: Production
+  - url: http://localhost:3000/api
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: Builder authentication endpoints
+  - name: Orders (Builder)
+    description: Builder-facing order management
+  - name: Quotes (Builder)
+    description: Builder-facing quote management
+  - name: Payments
+    description: Payment processing and invoices
+  - name: Deliveries
+    description: Delivery tracking
+  - name: Projects
+    description: Project information
+  - name: Builder Registration
+    description: Public builder registration
+  - name: Ops (Staff)
+    description: Staff operations endpoints
+  - name: Webhooks
+    description: External service webhooks
+  - name: Health
+    description: System health and readiness
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Builder login
+      description: Authenticate with email and password. Sets `abel_session` cookie on success.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: builder@company.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 1
+                  example: secure_password
+                rememberMe:
+                  type: boolean
+                  default: false
+                  description: Extend session expiry
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: abel_session=token_value; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  builder:
+                    $ref: '#/components/schemas/BuilderProfile'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Account inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Builder signup
+      description: Create a new builder account with company information.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyName
+                - contactName
+                - email
+                - password
+              properties:
+                companyName:
+                  type: string
+                  minLength: 1
+                  example: Acme Construction
+                contactName:
+                  type: string
+                  minLength: 1
+                  example: John Smith
+                email:
+                  type: string
+                  format: email
+                  example: john@acmeconstruction.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: secure_password_123
+                phone:
+                  type: string
+                  example: '555-1234'
+                paymentTerm:
+                  type: string
+                  enum: [PAY_AT_ORDER, PAY_ON_DELIVERY, NET_15, NET_30]
+                  default: NET_30
+                licenseNumber:
+                  type: string
+                  example: LIC-123456
+                taxId:
+                  type: string
+                  example: 12-3456789
+                taxExempt:
+                  type: boolean
+                  default: false
+                address:
+                  type: string
+                  example: 123 Main St
+                city:
+                  type: string
+                  example: Springfield
+                state:
+                  type: string
+                  example: IL
+                zip:
+                  type: string
+                  example: '62701'
+      responses:
+        '201':
+          description: Account created successfully
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  builder:
+                    $ref: '#/components/schemas/BuilderProfile'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Server error
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Builder logout
+      description: Clear session cookie and end builder session.
+      security:
+        - builderSession: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current session info
+      description: Return authenticated builder's profile with project/order counts.
+      security:
+        - builderSession: []
+      responses:
+        '200':
+          description: Session info retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  builder:
+                    allOf:
+                      - $ref: '#/components/schemas/BuilderProfile'
+                      - type: object
+                        properties:
+                          _count:
+                            type: object
+                            properties:
+                              projects:
+                                type: integer
+                              orders:
+                                type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Builder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Send password reset link to email. Always returns success to prevent email enumeration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset link sent (or account not found - response identical for security)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Email required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Server error
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Complete password reset
+      description: Validate reset token and set new password. Token expires after 1 hour.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                  description: Reset token from email link
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid or expired token, or invalid password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Server error
+
+  /auth/change-password:
+    post:
+      tags:
+        - Authentication
+      summary: Change password (authenticated)
+      description: Change password while logged in. Requires current password verification.
+      security:
+        - builderSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          description: Missing fields or current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Builder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /builder/orders/search:
+    get:
+      tags:
+        - Orders (Builder)
+      summary: Search builder's orders
+      description: Full-text search and filter builder's orders with pagination.
+      security:
+        - builderSession: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query (order number, project name, product names)
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by order status
+          schema:
+            type: string
+            enum: [DRAFT, CONFIRMED, SHIPPED, DELIVERED, CANCELLED]
+        - name: dateFrom
+          in: query
+          description: Start date filter (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          description: End date filter (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        orderNumber:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                        status:
+                          type: string
+                        total:
+                          type: number
+                          format: float
+                        itemCount:
+                          type: integer
+                        itemPreview:
+                          type: array
+                          items:
+                            type: string
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  totalPages:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /builder/orders/{id}/reorder:
+    post:
+      tags:
+        - Orders (Builder)
+      summary: Prepare reorder from previous order
+      description: Get items from a previous order with current pricing and stock status for reordering.
+      security:
+        - builderSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Order ID
+      responses:
+        '200':
+          description: Reorder items prepared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                  orderNumber:
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        productId:
+                          type: string
+                        productName:
+                          type: string
+                        sku:
+                          type: string
+                        quantity:
+                          type: integer
+                        originalUnitPrice:
+                          type: number
+                          format: float
+                        currentUnitPrice:
+                          type: number
+                          format: float
+                        priceChanged:
+                          type: boolean
+                        inStock:
+                          type: boolean
+                        discontinued:
+                          type: boolean
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                  unavailableItems:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /builder/deliveries:
+    get:
+      tags:
+        - Deliveries
+      summary: List builder's deliveries
+      description: Get all deliveries for authenticated builder with tracking status.
+      security:
+        - builderSession: []
+      responses:
+        '200':
+          description: Deliveries list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Delivery'
+                  upcoming:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Delivery'
+                  inTransit:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Delivery'
+                  completed:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Delivery'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /builders/register:
+    post:
+      tags:
+        - Builder Registration
+      summary: Public builder registration
+      description: Submit new builder application. Creates builder account with PENDING status for admin approval.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyName
+                - contactName
+                - contactEmail
+              properties:
+                companyName:
+                  type: string
+                  minLength: 1
+                contactName:
+                  type: string
+                  minLength: 1
+                contactEmail:
+                  type: string
+                  format: email
+                contactPhone:
+                  type: string
+                address:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                zip:
+                  type: string
+                businessLicense:
+                  type: string
+                taxId:
+                  type: string
+                estimatedAnnualVolume:
+                  type: string
+                referralSource:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  refNumber:
+                    type: string
+                    description: Application reference number
+                  applicationId:
+                    type: string
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Server error
+
+  /ops/invoices:
+    get:
+      tags:
+        - Ops (Staff)
+      summary: List all invoices (staff)
+      description: Staff view of all invoices with AR aging summary.
+      security:
+        - staffHeaders: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, ISSUED, SENT, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED]
+        - name: builderId
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: overdue
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [invoiceNumber, builder, total, balanceDue, status, dueDate, issuedAt, createdAt]
+            default: createdAt
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Invoice list with AR aging
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+                      pages:
+                        type: integer
+                  arAgingSummary:
+                    type: object
+                    properties:
+                      current:
+                        type: number
+                      days_1_30:
+                        type: number
+                      days_31_60:
+                        type: number
+                      days_60_plus:
+                        type: number
+        '401':
+          description: Not authenticated or invalid staff headers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Ops (Staff)
+      summary: Create invoice (staff)
+      description: Create a new invoice for a builder.
+      security:
+        - staffHeaders: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - builderId
+                - paymentTerm
+                - items
+              properties:
+                builderId:
+                  type: string
+                paymentTerm:
+                  type: string
+                  enum: [PAY_AT_ORDER, PAY_ON_DELIVERY, NET_15, NET_30]
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - description
+                      - quantity
+                      - unitPrice
+                    properties:
+                      description:
+                        type: string
+                      quantity:
+                        type: integer
+                        minimum: 1
+                      unitPrice:
+                        type: number
+                        format: float
+                        minimum: 0
+                orderId:
+                  type: string
+                jobId:
+                  type: string
+                notes:
+                  type: string
+                createdById:
+                  type: string
+      responses:
+        '201':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /ops/quotes:
+    get:
+      tags:
+        - Ops (Staff)
+      summary: List all quotes (staff)
+      description: Staff view of all quotes with filtering and search.
+      security:
+        - staffHeaders: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, SENT, APPROVED, REJECTED, EXPIRED, ORDERED]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [quoteNumber, status, total, createdAt, builder, project]
+            default: createdAt
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Quote list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  pagination:
+                    type: object
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /ops/orders:
+    get:
+      tags:
+        - Ops (Staff)
+      summary: List all orders (staff)
+      description: Staff view of all orders with builder and item details.
+      security:
+        - staffHeaders: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: builderId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [builder, orderNumber, status, total, createdAt, deliveryDate]
+            default: createdAt
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Order list with builder and item info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  pagination:
+                    type: object
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+
+  /webhooks/stripe:
+    post:
+      tags:
+        - Webhooks
+      summary: Stripe webhook receiver
+      description: |
+        Process Stripe webhook events with signature verification.
+
+        Requires `stripe-signature` header. Implements idempotency using event ID.
+        Failed events are stored in DLQ for replay.
+      parameters:
+        - name: stripe-signature
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Stripe-generated signature from request headers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe event payload
+      responses:
+        '200':
+          description: Event received and processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                  duplicate:
+                    type: boolean
+                    description: Whether event was already processed
+        '400':
+          description: Invalid signature or malformed event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Event processing failed (stored in DLQ)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: |
+        System health check verifying database and critical dependencies.
+        Point uptime monitors (UptimeRobot, BetterUptime) at this endpoint.
+
+        Returns 200 if healthy, 503 if dependencies unavailable.
+      responses:
+        '200':
+          description: System is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ready]
+                  checks:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                        latency:
+                          type: number
+                          description: Check latency in milliseconds
+        '503':
+          description: System dependencies unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [not_ready]
+                  checks:
+                    type: object
+
+components:
+  schemas:
+    BuilderProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        paymentTerm:
+          type: string
+          enum: [PAY_AT_ORDER, PAY_ON_DELIVERY, NET_15, NET_30]
+        status:
+          type: string
+          enum: [ACTIVE, PENDING, INACTIVE]
+        creditLimit:
+          type: number
+          format: float
+        accountBalance:
+          type: number
+          format: float
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error code or message
+        message:
+          type: string
+          description: Optional detailed error message
+
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+        deliveryNumber:
+          type: string
+        status:
+          type: string
+          enum: [SCHEDULED, LOADING, IN_TRANSIT, ARRIVED, UNLOADING, COMPLETE, PARTIAL_DELIVERY, REFUSED, RESCHEDULED]
+        address:
+          type: string
+        jobNumber:
+          type: string
+        orderNumber:
+          type: string
+        projectName:
+          type: string
+        departedAt:
+          type: string
+          format: date-time
+          nullable: true
+        arrivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        signedBy:
+          type: string
+          nullable: true
+        damageNotes:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        invoiceNumber:
+          type: string
+        builderId:
+          type: string
+        builderName:
+          type: string
+        orderId:
+          type: string
+          nullable: true
+        jobId:
+          type: string
+          nullable: true
+        subtotal:
+          type: number
+          format: float
+        taxAmount:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        amountPaid:
+          type: number
+          format: float
+        balanceDue:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [DRAFT, ISSUED, SENT, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED]
+        paymentTerm:
+          type: string
+          enum: [PAY_AT_ORDER, PAY_ON_DELIVERY, NET_15, NET_30]
+        issuedAt:
+          type: string
+          format: date-time
+          nullable: true
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              description:
+                type: string
+              quantity:
+                type: integer
+              unitPrice:
+                type: number
+                format: float
+              lineTotal:
+                type: number
+                format: float
+        payments:
+          type: array
+          items:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    builderSession:
+      type: apiKey
+      name: abel_session
+      in: cookie
+      description: Builder session cookie (set via POST /api/auth/login)
+
+    staffHeaders:
+      type: apiKey
+      name: x-staff-id
+      in: header
+      description: Staff authentication via headers (x-staff-id, x-staff-role, x-staff-email)
