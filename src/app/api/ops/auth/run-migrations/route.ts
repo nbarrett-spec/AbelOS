@@ -28,7 +28,7 @@ export async function POST(_request: NextRequest) {
  * are safe to re-run but no longer needed.
  * ═══════════════════════════════════════════════════════════════════════════
  */
-function _archivedMigrations() {
+async function _archivedMigrations() {
   /* eslint-disable */
   // @ts-nocheck
   const _neverRuns = false
