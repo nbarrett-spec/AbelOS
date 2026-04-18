@@ -81,6 +81,11 @@ export async function GET(request: NextRequest) {
     const whereClause = conditions.join(' AND ')
 
     // Main query: conversations with builder info and metrics
+    // Add staffId as the last param for unread count calculation
+    const staffIdForUnread = requestingStaffId || '__none__'
+    params.push(staffIdForUnread)
+    const staffIdParamIdx = paramIdx
+
     const conversations = await prisma.$queryRawUnsafe<any[]>(
       `SELECT
         c.id,
@@ -96,14 +101,13 @@ export async function GET(request: NextRequest) {
           SELECT COUNT(*)::int FROM "Message" m
           WHERE m."conversationId" = c.id
             AND m."senderType" = 'BUILDER'
-            AND NOT ($${paramIdx}::text = ANY(m."readBy"))
+            AND NOT ($${staffIdParamIdx}::text = ANY(m."readBy"))
         ), 0) as "unreadCount"
        FROM "Conversation" c
        LEFT JOIN "Builder" b ON c."builderId" = b.id
        WHERE ${whereClause}
        ORDER BY c."lastMessageAt" DESC`,
-      ...params,
-      requestingStaffId
+      ...params
     )
 
     return NextResponse.json({
