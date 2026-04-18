@@ -10,7 +10,7 @@ import { audit } from '@/lib/audit'
  * Idempotent — applies the MRP support indices in production. Called once
  * automatically by the /ops/mrp page on first load. Safe to re-run.
  */
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   const created: string[] = []
   const errors: string[] = []
 
