@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
   audit(request, 'CREATE', 'Integration', undefined, { method: 'POST', event: payload.event }).catch(() => {})
 
   // ── Idempotency ────────────────────────────────────────────────────
+  const raw = payload as any
   const eventId =
-    payload.eventId ||
-    payload.id ||
+    raw.eventId ||
+    raw.id ||
     request.headers.get('x-event-id') ||
     `${payload.event}:${payload.projectId}:${Date.now()}`
   const idem = await ensureIdempotent('buildertrend', eventId, payload.event, payload)
