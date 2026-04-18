@@ -26,16 +26,19 @@ export async function GET(request: NextRequest) {
   }
 
   const runId = await startCronRun('gmail-sync')
+  const started = Date.now()
 
   try {
     // Pull emails from the last 30 minutes (with overlap for safety)
     const result = await syncAllAccounts(200, 'newer_than:30m')
 
-    await finishCronRun(runId, result.status === 'FAILED' ? 'FAILED' : 'SUCCESS', {
-      created: result.recordsCreated,
-      skipped: result.recordsSkipped,
-      failed: result.recordsFailed,
-      durationMs: result.durationMs,
+    await finishCronRun(runId, result.status === 'FAILED' ? 'FAILURE' : 'SUCCESS', Date.now() - started, {
+      result: {
+        created: result.recordsCreated,
+        skipped: result.recordsSkipped,
+        failed: result.recordsFailed,
+        durationMs: result.durationMs,
+      },
     })
 
     return NextResponse.json({
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
       ...result,
     })
   } catch (error: any) {
-    await finishCronRun(runId, 'FAILED', { error: error.message })
+    await finishCronRun(runId, 'FAILURE', Date.now() - started, { error: error.message })
 
     return NextResponse.json(
       { error: 'Gmail sync cron failed', details: error.message },
