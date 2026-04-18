@@ -39,7 +39,7 @@ const statusConfig = {
     icon: ShieldCheck,
     label: 'Healthy',
     badge: 'success' as const,
-    barColor: 'success' as const,
+    barColor: 'green' as const,
     iconColor: 'text-success-600 dark:text-success-400',
   },
   warning: {
