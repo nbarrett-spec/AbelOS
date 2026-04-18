@@ -89,7 +89,7 @@ export default function OrdersPreview({ orders, loading }: OrdersPreviewProps) {
             Browse the catalog or request a quote to get started with your next project
           </p>
           <Link href="/catalog">
-            <Button variant="outline" size="sm" icon={<ChevronRight className="w-4 h-4" />} iconPosition="right">
+            <Button variant="outline" size="sm" iconRight={<ChevronRight className="w-4 h-4" />}>
               Browse Catalog
             </Button>
           </Link>
