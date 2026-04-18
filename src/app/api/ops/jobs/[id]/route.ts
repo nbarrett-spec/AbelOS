@@ -135,6 +135,7 @@ export async function PATCH(
   try {
     const { id } = params
     const body = await request.json()
+    const staffId = request.headers.get('x-staff-id') || 'system'
 
     // Get current job status
     const currentRows: any[] = await prisma.$queryRawUnsafe(`
