@@ -250,7 +250,7 @@ export default function DashboardPage() {
         <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">Sign in required</p>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Access your projects and orders</p>
         <Link href="/login">
-          <Button variant="accent" icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
+          <Button variant="accent" iconRight={<ArrowRight className="w-4 h-4" />}>
             Sign In
           </Button>
         </Link>
