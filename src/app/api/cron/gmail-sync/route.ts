@@ -25,6 +25,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Check if Gmail service account is configured
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_KEY && !process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH) {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      message: 'Gmail not configured — skipping sync. Set GOOGLE_SERVICE_ACCOUNT_KEY env var to enable.',
+    })
+  }
+
   const runId = await startCronRun('gmail-sync')
   const started = Date.now()
 

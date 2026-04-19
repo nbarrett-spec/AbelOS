@@ -32,6 +32,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Check if ECI Bolt is configured before burning a CronRun entry
+  const boltConfig: any[] = await (await import('@/lib/prisma')).prisma.$queryRawUnsafe(
+    `SELECT id FROM "IntegrationConfig" WHERE provider::text = 'ECI_BOLT' AND status::text = 'CONNECTED' LIMIT 1`
+  )
+  if (boltConfig.length === 0) {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      message: 'ECI Bolt not configured — skipping sync. Add IntegrationConfig with provider=ECI_BOLT to enable.',
+    })
+  }
+
   const runId = await startCronRun('bolt-sync', 'schedule')
   const results: any[] = []
   const startedAt = Date.now()

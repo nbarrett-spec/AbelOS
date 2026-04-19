@@ -26,6 +26,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Check if BPW Pulte is configured before burning a CronRun entry
+  // BPW uses IntegrationConfig with provider 'BPW_PULTE'
+  const { prisma } = await import('@/lib/prisma')
+  const bpwConfig: any[] = await prisma.$queryRawUnsafe(
+    `SELECT id FROM "IntegrationConfig" WHERE name ILIKE '%bpw%' OR name ILIKE '%pulte%' AND status::text = 'CONNECTED' LIMIT 1`
+  )
+  if (bpwConfig.length === 0) {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      message: 'BPW Pulte not configured — skipping sync. Add IntegrationConfig for BPW Pulte to enable.',
+    })
+  }
+
   const runId = await startCronRun('bpw-sync', 'schedule')
   const results: any[] = []
   const startedAt = Date.now()

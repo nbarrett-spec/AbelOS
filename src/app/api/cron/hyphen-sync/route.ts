@@ -19,6 +19,18 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Check if Hyphen is configured before burning a CronRun entry
+  const hyphenConfig: any[] = await (await import('@/lib/prisma')).prisma.$queryRawUnsafe(
+    `SELECT id FROM "IntegrationConfig" WHERE provider::text = 'HYPHEN' AND status::text = 'CONNECTED' LIMIT 1`
+  )
+  if (hyphenConfig.length === 0) {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      message: 'Hyphen not configured — skipping sync. Add IntegrationConfig with provider=HYPHEN to enable.',
+    })
+  }
+
   const runId = await startCronRun('hyphen-sync', 'schedule')
   const started = Date.now()
 
