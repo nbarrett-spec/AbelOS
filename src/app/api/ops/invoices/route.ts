@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const overdue = searchParams.get('overdue') === 'true'
-    const sortBy = searchParams.get('sortBy') || 'createdAt'
+    const sortBy = searchParams.get('sortBy') || 'issuedAt'
     const sortDir = searchParams.get('sortDir') === 'asc' ? 'ASC' : 'DESC'
     const search = searchParams.get('search')
 

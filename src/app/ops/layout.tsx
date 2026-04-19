@@ -51,7 +51,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '❤️': Heart, '🔮': Sparkles, '⚡': Zap, '🤝': Handshake, '🔗': Link2,
   '🌲': TreePine, '🗄️': Archive, '📁': FolderOpen, '👥': Users, '👤': User,
   '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark,
-  '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck,
+  '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck, '💡': Sparkles, '🔬': Sparkles,
+  '⚔️': Sparkles, '💹': TrendingUp, '🚀': TrendingUp, '🏛️': Building, '📉': TrendingUp, '🎓': FileText,
 }
 
 // ── Navigation Sections ────────────────────────────────────────────────────
@@ -59,7 +60,10 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 const NAV_SECTIONS: NavSection[] = [
   {
     label: 'OVERVIEW', id: 'overview',
-    items: [{ href: '/ops', label: 'Dashboard', icon: '📊' }],
+    items: [
+      { href: '/ops', label: 'Dashboard', icon: '📊' },
+      { href: '/ops/my-day', label: 'My Day', icon: '☀️' },
+    ],
   },
   {
     label: 'EXECUTIVE', id: 'executive',
@@ -70,6 +74,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/reports/shipping-forecast', label: 'Shipping Forecast', icon: '🚚' },
       { href: '/ops/executive/operations', label: 'Operations', icon: '⚙️' },
       { href: '/ops/finance', label: 'Financial', icon: '📈' },
+      { href: '/executive', label: 'Executive Suite', icon: '🏛️' },
+      { href: '/ops/admin/trends', label: 'Trend Tracker', icon: '📉' },
     ],
   },
   {
@@ -92,6 +98,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/sales/documents', label: 'Document Requests', icon: '📄' },
       { href: '/ops/quote-requests', label: 'Quote Requests', icon: '📋' },
       { href: '/ops/pricing', label: 'Pricing Engine', icon: '💰' },
+      { href: '/ops/margin-rules', label: 'Margin Protection', icon: '🛡️' },
       { href: '/ops/sales/intelligence', label: 'Sales Intelligence', icon: '🧠' },
       { href: '/ops/sales/command-center', label: 'Sales Command Center', icon: '🎯' },
       { href: '/ops/sales/outreach', label: 'Outreach Sequences', icon: '📧' },
@@ -106,6 +113,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/outreach/tracker', label: 'Cold Outreach', icon: '📞' },
       { href: '/ops/revenue-intelligence', label: 'AI Revenue Machine', icon: '💰' },
       { href: '/ops/customer-catalog', label: 'Customer Catalog', icon: '🛒' },
+      { href: '/ops/growth', label: 'Growth Opportunities', icon: '🚀' },
     ],
   },
   {
@@ -123,7 +131,9 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/takeoff-review', label: 'Takeoff Review', icon: '🔍' },
       { href: '/ops/floor-plans', label: 'Floor Plans', icon: '📐' },
       { href: '/ops/products', label: 'Product Catalog', icon: '📦' },
+      { href: '/ops/products/profitability', label: 'Product Profitability', icon: '💹' },
       { href: '/ops/catalog', label: 'Categories & Suppliers', icon: '🏷️' },
+      { href: '/dashboard/onboarding', label: 'Builder Onboarding', icon: '🎓' },
     ],
   },
   {
@@ -173,6 +183,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/delivery/curri', label: 'Curri (3rd Party)', icon: '🤝' },
       { href: '/ops/fleet', label: 'Fleet & Logistics Hub', icon: '🚛' },
       { href: '/ops/jobs/map', label: 'Live Jobsite Map', icon: '🗺️' },
+      { href: '/ops/supply-chain', label: 'Supply Chain Overview', icon: '🔗' },
+      { href: '/ops/auto-po', label: 'Auto-PO Generation', icon: '⚡' },
     ],
   },
   {
@@ -196,11 +208,16 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/builder-messages', label: 'Builder Inbox', icon: '📩' },
       { href: '/ops/communication-log', label: 'Communication Log', icon: '📧' },
       { href: '/ops/notifications', label: 'Notifications', icon: '🔔' },
+      { href: '/ops/gchat', label: 'Google Chat', icon: '💬' },
+      { href: '/ops/video-rooms', label: 'Video Rooms', icon: '📹' },
     ],
   },
   {
     label: 'AI OPERATIONS BRAIN', id: 'ai-brain',
     items: [
+      { href: '/ops/ai/insights', label: 'AI Insights', icon: '💡' },
+      { href: '/ops/ai/scans', label: 'NUC Scans', icon: '🔬' },
+      { href: '/ops/ai/competitive', label: 'Competitive Intel', icon: '⚔️' },
       { href: '/ops/ai/health', label: 'Business Health', icon: '❤️' },
       { href: '/ops/ai/predictive', label: 'Predictive Analytics', icon: '🔮' },
       { href: '/ops/ai/scheduling', label: 'Schedule Optimizer', icon: '📅' },
@@ -214,13 +231,14 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/warranty/automation', label: 'Warranty Automation', icon: '🛡️' },
       { href: '/ops/accounts/proactive', label: 'Proactive Accounts', icon: '🤝' },
       { href: '/ops/trades', label: 'Trade Finder', icon: '🤝' },
+      { href: '/ops/customers/health', label: 'Builder Health Scores', icon: '📊' },
     ],
   },
   {
     label: 'INTEGRATIONS', id: 'integrations',
     items: [
       { href: '/ops/integrations', label: 'Integration Hub', icon: '🔗' },
-      { href: '/ops/integrations/quickbooks', label: 'QuickBooks Desktop', icon: '💰' },
+      { href: '/ops/sync-health', label: 'Sync Health', icon: '🩺' },
       { href: '/ops/integrations/buildertrend', label: 'BuilderTrend', icon: '🏗️' },
       { href: '/ops/integrations/supplier-pricing', label: 'Supplier Pricing', icon: '🌲' },
       { href: '/ops/integrations/routing-audit', label: 'Routing Audit', icon: '🔍' },
@@ -343,13 +361,13 @@ function SidebarSection({
                 onClick={onNavigate}
                 className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 group ${
                   isActive
-                    ? 'bg-abel-orange/15 text-abel-orange dark:text-abel-orange-light border-l-[3px] border-abel-orange ml-0 pl-[9px]'
+                    ? 'bg-abel-amber/15 text-abel-amber dark:text-abel-amber-light border-l-[3px] border-abel-amber ml-0 pl-[9px]'
                     : 'text-gray-400 hover:text-white hover:bg-white/[0.04] border-l-[3px] border-transparent'
                 }`}
               >
                 <IconComponent
                   className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-abel-orange' : 'text-gray-500 group-hover:text-gray-300'
+                    isActive ? 'text-abel-amber' : 'text-gray-500 group-hover:text-gray-300'
                   }`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
@@ -460,7 +478,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
         {/* ── Top accent bar ─────────────────────────────────── */}
-        <div className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-abel-orange via-abel-orange to-abel-navy z-[60]" />
+        <div className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-abel-amber via-abel-amber to-abel-walnut z-[60]" />
 
         {/* ── Mobile overlay ─────────────────────────────────── */}
         {mobileOpen && (
@@ -474,7 +492,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         <aside
           className={`${
             collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[17rem]'
-          } fixed lg:static inset-y-0 left-0 z-50 w-[17rem] transition-all duration-300 ease-out flex flex-col border-r border-gray-800/80 bg-gray-950 ${
+          } fixed lg:static inset-y-0 left-0 z-50 w-[17rem] transition-all duration-300 ease-out flex flex-col border-r border-gray-800/80 bg-[#1a1714] ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
@@ -482,9 +500,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           <div className="h-[3.75rem] px-4 flex items-center justify-between border-b border-gray-800/60 shrink-0">
             {!collapsed ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-abel-orange flex items-center justify-center">
-                  <TreePine className="w-4 h-4 text-white" />
-                </div>
+                <Image src="/icon-192.png" alt="Abel Lumber" width={32} height={32} className="rounded-lg" />
                 <div>
                   <p className="text-sm font-bold text-white leading-none">Abel Lumber</p>
                   <p className="text-[10px] text-gray-500 mt-0.5">Operations</p>
@@ -492,9 +508,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div className="flex-1 flex justify-center">
-                <div className="w-8 h-8 rounded-lg bg-abel-orange flex items-center justify-center">
-                  <TreePine className="w-4 h-4 text-white" />
-                </div>
+                <Image src="/icon-192.png" alt="Abel Lumber" width={32} height={32} className="rounded-lg" />
               </div>
             )}
             <button
@@ -631,7 +645,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-abel-navy/30 rounded-full"
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/30 rounded-full"
                   aria-label="User menu"
                 >
                   <Avatar

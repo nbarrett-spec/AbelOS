@@ -71,17 +71,14 @@ export async function syncProducts(): Promise<SyncResult> {
 
   let created = 0, updated = 0, skipped = 0, failed = 0
   let page = 1
-  let hasMore = true
+  const MAX_PAGES = 300 // safety cap: 300 * 100 = 30,000 products max
 
   try {
-    while (hasMore) {
+    while (page <= MAX_PAGES) {
       const data = await inflowFetch(`/products?page=${page}&pageSize=100&includeInactive=false`, config)
       const products: InflowProduct[] = data.data || data
 
-      if (!products.length) {
-        hasMore = false
-        break
-      }
+      if (!products.length) break
 
       for (const ifProduct of products) {
         try {
@@ -130,8 +127,9 @@ export async function syncProducts(): Promise<SyncResult> {
         }
       }
 
+      // InFlow API may ignore pageSize and return fewer items per page (default ~20).
+      // Only stop when we get an empty page — not when count < requested pageSize.
       page++
-      if (products.length < 100) hasMore = false
 
       // Rate limiting
       await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
@@ -219,63 +217,76 @@ export async function syncInventory(): Promise<SyncResult> {
   const errors: string[] = []
 
   try {
-    const data = await inflowFetch('/products?page=1&pageSize=500&includeInactive=false', config)
-    const products: InflowProduct[] = data.data || data
+    let page = 1
+    const MAX_PAGES = 300
 
-    for (const ifProduct of products) {
-      try {
-        // Find the Product record by inflowId
-        const product = await (prisma as any).product.findFirst({
-          where: { inflowId: String(ifProduct.id) },
-          select: { id: true },
-        })
+    while (page <= MAX_PAGES) {
+      const data = await inflowFetch(`/products?page=${page}&pageSize=200&includeInactive=false`, config)
+      const products: InflowProduct[] = data.data || data
 
-        if (!product) {
-          skipped++
-          continue
-        }
+      if (!products.length) break
 
-        // Compute inventory values (default to 0 if field missing from API)
-        const onHand = ifProduct.quantityOnHand ?? 0
-        const onOrder = ifProduct.quantityOnOrder ?? 0
-        const committed = ifProduct.quantityCommitted ?? 0
-        const available = onHand - committed
-
-        // Upsert: create InventoryItem if it doesn't exist, update if it does
-        const existing = await (prisma as any).inventoryItem.findUnique({
-          where: { productId: product.id },
-        })
-
-        if (existing) {
-          await (prisma as any).inventoryItem.update({
-            where: { id: existing.id },
-            data: {
-              onHand,
-              onOrder,
-              committed,
-              available,
-            },
+      for (const ifProduct of products) {
+        try {
+          // Find the Product record by inflowId or SKU
+          const product = await (prisma as any).product.findFirst({
+            where: { OR: [{ inflowId: String(ifProduct.id) }, { sku: ifProduct.sku }] },
+            select: { id: true },
           })
-          updated++
-        } else {
-          await (prisma as any).inventoryItem.create({
-            data: {
-              productId: product.id,
-              onHand,
-              onOrder,
-              committed,
-              available,
-            },
+
+          if (!product) {
+            skipped++
+            continue
+          }
+
+          // Compute inventory values (default to 0 if field missing from API)
+          const onHand = ifProduct.quantityOnHand ?? 0
+          const onOrder = ifProduct.quantityOnOrder ?? 0
+          const committed = ifProduct.quantityCommitted ?? 0
+          const available = onHand - committed
+
+          // Upsert: create InventoryItem if it doesn't exist, update if it does
+          const existing = await (prisma as any).inventoryItem.findUnique({
+            where: { productId: product.id },
           })
-          created++
+
+          if (existing) {
+            await (prisma as any).inventoryItem.update({
+              where: { id: existing.id },
+              data: {
+                onHand,
+                onOrder,
+                committed,
+                available,
+              },
+            })
+            updated++
+          } else {
+            await (prisma as any).inventoryItem.create({
+              data: {
+                productId: product.id,
+                onHand,
+                onOrder,
+                committed,
+                available,
+              },
+            })
+            created++
+          }
+        } catch (err: any) {
+          failed++
+          const errMsg = `SKU ${ifProduct.sku || ifProduct.id}: ${err.message}`
+          errors.push(errMsg)
+          console.error(`InFlow inventory sync error:`, errMsg)
         }
-      } catch (err: any) {
-        failed++
-        const errMsg = `SKU ${ifProduct.sku || ifProduct.id}: ${err.message}`
-        errors.push(errMsg)
-        console.error(`InFlow inventory sync error:`, errMsg)
       }
-    }
+
+      // InFlow API may return fewer items than requested pageSize — keep going until empty
+      page++
+
+      // Rate limiting between pages
+      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+    } // end while
 
     const completedAt = new Date()
     const totalProcessed = created + updated + skipped + failed
@@ -494,9 +505,9 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
     }
 
     let page = 1
-    let hasMore = true
+    const MAX_PAGES = 500 // safety cap: 500 pages covers 10,000+ POs
 
-    while (hasMore) {
+    while (page <= MAX_PAGES) {
       const poList = await inflowFetch(`/purchase-orders?page=${page}&pageSize=100`, config)
       const orders: any[] = Array.isArray(poList) ? poList : (poList.data || [])
 
@@ -575,8 +586,8 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
         }
       }
 
+      // InFlow API may return fewer items than requested — keep going until empty page
       page++
-      if (orders.length < 100) hasMore = false
       await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
     }
 
@@ -722,29 +733,38 @@ export async function syncSalesOrders(): Promise<SyncResult> {
       throw new Error('No builders found — need at least one for sales order sync')
     }
 
-    // Get last successful sync time to only pull recently modified orders
-    // On first run or if no sync history, pull everything
+    // Check if we need a full backload or just incremental sync
+    // If fewer than 50 orders have inflowOrderId, we need to pull everything
+    const inflowOrderCount: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int as count FROM "Order" WHERE "inflowOrderId" IS NOT NULL`
+    )
+    const needsFullSync = (inflowOrderCount[0]?.count || 0) < 50
+
     let modifiedSince = ''
-    try {
-      const lastSync: any[] = await prisma.$queryRawUnsafe(
-        `SELECT "completedAt" FROM "SyncLog"
-         WHERE provider = 'INFLOW' AND "syncType" = 'salesOrders' AND status IN ('SUCCESS', 'PARTIAL')
-         ORDER BY "completedAt" DESC LIMIT 1`
-      )
-      if (lastSync.length > 0 && lastSync[0].completedAt) {
-        // Pull orders modified since 2 hours before last sync (overlap for safety)
-        const since = new Date(lastSync[0].completedAt)
-        since.setHours(since.getHours() - 2)
-        modifiedSince = `&modifiedSince=${since.toISOString()}`
+    if (!needsFullSync) {
+      // Incremental: only pull recently modified orders
+      try {
+        const lastSync: any[] = await prisma.$queryRawUnsafe(
+          `SELECT "completedAt" FROM "SyncLog"
+           WHERE provider = 'INFLOW' AND "syncType" = 'salesOrders' AND status IN ('SUCCESS', 'PARTIAL')
+           ORDER BY "completedAt" DESC LIMIT 1`
+        )
+        if (lastSync.length > 0 && lastSync[0].completedAt) {
+          const since = new Date(lastSync[0].completedAt)
+          since.setHours(since.getHours() - 2)
+          modifiedSince = `&modifiedSince=${since.toISOString()}`
+        }
+      } catch (e: any) {
+        console.warn('[InFlow SO Sync] Could not fetch last sync time, pulling all:', e?.message)
       }
-    } catch (e: any) {
-      console.warn('[InFlow SO Sync] Could not fetch last sync time, pulling all:', e?.message)
+    } else {
+      console.log('[InFlow SO Sync] Full backload: only', inflowOrderCount[0]?.count, 'orders linked — pulling all from InFlow')
     }
 
     let page = 1
-    let hasMore = true
+    const MAX_PAGES = 500
 
-    while (hasMore) {
+    while (page <= MAX_PAGES) {
       const soList = await inflowFetch(`/sales-orders?page=${page}&pageSize=100${modifiedSince}`, config)
       const orders: any[] = Array.isArray(soList) ? soList : (soList.data || [])
 
@@ -821,8 +841,8 @@ export async function syncSalesOrders(): Promise<SyncResult> {
         }
       }
 
+      // InFlow API may return fewer items than requested — keep going until empty page
       page++
-      if (orders.length < 100) hasMore = false
       await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
     }
 

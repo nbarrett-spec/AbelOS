@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
         'SELECT COUNT(*)::int as count FROM "Order"'
       ),
 
-      // Total order revenue (exclude cancelled orders)
+      // Total order revenue: delivered/complete revenue (not pipeline)
       prisma.$queryRawUnsafe<RevenueResult[]>(
-        'SELECT COALESCE(SUM(total)::float8, 0) as total FROM "Order" WHERE status::text != \'CANCELLED\''
+        'SELECT COALESCE(SUM(total)::float8, 0) as total FROM "Order" WHERE status::text IN (\'DELIVERED\', \'COMPLETE\')'
       ),
 
       // Orders grouped by status

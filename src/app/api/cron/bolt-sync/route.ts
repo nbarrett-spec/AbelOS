@@ -44,27 +44,27 @@ export async function GET(request: NextRequest) {
     results.push({ type: 'customers', status: 'FAILED', error: e?.message })
   }
 
-  // 2. Sync orders
+  // 2. Sync orders — look back 30 days to catch status updates on older orders
   try {
-    const sinceDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // last 7 days
+    const sinceDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // last 30 days
     const orderResult = await syncOrders(sinceDate)
     results.push({ type: 'orders', ...orderResult })
   } catch (e: any) {
     results.push({ type: 'orders', status: 'FAILED', error: e?.message })
   }
 
-  // 3. Sync work orders → Jobs
+  // 3. Sync work orders → Jobs — 30 day lookback for job status changes
   try {
-    const sinceDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const sinceDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // last 30 days
     const woResult = await syncWorkOrders(sinceDate)
     results.push({ type: 'work_orders', ...woResult })
   } catch (e: any) {
     results.push({ type: 'work_orders', status: 'FAILED', error: e?.message })
   }
 
-  // 4. Sync invoices
+  // 4. Sync invoices — 60 day lookback to catch payment updates on aging invoices
   try {
-    const sinceDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // last 14 days
+    const sinceDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) // last 60 days
     const invResult = await syncInvoices(sinceDate)
     results.push({ type: 'invoices', ...invResult })
   } catch (e: any) {
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
   }
   await finishCronRun(runId, hasErrors ? 'FAILURE' : 'SUCCESS', totalDuration, {
     result: payload,
-    error: hasErrors ? results.filter(r => r.status === 'FAILED').map(r => `${r.type}: ${r.error}`).join('; ') : undefined,
+    error: hasErrors ? results.filter(r => r.status === 'FAILED').map(r => `${r.type}: ${r.errorMessage || r.error || 'unknown'}`).join('; ') : undefined,
   })
   return NextResponse.json(payload)
 }
