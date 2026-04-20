@@ -539,6 +539,10 @@ model Order {
   deliveryDate  DateTime?
   deliveryNotes String?
 
+  // Business order date (distinct from row createdAt) — driven by InFlow OrderDate
+  orderDate  DateTime?
+  isForecast Boolean   @default(false)
+
   // InFlow sync
   inflowOrderId    String? @unique
   inflowCustomerId String?
@@ -552,6 +556,8 @@ model Order {
   @@index([builderId])
   @@index([orderNumber])
   @@index([status])
+  @@index([orderDate])
+  @@index([isForecast])
 }
 
 enum OrderStatus {
@@ -1484,6 +1490,9 @@ model PurchaseOrder {
   inflowId       String? @unique
   inflowVendorId String?
 
+  // Provenance — 'INFLOW' for real data, 'LEGACY_SEED' for pre-import bulk records
+  source String?
+
   items PurchaseOrderItem[]
 
   createdAt DateTime @default(now())
@@ -1494,6 +1503,7 @@ model PurchaseOrder {
   @@index([createdById])
   @@index([approvedById])
   @@index([orderedAt])
+  @@index([source])
 }
 
 enum POStatus {

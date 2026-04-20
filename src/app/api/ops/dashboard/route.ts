@@ -117,14 +117,14 @@ export async function GET(request: NextRequest) {
         `SELECT "builderId", COUNT(*)::int as "orderCount", COALESCE(SUM("Order".total)::float8, 0) as "totalValue", "Builder"."companyName" FROM "Order" JOIN "Builder" ON "Order"."builderId" = "Builder".id WHERE "Builder"."companyName" != 'Unmatched InFlow Customers' GROUP BY "builderId", "Builder"."companyName" ORDER BY COALESCE(SUM("Order".total), 0) DESC LIMIT 5`
       ),
 
-      // 5 most recent orders with builder name
+      // 5 most recent orders with builder name (by orderDate, excl. forecast)
       prisma.$queryRawUnsafe<RecentOrderResult[]>(
-        'SELECT "Order".id, "Order"."orderNumber", "Builder"."companyName" as builderName, "Order".total::float8 as total, "Order".status::text as status, "Order"."paymentStatus"::text as paymentStatus, "Order"."createdAt" FROM "Order" JOIN "Builder" ON "Order"."builderId" = "Builder".id ORDER BY "Order"."createdAt" DESC LIMIT 5'
+        'SELECT "Order".id, "Order"."orderNumber", "Builder"."companyName" as builderName, "Order".total::float8 as total, "Order".status::text as status, "Order"."paymentStatus"::text as paymentStatus, "Order"."orderDate" as "createdAt" FROM "Order" JOIN "Builder" ON "Order"."builderId" = "Builder".id WHERE "Order"."isForecast" = false ORDER BY "Order"."orderDate" DESC NULLS LAST LIMIT 5'
       ),
 
-      // Orders by month (last 6 months)
+      // Orders by month (last 6 months by orderDate, excl. forecast)
       prisma.$queryRawUnsafe<MonthlyTrendResult[]>(
-        'SELECT TO_CHAR("createdAt", \'YYYY-MM\') as month, COUNT(*)::int as count, COALESCE(SUM(total)::float8, 0) as revenue FROM "Order" WHERE "createdAt" >= NOW() - INTERVAL \'6 months\' GROUP BY TO_CHAR("createdAt", \'YYYY-MM\') ORDER BY month ASC'
+        'SELECT TO_CHAR("orderDate", \'YYYY-MM\') as month, COUNT(*)::int as count, COALESCE(SUM(total)::float8, 0) as revenue FROM "Order" WHERE "orderDate" >= DATE_TRUNC(\'month\', NOW() - INTERVAL \'5 months\') AND "orderDate" < DATE_TRUNC(\'month\', NOW()) + INTERVAL \'1 month\' AND "isForecast" = false AND status::text != \'CANCELLED\' GROUP BY TO_CHAR("orderDate", \'YYYY-MM\') ORDER BY month ASC'
       ),
 
       // POs by status

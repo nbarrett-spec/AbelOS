@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortBy = searchParams.get('sortBy') || 'orderDate';
+    const includeForecast = searchParams.get('includeForecast') === 'true';
     const sortDir = (searchParams.get('sortDir') || 'desc') as 'asc' | 'desc';
 
     const skip = (page - 1) * limit;
@@ -37,13 +38,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (dateFrom) {
-      whereConditions.push(`o."createdAt" >= $${params.length + 1}::timestamptz`);
+      whereConditions.push(`o."orderDate" >= $${params.length + 1}::timestamptz`);
       params.push(new Date(dateFrom).toISOString());
     }
 
     if (dateTo) {
-      whereConditions.push(`o."createdAt" <= $${params.length + 1}::timestamptz`);
+      whereConditions.push(`o."orderDate" <= $${params.length + 1}::timestamptz`);
       params.push(new Date(dateTo + 'T23:59:59.999Z').toISOString());
+    }
+
+    // By default, hide forecast (future-dated scheduled) orders from operational lists
+    if (!includeForecast) {
+      whereConditions.push(`o."isForecast" = false`);
     }
 
     if (search) {

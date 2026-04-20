@@ -16,56 +16,77 @@ export async function GET(request: NextRequest) {
   const canSeeSensitiveFinance = userRoles.some(r => SENSITIVE_FINANCE_ROLES.includes(r))
 
   try {
-    // Revenue KPIs from ORDERS (primary revenue source)
+    // Revenue KPIs from ORDERS
+    // Uses business "orderDate" (from InFlow) — not row createdAt — and excludes
+    // forecast (future-dated) orders from past/current revenue. Forecast is
+    // reported separately as "upcoming".
     const orderRevenue: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         ROUND(COALESCE(SUM(total), 0)::numeric, 2) as "totalRevenue",
         COUNT(*)::int as "totalOrders",
-        ROUND(COALESCE(SUM(CASE WHEN "createdAt" >= DATE_TRUNC('month', NOW()) THEN total ELSE 0 END), 0)::numeric, 2) as "currentMonth",
-        ROUND(COALESCE(SUM(CASE WHEN "createdAt" >= DATE_TRUNC('month', NOW() - INTERVAL '1 month')
-          AND "createdAt" < DATE_TRUNC('month', NOW()) THEN total ELSE 0 END), 0)::numeric, 2) as "lastMonth",
-        ROUND(COALESCE(SUM(CASE WHEN "createdAt" >= DATE_TRUNC('year', NOW()) THEN total ELSE 0 END), 0)::numeric, 2) as "ytd",
-        COUNT(CASE WHEN "createdAt" >= DATE_TRUNC('month', NOW()) THEN 1 END)::int as "ordersThisMonth"
+        ROUND(COALESCE(SUM(CASE WHEN "orderDate" >= DATE_TRUNC('month', NOW()) AND "orderDate" < DATE_TRUNC('month', NOW()) + INTERVAL '1 month' THEN total ELSE 0 END), 0)::numeric, 2) as "currentMonth",
+        ROUND(COALESCE(SUM(CASE WHEN "orderDate" >= DATE_TRUNC('month', NOW() - INTERVAL '1 month')
+          AND "orderDate" < DATE_TRUNC('month', NOW()) THEN total ELSE 0 END), 0)::numeric, 2) as "lastMonth",
+        ROUND(COALESCE(SUM(CASE WHEN "orderDate" >= DATE_TRUNC('year', NOW()) AND "orderDate" < NOW() THEN total ELSE 0 END), 0)::numeric, 2) as "ytd",
+        COUNT(CASE WHEN "orderDate" >= DATE_TRUNC('month', NOW()) AND "orderDate" < DATE_TRUNC('month', NOW()) + INTERVAL '1 month' THEN 1 END)::int as "ordersThisMonth"
       FROM "Order"
       WHERE status != 'CANCELLED'::"OrderStatus"
+        AND "isForecast" = false
     `)
     const oRev = orderRevenue[0] || {}
 
-    // Invoice & Collection metrics
-    const invoiceMetrics: any[] = await prisma.$queryRawUnsafe(`
+    // Upcoming / forecasted orders (scheduled future work — e.g. Toll Brothers trim-outs)
+    const upcoming: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        ROUND(COALESCE(SUM(total), 0)::numeric, 2) as "totalInvoiced",
-        ROUND(COALESCE(SUM("amountPaid"), 0)::numeric, 2) as "totalCollected",
-        ROUND(COALESCE(SUM("balanceDue"), 0)::numeric, 2) as "outstandingAR",
-        COUNT(*)::int as "invoiceCount",
-        COUNT(CASE WHEN status = 'OVERDUE'::"InvoiceStatus" THEN 1 END)::int as "overdueCount"
-      FROM "Invoice"
+        COUNT(*)::int as "count",
+        ROUND(COALESCE(SUM(total), 0)::numeric, 2) as "value"
+      FROM "Order"
+      WHERE "isForecast" = true AND status != 'CANCELLED'::"OrderStatus"
     `)
-    const inv = invoiceMetrics[0] || {}
+    const up = upcoming[0] || {}
+
+    // AR derived from Orders (the Invoice table lags — only 104 of 3,646 orders
+    // have invoices. Order.paymentStatus is the truth-of-record.)
+    const arFromOrders: any[] = await prisma.$queryRawUnsafe(`
+      SELECT
+        ROUND(COALESCE(SUM(CASE WHEN "paymentStatus"::text NOT IN ('PAID','REFUNDED') THEN total ELSE 0 END), 0)::numeric, 2) as "outstandingAR",
+        ROUND(COALESCE(SUM(CASE WHEN "paymentStatus"::text = 'PAID' THEN total ELSE 0 END), 0)::numeric, 2) as "totalCollected",
+        ROUND(COALESCE(SUM(total), 0)::numeric, 2) as "totalInvoiced",
+        COUNT(*) FILTER (WHERE "paymentStatus"::text NOT IN ('PAID','REFUNDED'))::int as "openOrders",
+        ROUND(COALESCE(SUM(CASE WHEN "dueDate" < NOW() AND "paymentStatus"::text NOT IN ('PAID','REFUNDED') THEN total ELSE 0 END), 0)::numeric, 2) as "overdueValue",
+        COUNT(*) FILTER (WHERE "dueDate" < NOW() AND "paymentStatus"::text NOT IN ('PAID','REFUNDED'))::int as "overdueCount"
+      FROM "Order"
+      WHERE status != 'CANCELLED'::"OrderStatus"
+        AND "isForecast" = false
+    `)
+    const inv = arFromOrders[0] || {}
 
     const momGrowth = Number(oRev.lastMonth) > 0
       ? ((Number(oRev.currentMonth) - Number(oRev.lastMonth)) / Number(oRev.lastMonth)) * 100
       : Number(oRev.currentMonth) > 0 ? 100 : 0
 
-    // Monthly revenue trend (last 6 months from Orders)
+    // Monthly revenue trend (last 6 months by orderDate, excluding forecast)
     const monthlyRevenue: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon YYYY') as month,
-        DATE_TRUNC('month', "createdAt") as "sortDate",
+        TO_CHAR(DATE_TRUNC('month', "orderDate"), 'Mon YYYY') as month,
+        DATE_TRUNC('month', "orderDate") as "sortDate",
         ROUND(COALESCE(SUM(total), 0)::numeric, 2) as revenue,
         COUNT(*)::int as "orderCount"
       FROM "Order"
-      WHERE "createdAt" >= DATE_TRUNC('month', NOW() - INTERVAL '5 months')
+      WHERE "orderDate" >= DATE_TRUNC('month', NOW() - INTERVAL '5 months')
+        AND "orderDate" < DATE_TRUNC('month', NOW()) + INTERVAL '1 month'
         AND status != 'CANCELLED'::"OrderStatus"
-      GROUP BY DATE_TRUNC('month', "createdAt"), TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon YYYY')
+        AND "isForecast" = false
+      GROUP BY DATE_TRUNC('month', "orderDate"), TO_CHAR(DATE_TRUNC('month', "orderDate"), 'Mon YYYY')
       ORDER BY "sortDate" ASC
     `)
 
-    // Order status distribution (pipeline health)
+    // Order status distribution (pipeline health) — exclude forecast from headline pipeline
     const ordersByStatus: any[] = await prisma.$queryRawUnsafe(`
       SELECT status::text, COUNT(*)::int as count,
         ROUND(COALESCE(SUM(total), 0)::numeric, 2) as value
       FROM "Order"
+      WHERE "isForecast" = false
       GROUP BY status
       ORDER BY count DESC
     `)
@@ -79,7 +100,7 @@ export async function GET(request: NextRequest) {
       FROM "Builder"
     `)
 
-    // Top builders by ORDER revenue
+    // Top builders by ORDER revenue (excluding forecast + cancelled)
     const topBuilders: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         o."builderId",
@@ -89,22 +110,24 @@ export async function GET(request: NextRequest) {
       FROM "Order" o
       JOIN "Builder" b ON o."builderId" = b.id
       WHERE o.status != 'CANCELLED'::"OrderStatus"
+        AND o."isForecast" = false
         AND b."companyName" != 'Unmatched InFlow Customers'
       GROUP BY o."builderId", b."companyName"
       ORDER BY revenue DESC
       LIMIT 10
     `)
 
-    // Operations snapshot from Orders
+    // Operations snapshot — use orderDate for cycle-time calc
     const opsSnapshot: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(CASE WHEN status IN ('COMPLETE'::"OrderStatus", 'DELIVERED'::"OrderStatus") THEN 1 END)::int as "completedAll",
         COUNT(CASE WHEN status IN ('COMPLETE'::"OrderStatus", 'DELIVERED'::"OrderStatus")
           AND "updatedAt" >= DATE_TRUNC('month', NOW()) THEN 1 END)::int as "completedThisMonth",
         COUNT(CASE WHEN status IN ('SHIPPED'::"OrderStatus", 'IN_PRODUCTION'::"OrderStatus", 'READY_TO_SHIP'::"OrderStatus") THEN 1 END)::int as "inProgress",
-        COUNT(CASE WHEN status IN ('RECEIVED'::"OrderStatus", 'CONFIRMED'::"OrderStatus") THEN 1 END)::int as "pending",
+        COUNT(CASE WHEN status IN ('RECEIVED'::"OrderStatus", 'CONFIRMED'::"OrderStatus") AND "isForecast" = false THEN 1 END)::int as "pending",
         ROUND(COALESCE(AVG(CASE WHEN status IN ('COMPLETE'::"OrderStatus", 'DELIVERED'::"OrderStatus")
-          THEN EXTRACT(EPOCH FROM ("updatedAt" - "createdAt")) / 86400.0 END), 0)::numeric, 1) as "avgCycleDays"
+          AND "deliveryDate" IS NOT NULL AND "orderDate" IS NOT NULL
+          THEN EXTRACT(EPOCH FROM ("deliveryDate" - "orderDate")) / 86400.0 END), 0)::numeric, 1) as "avgCycleDays"
       FROM "Order"
     `)
     const ops = opsSnapshot[0] || {}
@@ -120,17 +143,23 @@ export async function GET(request: NextRequest) {
     const delStats = deliveryStats[0] || {}
 
     // PO spending summary
+    // Uses "orderedAt" for business PO date. Breaks out INFLOW (real) vs LEGACY_SEED
+    // so ops views can filter by source when needed.
     const poSpending: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         ROUND(COALESCE(SUM(total), 0)::numeric, 2) as "totalSpend",
         COUNT(*)::int as "totalPOs",
+        ROUND(COALESCE(SUM(CASE WHEN source = 'INFLOW' THEN total ELSE 0 END), 0)::numeric, 2) as "inflowSpend",
+        COUNT(CASE WHEN source = 'INFLOW' THEN 1 END)::int as "inflowPOs",
         COUNT(CASE WHEN status NOT IN ('RECEIVED'::"POStatus", 'CANCELLED'::"POStatus") THEN 1 END)::int as "openPOs",
-        ROUND(COALESCE(SUM(CASE WHEN status NOT IN ('RECEIVED'::"POStatus", 'CANCELLED'::"POStatus") THEN total ELSE 0 END), 0)::numeric, 2) as "openValue"
+        ROUND(COALESCE(SUM(CASE WHEN status NOT IN ('RECEIVED'::"POStatus", 'CANCELLED'::"POStatus") THEN total ELSE 0 END), 0)::numeric, 2) as "openValue",
+        ROUND(COALESCE(SUM(CASE WHEN "orderedAt" >= DATE_TRUNC('month', NOW()) THEN total ELSE 0 END), 0)::numeric, 2) as "spendThisMonth"
       FROM "PurchaseOrder"
     `)
     const po = poSpending[0] || {}
 
     // Gross margin from actual COGS (OrderItem cost via Product.cost)
+    // Excludes forecast so we don't credit revenue we haven't earned against COGS we haven't incurred
     const cogsData: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         ROUND(COALESCE(SUM(oi.quantity * COALESCE(bom_cost(p.id), p.cost)), 0)::numeric, 2) as "totalCOGS"
@@ -138,6 +167,7 @@ export async function GET(request: NextRequest) {
       JOIN "Product" p ON oi."productId" = p.id
       JOIN "Order" o ON oi."orderId" = o.id
       WHERE o.status != 'CANCELLED'::"OrderStatus"
+        AND o."isForecast" = false
     `)
     const totalCOGS = Number(cogsData[0]?.totalCOGS || 0)
     const grossMargin = Number(oRev.totalRevenue) > 0
@@ -148,6 +178,7 @@ export async function GET(request: NextRequest) {
     const stalledOrders: any[] = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*)::int as c FROM "Order"
       WHERE status IN ('RECEIVED'::"OrderStatus", 'CONFIRMED'::"OrderStatus")
+        AND "isForecast" = false
         AND "updatedAt" < NOW() - INTERVAL '7 days'
     `)
 
@@ -159,9 +190,14 @@ export async function GET(request: NextRequest) {
         lastMonth: Number(oRev.lastMonth),
         ytd: Number(oRev.ytd),
         momGrowth: Math.round(momGrowth * 100) / 100,
+        upcomingCount: Number(up.count),
+        upcomingValue: Number(up.value),
         totalInvoiced: canSeeSensitiveFinance ? Number(inv.totalInvoiced) : undefined,
         totalCollected: canSeeSensitiveFinance ? Number(inv.totalCollected) : undefined,
         outstandingAR: canSeeSensitiveFinance ? Number(inv.outstandingAR) : undefined,
+        overdueValue: canSeeSensitiveFinance ? Number(inv.overdueValue) : undefined,
+        overdueCount: Number(inv.overdueCount),
+        openOrders: Number(inv.openOrders),
         grossMargin: canSeeSensitiveFinance ? Math.round(grossMargin * 100) / 100 : undefined,
       },
       monthlyRevenue: monthlyRevenue.map((m: any) => ({
@@ -178,6 +214,7 @@ export async function GET(request: NextRequest) {
         totalOrders: Number(oRev.totalOrders),
         inProgress: Number(ops.inProgress),
         pending: Number(ops.pending),
+        upcoming: Number(up.count),
       },
       builderMetrics: {
         totalBuilders: Number(builderMetrics[0]?.totalBuilders || 0),
@@ -200,6 +237,8 @@ export async function GET(request: NextRequest) {
       },
       financials: canSeeSensitiveFinance ? {
         totalPOSpend: Number(po.totalSpend),
+        inflowPOSpend: Number(po.inflowSpend),
+        poSpendThisMonth: Number(po.spendThisMonth),
         openPOs: Number(po.openPOs),
         openPOValue: Number(po.openValue),
         grossMargin: Math.round(grossMargin * 100) / 100,
@@ -208,6 +247,7 @@ export async function GET(request: NextRequest) {
       },
       alerts: {
         overdueInvoices: Number(inv.overdueCount),
+        overdueValue: canSeeSensitiveFinance ? Number(inv.overdueValue) : undefined,
         stalledOrders: Number(stalledOrders[0]?.c || 0),
       },
     })
