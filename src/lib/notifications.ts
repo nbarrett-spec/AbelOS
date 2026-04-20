@@ -145,10 +145,10 @@ function emailTemplate(content: string): string {
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <!-- Header -->
-        <div style="background-color: #1B4F72; padding: 24px 32px; text-align: left;">
+        <div style="background-color: #3E2A1E; padding: 24px 32px; text-align: left;">
           <table style="border-collapse: collapse;">
             <tr>
-              <td style="background-color: #E67E22; border-radius: 8px; width: 36px; height: 36px; text-align: center; vertical-align: middle; font-weight: bold; color: white; font-size: 14px;">AB</td>
+              <td style="background-color: #C9822B; border-radius: 8px; width: 36px; height: 36px; text-align: center; vertical-align: middle; font-weight: bold; color: white; font-size: 14px;">AB</td>
               <td style="padding-left: 12px; color: white; font-size: 18px; font-weight: 600;">Abel Lumber</td>
             </tr>
           </table>
@@ -162,7 +162,7 @@ function emailTemplate(content: string): string {
         <!-- Footer -->
         <div style="padding: 24px 32px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee;">
           <p>Abel Lumber &middot; Door &amp; Trim Specialists</p>
-          <p>Gainesville, TX &middot; <a href="https://abellumber.com" style="color: #E67E22; text-decoration: none;">abellumber.com</a></p>
+          <p>Gainesville, TX &middot; <a href="https://abellumber.com" style="color: #C9822B; text-decoration: none;">abellumber.com</a></p>
         </div>
       </div>
     </body>
@@ -181,21 +181,21 @@ export async function notifyQuoteReady(
   total: number
 ) {
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Your Quote is Ready</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Your Quote is Ready</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       Your quote for <strong>${projectName}</strong> has been prepared and is ready for review.
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Quote #${quoteNumber}</strong></p>
       <p style="margin: 0 0 8px 0;">Project: ${projectName}</p>
-      <p style="margin: 0; font-size: 18px; color: #1B4F72;"><strong>Total: $${total.toFixed(2)}</strong></p>
+      <p style="margin: 0; font-size: 18px; color: #3E2A1E;"><strong>Total: $${total.toFixed(2)}</strong></p>
     </div>
     <p style="color: #333; line-height: 1.6;">
       Log in to your account to review the quote and place an order.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/quotes" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Quote</a>
+      <a href="https://abellumber.com/dashboard/quotes" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Quote</a>
     </div>
   `)
 
@@ -225,22 +225,22 @@ export async function notifyOrderConfirmed(
   itemCount: number
 ) {
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Order Confirmed</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Order Confirmed</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       Your order has been confirmed and we're preparing it for shipment.
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Order #${orderNumber}</strong></p>
       <p style="margin: 0 0 8px 0;">Project: ${projectName}</p>
       <p style="margin: 0 0 8px 0;">Items: ${itemCount}</p>
-      <p style="margin: 0; font-size: 18px; color: #1B4F72;"><strong>Total: $${total.toFixed(2)}</strong></p>
+      <p style="margin: 0; font-size: 18px; color: #3E2A1E;"><strong>Total: $${total.toFixed(2)}</strong></p>
     </div>
     <p style="color: #333; line-height: 1.6;">
       We'll notify you when your items are ready to ship. You can track your order status in your account at any time.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/orders" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Track Order</a>
+      <a href="https://abellumber.com/dashboard/orders" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Track Order</a>
     </div>
   `)
 
@@ -273,12 +273,12 @@ export async function notifyOrderShipped(
     : ''
 
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Order Shipped</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Order Shipped</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       Your order has been shipped! Your items are on the way.
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Order #${orderNumber}</strong></p>
       <p style="margin: 0 0 8px 0;">Project: ${projectName}</p>
       ${trackingHtml}
@@ -287,7 +287,7 @@ export async function notifyOrderShipped(
       Track your shipment in your account to see estimated delivery date.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/deliveries" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Track Shipment</a>
+      <a href="https://abellumber.com/dashboard/deliveries" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Track Shipment</a>
     </div>
   `)
 
@@ -315,12 +315,12 @@ export async function notifyOrderDelivered(
   projectName: string
 ) {
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Order Delivered</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Order Delivered</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       Your order has been delivered! Thank you for your business.
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Order #${orderNumber}</strong></p>
       <p style="margin: 0;">Project: ${projectName}</p>
     </div>
@@ -328,7 +328,7 @@ export async function notifyOrderDelivered(
       If you have any questions about your order or need anything else, please don't hesitate to reach out.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/orders" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Order</a>
+      <a href="https://abellumber.com/dashboard/orders" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Order</a>
     </div>
   `)
 
@@ -357,21 +357,21 @@ export async function notifyInvoiceCreated(
   dueDate: string
 ) {
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Invoice Created</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Invoice Created</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       A new invoice has been created for your account.
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Invoice #${invoiceNumber}</strong></p>
-      <p style="margin: 0 0 8px 0;">Amount Due: <strong style="color: #1B4F72;">$${total.toFixed(2)}</strong></p>
+      <p style="margin: 0 0 8px 0;">Amount Due: <strong style="color: #3E2A1E;">$${total.toFixed(2)}</strong></p>
       <p style="margin: 0;">Due Date: ${dueDate}</p>
     </div>
     <p style="color: #333; line-height: 1.6;">
       View the invoice details in your account to see itemized charges and payment options.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/invoices" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Invoice</a>
+      <a href="https://abellumber.com/dashboard/invoices" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Invoice</a>
     </div>
   `)
 
@@ -400,21 +400,21 @@ export async function notifyInvoiceOverdue(
   daysOverdue: number
 ) {
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Invoice Overdue</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Invoice Overdue</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       We noticed that an invoice on your account is now overdue.
     </p>
-    <div style="background-color: #fff3cd; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #fff3cd; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Invoice #${invoiceNumber}</strong></p>
-      <p style="margin: 0 0 8px 0;">Amount Due: <strong style="color: #1B4F72;">$${total.toFixed(2)}</strong></p>
-      <p style="margin: 0; color: #E67E22;"><strong>${daysOverdue} days overdue</strong></p>
+      <p style="margin: 0 0 8px 0;">Amount Due: <strong style="color: #3E2A1E;">$${total.toFixed(2)}</strong></p>
+      <p style="margin: 0; color: #C9822B;"><strong>${daysOverdue} days overdue</strong></p>
     </div>
     <p style="color: #333; line-height: 1.6;">
       Please submit payment as soon as possible. If payment has already been sent, please disregard this notice.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/invoices" style="background-color: #E67E22; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Pay Now</a>
+      <a href="https://abellumber.com/dashboard/invoices" style="background-color: #C9822B; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Pay Now</a>
     </div>
   `)
 
@@ -445,14 +445,14 @@ export async function notifyPaymentReceived(
   const invoiceHtml = invoiceNumber ? `<p style="margin: 0;">Invoice #: ${invoiceNumber}</p>` : ''
 
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Payment Received</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Payment Received</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       We've received your payment. Thank you!
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Amount Received</strong></p>
-      <p style="margin: 0 0 8px 0; font-size: 18px; color: #1B4F72;"><strong>$${amount.toFixed(2)}</strong></p>
+      <p style="margin: 0 0 8px 0; font-size: 18px; color: #3E2A1E;"><strong>$${amount.toFixed(2)}</strong></p>
       <p style="margin: 0 0 8px 0;">Method: ${paymentMethod}</p>
       ${invoiceHtml}
     </div>
@@ -460,7 +460,7 @@ export async function notifyPaymentReceived(
       Your payment has been applied to your account. View your account details for payment history.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/invoices" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Account</a>
+      <a href="https://abellumber.com/dashboard/invoices" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Account</a>
     </div>
   `)
 
@@ -531,7 +531,7 @@ export async function notifyDeliveryStatusChange(
     if (extraData?.newDate) details.push(`📅 New date: ${extraData.newDate}`)
 
     const detailsHtml = details.length > 0
-      ? `<div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">${details.map(d => `<p style="margin: 4px 0;">${d}</p>`).join('')}</div>`
+      ? `<div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">${details.map(d => `<p style="margin: 4px 0;">${d}</p>`).join('')}</div>`
       : ''
 
     const statusLabels: Record<string, string> = {
@@ -544,7 +544,7 @@ export async function notifyDeliveryStatusChange(
     }
 
     const html = emailTemplate(`
-      <h2 style="color: #1B4F72; margin-top: 0;">${event.title(dn)}</h2>
+      <h2 style="color: #3E2A1E; margin-top: 0;">${event.title(dn)}</h2>
       <p style="color: #333; line-height: 1.6;">
         Hi ${r.builderName},<br><br>
         Your delivery <strong>${dn}</strong> ${statusLabels[newStatus] || 'has been updated'}.
@@ -556,7 +556,7 @@ export async function notifyDeliveryStatusChange(
         ${newStatus === 'RESCHEDULED' ? 'We apologize for any inconvenience.' : ''}
       </p>
       <div style="text-align: center; margin-top: 24px;">
-        <a href="https://abellumber.com/dashboard/deliveries" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Delivery</a>
+        <a href="https://abellumber.com/dashboard/deliveries" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Delivery</a>
       </div>
     `)
 
@@ -592,15 +592,15 @@ export async function notifyWarrantyUpdate(
   message: string
 ) {
   const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
-  const statusColor = status === 'APPROVED' ? '#1B4F72' : status === 'REJECTED' ? '#E67E22' : '#999'
+  const statusColor = status === 'APPROVED' ? '#3E2A1E' : status === 'REJECTED' ? '#C9822B' : '#999'
 
   const html = emailTemplate(`
-    <h2 style="color: #1B4F72; margin-top: 0;">Warranty Claim Update</h2>
+    <h2 style="color: #3E2A1E; margin-top: 0;">Warranty Claim Update</h2>
     <p style="color: #333; line-height: 1.6;">
       Hi there,<br><br>
       There's an update on your warranty claim.
     </p>
-    <div style="background-color: #f9f9f9; border-left: 4px solid #E67E22; padding: 16px; margin: 20px 0;">
+    <div style="background-color: #f9f9f9; border-left: 4px solid #C9822B; padding: 16px; margin: 20px 0;">
       <p style="margin: 0 0 8px 0;"><strong>Claim #${claimNumber}</strong></p>
       <p style="margin: 0 0 12px 0;">
         Status: <strong style="color: ${statusColor};">${statusLabel}</strong>
@@ -611,7 +611,7 @@ export async function notifyWarrantyUpdate(
       For more details, please check your warranty claims page.
     </p>
     <div style="text-align: center; margin-top: 24px;">
-      <a href="https://abellumber.com/dashboard/warranty" style="background-color: #1B4F72; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Claim</a>
+      <a href="https://abellumber.com/dashboard/warranty" style="background-color: #3E2A1E; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Claim</a>
     </div>
   `)
 

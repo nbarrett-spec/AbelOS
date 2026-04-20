@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/blueprints/[id]
@@ -143,6 +144,8 @@ export async function DELETE(
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'DELETE', 'Blueprint', params.id).catch(() => {});
 
     const blueprint: any = await prisma.blueprint.findUnique({
       where: { id: params.id },

@@ -123,7 +123,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -133,7 +133,7 @@ export default function ProductDetailPage() {
       <div className="max-w-2xl mx-auto py-12 text-center">
         <div className="text-5xl mb-4">😕</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">{error || 'Product not found'}</h2>
-        <Link href="/catalog" className="text-[#1B4F72] hover:underline">← Back to Catalog</Link>
+        <Link href="/catalog" className="text-[#3E2A1E] hover:underline">← Back to Catalog</Link>
       </div>
     )
   }
@@ -156,7 +156,7 @@ export default function ProductDetailPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/catalog" className="hover:text-[#1B4F72]">Catalog</Link>
+        <Link href="/catalog" className="hover:text-[#3E2A1E]">Catalog</Link>
         <span>/</span>
         <span className="text-gray-400">{product.category}</span>
         <span>/</span>
@@ -206,9 +206,9 @@ export default function ProductDetailPage() {
           )}
 
           {/* Pricing */}
-          <div className="bg-[#1B4F72]/5 rounded-xl p-5">
+          <div className="bg-[#3E2A1E]/5 rounded-xl p-5">
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-[#1B4F72]">{fmtPrice(product.builderPrice)}</span>
+              <span className="text-3xl font-bold text-[#3E2A1E]">{fmtPrice(product.builderPrice)}</span>
               {product.priceSource !== 'BASE' && product.builderPrice !== product.basePrice && (
                 <span className="text-lg text-gray-400 line-through mb-1">{fmtPrice(product.basePrice)}</span>
               )}
@@ -250,7 +250,7 @@ export default function ProductDetailPage() {
                   ? 'bg-green-500 text-white'
                   : product.stockStatus === 'OUT_OF_STOCK'
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-[#E67E22] hover:bg-[#D35400] text-white'
+                  : 'bg-[#C9822B] hover:bg-[#A86B1F] text-white'
               } disabled:opacity-60`}
             >
               {addedSuccess ? '✓ Added to Cart!' : addingToCart ? 'Adding...' : 'Add to Cart'}
@@ -336,7 +336,7 @@ export default function ProductDetailPage() {
                 <div className="text-3xl mb-2">🚪</div>
                 <p className="text-xs font-medium text-gray-900 truncate">{r.name}</p>
                 {r.doorSize && <p className="text-xs text-gray-500">{r.doorSize}</p>}
-                <p className="text-sm font-bold text-[#1B4F72] mt-1">{fmtPrice(Number(r.basePrice))}</p>
+                <p className="text-sm font-bold text-[#3E2A1E] mt-1">{fmtPrice(Number(r.basePrice))}</p>
               </Link>
             ))}
           </div>
@@ -383,19 +383,19 @@ function TierColumn({
         {items.slice(0, 3).map((item) => {
           const isThis = item.id === currentProductId
           return (
-            <div key={item.id} className={`bg-white rounded-lg p-3 ${isThis ? 'ring-2 ring-[#1B4F72]' : ''}`}>
+            <div key={item.id} className={`bg-white rounded-lg p-3 ${isThis ? 'ring-2 ring-[#3E2A1E]' : ''}`}>
               <div className="flex items-center justify-between">
-                <Link href={`/catalog/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-[#1B4F72] truncate flex-1">
+                <Link href={`/catalog/${item.id}`} className="text-sm font-medium text-gray-900 hover:text-[#3E2A1E] truncate flex-1">
                   {item.name}
-                  {isThis && <span className="ml-1 text-xs text-[#1B4F72]">(current)</span>}
+                  {isThis && <span className="ml-1 text-xs text-[#3E2A1E]">(current)</span>}
                 </Link>
               </div>
               <div className="flex items-center justify-between mt-1">
-                <span className="text-sm font-bold text-[#1B4F72]">{fmtPrice(Number(item.basePrice))}</span>
+                <span className="text-sm font-bold text-[#3E2A1E]">{fmtPrice(Number(item.basePrice))}</span>
                 {!isThis && (
                   <button
                     onClick={() => onAddToCart(item.id, 1, Number(item.basePrice), item.name, item.sku)}
-                    className="text-xs px-2 py-1 bg-[#E67E22] text-white rounded-md hover:bg-[#D35400] transition"
+                    className="text-xs px-2 py-1 bg-[#C9822B] text-white rounded-md hover:bg-[#A86B1F] transition"
                   >
                     Add
                   </button>

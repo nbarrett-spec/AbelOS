@@ -4,11 +4,11 @@
  */
 
 // Abel Brand Colors
-const ABEL_NAVY = '#1B4F72'
-const ABEL_ORANGE = '#E67E22'
+const ABEL_NAVY = '#3E2A1E'
+const ABEL_ORANGE = '#C9822B'
 const ABEL_GREEN = '#27AE60'
 const ABEL_LIGHT_GRAY = '#ECF0F1'
-const ABEL_DARK_GRAY = '#34495E'
+const ABEL_DARK_GRAY = '#404040'
 
 // Category to color mapping for visual consistency
 export const CATEGORY_PLACEHOLDER_COLORS: Record<string, string> = {

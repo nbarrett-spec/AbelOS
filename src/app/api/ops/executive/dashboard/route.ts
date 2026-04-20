@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         ROUND(COALESCE(SUM(CASE WHEN "createdAt" >= DATE_TRUNC('year', NOW()) THEN total ELSE 0 END), 0)::numeric, 2) as "ytd",
         COUNT(CASE WHEN "createdAt" >= DATE_TRUNC('month', NOW()) THEN 1 END)::int as "ordersThisMonth"
       FROM "Order"
-      WHERE status::text IN ('DELIVERED', 'COMPLETE')
+      WHERE status != 'CANCELLED'::"OrderStatus"
     `)
     const oRev = orderRevenue[0] || {}
 

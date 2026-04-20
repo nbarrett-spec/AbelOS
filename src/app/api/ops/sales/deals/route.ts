@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/lib/audit'
+import { logAudit, audit } from '@/lib/audit'
 import { executeWorkflows } from '@/lib/workflows'
 import { checkStaffAuth } from '@/lib/api-auth'
 
@@ -88,6 +88,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { companyName, contactName, contactEmail, contactPhone, address, city, state, zip, stage, probability, dealValue, source, expectedCloseDate, description } = body
     const ownerId = body.ownerId || staffId
+
+    audit(request, 'CREATE', 'Deal', undefined, { method: 'POST' }).catch(() => {})
 
     if (!companyName || !contactName) {
       return NextResponse.json({ error: 'companyName and contactName are required' }, { status: 400 })

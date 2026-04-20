@@ -138,14 +138,14 @@ export default function EmptyState({
             secondaryAction.href ? (
               <a
                 href={secondaryAction.href}
-                className="text-sm font-medium text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark transition-colors"
+                className="text-sm font-medium text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark transition-colors"
               >
                 {secondaryAction.label}
               </a>
             ) : (
               <button
                 onClick={secondaryAction.onClick}
-                className="text-sm font-medium text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark transition-colors"
+                className="text-sm font-medium text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark transition-colors"
               >
                 {secondaryAction.label}
               </button>

@@ -287,7 +287,7 @@ export default function AICopilot() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#1B4F72] hover:bg-[#163d5a] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 group"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#3E2A1E] hover:bg-[#163d5a] text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 group"
         title="Open Abel AI Assistant"
       >
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -297,7 +297,7 @@ export default function AICopilot() {
           <circle cx="14" cy="9" r="1" fill="currentColor" />
           <path d="M10 13c0 1 .5 2 2 2s2-1 2-2" />
         </svg>
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E67E22] rounded-full text-[10px] flex items-center justify-center font-bold">
+        <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#C9822B] rounded-full text-[10px] flex items-center justify-center font-bold">
           AI
         </span>
       </button>
@@ -307,14 +307,14 @@ export default function AICopilot() {
   // Minimized state
   if (isMinimized) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 bg-[#1B4F72] text-white rounded-xl shadow-xl px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-[#163d5a] transition"
+      <div className="fixed bottom-6 right-6 z-50 bg-[#3E2A1E] text-white rounded-xl shadow-xl px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-[#163d5a] transition"
            onClick={() => setIsMinimized(false)}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 2a8 8 0 0 0-8 8c0 3.4 2.1 6.3 5 7.5V20a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.5c2.9-1.2 5-4.1 5-7.5a8 8 0 0 0-8-8z" />
         </svg>
         <span className="text-sm font-medium">Abel AI</span>
         {messages.length > 0 && (
-          <span className="bg-[#E67E22] text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
+          <span className="bg-[#C9822B] text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
             {messages.filter(m => m.role === 'assistant' && !m.isLoading).length}
           </span>
         )}
@@ -326,7 +326,7 @@ export default function AICopilot() {
   return (
     <div className="fixed bottom-6 right-6 z-50 w-[420px] h-[600px] max-h-[80vh] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-[#1B4F72] text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="bg-[#3E2A1E] text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2a8 8 0 0 0-8 8c0 3.4 2.1 6.3 5 7.5V20a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.5c2.9-1.2 5-4.1 5-7.5a8 8 0 0 0-8-8z" />
@@ -374,10 +374,10 @@ export default function AICopilot() {
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1B4F72" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3E2A1E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2a8 8 0 0 0-8 8c0 3.4 2.1 6.3 5 7.5V20a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.5c2.9-1.2 5-4.1 5-7.5a8 8 0 0 0-8-8z" />
-                <circle cx="10" cy="9" r="1" fill="#1B4F72" />
-                <circle cx="14" cy="9" r="1" fill="#1B4F72" />
+                <circle cx="10" cy="9" r="1" fill="#3E2A1E" />
+                <circle cx="14" cy="9" r="1" fill="#3E2A1E" />
                 <path d="M10 13c0 1 .5 2 2 2s2-1 2-2" />
               </svg>
             </div>
@@ -390,7 +390,7 @@ export default function AICopilot() {
                 <button
                   key={action.label}
                   onClick={() => sendMessage(action.prompt)}
-                  className="text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-[#1B4F72]/30 rounded-lg transition text-xs text-gray-700 hover:text-[#1B4F72]"
+                  className="text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-[#3E2A1E]/30 rounded-lg transition text-xs text-gray-700 hover:text-[#3E2A1E]"
                 >
                   {action.label}
                 </button>
@@ -406,7 +406,7 @@ export default function AICopilot() {
               <div
                 className={`max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-[#1B4F72] text-white'
+                    ? 'bg-[#3E2A1E] text-white'
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
@@ -428,7 +428,7 @@ export default function AICopilot() {
                           {msg.toolsUsed.map((tool, i) => (
                             <span
                               key={i}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[10px] text-[#1B4F72] rounded-full font-medium"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[10px] text-[#3E2A1E] rounded-full font-medium"
                             >
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
@@ -463,14 +463,14 @@ export default function AICopilot() {
             onKeyDown={handleKeyDown}
             placeholder="Ask Abel AI anything..."
             rows={1}
-            className="flex-1 resize-none border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4F72] focus:ring-1 focus:ring-[#1B4F72]/20 max-h-20 overflow-y-auto"
+            className="flex-1 resize-none border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#3E2A1E] focus:ring-1 focus:ring-[#3E2A1E]/20 max-h-20 overflow-y-auto"
             style={{ minHeight: '38px' }}
             disabled={isLoading}
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isLoading}
-            className="w-9 h-9 bg-[#1B4F72] hover:bg-[#163d5a] disabled:bg-gray-300 text-white rounded-xl flex items-center justify-center transition flex-shrink-0"
+            className="w-9 h-9 bg-[#3E2A1E] hover:bg-[#163d5a] disabled:bg-gray-300 text-white rounded-xl flex items-center justify-center transition flex-shrink-0"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />

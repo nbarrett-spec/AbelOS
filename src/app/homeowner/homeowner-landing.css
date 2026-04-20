@@ -17,7 +17,7 @@
 .landing-header h2 {
   margin: 0 0 0.75rem 0;
   font-size: 2rem;
-  color: #1b4f72;
+  color: #3E2A1E;
   font-weight: 600;
 }
 
@@ -65,8 +65,8 @@
 
 .token-input:focus {
   outline: none;
-  border-color: #1b4f72;
-  box-shadow: 0 0 0 3px rgba(27, 79, 114, 0.1);
+  border-color: #3E2A1E;
+  box-shadow: 0 0 0 3px rgba(62, 42, 30, 0.1);
 }
 
 .token-input:disabled {
@@ -85,7 +85,7 @@
 
 .submit-button {
   padding: 0.875rem 1.5rem;
-  background: #e67e22;
+  background: #C9822B;
   color: white;
   border: none;
   border-radius: 6px;
@@ -119,7 +119,7 @@
 
 .landing-footer h3 {
   margin: 0 0 1rem 0;
-  color: #1b4f72;
+  color: #3E2A1E;
   font-size: 1.125rem;
 }
 
@@ -154,7 +154,7 @@
 
 .info-card h4 {
   margin: 0 0 0.75rem 0;
-  color: #1b4f72;
+  color: #3E2A1E;
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -167,7 +167,7 @@
 }
 
 .info-card a {
-  color: #e67e22;
+  color: #C9822B;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;

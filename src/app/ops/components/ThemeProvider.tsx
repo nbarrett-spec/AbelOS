@@ -22,7 +22,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_PREFERENCES: Preferences = {
   theme: 'light',
-  accentColor: '#3b82f6',
+  accentColor: '#C9822B',
   fontSize: 'medium',
   compactMode: false,
 };

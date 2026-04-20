@@ -177,7 +177,7 @@ export default function PipelinePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e67e22]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C9822B]" />
       </div>
     )
   }
@@ -195,7 +195,7 @@ export default function PipelinePage() {
             value={pipelineSearch}
             onChange={(e) => setPipelineSearch(e.target.value)}
             placeholder="Search deals..."
-            className="px-3 py-2 border rounded-lg text-sm w-48 focus:ring-2 focus:ring-[#E67E22]/20 focus:border-[#E67E22]"
+            className="px-3 py-2 border rounded-lg text-sm w-48 focus:ring-2 focus:ring-[#C9822B]/20 focus:border-[#C9822B]"
           />
           <button
             onClick={() => setShowMyDealsOnly(!showMyDealsOnly)}
@@ -250,7 +250,7 @@ export default function PipelinePage() {
                       >
                         <Link
                           href={`/sales/deals/${deal.id}`}
-                          className={`block p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition cursor-pointer border-b ${CARD_COLORS[stage]} border-gray-200 hover:border-[#e67e22]`}
+                          className={`block p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition cursor-pointer border-b ${CARD_COLORS[stage]} border-gray-200 hover:border-[#C9822B]`}
                         >
                           <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">
                             {deal.companyName}

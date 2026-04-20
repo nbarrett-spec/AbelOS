@@ -96,7 +96,7 @@ export default function PMPerformancePage() {
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb', padding: '16px 24px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 12 }}>
-            <Link href="/ops/portal/pm" style={{ color: '#E67E22', textDecoration: 'none', fontWeight: 500 }}>
+            <Link href="/ops/portal/pm" style={{ color: '#C9822B', textDecoration: 'none', fontWeight: 500 }}>
               PM Portal
             </Link>
             <span style={{ color: '#999' }}>/</span>
@@ -245,7 +245,7 @@ export default function PMPerformancePage() {
                   {atRiskJobs.map(job => (
                     <tr key={job.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                       <td style={{ padding: '10px 12px' }}>
-                        <Link href={`/ops/jobs/${job.id}`} style={{ color: '#E67E22', textDecoration: 'none', fontWeight: 600 }}>
+                        <Link href={`/ops/jobs/${job.id}`} style={{ color: '#C9822B', textDecoration: 'none', fontWeight: 600 }}>
                           {job.jobNumber}
                         </Link>
                       </td>
@@ -304,7 +304,7 @@ export default function PMPerformancePage() {
                         </span>
                       </td>
                       <td style={{ padding: '10px 12px' }}>
-                        <Link href={`/ops/jobs`} style={{ color: '#E67E22', textDecoration: 'none', fontWeight: 500 }}>
+                        <Link href={`/ops/jobs`} style={{ color: '#C9822B', textDecoration: 'none', fontWeight: 500 }}>
                           {d.jobNumber}
                         </Link>
                       </td>

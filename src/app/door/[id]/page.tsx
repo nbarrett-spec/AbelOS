@@ -73,8 +73,8 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div style={{ minHeight: '100vh', background: '#F5F6FA', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 32px' }}>
         {/* Header */}
-        <div style={{ padding: '20px 0 12px', textAlign: 'center', borderBottom: '3px solid #E67E22' }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: '#1B4F72', letterSpacing: -0.5 }}>ABEL LUMBER</div>
+        <div style={{ padding: '20px 0 12px', textAlign: 'center', borderBottom: '3px solid #C9822B' }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#3E2A1E', letterSpacing: -0.5 }}>ABEL LUMBER</div>
           <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>Door Identity System</div>
         </div>
         {children}
@@ -135,7 +135,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
     <Shell>
       {/* Product Card */}
       <div style={{ background: 'white', borderRadius: 12, marginTop: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <div style={{ background: '#1B4F72', padding: '16px 20px', color: 'white' }}>
+        <div style={{ background: '#3E2A1E', padding: '16px 20px', color: 'white' }}>
           <div style={{ fontSize: 16, fontWeight: 700 }}>{door.product?.name || 'Abel Lumber Door'}</div>
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>Serial: {door.serialNumber}</div>
         </div>
@@ -160,7 +160,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
 
           {/* Door Specs */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>Door Specifications</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>Door Specifications</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
                 ['Category', door.product?.category],
@@ -183,7 +183,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
           {/* Components */}
           {door.components?.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>Components</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>Components</div>
               {door.components.map((c: any, i: number) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0', fontSize: 13 }}>
                   <span style={{ color: '#333' }}>{c.name || c.sku}</span>
@@ -195,7 +195,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
 
           {/* Key Dates */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>Timeline</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>Timeline</div>
             {[
               ['Manufactured', door.dates?.manufactured],
               ['Quality Checked', door.dates?.qcPassed],
@@ -212,7 +212,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
           {/* Care Instructions */}
           {door.warranty?.careInstructions && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>Care Instructions</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>Care Instructions</div>
               <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6, background: '#F8F9FA', padding: 12, borderRadius: 8 }}>
                 {door.warranty.careInstructions}
               </div>
@@ -225,7 +225,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
       {!showServiceForm && !submitted && (
         <button onClick={() => setShowServiceForm(true)} style={{
           width: '100%', padding: 16, marginTop: 16, borderRadius: 10,
-          background: '#E67E22', color: 'white', border: 'none',
+          background: '#C9822B', color: 'white', border: 'none',
           fontSize: 16, fontWeight: 700, cursor: 'pointer',
         }}>
           Request Service
@@ -235,7 +235,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
       {/* Service Request Form */}
       {showServiceForm && !submitted && (
         <div style={{ background: 'white', borderRadius: 12, marginTop: 16, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#1B4F72', marginBottom: 16 }}>Request Service</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E', marginBottom: 16 }}>Request Service</div>
           {[
             { key: 'name', label: 'Your Name', type: 'text' },
             { key: 'email', label: 'Email', type: 'email' },
@@ -275,7 +275,7 @@ function HomeownerView({ door, doorId, showServiceForm, setShowServiceForm }: an
           <button onClick={submitService} disabled={submitting || !serviceData.description}
             style={{
               width: '100%', padding: 14, borderRadius: 8,
-              background: serviceData.description ? '#1B4F72' : '#ccc',
+              background: serviceData.description ? '#3E2A1E' : '#ccc',
               color: 'white', border: 'none', fontSize: 15, fontWeight: 600,
               cursor: serviceData.description ? 'pointer' : 'default',
             }}>
@@ -315,7 +315,7 @@ function StaffView({ door, doorId, doAction, actionLoading, actionMessage }: any
     <Shell>
       {/* Door Header */}
       <div style={{ background: 'white', borderRadius: 12, marginTop: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <div style={{ background: '#1B4F72', padding: '16px 20px', color: 'white' }}>
+        <div style={{ background: '#3E2A1E', padding: '16px 20px', color: 'white' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 700 }}>{door.product?.name || 'Door Unit'}</div>
@@ -345,7 +345,7 @@ function StaffView({ door, doorId, doAction, actionLoading, actionMessage }: any
 
           {/* Timeline */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>LIFECYCLE</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>LIFECYCLE</div>
             {[
               ['Manufactured', door.dates?.manufactured, op.manufacturedBy],
               ['QC Passed', door.dates?.qcPassed, op.qcPassedBy],
@@ -381,7 +381,7 @@ function StaffView({ door, doorId, doAction, actionLoading, actionMessage }: any
 
       {/* Context-Aware Actions */}
       <div style={{ background: 'white', borderRadius: 12, marginTop: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#1B4F72', marginBottom: 12 }}>ACTIONS</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#3E2A1E', marginBottom: 12 }}>ACTIONS</div>
 
         {/* QC Actions */}
         {(status === 'PRODUCTION' || status === 'QC_PENDING') && (
@@ -411,7 +411,7 @@ function StaffView({ door, doorId, doAction, actionLoading, actionMessage }: any
 
         {/* Deliver */}
         {status === 'STAGED' && (
-          <ActionBtn label="Confirm Delivered" color="#E67E22" loading={actionLoading}
+          <ActionBtn label="Confirm Delivered" color="#C9822B" loading={actionLoading}
             onClick={() => doAction('deliver')} full />
         )}
 
@@ -471,7 +471,7 @@ function StaffView({ door, doorId, doAction, actionLoading, actionMessage }: any
       {/* Event History */}
       {door.events?.length > 0 && (
         <div style={{ background: 'white', borderRadius: 12, marginTop: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#1B4F72', marginBottom: 8 }}>EVENT LOG</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>EVENT LOG</div>
           {door.events.slice(0, 10).map((e: any) => (
             <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f5f5', fontSize: 12 }}>
               <div>

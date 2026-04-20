@@ -23,6 +23,8 @@ function hasRequiredRole(role: string | null): boolean {
 export async function GET(request: NextRequest) {
   try {
     const role = getStaffRole(request)
+    const allRoles = (request.headers.get('x-staff-roles') || role || '').split(',').map(r => r.trim())
+    const isAdmin = allRoles.includes('ADMIN')
     if (!hasRequiredRole(role)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only ADMIN or MANAGER can list staff.' },
@@ -111,13 +113,16 @@ export async function GET(request: NextRequest) {
         title: s.title,
         active: s.active,
         hireDate: s.hireDate,
-        hourlyRate: s.hourlyRate,
+        // Compensation data: ADMIN only
+        ...(isAdmin ? { hourlyRate: s.hourlyRate } : {}),
         status,
         handbookSignedAt: s.handbookSignedAt,
         handbookVersion: s.handbookVersion,
-        portalOverrides: s.portalOverrides || {},
+        // Portal overrides: ADMIN only (managers can see staff but not modify access)
+        ...(isAdmin ? { portalOverrides: s.portalOverrides || {} } : {}),
         inviteTokenExpiry: s.inviteTokenExpiry,
         createdAt: s.createdAt,
+        // passwordHash is NEVER returned in API responses
       }
     })
 

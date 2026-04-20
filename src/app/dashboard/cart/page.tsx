@@ -153,7 +153,7 @@ export default function CartPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -172,7 +172,7 @@ export default function CartPage() {
           </p>
           <Link
             href="/catalog"
-            className="inline-block bg-[#1B4F72] hover:bg-[#1B4F72]/90 text-white font-bold py-3 px-6 rounded-lg transition"
+            className="inline-block bg-[#3E2A1E] hover:bg-[#3E2A1E]/90 text-white font-bold py-3 px-6 rounded-lg transition"
           >
             Continue Shopping
           </Link>
@@ -184,7 +184,7 @@ export default function CartPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
-      <Link href="/catalog" className="text-sm text-[#1B4F72] hover:underline mb-4 inline-block">
+      <Link href="/catalog" className="text-sm text-[#3E2A1E] hover:underline mb-4 inline-block">
         &larr; Continue Shopping
       </Link>
 
@@ -273,7 +273,7 @@ export default function CartPage() {
           </div>
           <div className="flex justify-between items-center border-t pt-3">
             <span className="text-base font-bold text-gray-900">Subtotal</span>
-            <span className="text-base font-bold text-[#1B4F72]">{fmt(subtotal)}</span>
+            <span className="text-base font-bold text-[#3E2A1E]">{fmt(subtotal)}</span>
           </div>
           <p className="text-xs text-gray-500 pt-2">
             Tax will be calculated and final pricing shown after generating a quote based on your project details.
@@ -285,7 +285,7 @@ export default function CartPage() {
       <div className="flex gap-3">
         <button
           onClick={() => setShowQuoteModal(true)}
-          className="flex-1 bg-[#E67E22] hover:bg-[#E67E22]/90 text-white font-bold py-4 px-6 rounded-lg transition"
+          className="flex-1 bg-[#C9822B] hover:bg-[#C9822B]/90 text-white font-bold py-4 px-6 rounded-lg transition"
         >
           Generate Quote
         </button>
@@ -315,7 +315,7 @@ export default function CartPage() {
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="e.g., Kitchen Renovation, Deck Project..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]"
                 autoFocus
               />
             </div>
@@ -328,7 +328,7 @@ export default function CartPage() {
                 value={deliveryNotes}
                 onChange={e => setDeliveryNotes(e.target.value)}
                 placeholder="e.g., Preferred delivery dates, special instructions..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]"
                 rows={3}
               />
             </div>
@@ -356,7 +356,7 @@ export default function CartPage() {
               <button
                 onClick={handleGenerateQuote}
                 disabled={generating || !projectName.trim()}
-                className="flex-1 px-4 py-2 bg-[#E67E22] hover:bg-[#E67E22]/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-[#C9822B] hover:bg-[#C9822B]/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {generating && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {generating ? 'Generating...' : 'Generate Quote'}

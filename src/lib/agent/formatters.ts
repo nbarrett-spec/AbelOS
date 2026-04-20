@@ -60,6 +60,6 @@ export function formatForChat(text: string): string {
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br/>')
     .replace(/\u2022 /g, '&bull; ')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#E67E22;text-decoration:underline" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#C9822B;text-decoration:underline" target="_blank" rel="noopener">$1</a>')
   return safe
 }

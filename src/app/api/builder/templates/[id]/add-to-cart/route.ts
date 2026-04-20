@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 interface CartItem {
   productId: string
@@ -28,6 +29,8 @@ export async function POST(
   }
 
   try {
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'CREATE', 'CartItem').catch(() => {});
+
     // Verify template belongs to this builder
     const templates: any[] = await prisma.$queryRawUnsafe(
       `SELECT id, name FROM "OrderTemplate"

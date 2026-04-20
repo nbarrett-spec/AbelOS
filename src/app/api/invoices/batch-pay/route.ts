@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { audit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    audit(request, 'CREATE', 'BatchPayment', undefined, {}, 'WARN').catch(() => {});
 
     const builderId = session.builderId
     const body = await request.json()

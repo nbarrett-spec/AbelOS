@@ -356,11 +356,53 @@ export async function middleware(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────────────────
+  // ADMIN PAGE ROUTES — /admin/*
+  // Requires ADMIN role. Non-admin staff get redirected to /ops.
+  // ────────────────────────────────────────────────────────────────────
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/api/admin')) {
+    const staffCookie = request.cookies.get(STAFF_COOKIE)
+    if (!staffCookie) {
+      return withRequestId(NextResponse.redirect(new URL('/ops/login', request.url)), requestId)
+    }
+
+    try {
+      const { payload } = await jwtVerify(staffCookie.value, JWT_SECRET)
+      const role = payload.role as string
+      const roles = ((payload.roles as string) || role).split(',').map((r: string) => r.trim())
+
+      if (!roles.includes('ADMIN')) {
+        logSecurityEventFromEdge(request, requestId, 'ACCESS_DENIED', {
+          reason: 'non_admin_accessing_admin_pages',
+          scope: 'admin_pages',
+          staffId: payload.staffId as string,
+          role,
+        })
+        return withRequestId(NextResponse.redirect(new URL('/ops', request.url)), requestId)
+      }
+
+      const requestHeaders = forwardWithRequestId(request, requestId)
+      requestHeaders.set('x-staff-id', payload.staffId as string)
+      requestHeaders.set('x-staff-role', role)
+      requestHeaders.set('x-staff-roles', (payload.roles as string) || role)
+      requestHeaders.set('x-staff-department', payload.department as string)
+      requestHeaders.set('x-staff-email', payload.email as string)
+      requestHeaders.set('x-staff-firstname', (payload.firstName as string) || '')
+      requestHeaders.set('x-staff-lastname', (payload.lastName as string) || '')
+      return withRequestId(
+        NextResponse.next({ request: { headers: requestHeaders } }),
+        requestId
+      )
+    } catch {
+      const loginUrl = new URL('/ops/login', request.url)
+      const response = NextResponse.redirect(loginUrl)
+      response.cookies.delete(STAFF_COOKIE)
+      return withRequestId(response, requestId)
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
   // ADMIN API ROUTES — /api/admin/*
-  // Staff cookie auth (same pattern as /api/ops). These endpoints use
-  // checkStaffAuth() which reads x-staff-id / x-staff-role headers.
-  // Without this block the headers are never set and every admin API
-  // call returns 401 "Not authenticated".
+  // Requires ADMIN role. Non-admin staff get 403 Forbidden.
   // ────────────────────────────────────────────────────────────────────
   if (pathname.startsWith('/api/admin')) {
     const staffCookie = request.cookies.get(STAFF_COOKIE)
@@ -377,10 +419,27 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(staffCookie.value, JWT_SECRET)
+      const role = payload.role as string
+      const roles = ((payload.roles as string) || role).split(',').map((r: string) => r.trim())
+
+      // ADMIN role required for all /api/admin endpoints
+      if (!roles.includes('ADMIN')) {
+        logSecurityEventFromEdge(request, requestId, 'ACCESS_DENIED', {
+          reason: 'non_admin_accessing_admin_api',
+          scope: 'admin_api',
+          staffId: payload.staffId as string,
+          role,
+        })
+        return withRequestId(
+          NextResponse.json({ error: 'Admin access required' }, { status: 403 }),
+          requestId
+        )
+      }
+
       const requestHeaders = forwardWithRequestId(request, requestId)
       requestHeaders.set('x-staff-id', payload.staffId as string)
-      requestHeaders.set('x-staff-role', payload.role as string)
-      requestHeaders.set('x-staff-roles', (payload.roles as string) || (payload.role as string))
+      requestHeaders.set('x-staff-role', role)
+      requestHeaders.set('x-staff-roles', (payload.roles as string) || role)
       requestHeaders.set('x-staff-department', payload.department as string)
       requestHeaders.set('x-staff-email', payload.email as string)
       requestHeaders.set('x-staff-firstname', (payload.firstName as string) || '')
@@ -524,6 +583,8 @@ export const config = {
     '/reset-password',
     // Staff ops routes
     '/ops/:path*',
+    // Admin routes (ADMIN role enforced in middleware)
+    '/admin/:path*',
     // Sales portal routes
     '/sales/:path*',
     // API routes (CSRF + auth)

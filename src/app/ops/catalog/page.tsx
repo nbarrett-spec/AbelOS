@@ -194,7 +194,7 @@ export default function CatalogManagementPage() {
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}>Catalog Management</h1>
         <div style={{
           marginTop: 32, padding: 40, backgroundColor: 'white', borderRadius: 16,
-          border: '2px dashed #E67E22', textAlign: 'center',
+          border: '2px dashed #C9822B', textAlign: 'center',
         }}>
           <p style={{ fontSize: 48, marginBottom: 12 }}>🔧</p>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}>Product Expansion Migration Required</h2>
@@ -205,7 +205,7 @@ export default function CatalogManagementPage() {
           <button
             onClick={runMigration}
             style={{
-              padding: '12px 32px', borderRadius: 12, backgroundColor: '#E67E22',
+              padding: '12px 32px', borderRadius: 12, backgroundColor: '#C9822B',
               color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer',
             }}
           >
@@ -232,7 +232,7 @@ export default function CatalogManagementPage() {
           </p>
         </div>
         <Link href="/ops/products" style={{
-          padding: '8px 16px', borderRadius: 8, backgroundColor: '#1B4F72', color: 'white',
+          padding: '8px 16px', borderRadius: 8, backgroundColor: '#3E2A1E', color: 'white',
           fontSize: 13, fontWeight: 500, textDecoration: 'none',
         }}>
           View Products
@@ -268,7 +268,7 @@ export default function CatalogManagementPage() {
             <button
               onClick={() => setShowNewCat(true)}
               style={{
-                padding: '8px 20px', borderRadius: 8, backgroundColor: '#E67E22', color: 'white',
+                padding: '8px 20px', borderRadius: 8, backgroundColor: '#C9822B', color: 'white',
                 border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               }}
             >
@@ -310,7 +310,7 @@ export default function CatalogManagementPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                       <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: 18, fontWeight: 700, color: '#1B4F72' }}>{cat.liveProductCount || 0}</p>
+                        <p style={{ fontSize: 18, fontWeight: 700, color: '#3E2A1E' }}>{cat.liveProductCount || 0}</p>
                         <p style={{ fontSize: 11, color: '#9ca3af' }}>Products</p>
                       </div>
                       <div style={{ textAlign: 'center' }}>
@@ -339,7 +339,7 @@ export default function CatalogManagementPage() {
                             <p style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>{sub.name}</p>
                             <p style={{ fontSize: 12, color: '#9ca3af' }}>{sub.description}</p>
                           </div>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: '#1B4F72' }}>{sub.liveProductCount || 0} products</p>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: '#3E2A1E' }}>{sub.liveProductCount || 0} products</p>
                         </div>
                       ))}
                     </div>
@@ -357,9 +357,9 @@ export default function CatalogManagementPage() {
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
-              { label: 'Total Suppliers', value: supplierStats.total, color: '#1B4F72' },
+              { label: 'Total Suppliers', value: supplierStats.total, color: '#3E2A1E' },
               { label: 'Active', value: supplierStats.activeCount, color: '#10B981' },
-              { label: 'Manufacturers', value: supplierStats.manufacturers, color: '#E67E22' },
+              { label: 'Manufacturers', value: supplierStats.manufacturers, color: '#C9822B' },
               { label: 'Distributors', value: supplierStats.distributors, color: '#6366F1' },
             ].map(s => (
               <div key={s.label} style={{ padding: 16, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb' }}>
@@ -390,7 +390,7 @@ export default function CatalogManagementPage() {
             <button
               onClick={() => setShowNewSupplier(true)}
               style={{
-                padding: '8px 20px', borderRadius: 8, backgroundColor: '#E67E22', color: 'white',
+                padding: '8px 20px', borderRadius: 8, backgroundColor: '#C9822B', color: 'white',
                 border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginLeft: 'auto',
               }}
             >
@@ -410,7 +410,7 @@ export default function CatalogManagementPage() {
                     <span style={{
                       padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                       backgroundColor: sup.type === 'MANUFACTURER' ? '#FEF3C7' : '#EBF5FF',
-                      color: sup.type === 'MANUFACTURER' ? '#92400E' : '#1B4F72',
+                      color: sup.type === 'MANUFACTURER' ? '#92400E' : '#3E2A1E',
                     }}>
                       {sup.type}
                     </span>
@@ -491,7 +491,7 @@ export default function CatalogManagementPage() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
               <button onClick={() => setShowNewCat(false)} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={createCategory} disabled={!newCat.name} style={{ padding: '8px 20px', borderRadius: 8, backgroundColor: '#E67E22', color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newCat.name ? 1 : 0.5 }}>Create</button>
+              <button onClick={createCategory} disabled={!newCat.name} style={{ padding: '8px 20px', borderRadius: 8, backgroundColor: '#C9822B', color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newCat.name ? 1 : 0.5 }}>Create</button>
             </div>
           </div>
         </div>
@@ -577,7 +577,7 @@ export default function CatalogManagementPage() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
               <button onClick={() => setShowNewSupplier(false)} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={createSupplier} disabled={!newSupplier.name || !newSupplier.code} style={{ padding: '8px 20px', borderRadius: 8, backgroundColor: '#E67E22', color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newSupplier.name && newSupplier.code ? 1 : 0.5 }}>Create Supplier</button>
+              <button onClick={createSupplier} disabled={!newSupplier.name || !newSupplier.code} style={{ padding: '8px 20px', borderRadius: 8, backgroundColor: '#C9822B', color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newSupplier.name && newSupplier.code ? 1 : 0.5 }}>Create Supplier</button>
             </div>
           </div>
         </div>

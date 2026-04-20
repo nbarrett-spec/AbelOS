@@ -125,8 +125,6 @@ export async function POST(request: NextRequest) {
           "notes"           TEXT,
           "createdById"     TEXT,
           "approvedById"    TEXT,
-          "qbTxnId"         TEXT,
-          "qbSyncedAt"      TIMESTAMPTZ,
           "inflowId"        TEXT,
           "inflowVendorId"  TEXT,
           "createdAt"       TIMESTAMPTZ DEFAULT NOW(),

@@ -260,7 +260,7 @@ export default function SubcontractorPricingPage() {
           borderWidth: '2px',
           borderStyle: 'solid',
           borderColor: 'rgba(230, 126, 34, 0.2)',
-          borderTopColor: '#E67E22'
+          borderTopColor: '#C9822B'
         }} />
       </div>
     )
@@ -283,7 +283,7 @@ export default function SubcontractorPricingPage() {
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           fontSize: '0.875rem',
           color: 'white',
-          backgroundColor: toastType === 'error' ? '#DC2626' : '#1B4F72'
+          backgroundColor: toastType === 'error' ? '#DC2626' : '#3E2A1E'
         }}>
           {toast}
         </div>
@@ -306,7 +306,7 @@ export default function SubcontractorPricingPage() {
           }}
           style={{
             padding: '0.5rem 1rem',
-            backgroundColor: '#E67E22',
+            backgroundColor: '#C9822B',
             color: 'white',
             borderRadius: '0.5rem',
             border: 'none',
@@ -316,7 +316,7 @@ export default function SubcontractorPricingPage() {
             transition: 'background-color 0.2s'
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D46D1A')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E67E22')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#C9822B')}
         >
           + Add Pricing Agreement
         </button>
@@ -344,7 +344,7 @@ export default function SubcontractorPricingPage() {
           <p style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Unique Crews
           </p>
-          <p style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1B4F72', marginTop: '0.5rem' }}>
+          <p style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#3E2A1E', marginTop: '0.5rem' }}>
             {uniqueCrews}
           </p>
         </div>
@@ -367,7 +367,7 @@ export default function SubcontractorPricingPage() {
                 fontSize: '0.875rem',
                 outline: 'none'
               }}
-              onFocus={(e) => (e.currentTarget.style.boxShadow = '0 0 0 2px #E67E22')}
+              onFocus={(e) => (e.currentTarget.style.boxShadow = '0 0 0 2px #C9822B')}
               onBlur={(e) => (e.currentTarget.style.boxShadow = 'none')}
             />
           </div>
@@ -389,7 +389,7 @@ export default function SubcontractorPricingPage() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  backgroundColor: typeFilter === type ? '#E67E22' : '#F3F4F6',
+                  backgroundColor: typeFilter === type ? '#C9822B' : '#F3F4F6',
                   color: typeFilter === type ? 'white' : '#374151',
                 }}
                 onMouseEnter={(e) => {
@@ -657,7 +657,7 @@ export default function SubcontractorPricingPage() {
                 type="submit"
                 style={{
                   padding: '0.5rem 1rem',
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: 'white',
                   borderRadius: '0.375rem',
                   border: 'none',
@@ -667,7 +667,7 @@ export default function SubcontractorPricingPage() {
                   transition: 'background-color 0.2s'
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D46D1A')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E67E22')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#C9822B')}
               >
                 {editingId ? 'Update Agreement' : 'Create Agreement'}
               </button>
@@ -813,7 +813,7 @@ export default function SubcontractorPricingPage() {
                           style={{
                             padding: '0.25rem 0.5rem',
                             fontSize: '0.75rem',
-                            backgroundColor: '#1B4F72',
+                            backgroundColor: '#3E2A1E',
                             color: 'white',
                             border: 'none',
                             borderRadius: '0.25rem',
@@ -821,7 +821,7 @@ export default function SubcontractorPricingPage() {
                             transition: 'background-color 0.2s'
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#0F3460')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1B4F72')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#3E2A1E')}
                         >
                           Edit
                         </button>
@@ -861,7 +861,7 @@ export default function SubcontractorPricingPage() {
           border: '1px solid #E5E7EB',
           padding: '1rem'
         }}>
-          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1B4F72', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#3E2A1E', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
             Cost Calculator Example
           </h3>
           <div style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.5' }}>

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { auditBuilder } from '@/lib/audit'
 
 // GET /api/builder/phase-config — get my phase configuration
 export async function GET() {
@@ -70,6 +71,8 @@ export async function PUT(request: NextRequest) {
     if (!session || !session.builderId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'UPDATE', 'PhaseConfig').catch(() => {});
 
     const body = await request.json()
     const { phases } = body

@@ -109,7 +109,7 @@ export default function AccountingBriefingPage() {
           { label: 'Invoices to Send', value: s.invoicesToSend, color: '#8E44AD' },
           { label: 'Payments Today', value: s.paymentsReceivedToday, color: '#27AE60' },
           { label: 'Collections Due', value: s.collectionsFollowUpsDue, color: s.collectionsFollowUpsDue > 0 ? '#E74C3C' : '#95A5A6' },
-          { label: 'AP Due This Week', value: s.apDueThisWeek, color: '#F39C12' },
+          { label: 'AP Due This Week', value: s.apDueThisWeek, color: '#D9993F' },
           { label: 'AR Balance', value: formatCurrency(data.arAgingSummary.total), color: '#3498DB', isAmount: true },
           { label: 'Overdue AR', value: formatCurrency(s.overdueAR), color: s.overdueAR > 0 ? '#E74C3C' : '#95A5A6', isAmount: true },
         ].map(kpi => (
@@ -130,8 +130,8 @@ export default function AccountingBriefingPage() {
             <div className="flex-1">
               <div className="flex h-8 rounded-lg overflow-hidden border border-gray-200">
                 {currentPct > 0 && <div style={{ width: `${currentPct}%`, backgroundColor: '#27AE60' }} />}
-                {days30Pct > 0 && <div style={{ width: `${days30Pct}%`, backgroundColor: '#F39C12' }} />}
-                {days60Pct > 0 && <div style={{ width: `${days60Pct}%`, backgroundColor: '#E67E22' }} />}
+                {days30Pct > 0 && <div style={{ width: `${days30Pct}%`, backgroundColor: '#D9993F' }} />}
+                {days60Pct > 0 && <div style={{ width: `${days60Pct}%`, backgroundColor: '#C9822B' }} />}
                 {days90Pct > 0 && <div style={{ width: `${days90Pct}%`, backgroundColor: '#E74C3C' }} />}
               </div>
             </div>
@@ -149,14 +149,14 @@ export default function AccountingBriefingPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#F39C12' }} />
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#D9993F' }} />
               <div>
                 <p className="text-gray-600">30 days</p>
                 <p className="font-semibold text-gray-900">{formatCurrency(data.arAgingSummary.days30)}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#E67E22' }} />
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#C9822B' }} />
               <div>
                 <p className="text-gray-600">60 days</p>
                 <p className="font-semibold text-gray-900">{formatCurrency(data.arAgingSummary.days60)}</p>

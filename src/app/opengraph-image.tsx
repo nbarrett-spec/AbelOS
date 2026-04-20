@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Aegis - AI Blueprint Intelligence for Builders'
+export const alt = 'Abel Lumber — Doors, Trim & Hardware for DFW Builders'
 export const size = {
   width: 1200,
   height: 630,
@@ -15,22 +15,45 @@ export default function OGImage() {
         style={{
           width: '100%',
           height: '100%',
-          background: `linear-gradient(135deg, #1B4F72 0%, #2d6a8f 50%, #154360 100%)`,
+          background: `linear-gradient(145deg, #3E2A1E 0%, #5A4233 40%, #2A1C14 100%)`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '60px',
-          gap: '20px',
+          gap: '16px',
           fontFamily: 'system-ui, -apple-system, sans-serif',
+          position: 'relative',
         }}
       >
-        {/* Logo/Initials */}
+        {/* Subtle texture overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.03,
+            backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.2) 3px, rgba(255,255,255,0.2) 5px)`,
+          }}
+        />
+
+        {/* Top accent line */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(to right, #C9822B, #D9993F, #C9822B)',
+          }}
+        />
+
+        {/* Logo */}
         <div
           style={{
             width: '80px',
             height: '80px',
-            background: '#E67E22',
+            background: '#C9822B',
             borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
@@ -38,7 +61,8 @@ export default function OGImage() {
             fontSize: '48px',
             fontWeight: 'bold',
             color: 'white',
-            marginBottom: '20px',
+            marginBottom: '12px',
+            boxShadow: '0 12px 40px rgba(201, 130, 43, 0.3)',
           }}
         >
           A
@@ -47,54 +71,59 @@ export default function OGImage() {
         {/* Main Title */}
         <h1
           style={{
-            fontSize: '72px',
+            fontSize: '68px',
             fontWeight: 'bold',
             color: 'white',
             margin: '0',
             textAlign: 'center',
             lineHeight: '1.1',
+            letterSpacing: '-2px',
           }}
         >
-          Aegis
+          Abel Lumber
         </h1>
 
         {/* Subtitle */}
         <p
           style={{
-            fontSize: '36px',
-            color: '#E67E22',
+            fontSize: '32px',
+            color: '#C9822B',
             margin: '0',
             textAlign: 'center',
             fontWeight: '600',
           }}
         >
-          Blueprint Intelligence, Instantly
+          Doors · Trim · Hardware
         </p>
 
         {/* Description */}
         <p
           style={{
-            fontSize: '24px',
-            color: 'rgba(255, 255, 255, 0.85)',
-            margin: '20px 0 0 0',
+            fontSize: '22px',
+            color: 'rgba(243, 234, 216, 0.7)',
+            margin: '16px 0 0 0',
             textAlign: 'center',
-            maxWidth: '900px',
-            lineHeight: '1.4',
+            maxWidth: '800px',
+            lineHeight: '1.5',
           }}
         >
-          Upload your plans. Get material takeoffs and quotes in minutes.
+          DFW&apos;s partner for production and custom homebuilders.
+          Order online, track deliveries, manage your account.
         </p>
 
         {/* Footer */}
         <div
           style={{
-            marginTop: '40px',
-            fontSize: '18px',
-            color: 'rgba(255, 255, 255, 0.7)',
+            position: 'absolute',
+            bottom: '32px',
+            fontSize: '16px',
+            color: 'rgba(243, 234, 216, 0.35)',
             textAlign: 'center',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
           }}
         >
-          AI-powered builder commerce — Built by Abel Lumber
+          Abel Doors & Trim · Gainesville, TX
         </div>
       </div>
     ),

@@ -2,7 +2,7 @@
 // Integration Framework — Shared Types
 // ──────────────────────────────────────────────────────────────────────────
 
-export type IntegrationProvider = 'INFLOW' | 'ECI_BOLT' | 'GMAIL' | 'HYPHEN' | 'QUICKBOOKS_DESKTOP' | 'BUILDERTREND'
+export type IntegrationProvider = 'INFLOW' | 'ECI_BOLT' | 'GMAIL' | 'HYPHEN' | 'BUILDERTREND'
 
 export interface IntegrationConfig {
   provider: IntegrationProvider

@@ -4,6 +4,15 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 
+// Roles that can see cost basis and margin data
+const MARGIN_VISIBLE_ROLES = ['ADMIN', 'MANAGER', 'ESTIMATOR', 'PURCHASING']
+
+function canSeeMargins(request: NextRequest): boolean {
+  const roles = (request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || '')
+    .split(',').map(r => r.trim())
+  return roles.some(r => MARGIN_VISIBLE_ROLES.includes(r))
+}
+
 // Ops-side pricing — staff auth via cookie (no builder session needed)
 export async function GET(
   request: NextRequest,
@@ -54,13 +63,14 @@ export async function GET(
       id
     )
 
-    // Map rows to structured response
+    // Map rows to structured response — margin/cost only visible to privileged roles
+    const showMargins = canSeeMargins(request)
     const mappedPricing = pricing.map((row: any) => ({
       id: row.id,
       builderId: row.builderId,
       productId: row.productId,
       customPrice: row.customPrice,
-      margin: row.margin,
+      ...(showMargins ? { margin: row.margin } : {}),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       product: {
@@ -69,7 +79,7 @@ export async function GET(
         name: row['product.name'],
         category: row['product.category'],
         basePrice: row['product.basePrice'],
-        cost: row['product.cost'],
+        ...(showMargins ? { cost: row['product.cost'] } : {}),
       },
     }))
 

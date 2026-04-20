@@ -251,7 +251,7 @@ export default function QuickOrderPage() {
 
   const S = {
     page: { display: 'flex', flexDirection: 'column' as const, minHeight: '100vh', backgroundColor: '#f5f6fa', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' } as React.CSSProperties,
-    header: { backgroundColor: '#1B4F72', color: '#fff', padding: '24px 32px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } as React.CSSProperties,
+    header: { backgroundColor: '#3E2A1E', color: '#fff', padding: '24px 32px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' } as React.CSSProperties,
     headerTitle: { fontSize: 28, fontWeight: 700, margin: 0, marginBottom: 4 } as React.CSSProperties,
     headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: 0 } as React.CSSProperties,
     container: { maxWidth: 1200, margin: '0 auto', padding: '32px', flex: 1, width: '100%' } as React.CSSProperties,
@@ -264,7 +264,7 @@ export default function QuickOrderPage() {
     dropdownLabel: { display: 'flex', flex: 1, justifyContent: 'space-between', gap: 16 } as React.CSSProperties,
     dropdownSku: { fontSize: 12, color: '#6b7280', fontWeight: 500 } as React.CSSProperties,
     dropdownName: { fontSize: 14, fontWeight: 500, color: '#1f2937' } as React.CSSProperties,
-    dropdownPrice: { fontSize: 14, fontWeight: 600, color: '#1B4F72' } as React.CSSProperties,
+    dropdownPrice: { fontSize: 14, fontWeight: 600, color: '#3E2A1E' } as React.CSSProperties,
     tableContainer: { backgroundColor: '#fff', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden', marginBottom: 24 } as React.CSSProperties,
     table: { width: '100%', borderCollapse: 'collapse' as const } as React.CSSProperties,
     th: { padding: '14px 16px', backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', textAlign: 'left' as const, fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase' as const, letterSpacing: 0.5 } as React.CSSProperties,
@@ -286,17 +286,17 @@ export default function QuickOrderPage() {
     totals: { display: 'flex', gap: 32 } as React.CSSProperties,
     totalItem: { display: 'flex', flexDirection: 'column' as const, gap: 4 } as React.CSSProperties,
     totalLabel: { fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5 } as React.CSSProperties,
-    totalValue: { fontSize: 20, fontWeight: 700, color: '#1B4F72' } as React.CSSProperties,
+    totalValue: { fontSize: 20, fontWeight: 700, color: '#3E2A1E' } as React.CSSProperties,
     actions: { display: 'flex', gap: 12 } as React.CSSProperties,
     btn: { padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' } as React.CSSProperties,
-    btnPrimary: { backgroundColor: '#E67E22', color: '#fff' } as React.CSSProperties,
+    btnPrimary: { backgroundColor: '#C9822B', color: '#fff' } as React.CSSProperties,
     btnSecondary: { backgroundColor: '#e5e7eb', color: '#374151' } as React.CSSProperties,
     btnDanger: { backgroundColor: '#fee2e2', color: '#dc2626' } as React.CSSProperties,
     empty: { textAlign: 'center' as const, padding: 60, color: '#9ca3af' } as React.CSSProperties,
     success: { padding: '12px 16px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: 6, marginBottom: 16, fontSize: 14, fontWeight: 500 } as React.CSSProperties,
     modal: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 } as React.CSSProperties,
     modalBox: { backgroundColor: '#fff', borderRadius: 12, padding: 32, maxWidth: 400, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' } as React.CSSProperties,
-    modalTitle: { fontSize: 18, fontWeight: 700, color: '#1B4F72', marginBottom: 20, margin: 0 } as React.CSSProperties,
+    modalTitle: { fontSize: 18, fontWeight: 700, color: '#3E2A1E', marginBottom: 20, margin: 0 } as React.CSSProperties,
     modalInput: { width: '100%', padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, marginBottom: 20, boxSizing: 'border-box' } as React.CSSProperties,
     modalButtons: { display: 'flex', gap: 12 } as React.CSSProperties,
   }
@@ -336,7 +336,7 @@ export default function QuickOrderPage() {
               fontSize: 14,
               cursor: 'pointer',
               backgroundColor: activeTab === 'quick-order' ? '#fff' : 'rgba(255,255,255,0.15)',
-              color: activeTab === 'quick-order' ? '#1B4F72' : 'rgba(255,255,255,0.9)',
+              color: activeTab === 'quick-order' ? '#3E2A1E' : 'rgba(255,255,255,0.9)',
               transition: 'all 0.2s',
             }}
           >
@@ -352,7 +352,7 @@ export default function QuickOrderPage() {
               fontSize: 14,
               cursor: 'pointer',
               backgroundColor: activeTab === 'reorder' ? '#fff' : 'rgba(255,255,255,0.15)',
-              color: activeTab === 'reorder' ? '#1B4F72' : 'rgba(255,255,255,0.9)',
+              color: activeTab === 'reorder' ? '#3E2A1E' : 'rgba(255,255,255,0.9)',
               transition: 'all 0.2s',
             }}
           >
@@ -411,7 +411,7 @@ export default function QuickOrderPage() {
                       return (
                         <tr key={order.id}>
                           <td style={S.td}>
-                            <span style={{ fontWeight: 600, color: '#1B4F72', fontFamily: 'monospace', fontSize: 13 }}>
+                            <span style={{ fontWeight: 600, color: '#3E2A1E', fontFamily: 'monospace', fontSize: 13 }}>
                               {order.orderNumber}
                             </span>
                           </td>
@@ -427,7 +427,7 @@ export default function QuickOrderPage() {
                             <span style={{ fontWeight: 500 }}>{order.itemCount}</span>
                           </td>
                           <td style={S.td}>
-                            <span style={{ fontWeight: 600, color: '#1B4F72' }}>{fmtPrice(order.total)}</span>
+                            <span style={{ fontWeight: 600, color: '#3E2A1E' }}>{fmtPrice(order.total)}</span>
                           </td>
                           <td style={S.td}>
                             <span style={{
@@ -448,7 +448,7 @@ export default function QuickOrderPage() {
                               disabled={reorderingId === order.id}
                               style={{
                                 padding: '8px 16px',
-                                backgroundColor: reorderingId === order.id ? '#d1d5db' : '#E67E22',
+                                backgroundColor: reorderingId === order.id ? '#d1d5db' : '#C9822B',
                                 color: '#fff',
                                 border: 'none',
                                 borderRadius: 6,
@@ -459,11 +459,11 @@ export default function QuickOrderPage() {
                               }}
                               onMouseEnter={(e) => {
                                 if (reorderingId !== order.id)
-                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#D35400'
+                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#A86B1F'
                               }}
                               onMouseLeave={(e) => {
                                 if (reorderingId !== order.id)
-                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#E67E22'
+                                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#C9822B'
                               }}
                             >
                               {reorderingId === order.id ? 'Adding...' : 'Reorder'}
@@ -567,7 +567,7 @@ export default function QuickOrderPage() {
                         />
                       </td>
                       <td style={S.td}>${item.unitPrice.toFixed(2)}</td>
-                      <td style={{ ...S.td, fontWeight: 600, color: '#1B4F72' }}>${lineTotal.toFixed(2)}</td>
+                      <td style={{ ...S.td, fontWeight: 600, color: '#3E2A1E' }}>${lineTotal.toFixed(2)}</td>
                       <td style={S.td}>
                         <span style={S.stockBadge(stockStatus.color, stockStatus.bg)}>
                           {stockStatus.label}
@@ -640,7 +640,7 @@ export default function QuickOrderPage() {
             style={{ ...S.btn, ...S.btnPrimary }}
             disabled={orderItems.length === 0 || isSubmitting}
             onMouseEnter={(e) => !orderItems.length ? null : (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#d97706'}
-            onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#E67E22'}
+            onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#C9822B'}
           >
             {isSubmitting ? 'Adding...' : 'Add to Cart'}
           </button>

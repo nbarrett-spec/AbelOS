@@ -88,7 +88,7 @@ export default function MobileBottomNav() {
                     width: '56px',
                     height: '56px',
                     borderRadius: '50%',
-                    backgroundColor: '#E67E22',
+                    backgroundColor: '#C9822B',
                     textDecoration: 'none',
                     boxShadow: '0 4px 12px rgba(230, 126, 34, 0.4)',
                     transition: 'all 0.2s ease-in-out',
@@ -164,7 +164,7 @@ export default function MobileBottomNav() {
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                     marginTop: '4px',
-                    color: isActive ? '#E67E22' : '#94A3B8',
+                    color: isActive ? '#C9822B' : '#94A3B8',
                     transition: 'color 0.2s ease-in-out',
                   }}
                 >

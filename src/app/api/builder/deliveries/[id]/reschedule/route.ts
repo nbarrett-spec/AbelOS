@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 type DeliveryWindow = 'EARLY_AM' | 'LATE_AM' | 'EARLY_PM' | 'LATE_PM' | 'ANYTIME'
 
@@ -128,6 +129,8 @@ export async function POST(
     if (!session || !session.builderId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'UPDATE', 'DeliveryReschedule').catch(() => {});
 
     const body: RescheduleRequest = await request.json()
     const { preferredDate, preferredWindow, reason } = body

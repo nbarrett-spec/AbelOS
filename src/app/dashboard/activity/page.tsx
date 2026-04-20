@@ -99,7 +99,7 @@ export default function ActivityPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -111,7 +111,7 @@ export default function ActivityPage() {
           <h1 className="text-2xl font-bold text-gray-900">Activity Log</h1>
           <p className="text-gray-500 text-sm mt-1">Recent activity across your account</p>
         </div>
-        <Link href="/dashboard" className="text-sm text-[#1B4F72] hover:underline">
+        <Link href="/dashboard" className="text-sm text-[#3E2A1E] hover:underline">
           ← Back to Dashboard
         </Link>
       </div>
@@ -130,7 +130,7 @@ export default function ActivityPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
               filter === f.key
-                ? 'bg-[#1B4F72] text-white'
+                ? 'bg-[#3E2A1E] text-white'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >

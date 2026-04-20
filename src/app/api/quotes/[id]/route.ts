@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth'
 import { sendOrderConfirmationEmail } from '@/lib/email'
 import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { sanitizeInput, isValidUUID, checkCSRF } from '@/lib/security'
+import { audit } from '@/lib/audit'
 
 // GET /api/quotes/[id] — Get single quote detail
 export async function GET(
@@ -106,6 +107,8 @@ export async function PATCH(
   }
 
   try {
+    audit(request, 'UPDATE', 'Quote', params.id).catch(() => {});
+
     const body = await request.json()
     const { action, signature, changeNotes } = body
 

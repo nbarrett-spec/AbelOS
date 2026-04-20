@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 interface OnboardingStep {
   id: string
@@ -232,6 +233,8 @@ export async function PATCH(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'UPDATE', 'BuilderOnboarding').catch(() => {});
 
     const body = await request.json()
     const { stepId, dismissed } = body

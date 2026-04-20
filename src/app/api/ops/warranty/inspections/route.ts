@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/lib/audit'
+import { logAudit, audit } from '@/lib/audit'
 import { createNotification } from '@/lib/notifications'
 import { checkStaffAuth } from '@/lib/api-auth'
 
@@ -75,6 +75,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { claimId, inspectorId, scheduledDate, notes } = body
 
+    audit(request, 'CREATE', 'WarrantyInspection', undefined, { method: 'POST' }).catch(() => {})
+
     if (!claimId || !scheduledDate) {
       return NextResponse.json({ error: 'claimId and scheduledDate are required' }, { status: 400 })
     }
@@ -133,6 +135,8 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
     const { inspectionId, status, findings, recommendation, notes, scheduledDate } = body
+
+    audit(request, 'UPDATE', 'WarrantyInspection', undefined, { method: 'PATCH' }).catch(() => {})
 
     if (!inspectionId) {
       return NextResponse.json({ error: 'inspectionId is required' }, { status: 400 })

@@ -122,7 +122,7 @@ export default function BuilderDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/admin/builders" className="text-abel-navy hover:underline text-sm font-medium mb-2 inline-block">
+          <Link href="/admin/builders" className="text-abel-walnut hover:underline text-sm font-medium mb-2 inline-block">
             ← Back to Builders
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">{builder.companyName}</h1>
@@ -249,7 +249,7 @@ export default function BuilderDetailPage() {
                     key={project.id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="py-3 px-4 font-medium text-abel-navy">
+                    <td className="py-3 px-4 font-medium text-abel-walnut">
                       {project.name}
                     </td>
                     <td className="py-3 px-4">
@@ -296,7 +296,7 @@ export default function BuilderDetailPage() {
                     key={quote.id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="py-3 px-4 font-medium text-abel-navy">
+                    <td className="py-3 px-4 font-medium text-abel-walnut">
                       {quote.quoteNumber}
                     </td>
                     <td className="py-3 px-4 font-semibold">

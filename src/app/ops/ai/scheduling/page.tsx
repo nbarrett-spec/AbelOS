@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react'
 
-const PRIORITY_COLORS: Record<string, string> = { HIGH: '#e74c3c', MEDIUM: '#e67e22', LOW: '#3498db' }
-const STATUS_COLORS: Record<string, string> = { OVERLOADED: '#e74c3c', UNDERUTILIZED: '#f39c12', BALANCED: '#27ae60' }
+const PRIORITY_COLORS: Record<string, string> = { HIGH: '#e74c3c', MEDIUM: '#C9822B', LOW: '#3498db' }
+const STATUS_COLORS: Record<string, string> = { OVERLOADED: '#e74c3c', UNDERUTILIZED: '#D9993F', BALANCED: '#27ae60' }
 const SUGGESTION_ICONS: Record<string, string> = { REBALANCE: '⚖️', UTILIZE: '📈', SCHEDULE: '📅', BATCH: '📦', REVIEW: '🔍' }
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#1B4F72'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#1B4F72' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -25,7 +25,7 @@ function Badge({ text, color }: { text: string; color: string }) {
 }
 
 function UtilizationBar({ pct }: { pct: number }) {
-  const color = pct > 90 ? '#e74c3c' : pct > 70 ? '#e67e22' : pct > 40 ? '#27ae60' : '#3498db'
+  const color = pct > 90 ? '#e74c3c' : pct > 70 ? '#C9822B' : pct > 40 ? '#27ae60' : '#3498db'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ flex: 1, height: 12, background: '#f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
@@ -59,13 +59,13 @@ export default function SchedulingOptimizerPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', marginBottom: 4 }}>AI Scheduling Optimizer</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>AI Scheduling Optimizer</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Intelligent crew scheduling, workload balancing, conflict detection, and capacity planning</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#1B4F72' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -90,15 +90,15 @@ function DashboardView({ data }: { data: any }) {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <KPICard label="Today's Jobs" value={Number(o.todayEntries || 0)} color="#1B4F72" />
+        <KPICard label="Today's Jobs" value={Number(o.todayEntries || 0)} color="#3E2A1E" />
         <KPICard label="This Week" value={Number(o.thisWeekEntries || 0)} sub={`${o.completedThisWeek || 0} completed`} />
-        <KPICard label="In Progress" value={Number(o.inProgress || 0)} color="#E67E22" />
+        <KPICard label="In Progress" value={Number(o.inProgress || 0)} color="#C9822B" />
         <KPICard label="Overdue" value={Number(o.overdueEntries || 0)} color={Number(o.overdueEntries) > 0 ? '#e74c3c' : '#27ae60'} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1B4F72' }}>Crew Status</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Crew Status</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -116,7 +116,7 @@ function DashboardView({ data }: { data: any }) {
                     <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600 }}>{Number(c.todayJobs)}</td>
                     <td style={{ padding: '8px 14px', textAlign: 'right' }}>{Number(c.weekJobs)}</td>
                     <td style={{ padding: '8px 14px', textAlign: 'right' }}>
-                      {Number(c.activeNow) > 0 ? <Badge text="BUSY" color="#e67e22" /> : <Badge text="IDLE" color="#27ae60" />}
+                      {Number(c.activeNow) > 0 ? <Badge text="BUSY" color="#C9822B" /> : <Badge text="IDLE" color="#27ae60" />}
                     </td>
                   </tr>
                 ))}
@@ -126,11 +126,11 @@ function DashboardView({ data }: { data: any }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1B4F72' }}>Delivery Pipeline</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Delivery Pipeline</h3>
           <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             {[
               { label: 'Scheduled', value: d.scheduled, color: '#3498db' },
-              { label: 'In Transit', value: d.inTransit, color: '#e67e22' },
+              { label: 'In Transit', value: d.inTransit, color: '#C9822B' },
               { label: 'Delivered (7d)', value: d.deliveredThisWeek, color: '#27ae60' },
               { label: 'Failed', value: d.failed, color: '#e74c3c' },
             ].map(item => (
@@ -143,7 +143,7 @@ function DashboardView({ data }: { data: any }) {
 
           {(data.entryTypes || []).length > 0 && (
             <>
-              <h3 style={{ fontSize: 16, fontWeight: 600, margin: '20px 0 12px', color: '#1B4F72' }}>Entry Types</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 600, margin: '20px 0 12px', color: '#3E2A1E' }}>Entry Types</h3>
               <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
                 {(data.entryTypes || []).map((e: any) => (
                   <div key={e.entryType} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0', fontSize: 13 }}>
@@ -163,9 +163,9 @@ function DashboardView({ data }: { data: any }) {
 function WorkloadView({ data }: { data: any }) {
   return (
     <div>
-      <KPICard label="Avg Weekly Jobs/Crew" value={data.avgWeeklyJobsPerCrew || 0} color="#1B4F72" />
+      <KPICard label="Avg Weekly Jobs/Crew" value={data.avgWeeklyJobsPerCrew || 0} color="#3E2A1E" />
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '20px 0 12px', color: '#1B4F72' }}>Crew Workload Balance</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '20px 0 12px', color: '#3E2A1E' }}>Crew Workload Balance</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -204,7 +204,7 @@ function WorkloadView({ data }: { data: any }) {
 
       {(data.dailyDistribution || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1B4F72' }}>Daily Distribution (This Week)</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Daily Distribution (This Week)</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -238,8 +238,8 @@ function ConflictsView({ data }: { data: any }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <KPICard label="Total Issues" value={s.totalIssues || 0} color={Number(s.totalIssues) > 0 ? '#e74c3c' : '#27ae60'} />
         <KPICard label="Double Bookings" value={s.doubleBookingCount || 0} color="#e74c3c" />
-        <KPICard label="Overdue" value={s.overdueCount || 0} color="#e67e22" />
-        <KPICard label="Unassigned" value={s.unassignedCount || 0} color="#f39c12" />
+        <KPICard label="Overdue" value={s.overdueCount || 0} color="#C9822B" />
+        <KPICard label="Unassigned" value={s.unassignedCount || 0} color="#D9993F" />
       </div>
 
       {(data.doubleBookings || []).length > 0 && (
@@ -270,7 +270,7 @@ function ConflictsView({ data }: { data: any }) {
 
       {(data.overdue || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#e67e22' }}>Overdue Entries</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#C9822B' }}>Overdue Entries</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -298,7 +298,7 @@ function ConflictsView({ data }: { data: any }) {
 
       {(data.unassigned || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#f39c12' }}>Unassigned Entries</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#D9993F' }}>Unassigned Entries</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -336,12 +336,12 @@ function CapacityView({ data }: { data: any }) {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <KPICard label="Active Orders" value={Number(pj.activeOrders || 0)} color="#1B4F72" />
-        <KPICard label="Deliveries This Week" value={Number(pj.deliveriesThisWeek || 0)} color="#E67E22" />
+        <KPICard label="Active Orders" value={Number(pj.activeOrders || 0)} color="#3E2A1E" />
+        <KPICard label="Deliveries This Week" value={Number(pj.deliveriesThisWeek || 0)} color="#C9822B" />
         <KPICard label="Next 2 Weeks" value={Number(pj.deliveriesNext2Weeks || 0)} color="#3498db" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1B4F72' }}>4-Week Capacity Outlook</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>4-Week Capacity Outlook</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead><tr style={{ background: '#f8f9fa' }}>
@@ -365,13 +365,13 @@ function CapacityView({ data }: { data: any }) {
 
       {(data.byType || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1B4F72' }}>Capacity by Crew Type</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Capacity by Crew Type</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
             {(data.byType || []).map((t: any) => {
               const util = Number(t.next2WeekCapacity) > 0 ? Number(t.next2WeekJobs) / Number(t.next2WeekCapacity) * 100 : 0
               return (
                 <div key={t.crewType} style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#1B4F72', marginBottom: 12 }}>{t.crewType}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E', marginBottom: 12 }}>{t.crewType}</div>
                   <div style={{ fontSize: 13, marginBottom: 8 }}>Crews: <strong>{Number(t.crewCount)}</strong></div>
                   <div style={{ fontSize: 13, marginBottom: 8 }}>Next 2 weeks: <strong>{Number(t.next2WeekJobs)}</strong> / {Number(t.next2WeekCapacity)} capacity</div>
                   <UtilizationBar pct={util} />
@@ -389,7 +389,7 @@ function OptimizationView({ data }: { data: any }) {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-        <KPICard label="Suggestions" value={data.totalIssues || 0} color="#1B4F72" />
+        <KPICard label="Suggestions" value={data.totalIssues || 0} color="#3E2A1E" />
         <KPICard label="High Priority" value={data.highPriority || 0} color="#e74c3c" />
       </div>
 

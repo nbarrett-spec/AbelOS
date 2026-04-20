@@ -82,7 +82,7 @@ export default function SalesBriefingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -121,16 +121,16 @@ export default function SalesBriefingPage() {
           <h1 className="text-2xl font-bold text-gray-900">{greeting} — Today's Briefing</h1>
           <p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
         </div>
-        <Link href="/ops/portal/sales" className="text-sm text-[#1B4F72] hover:underline">← Back to Dashboard</Link>
+        <Link href="/ops/portal/sales" className="text-sm text-[#3E2A1E] hover:underline">← Back to Dashboard</Link>
       </div>
 
       {/* Quick KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Active Deals', value: s.activeDeals, color: '#1B4F72' },
+          { label: 'Active Deals', value: s.activeDeals, color: '#3E2A1E' },
           { label: 'Pipeline Value', value: formatCurrency(s.pipelineValue), color: '#27AE60' },
           { label: 'Quotes Expiring', value: s.quotesExpiring7d, color: s.quotesExpiring7d > 0 ? '#E74C3C' : '#95A5A6' },
-          { label: 'Follow-Ups Due', value: s.followUpsDue, color: s.followUpsDue > 0 ? '#E67E22' : '#95A5A6' },
+          { label: 'Follow-Ups Due', value: s.followUpsDue, color: s.followUpsDue > 0 ? '#C9822B' : '#95A5A6' },
           { label: 'New Leads Today', value: s.newLeadsToday, color: '#3498DB' },
           { label: 'Closing This Week', value: s.closingThisWeek, color: '#9B59B6' },
         ].map(kpi => (
@@ -166,7 +166,7 @@ export default function SalesBriefingPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Deals Closing This Week</h2>
-            <Link href="/ops/pipeline" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <Link href="/ops/pipeline" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
               View Pipeline →
             </Link>
           </div>
@@ -201,7 +201,7 @@ export default function SalesBriefingPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Quotes Expiring Soon</h2>
-            <Link href="/quotes" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <Link href="/quotes" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
               View Quotes →
             </Link>
           </div>
@@ -220,7 +220,7 @@ export default function SalesBriefingPage() {
                       <p className="font-semibold text-gray-900">{quote.builderName}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{quote.quoteNumber}</p>
                     </div>
-                    <span className="text-lg font-bold text-[#E67E22]">{formatCurrency(quote.total)}</span>
+                    <span className="text-lg font-bold text-[#C9822B]">{formatCurrency(quote.total)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className={`px-2 py-1 rounded ${quote.status === 'SENT' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
@@ -240,7 +240,7 @@ export default function SalesBriefingPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Follow-Ups Due</h2>
-            <Link href="/deals" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <Link href="/deals" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
               View All →
             </Link>
           </div>
@@ -273,7 +273,7 @@ export default function SalesBriefingPage() {
                       </span>
                     </td>
                     <td className="py-3">
-                      <button className="text-xs text-[#1B4F72] hover:underline font-medium">
+                      <button className="text-xs text-[#3E2A1E] hover:underline font-medium">
                         Log Activity →
                       </button>
                     </td>
@@ -315,7 +315,7 @@ export default function SalesBriefingPage() {
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#1B4F72]"
+                    className="h-full rounded-full bg-[#3E2A1E]"
                     style={{
                       width: `${Math.min((stage.count / Math.max(...data.dealsByStage.map(s => s.count))) * 100, 100)}%`,
                     }}

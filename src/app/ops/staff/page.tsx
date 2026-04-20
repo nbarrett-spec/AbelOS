@@ -546,7 +546,7 @@ export default function StaffManagementPage() {
                     </td>
                     <td style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 13 }}>{member.email}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500, backgroundColor: '#1B4F72', color: '#93c5fd' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500, backgroundColor: '#3E2A1E', color: '#93c5fd' }}>
                         {ROLES.find(r => r.value === member.role)?.label || member.role}
                       </span>
                     </td>

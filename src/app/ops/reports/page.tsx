@@ -37,7 +37,7 @@ export default function ReportsPage() {
   if (loading || !data) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -70,7 +70,7 @@ export default function ReportsPage() {
               key={opt.value}
               onClick={() => setPeriod(opt.value)}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${
-                period === opt.value ? 'bg-white shadow text-[#1B4F72]' : 'text-gray-500 hover:text-gray-700'
+                period === opt.value ? 'bg-white shadow text-[#3E2A1E]' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {opt.label}
@@ -83,14 +83,14 @@ export default function ReportsPage() {
       <div className="mb-6">
         <a
           href="/ops/reports/shipping-forecast"
-          className="inline-flex items-center gap-3 bg-white border rounded-xl px-5 py-4 hover:border-[#1B4F72] hover:shadow-md transition group"
+          className="inline-flex items-center gap-3 bg-white border rounded-xl px-5 py-4 hover:border-[#3E2A1E] hover:shadow-md transition group"
         >
           <span className="text-2xl">🚚</span>
           <div>
-            <p className="font-semibold text-gray-900 group-hover:text-[#1B4F72] transition">Shipping Forecast Report</p>
+            <p className="font-semibold text-gray-900 group-hover:text-[#3E2A1E] transition">Shipping Forecast Report</p>
             <p className="text-xs text-gray-400">Orders shipping soon with BOM totals, assembled doors &amp; downloadable XLSX</p>
           </div>
-          <span className="text-gray-300 group-hover:text-[#1B4F72] ml-4 transition">&rarr;</span>
+          <span className="text-gray-300 group-hover:text-[#3E2A1E] ml-4 transition">&rarr;</span>
         </a>
       </div>
 
@@ -98,12 +98,12 @@ export default function ReportsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div className="bg-white rounded-xl border p-5">
           <p className="text-sm text-gray-500">Total Revenue</p>
-          <p className="text-3xl font-bold text-[#1B4F72] mt-1">{fmtCurrency(rev.totalRevenue)}</p>
+          <p className="text-3xl font-bold text-[#3E2A1E] mt-1">{fmtCurrency(rev.totalRevenue)}</p>
           <p className="text-xs text-gray-400 mt-1">{fmt(rev.orderCount)} orders</p>
         </div>
         <div className="bg-white rounded-xl border p-5">
           <p className="text-sm text-gray-500">Avg Order Value</p>
-          <p className="text-3xl font-bold text-[#E67E22] mt-1">{fmtCurrency(rev.avgOrderValue)}</p>
+          <p className="text-3xl font-bold text-[#C9822B] mt-1">{fmtCurrency(rev.avgOrderValue)}</p>
           <p className="text-xs text-gray-400 mt-1">{fmt(rev.completedOrders)} completed</p>
         </div>
         <div className="bg-white rounded-xl border p-5">
@@ -131,7 +131,7 @@ export default function ReportsPage() {
                   <span className="text-sm text-gray-500 w-10">{m.monthLabel}</span>
                   <div className="flex-1 h-8 bg-gray-50 rounded-lg overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-[#1B4F72] to-[#2980B9] rounded-lg flex items-center px-3"
+                      className="h-full bg-gradient-to-r from-[#3E2A1E] to-[#2980B9] rounded-lg flex items-center px-3"
                       style={{ width: `${Math.max(5, (m.revenue / maxMonthlyRevenue) * 100)}%` }}
                     >
                       <span className="text-xs text-white font-medium whitespace-nowrap">{fmtCurrency(m.revenue)}</span>
@@ -154,12 +154,12 @@ export default function ReportsPage() {
               {data.pipeline.map(p => (
                 <div key={p.status} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#1B4F72]" />
+                    <span className="w-2 h-2 rounded-full bg-[#3E2A1E]" />
                     <span className="text-sm font-medium text-gray-700">{STATUS_LABELS[p.status] || p.status}</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-sm text-gray-500">{p.count} orders</span>
-                    <span className="text-sm font-semibold text-[#1B4F72]">{fmtCurrency(p.value)}</span>
+                    <span className="text-sm font-semibold text-[#3E2A1E]">{fmtCurrency(p.value)}</span>
                   </div>
                 </div>
               ))}
@@ -180,7 +180,7 @@ export default function ReportsPage() {
                 <div key={b.companyName} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                      i === 0 ? 'bg-[#E67E22]' : i === 1 ? 'bg-[#1B4F72]' : 'bg-gray-400'
+                      i === 0 ? 'bg-[#C9822B]' : i === 1 ? 'bg-[#3E2A1E]' : 'bg-gray-400'
                     }`}>
                       {i + 1}
                     </span>
@@ -189,7 +189,7 @@ export default function ReportsPage() {
                       <p className="text-xs text-gray-400">{b.orderCount} orders &middot; avg {fmtCurrency(b.avgOrder)}</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-[#1B4F72]">{fmtCurrency(b.totalRevenue)}</span>
+                  <span className="text-sm font-bold text-[#3E2A1E]">{fmtCurrency(b.totalRevenue)}</span>
                 </div>
               ))}
             </div>
@@ -210,7 +210,7 @@ export default function ReportsPage() {
                   <div key={c.category} className="flex items-center gap-3">
                     <span className="text-sm text-gray-600 w-32 truncate">{c.category}</span>
                     <div className="flex-1 h-5 bg-gray-50 rounded overflow-hidden">
-                      <div className="h-full bg-[#1B4F72]/20 rounded" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-[#3E2A1E]/20 rounded" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-xs text-gray-500 w-10 text-right">{pct}%</span>
                     <span className="text-sm font-medium text-gray-900 w-20 text-right">{fmtCurrency(c.revenue)}</span>

@@ -133,7 +133,7 @@ export default function Modal({
                   'ml-4 -mt-1 p-1.5 rounded-lg text-gray-400',
                   'hover:bg-gray-100 hover:text-gray-600',
                   'dark:hover:bg-gray-800 dark:hover:text-gray-300',
-                  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abel-navy/40'
+                  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/40'
                 )}
                 aria-label="Close"
               >

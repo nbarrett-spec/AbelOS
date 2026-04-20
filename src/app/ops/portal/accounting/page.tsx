@@ -176,7 +176,7 @@ export default function AccountingCommandCenter() {
         <div className="text-center py-12">
           <div className="text-4xl mb-4">⚠️</div>
           <p className="text-gray-600 font-medium">{error}</p>
-          <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+          <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm">
             Retry
           </button>
         </div>

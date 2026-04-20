@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // /api/ops/communication-logs/gmail-sync
@@ -105,6 +106,8 @@ export async function POST(request: NextRequest) {
 
   const emails = body.emails || []
   const syncAccount = body.syncAccount || 'unknown'
+
+  audit(request, 'CREATE', 'GmailSync', undefined, { method: 'POST' }).catch(() => {})
 
   if (emails.length === 0) {
     return NextResponse.json({ error: 'No emails provided', syncAccount }, { status: 400 })

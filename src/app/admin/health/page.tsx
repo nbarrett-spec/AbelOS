@@ -236,19 +236,19 @@ export default function AdminHealthPage() {
           </select>
           <Link
             href="/admin/timeline"
-            className="text-sm text-abel-navy hover:text-abel-navy/80 font-medium px-3 py-1.5 border border-abel-navy/30 rounded hover:bg-abel-navy/5"
+            className="text-sm text-abel-walnut hover:text-abel-walnut/80 font-medium px-3 py-1.5 border border-abel-walnut/30 rounded hover:bg-abel-walnut/5"
           >
             Timeline →
           </Link>
           <Link
             href="/admin/alert-history"
-            className="text-sm text-abel-navy hover:text-abel-navy/80 font-medium px-3 py-1.5 border border-abel-navy/30 rounded hover:bg-abel-navy/5"
+            className="text-sm text-abel-walnut hover:text-abel-walnut/80 font-medium px-3 py-1.5 border border-abel-walnut/30 rounded hover:bg-abel-walnut/5"
           >
             Alert history →
           </Link>
           <button
             onClick={load}
-            className="text-sm text-white bg-abel-navy hover:bg-abel-navy/90 px-3 py-1.5 rounded"
+            className="text-sm text-white bg-abel-walnut hover:bg-abel-walnut/90 px-3 py-1.5 rounded"
           >
             Refresh
           </button>
@@ -383,7 +383,7 @@ export default function AdminHealthPage() {
             <span className="font-mono">SlowQueryLog</span>.
           </p>
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-4xl font-bold text-abel-navy">
+            <span className="text-4xl font-bold text-abel-walnut">
               {data?.thresholdMs ?? 500}
               <span className="text-xl font-normal text-gray-500 ml-1">ms</span>
             </span>
@@ -441,7 +441,7 @@ export default function AdminHealthPage() {
           </div>
           <Link
             href="/admin/errors"
-            className="text-sm text-abel-navy underline hover:no-underline"
+            className="text-sm text-abel-walnut underline hover:no-underline"
           >
             Drill down →
           </Link>
@@ -608,7 +608,7 @@ export default function AdminHealthPage() {
           <h2 className="text-xl font-bold text-gray-900">Recent Slow Queries</h2>
           <Link
             href="/admin/errors"
-            className="text-sm text-abel-navy underline hover:no-underline"
+            className="text-sm text-abel-walnut underline hover:no-underline"
           >
             View client errors →
           </Link>

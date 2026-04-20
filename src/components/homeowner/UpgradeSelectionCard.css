@@ -12,8 +12,8 @@
 }
 
 .upgrade-card:hover:not([data-locked="true"]) {
-  border-color: #1b4f72;
-  box-shadow: 0 4px 12px rgba(27, 79, 114, 0.1);
+  border-color: #3E2A1E;
+  box-shadow: 0 4px 12px rgba(62, 42, 30, 0.1);
 }
 
 .upgrade-card[data-locked="true"] {
@@ -34,7 +34,7 @@
 .location-name {
   margin: 0;
   font-size: 1.125rem;
-  color: #1b4f72;
+  color: #3E2A1E;
   font-weight: 600;
 }
 
@@ -99,7 +99,7 @@
 .product-price {
   margin: 0;
   font-size: 0.9rem;
-  color: #1b4f72;
+  color: #3E2A1E;
   font-weight: 500;
 }
 
@@ -143,7 +143,7 @@
 }
 
 .upgrade-option:hover:not(:disabled) {
-  border-color: #e67e22;
+  border-color: #C9822B;
   background: #fffbf5;
 }
 
@@ -196,7 +196,7 @@
 
 .upgrade-price {
   font-size: 0.95rem;
-  color: #e67e22;
+  color: #C9822B;
   font-weight: 700;
 }
 

@@ -139,7 +139,7 @@ export default function CronsPage() {
         </div>
         <button
           onClick={loadSummary}
-          className="px-4 py-2 bg-abel-navy text-white rounded hover:bg-abel-navy/90 text-sm font-medium"
+          className="px-4 py-2 bg-abel-walnut text-white rounded hover:bg-abel-walnut/90 text-sm font-medium"
         >
           Refresh
         </button>

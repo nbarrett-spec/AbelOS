@@ -9,13 +9,13 @@ const variants = {
   warning: 'bg-warning-50 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
   danger: 'bg-danger-50 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
   info: 'bg-info-50 text-info-700 dark:bg-info-900/30 dark:text-info-400',
-  brand: 'bg-abel-navy/8 text-abel-navy dark:bg-abel-navy/20 dark:text-abel-navy-light',
-  orange: 'bg-abel-orange/10 text-abel-orange-dark dark:bg-abel-orange/20 dark:text-abel-orange-light',
+  brand: 'bg-abel-walnut/8 text-abel-walnut dark:bg-abel-walnut/20 dark:text-abel-walnut-light',
+  orange: 'bg-abel-amber/10 text-abel-amber-dark dark:bg-abel-amber/20 dark:text-abel-amber-light',
   // Solid variants for high-contrast use
   'success-solid': 'bg-success-600 text-white',
   'danger-solid': 'bg-danger-600 text-white',
   'warning-solid': 'bg-warning-500 text-white',
-  'brand-solid': 'bg-abel-navy text-white',
+  'brand-solid': 'bg-abel-walnut text-white',
 } as const
 
 const sizes = {
@@ -65,8 +65,8 @@ export default function Badge({
             'bg-warning-500': variant === 'warning' || variant === 'warning-solid',
             'bg-danger-500': variant === 'danger' || variant === 'danger-solid',
             'bg-info-500': variant === 'info',
-            'bg-abel-navy': variant === 'brand' || variant === 'brand-solid',
-            'bg-abel-orange': variant === 'orange',
+            'bg-abel-walnut': variant === 'brand' || variant === 'brand-solid',
+            'bg-abel-amber': variant === 'orange',
           })}
         />
       )}

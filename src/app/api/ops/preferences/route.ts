@@ -7,7 +7,7 @@ import { audit } from '@/lib/audit'
 
 const DEFAULT_PREFERENCES = {
   theme: 'system',
-  accentColor: '#E67E22',
+  accentColor: '#C9822B',
   sidebarCollapsed: false,
   compactMode: false,
   dashboardLayout: {},

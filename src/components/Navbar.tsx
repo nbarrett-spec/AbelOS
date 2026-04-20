@@ -191,12 +191,12 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-abel-navy text-white shadow-lg">
+    <nav className="bg-abel-walnut text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-abel-orange rounded-lg flex items-center justify-center font-bold text-sm">
+            <div className="w-8 h-8 bg-abel-amber rounded-lg flex items-center justify-center font-bold text-sm">
               AB
             </div>
             <span className="font-semibold text-lg hidden sm:block">
@@ -214,7 +214,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={link.highlight
-                  ? 'text-abel-orange hover:text-white transition font-medium'
+                  ? 'text-abel-amber hover:text-white transition font-medium'
                   : 'text-white/80 hover:text-white transition'}
               >
                 {link.label}
@@ -317,7 +317,7 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-abel-orange text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    <span className="absolute -top-0.5 -right-0.5 bg-abel-amber text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}
@@ -328,7 +328,7 @@ export default function Navbar() {
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                       <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
                       {unreadCount > 0 && (
-                        <button onClick={markAllRead} className="text-xs text-abel-orange hover:underline font-medium">
+                        <button onClick={markAllRead} className="text-xs text-abel-amber hover:underline font-medium">
                           Mark all read
                         </button>
                       )}
@@ -357,7 +357,7 @@ export default function Navbar() {
                                   {n.title}
                                 </p>
                                 {!n.read && (
-                                  <span className="w-2 h-2 rounded-full bg-abel-orange flex-shrink-0 mt-1.5" />
+                                  <span className="w-2 h-2 rounded-full bg-abel-amber flex-shrink-0 mt-1.5" />
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 truncate mt-0.5">{n.message}</p>
@@ -371,7 +371,7 @@ export default function Navbar() {
                       <div className="border-t border-gray-100 px-4 py-2 text-center">
                         <button
                           onClick={() => { setNotifOpen(false); router.push('/dashboard/notifications') }}
-                          className="text-xs text-abel-orange hover:underline font-medium"
+                          className="text-xs text-abel-amber hover:underline font-medium"
                         >
                           View all notifications
                         </button>
@@ -389,7 +389,7 @@ export default function Navbar() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-3 py-2 transition"
                 >
-                  <div className="w-8 h-8 bg-abel-orange rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 bg-abel-amber rounded-full flex items-center justify-center text-sm font-bold">
                     {getInitials(builder.contactName)}
                   </div>
                   <span className="hidden sm:block text-sm">
@@ -450,7 +450,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-3 py-2.5 rounded-lg text-sm transition ${
                   link.highlight
-                    ? 'text-abel-orange font-medium hover:bg-white/10'
+                    ? 'text-abel-amber font-medium hover:bg-white/10'
                     : 'text-white/80 hover:text-white hover:bg-white/10'
                 }`}
               >

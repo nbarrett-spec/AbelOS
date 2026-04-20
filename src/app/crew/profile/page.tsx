@@ -66,7 +66,7 @@ export default function ProfilePage() {
   return (
     <div className="p-4 space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1B4F72] to-[#0D2438] text-white rounded-lg p-4">
+      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#0D2438] text-white rounded-lg p-4">
         <p className="text-sm text-blue-200 mb-1">My Profile</p>
         <h1 className="text-2xl font-bold">Field Operations</h1>
       </div>
@@ -106,7 +106,7 @@ export default function ProfilePage() {
                     key={member.id}
                     className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
                   >
-                    <div className="flex items-center justify-center w-10 h-10 bg-[#E67E22] text-white rounded-full font-bold text-sm">
+                    <div className="flex items-center justify-center w-10 h-10 bg-[#C9822B] text-white rounded-full font-bold text-sm">
                       {member.name.charAt(0)}
                     </div>
                     <div className="flex-1">

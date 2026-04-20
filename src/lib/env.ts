@@ -84,17 +84,6 @@ const envSchema = z.object({
     .optional()
     .describe('API key for NUC agent cluster authentication'),
 
-  // QuickBooks (optional)
-  QBWC_USERNAME: z
-    .string()
-    .optional()
-    .describe('QuickBooks Web Connector username'),
-
-  QBWC_PASSWORD: z
-    .string()
-    .optional()
-    .describe('QuickBooks Web Connector password'),
-
   // Error monitoring (optional, Sentry)
   SENTRY_DSN: z
     .string()

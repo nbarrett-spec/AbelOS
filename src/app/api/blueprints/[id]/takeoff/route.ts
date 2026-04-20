@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/blueprints/[id]/takeoff
@@ -22,6 +23,8 @@ export async function POST(
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'CREATE', 'Takeoff', params.id).catch(() => {});
 
     const body = await request.json()
     const { analysis } = body

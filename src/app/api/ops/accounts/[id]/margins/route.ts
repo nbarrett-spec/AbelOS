@@ -4,6 +4,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 
+// Margin analysis is restricted to roles that need cost/margin visibility
+const MARGIN_ALLOWED_ROLES = ['ADMIN', 'MANAGER', 'ESTIMATOR', 'PURCHASING']
+
+function canAccessMargins(request: NextRequest): boolean {
+  const roles = (request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || '')
+    .split(',').map(r => r.trim())
+  return roles.some(r => MARGIN_ALLOWED_ROLES.includes(r))
+}
+
 // GET /api/ops/accounts/[id]/margins
 // Returns margin targets, category breakdowns, and actual performance
 export async function GET(
@@ -12,6 +21,14 @@ export async function GET(
 ) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  // Additional role check — margin data is sensitive
+  if (!canAccessMargins(request)) {
+    return NextResponse.json(
+      { error: 'Access denied. Margin analysis requires ADMIN, MANAGER, ESTIMATOR, or PURCHASING role.' },
+      { status: 403 }
+    )
+  }
 
   const builderId = params.id
 
@@ -154,6 +171,14 @@ export async function POST(
 ) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  // Margin target setting restricted to privileged roles
+  if (!canAccessMargins(request)) {
+    return NextResponse.json(
+      { error: 'Access denied. Margin target updates require ADMIN, MANAGER, ESTIMATOR, or PURCHASING role.' },
+      { status: 403 }
+    )
+  }
 
   const builderId = params.id
 

@@ -146,7 +146,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
         <button
           onClick={() => setShowUpload(!showUpload)}
           className="text-xs px-2.5 py-1 rounded-lg font-medium text-white"
-          style={{ backgroundColor: '#E67E22' }}
+          style={{ backgroundColor: '#C9822B' }}
         >
           + Upload
         </button>

@@ -83,6 +83,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
+    audit(request, 'CREATE', 'ManufacturingAI', undefined, { method: 'POST' }).catch(() => {})
+
     // 3. Fetch real-time manufacturing context from database
     const context = await fetchManufacturingContext()
 

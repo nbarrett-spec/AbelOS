@@ -176,8 +176,8 @@ export default function BuilderTrendPage() {
             animation: 'spin 1s linear infinite',
             width: '32px',
             height: '32px',
-            border: '4px solid #1B4F72',
-            borderTop: '4px solid #E67E22',
+            border: '4px solid #3E2A1E',
+            borderTop: '4px solid #C9822B',
             borderRadius: '50%',
           }}
         />
@@ -332,7 +332,7 @@ export default function BuilderTrendPage() {
                 onClick={() => setShowCredentialForm(true)}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '8px',
@@ -345,7 +345,7 @@ export default function BuilderTrendPage() {
                   (e.currentTarget.style.backgroundColor = '#D97706')
                 }
                 onMouseOut={(e) =>
-                  (e.currentTarget.style.backgroundColor = '#E67E22')
+                  (e.currentTarget.style.backgroundColor = '#C9822B')
                 }
               >
                 Configure API Credentials
@@ -507,7 +507,7 @@ export default function BuilderTrendPage() {
                 disabled={syncing === 'sync_projects'}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '8px',
@@ -524,7 +524,7 @@ export default function BuilderTrendPage() {
                 }}
                 onMouseOut={(e) => {
                   if (syncing !== 'sync_projects') {
-                    e.currentTarget.style.backgroundColor = '#E67E22'
+                    e.currentTarget.style.backgroundColor = '#C9822B'
                   }
                 }}
               >
@@ -535,7 +535,7 @@ export default function BuilderTrendPage() {
                 disabled={syncing === 'sync_schedules'}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '8px',
@@ -553,7 +553,7 @@ export default function BuilderTrendPage() {
                 }}
                 onMouseOut={(e) => {
                   if (syncing !== 'sync_schedules') {
-                    e.currentTarget.style.backgroundColor = '#E67E22'
+                    e.currentTarget.style.backgroundColor = '#C9822B'
                   }
                 }}
               >
@@ -566,7 +566,7 @@ export default function BuilderTrendPage() {
                 disabled={syncing === 'sync_materials'}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '8px',
@@ -584,7 +584,7 @@ export default function BuilderTrendPage() {
                 }}
                 onMouseOut={(e) => {
                   if (syncing !== 'sync_materials') {
-                    e.currentTarget.style.backgroundColor = '#E67E22'
+                    e.currentTarget.style.backgroundColor = '#C9822B'
                   }
                 }}
               >

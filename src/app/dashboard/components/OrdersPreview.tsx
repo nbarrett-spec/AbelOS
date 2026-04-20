@@ -49,7 +49,7 @@ export default function OrdersPreview({ orders, loading }: OrdersPreviewProps) {
       <CardHeader className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Package className="w-4.5 h-4.5 text-abel-orange" />
+            <Package className="w-4.5 h-4.5 text-abel-amber" />
             Active Orders
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -58,7 +58,7 @@ export default function OrdersPreview({ orders, loading }: OrdersPreviewProps) {
         </div>
         <Link
           href="/dashboard/orders"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark dark:hover:text-white transition-colors group"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark dark:hover:text-white transition-colors group"
         >
           View All
           <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -105,8 +105,8 @@ export default function OrdersPreview({ orders, loading }: OrdersPreviewProps) {
                 className="px-6 py-3.5 flex items-center justify-between group transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
               >
                 <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-lg bg-abel-orange/8 dark:bg-abel-orange/15 flex items-center justify-center shrink-0">
-                    <Package className="w-4 h-4 text-abel-orange" />
+                  <div className="w-9 h-9 rounded-lg bg-abel-amber/8 dark:bg-abel-amber/15 flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4 text-abel-amber" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">

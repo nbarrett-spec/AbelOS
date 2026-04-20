@@ -51,7 +51,7 @@ export default function SalesTopNav({
           {/* Left: Logo/Branding */}
           <div className="flex items-center gap-8">
             <Link href="/sales" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-8 h-8 rounded bg-[#e67e22] flex items-center justify-center font-bold text-white">
+              <div className="w-8 h-8 rounded bg-[#C9822B] flex items-center justify-center font-bold text-white">
                 A
               </div>
               <span className="text-lg font-bold hidden sm:inline">Abel Sales</span>
@@ -90,7 +90,7 @@ export default function SalesTopNav({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-8 h-8 rounded-full bg-[#e67e22] text-white text-xs flex items-center justify-center font-bold hover:bg-[#d35400] transition-colors"
+                className="w-8 h-8 rounded-full bg-[#C9822B] text-white text-xs flex items-center justify-center font-bold hover:bg-[#A86B1F] transition-colors"
                 title={`${firstName} ${lastName}`}
               >
                 {initials}

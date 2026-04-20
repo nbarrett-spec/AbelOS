@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    HOMEOWNER PORTAL STYLES
-   Brand Colors: Navy #1B4F72, Orange #E67E22, Green #27AE60
+   Brand Colors: Navy #3E2A1E, Orange #C9822B, Green #27AE60
    ═══════════════════════════════════════════════════════════════ */
 
 .homeowner-layout {
@@ -15,7 +15,7 @@
 
 .homeowner-header {
   background: white;
-  border-bottom: 3px solid #1b4f72;
+  border-bottom: 3px solid #3E2A1E;
   padding: 1.5rem 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -30,7 +30,7 @@
   margin: 0;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1b4f72;
+  color: #3E2A1E;
   letter-spacing: -0.5px;
 }
 
@@ -83,14 +83,14 @@
 }
 
 .footer-section a {
-  color: #1b4f72;
+  color: #3E2A1E;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .footer-section a:hover {
-  color: #e67e22;
+  color: #C9822B;
 }
 
 .footer-divider {

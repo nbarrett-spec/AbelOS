@@ -16,10 +16,10 @@
      Base Button Variants (Core)
      ============================================ */
   .btn-primary {
-    @apply px-6 py-2.5 bg-abel-navy hover:bg-abel-navy-dark text-white font-medium rounded-xl transition shadow-sm;
+    @apply px-6 py-2.5 bg-abel-walnut hover:bg-abel-walnut-dark text-white font-medium rounded-xl transition shadow-sm;
   }
   .btn-accent {
-    @apply px-6 py-2.5 bg-abel-orange hover:bg-abel-orange-dark text-white font-medium rounded-xl transition shadow-sm;
+    @apply px-6 py-2.5 bg-abel-amber hover:bg-abel-amber-dark text-white font-medium rounded-xl transition shadow-sm;
   }
   .btn-outline {
     @apply px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition;
@@ -49,7 +49,7 @@
      Form Elements (Core)
      ============================================ */
   .input {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-abel-navy/20 focus:border-abel-navy outline-none transition;
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-abel-walnut/20 focus:border-abel-walnut outline-none transition;
   }
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1;
@@ -109,7 +109,7 @@
     @apply bg-gray-100 text-gray-700;
   }
   .badge-brand {
-    @apply bg-abel-navy/10 text-abel-navy;
+    @apply bg-abel-walnut/10 text-abel-walnut;
   }
 
   /* ============================================
@@ -159,7 +159,7 @@
      Focus Ring Utility
      ============================================ */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-abel-navy;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-abel-walnut;
   }
   .focus-ring-danger {
     @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger-500;
@@ -190,7 +190,7 @@
      Pill Chip
      ============================================ */
   .pill {
-    @apply inline-flex items-center rounded-full px-4 py-2 text-sm font-medium bg-abel-navy text-white transition hover:bg-abel-navy-dark;
+    @apply inline-flex items-center rounded-full px-4 py-2 text-sm font-medium bg-abel-walnut text-white transition hover:bg-abel-walnut-dark;
   }
 
   /* ============================================
@@ -340,7 +340,7 @@
 
 /* Focus visible ring utility (matches design system) */
 .focus-ring {
-  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-abel-navy/30 focus-visible:ring-offset-2;
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/30 focus-visible:ring-offset-2;
 }
 
 /* Smooth page transitions */
@@ -448,7 +448,7 @@ html.dark body {
 :where(html.dark) .badge-danger { background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; }
 :where(html.dark) .badge-info { background-color: rgba(14, 165, 233, 0.15); color: #7dd3fc; }
 :where(html.dark) .badge-neutral { background-color: #374151; color: #e5e7eb; }
-:where(html.dark) .badge-brand { background-color: rgba(27, 79, 114, 0.3); color: #93c5fd; }
+:where(html.dark) .badge-brand { background-color: rgba(62, 42, 30, 0.4); color: #D9993F; }
 
 /* Skeleton dark mode */
 :where(html.dark) .skeleton { background-color: #374151; }

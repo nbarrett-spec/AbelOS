@@ -90,9 +90,9 @@ export async function GET(
     let yPosition = margin
 
     // ─── TOP ACCENT BAR ────────────────────────────────
-    pdf.setFillColor(230, 126, 34) // #E67E22 abel-orange
+    pdf.setFillColor(230, 126, 34) // #C9822B abel-amber
     pdf.rect(0, 0, pageWidth, 4, 'F')
-    pdf.setFillColor(27, 79, 114) // #1B4F72 navy
+    pdf.setFillColor(27, 79, 114) // #3E2A1E navy
     pdf.rect(0, 4, pageWidth, 1.5, 'F')
 
     yPosition = 12
@@ -101,7 +101,7 @@ export async function GET(
     // Logo/Company Name
     pdf.setFont('Helvetica', 'bold')
     pdf.setFontSize(28)
-    pdf.setTextColor(27, 79, 114) // #1B4F72 navy
+    pdf.setTextColor(27, 79, 114) // #3E2A1E navy
     pdf.text('ABEL LUMBER', margin, yPosition)
 
     // Tagline

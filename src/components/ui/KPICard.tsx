@@ -24,14 +24,14 @@ export interface KPICardProps {
 
 const accentColors = {
   navy: {
-    border: 'border-l-abel-navy',
-    iconBg: 'bg-abel-navy/8 text-abel-navy dark:bg-abel-navy/20',
-    sparkStroke: '#1B4F72',
+    border: 'border-l-abel-walnut',
+    iconBg: 'bg-abel-walnut/8 text-abel-walnut dark:bg-abel-walnut/20',
+    sparkStroke: '#3E2A1E',
   },
   orange: {
-    border: 'border-l-abel-orange',
-    iconBg: 'bg-abel-orange/8 text-abel-orange dark:bg-abel-orange/20',
-    sparkStroke: '#E67E22',
+    border: 'border-l-abel-amber',
+    iconBg: 'bg-abel-amber/8 text-abel-amber dark:bg-abel-amber/20',
+    sparkStroke: '#C9822B',
   },
   green: {
     border: 'border-l-success-500',

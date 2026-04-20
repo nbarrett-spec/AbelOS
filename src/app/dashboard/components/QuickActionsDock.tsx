@@ -62,8 +62,8 @@ const ACTIONS: QuickAction[] = [
     href: '/catalog',
     icon: <Book className="w-5 h-5" />,
     label: 'Catalog',
-    color: 'text-abel-navy dark:text-abel-navy-light',
-    hoverBg: 'group-hover:bg-abel-navy/5 dark:group-hover:bg-abel-navy/10',
+    color: 'text-abel-walnut dark:text-abel-walnut-light',
+    hoverBg: 'group-hover:bg-abel-walnut/5 dark:group-hover:bg-abel-walnut/10',
   },
   {
     href: '/dashboard/warranty',

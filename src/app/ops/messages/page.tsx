@@ -407,7 +407,7 @@ export default function MessagesPage() {
         <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
         <button
           onClick={() => setShowNewConversation(true)}
-          className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
+          className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
         >
           + New Message
         </button>
@@ -430,7 +430,7 @@ export default function MessagesPage() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === tab.id
-                    ? 'border-[#E67E22] text-[#E67E22]'
+                    ? 'border-[#C9822B] text-[#C9822B]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -459,7 +459,7 @@ export default function MessagesPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 text-sm truncate flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[#E67E22] shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-[#C9822B] shrink-0" />
                           {conv.name}
                         </h3>
                         {conv.lastMessage && (
@@ -469,7 +469,7 @@ export default function MessagesPage() {
                         )}
                       </div>
                       {conv.unreadCount > 0 && (
-                        <span className="px-2 py-1 bg-[#E67E22] text-white rounded-full text-xs font-bold flex-shrink-0">
+                        <span className="px-2 py-1 bg-[#C9822B] text-white rounded-full text-xs font-bold flex-shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
@@ -510,7 +510,7 @@ export default function MessagesPage() {
                         </p>
                       </div>
                       {channel.unreadCount > 0 && (
-                        <span className="px-2 py-1 bg-[#E67E22] text-white rounded-full text-xs font-bold flex-shrink-0">
+                        <span className="px-2 py-1 bg-[#C9822B] text-white rounded-full text-xs font-bold flex-shrink-0">
                           {channel.unreadCount}
                         </span>
                       )}
@@ -548,7 +548,7 @@ export default function MessagesPage() {
                         )}
                       </div>
                       {conv.unreadCount > 0 && (
-                        <span className="px-2 py-1 bg-[#E67E22] text-white rounded-full text-xs font-bold flex-shrink-0">
+                        <span className="px-2 py-1 bg-[#C9822B] text-white rounded-full text-xs font-bold flex-shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
@@ -643,11 +643,11 @@ export default function MessagesPage() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E67E22] focus:border-transparent text-sm"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent text-sm"
                   />
                   <button
                     onClick={handleSendMessage}
-                    className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
+                    className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
                   >
                     Send
                   </button>
@@ -682,7 +682,7 @@ export default function MessagesPage() {
                   value={newConversationName}
                   onChange={e => setNewConversationName(e.target.value)}
                   placeholder="Leave blank for direct message"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E67E22] focus:border-transparent text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent text-sm"
                 />
               </div>
 
@@ -745,7 +745,7 @@ export default function MessagesPage() {
               <button
                 onClick={handleCreateConversation}
                 disabled={selectedRecipients.length === 0}
-                className="flex-1 px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+                className="flex-1 px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
                 Start Chat
               </button>

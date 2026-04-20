@@ -6,9 +6,9 @@ import Link from 'next/link'
 const REFERRAL_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
   { key: 'CONTACTED', label: 'Contacted', color: '#3498DB' },
-  { key: 'SIGNED_UP', label: 'Signed Up', color: '#E67E22' },
+  { key: 'SIGNED_UP', label: 'Signed Up', color: '#C9822B' },
   { key: 'FIRST_ORDER', label: 'First Order', color: '#27AE60' },
-  { key: 'CREDITED', label: 'Credited', color: '#F39C12' },
+  { key: 'CREDITED', label: 'Credited', color: '#D9993F' },
 ]
 
 interface Referral {
@@ -161,7 +161,7 @@ export default function ReferralsPage() {
 
       {/* Header */}
       <div style={{ marginBottom: '3rem' }}>
-        <Link href="/dashboard" style={{ fontSize: '0.875rem', color: '#1B4F72', textDecoration: 'none' }}>
+        <Link href="/dashboard" style={{ fontSize: '0.875rem', color: '#3E2A1E', textDecoration: 'none' }}>
           ← Back to Dashboard
         </Link>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', margin: '1rem 0 0.5rem 0' }}>
@@ -184,7 +184,7 @@ export default function ReferralsPage() {
       >
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
           <div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1B4F72' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3E2A1E' }}>
               ${stats.totalEarned.toFixed(2)}
             </div>
             <div style={{ color: '#666', fontSize: '0.875rem', marginTop: '0.5rem' }}>
@@ -192,7 +192,7 @@ export default function ReferralsPage() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#E67E22' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#C9822B' }}>
               ${stats.pendingCredit.toFixed(2)}
             </div>
             <div style={{ color: '#666', fontSize: '0.875rem', marginTop: '0.5rem' }}>
@@ -214,7 +214,7 @@ export default function ReferralsPage() {
       <div
         style={{
           backgroundColor: '#fff',
-          border: '2px solid #1B4F72',
+          border: '2px solid #3E2A1E',
           borderRadius: '0.75rem',
           padding: '1.5rem',
           marginBottom: '2rem',
@@ -249,7 +249,7 @@ export default function ReferralsPage() {
                 onClick={() => copyToClipboard(referrals[0].referralCode)}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  backgroundColor: copiedCode === referrals[0].referralCode ? '#27AE60' : '#1B4F72',
+                  backgroundColor: copiedCode === referrals[0].referralCode ? '#27AE60' : '#3E2A1E',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '0.5rem',
@@ -274,7 +274,7 @@ export default function ReferralsPage() {
           style={{
             width: '100%',
             padding: '1rem',
-            backgroundColor: '#1B4F72',
+            backgroundColor: '#3E2A1E',
             color: '#fff',
             border: 'none',
             borderRadius: '0.5rem',
@@ -423,7 +423,7 @@ export default function ReferralsPage() {
               type="submit"
               style={{
                 padding: '0.75rem 1.5rem',
-                backgroundColor: '#1B4F72',
+                backgroundColor: '#3E2A1E',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '0.5rem',
@@ -523,7 +523,7 @@ export default function ReferralsPage() {
                         style={{
                           fontSize: '0.875rem',
                           fontWeight: '600',
-                          color: ref.referrerCredited ? '#27AE60' : '#F39C12',
+                          color: ref.referrerCredited ? '#27AE60' : '#D9993F',
                         }}
                       >
                         ${ref.creditAmount.toFixed(2)}
@@ -542,7 +542,7 @@ export default function ReferralsPage() {
                       fontFamily: 'monospace',
                       fontSize: '0.875rem',
                       fontWeight: 'bold',
-                      color: '#1B4F72',
+                      color: '#3E2A1E',
                     }}
                   >
                     {ref.referralCode}

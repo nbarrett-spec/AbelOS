@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { mapCategory } from '@/lib/product-categories'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/products/cleanup — Remap all product categories
@@ -53,6 +54,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'CREATE', 'ProductCleanup', undefined, { method: 'POST' }).catch(() => {})
+
     // Get all distinct raw categories
     const rawCategories: any[] = await prisma.$queryRawUnsafe(
       `SELECT "category", COUNT(*)::int AS "count"

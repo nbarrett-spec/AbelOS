@@ -21,8 +21,8 @@ interface SystemSettings {
   [key: string]: string
 }
 
-const BLUE = '#1B4F72'
-const ORANGE = '#E67E22'
+const BLUE = '#3E2A1E'
+const ORANGE = '#C9822B'
 const WHITE = '#FFFFFF'
 
 export default function SettingsPage() {
@@ -477,48 +477,7 @@ export default function SettingsPage() {
         <div style={{ backgroundColor: WHITE, borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: '600', color: BLUE, margin: '0 0 1.5rem 0' }}>Integration Status</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-            {/* QuickBooks */}
-            <div
-              style={{
-                backgroundColor: '#f8f9fa',
-                borderRadius: '8px',
-                padding: '1.25rem',
-                border: '2px solid #ddd',
-              }}
-            >
-              <h3 style={{ margin: '0 0 0.75rem 0', color: BLUE, fontSize: '1.1rem' }}>QuickBooks</h3>
-              <div
-                style={{
-                  display: 'inline-block',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem',
-                  fontWeight: '600',
-                  backgroundColor: '#f8d7da',
-                  color: '#721c24',
-                  marginBottom: '0.75rem',
-                }}
-              >
-                Not Connected
-              </div>
-              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>Status: Ready to connect</p>
-              <button
-                style={{
-                  marginTop: '1rem',
-                  backgroundColor: BLUE,
-                  color: WHITE,
-                  border: 'none',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                }}
-              >
-                Configure
-              </button>
-            </div>
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
             {/* Gmail/SMTP */}
             <div
               style={{

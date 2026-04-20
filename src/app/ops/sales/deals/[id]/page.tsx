@@ -339,7 +339,7 @@ export default function DealDetailPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#1B4F72]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
         }`}>
           {toast}
         </div>
@@ -381,7 +381,7 @@ export default function DealDetailPage() {
                     </button>
                   </>
                 )}
-                <button onClick={handleAssignToMe} className="px-3 py-2 bg-[#e67e22] text-white rounded-lg hover:bg-[#d46711] flex items-center gap-1 text-sm font-medium">
+                <button onClick={handleAssignToMe} className="px-3 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-[#d46711] flex items-center gap-1 text-sm font-medium">
                   Assign to Me
                 </button>
                 <div className="relative">

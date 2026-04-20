@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useToast } from '@/contexts/ToastContext'
 
-const NAVY = '#1B4F72'
-const ORANGE = '#E67E22'
+const NAVY = '#3E2A1E'
+const ORANGE = '#C9822B'
 
 interface AgentSession {
   agentRole: string
@@ -65,7 +65,7 @@ interface DailyBrief {
 const AGENT_LABELS: Record<string, { name: string; emoji: string; color: string }> = {
   COORDINATOR: { name: 'Coordinator', emoji: '🎯', color: '#8E44AD' },
   SALES: { name: 'Sales Agent', emoji: '💼', color: '#27AE60' },
-  MARKETING: { name: 'Marketing & SEO', emoji: '📢', color: '#E67E22' },
+  MARKETING: { name: 'Marketing & SEO', emoji: '📢', color: '#C9822B' },
   OPS: { name: 'Operations', emoji: '⚙️', color: '#2980B9' },
   CUSTOMER_SUCCESS: { name: 'Customer Success', emoji: '🤝', color: '#16A085' },
   INTEL: { name: 'Intelligence', emoji: '🧠', color: '#C0392B' },
@@ -73,14 +73,14 @@ const AGENT_LABELS: Record<string, { name: string; emoji: string; color: string 
 
 const STATUS_COLORS: Record<string, string> = {
   ONLINE: '#27AE60',
-  BUSY: '#E67E22',
+  BUSY: '#C9822B',
   IDLE: '#3498DB',
   OFFLINE: '#95A5A6',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
   URGENT: '#E74C3C',
-  HIGH: '#E67E22',
+  HIGH: '#C9822B',
   NORMAL: '#3498DB',
   LOW: '#95A5A6',
 }
@@ -299,7 +299,7 @@ export default function CommandCenterPage() {
                   { label: 'New Orders Today', value: brief.revenue.newOrdersToday.toString(), sub: formatCurrency(brief.revenue.newOrderValueToday), color: '#2980B9' },
                   { label: 'Overdue Invoices', value: brief.collections.totalOverdue.toString(), sub: formatCurrency(brief.collections.totalOverdueAmount), color: '#E74C3C' },
                   { label: 'Deliveries Today', value: brief.operations.deliveriesToday.scheduledToday.toString(), sub: `${brief.operations.deliveriesToday.completedToday} completed`, color: '#8E44AD' },
-                  { label: 'Stalled Deals', value: brief.sales.stalledDealCount.toString(), sub: formatCurrency(brief.sales.stalledDealValue), color: '#E67E22' },
+                  { label: 'Stalled Deals', value: brief.sales.stalledDealCount.toString(), sub: formatCurrency(brief.sales.stalledDealValue), color: '#C9822B' },
                   { label: 'At-Risk Builders', value: brief.customerHealth.atRiskCount.toString(), color: '#C0392B' },
                   { label: 'Tasks Completed', value: String(statusData?.taskQueue.totalCompletedToday || 0), color: '#27AE60' },
                   { label: 'Pending Approvals', value: String(statusData?.taskQueue.awaitingApprovalCount || 0), color: brief.pendingApprovalCount > 0 ? '#E74C3C' : '#95A5A6' },
@@ -349,7 +349,7 @@ export default function CommandCenterPage() {
                         <div style={{ fontSize: 10, color: '#888' }}>Errors</div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: agent.unreadMessages > 0 ? '#E67E22' : '#888' }}>{agent.unreadMessages}</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: agent.unreadMessages > 0 ? '#C9822B' : '#888' }}>{agent.unreadMessages}</div>
                         <div style={{ fontSize: 10, color: '#888' }}>Messages</div>
                       </div>
                     </div>

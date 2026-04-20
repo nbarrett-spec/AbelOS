@@ -178,7 +178,7 @@ export function ScheduleEntryModal({ isOpen, entryId, onClose, onUpdate }: Sched
             <div className="flex flex-wrap gap-2">
               {entry.status === 'TENTATIVE' && (
                 <button onClick={() => handleStatusChange('FIRM')} disabled={saving}
-                  className="px-3 py-1.5 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50">
+                  className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50">
                   Confirm (Firm)
                 </button>
               )}
@@ -232,7 +232,7 @@ export function ScheduleEntryModal({ isOpen, entryId, onClose, onUpdate }: Sched
               </div>
               <div className="flex gap-2">
                 <button onClick={handleSave} disabled={saving}
-                  className="px-4 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-medium hover:bg-[#154360] disabled:opacity-50">
+                  className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-medium hover:bg-[#2A1C14] disabled:opacity-50">
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button onClick={() => setEditMode(false)}

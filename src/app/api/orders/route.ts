@@ -7,6 +7,7 @@ import { notifyOrderConfirmed } from '@/lib/notifications'
 import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { checkCSRF } from '@/lib/security'
 import { logger, getRequestId } from '@/lib/logger'
+import { audit } from '@/lib/audit'
 
 // GET /api/orders — List builder's orders
 export async function GET(request: NextRequest) {
@@ -55,6 +56,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    audit(request, 'CREATE', 'Order').catch(() => {});
+
     const body = await request.json()
     const { quoteId, deliveryNotes } = body
 

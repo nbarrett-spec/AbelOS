@@ -352,7 +352,7 @@ export default function DashboardPage() {
                 </h3>
                 <Link
                   href="/dashboard/deliveries"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark dark:hover:text-white transition-colors group"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark dark:hover:text-white transition-colors group"
                 >
                   View All
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

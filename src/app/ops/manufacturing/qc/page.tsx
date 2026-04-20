@@ -83,7 +83,7 @@ export default function QualityControlPage() {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
           <p className="mt-4 text-gray-600">Loading quality checks...</p>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function QualityControlPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] transition-colors"
+            className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] transition-colors"
           >
             + New QC Check
           </button>
@@ -161,7 +161,7 @@ export default function QualityControlPage() {
           onClick={() => setActiveFilter('ALL')}
           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
             activeFilter === 'ALL'
-              ? 'bg-[#1B4F72] text-white border-transparent'
+              ? 'bg-[#3E2A1E] text-white border-transparent'
               : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
           }`}
         >
@@ -175,7 +175,7 @@ export default function QualityControlPage() {
               onClick={() => setActiveFilter(type.key)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 activeFilter === type.key
-                  ? 'bg-[#1B4F72] text-white border-transparent'
+                  ? 'bg-[#3E2A1E] text-white border-transparent'
                   : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
@@ -213,7 +213,7 @@ export default function QualityControlPage() {
                       {check.job ? (
                         <Link
                           href={`/ops/jobs/${check.job.id}`}
-                          className="text-[#1B4F72] hover:underline font-medium"
+                          className="text-[#3E2A1E] hover:underline font-medium"
                         >
                           {check.job.jobNumber}
                         </Link>
@@ -389,7 +389,7 @@ function CreateQCModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#1B4F72]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
         }`}>
           {toast}
         </div>
@@ -407,7 +407,7 @@ function CreateQCModal({
               value={formData.jobId}
               onChange={(e) => setFormData({ ...formData, jobId: e.target.value })}
               placeholder="Job ID"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
             />
           </div>
 
@@ -418,7 +418,7 @@ function CreateQCModal({
             <select
               value={formData.checkType}
               onChange={(e) => setFormData({ ...formData, checkType: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
             >
               {QC_TYPES.map((type) => (
                 <option key={type.key} value={type.key}>
@@ -435,7 +435,7 @@ function CreateQCModal({
             <select
               value={formData.result}
               onChange={(e) => setFormData({ ...formData, result: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
             >
               <option value="PASS">Pass</option>
               <option value="FAIL">Fail</option>
@@ -452,7 +452,7 @@ function CreateQCModal({
               value={formData.defectCodes}
               onChange={(e) => setFormData({ ...formData, defectCodes: e.target.value })}
               placeholder="e.g., D001, D002"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
             />
           </div>
 
@@ -464,7 +464,7 @@ function CreateQCModal({
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Inspection notes..."
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20 resize-none"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 resize-none"
               rows={3}
             />
           </div>
@@ -480,7 +480,7 @@ function CreateQCModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-medium hover:bg-[#154360] disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-medium hover:bg-[#2A1C14] disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Check'}
             </button>

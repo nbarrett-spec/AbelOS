@@ -168,7 +168,7 @@ export default function BuilderApplicationsPage() {
           </p>
         </div>
         <Link href="/apply" target="_blank" style={{
-          padding: '8px 16px', borderRadius: 8, backgroundColor: '#E67E22', color: 'white',
+          padding: '8px 16px', borderRadius: 8, backgroundColor: '#C9822B', color: 'white',
           fontSize: 13, fontWeight: 600, textDecoration: 'none',
         }}>
           View Public Form
@@ -238,7 +238,7 @@ export default function BuilderApplicationsPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
                     <div style={{
-                      width: 44, height: 44, borderRadius: '50%', backgroundColor: '#1B4F72', color: 'white',
+                      width: 44, height: 44, borderRadius: '50%', backgroundColor: '#3E2A1E', color: 'white',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontWeight: 700, fontSize: 18, flexShrink: 0,
                     }}>
@@ -278,7 +278,7 @@ export default function BuilderApplicationsPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                       {/* Contact Info */}
                       <div>
-                        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#1B4F72', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Contact</h4>
+                        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#3E2A1E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Contact</h4>
                         <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8 }}>
                           <div><strong>Name:</strong> {app.contactName}</div>
                           <div><strong>Email:</strong> {app.contactEmail}</div>
@@ -290,7 +290,7 @@ export default function BuilderApplicationsPage() {
 
                       {/* Business Details */}
                       <div>
-                        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#1B4F72', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Business</h4>
+                        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#3E2A1E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Business</h4>
                         <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8 }}>
                           {notes['Business Type'] && <div><strong>Type:</strong> {notes['Business Type']}</div>}
                           {notes['Years in Business'] && <div><strong>Years:</strong> {notes['Years in Business']}</div>}
@@ -304,12 +304,12 @@ export default function BuilderApplicationsPage() {
                       {/* Product Interests */}
                       {notes['Product Interests'] && (
                         <div>
-                          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#1B4F72', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Product Interests</h4>
+                          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#3E2A1E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Product Interests</h4>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                             {notes['Product Interests'].split(', ').map(p => (
                               <span key={p} style={{
                                 padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 500,
-                                backgroundColor: '#EBF5FF', color: '#1B4F72',
+                                backgroundColor: '#EBF5FF', color: '#3E2A1E',
                               }}>
                                 {p}
                               </span>
@@ -321,7 +321,7 @@ export default function BuilderApplicationsPage() {
                       {/* Current Suppliers */}
                       {notes['Current Suppliers'] && (
                         <div>
-                          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#1B4F72', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Current Suppliers</h4>
+                          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#3E2A1E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Current Suppliers</h4>
                           <p style={{ fontSize: 14, color: '#374151' }}>{notes['Current Suppliers']}</p>
                         </div>
                       )}
@@ -329,7 +329,7 @@ export default function BuilderApplicationsPage() {
                       {/* Additional Notes */}
                       {notes['Additional Notes'] && (
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#1B4F72', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Notes</h4>
+                          <h4 style={{ fontSize: 13, fontWeight: 600, color: '#3E2A1E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Notes</h4>
                           <p style={{ fontSize: 14, color: '#374151' }}>{notes['Additional Notes']}</p>
                         </div>
                       )}

@@ -179,7 +179,7 @@ export function CreatePOModal({
               value={formData.vendorId}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
             >
               <option value="">Select a vendor</option>
               {vendors.map((vendor) => (
@@ -200,7 +200,7 @@ export function CreatePOModal({
               name="expectedDate"
               value={formData.expectedDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
             />
           </div>
         </div>
@@ -212,7 +212,7 @@ export function CreatePOModal({
             <button
               type="button"
               onClick={addItem}
-              className="px-3 py-1 text-sm bg-[#E67E22] text-white rounded-lg hover:bg-[#D35400] transition-colors"
+              className="px-3 py-1 text-sm bg-[#C9822B] text-white rounded-lg hover:bg-[#A86B1F] transition-colors"
             >
               + Add Item
             </button>
@@ -227,7 +227,7 @@ export function CreatePOModal({
                     value={item.vendorSku}
                     onChange={(e) => handleItemChange(index, 'vendorSku', e.target.value)}
                     placeholder="Vendor SKU"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
                   />
                 </div>
                 <div className="flex-1">
@@ -236,7 +236,7 @@ export function CreatePOModal({
                     value={item.description}
                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                     placeholder="Description"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
                   />
                 </div>
                 <div className="w-20">
@@ -246,7 +246,7 @@ export function CreatePOModal({
                     onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                     placeholder="Qty"
                     min="1"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
                   />
                 </div>
                 <div className="w-24">
@@ -257,7 +257,7 @@ export function CreatePOModal({
                     placeholder="Cost"
                     step="0.01"
                     min="0"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
                   />
                 </div>
                 <div className="w-24 text-right">
@@ -285,7 +285,7 @@ export function CreatePOModal({
               </div>
               <div className="flex justify-between text-base font-bold">
                 <span>Total:</span>
-                <span className="text-[#1B4F72]">${calculateTotal().toFixed(2)}</span>
+                <span className="text-[#3E2A1E]">${calculateTotal().toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -302,7 +302,7 @@ export function CreatePOModal({
             onChange={handleChange}
             placeholder="Special instructions, shipping notes, etc."
             rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           />
         </div>
 
@@ -318,7 +318,7 @@ export function CreatePOModal({
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Creating...' : 'Create PO'}
           </button>

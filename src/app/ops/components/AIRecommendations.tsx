@@ -183,7 +183,7 @@ export function AIRecommendations() {
                 {rec.actionUrl ? (
                   <Link
                     href={rec.actionUrl}
-                    className="px-3 py-1.5 text-xs font-semibold bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] transition-colors whitespace-nowrap"
+                    className="px-3 py-1.5 text-xs font-semibold bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] transition-colors whitespace-nowrap"
                   >
                     {rec.actionLabel} →
                   </Link>

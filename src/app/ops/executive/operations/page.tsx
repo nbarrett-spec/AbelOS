@@ -38,7 +38,7 @@ interface OperationsData {
   }>
 }
 
-const COLORS = ['#1B4F72', '#E67E22', '#27AE60', '#3498DB', '#8E44AD', '#E74C3C']
+const COLORS = ['#3E2A1E', '#C9822B', '#27AE60', '#3498DB', '#8E44AD', '#E74C3C']
 
 export default function OperationsDashboard() {
   const [data, setData] = useState<OperationsData | null>(null)
@@ -117,7 +117,7 @@ export default function OperationsDashboard() {
                     title={`Scheduled: ${crew.scheduled}`}
                   ></div>
                   <div
-                    className="bg-[#E67E22] transition-all"
+                    className="bg-[#C9822B] transition-all"
                     style={{ width: `${(crew.inProgress / total) * 100}%` }}
                     title={`In Progress: ${crew.inProgress}`}
                   ></div>
@@ -136,7 +136,7 @@ export default function OperationsDashboard() {
               <span>Scheduled</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-[#E67E22] rounded"></div>
+              <div className="w-3 h-3 bg-[#C9822B] rounded"></div>
               <span>In Progress</span>
             </div>
             <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function OperationsDashboard() {
                 </div>
                 <div className="flex gap-1 h-6 bg-gray-100 rounded overflow-hidden">
                   <div
-                    className="bg-[#1B4F72] transition-all"
+                    className="bg-[#3E2A1E] transition-all"
                     style={{ width: `${(day.deliveries / day.total) * 100}%` }}
                     title={`Deliveries: ${day.deliveries}`}
                   ></div>
@@ -180,7 +180,7 @@ export default function OperationsDashboard() {
         </div>
         <div className="flex gap-6 justify-center text-xs pt-4 border-t mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-[#1B4F72] rounded"></div>
+            <div className="w-3 h-3 bg-[#3E2A1E] rounded"></div>
             <span>Deliveries</span>
           </div>
           <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function OperationsDashboard() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
-                    className="h-3 rounded-full bg-[#1B4F72] transition-all"
+                    className="h-3 rounded-full bg-[#3E2A1E] transition-all"
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>
@@ -325,7 +325,7 @@ export default function OperationsDashboard() {
 
       {/* Key Metrics Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#1B4F72]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#3E2A1E]">
           <div className="text-gray-500 text-sm">Active Crews</div>
           <div className="text-3xl font-bold text-gray-900 mt-2">
             {data.crewUtilization.length}
@@ -333,7 +333,7 @@ export default function OperationsDashboard() {
           <p className="text-xs text-gray-400 mt-2">2-week forecast</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#E67E22]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
           <div className="text-gray-500 text-sm">Avg Days per Stage</div>
           <div className="text-3xl font-bold text-gray-900 mt-2">
             {data.jobVelocity.length > 0

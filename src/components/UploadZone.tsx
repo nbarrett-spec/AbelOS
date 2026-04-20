@@ -105,21 +105,21 @@ export default function UploadZone({
       className={`
         border-2 border-dashed rounded-xl p-12 text-center transition-all
         ${dragActive
-          ? 'border-abel-orange bg-orange-50'
-          : 'border-gray-300 hover:border-abel-navy/50 bg-gray-50'
+          ? 'border-abel-amber bg-orange-50'
+          : 'border-gray-300 hover:border-abel-walnut/50 bg-gray-50'
         }
         ${uploading ? 'pointer-events-none opacity-70' : 'cursor-pointer'}
       `}
     >
       {uploading ? (
         <div className="space-y-4">
-          <div className="w-16 h-16 mx-auto border-4 border-abel-navy border-t-transparent rounded-full animate-spin" />
-          <p className="text-lg font-medium text-abel-navy">
+          <div className="w-16 h-16 mx-auto border-4 border-abel-walnut border-t-transparent rounded-full animate-spin" />
+          <p className="text-lg font-medium text-abel-walnut">
             Uploading blueprint...
           </p>
           <div className="w-64 mx-auto bg-gray-200 rounded-full h-2">
             <div
-              className="bg-abel-orange h-2 rounded-full transition-all duration-300"
+              className="bg-abel-amber h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -127,9 +127,9 @@ export default function UploadZone({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="w-16 h-16 mx-auto bg-abel-navy/10 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto bg-abel-walnut/10 rounded-full flex items-center justify-center">
             <svg
-              className="w-8 h-8 text-abel-navy"
+              className="w-8 h-8 text-abel-walnut"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -148,7 +148,7 @@ export default function UploadZone({
             </p>
             <p className="text-sm text-gray-500 mt-1">
               or{' '}
-              <label className="text-abel-orange hover:text-abel-orange-dark cursor-pointer font-medium">
+              <label className="text-abel-amber hover:text-abel-amber-dark cursor-pointer font-medium">
                 browse files
                 <input
                   type="file"

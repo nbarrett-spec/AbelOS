@@ -122,7 +122,7 @@ export default function InvoicesPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -145,7 +145,7 @@ export default function InvoicesPage() {
         </div>
         <Link
           href="/dashboard"
-          className="text-sm text-[#1B4F72] hover:underline font-medium"
+          className="text-sm text-[#3E2A1E] hover:underline font-medium"
         >
           ← Back to Dashboard
         </Link>
@@ -221,7 +221,7 @@ export default function InvoicesPage() {
             {t.count > 0 && (
               <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                 tab === t.key
-                  ? t.key === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-[#1B4F72]/10 text-[#1B4F72]'
+                  ? t.key === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-[#3E2A1E]/10 text-[#3E2A1E]'
                   : 'bg-gray-200 text-gray-500'
               }`}>
                 {t.count}
@@ -243,7 +243,7 @@ export default function InvoicesPage() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-6 h-6 mx-auto border-3 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 mx-auto border-3 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
@@ -310,7 +310,7 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-5 py-3.5 text-sm font-semibold text-gray-900 text-right">{fmt(invoice.total)}</td>
                         <td className={`px-5 py-3.5 text-sm font-semibold text-right ${
-                          balance <= 0 ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-[#E67E22]'
+                          balance <= 0 ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-[#C9822B]'
                         }`}>
                           {balance <= 0 ? 'Paid' : fmt(balance)}
                         </td>
@@ -334,7 +334,7 @@ export default function InvoicesPage() {
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                   <div
-                                    className={`h-2 rounded-full transition-all ${balance <= 0 ? 'bg-green-500' : isOverdue ? 'bg-red-500' : 'bg-[#E67E22]'}`}
+                                    className={`h-2 rounded-full transition-all ${balance <= 0 ? 'bg-green-500' : isOverdue ? 'bg-red-500' : 'bg-[#C9822B]'}`}
                                     style={{ width: `${Math.min(100, invoice.total > 0 ? (invoice.amountPaid / invoice.total) * 100 : 0)}%` }}
                                   />
                                 </div>
@@ -352,7 +352,7 @@ export default function InvoicesPage() {
                                 </div>
                                 <div className="bg-white rounded-lg border px-3 py-2">
                                   <p className="text-xs text-gray-400">Balance Due</p>
-                                  <p className={`text-sm font-semibold ${balance > 0 ? 'text-[#E67E22]' : 'text-green-600'}`}>
+                                  <p className={`text-sm font-semibold ${balance > 0 ? 'text-[#C9822B]' : 'text-green-600'}`}>
                                     {balance > 0 ? fmt(balance) : 'Paid in Full'}
                                   </p>
                                 </div>
@@ -404,7 +404,7 @@ export default function InvoicesPage() {
                               <div className="mt-4 pt-3 border-t flex gap-3">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); window.open(`/api/invoices/${invoice.id}/pdf`, '_blank') }}
-                                  className="px-4 py-1.5 bg-[#1B4F72] text-white text-xs font-medium rounded-lg hover:bg-[#163d59] transition"
+                                  className="px-4 py-1.5 bg-[#3E2A1E] text-white text-xs font-medium rounded-lg hover:bg-[#163d59] transition"
                                 >
                                   Download PDF
                                 </button>
@@ -412,7 +412,7 @@ export default function InvoicesPage() {
                                   <Link
                                     href={`/dashboard/orders/${invoice.orderId}`}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="px-4 py-1.5 bg-white text-[#1B4F72] border border-[#1B4F72]/30 text-xs font-medium rounded-lg hover:bg-[#1B4F72]/5 transition"
+                                    className="px-4 py-1.5 bg-white text-[#3E2A1E] border border-[#3E2A1E]/30 text-xs font-medium rounded-lg hover:bg-[#3E2A1E]/5 transition"
                                   >
                                     View Order
                                   </Link>
@@ -439,7 +439,7 @@ export default function InvoicesPage() {
         </div>
         <Link
           href="/dashboard/messages"
-          className="px-4 py-2 bg-[#E67E22] text-white text-xs font-semibold rounded-lg hover:bg-[#d35400] transition whitespace-nowrap"
+          className="px-4 py-2 bg-[#C9822B] text-white text-xs font-semibold rounded-lg hover:bg-[#A86B1F] transition whitespace-nowrap"
         >
           Send a Message
         </Link>

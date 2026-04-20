@@ -65,7 +65,7 @@ function StaffResetPasswordInner() {
           <p style={{ color: '#666', fontSize: 14 }}>This password reset link is invalid or has expired.</p>
           <Link href="/ops/forgot-password" style={{
             display: 'inline-block', marginTop: 16,
-            color: '#E67E22', fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            color: '#C9822B', fontSize: 14, fontWeight: 600, textDecoration: 'none',
           }}>
             Request a new link →
           </Link>
@@ -85,7 +85,7 @@ function StaffResetPasswordInner() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
             width: 80, height: 80, borderRadius: 16,
-            background: 'linear-gradient(135deg, #E67E22, #d35400)',
+            background: 'linear-gradient(135deg, #C9822B, #A86B1F)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
             boxShadow: '0 8px 32px rgba(230, 126, 34, 0.3)',
@@ -115,7 +115,7 @@ function StaffResetPasswordInner() {
               }}>
                 ✓
               </div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1B4F72', margin: '0 0 8px' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#3E2A1E', margin: '0 0 8px' }}>
                 Password Updated
               </h2>
               <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
@@ -123,7 +123,7 @@ function StaffResetPasswordInner() {
               </p>
               <Link href="/ops/login" style={{
                 display: 'inline-block', marginTop: 20, padding: '12px 32px',
-                background: 'linear-gradient(135deg, #1B4F72, #1a3a5c)',
+                background: 'linear-gradient(135deg, #3E2A1E, #5A4233)',
                 color: 'white', borderRadius: 8, fontSize: 15, fontWeight: 600,
                 textDecoration: 'none',
               }}>
@@ -195,7 +195,7 @@ function StaffResetPasswordInner() {
                 disabled={loading}
                 style={{
                   width: '100%', padding: '12px 20px',
-                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #E67E22, #d35400)',
+                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #C9822B, #A86B1F)',
                   color: 'white', border: 'none', borderRadius: 8,
                   fontSize: 15, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',

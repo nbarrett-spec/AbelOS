@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
+import crypto from 'crypto'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Vehicle GPS Location API
@@ -162,6 +164,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { crewId, latitude, longitude, heading, speed, status, activeDeliveryId, vehicleId, address } = body
+
+    audit(request, 'CREATE', 'FleetLocation', undefined, { method: 'POST' }).catch(() => {})
 
     if (!crewId || latitude == null || longitude == null) {
       return NextResponse.json(

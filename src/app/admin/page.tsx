@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                         key={quote.id}
                         className="border-b border-gray-100 hover:bg-gray-50 transition"
                       >
-                        <td className="py-3 px-4 font-medium text-abel-navy">
+                        <td className="py-3 px-4 font-medium text-abel-walnut">
                           {quote.quoteNumber}
                         </td>
                         <td className="py-3 px-4">{quote.builderName}</td>

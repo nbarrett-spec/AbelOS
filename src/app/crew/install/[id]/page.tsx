@@ -118,7 +118,7 @@ export default function InstallationDetailPage() {
       {/* Back Button */}
       <Link
         href="/crew"
-        className="inline-flex items-center text-[#1B4F72] hover:text-[#0D2438] font-medium text-sm mb-2"
+        className="inline-flex items-center text-[#3E2A1E] hover:text-[#0D2438] font-medium text-sm mb-2"
       >
         ← Back
       </Link>

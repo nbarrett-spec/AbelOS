@@ -146,7 +146,7 @@ export default function DocumentsPage() {
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1B4F72', margin: 0 }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
             Document Center
           </h1>
           {data && (
@@ -202,9 +202,9 @@ export default function DocumentsPage() {
                 style={{
                   padding: '10px 16px',
                   borderRadius: '8px',
-                  border: selectedType === type ? `2px solid #E67E22` : '1px solid #d1d5db',
+                  border: selectedType === type ? `2px solid #C9822B` : '1px solid #d1d5db',
                   backgroundColor: selectedType === type ? '#fff9f0' : 'white',
-                  color: selectedType === type ? '#E67E22' : '#6b7280',
+                  color: selectedType === type ? '#C9822B' : '#6b7280',
                   fontWeight: selectedType === type ? 600 : 500,
                   fontSize: '14px',
                   cursor: 'pointer',
@@ -270,7 +270,7 @@ export default function DocumentsPage() {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   borderBottom: expandedDepartments.has(dept.department)
-                    ? `2px solid #1B4F72`
+                    ? `2px solid #3E2A1E`
                     : 'none',
                   transition: 'all 0.2s',
                 }}
@@ -286,7 +286,7 @@ export default function DocumentsPage() {
                     style={{
                       fontSize: '16px',
                       fontWeight: 600,
-                      color: '#1B4F72',
+                      color: '#3E2A1E',
                       margin: '0 0 4px 0',
                     }}
                   >

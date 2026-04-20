@@ -151,10 +151,10 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-abel-navy p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-abel-walnut p-12 flex-col justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-abel-orange rounded-xl flex items-center justify-center font-bold text-white">
+            <div className="w-10 h-10 bg-abel-amber rounded-xl flex items-center justify-center font-bold text-white">
               AB
             </div>
             <span className="text-white font-semibold text-xl">Abel Builder</span>
@@ -177,7 +177,7 @@ export default function SignupPage() {
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <h1 className="text-2xl font-bold text-abel-slate mb-1">
+          <h1 className="text-2xl font-bold text-abel-charcoal mb-1">
             Create your account
           </h1>
           <p className="text-gray-500 mb-8">
@@ -190,7 +190,7 @@ export default function SignupPage() {
               <div
                 key={s}
                 className={`h-1.5 flex-1 rounded-full transition ${
-                  s <= step ? 'bg-abel-orange' : 'bg-gray-200'
+                  s <= step ? 'bg-abel-amber' : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -314,7 +314,7 @@ export default function SignupPage() {
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
                     tabIndex={-1}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-abel-orange transition text-sm font-medium"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-abel-amber transition text-sm font-medium"
                   >
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
@@ -508,12 +508,12 @@ export default function SignupPage() {
                   onClick={() => updateForm('paymentTerm', opt.value)}
                   className={`w-full text-left p-4 rounded-xl border-2 transition ${
                     form.paymentTerm === opt.value
-                      ? 'border-abel-orange bg-orange-50'
+                      ? 'border-abel-amber bg-orange-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-abel-slate">
+                    <span className="font-medium text-abel-charcoal">
                       {opt.label}
                     </span>
                     {opt.badge && (
@@ -542,7 +542,7 @@ export default function SignupPage() {
 
           <p className="mt-8 text-center text-sm text-gray-500">
             Already have an account?{' '}
-            <Link href="/login" className="text-abel-orange font-medium hover:underline">
+            <Link href="/login" className="text-abel-amber font-medium hover:underline">
               Sign in
             </Link>
           </p>

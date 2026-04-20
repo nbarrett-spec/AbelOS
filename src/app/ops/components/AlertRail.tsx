@@ -47,7 +47,7 @@ export function AlertRail({ alerts }: { alerts: Alert[] }) {
   return (
     <div className="mb-6 space-y-2">
       <div className="flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-abel-orange to-abel-orange rounded-full" />
+        <div className="w-1 h-4 bg-gradient-to-b from-abel-amber to-abel-amber rounded-full" />
         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">System Alerts</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

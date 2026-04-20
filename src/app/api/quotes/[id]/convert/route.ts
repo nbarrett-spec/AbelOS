@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/quotes/[id]/convert — Convert an approved/sent quote to an order
 export async function POST(
@@ -19,6 +20,8 @@ export async function POST(
   const quoteId = params.id
 
   try {
+    audit(request, 'CREATE', 'QuoteConversion', quoteId).catch(() => {});
+
     const body = await request.json().catch(() => ({}))
     const poNumber = body.poNumber || null
     const deliveryNotes = body.deliveryNotes || null

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-const NAVY = '#1B4F72'
-const ORANGE = '#E67E22'
+const NAVY = '#3E2A1E'
+const ORANGE = '#C9822B'
 
 export default function SEODashboardPage() {
   const [keywords, setKeywords] = useState<any[]>([])
@@ -36,7 +36,7 @@ export default function SEODashboardPage() {
     finally { setLoading(false) }
   }
 
-  const difficultyColor = (d: number) => d >= 70 ? '#c0392b' : d >= 50 ? ORANGE : d >= 30 ? '#f39c12' : '#27ae60'
+  const difficultyColor = (d: number) => d >= 70 ? '#c0392b' : d >= 50 ? ORANGE : d >= 30 ? '#D9993F' : '#27ae60'
   const rankBadge = (rank: number | null) => {
     if (!rank) return <span style={{ color: '#999', fontSize: '12px' }}>—</span>
     const color = rank <= 10 ? '#27ae60' : rank <= 20 ? ORANGE : '#c0392b'

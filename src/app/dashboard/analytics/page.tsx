@@ -100,7 +100,7 @@ export default function AnalyticsPage() {
           style={{
             width: '32px',
             height: '32px',
-            border: '4px solid #1B4F72',
+            border: '4px solid #3E2A1E',
             borderTop: 'transparent',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
             paddingRight: '24px',
             paddingTop: '8px',
             paddingBottom: '8px',
-            backgroundColor: '#E67E22',
+            backgroundColor: '#C9822B',
             color: 'white',
             borderRadius: '8px',
             fontWeight: '600',
@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
           style={{
             width: '32px',
             height: '32px',
-            border: '4px solid #1B4F72',
+            border: '4px solid #3E2A1E',
             borderTop: 'transparent',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
@@ -169,8 +169,8 @@ export default function AnalyticsPage() {
   )
   const currentMonth = new Date().toISOString().substring(0, 7)
   const colors = {
-    navy: '#1B4F72',
-    orange: '#E67E22',
+    navy: '#3E2A1E',
+    orange: '#C9822B',
     lightGray: '#f5f5f5',
     borderGray: '#e0e0e0',
     darkGray: '#333',
@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
 
   let gradientStops: string[] = []
   let currentAngle = 0
-  const chartColors = ['#1B4F72', '#E67E22', '#2E86AB', '#A23B72', '#F18F01']
+  const chartColors = ['#3E2A1E', '#C9822B', '#2E86AB', '#A23B72', '#F18F01']
 
   chartCategories.forEach((cat, idx) => {
     const percentage = (cat.spend / totalCategorySpend) * 100

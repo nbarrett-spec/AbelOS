@@ -80,7 +80,7 @@ export default function KPIDashboard() {
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
         </div>
       </div>
     )
@@ -153,7 +153,7 @@ export default function KPIDashboard() {
 
         {/* Open Orders */}
         <Link href="/ops/orders" className="group">
-          <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer group-hover:border-[#1B4F72]">
+          <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer group-hover:border-[#3E2A1E]">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Open Orders</p>
             <p className="text-3xl font-bold text-gray-900 mt-3">{data.openOrders}</p>
             <p className="text-xs text-gray-400 mt-2">Ready for action →</p>
@@ -215,9 +215,9 @@ export default function KPIDashboard() {
               'CREATED': '#95A5A6',
               'READINESS_CHECK': '#3498DB',
               'MATERIALS_LOCKED': '#3498DB',
-              'IN_PRODUCTION': '#E67E22',
-              'STAGED': '#F39C12',
-              'LOADED': '#F39C12',
+              'IN_PRODUCTION': '#C9822B',
+              'STAGED': '#D9993F',
+              'LOADED': '#D9993F',
               'IN_TRANSIT': '#F1C40F',
               'DELIVERED': '#2ECC71',
               'INSTALLING': '#1ABC9C',

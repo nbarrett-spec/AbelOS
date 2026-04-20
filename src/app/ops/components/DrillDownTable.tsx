@@ -24,8 +24,8 @@ interface DrillDownTableProps {
 }
 
 const BRAND_COLORS = {
-  navy: '#1B4F72',
-  orange: '#E67E22',
+  navy: '#3E2A1E',
+  orange: '#C9822B',
   lightGray: '#F5F5F5',
   darkGray: '#333333',
   borderGray: '#CCCCCC',

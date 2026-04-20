@@ -188,9 +188,9 @@ const ForecastStrip: FC<ForecastStripProps> = ({
                     onClick={item.onAddToCart}
                     className={clsx(
                       'flex items-center gap-2 px-3 py-2 rounded-md',
-                      'bg-abel-navy hover:bg-abel-navy-light text-white',
+                      'bg-abel-walnut hover:bg-abel-walnut-light text-white',
                       'transition-colors duration-fast',
-                      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-abel-navy',
+                      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-abel-walnut',
                       'text-sm font-medium flex-shrink-0'
                     )}
                     aria-label={`Add ${item.name} to cart`}

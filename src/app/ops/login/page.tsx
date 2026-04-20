@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 
 function StaffLoginInner() {
   const [email, setEmail] = useState<string>('')
@@ -11,34 +12,6 @@ function StaffLoginInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/ops'
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setEmail(e.target.value)
-  }
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setPassword(e.target.value)
-  }
-
-  const handleEmailFocus = (e: React.FocusEvent<HTMLInputElement>): void => {
-    e.target.style.borderColor = '#f59e0b'
-    e.target.style.boxShadow = '0 0 0 3px rgba(245, 158, 11, 0.1)'
-  }
-
-  const handleEmailBlur = (e: React.FocusEvent<HTMLInputElement>): void => {
-    e.target.style.borderColor = '#1f2937'
-    e.target.style.boxShadow = 'none'
-  }
-
-  const handlePasswordFocus = (e: React.FocusEvent<HTMLInputElement>): void => {
-    e.target.style.borderColor = '#f59e0b'
-    e.target.style.boxShadow = '0 0 0 3px rgba(245, 158, 11, 0.1)'
-  }
-
-  const handlePasswordBlur = (e: React.FocusEvent<HTMLInputElement>): void => {
-    e.target.style.borderColor = '#1f2937'
-    e.target.style.boxShadow = 'none'
-  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
@@ -60,7 +33,6 @@ function StaffLoginInner() {
         return
       }
 
-      // Redirect to intended page or dashboard
       router.push(redirect)
     } catch {
       setError('Network error. Please try again.')
@@ -68,297 +40,157 @@ function StaffLoginInner() {
     }
   }
 
-  const handleButtonMouseEnter = (e: React.MouseEvent<HTMLButtonElement>): void => {
-    if (!loading) {
-      (e.target as HTMLButtonElement).style.background = '#fbbf24'
-      ;(e.target as HTMLButtonElement).style.boxShadow = '0 20px 25px rgba(245, 158, 11, 0.3)'
-    }
-  }
-
-  const handleButtonMouseLeave = (e: React.MouseEvent<HTMLButtonElement>): void => {
-    if (!loading) {
-      (e.target as HTMLButtonElement).style.background = '#f59e0b'
-      ;(e.target as HTMLButtonElement).style.boxShadow = 'none'
-    }
-  }
-
   const showSessionExpiredBanner = redirect && redirect !== '/ops'
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#0a1628',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Animated gradient orb background */}
-      <div style={{
-        position: 'absolute',
-        width: '500px',
-        height: '500px',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #f59e0b 0%, #3b82f6 100%)',
-        opacity: 0.1,
-        filter: 'blur(80px)',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        animation: 'float 8s ease-in-out infinite',
-        pointerEvents: 'none',
-      }} />
-
-      <style>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translate(-50%, -50%);
-          }
-          50% {
-            transform: translate(-48%, -52%);
-          }
-        }
-      `}</style>
-
-      {/* Top gradient line */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '2px',
-        background: 'linear-gradient(to right, #f59e0b, #f97316, #f59e0b)',
-      }} />
-
-      {/* Session Expiry Banner */}
-      {showSessionExpiredBanner && (
-        <div style={{
-          position: 'absolute',
-          top: 20,
-          left: 0,
-          right: 0,
-          padding: '0 20px',
-          display: 'flex',
-          justifyContent: 'center',
-          zIndex: 20,
-        }}>
-          <div style={{
-            maxWidth: 420,
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: 12,
-            color: '#fcd34d',
-            fontSize: 13,
-            fontWeight: 500,
-            textAlign: 'center',
-          }}>
-            Your session has expired. Please sign in again.
+    <div className="min-h-screen flex font-sans">
+      {/* Left panel — brand accent (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-[45%] bg-abel-walnut relative items-center justify-center overflow-hidden">
+        {/* Subtle wood-grain texture overlay */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: `repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 2px,
+            rgba(255,255,255,0.1) 2px,
+            rgba(255,255,255,0.1) 4px
+          )`,
+        }} />
+        {/* Content */}
+        <div className="relative z-10 px-16 max-w-lg">
+          <div className="w-20 h-20 mb-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg">
+            <Image
+              src="/icon-192.png"
+              alt="Abel Lumber"
+              width={56}
+              height={56}
+              className="rounded-lg"
+            />
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+            Abel Operations
+          </h2>
+          <p className="text-abel-cream/70 text-base leading-relaxed">
+            Doors, trim, and hardware — delivered right, every time. Manage your accounts, orders, and deliveries from one place.
+          </p>
+          <div className="mt-12 pt-8 border-t border-white/10">
+            <p className="text-abel-cream/40 text-xs font-medium tracking-wider uppercase">
+              Abel Doors & Trim · DFW
+            </p>
           </div>
         </div>
-      )}
+      </div>
 
-      <div style={{
-        width: '100%',
-        maxWidth: 420,
-        padding: '0 20px',
-        position: 'relative',
-        zIndex: 10,
-      }}>
-        {/* Logo + Header */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: 12,
-            background: '#f59e0b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: '0 20px 40px rgba(245, 158, 11, 0.25)',
-          }}>
-            <span style={{
-              fontSize: 28,
-              fontWeight: 800,
-              color: '#000000',
-            }}>A</span>
+      {/* Right panel — login form */}
+      <div className="flex-1 flex items-center justify-center bg-abel-cream px-6 sm:px-12 relative">
+        {/* Session Expiry Banner */}
+        {showSessionExpiredBanner && (
+          <div className="absolute top-6 left-6 right-6 flex justify-center z-20">
+            <div className="max-w-sm w-full px-4 py-3 bg-warning-100 border border-warning-300 rounded-xl text-warning-800 text-sm font-medium text-center">
+              Your session has expired. Please sign in again.
+            </div>
           </div>
-          <h1 style={{
-            fontSize: 28,
-            fontWeight: 700,
-            color: '#ffffff',
-            margin: '0 0 8px',
-            letterSpacing: '-0.5px',
-          }}>
-            Abel Operations
-          </h1>
-          <p style={{
-            fontSize: 13,
-            color: '#6b7280',
-            margin: 0,
-            fontWeight: 500,
-          }}>
-            Staff Portal
+        )}
+
+        <div className="w-full max-w-sm">
+          {/* Mobile logo (visible only on small screens) */}
+          <div className="flex lg:hidden items-center gap-3 mb-10">
+            <Image
+              src="/icon-192.png"
+              alt="Abel Lumber"
+              width={40}
+              height={40}
+              className="rounded-lg"
+            />
+            <span className="text-xl font-bold text-abel-walnut tracking-tight">
+              Abel Operations
+            </span>
+          </div>
+
+          {/* Heading */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-abel-charcoal tracking-tight mb-2">
+              Sign in to your account
+            </h1>
+            <p className="text-sm text-abel-kiln-oak">
+              Staff portal access
+            </p>
+          </div>
+
+          {/* Login Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/60 shadow-elevation-3 p-8">
+            <form onSubmit={handleSubmit}>
+              {/* Email */}
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-abel-charcoal mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@abellumber.com"
+                  required
+                  className="w-full px-4 py-3 bg-abel-cream/50 border border-gray-200 rounded-xl text-sm text-abel-charcoal outline-none transition-all duration-200 focus:border-abel-amber focus:ring-2 focus:ring-abel-amber/20 placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-abel-charcoal mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="w-full px-4 py-3 bg-abel-cream/50 border border-gray-200 rounded-xl text-sm text-abel-charcoal outline-none transition-all duration-200 focus:border-abel-amber focus:ring-2 focus:ring-abel-amber/20 placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="px-4 py-3 bg-danger-50 border border-danger-200 rounded-xl text-danger-700 text-sm mb-5">
+                  {error}
+                </div>
+              )}
+
+              {/* Forgot Password */}
+              <div className="text-right mb-6">
+                <a
+                  href="/ops/forgot-password"
+                  className="text-sm text-abel-amber font-medium hover:text-abel-amber-dark transition-colors"
+                >
+                  Forgot password?
+                </a>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-6 bg-abel-walnut hover:bg-abel-walnut-light text-white font-semibold rounded-xl transition-all duration-200 shadow-elevation-2 hover:shadow-elevation-3 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none text-sm tracking-wide"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Signing in…
+                  </span>
+                ) : 'Sign In'}
+              </button>
+            </form>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-xs text-gray-400 mt-8 font-medium">
+            Abel Doors & Trim · Operations Platform
           </p>
         </div>
-
-        {/* Login Card */}
-        <div style={{
-          background: 'rgba(17, 24, 39, 0.8)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid #1f2937',
-          borderRadius: 16,
-          padding: 32,
-          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-        }}>
-          <form onSubmit={handleSubmit}>
-            {/* Email */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{
-                display: 'block',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#9ca3af',
-                marginBottom: 8,
-              }}>
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={handleEmailChange}
-                onFocus={handleEmailFocus}
-                onBlur={handleEmailBlur}
-                placeholder="you@abellumber.com"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: 12,
-                  fontSize: 14,
-                  color: '#ffffff',
-                  outline: 'none',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box',
-                  boxShadow: 'none',
-                }}
-              />
-            </div>
-
-            {/* Password */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{
-                display: 'block',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#9ca3af',
-                marginBottom: 8,
-              }}>
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={handlePasswordChange}
-                onFocus={handlePasswordFocus}
-                onBlur={handlePasswordBlur}
-                placeholder="Enter your password"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: 12,
-                  fontSize: 14,
-                  color: '#ffffff',
-                  outline: 'none',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box',
-                  boxShadow: 'none',
-                }}
-              />
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div style={{
-                padding: 12,
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                borderRadius: 12,
-                color: '#f87171',
-                fontSize: 13,
-                marginBottom: 20,
-              }}>
-                {error}
-              </div>
-            )}
-
-            {/* Forgot Password */}
-            <div style={{ textAlign: 'right', marginBottom: 24 }}>
-              <a
-                href="/ops/forgot-password"
-                style={{
-                  fontSize: 13,
-                  color: '#fbbf24',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                  transition: 'color 0.2s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>): void => {
-                  (e.target as HTMLAnchorElement).style.color = '#fcd34d'
-                }}
-                onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>): void => {
-                  (e.target as HTMLAnchorElement).style.color = '#fbbf24'
-                }}
-              >
-                Forgot password?
-              </a>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              onMouseEnter={handleButtonMouseEnter}
-              onMouseLeave={handleButtonMouseLeave}
-              style={{
-                width: '100%',
-                padding: '12px 20px',
-                background: loading ? '#6b7280' : '#f59e0b',
-                color: loading ? '#d1d5db' : '#000000',
-                border: 'none',
-                borderRadius: 12,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                letterSpacing: '-0.3px',
-              }}
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <p style={{
-          textAlign: 'center',
-          fontSize: 11,
-          color: '#4b5563',
-          marginTop: 32,
-          fontWeight: 500,
-        }}>
-          Abel Door & Trim · Operations Platform
-        </p>
       </div>
     </div>
   )
@@ -367,15 +199,14 @@ function StaffLoginInner() {
 export default function StaffLoginPage() {
   return (
     <Suspense fallback={
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#0a1628',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}>
-        <p style={{ color: '#6b7280' }}>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-abel-cream font-sans">
+        <div className="flex items-center gap-3 text-abel-kiln-oak">
+          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span className="text-sm font-medium">Loading…</span>
+        </div>
       </div>
     }>
       <StaffLoginInner />

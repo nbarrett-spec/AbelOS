@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { analyzeBlueprint } from '@/lib/blueprint-ai'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/blueprints/[id]/analyze
@@ -20,6 +21,8 @@ export async function POST(
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'CREATE', 'BlueprintAnalysis', params.id).catch(() => {});
 
     // Fetch blueprint and verify ownership
     const blueprint = await prisma.blueprint.findUnique({

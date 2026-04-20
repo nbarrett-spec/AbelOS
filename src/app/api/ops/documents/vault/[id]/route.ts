@@ -103,6 +103,8 @@ export async function DELETE(
 
   const { id } = await params
 
+  audit(request, 'DELETE', 'Document', id, { method: 'DELETE' }).catch(() => {})
+
   // Check exists
   const docs: any[] = await prisma.$queryRawUnsafe(
     `SELECT "id", "fileName", "storageType", "blobUrl" FROM "DocumentVault" WHERE "id" = $1`,

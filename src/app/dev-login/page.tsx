@@ -89,7 +89,7 @@ export default function DevLoginPage() {
     SILVER: '#9CA3AF',
     GOLD: '#F59E0B',
     PLATINUM: '#8B5CF6',
-    CUSTOM: '#E67E22',
+    CUSTOM: '#C9822B',
   }
 
   return (
@@ -131,7 +131,7 @@ export default function DevLoginPage() {
             disabled={loggingIn === 'auto'}
             style={{
               padding: '14px 32px',
-              background: '#E67E22',
+              background: '#C9822B',
               color: 'white',
               border: 'none',
               borderRadius: 12,
@@ -240,7 +240,7 @@ export default function DevLoginPage() {
                   disabled={!!loggingIn}
                   style={{
                     padding: '10px 20px',
-                    background: loggingIn === b.email ? '#94A3B8' : '#1B4F72',
+                    background: loggingIn === b.email ? '#94A3B8' : '#3E2A1E',
                     color: 'white',
                     border: 'none',
                     borderRadius: 10,

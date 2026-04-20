@@ -58,7 +58,7 @@ export default function TakeoffReviewListPage() {
         <button
           onClick={() => setStatusFilter('')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-            !statusFilter ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            !statusFilter ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           All ({Object.values(statusCounts).reduce((s, v) => s + v, 0)})
@@ -68,7 +68,7 @@ export default function TakeoffReviewListPage() {
             key={s}
             onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              statusFilter === s ? 'bg-[#1B4F72] text-white' : `${statusColors[s] || 'bg-gray-100 text-gray-600'} hover:opacity-80`
+              statusFilter === s ? 'bg-[#3E2A1E] text-white' : `${statusColors[s] || 'bg-gray-100 text-gray-600'} hover:opacity-80`
             }`}
           >
             {statusLabels[s] || s} ({statusCounts[s] || 0})
@@ -83,14 +83,14 @@ export default function TakeoffReviewListPage() {
           placeholder="Search by project or builder name..."
           value={search}
           onChange={e => { setSearch(e.target.value); setLoading(true) }}
-          className="w-full max-w-md px-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+          className="w-full max-w-md px-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
         />
       </div>
 
       {/* Takeoff List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : takeoffs.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
@@ -102,7 +102,7 @@ export default function TakeoffReviewListPage() {
             <Link
               key={t.id}
               href={`/ops/takeoff-review/${t.id}`}
-              className="block bg-white rounded-xl border p-4 hover:border-[#1B4F72]/30 hover:shadow-sm transition"
+              className="block bg-white rounded-xl border p-4 hover:border-[#3E2A1E]/30 hover:shadow-sm transition"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">

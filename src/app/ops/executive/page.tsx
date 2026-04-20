@@ -53,11 +53,11 @@ interface DashboardData {
 const STATUS_COLORS: Record<string, string> = {
   RECEIVED: '#3498DB',
   CONFIRMED: '#2980B9',
-  IN_PRODUCTION: '#E67E22',
-  READY_TO_SHIP: '#F39C12',
+  IN_PRODUCTION: '#C9822B',
+  READY_TO_SHIP: '#D9993F',
   SHIPPED: '#8E44AD',
   DELIVERED: '#27AE60',
-  COMPLETE: '#1B4F72',
+  COMPLETE: '#3E2A1E',
   CANCELLED: '#95A5A6',
 }
 
@@ -146,7 +146,7 @@ export default function ExecutiveDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">CEO Dashboard</h1>
           <p className="text-gray-500 mt-1">Executive command center — revenue, operations, and growth metrics</p>
         </div>
-        <button onClick={fetchData} className="px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm font-medium">
+        <button onClick={fetchData} className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm font-medium">
           🔄 Refresh
         </button>
       </div>
@@ -178,7 +178,7 @@ export default function ExecutiveDashboard() {
 
       {/* Revenue KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div onClick={() => router.push('/ops/finance')} className="bg-white rounded-lg shadow p-5 border-l-4 border-[#1B4F72] hover:shadow-lg transition-shadow cursor-pointer">
+        <div onClick={() => router.push('/ops/finance')} className="bg-white rounded-lg shadow p-5 border-l-4 border-[#3E2A1E] hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-xs text-gray-500 uppercase font-medium">Total Revenue</p>
           {canViewFinancials ? (
             <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(data.revenueKpis.totalRevenue)}</p>
@@ -220,7 +220,7 @@ export default function ExecutiveDashboard() {
           )}
           <p className="text-xs text-gray-400 mt-1">Revenue vs COGS</p>
         </div>
-        <div onClick={() => router.push('/ops/finance/ar')} className="bg-white rounded-lg shadow p-5 border-l-4 border-[#E67E22] hover:shadow-lg transition-shadow cursor-pointer">
+        <div onClick={() => router.push('/ops/finance/ar')} className="bg-white rounded-lg shadow p-5 border-l-4 border-[#C9822B] hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-xs text-gray-500 uppercase font-medium">Outstanding AR</p>
           {canViewFinancials ? (
             <>
@@ -273,7 +273,7 @@ export default function ExecutiveDashboard() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
-                        className="h-3 rounded-full bg-gradient-to-r from-[#1B4F72] to-[#E67E22] transition-all"
+                        className="h-3 rounded-full bg-gradient-to-r from-[#3E2A1E] to-[#C9822B] transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -351,7 +351,7 @@ export default function ExecutiveDashboard() {
                   {data.builderMetrics.topBuilders.map((b, idx) => (
                     <tr key={b.builderId} onClick={() => router.push(`/ops/accounts/${b.builderId}`)} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow-md transition-shadow cursor-pointer`}>
                       <td className="py-2.5 px-3">
-                        <div className="w-6 h-6 rounded-full bg-[#1B4F72] text-white text-xs flex items-center justify-center font-bold">
+                        <div className="w-6 h-6 rounded-full bg-[#3E2A1E] text-white text-xs flex items-center justify-center font-bold">
                           {idx + 1}
                         </div>
                       </td>
@@ -377,7 +377,7 @@ export default function ExecutiveDashboard() {
           <div className="space-y-5">
             <div onClick={() => router.push('/ops/accounts')} className="cursor-pointer hover:shadow-md transition-shadow p-2 rounded-lg hover:bg-gray-50">
               <p className="text-gray-500 text-sm">Total Builders</p>
-              <p className="text-3xl font-bold text-[#1B4F72] mt-1">{data.builderMetrics.totalBuilders}</p>
+              <p className="text-3xl font-bold text-[#3E2A1E] mt-1">{data.builderMetrics.totalBuilders}</p>
             </div>
             <div onClick={() => router.push('/ops/accounts?status=ACTIVE')} className="border-t pt-4 cursor-pointer hover:shadow-md transition-shadow p-2 rounded-lg hover:bg-gray-50">
               <p className="text-gray-500 text-sm">Active Accounts</p>
@@ -390,7 +390,7 @@ export default function ExecutiveDashboard() {
             </div>
             <div onClick={() => router.push('/ops/accounts?new=true')} className="border-t pt-4 cursor-pointer hover:shadow-md transition-shadow p-2 rounded-lg hover:bg-gray-50">
               <p className="text-gray-500 text-sm">New This Month</p>
-              <p className="text-3xl font-bold text-[#E67E22] mt-1">{data.builderMetrics.newThisMonth}</p>
+              <p className="text-3xl font-bold text-[#C9822B] mt-1">{data.builderMetrics.newThisMonth}</p>
             </div>
           </div>
         </div>
@@ -405,7 +405,7 @@ export default function ExecutiveDashboard() {
         </div>
         <div onClick={() => router.push('/ops/orders?status=IN_PROGRESS')} className="bg-white rounded-lg shadow p-5 hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-xs text-gray-500 uppercase font-medium">In Progress</p>
-          <p className="text-2xl font-bold text-[#E67E22] mt-1">{data.operationsSnapshot.inProgress}</p>
+          <p className="text-2xl font-bold text-[#C9822B] mt-1">{data.operationsSnapshot.inProgress}</p>
           <p className="text-xs text-gray-400 mt-1">Active orders</p>
         </div>
         <div onClick={() => router.push('/ops/executive/operations')} className="bg-white rounded-lg shadow p-5 hover:shadow-lg transition-shadow cursor-pointer">
@@ -441,7 +441,7 @@ export default function ExecutiveDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-[#1B4F72] to-[#0D2847] rounded-lg shadow p-6 text-white">
+      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#0D2847] rounded-lg shadow p-6 text-white">
         <h3 className="text-lg font-semibold mb-4">Quick Access</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link href="/ops/finance" className="bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg font-medium text-sm text-center transition">

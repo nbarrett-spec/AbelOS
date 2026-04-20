@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-const NAVY = '#1B4F72'
-const ORANGE = '#E67E22'
+const NAVY = '#3E2A1E'
+const ORANGE = '#C9822B'
 
 interface PermitLead {
   id: string

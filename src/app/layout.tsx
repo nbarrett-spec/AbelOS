@@ -9,7 +9,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#1B4F72' }],
+  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#3E2A1E' }],
   colorScheme: 'light dark',
 }
 
@@ -108,7 +108,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-white text-gray-900 transition-colors">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only fixed top-0 left-0 z-[10000] px-4 py-2 bg-[#1B4F72] text-white font-semibold rounded-br"
+          className="sr-only focus:not-sr-only fixed top-0 left-0 z-[10000] px-4 py-2 bg-[#3E2A1E] text-white font-semibold rounded-br"
         >
           Skip to main content
         </a>

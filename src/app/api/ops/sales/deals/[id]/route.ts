@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
-import { logAudit } from '@/lib/audit'
+import { logAudit, audit } from '@/lib/audit'
 import { executeWorkflows } from '@/lib/workflows'
 import { checkStaffAuth } from '@/lib/api-auth'
 
@@ -107,6 +107,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const dealId = params.id
     const body = await request.json()
     const { companyName, contactName, contactEmail, contactPhone, address, city, state, zip, stage, probability, dealValue, source, expectedCloseDate, actualCloseDate, lostReason, ownerId, lostDate, description } = body
+
+    audit(request, 'UPDATE', 'Deal', dealId, { method: 'PUT' }).catch(() => {})
 
     // Check if deal exists
     const existingDeal: any[] = await prisma.$queryRawUnsafe(`SELECT "id", "stage" FROM "Deal" WHERE "id" = $1`, dealId)
@@ -304,6 +306,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const dealId = params.id
+
+    audit(request, 'DELETE', 'Deal', dealId, { method: 'DELETE' }).catch(() => {})
 
     // Check if deal exists
     const existingDeal: any[] = await prisma.$queryRawUnsafe(`SELECT "id" FROM "Deal" WHERE "id" = $1`, dealId)

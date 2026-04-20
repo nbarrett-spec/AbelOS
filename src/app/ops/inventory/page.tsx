@@ -85,15 +85,15 @@ export default function InventoryPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', margin: 0 }}>📦 Inventory Management</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>📦 Inventory Management</h1>
           <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>Track stock levels, reorder points & daily usage</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a href="/ops/procurement-intelligence" style={{ padding: '10px 16px', borderRadius: 8, background: '#E67E22', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
+          <a href="/ops/procurement-intelligence" style={{ padding: '10px 16px', borderRadius: 8, background: '#C9822B', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
             🤖 AI Analysis
           </a>
           <button onClick={syncProducts} disabled={syncing}
-            style={{ padding: '10px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: syncing ? '#9CA3AF' : '#1B4F72', color: '#fff', fontWeight: 600, fontSize: 13 }}>
+            style={{ padding: '10px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: syncing ? '#9CA3AF' : '#3E2A1E', color: '#fff', fontWeight: 600, fontSize: 13 }}>
             {syncing ? '⏳ Syncing...' : '🔄 Sync Products'}
           </button>
         </div>
@@ -103,7 +103,7 @@ export default function InventoryPage() {
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
           {[
-            { label: 'Total Items', value: stats.totalItems, color: '#1B4F72', icon: '📦', status: '' },
+            { label: 'Total Items', value: stats.totalItems, color: '#3E2A1E', icon: '📦', status: '' },
             { label: 'Inventory Value', value: `$${Number(stats.totalValue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#16A34A', icon: '💰', status: '' },
             { label: 'Out of Stock', value: stats.outOfStockCount, color: '#DC2626', icon: '🚫', status: 'OUT_OF_STOCK' },
             { label: 'Critical', value: stats.criticalCount, color: '#EA580C', icon: '🚨', status: 'CRITICAL' },
@@ -189,7 +189,7 @@ export default function InventoryPage() {
                       <a
                         href={`/ops/purchasing/new?product=${item.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        style={{ padding: '4px 10px', borderRadius: 4, background: '#1B4F72', color: '#fff', textDecoration: 'none', fontSize: 11, fontWeight: 600 }}
+                        style={{ padding: '4px 10px', borderRadius: 4, background: '#3E2A1E', color: '#fff', textDecoration: 'none', fontSize: 11, fontWeight: 600 }}
                       >
                         Create PO
                       </a>
@@ -239,7 +239,7 @@ export default function InventoryPage() {
       ) : inventory.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, background: '#F9FAFB', borderRadius: 12 }}>
           <div style={{ fontSize: 48 }}>📦</div>
-          <h3 style={{ color: '#1B4F72' }}>No inventory items</h3>
+          <h3 style={{ color: '#3E2A1E' }}>No inventory items</h3>
           <p style={{ color: '#6B7280' }}>Click "Sync Products" to populate inventory from your product catalog.</p>
         </div>
       ) : (
@@ -334,7 +334,7 @@ export default function InventoryPage() {
                         <td colSpan={14} style={{ padding: 0 }}>
                           <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                             <div>
-                              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1B4F72', margin: '0 0 12px 0' }}>{item.productName}</h3>
+                              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E', margin: '0 0 12px 0' }}>{item.productName}</h3>
                               <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>SKU: <span style={{ fontFamily: 'monospace', color: '#111', fontWeight: 600 }}>{item.sku}</span></div>
 
                               <div style={{ marginBottom: 16 }}>
@@ -359,7 +359,7 @@ export default function InventoryPage() {
                               )}
 
                               <a href={`/ops/purchasing/new?product=${item.id}`}
-                                style={{ display: 'inline-block', padding: '10px 16px', background: '#1B4F72', color: '#fff', borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                                style={{ display: 'inline-block', padding: '10px 16px', background: '#3E2A1E', color: '#fff', borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                                 + Create PO
                               </a>
                             </div>

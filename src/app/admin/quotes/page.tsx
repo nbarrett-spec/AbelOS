@@ -143,7 +143,7 @@ export default function QuotesPage() {
         {/* Total Quotes Card */}
         <div className="card p-6 border border-gray-200 rounded-lg bg-white">
           <p className="text-sm font-medium text-gray-600">Total Quotes</p>
-          <p className="text-4xl font-bold mt-2 text-abel-navy">
+          <p className="text-4xl font-bold mt-2 text-abel-walnut">
             {kpis.totalQuotes}
           </p>
           <p className="text-xs text-gray-500 mt-2">All time</p>
@@ -177,7 +177,7 @@ export default function QuotesPage() {
               onClick={() => setActiveFilter(tab.value)}
               className={`flex-1 min-w-24 px-4 py-4 text-sm font-medium transition-colors border-b-2 ${
                 activeFilter === tab.value
-                  ? 'border-b-abel-orange text-abel-navy bg-blue-50'
+                  ? 'border-b-abel-amber text-abel-walnut bg-blue-50'
                   : 'border-b-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -211,7 +211,7 @@ export default function QuotesPage() {
                     key={quote.id}
                     className="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
                   >
-                    <td className="py-4 px-4 font-semibold text-abel-navy">
+                    <td className="py-4 px-4 font-semibold text-abel-walnut">
                       {quote.quoteNumber}
                     </td>
                     <td className="py-4 px-4 text-gray-900">
@@ -235,7 +235,7 @@ export default function QuotesPage() {
                     <td className="py-4 px-4 text-center">
                       <Link
                         href={`/quotes/${quote.id}`}
-                        className="text-abel-navy hover:text-abel-navy-dark hover:underline font-medium transition"
+                        className="text-abel-walnut hover:text-abel-walnut-dark hover:underline font-medium transition"
                       >
                         View
                       </Link>

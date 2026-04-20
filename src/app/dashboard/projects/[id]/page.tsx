@@ -180,7 +180,7 @@ export default function ProjectDetailPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -189,7 +189,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="text-center py-20">
         <p className="text-gray-500 mb-4">{error || 'Project not found'}</p>
-        <Link href="/dashboard/projects" className="text-[#1B4F72] font-medium hover:underline">
+        <Link href="/dashboard/projects" className="text-[#3E2A1E] font-medium hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -202,7 +202,7 @@ export default function ProjectDetailPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Link href="/dashboard/projects" className="text-[#1B4F72] hover:underline text-sm font-medium">
+            <Link href="/dashboard/projects" className="text-[#3E2A1E] hover:underline text-sm font-medium">
               Projects
             </Link>
             <span className="text-gray-400">/</span>
@@ -218,7 +218,7 @@ export default function ProjectDetailPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowHomeownerModal(true)}
-            className="px-4 py-2 bg-[#E67E22] text-white rounded-lg font-semibold text-sm hover:bg-[#d35400] transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
+            className="px-4 py-2 bg-[#C9822B] text-white rounded-lg font-semibold text-sm hover:bg-[#A86B1F] transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8l-6-4m6 4l6-4" />
@@ -235,7 +235,7 @@ export default function ProjectDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Total Orders</p>
-          <p className="text-3xl font-bold text-[#1B4F72]">{project.orderCount}</p>
+          <p className="text-3xl font-bold text-[#3E2A1E]">{project.orderCount}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Total Spend</p>
@@ -260,7 +260,7 @@ export default function ProjectDetailPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
                 activeTab === tab
-                  ? 'text-[#1B4F72] border-[#1B4F72]'
+                  ? 'text-[#3E2A1E] border-[#3E2A1E]'
                   : 'text-gray-600 border-transparent hover:text-gray-900'
               }`}
             >
@@ -336,7 +336,7 @@ export default function ProjectDetailPage() {
                 <p className="text-gray-500 mb-4">No orders for this project yet</p>
                 <Link
                   href="/catalog"
-                  className="text-[#1B4F72] font-medium hover:underline"
+                  className="text-[#3E2A1E] font-medium hover:underline"
                 >
                   Start ordering →
                 </Link>
@@ -349,12 +349,12 @@ export default function ProjectDetailPage() {
                     <Link
                       key={order.id}
                       href={`/orders/${order.id}`}
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#E67E22] hover:bg-gray-50 transition-all"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#C9822B] hover:bg-gray-50 transition-all"
                     >
                       <span className="text-2xl">{os.icon}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-[#1B4F72] font-mono">{order.orderNumber}</span>
+                          <span className="text-sm font-bold text-[#3E2A1E] font-mono">{order.orderNumber}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${os.color}`}>
                             {os.label}
                           </span>
@@ -387,7 +387,7 @@ export default function ProjectDetailPage() {
                   return (
                     <div
                       key={delivery.id}
-                      className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#E67E22] hover:bg-gray-50 transition-all"
+                      className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#C9822B] hover:bg-gray-50 transition-all"
                     >
                       <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${
                         isPast
@@ -438,12 +438,12 @@ export default function ProjectDetailPage() {
                     <Link
                       key={invoice.id}
                       href={`/dashboard/invoices`}
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#E67E22] hover:bg-gray-50 transition-all"
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#C9822B] hover:bg-gray-50 transition-all"
                     >
                       <span className="text-2xl">💳</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-[#1B4F72] font-mono">{invoice.invoiceNumber}</span>
+                          <span className="text-sm font-bold text-[#3E2A1E] font-mono">{invoice.invoiceNumber}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${is.color}`}>
                             {is.label}
                           </span>
@@ -470,8 +470,8 @@ export default function ProjectDetailPage() {
             {!accessCreated ? (
               <>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-[#E67E22]/10 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-[#E67E22]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-[#C9822B]/10 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-[#C9822B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8l-6-4m6 4l6-4" />
                     </svg>
                   </div>
@@ -490,7 +490,7 @@ export default function ProjectDetailPage() {
                       value={homeownerName}
                       onChange={(e) => setHomeownerName(e.target.value)}
                       placeholder="John Smith"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#E67E22] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -500,7 +500,7 @@ export default function ProjectDetailPage() {
                       value={homeownerEmail}
                       onChange={(e) => setHomeownerEmail(e.target.value)}
                       placeholder="john@example.com"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#E67E22] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -510,7 +510,7 @@ export default function ProjectDetailPage() {
                       value={homeownerPhone}
                       onChange={(e) => setHomeownerPhone(e.target.value)}
                       placeholder="555-1234"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#E67E22] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -526,7 +526,7 @@ export default function ProjectDetailPage() {
                   <button
                     onClick={handleCreateHomeownerAccess}
                     disabled={creatingAccess}
-                    className="flex-1 px-4 py-2.5 bg-[#E67E22] text-white rounded-lg text-sm font-semibold hover:bg-[#d35400] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2.5 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F] transition disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {creatingAccess ? (
                       <>
@@ -564,7 +564,7 @@ export default function ProjectDetailPage() {
                     />
                     <button
                       onClick={handleCopyUrl}
-                      className="px-3 py-2 bg-[#1B4F72] text-white rounded text-sm font-medium hover:bg-[#0d2c47] transition"
+                      className="px-3 py-2 bg-[#3E2A1E] text-white rounded text-sm font-medium hover:bg-[#0d2c47] transition"
                     >
                       Copy
                     </button>
@@ -579,7 +579,7 @@ export default function ProjectDetailPage() {
 
                 <button
                   onClick={handleResetModal}
-                  className="w-full px-4 py-2.5 bg-[#E67E22] text-white rounded-lg text-sm font-semibold hover:bg-[#d35400] transition"
+                  className="w-full px-4 py-2.5 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F] transition"
                 >
                   Done
                 </button>

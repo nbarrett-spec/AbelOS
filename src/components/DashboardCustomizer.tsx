@@ -82,7 +82,7 @@ export default function DashboardCustomizer({ widgets, onChange, onReset, onClos
             key={key}
             className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${
               widgets[key]
-                ? 'border-[#1B4F72] bg-[#1B4F72]/5'
+                ? 'border-[#3E2A1E] bg-[#3E2A1E]/5'
                 : 'border-gray-200 bg-gray-50 opacity-60'
             }`}
           >
@@ -93,7 +93,7 @@ export default function DashboardCustomizer({ widgets, onChange, onReset, onClos
               className="sr-only"
             />
             <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-              widgets[key] ? 'border-[#1B4F72] bg-[#1B4F72]' : 'border-gray-300'
+              widgets[key] ? 'border-[#3E2A1E] bg-[#3E2A1E]' : 'border-gray-300'
             }`}>
               {widgets[key] && (
                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

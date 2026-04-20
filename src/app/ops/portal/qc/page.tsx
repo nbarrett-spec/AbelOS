@@ -158,8 +158,8 @@ export default function QCPortal() {
     },
     NORMAL: {
       bg: 'bg-blue-50',
-      border: 'border-blue-200 hover:border-[#1B4F72]',
-      badge: 'bg-[#1B4F72] text-white',
+      border: 'border-blue-200 hover:border-[#3E2A1E]',
+      badge: 'bg-[#3E2A1E] text-white',
     },
   }
 
@@ -258,7 +258,7 @@ export default function QCPortal() {
           </Link>
           <Link
             href="/ops/portal/qc/queue"
-            className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#1B4F72] transition-all text-sm font-medium text-gray-900 text-center"
+            className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#3E2A1E] transition-all text-sm font-medium text-gray-900 text-center"
           >
             📋 View Queue
           </Link>

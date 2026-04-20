@@ -40,7 +40,7 @@ interface FinancialData {
   }>
 }
 
-const COLORS = ['#1B4F72', '#E67E22', '#27AE60', '#3498DB', '#8E44AD', '#E74C3C']
+const COLORS = ['#3E2A1E', '#C9822B', '#27AE60', '#3498DB', '#8E44AD', '#E74C3C']
 
 export default function FinancialDashboard() {
   const [data, setData] = useState<FinancialData | null>(null)
@@ -129,7 +129,7 @@ export default function FinancialDashboard() {
           <p className="text-xs text-gray-400 mt-2">7-day collections</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#E67E22]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
           <div className="text-gray-500 text-sm font-medium">Outstanding AR</div>
           <div className="text-2xl font-bold text-gray-900 mt-2">
             {canViewFinancials ? formatCurrency(data.arAging.totalAR) : restricted}
@@ -137,7 +137,7 @@ export default function FinancialDashboard() {
           <p className="text-xs text-gray-400 mt-2">Accounts receivable</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#1B4F72]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#3E2A1E]">
           <div className="text-gray-500 text-sm font-medium">
             Invoices This Week
           </div>
@@ -225,7 +225,7 @@ export default function FinancialDashboard() {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
-                      className="h-3 rounded-full bg-[#1B4F72] transition-all"
+                      className="h-3 rounded-full bg-[#3E2A1E] transition-all"
                       style={{ width: `${percentage}%` }}
                     ></div>
                   </div>
@@ -263,7 +263,7 @@ export default function FinancialDashboard() {
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-[#1B4F72] h-2 rounded-full"
+                      className="bg-[#3E2A1E] h-2 rounded-full"
                       style={{
                         width: `${
                           (vendor.totalSpent / data.poSpending.totalPOValue) * 100
@@ -347,9 +347,9 @@ export default function FinancialDashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow p-6 border-l-4 border-[#1B4F72]">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow p-6 border-l-4 border-[#3E2A1E]">
           <div className="text-gray-700 font-semibold">Collection Efficiency</div>
-          <div className="text-3xl font-bold text-[#1B4F72] mt-2">
+          <div className="text-3xl font-bold text-[#3E2A1E] mt-2">
             {canViewFinancials ? (
               <>
                 {data.arAging.totalAR > 0
@@ -368,9 +368,9 @@ export default function FinancialDashboard() {
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-6 border-l-4 border-[#E67E22]">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
           <div className="text-gray-700 font-semibold">DSO (Days Sales Outstanding)</div>
-          <div className="text-3xl font-bold text-[#E67E22] mt-2">
+          <div className="text-3xl font-bold text-[#C9822B] mt-2">
             {canViewFinancials ? (
               data.arAging.totalAR > 0 && data.cashFlow.collectedThisWeek > 0
                 ? Math.round(

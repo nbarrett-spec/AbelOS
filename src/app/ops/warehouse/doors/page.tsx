@@ -164,7 +164,7 @@ export default function DoorRegistryPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
             📱 Door Identity Registry
           </h1>
           <p style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
@@ -174,13 +174,13 @@ export default function DoorRegistryPage() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => setShowCreateModal(true)}
-            style={{ padding: '8px 16px', background: '#1B4F72', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '8px 16px', background: '#3E2A1E', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             + Tag Single Door
           </button>
           <button
             onClick={() => setShowOrderModal(true)}
-            style={{ padding: '8px 16px', background: '#E67E22', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '8px 16px', background: '#C9822B', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             + Tag From Order
           </button>
@@ -190,13 +190,13 @@ export default function DoorRegistryPage() {
       {/* Summary Cards */}
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 24 }}>
-          <SummaryCard label="Total Doors" value={summary.total} color="#1B4F72" />
+          <SummaryCard label="Total Doors" value={summary.total} color="#3E2A1E" />
           <SummaryCard label="In Production" value={summary.inProduction} color="#6B7280" />
           <SummaryCard label="QC Passed" value={summary.qcPassed} color="#10B981" />
           <SummaryCard label="Stored" value={summary.stored} color="#3B82F6" />
           <SummaryCard label="Staged" value={summary.staged} color="#F59E0B" />
           <SummaryCard label="Delivered" value={summary.delivered} color="#8B5CF6" />
-          <SummaryCard label="Installed" value={summary.installed} color="#1B4F72" />
+          <SummaryCard label="Installed" value={summary.installed} color="#3E2A1E" />
         </div>
       )}
 
@@ -218,7 +218,7 @@ export default function DoorRegistryPage() {
             onClick={() => setStatusFilter('')}
             style={{
               padding: '5px 12px', borderRadius: 16, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              background: !statusFilter ? '#1B4F72' : 'white',
+              background: !statusFilter ? '#3E2A1E' : 'white',
               color: !statusFilter ? 'white' : '#374151',
               border: '1px solid #E5E7EB'
             }}
@@ -229,7 +229,7 @@ export default function DoorRegistryPage() {
               onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
               style={{
                 padding: '5px 12px', borderRadius: 16, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                background: statusFilter === s ? (STATUS_COLORS[s]?.text || '#1B4F72') : 'white',
+                background: statusFilter === s ? (STATUS_COLORS[s]?.text || '#3E2A1E') : 'white',
                 color: statusFilter === s ? 'white' : '#374151',
                 border: '1px solid #E5E7EB'
               }}
@@ -266,7 +266,7 @@ export default function DoorRegistryPage() {
                 return (
                   <tr key={door.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                     <td style={{ padding: '10px 12px' }}>
-                      <a href={`/door/${door.serialNumber}`} style={{ color: '#1B4F72', fontWeight: 600, textDecoration: 'none', fontFamily: 'monospace', fontSize: 12 }}>
+                      <a href={`/door/${door.serialNumber}`} style={{ color: '#3E2A1E', fontWeight: 600, textDecoration: 'none', fontFamily: 'monospace', fontSize: 12 }}>
                         {door.serialNumber}
                       </a>
                     </td>
@@ -308,7 +308,7 @@ export default function DoorRegistryPage() {
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1B4F72', marginBottom: 16 }}>Tag Single Door</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#3E2A1E', marginBottom: 16 }}>Tag Single Door</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Product ID *</label>
@@ -349,7 +349,7 @@ export default function DoorRegistryPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button onClick={() => setShowCreateModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleCreateSingle} disabled={creating || !singleForm.productId} style={{ padding: '8px 16px', background: '#1B4F72', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !singleForm.productId ? 0.6 : 1 }}>
+              <button onClick={handleCreateSingle} disabled={creating || !singleForm.productId} style={{ padding: '8px 16px', background: '#3E2A1E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !singleForm.productId ? 0.6 : 1 }}>
                 {creating ? 'Creating...' : 'Create & Tag'}
               </button>
             </div>
@@ -361,7 +361,7 @@ export default function DoorRegistryPage() {
       {showOrderModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#E67E22', marginBottom: 4 }}>Tag Doors From Order</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#C9822B', marginBottom: 4 }}>Tag Doors From Order</h3>
             <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>
               Creates one door identity per unit for every item in the order
             </p>
@@ -396,7 +396,7 @@ export default function DoorRegistryPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button onClick={() => setShowOrderModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleCreateFromOrder} disabled={creating || !orderForm.orderId} style={{ padding: '8px 16px', background: '#E67E22', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !orderForm.orderId ? 0.6 : 1 }}>
+              <button onClick={handleCreateFromOrder} disabled={creating || !orderForm.orderId} style={{ padding: '8px 16px', background: '#C9822B', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !orderForm.orderId ? 0.6 : 1 }}>
                 {creating ? 'Creating...' : 'Create Door Tags'}
               </button>
             </div>

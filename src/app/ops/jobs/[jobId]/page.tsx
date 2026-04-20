@@ -11,7 +11,7 @@ const STATUS_COLORS: Record<string, string> = {
   MATERIALS_LOCKED: '#4B0082',
   IN_PRODUCTION: '#9B59B6',
   STAGED: '#F1C40F',
-  LOADED: '#E67E22',
+  LOADED: '#C9822B',
   IN_TRANSIT: '#FFA500',
   DELIVERED: '#1ABC9C',
   INSTALLING: '#00BCD4',
@@ -249,7 +249,7 @@ export default function JobDetailPage() {
     return (
       <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1B4F72] mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3E2A1E] mx-auto mb-4" />
           <p className="text-gray-500">Loading job details...</p>
         </div>
       </div>
@@ -262,7 +262,7 @@ export default function JobDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 text-lg font-semibold mb-2">Error</p>
           <p className="text-red-600">{error || 'Job not found'}</p>
-          <button onClick={() => router.push('/ops/jobs')} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#163d5a]">
+          <button onClick={() => router.push('/ops/jobs')} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#163d5a]">
             Back to Pipeline
           </button>
         </div>
@@ -295,7 +295,7 @@ export default function JobDetailPage() {
             <button
               onClick={advanceStatus}
               disabled={updating}
-              className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-[#d35400] disabled:opacity-50 font-medium"
+              className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 font-medium"
             >
               {updating ? 'Updating...' : `Advance → ${STATUS_LABELS[nextStatus] || nextStatus}`}
             </button>
@@ -398,7 +398,7 @@ export default function JobDetailPage() {
           <div className="bg-white rounded-lg border p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Job Profitability</h2>
-              <button onClick={loadProfitability} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#1B4F72] hover:bg-[#163d5a]">
+              <button onClick={loadProfitability} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#3E2A1E] hover:bg-[#163d5a]">
                 {showProfit ? 'Hide' : 'Analyze'}
               </button>
             </div>
@@ -407,11 +407,11 @@ export default function JobDetailPage() {
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="bg-blue-50 rounded-lg p-3 text-center">
                     <p className="text-xs text-gray-500">Revenue</p>
-                    <p className="text-lg font-bold text-[#1B4F72]">{formatCurrency(profitability.profitability.totalRevenue)}</p>
+                    <p className="text-lg font-bold text-[#3E2A1E]">{formatCurrency(profitability.profitability.totalRevenue)}</p>
                   </div>
                   <div className="bg-orange-50 rounded-lg p-3 text-center">
                     <p className="text-xs text-gray-500">BOM Cost</p>
-                    <p className="text-lg font-bold text-[#E67E22]">{formatCurrency(profitability.profitability.totalBomCost)}</p>
+                    <p className="text-lg font-bold text-[#C9822B]">{formatCurrency(profitability.profitability.totalBomCost)}</p>
                   </div>
                   <div className={`rounded-lg p-3 text-center ${profitability.profitability.grossMargin >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
                     <p className="text-xs text-gray-500">Gross Margin</p>
@@ -512,8 +512,8 @@ export default function JobDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Change Orders</h2>
               <div className="flex gap-2">
-                <button onClick={() => setShowCOForm(!showCOForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#E67E22] hover:bg-[#d35400]">+ New</button>
-                <button onClick={loadChangeOrders} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#1B4F72] border border-[#1B4F72] hover:bg-blue-50">
+                <button onClick={() => setShowCOForm(!showCOForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#C9822B] hover:bg-[#A86B1F]">+ New</button>
+                <button onClick={loadChangeOrders} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#3E2A1E] border border-[#3E2A1E] hover:bg-blue-50">
                   {showCO ? 'Hide' : 'Load'}
                 </button>
               </div>
@@ -524,7 +524,7 @@ export default function JobDetailPage() {
                 <textarea value={coForm.description} onChange={e => setCoForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" className="w-full border rounded px-3 py-2 text-sm" rows={2} />
                 <div className="flex gap-2 items-center">
                   <input value={coForm.costImpact} onChange={e => setCoForm(f => ({ ...f, costImpact: e.target.value }))} placeholder="Cost impact ($)" className="border rounded px-3 py-2 text-sm w-32" type="number" />
-                  <button onClick={createChangeOrder} className="px-3 py-2 bg-[#1B4F72] text-white rounded text-sm font-medium hover:bg-[#163d5a]">Create CO</button>
+                  <button onClick={createChangeOrder} className="px-3 py-2 bg-[#3E2A1E] text-white rounded text-sm font-medium hover:bg-[#163d5a]">Create CO</button>
                   <button onClick={() => setShowCOForm(false)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
                 </div>
               </div>
@@ -566,8 +566,8 @@ export default function JobDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Punch List</h2>
               <div className="flex gap-2">
-                <button onClick={() => setShowPunchForm(!showPunchForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#E67E22] hover:bg-[#d35400]">+ Add Item</button>
-                <button onClick={loadPunchItems} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#1B4F72] border border-[#1B4F72] hover:bg-blue-50">
+                <button onClick={() => setShowPunchForm(!showPunchForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#C9822B] hover:bg-[#A86B1F]">+ Add Item</button>
+                <button onClick={loadPunchItems} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#3E2A1E] border border-[#3E2A1E] hover:bg-blue-50">
                   {showPunch ? 'Hide' : 'Load'}
                 </button>
               </div>
@@ -590,7 +590,7 @@ export default function JobDetailPage() {
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={createPunchItem} className="px-3 py-2 bg-[#1B4F72] text-white rounded text-sm font-medium hover:bg-[#163d5a]">Add Item</button>
+                  <button onClick={createPunchItem} className="px-3 py-2 bg-[#3E2A1E] text-white rounded text-sm font-medium hover:bg-[#163d5a]">Add Item</button>
                   <button onClick={() => setShowPunchForm(false)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
                 </div>
               </div>
@@ -648,7 +648,7 @@ export default function JobDetailPage() {
               <div className="mt-3 pt-3 border-t space-y-1">
                 {job.order.builder.email && <p className="text-sm text-blue-600">{job.order.builder.email}</p>}
                 {job.order.builder.phone && <p className="text-sm text-gray-600">{job.order.builder.phone}</p>}
-                <Link href={`/ops/accounts`} className="text-xs text-[#1B4F72] hover:underline">View Account →</Link>
+                <Link href={`/ops/accounts`} className="text-xs text-[#3E2A1E] hover:underline">View Account →</Link>
               </div>
             )}
           </div>
@@ -674,7 +674,7 @@ export default function JobDetailPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-xs text-gray-500">Order #</span>
-                  <span className="text-sm font-medium text-[#1B4F72]">{job.order.orderNumber}</span>
+                  <span className="text-sm font-medium text-[#3E2A1E]">{job.order.orderNumber}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-xs text-gray-500">Total</span>
@@ -715,7 +715,7 @@ export default function JobDetailPage() {
               ].map(item => (
                 <div key={item.label} className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">{item.label}</span>
-                  <span className={`text-sm font-bold ${item.count > 0 ? 'text-[#1B4F72]' : 'text-gray-300'}`}>{item.count}</span>
+                  <span className={`text-sm font-bold ${item.count > 0 ? 'text-[#3E2A1E]' : 'text-gray-300'}`}>{item.count}</span>
                 </div>
               ))}
             </div>

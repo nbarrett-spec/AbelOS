@@ -39,7 +39,7 @@ export default function HomeownerLanding() {
     <div className="max-w-lg mx-auto pt-8">
       {/* Welcome Card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-[#1B4F72] to-[#2471A3] px-6 py-8 text-center">
+        <div className="bg-gradient-to-r from-[#3E2A1E] to-[#5A4233] px-6 py-8 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Welcome to Your Selection Portal</h2>
           <p className="text-white/80 text-sm">Customize the doors and hardware for your new home</p>
         </div>
@@ -59,7 +59,7 @@ export default function HomeownerLanding() {
               value={token}
               onChange={(e) => setToken(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72] disabled:opacity-50"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E] disabled:opacity-50"
             />
           </div>
 
@@ -72,7 +72,7 @@ export default function HomeownerLanding() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#E67E22] text-white rounded-lg font-semibold text-sm hover:bg-[#d35400] transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-[#C9822B] text-white rounded-lg font-semibold text-sm hover:bg-[#A86B1F] transition-colors disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -97,7 +97,7 @@ export default function HomeownerLanding() {
             { step: '4', title: 'Confirm', desc: "Lock in your selections and we'll deliver your perfect doors" },
           ].map(item => (
             <div key={item.step} className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#1B4F72] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-[#3E2A1E] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                 {item.step}
               </div>
               <div>

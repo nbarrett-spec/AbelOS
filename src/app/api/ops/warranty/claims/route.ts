@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/lib/audit'
+import { logAudit, audit } from '@/lib/audit'
 import { createNotification } from '@/lib/notifications'
 import { checkStaffAuth } from '@/lib/api-auth'
 
@@ -139,6 +139,8 @@ export async function POST(request: NextRequest) {
       contactName, contactEmail, contactPhone,
       siteAddress, siteCity, siteState, siteZip, assignedTo
     } = body
+
+    audit(request, 'CREATE', 'WarrantyClaim', undefined, { method: 'POST' }).catch(() => {})
 
     if (!subject || !description || !type) {
       return NextResponse.json({ error: 'Subject, description, and type are required' }, { status: 400 })

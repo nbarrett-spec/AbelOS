@@ -230,7 +230,7 @@ export default function OpsOrdersPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Orders', value: total || orders.length, color: 'text-[#1B4F72]', icon: '📋' },
+          { label: 'Total Orders', value: total || orders.length, color: 'text-[#3E2A1E]', icon: '📋' },
           { label: 'Awaiting Confirm', value: received, color: 'text-blue-600', icon: '📥' },
           { label: 'In Production', value: inProd, color: 'text-amber-600', icon: '🏭' },
           { label: 'Pipeline Value', value: fmt(totalValue), color: 'text-emerald-600', icon: '💰' },
@@ -260,8 +260,8 @@ export default function OpsOrdersPage() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="mb-4 px-4 py-3 bg-[#1B4F72]/5 border border-[#1B4F72]/20 rounded-lg flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-[#1B4F72]">{selectedIds.size} order{selectedIds.size > 1 ? 's' : ''} selected</span>
+        <div className="mb-4 px-4 py-3 bg-[#3E2A1E]/5 border border-[#3E2A1E]/20 rounded-lg flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-[#3E2A1E]">{selectedIds.size} order{selectedIds.size > 1 ? 's' : ''} selected</span>
           <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)}
             className="px-3 py-1.5 text-sm border rounded-lg">
             <option value="">Choose action...</option>
@@ -270,7 +270,7 @@ export default function OpsOrdersPage() {
             ))}
           </select>
           <button onClick={handleBulkUpdate} disabled={!bulkAction || bulkUpdating}
-            className="px-3 py-1.5 text-sm bg-[#E67E22] text-white font-medium rounded-lg hover:bg-[#d35400] disabled:opacity-50 transition">
+            className="px-3 py-1.5 text-sm bg-[#C9822B] text-white font-medium rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 transition">
             {bulkUpdating ? 'Updating...' : 'Apply'}
           </button>
           <button onClick={() => setSelectedIds(new Set())}
@@ -286,15 +286,15 @@ export default function OpsOrdersPage() {
             placeholder="Search orders, builders, PO numbers..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]"
           />
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500 font-medium whitespace-nowrap">From</label>
             <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]" />
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
             <label className="text-xs text-gray-500 font-medium whitespace-nowrap">To</label>
             <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]" />
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
             {(dateFrom || dateTo) && (
               <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
                 className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
@@ -305,7 +305,7 @@ export default function OpsOrdersPage() {
           <button
             onClick={() => setStatusFilter('')}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              !statusFilter ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              !statusFilter ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
             }`}
           >
             All
@@ -352,7 +352,7 @@ export default function OpsOrdersPage() {
       {/* Orders List */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : orders.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
@@ -373,7 +373,7 @@ export default function OpsOrdersPage() {
             const project = order.quote?.project
 
             return (
-              <div key={order.id} className={`bg-white rounded-xl border overflow-hidden hover:shadow-sm transition-shadow ${selectedIds.has(order.id) ? 'border-[#E67E22] ring-1 ring-[#E67E22]/30' : 'border-gray-200'}`}>
+              <div key={order.id} className={`bg-white rounded-xl border overflow-hidden hover:shadow-sm transition-shadow ${selectedIds.has(order.id) ? 'border-[#C9822B] ring-1 ring-[#C9822B]/30' : 'border-gray-200'}`}>
                 {/* Header Row */}
                 <div
                   className="px-5 py-4 cursor-pointer flex items-center justify-between gap-4"
@@ -384,7 +384,7 @@ export default function OpsOrdersPage() {
                       className="w-4 h-4 rounded border-gray-300 flex-shrink-0" />
                     <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-[#1B4F72] font-mono">{order.orderNumber}</span>
+                        <span className="text-sm font-bold text-[#3E2A1E] font-mono">{order.orderNumber}</span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${sc.bg} ${sc.text}`}>
                           {sc.label}
                         </span>
@@ -499,7 +499,7 @@ export default function OpsOrdersPage() {
                         <tfoot>
                           <tr className="border-t-2 border-gray-200 bg-gray-50">
                             <td colSpan={3} className="px-4 py-2 text-right font-bold text-gray-700">Total</td>
-                            <td className="px-4 py-2 text-right font-bold text-[#1B4F72] text-base">{fmt(order.total)}</td>
+                            <td className="px-4 py-2 text-right font-bold text-[#3E2A1E] text-base">{fmt(order.total)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -570,7 +570,7 @@ export default function OpsOrdersPage() {
                         <button
                           onClick={() => generateInvoice(order.id)}
                           disabled={saving}
-                          className="px-4 py-2 bg-white border border-[#1B4F72] text-[#1B4F72] rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors disabled:opacity-50"
+                          className="px-4 py-2 bg-white border border-[#3E2A1E] text-[#3E2A1E] rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors disabled:opacity-50"
                         >
                           🧾 Generate Invoice
                         </button>
@@ -624,7 +624,7 @@ export default function OpsOrdersPage() {
                   type="date"
                   value={schedDate}
                   onChange={e => setSchedDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]"
                 />
               </div>
               <div>
@@ -634,7 +634,7 @@ export default function OpsOrdersPage() {
                   onChange={e => setSchedNotes(e.target.value)}
                   placeholder="Gate code, contact on site, special instructions..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72] resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E] resize-none"
                 />
               </div>
               {scheduleModal.quote?.project?.jobAddress && (
@@ -659,7 +659,7 @@ export default function OpsOrdersPage() {
                   deliveryNotes: schedNotes || null,
                 })}
                 disabled={saving}
-                className="px-5 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-semibold hover:bg-[#163d5a] transition-colors disabled:opacity-50"
+                className="px-5 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-semibold hover:bg-[#163d5a] transition-colors disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Schedule'}
               </button>

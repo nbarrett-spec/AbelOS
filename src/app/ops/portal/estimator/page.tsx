@@ -82,7 +82,7 @@ export default function EstimatorPortalPage() {
           { icon: '📋', label: 'Morning Briefing', href: '/ops/portal/estimator/briefing', color: '#16A085' },
           { icon: '📐', label: 'Review Takeoffs', href: '/ops/takeoffs', color: '#3498DB' },
           { icon: '📄', label: 'Create Quote', href: '/ops/quotes', color: '#27AE60' },
-          { icon: '💰', label: 'Pricing Engine', href: '/ops/pricing', color: '#F39C12' },
+          { icon: '💰', label: 'Pricing Engine', href: '/ops/pricing', color: '#D9993F' },
           { icon: '📊', label: 'Floor Plans', href: '/ops/plans', color: '#9B59B6' },
           { icon: '📸', label: 'Blueprint Analysis', href: '/ops/blueprints', color: '#E74C3C' },
         ].map(action => (
@@ -223,7 +223,7 @@ export default function EstimatorPortalPage() {
           <p className="text-3xl font-bold mt-2">{s.takeoffsAwaitingReview + s.quotesInDraft}</p>
           <p className="text-xs mt-1 opacity-75">Active items</p>
         </div>
-        <div className="bg-gradient-to-br from-[#F39C12] to-[#D68910] rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-br from-[#D9993F] to-[#D68910] rounded-xl p-6 text-white">
           <p className="text-sm opacity-90">Time Sensitive</p>
           <p className="text-3xl font-bold mt-2">{s.quotesExpiringSoon}</p>
           <p className="text-xs mt-1 opacity-75">Expiring this week</p>

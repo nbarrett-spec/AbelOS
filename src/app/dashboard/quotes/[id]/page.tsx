@@ -324,7 +324,7 @@ export default function QuoteDetailPage() {
         <div className="text-5xl mb-4">📋</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Quote Not Found</h2>
         <p className="text-gray-500 mb-6">{error || 'This quote could not be loaded.'}</p>
-        <Link href="/dashboard/quotes" className="text-[#1B4F72] font-semibold hover:underline">
+        <Link href="/dashboard/quotes" className="text-[#3E2A1E] font-semibold hover:underline">
           &larr; Back to Quotes
         </Link>
       </div>
@@ -350,16 +350,16 @@ export default function QuoteDetailPage() {
           </p>
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-500">Order Number</p>
-            <p className="text-xl font-mono font-bold text-[#1B4F72]">{orderSuccess.orderNumber}</p>
+            <p className="text-xl font-mono font-bold text-[#3E2A1E]">{orderSuccess.orderNumber}</p>
           </div>
           <div className="flex flex-col gap-3">
             <Link
               href={`/dashboard/orders/${orderSuccess.orderId}`}
-              className="bg-[#E67E22] hover:bg-[#d35400] text-white font-semibold py-3 px-6 rounded-lg transition"
+              className="bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold py-3 px-6 rounded-lg transition"
             >
               View Order Details
             </Link>
-            <Link href="/dashboard/quotes" className="text-[#1B4F72] font-semibold hover:underline py-2">
+            <Link href="/dashboard/quotes" className="text-[#3E2A1E] font-semibold hover:underline py-2">
               Back to Quotes
             </Link>
           </div>
@@ -377,7 +377,7 @@ export default function QuoteDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
-      <Link href="/dashboard/quotes" className="text-sm text-[#1B4F72] hover:underline mb-4 inline-block">
+      <Link href="/dashboard/quotes" className="text-sm text-[#3E2A1E] hover:underline mb-4 inline-block">
         &larr; Back to Quotes
       </Link>
 
@@ -506,7 +506,7 @@ export default function QuoteDetailPage() {
             )}
             <div className="flex justify-between items-center border-t pt-2">
               <span className="text-sm font-bold text-gray-900">Total</span>
-              <span className="text-lg font-bold text-[#1B4F72]">{fmt(quote.total)}</span>
+              <span className="text-lg font-bold text-[#3E2A1E]">{fmt(quote.total)}</span>
             </div>
             {quote.validUntil && (
               <div className="pt-2 border-t">
@@ -590,7 +590,7 @@ export default function QuoteDetailPage() {
               <tr>
                 <td colSpan={quote.items.some(i => i.location) ? 3 : 2} />
                 <td className="px-5 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
-                <td className="px-5 py-3 text-lg font-bold text-[#1B4F72] text-right">{fmt(quote.total)}</td>
+                <td className="px-5 py-3 text-lg font-bold text-[#3E2A1E] text-right">{fmt(quote.total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -748,7 +748,7 @@ export default function QuoteDetailPage() {
                   onChange={e => setChangeNotes(e.target.value)}
                   placeholder="e.g., Please swap the 2-panel doors for Shaker style, add hardware for 3 additional interior doors, adjust quantity on exterior door to 2..."
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22] resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] resize-none"
                 />
               </div>
 
@@ -764,7 +764,7 @@ export default function QuoteDetailPage() {
                   Cancel
                 </button>
                 <button onClick={handleRequestChanges} disabled={actionInProgress || !changeNotes.trim()}
-                  className="flex-1 px-4 py-2.5 bg-[#E67E22] text-white font-semibold rounded-lg hover:bg-[#d35400] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  className="flex-1 px-4 py-2.5 bg-[#C9822B] text-white font-semibold rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   {actionInProgress && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   {actionInProgress ? 'Sending...' : 'Submit Request'}
                 </button>

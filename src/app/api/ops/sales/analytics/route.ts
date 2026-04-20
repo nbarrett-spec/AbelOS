@@ -1,367 +1,367 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 
-// GET /api/ops/sales/analytics?report=<type>
+// GET /api/ops/sales/analytics
+// Sales analytics API powering /ops/sales/analytics page
+// Query param: report=dashboard|forecast|win-loss|velocity|rep-performance (default: dashboard)
 export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
+  const authError = await checkStaffAuthWithFallback(request)
   if (authError) return authError
 
-  try {
-    const { searchParams } = new URL(request.url)
-    const report = searchParams.get('report') || 'forecast'
+  const url = new URL(request.url)
+  const report = url.searchParams.get('report') || 'dashboard'
 
-    if (report === 'forecast') {
-      return await handleForecast()
-    } else if (report === 'win_loss') {
-      return await handleWinLoss()
-    } else if (report === 'rep_scorecard') {
-      return await handleRepScorecard()
-    } else if (report === 'velocity') {
-      return await handleVelocity()
-    } else {
-      return NextResponse.json({ error: 'Invalid report type' }, { status: 400 })
+  try {
+    switch (report) {
+      case 'forecast':
+        return await handleForecast()
+      case 'win-loss':
+        return await handleWinLoss()
+      case 'velocity':
+        return await handleVelocity()
+      case 'rep-performance':
+        return await handleRepPerformance()
+      case 'dashboard':
+      default:
+        return await handleDashboard()
     }
   } catch (error: any) {
-    console.error('Analytics error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error(`Error in sales analytics (${report}):`, error)
+    return NextResponse.json(
+      { error: `Failed to load ${report} analytics` },
+      { status: 500 }
+    )
   }
 }
 
-// ─── FORECAST ───────────────────────────────────────────────────────────
+// ─── DASHBOARD: Overview metrics ──────────────────────────────────
+async function handleDashboard() {
+  // Total revenue (30d, 90d, YTD)
+  const revenueMetrics: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COALESCE(SUM(CASE WHEN i."issuedAt" >= NOW() - INTERVAL '30 days' THEN i."total" ELSE 0 END), 0)::float AS "revenue30d",
+      COALESCE(SUM(CASE WHEN i."issuedAt" >= NOW() - INTERVAL '90 days' THEN i."total" ELSE 0 END), 0)::float AS "revenue90d",
+      COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM i."issuedAt") = EXTRACT(YEAR FROM NOW()) THEN i."total" ELSE 0 END), 0)::float AS "revenueYTD"
+    FROM "Invoice" i
+    WHERE i."status"::text = 'PAID'
+  `)
 
+  // Deal count by status
+  const dealCounts: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::int AS "won",
+      COUNT(CASE WHEN d."stage"::text = 'LOST' THEN 1 END)::int AS "lost",
+      COUNT(CASE WHEN d."stage"::text NOT IN ('WON', 'LOST', 'ONBOARDED') THEN 1 END)::int AS "open",
+      COUNT(CASE WHEN d."stage"::text IN ('PROSPECT', 'DISCOVERY') AND d."createdAt" < NOW() - INTERVAL '90 days' THEN 1 END)::int AS "stale"
+    FROM "Deal" d
+  `)
+
+  // Quote conversion rate
+  const quoteMetrics: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COUNT(*)::int AS "totalQuotes",
+      COUNT(CASE WHEN q."status"::text = 'APPROVED' THEN 1 END)::int AS "acceptedQuotes"
+    FROM "Quote" q
+  `)
+
+  // Average deal size
+  const avgDealSize: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COALESCE(AVG(d."dealValue"), 0)::float AS "avgDealSize"
+    FROM "Deal" d
+    WHERE d."stage"::text = 'WON'
+  `)
+
+  // Top 5 reps by revenue
+  const topReps: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      s."firstName" || ' ' || s."lastName" AS "name",
+      s."id",
+      COUNT(d."id")::int AS "dealCount",
+      COALESCE(SUM(CASE WHEN d."stage"::text = 'WON' THEN i."total" ELSE 0 END), 0)::float AS "revenue"
+    FROM "Deal" d
+    LEFT JOIN "Staff" s ON s."id" = d."ownerId"
+    LEFT JOIN "Invoice" i ON i."builderId" = d."builderId" AND i."status"::text = 'PAID'
+    WHERE s."active" = true AND s."role"::text = 'SALES'
+    GROUP BY s."id", s."firstName", s."lastName"
+    ORDER BY "revenue" DESC
+    LIMIT 5
+  `)
+
+  const rev = revenueMetrics[0] || {}
+  const deals = dealCounts[0] || {}
+  const quotes = quoteMetrics[0] || {}
+  const avgSize = avgDealSize[0] || {}
+
+  return NextResponse.json({
+    revenue: {
+      last30Days: Number(rev.revenue30d) || 0,
+      last90Days: Number(rev.revenue90d) || 0,
+      yearToDate: Number(rev.revenueYTD) || 0,
+    },
+    dealCounts: {
+      won: deals.won || 0,
+      lost: deals.lost || 0,
+      open: deals.open || 0,
+      stale: deals.stale || 0,
+    },
+    quoteConversion: {
+      total: quotes.totalQuotes || 0,
+      accepted: quotes.acceptedQuotes || 0,
+      conversionRate: quotes.totalQuotes
+        ? ((quotes.acceptedQuotes / quotes.totalQuotes) * 100).toFixed(1)
+        : '0.0',
+    },
+    avgDealSize: Number(avgSize.avgDealSize) || 0,
+    topReps: topReps.map(r => ({
+      repId: r.id,
+      name: r.name,
+      dealCount: r.dealCount || 0,
+      revenue: Number(r.revenue) || 0,
+    })),
+  })
+}
+
+// ─── FORECAST: Revenue forecast ──────────────────────────────────
 async function handleForecast() {
-  try {
-    // Weighted pipeline: sum of dealValue * (probability / 100) for active deals
-    const activeStages = ["PROSPECT", "DISCOVERY", "WALKTHROUGH", "BID_SUBMITTED", "BID_REVIEW", "NEGOTIATION"]
-    const activeStagesStr = activeStages.map(s => `'${s}'`).join(',')
+  // Monthly revenue actual (last 12 months)
+  const monthlyRevenue: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      TO_CHAR(i."issuedAt"::date, 'YYYY-MM') AS "month",
+      COALESCE(SUM(i."total"), 0)::float AS "revenue"
+    FROM "Invoice" i
+    WHERE i."status"::text = 'PAID'
+      AND i."issuedAt" >= NOW() - INTERVAL '12 months'
+    GROUP BY TO_CHAR(i."issuedAt"::date, 'YYYY-MM')
+    ORDER BY "month" ASC
+  `)
 
-    const pipelineResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COALESCE(SUM(d."dealValue" * (d."probability" / 100.0)), 0) AS "weightedPipeline"
-       FROM "Deal" d
-       WHERE d."stage"::text IN (${activeStagesStr})`
-    )
-    const weightedPipeline = parseFloat(pipelineResult[0]?.weightedPipeline || 0)
+  // Open pipeline value
+  const openPipeline: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COALESCE(SUM(d."dealValue"), 0)::float AS "value"
+    FROM "Deal" d
+    WHERE d."stage"::text NOT IN ('WON', 'LOST')
+  `)
 
-    // Project monthly closes based on expectedCloseDate
-    const now = new Date()
-    const month1Start = new Date(now.getFullYear(), now.getMonth(), 1)
-    const month1End = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    const month2Start = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    const month2End = new Date(now.getFullYear(), now.getMonth() + 2, 0)
-    const month3Start = new Date(now.getFullYear(), now.getMonth() + 2, 1)
-    const month3End = new Date(now.getFullYear(), now.getMonth() + 3, 0)
+  // Weighted pipeline (probability-adjusted)
+  const weightedPipeline: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COALESCE(SUM(d."dealValue" * d."probability" / 100.0), 0)::float AS "value"
+    FROM "Deal" d
+    WHERE d."stage"::text NOT IN ('WON', 'LOST')
+  `)
 
-    const projectionResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        COALESCE(SUM(CASE WHEN d."expectedCloseDate" >= $1 AND d."expectedCloseDate" <= $2 AND d."stage"::text IN (${activeStagesStr}) THEN d."dealValue" * (d."probability" / 100.0) ELSE 0 END), 0) AS "month1",
-        COALESCE(SUM(CASE WHEN d."expectedCloseDate" >= $3 AND d."expectedCloseDate" <= $4 AND d."stage"::text IN (${activeStagesStr}) THEN d."dealValue" * (d."probability" / 100.0) ELSE 0 END), 0) AS "month2",
-        COALESCE(SUM(CASE WHEN d."expectedCloseDate" >= $5 AND d."expectedCloseDate" <= $6 AND d."stage"::text IN (${activeStagesStr}) THEN d."dealValue" * (d."probability" / 100.0) ELSE 0 END), 0) AS "month3"
-       FROM "Deal" d`,
-      month1Start,
-      month1End,
-      month2Start,
-      month2End,
-      month3Start,
-      month3End
-    )
-    const projectedRevenue = {
-      month1: parseFloat(projectionResult[0]?.month1 || 0),
-      month2: parseFloat(projectionResult[0]?.month2 || 0),
-      month3: parseFloat(projectionResult[0]?.month3 || 0),
-    }
+  // Monthly pipeline aging (deals created by month, still open)
+  const pipelineAging: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      TO_CHAR(d."createdAt"::date, 'YYYY-MM') AS "createdMonth",
+      COUNT(*)::int AS "count",
+      COALESCE(AVG(EXTRACT(DAY FROM (NOW() - d."createdAt"))::int), 0)::float AS "avgAgeDays"
+    FROM "Deal" d
+    WHERE d."stage"::text NOT IN ('WON', 'LOST')
+    GROUP BY TO_CHAR(d."createdAt"::date, 'YYYY-MM')
+    ORDER BY "createdMonth" DESC
+    LIMIT 12
+  `)
 
-    // Average deal size and days to close
-    const statsResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        COALESCE(AVG(d."dealValue"), 0) AS "avgDealSize",
-        COALESCE(AVG(EXTRACT(DAY FROM (d."actualCloseDate" - d."createdAt"))), 0) AS "avgDaysToClose"
-       FROM "Deal" d
-       WHERE d."stage"::text IN ('WON', 'LOST', 'ONBOARDED')`
-    )
-    const avgDealSize = parseFloat(statsResult[0]?.avgDealSize || 0)
-    const avgDaysToClose = Math.round(parseFloat(statsResult[0]?.avgDaysToClose || 0))
+  const open = openPipeline[0] || {}
+  const weighted = weightedPipeline[0] || {}
 
-    return NextResponse.json({
-      report: 'forecast',
-      weightedPipeline: Math.round(weightedPipeline * 100) / 100,
-      projectedRevenue,
-      avgDealSize: Math.round(avgDealSize * 100) / 100,
-      avgDaysToClose,
-    })
-  } catch (error: any) {
-    console.error('Forecast error:', error)
-    throw error
-  }
+  return NextResponse.json({
+    monthlyRevenue: monthlyRevenue.map(m => ({
+      month: m.month,
+      revenue: Number(m.revenue) || 0,
+    })),
+    openPipeline: {
+      value: Number(open.value) || 0,
+    },
+    weightedPipeline: {
+      value: Number(weighted.value) || 0,
+    },
+    pipelineAging: pipelineAging.map(p => ({
+      createdMonth: p.createdMonth,
+      dealCount: p.count || 0,
+      avgAgeDays: Number(p.avgAgeDays) || 0,
+    })),
+  })
 }
 
-// ─── WIN/LOSS ───────────────────────────────────────────────────────────
-
+// ─── WIN/LOSS: Win/Loss analysis ────────────────────────────────
 async function handleWinLoss() {
-  try {
-    // Overall win rate
-    const winLossResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        COUNT(*) FILTER (WHERE "stage"::text = 'WON')::int AS "won",
-        COUNT(*) FILTER (WHERE "stage"::text = 'LOST')::int AS "lost"
-       FROM "Deal"`
-    )
-    const won = winLossResult[0]?.won || 0
-    const lost = winLossResult[0]?.lost || 0
-    const winRate = won + lost > 0 ? Math.round((won / (won + lost)) * 100) : 0
+  // Win rate by month (last 6 months)
+  const winRateByMonth: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      TO_CHAR(d."actualCloseDate"::date, 'YYYY-MM') AS "month",
+      COUNT(*)::int AS "total",
+      COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::int AS "won",
+      CASE WHEN COUNT(*) > 0 THEN
+        ROUND((COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::float / COUNT(*)) * 100, 1)::float
+      ELSE 0 END AS "winRate"
+    FROM "Deal" d
+    WHERE d."actualCloseDate" IS NOT NULL
+      AND d."actualCloseDate" >= NOW() - INTERVAL '6 months'
+    GROUP BY TO_CHAR(d."actualCloseDate"::date, 'YYYY-MM')
+    ORDER BY "month" DESC
+  `)
 
-    // Average deal size for wins vs losses
-    const avgValuesResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        COALESCE(AVG(d."dealValue") FILTER (WHERE d."stage"::text = 'WON'), 0) AS "avgWinValue",
-        COALESCE(AVG(d."dealValue") FILTER (WHERE d."stage"::text = 'LOST'), 0) AS "avgLossValue"
-       FROM "Deal" d`
-    )
-    const avgWinValue = parseFloat(avgValuesResult[0]?.avgWinValue || 0)
-    const avgLossValue = parseFloat(avgValuesResult[0]?.avgLossValue || 0)
+  // Loss reasons breakdown
+  const lossReasons: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      COALESCE(d."lostReason", 'Unknown') AS "reason",
+      COUNT(*)::int AS "count"
+    FROM "Deal" d
+    WHERE d."stage"::text = 'LOST'
+      AND d."lostDate" >= NOW() - INTERVAL '6 months'
+    GROUP BY COALESCE(d."lostReason", 'Unknown')
+    ORDER BY "count" DESC
+  `)
 
-    // By source
-    const bySourceResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        d."source"::text AS "source",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'WON')::int AS "won",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'LOST')::int AS "lost",
-        COUNT(*)::int AS "total"
-       FROM "Deal" d
-       WHERE d."stage"::text IN ('WON', 'LOST')
-       GROUP BY d."source"::text
-       ORDER BY "total" DESC`
-    )
+  // Average sales cycle
+  const avgCycle: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      ROUND(AVG(EXTRACT(DAY FROM (d."actualCloseDate" - d."createdAt"))::int), 1)::float AS "avgDays"
+    FROM "Deal" d
+    WHERE d."stage"::text = 'WON' AND d."actualCloseDate" IS NOT NULL
+  `)
 
-    const bySource = bySourceResult.map(row => ({
-      source: row.source,
-      won: row.won,
-      lost: row.lost,
-      total: row.total,
-      winRate: row.total > 0 ? Math.round((row.won / row.total) * 100) : 0,
-    }))
+  // Win rate by deal size bucket
+  const winRateBySize: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      CASE
+        WHEN d."dealValue" < 10000 THEN '0-10K'
+        WHEN d."dealValue" < 50000 THEN '10-50K'
+        WHEN d."dealValue" < 100000 THEN '50-100K'
+        ELSE '100K+'
+      END AS "bucket",
+      COUNT(*)::int AS "total",
+      COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::int AS "won",
+      CASE WHEN COUNT(*) > 0 THEN
+        ROUND((COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::float / COUNT(*)) * 100, 1)::float
+      ELSE 0 END AS "winRate"
+    FROM "Deal" d
+    WHERE d."createdAt" >= NOW() - INTERVAL '12 months'
+    GROUP BY "bucket"
+    ORDER BY
+      CASE "bucket"
+        WHEN '0-10K' THEN 1
+        WHEN '10-50K' THEN 2
+        WHEN '50-100K' THEN 3
+        WHEN '100K+' THEN 4
+      END
+  `)
 
-    // By rep
-    const byRepResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        d."ownerId",
-        s."firstName",
-        s."lastName",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'WON')::int AS "won",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'LOST')::int AS "lost",
-        COUNT(*)::int AS "total"
-       FROM "Deal" d
-       LEFT JOIN "Staff" s ON s."id" = d."ownerId"
-       WHERE d."stage"::text IN ('WON', 'LOST')
-       GROUP BY d."ownerId", s."firstName", s."lastName"
-       ORDER BY "won" DESC`
-    )
+  const cycle = avgCycle[0] || {}
 
-    const byRep = byRepResult.map(row => ({
-      repId: row.ownerId,
-      repName: `${row.firstName} ${row.lastName}`,
-      won: row.won,
-      lost: row.lost,
-      total: row.total,
-      winRate: row.total > 0 ? Math.round((row.won / row.total) * 100) : 0,
-    }))
-
-    // By quarter
-    const byQuarterResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        CONCAT('Q', CEIL(EXTRACT(MONTH FROM d."updatedAt") / 3.0)::int, ' ', EXTRACT(YEAR FROM d."updatedAt")::int) AS "quarter",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'WON')::int AS "won",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'LOST')::int AS "lost",
-        COUNT(*)::int AS "total"
-       FROM "Deal" d
-       WHERE d."stage"::text IN ('WON', 'LOST')
-       GROUP BY CEIL(EXTRACT(MONTH FROM d."updatedAt") / 3.0), EXTRACT(YEAR FROM d."updatedAt")
-       ORDER BY EXTRACT(YEAR FROM d."updatedAt") DESC, CEIL(EXTRACT(MONTH FROM d."updatedAt") / 3.0) DESC`
-    )
-
-    const byQuarter = byQuarterResult.map(row => ({
-      quarter: row.quarter,
-      won: row.won,
-      lost: row.lost,
-      total: row.total,
-      winRate: row.total > 0 ? Math.round((row.won / row.total) * 100) : 0,
-    }))
-
-    // Top loss reasons
-    const lossReasonsResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        d."lostReason",
-        COUNT(*)::int AS "count"
-       FROM "Deal" d
-       WHERE d."stage"::text = 'LOST' AND d."lostReason" IS NOT NULL
-       GROUP BY d."lostReason"
-       ORDER BY "count" DESC
-       LIMIT 5`
-    )
-
-    const topLossReasons = lossReasonsResult.map(row => ({
-      reason: row.lostReason,
-      count: row.count,
-    }))
-
-    return NextResponse.json({
-      report: 'win_loss',
-      winRate,
-      avgWinValue: Math.round(avgWinValue * 100) / 100,
-      avgLossValue: Math.round(avgLossValue * 100) / 100,
-      totalWon: won,
-      totalLost: lost,
-      bySource,
-      byRep,
-      byQuarter,
-      topLossReasons,
-    })
-  } catch (error: any) {
-    console.error('Win/Loss error:', error)
-    throw error
-  }
+  return NextResponse.json({
+    winRateByMonth: winRateByMonth.map(m => ({
+      month: m.month,
+      total: m.total || 0,
+      won: m.won || 0,
+      winRate: Number(m.winRate) || 0,
+    })),
+    lossReasons: lossReasons.map(l => ({
+      reason: l.reason,
+      count: l.count || 0,
+    })),
+    avgSalesCycleDays: Number(cycle.avgDays) || 0,
+    winRateByDealSize: winRateBySize.map(w => ({
+      bucket: w.bucket,
+      total: w.total || 0,
+      won: w.won || 0,
+      winRate: Number(w.winRate) || 0,
+    })),
+  })
 }
 
-// ─── REP SCORECARD ──────────────────────────────────────────────────────
-
-async function handleRepScorecard() {
-  try {
-    const repsResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        d."ownerId",
-        s."firstName",
-        s."lastName",
-        COUNT(*)::int AS "totalDeals",
-        COUNT(*) FILTER (WHERE d."stage"::text NOT IN ('WON', 'LOST', 'ONBOARDED'))::int AS "activeDeals",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'WON')::int AS "wonDeals",
-        COUNT(*) FILTER (WHERE d."stage"::text = 'LOST')::int AS "lostDeals",
-        COALESCE(SUM(CASE WHEN d."stage"::text NOT IN ('WON', 'LOST', 'ONBOARDED') THEN d."dealValue" * (d."probability" / 100.0) ELSE 0 END), 0) AS "pipelineValue",
-        COALESCE(SUM(CASE WHEN d."stage"::text = 'WON' THEN d."dealValue" ELSE 0 END), 0) AS "wonValue",
-        COALESCE(AVG(EXTRACT(DAY FROM (d."actualCloseDate" - d."createdAt"))), 0) AS "avgDaysToClose"
-       FROM "Deal" d
-       LEFT JOIN "Staff" s ON s."id" = d."ownerId"
-       WHERE d."ownerId" IS NOT NULL
-       GROUP BY d."ownerId", s."firstName", s."lastName"
-       ORDER BY "wonValue" DESC`
-    )
-
-    const scorecardsPromises = repsResult.map(async (rep) => {
-      const winRate = rep.totalDeals > 0 ? Math.round((rep.wonDeals / rep.totalDeals) * 100) : 0
-
-      // Activity count in last 30 days
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      const activitiesResult: any[] = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*)::int AS "count" FROM "DealActivity"
-         WHERE "staffId" = $1 AND "createdAt" >= $2`,
-        rep.ownerId,
-        thirtyDaysAgo
-      )
-      const activityCount = activitiesResult[0]?.count || 0
-
-      // Deals by stage
-      const stagesResult: any[] = await prisma.$queryRawUnsafe(
-        `SELECT
-          d."stage"::text AS "stage",
-          COUNT(*)::int AS "count"
-         FROM "Deal" d
-         WHERE d."ownerId" = $1
-         GROUP BY d."stage"::text
-         ORDER BY "count" DESC`,
-        rep.ownerId
-      )
-
-      const dealsByStage = stagesResult.reduce((acc: any, row: any) => {
-        acc[row.stage] = row.count
-        return acc
-      }, {})
-
-      return {
-        repId: rep.ownerId,
-        repName: `${rep.firstName} ${rep.lastName}`,
-        totalDeals: rep.totalDeals,
-        activeDeals: rep.activeDeals,
-        wonDeals: rep.wonDeals,
-        lostDeals: rep.lostDeals,
-        winRate,
-        pipelineValue: Math.round(parseFloat(rep.pipelineValue) * 100) / 100,
-        wonValue: Math.round(parseFloat(rep.wonValue) * 100) / 100,
-        avgDaysToClose: Math.round(parseFloat(rep.avgDaysToClose)),
-        activityCountLast30: activityCount,
-        dealsByStage,
-      }
-    })
-
-    const scorecards = await Promise.all(scorecardsPromises)
-
-    return NextResponse.json({
-      report: 'rep_scorecard',
-      scorecards,
-    })
-  } catch (error: any) {
-    console.error('Rep Scorecard error:', error)
-    throw error
-  }
-}
-
-// ─── VELOCITY ───────────────────────────────────────────────────────────
-
+// ─── VELOCITY: Sales velocity ───────────────────────────────────
 async function handleVelocity() {
-  try {
-    // Monthly velocity metrics
-    const monthlyResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        CONCAT(TO_CHAR(d."createdAt", 'YYYY-MM')) AS "month",
-        COUNT(*)::int AS "opportunities",
-        COALESCE(AVG(d."dealValue"), 0) AS "avgDealValue",
-        COALESCE(AVG(CASE WHEN d."stage"::text = 'WON' THEN 1 WHEN d."stage"::text = 'LOST' THEN 0 ELSE NULL END), 0) AS "winRate",
-        COALESCE(AVG(EXTRACT(DAY FROM (d."actualCloseDate" - d."createdAt"))), 30) AS "avgCycleLength"
-       FROM "Deal" d
-       GROUP BY TO_CHAR(d."createdAt", 'YYYY-MM')
-       ORDER BY "month" DESC
-       LIMIT 12`
-    )
+  // Avg days in each deal stage
+  const stageMetrics: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      d."stage"::text AS "stage",
+      COUNT(*)::int AS "dealCount",
+      ROUND(AVG(EXTRACT(DAY FROM (NOW() - d."createdAt"))::int), 1)::float AS "avgDaysInStage"
+    FROM "Deal" d
+    WHERE d."stage"::text NOT IN ('WON', 'LOST')
+    GROUP BY d."stage"::text
+  `)
 
-    const velocity = monthlyResult.map(row => {
-      const opportunities = row.opportunities
-      const avgDealValue = parseFloat(row.avgDealValue || 0)
-      const winRate = parseFloat(row.winRate || 0)
-      const avgCycleLength = Math.max(1, parseFloat(row.avgCycleLength || 30))
+  // Conversion rate between stages (simple: stage progression)
+  const stageProgression: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      d."stage"::text AS "currentStage",
+      COUNT(*)::int AS "dealCount"
+    FROM "Deal" d
+    GROUP BY d."stage"::text
+    ORDER BY
+      CASE d."stage"::text
+        WHEN 'PROSPECT' THEN 1
+        WHEN 'DISCOVERY' THEN 2
+        WHEN 'WALKTHROUGH' THEN 3
+        WHEN 'BID_SUBMITTED' THEN 4
+        WHEN 'BID_REVIEW' THEN 5
+        WHEN 'NEGOTIATION' THEN 6
+        WHEN 'WON' THEN 7
+        WHEN 'LOST' THEN 8
+        WHEN 'ONBOARDED' THEN 9
+        ELSE 0
+      END
+  `)
 
-      const salesVelocity =
-        opportunities > 0 && avgDealValue > 0 && avgCycleLength > 0
-          ? Math.round((opportunities * avgDealValue * winRate) / avgCycleLength * 100) / 100
-          : 0
+  return NextResponse.json({
+    stageMetrics: stageMetrics.map(s => ({
+      stage: s.stage,
+      dealCount: s.dealCount || 0,
+      avgDaysInStage: Number(s.avgDaysInStage) || 0,
+    })),
+    stageProgression: stageProgression.map(s => ({
+      stage: s.currentStage,
+      dealCount: s.dealCount || 0,
+    })),
+  })
+}
 
-      return {
-        month: row.month,
-        opportunities,
-        avgDealValue: Math.round(avgDealValue * 100) / 100,
-        winRate: Math.round(winRate * 10000) / 100, // Convert to percentage
-        avgCycleLength: Math.round(avgCycleLength),
-        salesVelocity,
-      }
-    })
+// ─── REP PERFORMANCE: Per-rep metrics ───────────────────────────
+async function handleRepPerformance() {
+  const repMetrics: any[] = await prisma.$queryRawUnsafe(`
+    SELECT
+      s."id",
+      s."firstName" || ' ' || s."lastName" AS "name",
+      s."email",
+      COUNT(d."id")::int AS "dealCount",
+      COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::int AS "wonCount",
+      CASE WHEN COUNT(d."id") > 0 THEN
+        ROUND((COUNT(CASE WHEN d."stage"::text = 'WON' THEN 1 END)::float / COUNT(d."id")) * 100, 1)::float
+      ELSE 0 END AS "winRate",
+      COALESCE(AVG(CASE WHEN d."stage"::text = 'WON' THEN d."dealValue" ELSE NULL END), 0)::float AS "avgDealSize",
+      ROUND(AVG(CASE WHEN d."stage"::text = 'WON' AND d."actualCloseDate" IS NOT NULL
+        THEN EXTRACT(DAY FROM (d."actualCloseDate" - d."createdAt"))::int
+        ELSE NULL
+      END), 1)::float AS "avgCycleDays",
+      COALESCE(SUM(CASE WHEN d."stage"::text = 'WON' THEN i."total" ELSE 0 END), 0)::float AS "revenue"
+    FROM "Staff" s
+    LEFT JOIN "Deal" d ON d."ownerId" = s."id"
+    LEFT JOIN "Invoice" i ON i."builderId" = d."builderId" AND i."status"::text = 'PAID'
+    WHERE s."role"::text LIKE '%SALES%'
+      AND s."active" = true
+    GROUP BY s."id", s."firstName", s."lastName", s."email"
+    ORDER BY "revenue" DESC
+  `)
 
-    // Current month overall
-    const now = new Date()
-    const monthStr = now.toISOString().slice(0, 7)
-    const currentMonth = velocity.find(v => v.month === monthStr) || {
-      month: monthStr,
-      opportunities: 0,
-      avgDealValue: 0,
-      winRate: 0,
-      avgCycleLength: 0,
-      salesVelocity: 0,
-    }
-
-    return NextResponse.json({
-      report: 'velocity',
-      currentMonth,
-      monthlyTrend: velocity,
-    })
-  } catch (error: any) {
-    console.error('Velocity error:', error)
-    throw error
-  }
+  return NextResponse.json({
+    repMetrics: repMetrics.map(r => ({
+      repId: r.id,
+      name: r.name,
+      email: r.email,
+      dealCount: r.dealCount || 0,
+      wonCount: r.wonCount || 0,
+      winRate: Number(r.winRate) || 0,
+      avgDealSize: Number(r.avgDealSize) || 0,
+      avgCycleDays: Number(r.avgCycleDays) || 0,
+      revenue: Number(r.revenue) || 0,
+    })),
+  })
 }

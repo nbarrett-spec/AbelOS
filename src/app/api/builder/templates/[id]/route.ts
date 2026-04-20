@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 interface TemplateItem {
   id: string
@@ -117,6 +118,8 @@ export async function DELETE(
   }
 
   try {
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'DELETE', 'Template').catch(() => {});
+
     // Verify template belongs to this builder
     const templates: any[] = await prisma.$queryRawUnsafe(
       `SELECT id FROM "OrderTemplate"

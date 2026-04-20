@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { auditBuilder } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
 const DEFAULT_BRANDING = {
   logoUrl: null,
-  primaryColor: '#1B4F72',
-  secondaryColor: '#E67E22',
+  primaryColor: '#3E2A1E',
+  secondaryColor: '#C9822B',
   accentColor: '#2ECC71',
   fontFamily: 'Inter',
   portalTitle: null,
@@ -65,6 +66,8 @@ export async function PATCH(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'UPDATE', 'BuilderBranding').catch(() => {});
 
     const body = await request.json();
 

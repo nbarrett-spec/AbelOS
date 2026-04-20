@@ -56,7 +56,7 @@ export default function Tabs({
             onClick={() => onChange(tab.id)}
             className={clsx(
               'relative inline-flex items-center justify-center gap-1.5 font-medium transition-all duration-150',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abel-navy/40',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/40',
               fullWidth && 'flex-1',
               // Size
               size === 'sm' && 'px-3 py-1.5 text-xs',
@@ -65,7 +65,7 @@ export default function Tabs({
               variant === 'underline' && [
                 '-mb-px',
                 active
-                  ? 'text-abel-navy dark:text-abel-navy-light border-b-2 border-abel-navy dark:border-abel-navy-light'
+                  ? 'text-abel-walnut dark:text-abel-walnut-light border-b-2 border-abel-walnut dark:border-abel-walnut-light'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border-b-2 border-transparent',
               ],
               // Pills variant
@@ -91,7 +91,7 @@ export default function Tabs({
                 className={clsx(
                   'ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full leading-none',
                   active
-                    ? 'bg-abel-navy/10 text-abel-navy dark:bg-abel-navy/30 dark:text-abel-navy-light'
+                    ? 'bg-abel-walnut/10 text-abel-walnut dark:bg-abel-walnut/30 dark:text-abel-walnut-light'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 )}
               >

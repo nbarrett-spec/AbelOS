@@ -64,10 +64,10 @@ export default function GlobalError({
             fontSize: 32, fontWeight: 700, margin: '0 auto 24px',
             boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
           }}>!</div>
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#E67E22', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#C9822B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
             Abel Lumber
           </p>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', marginBottom: 12, margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 12, margin: 0 }}>
             Platform error
           </h1>
           <p style={{ fontSize: 14, color: '#6b7280', marginTop: 12, marginBottom: 20, lineHeight: 1.6 }}>
@@ -89,7 +89,7 @@ export default function GlobalError({
               onClick={handleReset}
               style={{
                 padding: '10px 22px', borderRadius: 10,
-                backgroundColor: '#1B4F72', color: 'white',
+                backgroundColor: '#3E2A1E', color: 'white',
                 fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
               }}
             >
@@ -109,7 +109,7 @@ export default function GlobalError({
           </div>
           <p style={{ marginTop: 24, fontSize: 13, color: '#9ca3af' }}>
             Support:{' '}
-            <a href="mailto:support@abellumber.com" style={{ color: '#1B4F72', textDecoration: 'none', fontWeight: 500 }}>
+            <a href="mailto:support@abellumber.com" style={{ color: '#3E2A1E', textDecoration: 'none', fontWeight: 500 }}>
               support@abellumber.com
             </a>
           </p>

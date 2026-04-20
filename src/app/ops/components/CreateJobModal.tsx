@@ -164,7 +164,7 @@ export function CreateJobModal({
             value={formData.builderName}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           >
             <option value="">Select a builder</option>
             {builders.map((builder) => (
@@ -186,7 +186,7 @@ export function CreateJobModal({
             value={formData.community}
             onChange={handleChange}
             placeholder="e.g., Canyon Ridge"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           />
         </div>
 
@@ -201,7 +201,7 @@ export function CreateJobModal({
             value={formData.lotBlock}
             onChange={handleChange}
             placeholder="e.g., Lot 14 Block 3"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           />
         </div>
 
@@ -216,7 +216,7 @@ export function CreateJobModal({
             value={formData.jobAddress}
             onChange={handleChange}
             placeholder="e.g., 1234 Main Street"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           />
         </div>
 
@@ -230,7 +230,7 @@ export function CreateJobModal({
               name="scopeType"
               value={formData.scopeType}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
             >
               {SCOPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -249,7 +249,7 @@ export function CreateJobModal({
               name="dropPlan"
               value={formData.dropPlan}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
             >
               {DROP_PLAN_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -270,7 +270,7 @@ export function CreateJobModal({
               name="assignedPMId"
               value={formData.assignedPMId}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
             >
               <option value="">Unassigned</option>
               {pms.map((pm) => (
@@ -291,7 +291,7 @@ export function CreateJobModal({
               name="scheduledDate"
               value={formData.scheduledDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
             />
           </div>
         </div>
@@ -307,7 +307,7 @@ export function CreateJobModal({
             onChange={handleChange}
             placeholder="Any additional notes or special instructions"
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           />
         </div>
 
@@ -323,7 +323,7 @@ export function CreateJobModal({
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Creating...' : 'Create Job'}
           </button>

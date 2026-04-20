@@ -73,7 +73,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               'focus:outline-none focus:ring-2 focus:ring-offset-0',
               error
                 ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500/20 dark:border-danger-700'
-                : 'border-gray-300 focus:border-abel-navy focus:ring-abel-navy/20 dark:border-gray-700 dark:focus:border-abel-navy-light',
+                : 'border-gray-300 focus:border-abel-walnut focus:ring-abel-walnut/20 dark:border-gray-700 dark:focus:border-abel-walnut-light',
               // Sizing
               sizes[size],
               icon && 'pl-10',

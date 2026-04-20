@@ -71,9 +71,6 @@ const indexMigrations = [
   // ─── DECISION NOTES: job timeline ───
   `CREATE INDEX IF NOT EXISTS "idx_decisionnote_job_created" ON "DecisionNote" ("jobId", "createdAt" DESC);`,
 
-  // ─── QB SYNC QUEUE: processing pipeline ───
-  `CREATE INDEX IF NOT EXISTS "idx_qbsync_status_created" ON "QBSyncQueue" ("status", "createdAt");`,
-
   // ─── BUILDERS: search and filtering ───
   `CREATE INDEX IF NOT EXISTS "idx_builder_status_company" ON "Builder" ("status", "companyName");`,
 ];

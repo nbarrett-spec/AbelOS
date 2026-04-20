@@ -66,7 +66,7 @@ export default function StagingPage() {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
           <p className="mt-4 text-gray-600">Loading staging area...</p>
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function StagingPage() {
         </div>
         <Link
           href="/ops/manufacturing"
-          className="text-xs text-[#1B4F72] hover:underline"
+          className="text-xs text-[#3E2A1E] hover:underline"
         >
           ← Back to Dashboard
         </Link>
@@ -300,16 +300,16 @@ function JobCard({
     : 0
 
   return (
-    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md hover:border-[#1B4F72] transition-all">
+    <div className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md hover:border-[#3E2A1E] transition-all">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#1B4F72]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
         }`}>
           {toast}
         </div>
       )}
       <Link href={`/ops/jobs/${job.id}`} className="block mb-2">
-        <p className="text-xs font-bold text-gray-900 hover:text-[#1B4F72]">{job.jobNumber}</p>
+        <p className="text-xs font-bold text-gray-900 hover:text-[#3E2A1E]">{job.jobNumber}</p>
         <p className="text-xs text-gray-600">{job.builderName}</p>
       </Link>
 
@@ -331,7 +331,7 @@ function JobCard({
         </div>
         <div className="w-full bg-gray-200 rounded-full h-1.5">
           <div
-            className="bg-[#E67E22] h-1.5 rounded-full transition-all"
+            className="bg-[#C9822B] h-1.5 rounded-full transition-all"
             style={{ width: `${pickProgress}%` }}
           />
         </div>
@@ -349,7 +349,7 @@ function JobCard({
           disabled={!allPicksReady || isUpdating}
           className={`w-full px-2 py-1 rounded text-xs font-medium transition-colors ${
             allPicksReady
-              ? 'bg-[#1B4F72] text-white hover:bg-[#154360]'
+              ? 'bg-[#3E2A1E] text-white hover:bg-[#2A1C14]'
               : 'bg-gray-200 text-gray-500 cursor-not-allowed'
           } disabled:opacity-50`}
         >

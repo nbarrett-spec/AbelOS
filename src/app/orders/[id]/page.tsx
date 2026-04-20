@@ -76,7 +76,7 @@ export default function OrderDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     )
@@ -88,7 +88,7 @@ export default function OrderDetailPage() {
         <Navbar />
         <div className="max-w-5xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-500 mb-4">{error ? 'Failed to load order details.' : 'Order not found.'}</p>
-          <Link href="/dashboard/orders" className="text-[#E67E22] hover:text-[#d35400] font-medium">← Back to Orders</Link>
+          <Link href="/dashboard/orders" className="text-[#C9822B] hover:text-[#A86B1F] font-medium">← Back to Orders</Link>
         </div>
       </div>
     )
@@ -107,9 +107,9 @@ export default function OrderDetailPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <Link href="/dashboard" className="hover:text-[#1B4F72]">Dashboard</Link>
+          <Link href="/dashboard" className="hover:text-[#3E2A1E]">Dashboard</Link>
           <span>/</span>
-          <Link href="/dashboard/orders" className="hover:text-[#1B4F72]">Orders</Link>
+          <Link href="/dashboard/orders" className="hover:text-[#3E2A1E]">Orders</Link>
           <span>/</span>
           <span className="text-gray-900 font-medium">{order.orderNumber}</span>
         </div>
@@ -123,7 +123,7 @@ export default function OrderDetailPage() {
               <p className="text-sm text-gray-400 mt-1">Placed {new Date(order.createdAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
             </div>
             <div className="sm:text-right">
-              <p className="text-2xl sm:text-3xl font-bold text-[#1B4F72]">${order.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-[#3E2A1E]">${order.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
               {order.deliveryDate && (
                 <p className="text-sm text-gray-500 mt-1">Est. delivery: {new Date(order.deliveryDate).toLocaleDateString()}</p>
               )}
@@ -134,7 +134,7 @@ export default function OrderDetailPage() {
           <div className="flex flex-wrap gap-3 mt-5 pt-5 border-t">
             <button
               onClick={() => { setContactType('QUESTION'); setShowContactModal(true) }}
-              className="px-4 py-2 bg-[#1B4F72] text-white text-sm font-medium rounded-lg hover:bg-[#1a2f4e] transition"
+              className="px-4 py-2 bg-[#3E2A1E] text-white text-sm font-medium rounded-lg hover:bg-[#1a2f4e] transition"
             >
               Contact Abel Lumber
             </button>
@@ -166,7 +166,7 @@ export default function OrderDetailPage() {
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 transition-all ${
                       isComplete
                         ? isCurrent
-                          ? 'border-[#E67E22] bg-[#E67E22]/10'
+                          ? 'border-[#C9822B] bg-[#C9822B]/10'
                           : 'border-green-500 bg-green-50'
                         : 'border-gray-200 bg-gray-50'
                     }`}>
@@ -177,9 +177,9 @@ export default function OrderDetailPage() {
                     )}
                   </div>
                   <div className={`pt-1 ${isComplete ? '' : 'opacity-40'}`}>
-                    <p className={`font-semibold ${isCurrent ? 'text-[#E67E22]' : isComplete ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <p className={`font-semibold ${isCurrent ? 'text-[#C9822B]' : isComplete ? 'text-gray-900' : 'text-gray-400'}`}>
                       {step.label}
-                      {isCurrent && <span className="ml-2 text-xs bg-[#E67E22] text-white px-2 py-0.5 rounded-full">Current</span>}
+                      {isCurrent && <span className="ml-2 text-xs bg-[#C9822B] text-white px-2 py-0.5 rounded-full">Current</span>}
                     </p>
                     <p className="text-sm text-gray-500 mt-0.5">{step.description}</p>
                   </div>
@@ -245,7 +245,7 @@ export default function OrderDetailPage() {
           </div>
           <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center">
             <span className="text-sm font-medium text-gray-600">Total</span>
-            <span className="text-xl font-bold text-[#1B4F72]">${order.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span className="text-xl font-bold text-[#3E2A1E]">${order.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
         </div>
 
@@ -253,7 +253,7 @@ export default function OrderDetailPage() {
         {order.invoiceId && (
           <div className="bg-white rounded-2xl border p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Invoice</h2>
-            <Link href="/dashboard/invoices" className="text-[#E67E22] hover:text-[#d35400] font-medium text-sm">
+            <Link href="/dashboard/invoices" className="text-[#C9822B] hover:text-[#A86B1F] font-medium text-sm">
               View Invoice →
             </Link>
           </div>
@@ -302,7 +302,7 @@ export default function OrderDetailPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={sending || !contactMessage.trim()}
-                className="px-4 py-2 bg-[#E67E22] text-white text-sm font-medium rounded-lg hover:bg-[#d35400] disabled:opacity-50 transition"
+                className="px-4 py-2 bg-[#C9822B] text-white text-sm font-medium rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 transition"
               >
                 {sending ? 'Sending...' : 'Send Message'}
               </button>

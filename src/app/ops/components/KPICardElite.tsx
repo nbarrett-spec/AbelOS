@@ -10,18 +10,22 @@ interface KPICardEliteProps {
   sparkline?: number[]
   context?: string
   href?: string
-  color?: 'navy' | 'orange' | 'green' | 'slate' | 'info' | 'warning' | 'danger'
+  color?: 'walnut' | 'amber' | 'green' | 'charcoal' | 'info' | 'warning' | 'danger' | 'navy' | 'orange' | 'slate'
   isLoading?: boolean
 }
 
-const colorMap = {
-  navy: { border: 'border-l-abel-navy', bg: 'hover:bg-abel-navy/5' },
-  orange: { border: 'border-l-abel-orange', bg: 'hover:bg-abel-orange/5' },
+const colorMap: Record<string, { border: string; bg: string }> = {
+  walnut: { border: 'border-l-abel-walnut', bg: 'hover:bg-abel-walnut/5' },
+  amber: { border: 'border-l-abel-amber', bg: 'hover:bg-abel-amber/5' },
   green: { border: 'border-l-abel-green', bg: 'hover:bg-abel-green/5' },
-  slate: { border: 'border-l-abel-slate', bg: 'hover:bg-abel-slate/5' },
+  charcoal: { border: 'border-l-abel-charcoal', bg: 'hover:bg-abel-charcoal/5' },
   info: { border: 'border-l-info-500', bg: 'hover:bg-info-50' },
   warning: { border: 'border-l-warning-500', bg: 'hover:bg-warning-50' },
   danger: { border: 'border-l-danger-500', bg: 'hover:bg-danger-50' },
+  // Legacy aliases
+  navy: { border: 'border-l-abel-walnut', bg: 'hover:bg-abel-walnut/5' },
+  orange: { border: 'border-l-abel-amber', bg: 'hover:bg-abel-amber/5' },
+  slate: { border: 'border-l-abel-charcoal', bg: 'hover:bg-abel-charcoal/5' },
 }
 
 export function KPICardElite({
@@ -75,15 +79,19 @@ export function KPICardElite({
 }
 
 function SparklineEmbedded({ data, color }: { data: number[]; color: string }) {
-  const colorVal = {
-    navy: '#1B4F72',
-    orange: '#E67E22',
+  const colorVal: Record<string, string> = {
+    walnut: '#3E2A1E',
+    amber: '#C9822B',
     green: '#27AE60',
-    slate: '#2C3E50',
+    charcoal: '#2C2C2C',
     info: '#0ea5e9',
     warning: '#f59e0b',
     danger: '#ef4444',
-  }[color]
+    navy: '#3E2A1E',
+    orange: '#C9822B',
+    slate: '#2C2C2C',
+  }
+  const strokeColor = colorVal[color] || '#3E2A1E'
 
   const max = Math.max(...data)
   const min = Math.min(...data)
@@ -102,8 +110,8 @@ function SparklineEmbedded({ data, color }: { data: number[]; color: string }) {
 
   return (
     <svg width={width} height={height} style={{ display: 'block', width: '100%' }}>
-      <path d={pathD} fill="none" stroke={colorVal} strokeWidth={1.5} strokeLinecap="round" />
-      <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={1.5} fill={colorVal} />
+      <path d={pathD} fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinecap="round" />
+      <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={1.5} fill={strokeColor} />
     </svg>
   )
 }

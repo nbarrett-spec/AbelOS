@@ -56,8 +56,8 @@ interface Toast {
   type: 'success' | 'error' | 'info';
 }
 
-const NAVY = '#1B4F72';
-const ORANGE = '#E67E22';
+const NAVY = '#3E2A1E';
+const ORANGE = '#C9822B';
 
 export default function OutreachPage() {
   const [activeTab, setActiveTab] = useState<'sequences' | 'queue' | 'templates' | 'performance'>('sequences');

@@ -157,7 +157,7 @@ export default function BulkOrderPage() {
     title: {
       fontSize: '28px',
       fontWeight: 700,
-      color: '#1B4F72',
+      color: '#3E2A1E',
       margin: '0 0 8px',
     } as React.CSSProperties,
     subtitle: {
@@ -198,7 +198,7 @@ export default function BulkOrderPage() {
     button: (variant: 'primary' | 'secondary' | 'success' | 'danger') => {
       const variants = {
         primary: {
-          backgroundColor: '#1B4F72',
+          backgroundColor: '#3E2A1E',
           color: '#fff',
         },
         secondary: {

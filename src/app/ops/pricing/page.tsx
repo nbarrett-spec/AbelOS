@@ -166,7 +166,7 @@ export default function PricingEnginePage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-[#e67e22] text-[#e67e22]'
+                  ? 'border-[#C9822B] text-[#C9822B]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -714,7 +714,7 @@ function RevenueLeaksTab({ data }: { data: RevenueLeakData }) {
         <div className="space-y-3">
           <FunnelBar label="Total Quotes" value={data.conversionRate.totalQuotes} max={data.conversionRate.totalQuotes} color="#1e3a5f" />
           <FunnelBar label="Converted to Order" value={data.conversionRate.convertedToOrder} max={data.conversionRate.totalQuotes} color="#27ae60" />
-          <FunnelBar label="Still in Draft" value={data.conversionRate.stillDraft} max={data.conversionRate.totalQuotes} color="#f39c12" />
+          <FunnelBar label="Still in Draft" value={data.conversionRate.stillDraft} max={data.conversionRate.totalQuotes} color="#D9993F" />
           <FunnelBar label="Expired" value={data.conversionRate.expired} max={data.conversionRate.totalQuotes} color="#e74c3c" />
         </div>
       </div>

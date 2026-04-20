@@ -138,7 +138,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
                 onChange={handleChange}
                 required
                 placeholder="e.g., Delivery Team A, Install Crew - Sean"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
               />
             </div>
 
@@ -150,7 +150,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
                 name="crewType"
                 value={formData.crewType}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
               >
                 <option value="DELIVERY">Delivery</option>
                 <option value="INSTALLATION">Installation</option>
@@ -173,7 +173,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
                 value={formData.vehicleId}
                 onChange={handleChange}
                 placeholder="Vehicle ID"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
               />
             </div>
 
@@ -187,7 +187,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
                 value={formData.vehiclePlate}
                 onChange={handleChange}
                 placeholder="e.g., ABC-123"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22] font-mono"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] font-mono"
               />
             </div>
           </div>
@@ -196,7 +196,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
           <div className="space-y-4 border-t pt-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900 text-sm">Team Members</h3>
-              <span className="text-xs bg-[#E67E22] text-white px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-[#C9822B] text-white px-2.5 py-1 rounded-full">
                 {selectedStaffCount} selected
               </span>
             </div>
@@ -216,7 +216,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
                       type="checkbox"
                       checked={memberIds.includes(staffMember.id)}
                       onChange={() => toggleMember(staffMember.id)}
-                      className="mt-0.5 w-4 h-4 rounded accent-[#E67E22]"
+                      className="mt-0.5 w-4 h-4 rounded accent-[#C9822B]"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm text-gray-900">
@@ -245,7 +245,7 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
             <button
               type="submit"
               disabled={loading || !formData.name || !formData.crewType}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#D46D1A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white bg-[#C9822B] rounded-lg hover:bg-[#D46D1A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Crew'}
             </button>

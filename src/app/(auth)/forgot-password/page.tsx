@@ -38,9 +38,9 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-abel-navy p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-abel-walnut p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-abel-orange rounded-xl flex items-center justify-center font-bold text-white">
+          <div className="w-10 h-10 bg-abel-amber rounded-xl flex items-center justify-center font-bold text-white">
             AB
           </div>
           <span className="text-white font-semibold text-xl">Abel Builder</span>
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-abel-slate mb-2">Check your email</h1>
+              <h1 className="text-2xl font-bold text-abel-charcoal mb-2">Check your email</h1>
               <p className="text-gray-500 mb-6">
                 If an account exists for <strong>{email}</strong>, we&apos;ve sent a password reset link. Check your inbox and spam folder.
               </p>
@@ -89,14 +89,14 @@ export default function ForgotPasswordPage() {
               </div>
               <p className="mt-8 text-xs text-gray-400">
                 Didn&apos;t get the email? Check spam, or email{' '}
-                <a href="mailto:support@abellumber.com" className="text-abel-navy hover:underline">
+                <a href="mailto:support@abellumber.com" className="text-abel-walnut hover:underline">
                   support@abellumber.com
                 </a>
               </p>
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-abel-slate mb-1">Forgot your password?</h1>
+              <h1 className="text-2xl font-bold text-abel-charcoal mb-1">Forgot your password?</h1>
               <p className="text-gray-500 mb-8">
                 Enter your email and we&apos;ll send you a reset link.
               </p>
@@ -143,7 +143,7 @@ export default function ForgotPasswordPage() {
 
               <p className="mt-8 text-center text-sm text-gray-500">
                 Remember your password?{' '}
-                <Link href="/login" className="text-abel-orange font-medium hover:underline">
+                <Link href="/login" className="text-abel-amber font-medium hover:underline">
                   Sign in
                 </Link>
               </p>

@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
 
     // 1. Add new provider values to IntegrationProvider enum
     // Whitelist of allowed enum values (ALTER TYPE ADD VALUE does not support $1 placeholders)
-    const ALLOWED_PROVIDERS = new Set(['QUICKBOOKS_DESKTOP', 'BUILDERTREND', 'BOISE_CASCADE']);
-    const newProviders = ['QUICKBOOKS_DESKTOP', 'BUILDERTREND', 'BOISE_CASCADE'];
+    const ALLOWED_PROVIDERS = new Set(['BUILDERTREND', 'BOISE_CASCADE']);
+    const newProviders = ['BUILDERTREND', 'BOISE_CASCADE'];
     for (const p of newProviders) {
       if (!ALLOWED_PROVIDERS.has(p)) continue;
       try {
@@ -35,30 +35,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Create QB Desktop sync queue table
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "QBSyncQueue" (
-        "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
-        "action" TEXT NOT NULL,
-        "entityType" TEXT NOT NULL,
-        "entityId" TEXT NOT NULL,
-        "qbTxnId" TEXT,
-        "qbListId" TEXT,
-        "requestXml" TEXT,
-        "responseXml" TEXT,
-        "payload" JSONB NOT NULL DEFAULT '{}',
-        "status" TEXT NOT NULL DEFAULT 'QUEUED',
-        "attempts" INTEGER NOT NULL DEFAULT 0,
-        "maxAttempts" INTEGER NOT NULL DEFAULT 3,
-        "lastError" TEXT,
-        "processedAt" TIMESTAMP(3),
-        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "QBSyncQueue_pkey" PRIMARY KEY ("id")
-      );
-    `);
-    results.push('Created QBSyncQueue table');
-
-    // 3. Create supplier price updates table
+    // 2. Create supplier price updates table
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "SupplierPriceUpdate" (
         "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
@@ -84,7 +61,7 @@ export async function POST(request: NextRequest) {
     `);
     results.push('Created SupplierPriceUpdate table');
 
-    // 4. Create BuilderTrend project mapping table
+    // 3. Create BuilderTrend project mapping table
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "BTProjectMapping" (
         "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
@@ -107,39 +84,8 @@ export async function POST(request: NextRequest) {
     `);
     results.push('Created BTProjectMapping table');
 
-    // 5. Add QB tracking columns to Invoice table if not present
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "qbTxnId" TEXT`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "qbSyncedAt" TIMESTAMP(3)`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "qbSyncStatus" TEXT DEFAULT 'PENDING'`);
-      results.push('Added QB columns to Invoice');
-    } catch (e: any) { results.push(`Invoice columns: ${e.message}`); }
-
-    // 6. Add QB tracking columns to Order table
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "qbTxnId" TEXT`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "qbSyncedAt" TIMESTAMP(3)`);
-      results.push('Added QB columns to Order');
-    } catch (e: any) { results.push(`Order columns: ${e.message}`); }
-
-    // 7. Add QB tracking columns to Builder (as QB Customer)
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Builder" ADD COLUMN IF NOT EXISTS "qbListId" TEXT`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Builder" ADD COLUMN IF NOT EXISTS "qbSyncedAt" TIMESTAMP(3)`);
-      results.push('Added QB columns to Builder');
-    } catch (e: any) { results.push(`Builder columns: ${e.message}`); }
-
-    // 8. Add QB tracking to PurchaseOrder (as QB Bill)
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "PurchaseOrder" ADD COLUMN IF NOT EXISTS "qbTxnId" TEXT`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "PurchaseOrder" ADD COLUMN IF NOT EXISTS "qbSyncedAt" TIMESTAMP(3)`);
-      results.push('Added QB columns to PurchaseOrder');
-    } catch (e: any) { results.push(`PurchaseOrder columns: ${e.message}`); }
-
-    // 9. Create indexes (one at a time — Prisma doesn't allow multi-statement)
+    // 4. Create indexes (one at a time — Prisma doesn't allow multi-statement)
     const indexes = [
-      `CREATE INDEX IF NOT EXISTS "QBSyncQueue_status_idx" ON "QBSyncQueue"("status")`,
-      `CREATE INDEX IF NOT EXISTS "QBSyncQueue_entityType_idx" ON "QBSyncQueue"("entityType", "status")`,
       `CREATE INDEX IF NOT EXISTS "SupplierPriceUpdate_status_idx" ON "SupplierPriceUpdate"("status")`,
       `CREATE INDEX IF NOT EXISTS "SupplierPriceUpdate_supplier_idx" ON "SupplierPriceUpdate"("supplier")`,
       `CREATE INDEX IF NOT EXISTS "SupplierPriceUpdate_batchId_idx" ON "SupplierPriceUpdate"("batchId")`,
@@ -150,9 +96,8 @@ export async function POST(request: NextRequest) {
     }
     results.push('Created indexes');
 
-    // 10. Seed the three new integration configs
+    // 5. Seed the integration configs
     for (const integration of [
-      { provider: 'QUICKBOOKS_DESKTOP', name: 'QuickBooks Desktop', syncInterval: 15 },
       { provider: 'BUILDERTREND', name: 'BuilderTrend', syncInterval: 60 },
       { provider: 'BOISE_CASCADE', name: 'Boise Cascade / BlueLinx', syncInterval: 1440 },
     ]) {

@@ -46,7 +46,7 @@ function catIcon(cat: string): string {
 
 function Placeholder({ cat }: { cat: string }) {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1B4F72" strokeWidth="1.5">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3E2A1E" strokeWidth="1.5">
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <path d="M3 9h18M9 3v18" />
     </svg>
@@ -98,7 +98,7 @@ export default function ProductBundles() {
         style={{
           fontSize: 18,
           fontWeight: 700,
-          color: '#1B4F72',
+          color: '#3E2A1E',
           marginBottom: 16,
           display: 'flex',
           alignItems: 'center',
@@ -153,7 +153,7 @@ export default function ProductBundles() {
                   style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: '#1B4F72',
+                    color: '#3E2A1E',
                     margin: '0 0 4px',
                   }}
                 >
@@ -165,7 +165,7 @@ export default function ProductBundles() {
               </div>
               <div
                 style={{
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: '#fff',
                   fontSize: 11,
                   fontWeight: 700,
@@ -273,7 +273,7 @@ export default function ProductBundles() {
                     style={{
                       fontSize: 20,
                       fontWeight: 700,
-                      color: '#1B4F72',
+                      color: '#3E2A1E',
                     }}
                   >
                     {fmtPrice(bundle.bundlePrice)}
@@ -326,7 +326,7 @@ export default function ProductBundles() {
                       <span
                         style={{
                           fontWeight: 600,
-                          color: '#1B4F72',
+                          color: '#3E2A1E',
                         }}
                       >
                         {fmtPrice(item.builderPrice || item.basePrice)}
@@ -349,7 +349,7 @@ export default function ProductBundles() {
                   backgroundColor: '#f9fafb',
                   fontSize: 12,
                   fontWeight: 600,
-                  color: '#1B4F72',
+                  color: '#3E2A1E',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
@@ -371,7 +371,7 @@ export default function ProductBundles() {
                   padding: '10px 12px',
                   borderRadius: 6,
                   border: 'none',
-                  backgroundColor: '#1B4F72',
+                  backgroundColor: '#3E2A1E',
                   color: '#fff',
                   fontSize: 13,
                   fontWeight: 600,
@@ -384,7 +384,7 @@ export default function ProductBundles() {
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLButtonElement
-                  el.style.backgroundColor = '#1B4F72'
+                  el.style.backgroundColor = '#3E2A1E'
                 }}
               >
                 Add Bundle to Cart

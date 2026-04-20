@@ -191,7 +191,7 @@ export default function AccountsPayablePage() {
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-gray-900">{formatCurrency(po.amount)}</div>
-                  <button className="mt-1 text-sm text-[#E67E22] hover:text-[#E67E22] font-semibold">Mark Paid →</button>
+                  <button className="mt-1 text-sm text-[#C9822B] hover:text-[#C9822B] font-semibold">Mark Paid →</button>
                 </div>
               </div>
             ))}
@@ -257,7 +257,7 @@ export default function AccountsPayablePage() {
             <tbody>
               {filteredPOs.map((po, idx) => (
                 <tr key={po.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td className="py-3 px-4 font-bold text-[#1B4F72]">{po.poNumber}</td>
+                  <td className="py-3 px-4 font-bold text-[#3E2A1E]">{po.poNumber}</td>
                   <td className="py-3 px-4 text-gray-900">{po.vendorName}</td>
                   <td className="text-right py-3 px-4 font-bold text-gray-900">{formatCurrency(po.amount)}</td>
                   <td className="text-right py-3 px-4 text-gray-600">{po.items}</td>
@@ -274,7 +274,7 @@ export default function AccountsPayablePage() {
                   </td>
                   <td className="text-right py-3 px-4 text-gray-600">{po.expectedDate ? formatDate(po.expectedDate) : '—'}</td>
                   <td className="py-3 px-4 text-xs">
-                    {po.status === 'PENDING_APPROVAL' && <button className="text-[#E67E22] hover:text-[#E67E22] font-semibold">Approve →</button>}
+                    {po.status === 'PENDING_APPROVAL' && <button className="text-[#C9822B] hover:text-[#C9822B] font-semibold">Approve →</button>}
                     {po.status === 'RECEIVED' && <button className="text-[#27AE60] hover:text-[#27AE60] font-semibold">Close</button>}
                   </td>
                 </tr>

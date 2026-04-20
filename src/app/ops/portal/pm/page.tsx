@@ -266,7 +266,7 @@ export default function PMPortal() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
       </div>
     )
   }
@@ -276,7 +276,7 @@ export default function PMPortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); loadData() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+        <button onClick={() => { setError(null); loadData() }} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm">
           Retry
         </button>
       </div>
@@ -292,7 +292,7 @@ export default function PMPortal() {
           <p className="text-gray-600 mt-1">Track jobs, deliveries, and team tasks</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/ops/jobs" className="px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] transition-colors text-sm font-medium">
+          <Link href="/ops/jobs" className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] transition-colors text-sm font-medium">
             + Create Job
           </Link>
           <button
@@ -309,7 +309,7 @@ export default function PMPortal() {
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">My Jobs</h2>
-            <Link href="/ops/jobs" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+            <Link href="/ops/jobs" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
               View All →
             </Link>
           </div>
@@ -323,7 +323,7 @@ export default function PMPortal() {
             <div className="space-y-3">
               {myJobs.map((job) => (
                 <Link key={job.id} href={`/ops/jobs/${job.id}`}>
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-[#1B4F72] hover:bg-blue-50 transition-all">
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-[#3E2A1E] hover:bg-blue-50 transition-all">
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">{job.jobNumber}</p>
                       <p className="text-sm text-gray-600 mt-0.5">
@@ -349,21 +349,21 @@ export default function PMPortal() {
         <div className="bg-white rounded-xl border p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-2">
-            <Link href="/ops/portal/pm/briefing" className="block px-4 py-3 rounded-lg border border-[#E67E22] bg-orange-50 hover:bg-orange-100 transition-all text-sm font-medium text-gray-900">
+            <Link href="/ops/portal/pm/briefing" className="block px-4 py-3 rounded-lg border border-[#C9822B] bg-orange-50 hover:bg-orange-100 transition-all text-sm font-medium text-gray-900">
               ☀️ Morning Briefing
             </Link>
-            <Link href="/ops/jobs" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#1B4F72] transition-all text-sm font-medium text-gray-900">
+            <Link href="/ops/jobs" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#3E2A1E] transition-all text-sm font-medium text-gray-900">
               🆕 Create Job
             </Link>
             <button
               onClick={() => setDecisionNoteModal(true)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#E67E22] transition-all text-sm font-medium text-gray-900">
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C9822B] transition-all text-sm font-medium text-gray-900">
               📝 Add Decision Note
             </button>
             <Link href="/ops/schedule" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all text-sm font-medium text-gray-900">
               📅 Schedule Delivery
             </Link>
-            <Link href="/ops/portal/pm/material-eta" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#1B4F72] transition-all text-sm font-medium text-gray-900">
+            <Link href="/ops/portal/pm/material-eta" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#3E2A1E] transition-all text-sm font-medium text-gray-900">
               📦 Material ETA
             </Link>
             <Link href="/ops/portal/pm/scorecard" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all text-sm font-medium text-gray-900">
@@ -380,7 +380,7 @@ export default function PMPortal() {
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Upcoming Deliveries (Next 7 Days)</h2>
-          <Link href="/ops/schedule" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+          <Link href="/ops/schedule" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
             Full Schedule →
           </Link>
         </div>
@@ -393,7 +393,7 @@ export default function PMPortal() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {upcomingDeliveries.map((delivery) => (
-              <div key={delivery.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#E67E22] transition-all">
+              <div key={delivery.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#C9822B] transition-all">
                 <p className="font-semibold text-gray-900 truncate">{delivery.title}</p>
                 <p className="text-sm text-gray-600 mt-1">
                   {delivery.job?.builderName || 'Unassigned'}
@@ -405,7 +405,7 @@ export default function PMPortal() {
                   <span className="text-xs text-gray-500">
                     📅 {new Date(delivery.scheduledDate).toLocaleDateString()}
                   </span>
-                  <span className="text-xs font-medium text-[#1B4F72]">View →</span>
+                  <span className="text-xs font-medium text-[#3E2A1E]">View →</span>
                 </div>
               </div>
             ))}
@@ -421,7 +421,7 @@ export default function PMPortal() {
             <h2 className="text-lg font-bold text-gray-900">Open Tasks</h2>
             <button
               onClick={() => setTaskModal(true)}
-              className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+              className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
               New Task →
             </button>
           </div>
@@ -463,7 +463,7 @@ export default function PMPortal() {
             <h2 className="text-lg font-bold text-gray-900">Recent Decision Notes</h2>
             <button
               onClick={() => setDecisionNoteModal(true)}
-              className="text-sm text-[#1B4F72] hover:text-[#E67E22]">
+              className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">
               Add Note →
             </button>
           </div>
@@ -510,7 +510,7 @@ export default function PMPortal() {
             </div>
           ) : (
             topBuilders.map((builder) => (
-              <div key={builder.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#1B4F72] transition-all">
+              <div key={builder.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#3E2A1E] transition-all">
                 <p className="font-semibold text-gray-900 text-sm">{builder.companyName}</p>
                 <div className="mt-3 space-y-2 text-xs">
                   <div className="flex justify-between">
@@ -545,7 +545,7 @@ export default function PMPortal() {
                   <select
                     value={noteJobId}
                     onChange={(e) => setNoteJobId(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent">
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent">
                     <option value="">Choose a job...</option>
                     {myJobs.map((job) => (
                       <option key={job.id} value={job.id}>
@@ -560,7 +560,7 @@ export default function PMPortal() {
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     placeholder="Enter your note..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent resize-none"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent resize-none"
                     rows={5}
                   />
                 </div>
@@ -578,7 +578,7 @@ export default function PMPortal() {
                 <button
                   onClick={handleSubmitNote}
                   disabled={submittingNote || !noteText.trim() || !noteJobId}
-                  className="flex-1 px-4 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-medium hover:bg-[#154360] transition-colors disabled:opacity-50">
+                  className="flex-1 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-medium hover:bg-[#2A1C14] transition-colors disabled:opacity-50">
                   {submittingNote ? 'Saving...' : 'Save Note'}
                 </button>
               </div>
@@ -599,7 +599,7 @@ export default function PMPortal() {
                   <select
                     value={decisionNoteJobId}
                     onChange={(e) => setDecisionNoteJobId(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent">
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent">
                     <option value="">Choose a job...</option>
                     {myJobs.map((job) => (
                       <option key={job.id} value={job.id}>
@@ -614,7 +614,7 @@ export default function PMPortal() {
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     placeholder="Enter your decision note..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent resize-none"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent resize-none"
                     rows={5}
                   />
                 </div>
@@ -632,7 +632,7 @@ export default function PMPortal() {
                 <button
                   onClick={handleSubmitDecisionNote}
                   disabled={submittingNote || !noteText.trim() || !decisionNoteJobId}
-                  className="flex-1 px-4 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-medium hover:bg-[#154360] transition-colors disabled:opacity-50">
+                  className="flex-1 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-medium hover:bg-[#2A1C14] transition-colors disabled:opacity-50">
                   {submittingNote ? 'Saving...' : 'Save Note'}
                 </button>
               </div>
@@ -655,7 +655,7 @@ export default function PMPortal() {
                     value={taskTitle}
                     onChange={(e) => setTaskTitle(e.target.value)}
                     placeholder="Enter task title..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -663,7 +663,7 @@ export default function PMPortal() {
                   <select
                     value={taskJobId}
                     onChange={(e) => setTaskJobId(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent">
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent">
                     <option value="">Choose a job...</option>
                     {myJobs.map((job) => (
                       <option key={job.id} value={job.id}>
@@ -677,7 +677,7 @@ export default function PMPortal() {
                   <select
                     value={taskPriority}
                     onChange={(e) => setTaskPriority(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent">
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent">
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
@@ -689,7 +689,7 @@ export default function PMPortal() {
                     type="date"
                     value={taskDueDate}
                     onChange={(e) => setTaskDueDate(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -698,7 +698,7 @@ export default function PMPortal() {
                     value={taskDescription}
                     onChange={(e) => setTaskDescription(e.target.value)}
                     placeholder="Enter task description..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B4F72] focus:border-transparent resize-none"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent resize-none"
                     rows={3}
                   />
                 </div>
@@ -719,7 +719,7 @@ export default function PMPortal() {
                 <button
                   onClick={handleSubmitTask}
                   disabled={submittingNote || !taskTitle.trim() || !taskJobId}
-                  className="flex-1 px-4 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-medium hover:bg-[#154360] transition-colors disabled:opacity-50">
+                  className="flex-1 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-medium hover:bg-[#2A1C14] transition-colors disabled:opacity-50">
                   {submittingNote ? 'Creating...' : 'Create Task'}
                 </button>
               </div>

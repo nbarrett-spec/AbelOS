@@ -50,7 +50,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -63,7 +63,7 @@ export default function OrdersPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Orders</h1>
             <p className="text-gray-500 text-sm mt-1">Track your order status and delivery schedule</p>
           </div>
-          <Link href="/dashboard" className="text-sm text-[#1B4F72] hover:underline">← Back to Dashboard</Link>
+          <Link href="/dashboard" className="text-sm text-[#3E2A1E] hover:underline">← Back to Dashboard</Link>
         </div>
 
         {orders.length === 0 ? (
@@ -94,7 +94,7 @@ export default function OrdersPage() {
                       <p className="text-sm text-gray-500 mt-1">{order.projectName} &middot; {order.itemCount} items</p>
                     </div>
                     <div className="sm:text-right">
-                      <p className="text-lg sm:text-xl font-bold text-[#1B4F72]">${order.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg sm:text-xl font-bold text-[#3E2A1E]">${order.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
@@ -103,7 +103,7 @@ export default function OrdersPage() {
                   <div className="relative">
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#1B4F72] to-[#E67E22] rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-[#3E2A1E] to-[#C9822B] rounded-full transition-all duration-500"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -129,7 +129,7 @@ export default function OrdersPage() {
             {orders.length > visibleCount && (
               <button
                 onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                className="w-full py-3 text-sm font-medium text-[#1B4F72] bg-white border border-[#1B4F72]/20 rounded-xl hover:bg-[#1B4F72]/5 transition"
+                className="w-full py-3 text-sm font-medium text-[#3E2A1E] bg-white border border-[#3E2A1E]/20 rounded-xl hover:bg-[#3E2A1E]/5 transition"
               >
                 Show more orders ({orders.length - visibleCount} remaining)
               </button>

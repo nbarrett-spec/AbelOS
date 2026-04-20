@@ -117,7 +117,7 @@ export function ActionQueue() {
             >
               <span className="text-base flex-shrink-0">{icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#1B4F72]">{action.title}</p>
+                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#3E2A1E]">{action.title}</p>
                 <p className="text-[11px] text-gray-500 truncate">{action.subtitle}</p>
               </div>
               {action.age && (

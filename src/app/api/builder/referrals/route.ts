@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 // Generate unique referral code: ABEL-{builderLastName}-{random4}
 function generateReferralCode(builderName: string): string {
@@ -89,6 +90,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'CREATE', 'Referral').catch(() => {});
 
     const { referredCompany, referredContact, referredEmail, referredPhone, notes } =
       await request.json()
@@ -179,6 +182,8 @@ export async function PATCH(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'UPDATE', 'Referral').catch(() => {});
 
     const { referralId, status } = await request.json()
 

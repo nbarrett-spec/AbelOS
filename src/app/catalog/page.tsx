@@ -170,15 +170,15 @@ export default function CatalogPage() {
       display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 20px',
       border: 'none', cursor: 'pointer', fontSize: 14, textAlign: 'left' as const,
       backgroundColor: active ? '#EBF5FB' : 'transparent',
-      color: active ? '#1B4F72' : '#374151',
+      color: active ? '#3E2A1E' : '#374151',
       fontWeight: active ? 600 : 400,
-      borderLeft: active ? '3px solid #1B4F72' : '3px solid transparent',
+      borderLeft: active ? '3px solid #3E2A1E' : '3px solid transparent',
     }),
     searchWrap: { display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' } as React.CSSProperties,
     searchInput: { flex: 1, padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none' } as React.CSSProperties,
     viewBtn: (active: boolean) => ({
       padding: '8px 14px', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer',
-      backgroundColor: active ? '#1B4F72' : '#fff', color: active ? '#fff' : '#374151', fontSize: 13,
+      backgroundColor: active ? '#3E2A1E' : '#fff', color: active ? '#fff' : '#374151', fontSize: 13,
     }),
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 } as React.CSSProperties,
     card: { backgroundColor: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.2s' } as React.CSSProperties,
@@ -192,8 +192,8 @@ export default function CatalogPage() {
     listImg: { width: 56, height: 56, backgroundColor: '#f5f6fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' } as React.CSSProperties,
     pager: { display: 'flex', justifyContent: 'center', gap: 6, marginTop: 32 } as React.CSSProperties,
     pageBtn: (active: boolean) => ({
-      padding: '8px 14px', borderRadius: 6, border: active ? '2px solid #1B4F72' : '1px solid #d1d5db',
-      backgroundColor: active ? '#1B4F72' : '#fff', color: active ? '#fff' : '#374151',
+      padding: '8px 14px', borderRadius: 6, border: active ? '2px solid #3E2A1E' : '1px solid #d1d5db',
+      backgroundColor: active ? '#3E2A1E' : '#fff', color: active ? '#fff' : '#374151',
       cursor: 'pointer', fontSize: 13, fontWeight: active ? 700 : 400,
     }),
     modal: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 } as React.CSSProperties,
@@ -213,7 +213,7 @@ export default function CatalogPage() {
   const renderCard = (p: Product) => {
     const price = p.builderPrice || p.basePrice
     const color = catColor(p.cleanCategory)
-    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#E67E22' : '#e74c3c'
+    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#C9822B' : '#e74c3c'
     const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : p.stockStatus === 'LOW_STOCK' ? `Low Stock (${p.stock} left)` : 'Out of Stock'
     const isOutOfStock = p.stockStatus === 'OUT_OF_STOCK'
 
@@ -240,9 +240,9 @@ export default function CatalogPage() {
           </h3>
           <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 8px' }}>{p.sku}</p>
           {price > 0 ? (
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#1B4F72' }}>{fmtPrice(price)}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#3E2A1E' }}>{fmtPrice(price)}</div>
           ) : (
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#E67E22' }}>Request Quote</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#C9822B' }}>Request Quote</div>
           )}
           {hasPricing && p.priceSource === 'CUSTOM' && (
             <span style={{ fontSize: 11, color: '#27ae60', fontWeight: 600 }}>★ Custom Price</span>
@@ -258,7 +258,7 @@ export default function CatalogPage() {
   /* ── render list row ── */
   const renderListRow = (p: Product) => {
     const price = p.builderPrice || p.basePrice
-    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#E67E22' : '#e74c3c'
+    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#C9822B' : '#e74c3c'
     const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : p.stockStatus === 'LOW_STOCK' ? `Low Stock (${p.stock} left)` : 'Out of Stock'
 
     return (
@@ -282,9 +282,9 @@ export default function CatalogPage() {
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           {price > 0 ? (
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#1B4F72' }}>{fmtPrice(price)}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E' }}>{fmtPrice(price)}</div>
           ) : (
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#E67E22' }}>Request Quote</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#C9822B' }}>Request Quote</div>
           )}
         </div>
       </div>
@@ -297,7 +297,7 @@ export default function CatalogPage() {
     const p = selectedProduct
     const price = p.builderPrice || p.basePrice
     const isOutOfStock = p.stockStatus === 'OUT_OF_STOCK'
-    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#E67E22' : '#e74c3c'
+    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#C9822B' : '#e74c3c'
     const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : p.stockStatus === 'LOW_STOCK' ? `Low Stock (${p.stock} left)` : 'Out of Stock'
     const specs = [
       p.doorSize && ['Size', p.doorSize],
@@ -314,7 +314,7 @@ export default function CatalogPage() {
       <div style={S.modal} onClick={() => setSelectedProduct(null)}>
         <div style={S.modalBox} onClick={e => e.stopPropagation()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1B4F72' }}>Product Details</h2>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#3E2A1E' }}>Product Details</h2>
             <button onClick={() => setSelectedProduct(null)}
               style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#999', lineHeight: 1 }}>×</button>
           </div>
@@ -336,9 +336,9 @@ export default function CatalogPage() {
           {p.description && <p style={{ fontSize: 13, color: '#4b5563', margin: '8px 0 16px', lineHeight: 1.5 }}>{p.description}</p>}
 
           {price > 0 ? (
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', margin: '12px 0' }}>{fmtPrice(price)}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: '12px 0' }}>{fmtPrice(price)}</div>
           ) : (
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#E67E22', margin: '12px 0' }}>Contact us for pricing</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#C9822B', margin: '12px 0' }}>Contact us for pricing</div>
           )}
 
           {specs.length > 0 && (
@@ -364,7 +364,7 @@ export default function CatalogPage() {
                 fontSize: 14,
                 fontWeight: 600,
                 cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                backgroundColor: isOutOfStock ? '#d1d5db' : '#1B4F72',
+                backgroundColor: isOutOfStock ? '#d1d5db' : '#3E2A1E',
                 color: isOutOfStock ? '#9ca3af' : '#fff',
                 transition: 'all 0.2s',
               }}
@@ -375,7 +375,7 @@ export default function CatalogPage() {
               }}
               onMouseLeave={(e) => {
                 if (!isOutOfStock) {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1B4F72'
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#3E2A1E'
                 }
               }}
             >
@@ -386,10 +386,10 @@ export default function CatalogPage() {
               style={{
                 padding: '12px 16px',
                 borderRadius: 8,
-                border: '2px solid #1B4F72',
+                border: '2px solid #3E2A1E',
                 fontSize: 14,
                 fontWeight: 600,
-                color: '#1B4F72',
+                color: '#3E2A1E',
                 textDecoration: 'none',
                 textAlign: 'center',
                 transition: 'all 0.2s',
@@ -421,7 +421,7 @@ export default function CatalogPage() {
       {/* Main */}
       <main style={S.main}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1B4F72', margin: 0 }}>Product Catalog</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>Product Catalog</h1>
           <span style={{ fontSize: 13, color: '#6b7280' }}>
             {loading ? 'Loading...' : `${total.toLocaleString()} products`}
           </span>

@@ -476,7 +476,7 @@ export default function OpsQuotesPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#1B4F72]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
         }`}>
           {toast}
         </div>
@@ -497,7 +497,7 @@ export default function OpsQuotesPage() {
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="px-5 py-2.5 bg-[#E67E22] text-white rounded-lg text-sm font-semibold hover:bg-[#d35400] transition-colors"
+            className="px-5 py-2.5 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F] transition-colors"
           >
             + Create Quote
           </button>
@@ -531,13 +531,13 @@ export default function OpsQuotesPage() {
           placeholder="Search quotes, builders, projects..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-lg text-sm w-72 focus:outline-none focus:border-[#1B4F72]"
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm w-72 focus:outline-none focus:border-[#3E2A1E]"
         />
         <div className="flex gap-1">
           <button
             onClick={() => setStatusFilter('')}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-              !statusFilter ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              !statusFilter ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             All
@@ -547,7 +547,7 @@ export default function OpsQuotesPage() {
               key={s}
               onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                statusFilter === s ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                statusFilter === s ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {s}
@@ -557,10 +557,10 @@ export default function OpsQuotesPage() {
         <div className="flex items-center gap-2">
           <label className="text-xs text-gray-500 font-medium whitespace-nowrap">From</label>
           <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]" />
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
           <label className="text-xs text-gray-500 font-medium whitespace-nowrap">To</label>
           <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]" />
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
           {(dateFrom || dateTo) && (
             <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
               className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
@@ -571,7 +571,7 @@ export default function OpsQuotesPage() {
       {/* Quotes List */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
         </div>
       ) : quotes.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border">
@@ -614,7 +614,7 @@ export default function OpsQuotesPage() {
                     className="px-5 py-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex-1">
-                      <span className="text-sm font-bold text-[#1B4F72] font-mono">{quote.quoteNumber}</span>
+                      <span className="text-sm font-bold text-[#3E2A1E] font-mono">{quote.quoteNumber}</span>
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-600">
@@ -685,7 +685,7 @@ export default function OpsQuotesPage() {
                           )}
                           <tr>
                             <td colSpan={4} className="py-2 text-right font-bold text-gray-900">Total</td>
-                            <td className="py-2 text-right font-bold text-lg text-[#1B4F72]">{fmt(quote.total)}</td>
+                            <td className="py-2 text-right font-bold text-lg text-[#3E2A1E]">{fmt(quote.total)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -723,7 +723,7 @@ export default function OpsQuotesPage() {
                           </>
                         )}
                         {quote.status === 'APPROVED' && (
-                          <button onClick={() => convertToOrder(quote)} disabled={saving} className="px-4 py-2 bg-[#1B4F72] text-white rounded-lg text-sm font-semibold hover:bg-[#154360] disabled:opacity-50">
+                          <button onClick={() => convertToOrder(quote)} disabled={saving} className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-semibold hover:bg-[#2A1C14] disabled:opacity-50">
                             Convert to Order
                           </button>
                         )}
@@ -735,7 +735,7 @@ export default function OpsQuotesPage() {
                         {(quote.status === 'DRAFT' || quote.status === 'SENT') && (
                           <button
                             onClick={() => openEditModal(quote)}
-                            className="px-4 py-2 bg-[#E67E22] text-white rounded-lg text-sm font-semibold hover:bg-[#d35400]"
+                            className="px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F]"
                           >
                             Edit Quote
                           </button>
@@ -829,7 +829,7 @@ export default function OpsQuotesPage() {
                   type="date"
                   value={editValidUntil}
                   onChange={e => setEditValidUntil(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                 />
               </div>
 
@@ -841,7 +841,7 @@ export default function OpsQuotesPage() {
                   onChange={e => setEditNotes(e.target.value)}
                   rows={2}
                   placeholder="Internal notes about this quote..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72] resize-none"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E] resize-none"
                 />
               </div>
 
@@ -849,7 +849,7 @@ export default function OpsQuotesPage() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-semibold text-gray-700">Line Items</label>
-                  <button onClick={addEditLineItem} className="text-xs font-semibold text-[#E67E22] hover:text-[#d35400]">
+                  <button onClick={addEditLineItem} className="text-xs font-semibold text-[#C9822B] hover:text-[#A86B1F]">
                     + Add Item
                   </button>
                 </div>
@@ -867,20 +867,20 @@ export default function OpsQuotesPage() {
                         value={item.description}
                         onChange={e => updateEditLineItem(idx, 'description', e.target.value)}
                         placeholder="e.g., 2068 Hollow Core Door"
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <input
                         value={item.location || ''}
                         onChange={e => updateEditLineItem(idx, 'location', e.target.value)}
                         placeholder="e.g., Master"
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <input
                         type="number"
                         value={item.quantity}
                         onChange={e => updateEditLineItem(idx, 'quantity', parseInt(e.target.value) || 1)}
                         min={1}
-                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#1B4F72]"
+                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <input
                         type="number"
@@ -888,7 +888,7 @@ export default function OpsQuotesPage() {
                         onChange={e => updateEditLineItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
                         step="0.01"
                         placeholder="0.00"
-                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#1B4F72]"
+                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <button
                         onClick={() => removeEditLineItem(idx)}
@@ -917,7 +917,7 @@ export default function OpsQuotesPage() {
                   )}
                   <div className="border-t border-gray-200 pt-2">
                     <p className="text-xs text-gray-500 uppercase">Estimated Total</p>
-                    <p className="text-xl font-bold text-[#1B4F72]">{fmt(editItems.reduce((s, i) => s + (i.quantity * i.unitPrice), 0) * (1 + (editingQuote.termAdjustment / editingQuote.subtotal || 0)))}</p>
+                    <p className="text-xl font-bold text-[#3E2A1E]">{fmt(editItems.reduce((s, i) => s + (i.quantity * i.unitPrice), 0) * (1 + (editingQuote.termAdjustment / editingQuote.subtotal || 0)))}</p>
                   </div>
                 </div>
               </div>
@@ -928,7 +928,7 @@ export default function OpsQuotesPage() {
               <div className="mx-6 mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">🤖</span>
-                  <span className="font-bold text-sm text-[#1B4F72]">AI Optimization Applied</span>
+                  <span className="font-bold text-sm text-[#3E2A1E]">AI Optimization Applied</span>
                 </div>
                 <p className="text-xs text-gray-600 mb-2">{aiResult.reasoning}</p>
                 {aiResult.appliedRules.length > 0 && (
@@ -949,7 +949,7 @@ export default function OpsQuotesPage() {
               <button
                 onClick={handleAiOptimize}
                 disabled={aiOptimizing || editItems.every(i => !i.description.trim())}
-                className="px-4 py-2.5 bg-gradient-to-r from-[#1B4F72] to-[#2980b9] text-white rounded-lg text-sm font-semibold hover:from-[#153d59] hover:to-[#1f6fa0] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                className="px-4 py-2.5 bg-gradient-to-r from-[#3E2A1E] to-[#2980b9] text-white rounded-lg text-sm font-semibold hover:from-[#153d59] hover:to-[#1f6fa0] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
               >
                 {aiOptimizing ? (
                   <>⏳ Optimizing...</>
@@ -967,7 +967,7 @@ export default function OpsQuotesPage() {
                 <button
                   onClick={handleSaveEdit}
                   disabled={editSaving || editItems.every(i => !i.description.trim())}
-                  className="px-6 py-2.5 bg-[#E67E22] text-white rounded-lg text-sm font-semibold hover:bg-[#d35400] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-6 py-2.5 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -1024,7 +1024,7 @@ export default function OpsQuotesPage() {
                   <select
                     value={selectedBuilder}
                     onChange={e => { setSelectedBuilder(e.target.value); setSelectedProject('') }}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                   >
                     <option value="">Select a builder...</option>
                     {builders.map(b => (
@@ -1037,7 +1037,7 @@ export default function OpsQuotesPage() {
                   <select
                     value={selectedProject}
                     onChange={e => setSelectedProject(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                     disabled={!selectedBuilder}
                   >
                     <option value="">No project linked</option>
@@ -1056,7 +1056,7 @@ export default function OpsQuotesPage() {
                   onChange={e => setQuoteNotes(e.target.value)}
                   rows={2}
                   placeholder="Internal notes about this quote..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72] resize-none"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E] resize-none"
                 />
               </div>
 
@@ -1064,7 +1064,7 @@ export default function OpsQuotesPage() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-semibold text-gray-700">Line Items *</label>
-                  <button onClick={addLineItem} className="text-xs font-semibold text-[#E67E22] hover:text-[#d35400]">
+                  <button onClick={addLineItem} className="text-xs font-semibold text-[#C9822B] hover:text-[#A86B1F]">
                     + Add Item
                   </button>
                 </div>
@@ -1082,20 +1082,20 @@ export default function OpsQuotesPage() {
                         value={item.description}
                         onChange={e => updateLineItem(idx, 'description', e.target.value)}
                         placeholder="e.g., 2068 Hollow Core Door"
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <input
                         value={item.location}
                         onChange={e => updateLineItem(idx, 'location', e.target.value)}
                         placeholder="e.g., Master"
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1B4F72]"
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <input
                         type="number"
                         value={item.quantity}
                         onChange={e => updateLineItem(idx, 'quantity', parseInt(e.target.value) || 1)}
                         min={1}
-                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#1B4F72]"
+                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <input
                         type="number"
@@ -1103,7 +1103,7 @@ export default function OpsQuotesPage() {
                         onChange={e => updateLineItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
                         step="0.01"
                         placeholder="0.00"
-                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#1B4F72]"
+                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-[#3E2A1E]"
                       />
                       <button
                         onClick={() => removeLineItem(idx)}
@@ -1121,7 +1121,7 @@ export default function OpsQuotesPage() {
               <div className="flex justify-end">
                 <div className="bg-gray-50 rounded-lg px-5 py-3 text-right">
                   <p className="text-xs text-gray-500 uppercase">Estimated Total</p>
-                  <p className="text-xl font-bold text-[#1B4F72]">{fmt(newItemTotal)}</p>
+                  <p className="text-xl font-bold text-[#3E2A1E]">{fmt(newItemTotal)}</p>
                   <p className="text-[10px] text-gray-400 mt-0.5">Final total may include payment term adjustments</p>
                 </div>
               </div>
@@ -1138,7 +1138,7 @@ export default function OpsQuotesPage() {
               <button
                 onClick={handleCreateQuote}
                 disabled={creating || !selectedBuilder || lineItems.every(i => !i.description.trim())}
-                className="px-6 py-2.5 bg-[#E67E22] text-white rounded-lg text-sm font-semibold hover:bg-[#d35400] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2.5 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {creating ? 'Creating...' : 'Create Quote'}
               </button>

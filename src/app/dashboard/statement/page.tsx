@@ -59,7 +59,7 @@ export default function AccountStatementPage() {
           {[3, 6, 12].map(m => (
             <button key={m} onClick={() => setMonths(m)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                months === m ? 'bg-[#1B4F72] text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300'
+                months === m ? 'bg-[#3E2A1E] text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300'
               }`}>
               {m}mo
             </button>
@@ -71,12 +71,12 @@ export default function AccountStatementPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 uppercase tracking-wider">Total Ordered</p>
-          <p className="text-xl font-bold text-[#1B4F72] mt-1">{fmt(s.totalOrdered)}</p>
+          <p className="text-xl font-bold text-[#3E2A1E] mt-1">{fmt(s.totalOrdered)}</p>
           <p className="text-xs text-gray-400 mt-1">{s.orderCount} orders</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 uppercase tracking-wider">Total Invoiced</p>
-          <p className="text-xl font-bold text-[#E67E22] mt-1">{fmt(s.totalInvoiced)}</p>
+          <p className="text-xl font-bold text-[#C9822B] mt-1">{fmt(s.totalInvoiced)}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 uppercase tracking-wider">Total Paid</p>
@@ -128,7 +128,7 @@ export default function AccountStatementPage() {
                   <div className="w-full flex flex-col items-center justify-end h-20">
                     <p className="text-[10px] text-gray-500 mb-1">{fmt(m.total)}</p>
                     <div
-                      className="w-full max-w-[40px] bg-[#1B4F72] rounded-t-md transition-all"
+                      className="w-full max-w-[40px] bg-[#3E2A1E] rounded-t-md transition-all"
                       style={{ height: `${Math.max(4, pct)}%` }}
                     />
                   </div>
@@ -186,10 +186,10 @@ export default function AccountStatementPage() {
 
       {/* Quick Links */}
       <div className="mt-6 flex gap-3 flex-wrap">
-        <Link href="/dashboard/invoices" className="px-4 py-2 text-sm font-medium bg-[#1B4F72] text-white rounded-lg hover:bg-[#163d59] transition">
+        <Link href="/dashboard/invoices" className="px-4 py-2 text-sm font-medium bg-[#3E2A1E] text-white rounded-lg hover:bg-[#163d59] transition">
           View Invoices
         </Link>
-        <Link href="/dashboard/payments" className="px-4 py-2 text-sm font-medium bg-[#E67E22] text-white rounded-lg hover:bg-[#cf6f1e] transition">
+        <Link href="/dashboard/payments" className="px-4 py-2 text-sm font-medium bg-[#C9822B] text-white rounded-lg hover:bg-[#cf6f1e] transition">
           Make a Payment
         </Link>
         <Link href="/dashboard/orders" className="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 transition">

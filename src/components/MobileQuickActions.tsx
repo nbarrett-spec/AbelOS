@@ -220,7 +220,7 @@ export default function MobileQuickActions() {
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            backgroundColor: '#E67E22',
+            backgroundColor: '#C9822B',
             border: 'none',
             display: 'flex',
             alignItems: 'center',

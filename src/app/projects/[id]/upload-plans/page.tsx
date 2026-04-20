@@ -177,7 +177,7 @@ export default function UploadPlansPage() {
           ref={dragDropRef}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-[#1B4F72] hover:bg-blue-50 transition mb-6"
+          className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-[#3E2A1E] hover:bg-blue-50 transition mb-6"
           onClick={() => fileInputRef.current?.click()}
         >
           <svg
@@ -214,7 +214,7 @@ export default function UploadPlansPage() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g., 4 bedroom, 3 bath, 2-car garage..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72] resize-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E] resize-none"
             rows={3}
           />
         </div>
@@ -230,7 +230,7 @@ export default function UploadPlansPage() {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="w-full bg-[#1B4F72] text-white py-3 rounded-lg font-semibold hover:bg-[#163d5c] disabled:opacity-50 transition flex items-center justify-center gap-2"
+          className="w-full bg-[#3E2A1E] text-white py-3 rounded-lg font-semibold hover:bg-[#163d5c] disabled:opacity-50 transition flex items-center justify-center gap-2"
         >
           {uploading ? (
             <>
@@ -313,7 +313,7 @@ export default function UploadPlansPage() {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <Link
                 href={`/ops/blueprints/analyze`}
-                className="inline-block bg-[#E67E22] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#d46d1a] transition"
+                className="inline-block bg-[#C9822B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#d46d1a] transition"
               >
                 Review & Generate Takeoffs →
               </Link>
@@ -324,7 +324,7 @@ export default function UploadPlansPage() {
 
       {uploadState.loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
         </div>
       )}
     </div>

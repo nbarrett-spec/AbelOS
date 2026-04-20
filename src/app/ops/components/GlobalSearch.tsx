@@ -291,7 +291,7 @@ export function GlobalSearch() {
                           padding: '8px 16px 4px 16px',
                           fontSize: '12px',
                           fontWeight: '600',
-                          color: '#E67E22',
+                          color: '#C9822B',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
                         }}
@@ -313,7 +313,7 @@ export function GlobalSearch() {
                               padding: '8px 16px',
                               cursor: 'pointer',
                               backgroundColor: isSelected ? 'rgba(230, 126, 34, 0.1)' : 'transparent',
-                              borderLeft: isSelected ? '3px solid #E67E22' : '3px solid transparent',
+                              borderLeft: isSelected ? '3px solid #C9822B' : '3px solid transparent',
                               paddingLeft: '13px',
                               transition: 'all 0.15s ease',
                             }}

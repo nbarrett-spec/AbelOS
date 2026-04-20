@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { projectSchema } from '@/lib/validations'
+import { audit } from '@/lib/audit'
 
 // GET all projects for logged-in builder
 export async function GET() {
@@ -111,6 +112,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    audit(request, 'CREATE', 'Project').catch(() => {});
+
     const body = await request.json()
     const parsed = projectSchema.safeParse(body)
 

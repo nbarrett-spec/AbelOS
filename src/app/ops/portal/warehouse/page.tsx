@@ -180,7 +180,7 @@ export default function WarehousePortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); fetchData() }} className="mt-4 px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm">
+        <button onClick={() => { setError(null); fetchData() }} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm">
           Retry
         </button>
       </div>
@@ -226,7 +226,7 @@ export default function WarehousePortal() {
           <p className="text-2xl font-bold text-gray-900 mt-1">{kpis.picksPending}</p>
           <p className="text-xs text-gray-400 mt-1">{pickSummary.picking} in progress</p>
         </div>
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#E67E22] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-[#C9822B] p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Jobs In Production</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{kpis.jobsInProduction}</p>
           <p className="text-xs text-gray-400 mt-1">Active jobs</p>
@@ -347,7 +347,7 @@ export default function WarehousePortal() {
                 ? Math.ceil((new Date(job.scheduledDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
                 : null
               return (
-                <div key={job.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#E67E22] transition-all">
+                <div key={job.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#C9822B] transition-all">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <p className="font-semibold text-gray-900">{job.jobNumber}</p>

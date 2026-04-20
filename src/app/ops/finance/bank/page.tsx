@@ -103,17 +103,17 @@ export default function BankAndCreditLinesPage() {
           <p className="text-xs text-gray-400 mt-2">Checking + Savings + Money Market</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#1B4F72]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#3E2A1E]">
           <div className="text-gray-500 text-sm font-medium">Available Credit</div>
-          <div className="text-2xl font-bold text-[#1B4F72] mt-2">
+          <div className="text-2xl font-bold text-[#3E2A1E] mt-2">
             {formatCurrency(totalCreditAvailable)}
           </div>
           <p className="text-xs text-gray-400 mt-2">Unused credit lines</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#E67E22]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
           <div className="text-gray-500 text-sm font-medium">Total Liquidity</div>
-          <div className="text-2xl font-bold text-[#E67E22] mt-2">
+          <div className="text-2xl font-bold text-[#C9822B] mt-2">
             {formatCurrency(totalCash + totalCreditAvailable)}
           </div>
           <p className="text-xs text-gray-400 mt-2">Cash + available credit</p>
@@ -126,7 +126,7 @@ export default function BankAndCreditLinesPage() {
           <h3 className="text-lg font-semibold text-gray-900">Bank Accounts & Credit Lines</h3>
           <button
             onClick={() => setShowAddAccount(!showAddAccount)}
-            className="bg-[#E67E22] text-white px-4 py-2 rounded font-semibold hover:bg-[#D66D11] transition"
+            className="bg-[#C9822B] text-white px-4 py-2 rounded font-semibold hover:bg-[#D66D11] transition"
           >
             + Add Account
           </button>
@@ -188,7 +188,7 @@ export default function BankAndCreditLinesPage() {
                 <div className="text-xs text-gray-400 mt-4 pt-4 border-t">
                   Last updated: {formatDate(account.lastUpdated)}
                 </div>
-                <button className="mt-4 w-full text-sm text-[#E67E22] hover:text-[#E67E22] font-semibold">
+                <button className="mt-4 w-full text-sm text-[#C9822B] hover:text-[#C9822B] font-semibold">
                   Edit Account
                 </button>
               </div>
@@ -201,7 +201,7 @@ export default function BankAndCreditLinesPage() {
             <p>No bank accounts added yet.</p>
             <button
               onClick={() => setShowAddAccount(true)}
-              className="mt-4 text-[#E67E22] hover:text-[#E67E22] font-semibold"
+              className="mt-4 text-[#C9822B] hover:text-[#C9822B] font-semibold"
             >
               Add your first account →
             </button>
@@ -250,7 +250,7 @@ export default function BankAndCreditLinesPage() {
           <h3 className="text-lg font-semibold text-gray-900">Transaction Log</h3>
           <button
             onClick={() => setShowAddTransaction(!showAddTransaction)}
-            className="bg-[#E67E22] text-white px-4 py-2 rounded font-semibold hover:bg-[#D66D11] transition"
+            className="bg-[#C9822B] text-white px-4 py-2 rounded font-semibold hover:bg-[#D66D11] transition"
           >
             + Add Transaction
           </button>

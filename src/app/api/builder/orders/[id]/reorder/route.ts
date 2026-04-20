@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 interface ReorderItem {
   productId: string
@@ -34,6 +35,7 @@ export async function POST(
 
   try {
     const orderId = params.id
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'CREATE', 'Reorder').catch(() => {});
 
     // Verify order belongs to this builder
     const orderCheck: any[] = await prisma.$queryRawUnsafe(

@@ -122,7 +122,7 @@ export default function WarrantyPoliciesPage() {
     <div>
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#1B4F72]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
         }`}>
           {toast}
         </div>
@@ -140,14 +140,14 @@ export default function WarrantyPoliciesPage() {
           {policies.length === 0 && (
             <button
               onClick={seedDefaults}
-              className="px-4 py-2 border border-[#e67e22] text-[#e67e22] rounded-lg text-sm font-medium hover:bg-orange-50"
+              className="px-4 py-2 border border-[#C9822B] text-[#C9822B] rounded-lg text-sm font-medium hover:bg-orange-50"
             >
               Load Default Policies
             </button>
           )}
           <button
             onClick={() => setShowNewForm(!showNewForm)}
-            className="px-4 py-2 bg-[#e67e22] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]"
+            className="px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]"
           >
             + New Policy
           </button>
@@ -213,7 +213,7 @@ export default function WarrantyPoliciesPage() {
           <p className="text-gray-300 text-sm mb-4">Click &quot;Load Default Policies&quot; to set up Abel Lumber&apos;s standard warranty policies</p>
           <button
             onClick={seedDefaults}
-            className="px-6 py-3 bg-[#e67e22] text-white rounded-lg font-medium hover:bg-[#d46711]"
+            className="px-6 py-3 bg-[#C9822B] text-white rounded-lg font-medium hover:bg-[#d46711]"
           >
             Load Default Policies
           </button>

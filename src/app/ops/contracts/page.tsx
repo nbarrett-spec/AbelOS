@@ -148,7 +148,7 @@ export default function ContractsPage() {
                               <td style={{ padding: '8px', color: '#1f2937' }}>{tier.category}</td>
                               <td style={{ padding: '8px', color: '#6b7280' }}>{tier.subcategory || '—'}</td>
                               <td style={{ padding: '8px', color: '#6b7280' }}>{tier.priceType}</td>
-                              <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600, color: '#1B4F72' }}>
+                              <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600, color: '#3E2A1E' }}>
                                 {tier.priceType === 'FIXED' && tier.fixedPrice ? `$${tier.fixedPrice.toFixed(2)}` : ''}
                                 {tier.priceType === 'DISCOUNT_PCT' && tier.discountPct ? `${tier.discountPct}% off` : ''}
                                 {tier.priceType === 'COST_PLUS' && tier.costPlusPct ? `Cost + ${tier.costPlusPct}%` : ''}

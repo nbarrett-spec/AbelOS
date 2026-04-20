@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/lib/audit'
+import { logAudit, audit } from '@/lib/audit'
 import { createNotification } from '@/lib/notifications'
 import { sendWarrantyUpdateEmail } from '@/lib/email'
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -81,6 +81,8 @@ export async function PATCH(
 
     const body = await request.json()
     const { status: newStatus, assignedTo, priority, resolutionType, resolutionNotes, resolutionCost, creditAmount, replacementOrderId, internalNotes } = body
+
+    audit(request, 'UPDATE', 'WarrantyClaim', params.id, { method: 'PATCH' }).catch(() => {})
 
     // Get current claim
     const currentClaim = await prisma.$queryRawUnsafe(

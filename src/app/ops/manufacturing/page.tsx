@@ -75,7 +75,7 @@ export default function ManufacturingDashboard() {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
           <p className="mt-4 text-gray-600">Loading manufacturing dashboard...</p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function ManufacturingDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/ops/manufacturing/build-sheet" className="px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm font-medium">
+          <Link href="/ops/manufacturing/build-sheet" className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm font-medium">
             Build Sheet
           </Link>
           <Link href="/ops/manufacturing/bom" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
@@ -151,7 +151,7 @@ export default function ManufacturingDashboard() {
               <h2 className="text-lg font-bold text-gray-900">Production Queue</h2>
               <Link
                 href="/ops/manufacturing/picks"
-                className="text-xs text-[#1B4F72] hover:underline"
+                className="text-xs text-[#3E2A1E] hover:underline"
               >
                 View All →
               </Link>
@@ -192,7 +192,7 @@ export default function ManufacturingDashboard() {
               <h2 className="text-lg font-bold text-gray-900">Material Pick Status</h2>
               <Link
                 href="/ops/manufacturing/picks"
-                className="text-xs text-[#1B4F72] hover:underline"
+                className="text-xs text-[#3E2A1E] hover:underline"
               >
                 Manage Picks →
               </Link>
@@ -212,7 +212,7 @@ export default function ManufacturingDashboard() {
               <h2 className="text-lg font-bold text-gray-900">Recent Quality Checks</h2>
               <Link
                 href="/ops/manufacturing/qc"
-                className="text-xs text-[#1B4F72] hover:underline"
+                className="text-xs text-[#3E2A1E] hover:underline"
               >
                 QC Details →
               </Link>

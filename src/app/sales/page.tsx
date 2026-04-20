@@ -172,7 +172,7 @@ export default function SalesDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e67e22]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C9822B]" />
       </div>
     )
   }
@@ -264,7 +264,7 @@ export default function SalesDashboard() {
             <h2 className="text-lg font-bold text-gray-900">My Pipeline</h2>
             <Link
               href="/sales/pipeline"
-              className="text-sm text-[#e67e22] hover:text-[#d35400] font-medium"
+              className="text-sm text-[#C9822B] hover:text-[#A86B1F] font-medium"
             >
               View All →
             </Link>
@@ -276,7 +276,7 @@ export default function SalesDashboard() {
                 <Link
                   key={deal.id}
                   href={`/sales/deals/${deal.id}`}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-[#e67e22] hover:bg-gray-50 transition"
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-[#C9822B] hover:bg-gray-50 transition"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 truncate">
@@ -306,7 +306,7 @@ export default function SalesDashboard() {
               <p className="text-gray-500">No deals yet</p>
               <Link
                 href="/sales/deals"
-                className="text-sm text-[#e67e22] hover:text-[#d35400] font-medium mt-2 inline-block"
+                className="text-sm text-[#C9822B] hover:text-[#A86B1F] font-medium mt-2 inline-block"
               >
                 Create your first deal →
               </Link>
@@ -323,7 +323,7 @@ export default function SalesDashboard() {
               {followUps.map((followUp) => (
                 <div
                   key={followUp.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:border-[#e67e22] transition"
+                  className="p-3 border border-gray-200 rounded-lg hover:border-[#C9822B] transition"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <p className="font-semibold text-gray-900 text-sm">

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { isStripeConfigured, getOrCreateCustomer, createCheckoutSession, getCheckoutSession } from '@/lib/stripe'
-import { auditBuilder } from '@/lib/audit'
+import { auditBuilder, audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/payments — List builder's payments, or verify a checkout session
@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    audit(request, 'CREATE', 'Payment', undefined, {}, 'WARN').catch(() => {});
+
     const body = await request.json()
     const { invoiceId } = body
     if (!invoiceId || typeof invoiceId !== 'string' || invoiceId.trim().length === 0) {

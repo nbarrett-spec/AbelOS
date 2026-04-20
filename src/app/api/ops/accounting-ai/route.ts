@@ -72,6 +72,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
+    audit(request, 'CREATE', 'AccountingAI', undefined, { method: 'POST' }).catch(() => {})
+
     // 3. Fetch real-time financial context from database
     const context = await fetchFinancialContext()
 

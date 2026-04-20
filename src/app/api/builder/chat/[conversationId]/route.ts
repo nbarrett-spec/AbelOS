@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
+import { auditBuilder } from '@/lib/audit'
 
 // GET /api/builder/chat/[conversationId] — Get messages for a specific conversation
 export async function GET(
@@ -129,6 +130,7 @@ export async function POST(
 
   try {
     const builderId = session.builderId
+    auditBuilder(builderId, session.companyName || 'Unknown', 'CREATE', 'ChatMessage').catch(() => {});
     const conversationId = params.conversationId
     const body = await request.json()
     const { message } = body

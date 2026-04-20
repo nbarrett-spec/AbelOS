@@ -34,12 +34,12 @@ export default function HeroSection({ firstName = 'Builder', ytdSavings }: HeroS
 
   return (
     <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-abel-navy via-[#1a4065] to-[#0d2840]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-abel-walnut via-abel-walnut-light to-abel-walnut-dark">
         {/* ── Decorative layers ───────────────────────────────── */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Warm glow */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-abel-orange/8 rounded-full blur-[120px] -translate-y-1/3 translate-x-1/4" />
-          <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-abel-navy-light/15 rounded-full blur-[80px] translate-y-1/3" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-abel-amber/8 rounded-full blur-[120px] -translate-y-1/3 translate-x-1/4" />
+          <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-abel-walnut-light/15 rounded-full blur-[80px] translate-y-1/3" />
 
           {/* Dot grid pattern */}
           <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
@@ -59,7 +59,7 @@ export default function HeroSection({ firstName = 'Builder', ytdSavings }: HeroS
         <div className="relative px-7 py-10 md:px-10 md:py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           {/* Left */}
           <div className="flex-1">
-            <p className="text-sm font-semibold text-abel-orange/90 tracking-wide uppercase mb-1.5 flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-abel-amber/90 tracking-wide uppercase mb-1.5 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Welcome back
             </p>
@@ -74,7 +74,7 @@ export default function HeroSection({ firstName = 'Builder', ytdSavings }: HeroS
             {/* YTD Savings pill */}
             {ytdSavings > 0 && (
               <div className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white/[0.06] backdrop-blur-sm rounded-xl border border-white/10 order-2 sm:order-1">
-                <Zap className="w-4 h-4 text-abel-orange" />
+                <Zap className="w-4 h-4 text-abel-amber" />
                 <span className="text-sm font-bold text-white">
                   ${(ytdSavings / 1000).toFixed(0)}k
                 </span>
@@ -89,7 +89,7 @@ export default function HeroSection({ firstName = 'Builder', ytdSavings }: HeroS
                 size="lg"
                 icon={<ArrowRight className="w-4.5 h-4.5" />}
 
-                className="w-full sm:w-auto shadow-lg shadow-abel-orange/25 hover:shadow-xl hover:shadow-abel-orange/30"
+                className="w-full sm:w-auto shadow-lg shadow-abel-amber/25 hover:shadow-xl hover:shadow-abel-amber/30"
               >
                 Start an Order
               </Button>

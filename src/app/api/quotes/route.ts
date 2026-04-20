@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth'
 import { generateQuoteNumber } from '@/lib/utils'
 import { PAYMENT_TERM_MULTIPLIERS } from '@/lib/constants'
 import { sendQuoteReadyEmail } from '@/lib/email'
+import { audit } from '@/lib/audit'
 
 // Fallback pricing if no product match found in DB
 const FALLBACK_PRICING: Record<string, number> = {
@@ -185,6 +186,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    audit(request, 'CREATE', 'Quote').catch(() => {});
+
     const body = await request.json()
     const { takeoffId, projectId, items: cartItems, projectName, deliveryNotes } = body
 

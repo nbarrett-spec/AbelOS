@@ -143,7 +143,7 @@ export default function BuildSheetPage() {
           <h1 className="text-2xl font-bold text-gray-900">Build Sheet</h1>
           <p className="text-gray-600 text-sm mt-1">Manufacturing worksheet with BOM expansion, picks, and QC gates</p>
         </div>
-        <Link href="/ops/manufacturing" className="text-sm text-[#1B4F72] hover:text-[#E67E22]">← Manufacturing Dashboard</Link>
+        <Link href="/ops/manufacturing" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">← Manufacturing Dashboard</Link>
       </div>
 
       {/* Job Search */}
@@ -153,7 +153,7 @@ export default function BuildSheetPage() {
           <input
             type="text"
             placeholder="Search by job number or builder..."
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1B4F72] focus:outline-none"
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:outline-none"
             value={jobSearch}
             onChange={(e) => setJobSearch(e.target.value)}
           />
@@ -178,7 +178,7 @@ export default function BuildSheetPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
         </div>
       )}
 
@@ -253,7 +253,7 @@ export default function BuildSheetPage() {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
-                  className="bg-[#1B4F72] h-3 rounded-full transition-all"
+                  className="bg-[#3E2A1E] h-3 rounded-full transition-all"
                   style={{ width: `${data.pickSummary.percentComplete}%` }}
                 />
               </div>
@@ -271,7 +271,7 @@ export default function BuildSheetPage() {
           <div className="bg-white rounded-xl border p-6">
             <h3 className="font-bold text-gray-900 mb-3">Actions</h3>
             <div className="flex flex-wrap gap-2">
-              <button onClick={generatePicks} className="px-4 py-2 bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360] text-sm font-medium">
+              <button onClick={generatePicks} className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm font-medium">
                 {data.gates.pickListGenerated ? 'Regenerate Pick List' : 'Generate Pick List'}
               </button>
               {data.pickSummary.pending > 0 && (
@@ -313,27 +313,27 @@ export default function BuildSheetPage() {
 
               {/* Status advance buttons */}
               {data.job.status === 'CREATED' && (
-                <button onClick={() => advanceJob('READINESS_CHECK')} className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button onClick={() => advanceJob('READINESS_CHECK')} className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
                   → Readiness Check
                 </button>
               )}
               {data.job.status === 'READINESS_CHECK' && (
-                <button onClick={() => advanceJob('MATERIALS_LOCKED')} className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button onClick={() => advanceJob('MATERIALS_LOCKED')} className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
                   → Lock Materials
                 </button>
               )}
               {data.job.status === 'MATERIALS_LOCKED' && (
-                <button onClick={() => advanceJob('IN_PRODUCTION')} className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button onClick={() => advanceJob('IN_PRODUCTION')} className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
                   → Start Production
                 </button>
               )}
               {data.job.status === 'IN_PRODUCTION' && (
-                <button onClick={() => advanceJob('STAGED')} className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button onClick={() => advanceJob('STAGED')} className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
                   → Staging Complete
                 </button>
               )}
               {data.job.status === 'STAGED' && (
-                <button onClick={() => advanceJob('LOADED')} className="px-4 py-2 bg-[#E67E22] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button onClick={() => advanceJob('LOADED')} className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
                   → Load on Truck
                 </button>
               )}

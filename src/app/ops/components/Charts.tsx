@@ -25,7 +25,7 @@ export function BarChart({
   formatValue = (v) => v.toLocaleString(),
 }: BarChartProps) {
   const max = maxValue || Math.max(...data.map((d) => d.value), 1)
-  const defaultColors = ['#1B4F72', '#E67E22', '#27AE60', '#8E44AD', '#E74C3C', '#3498DB', '#1ABC9C', '#F39C12', '#2C3E50']
+  const defaultColors = ['#3E2A1E', '#C9822B', '#27AE60', '#8CA8B8', '#B8876B', '#8B6F47', '#6E2A24', '#8B6F2A', '#2C2C2C']
 
   return (
     <div style={{ height, display: 'flex', alignItems: 'flex-end', gap: 4, paddingBottom: 28, position: 'relative' }}>
@@ -191,7 +191,7 @@ export function Sparkline({
   data,
   width = 200,
   height = 50,
-  color = '#1B4F72',
+  color = '#3E2A1E',
   fillColor,
   showDots = false,
 }: SparklineProps) {
@@ -243,7 +243,7 @@ export function HBarChart({
   formatValue = (v) => v.toLocaleString(),
 }: HBarChartProps) {
   const max = maxValue || Math.max(...data.map((d) => d.value), 1)
-  const defaultColors = ['#1B4F72', '#E67E22', '#27AE60', '#8E44AD', '#E74C3C', '#3498DB', '#1ABC9C', '#F39C12']
+  const defaultColors = ['#3E2A1E', '#C9822B', '#27AE60', '#8E44AD', '#E74C3C', '#3498DB', '#1ABC9C', '#D9993F']
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -285,7 +285,7 @@ interface MiniStatProps {
   color?: string
 }
 
-export function MiniStat({ label, value, trend, trendLabel, sparkData, color = '#1B4F72' }: MiniStatProps) {
+export function MiniStat({ label, value, trend, trendLabel, sparkData, color = '#3E2A1E' }: MiniStatProps) {
   const isPositive = (trend || 0) >= 0
 
   return (
@@ -327,7 +327,7 @@ interface ProgressRingProps {
   label?: string
 }
 
-export function ProgressRing({ value, size = 60, strokeWidth = 6, color = '#1B4F72', label }: ProgressRingProps) {
+export function ProgressRing({ value, size = 60, strokeWidth = 6, color = '#3E2A1E', label }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (Math.min(value, 100) / 100) * circumference

@@ -99,7 +99,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               onChange={handleChange}
               required
               placeholder="e.g., DW Distribution"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -114,7 +114,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               onChange={handleChange}
               required
               placeholder="e.g., DW, BC, MASO"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22] font-mono"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] font-mono"
             />
           </div>
 
@@ -128,7 +128,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               value={formData.contactName}
               onChange={handleChange}
               placeholder="John Smith"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -142,7 +142,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               value={formData.email}
               onChange={handleChange}
               placeholder="contact@vendor.com"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -156,7 +156,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               value={formData.phone}
               onChange={handleChange}
               placeholder="(555) 123-4567"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -170,7 +170,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               value={formData.address}
               onChange={handleChange}
               placeholder="123 Main St, City, State 12345"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -184,7 +184,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               value={formData.website}
               onChange={handleChange}
               placeholder="https://www.vendor.com"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -198,7 +198,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               value={formData.accountNumber}
               onChange={handleChange}
               placeholder="Abel's account number with vendor"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -213,7 +213,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               onChange={handleChange}
               placeholder="5"
               min="0"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#E67E22]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
 
@@ -228,7 +228,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#E67E22] rounded-lg hover:bg-[#D46D1A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white bg-[#C9822B] rounded-lg hover:bg-[#D46D1A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Vendor'}
             </button>

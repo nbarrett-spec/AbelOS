@@ -38,7 +38,7 @@ export default function AdminLayout({
         <aside
           className={`${
             sidebarOpen ? 'w-64' : 'w-20'
-          } bg-abel-navy text-white transition-all duration-300 min-h-screen`}
+          } bg-abel-walnut text-white transition-all duration-300 min-h-screen`}
         >
           <div className="p-4 space-y-6">
             {/* Toggle Button */}
@@ -59,7 +59,7 @@ export default function AdminLayout({
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                       isActive
-                        ? 'bg-abel-orange text-white'
+                        ? 'bg-abel-amber text-white'
                         : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                   >

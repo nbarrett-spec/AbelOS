@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { auditBuilder } from '@/lib/audit'
 
 interface TemplateResponse {
   id: string
@@ -73,6 +74,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    auditBuilder(session.builderId, session.companyName || 'Unknown', 'CREATE', 'Template').catch(() => {});
+
     const body: CreateTemplateBody = await request.json()
     const { name, description, sourceOrderId, items } = body
 

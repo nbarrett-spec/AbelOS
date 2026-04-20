@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react'
 
 const TIER_COLORS: Record<string, string> = {
   HOT: '#e74c3c',
-  WARM: '#e67e22',
+  WARM: '#C9822B',
   COOL: '#3498db',
   COLD: '#95a5a6',
 }
 
 const RISK_COLORS: Record<string, string> = {
   HIGH_RISK: '#e74c3c',
-  MEDIUM_RISK: '#e67e22',
-  LOW_RISK: '#f39c12',
+  MEDIUM_RISK: '#C9822B',
+  LOW_RISK: '#D9993F',
   HEALTHY: '#27ae60',
   NEVER_ORDERED: '#95a5a6',
 }
@@ -21,15 +21,15 @@ const SEGMENT_COLORS: Record<string, string> = {
   PLATINUM: '#8e44ad',
   GOLD: '#f1c40f',
   SILVER: '#bdc3c7',
-  BRONZE: '#e67e22',
+  BRONZE: '#C9822B',
   PROSPECT: '#95a5a6',
 }
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#1B4F72'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#1B4F72' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -45,7 +45,7 @@ function Badge({ text, color }: { text: string; color: string }) {
 
 function ScoreBar({ score, max = 100 }: { score: number; max?: number }) {
   const pct = Math.min(100, (score / max) * 100)
-  const color = pct >= 75 ? '#e74c3c' : pct >= 50 ? '#e67e22' : pct >= 25 ? '#3498db' : '#95a5a6'
+  const color = pct >= 75 ? '#e74c3c' : pct >= 50 ? '#C9822B' : pct >= 25 ? '#3498db' : '#95a5a6'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ flex: 1, height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
@@ -80,13 +80,13 @@ export default function LeadScoringPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', marginBottom: 4 }}>Lead Scoring & Customer Intelligence</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Lead Scoring & Customer Intelligence</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>RFM-based scoring, lifetime value analysis, churn prediction, and growth opportunities</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#1B4F72' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -115,11 +115,11 @@ function DashboardView({ data }: { data: any }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <KPICard label="Total Builders" value={Number(e.totalBuilders || 0)} sub={`${e.activeBuilders} active`} />
         <KPICard label="New (30d)" value={Number(g.newBuilders30d || 0)} sub={`${g.newBuilders7d || 0} this week`} color="#27ae60" />
-        <KPICard label="Pipeline Value" value={`$${Number(p.pipelineValue || 0).toLocaleString()}`} sub={`${p.activeQuotes || 0} quotes`} color="#E67E22" />
+        <KPICard label="Pipeline Value" value={`$${Number(p.pipelineValue || 0).toLocaleString()}`} sub={`${p.activeQuotes || 0} quotes`} color="#C9822B" />
         <KPICard label="Active Deals" value={Number(p.activeDeals || 0)} sub={`$${Number(p.dealPipelineValue || 0).toLocaleString()}`} color="#8e44ad" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1B4F72' }}>Revenue Segments</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Revenue Segments</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
         {(data.segments || []).map((s: any) => (
           <div key={s.segment} style={{ background: '#fff', borderRadius: 10, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', borderTop: `3px solid ${SEGMENT_COLORS[s.segment] || '#999'}` }}>
@@ -140,7 +140,7 @@ function LeadScoresView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <KPICard label="Hot Leads" value={summary.hot || 0} color="#e74c3c" />
-        <KPICard label="Warm Leads" value={summary.warm || 0} color="#e67e22" />
+        <KPICard label="Warm Leads" value={summary.warm || 0} color="#C9822B" />
         <KPICard label="Cool Leads" value={summary.cool || 0} color="#3498db" />
         <KPICard label="Cold Leads" value={summary.cold || 0} color="#95a5a6" />
       </div>
@@ -190,9 +190,9 @@ function CLVView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <KPICard label="Total 3yr CLV" value={`$${Number(data.totalCLV || 0).toLocaleString()}`} color="#8e44ad" />
-        <KPICard label="Avg CLV" value={`$${Number(data.avgCLV || 0).toLocaleString()}`} color="#1B4F72" />
+        <KPICard label="Avg CLV" value={`$${Number(data.avgCLV || 0).toLocaleString()}`} color="#3E2A1E" />
         <KPICard label="$100K+ Accounts" value={dist.over100k || 0} color="#e74c3c" />
-        <KPICard label="$50-100K Accounts" value={dist['50k_100k'] || 0} color="#e67e22" />
+        <KPICard label="$50-100K Accounts" value={dist['50k_100k'] || 0} color="#C9822B" />
       </div>
 
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
@@ -238,8 +238,8 @@ function ChurnView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
         <KPICard label="High Risk" value={s.highRisk || 0} color="#e74c3c" sub="180+ days inactive" />
-        <KPICard label="Medium Risk" value={s.mediumRisk || 0} color="#e67e22" sub="90-180 days inactive" />
-        <KPICard label="Low Risk" value={s.lowRisk || 0} color="#f39c12" sub="45-90 days inactive" />
+        <KPICard label="Medium Risk" value={s.mediumRisk || 0} color="#C9822B" sub="90-180 days inactive" />
+        <KPICard label="Low Risk" value={s.lowRisk || 0} color="#D9993F" sub="45-90 days inactive" />
         <KPICard label="Healthy" value={s.healthy || 0} color="#27ae60" sub="Active recent" />
         <KPICard label="At-Risk Revenue" value={`$${Number(data.atRiskRevenue || 0).toLocaleString()}`} color="#e74c3c" sub="High + Medium risk" />
       </div>
@@ -289,7 +289,7 @@ function GrowthView({ data }: { data: any }) {
     <div>
       <KPICard label="Total Upsell Potential" value={`$${Number(data.totalPotentialRevenue || 0).toLocaleString()}`} color="#27ae60" />
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#1B4F72' }}>Win-Back Targets</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#3E2A1E' }}>Win-Back Targets</h3>
       <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Inactive builders with $5K+ past spend — prime for re-engagement</p>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -316,7 +316,7 @@ function GrowthView({ data }: { data: any }) {
         </table>
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#1B4F72' }}>Upsell Opportunities</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#3E2A1E' }}>Upsell Opportunities</h3>
       <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Builders ordering below segment average — room to grow order value</p>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -336,7 +336,7 @@ function GrowthView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.companyName}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.avgOrderValue || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right', color: '#999' }}>${Number(b.segmentAvg || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', color: '#e67e22' }}>${Number(b.upsellGap || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'right', color: '#C9822B' }}>${Number(b.upsellGap || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#27ae60' }}>${Number(b.potentialRevenue || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.orderCount)}</td>
               </tr>
@@ -345,7 +345,7 @@ function GrowthView({ data }: { data: any }) {
         </table>
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#1B4F72' }}>Cross-Sell Gaps</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#3E2A1E' }}>Cross-Sell Gaps</h3>
       <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Builders buying from 1-3 categories — opportunity to expand product mix</p>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -378,7 +378,7 @@ function EngagementView({ data }: { data: any }) {
   const maxRev = Math.max(1, ...timeline.map((t: any) => Number(t.revenue || 0)))
   return (
     <div>
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#1B4F72' }}>12-Month Engagement Timeline</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#3E2A1E' }}>12-Month Engagement Timeline</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -401,7 +401,7 @@ function EngagementView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(t.revenue || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px' }}>
                   <div style={{ height: 16, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: `${(Number(t.revenue || 0) / maxRev) * 100}%`, height: '100%', background: '#1B4F72', borderRadius: 4 }} />
+                    <div style={{ width: `${(Number(t.revenue || 0) / maxRev) * 100}%`, height: '100%', background: '#3E2A1E', borderRadius: 4 }} />
                   </div>
                 </td>
               </tr>

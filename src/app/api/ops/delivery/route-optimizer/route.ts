@@ -207,6 +207,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json();
     const { fuelPrice, truckMpg, crewHourlyRate, hqAddress } = body;
 
+    audit(request, 'CREATE', 'RouteOptimization', undefined, { method: 'POST' }).catch(() => {})
+
     // Store settings in database (using raw SQL for simplicity)
     const settings = {
       fuelPrice: fuelPrice ?? DEFAULT_SETTINGS.fuelPrice,

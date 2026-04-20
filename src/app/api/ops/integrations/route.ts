@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
       `SELECT * FROM "SyncLog" ORDER BY "startedAt" DESC LIMIT 20`
     )
 
-    // Ensure all 4 providers have a config entry
-    const providers = ['QUICKBOOKS_DESKTOP', 'BUILDERTREND', 'BOISE_CASCADE', 'INFLOW', 'ECI_BOLT', 'GMAIL', 'HYPHEN', 'BPW_PULTE']
+    // Ensure all providers have a config entry
+    const providers = ['BUILDERTREND', 'BOISE_CASCADE', 'INFLOW', 'ECI_BOLT', 'GMAIL', 'HYPHEN', 'BPW_PULTE']
     const configMap: Record<string, any> = {}
     for (const c of configs) configMap[c.provider] = c
 
@@ -145,7 +145,6 @@ export async function POST(request: NextRequest) {
 
 function providerName(provider: string): string {
   const map: Record<string, string> = {
-    QUICKBOOKS_DESKTOP: 'QuickBooks Desktop',
     BUILDERTREND: 'BuilderTrend',
     BOISE_CASCADE: 'Boise Cascade / BlueLinx',
     INFLOW: 'InFlow Inventory',
@@ -159,7 +158,6 @@ function providerName(provider: string): string {
 
 function providerDescription(provider: string): string {
   const map: Record<string, string> = {
-    QUICKBOOKS_DESKTOP: 'Two-way sync of invoices, payments, customers, and bills with QuickBooks Desktop via Web Connector',
     BUILDERTREND: 'Pull builder project schedules, material selections, and push quote/order status to BuilderTrend',
     BOISE_CASCADE: 'Import supplier price sheets, auto-update product costs, and track margin impact from Boise Cascade / BlueLinx',
     INFLOW: 'Real-time product catalog and inventory sync during Bolt transition',

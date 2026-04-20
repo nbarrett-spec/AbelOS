@@ -75,6 +75,26 @@
     {
       "path": "/api/cron/material-watch",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/nuc-alerts",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/morning-briefing",
+      "schedule": "0 12 * * 1-5"
+    },
+    {
+      "path": "/api/cron/collections-email",
+      "schedule": "0 14 * * 1-5"
+    },
+    {
+      "path": "/api/cron/weekly-report",
+      "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/cron/pm-daily-tasks",
+      "schedule": "30 11 * * 1-5"
     }
   ]
 }

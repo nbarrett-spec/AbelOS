@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LogIn, ArrowRight, AlertCircle, TreePine } from 'lucide-react'
+import { LogIn, ArrowRight, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
@@ -56,11 +57,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex relative overflow-hidden">
       {/* ── Left panel: immersive brand experience ─────────────────── */}
-      <div className="hidden lg:flex lg:w-[55%] relative bg-abel-navy overflow-hidden">
+      <div className="hidden lg:flex lg:w-[55%] relative bg-abel-walnut overflow-hidden">
         {/* Layered background */}
         <div className="absolute inset-0">
           {/* Gradient base */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0d2840] via-abel-navy to-[#1a3a5c]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-abel-walnut-dark via-abel-walnut to-abel-walnut-light" />
 
           {/* Subtle grid pattern */}
           <div
@@ -72,8 +73,8 @@ export default function LoginPage() {
           />
 
           {/* Warm glow from bottom-right */}
-          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-abel-orange/15 rounded-full blur-[120px]" />
-          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-abel-navy-light/20 rounded-full blur-[100px]" />
+          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-abel-amber/15 rounded-full blur-[120px]" />
+          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-abel-walnut-light/20 rounded-full blur-[100px]" />
 
           {/* Floating wood grain lines */}
           <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
@@ -95,9 +96,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="animate-enter">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-abel-orange flex items-center justify-center">
-                <TreePine className="w-5 h-5 text-white" />
-              </div>
+              <Image src="/icon-192.png" alt="Abel Lumber" width={40} height={40} className="rounded-xl" />
               <span className="text-xl font-bold text-white tracking-tight">Abel Lumber</span>
             </div>
           </div>
@@ -106,7 +105,7 @@ export default function LoginPage() {
           <div className="max-w-md">
             <h1 className="animate-enter animate-enter-delay-1 text-4xl xl:text-5xl font-bold text-white leading-[1.1] tracking-tight">
               Built for the
-              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-abel-orange to-abel-orange-light">
+              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-abel-amber to-abel-amber-light">
                 builders who
               </span>
               <span className="block mt-1">build Texas.</span>
@@ -143,9 +142,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden mb-10 animate-enter">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-abel-navy flex items-center justify-center">
-                <TreePine className="w-4.5 h-4.5 text-white" />
-              </div>
+              <Image src="/icon-192.png" alt="Abel Lumber" width={36} height={36} className="rounded-xl" />
               <span className="text-lg font-bold text-gray-900 dark:text-white">Abel Lumber</span>
             </div>
           </div>
@@ -220,7 +217,7 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-abel-navy focus:ring-abel-navy/30 cursor-pointer transition"
+                  className="w-4 h-4 rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-abel-walnut focus:ring-abel-walnut/30 cursor-pointer transition"
                 />
                 <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                   Remember me
@@ -228,7 +225,7 @@ export default function LoginPage() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-abel-navy dark:text-abel-navy-light hover:text-abel-navy-dark dark:hover:text-white transition-colors"
+                className="text-sm font-medium text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark dark:hover:text-white transition-colors"
               >
                 Forgot password?
               </Link>
@@ -243,7 +240,7 @@ export default function LoginPage() {
               loading={loading}
               disabled={!email || !password}
               icon={!loading ? <LogIn className="w-4.5 h-4.5" /> : undefined}
-              className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-abel-orange/20 hover:shadow-xl hover:shadow-abel-orange/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
+              className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-abel-amber/20 hover:shadow-xl hover:shadow-abel-amber/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>

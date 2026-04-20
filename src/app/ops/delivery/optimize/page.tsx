@@ -38,7 +38,7 @@ export default function DeliveryOptimizePage() {
           {TABS.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id ? 'border-[#e67e22] text-[#e67e22]' : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === tab.id ? 'border-[#C9822B] text-[#C9822B]' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}>
               <span className="mr-1">{tab.icon}</span> {tab.label}
             </button>
@@ -82,7 +82,7 @@ function DashTab({ data }: { data: any }) {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Status</h2>
           <div className="space-y-3">
             <StatBar label="Scheduled" value={Number(d.scheduled)} max={Number(d.totalDeliveries)} color="#3498db" />
-            <StatBar label="In Transit" value={Number(d.inTransit)} max={Number(d.totalDeliveries)} color="#f39c12" />
+            <StatBar label="In Transit" value={Number(d.inTransit)} max={Number(d.totalDeliveries)} color="#D9993F" />
             <StatBar label="Completed" value={Number(d.completed)} max={Number(d.totalDeliveries)} color="#27ae60" />
             <StatBar label="Cancelled" value={Number(d.cancelled)} max={Number(d.totalDeliveries)} color="#e74c3c" />
           </div>

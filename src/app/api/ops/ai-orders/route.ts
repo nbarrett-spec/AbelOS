@@ -415,6 +415,8 @@ export async function POST(
     const body = (await request.json()) as ExecuteRequest
     const { action, recommendationIndex, orderId } = body
 
+    audit(request, 'CREATE', 'AIOrder', undefined, { method: 'POST' }).catch(() => {})
+
     // Get staff ID from request headers
     const staffId = request.headers.get('x-staff-id') || 'system'
 

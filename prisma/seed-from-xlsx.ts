@@ -339,7 +339,6 @@ async function importBuilders(rows: Record<string, any>[]) {
         taxExempt: boolish(r.taxExempt, false),
         taxId: strOrNull(r.taxId),
         status: (strOrNull(r.status) ?? 'ACTIVE') as any,
-        qbListId: strOrNull(r.qbListId),
       }
       if (DRY_RUN) {
         record({ sheet: 'Builders', row: i + 2, action: existing ? 'updated' : 'created', key: email })

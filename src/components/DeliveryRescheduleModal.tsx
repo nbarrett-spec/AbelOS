@@ -122,7 +122,7 @@ export function DeliveryRescheduleModal({
             fontSize: '20px',
             fontWeight: 'bold',
             marginBottom: '16px',
-            color: '#1B4F72',
+            color: '#3E2A1E',
           }}
         >
           Request Reschedule
@@ -245,7 +245,7 @@ export function DeliveryRescheduleModal({
                           padding: '12px',
                           border:
                             selectedWindow === slot.window
-                              ? '2px solid #E67E22'
+                              ? '2px solid #C9822B'
                               : '1px solid #ddd',
                           borderRadius: '6px',
                           backgroundColor:
@@ -352,7 +352,7 @@ export function DeliveryRescheduleModal({
                   padding: '10px 20px',
                   border: 'none',
                   borderRadius: '6px',
-                  backgroundColor: '#E67E22',
+                  backgroundColor: '#C9822B',
                   color: 'white',
                   cursor:
                     submitting || !selectedDate || !selectedWindow || loading

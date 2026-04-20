@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 interface FileUploadRequest {
   file: File
@@ -105,6 +106,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'CREATE', 'ProjectBlueprint', params.id).catch(() => {});
 
     const projectId = params.id
     const formData = await request.formData()

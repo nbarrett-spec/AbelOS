@@ -131,11 +131,11 @@ export default function ProcurementIntelligencePage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', margin: 0 }}>🤖 AI Procurement Brain</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>🤖 AI Procurement Brain</h1>
           <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>Intelligent purchasing, demand forecasting & inventory optimization</p>
         </div>
         <button onClick={() => loadTab(tab)} disabled={loading}
-          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: loading ? '#9CA3AF' : '#E67E22', color: '#fff', fontWeight: 600, fontSize: 14 }}>
+          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: loading ? '#9CA3AF' : '#C9822B', color: '#fff', fontWeight: 600, fontSize: 14 }}>
           {loading ? '⏳ Analyzing...' : '🔄 Refresh'}
         </button>
       </div>
@@ -143,8 +143,8 @@ export default function ProcurementIntelligencePage() {
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap', borderBottom: '2px solid #E5E7EB', paddingBottom: 2 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => loadTab(t.id)}
-            style={{ padding: '10px 16px', border: 'none', borderBottom: tab === t.id ? '3px solid #1B4F72' : '3px solid transparent',
-              background: tab === t.id ? '#EBF5FB' : 'transparent', color: tab === t.id ? '#1B4F72' : '#6B7280',
+            style={{ padding: '10px 16px', border: 'none', borderBottom: tab === t.id ? '3px solid #3E2A1E' : '3px solid transparent',
+              background: tab === t.id ? '#EBF5FB' : 'transparent', color: tab === t.id ? '#3E2A1E' : '#6B7280',
               fontWeight: tab === t.id ? 700 : 500, fontSize: 13, cursor: 'pointer', borderRadius: '8px 8px 0 0' }}>
             {t.icon} {t.label}
           </button>
@@ -162,7 +162,7 @@ export default function ProcurementIntelligencePage() {
       {/* ── OVERVIEW TAB ─────────────────────────────────────────────── */}
       {!loading && tab === 'overview' && (
         <div>
-          <div style={{ background: 'linear-gradient(135deg, #1B4F72, #2980B9)', borderRadius: 12, padding: 24, marginBottom: 24, color: '#fff' }}>
+          <div style={{ background: 'linear-gradient(135deg, #3E2A1E, #2980B9)', borderRadius: 12, padding: 24, marginBottom: 24, color: '#fff' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>🧠 AI Procurement Insights</h2>
             {demandInsights.map((ins, i) => <p key={i} style={{ margin: '8px 0', fontSize: 14, lineHeight: 1.6, opacity: 0.95 }}>{ins}</p>)}
           </div>
@@ -170,18 +170,18 @@ export default function ProcurementIntelligencePage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
             <Card label="Items Need Reorder" value={reorderSummary?.totalItemsNeedReorder || 0} color="#DC2626" icon="⚠️" />
             <Card label="Critical Items" value={reorderSummary?.criticalCount || 0} color="#EA580C" icon="🚨" />
-            <Card label="Est. Reorder Cost" value={`$${(reorderSummary?.estimatedTotalCost || 0).toLocaleString('en-US', { minimumFractionDigits: 0 })}`} color="#1B4F72" icon="💰" />
+            <Card label="Est. Reorder Cost" value={`$${(reorderSummary?.estimatedTotalCost || 0).toLocaleString('en-US', { minimumFractionDigits: 0 })}`} color="#3E2A1E" icon="💰" />
             <Card label="Categories Tracked" value={forecasts.length} color="#16A34A" icon="📊" />
           </div>
 
           {forecasts.length > 0 && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20, marginBottom: 24 }}>
-              <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16, fontWeight: 700 }}>📈 30-Day Demand Forecast by Category</h3>
+              <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16, fontWeight: 700 }}>📈 30-Day Demand Forecast by Category</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                 {forecasts.map((f, i) => (
                   <div key={i} style={{ background: '#F8FAFC', borderRadius: 8, padding: 16, border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1B4F72', marginBottom: 8 }}>{f.category}</div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#E67E22' }}>{f.forecast.next30days}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#3E2A1E', marginBottom: 8 }}>{f.category}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#C9822B' }}>{f.forecast.next30days}</div>
                     <div style={{ fontSize: 11, color: '#6B7280' }}>units forecasted</div>
                     <div style={{ marginTop: 8, fontSize: 12, color: '#6B7280' }}>Avg: {f.historical.avgMonthly}/mo • Pending: {f.pendingFromQuotes}</div>
                     <div style={{ marginTop: 4, fontSize: 11, color: f.forecast.seasonalFactor > 1 ? '#16A34A' : '#DC2626' }}>
@@ -195,7 +195,7 @@ export default function ProcurementIntelligencePage() {
 
           {recommendations.length > 0 && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>⚠️ Top Reorder Alerts ({recommendations.length})</h3>
+              <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>⚠️ Top Reorder Alerts ({recommendations.length})</h3>
               {recommendations.slice(0, 8).map((r, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
                   <span style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#fff', background: urgencyColor(r.urgency) }}>{r.urgency}</span>
@@ -204,7 +204,7 @@ export default function ProcurementIntelligencePage() {
                     <div style={{ fontSize: 12, color: '#6B7280' }}>{r.sku} • {r.quantityOnHand} on hand • {r.daysUntilStockout} days left</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12 }}>
-                    <div style={{ fontWeight: 600, color: '#1B4F72' }}>Order {r.suggestedQty} units</div>
+                    <div style={{ fontWeight: 600, color: '#3E2A1E' }}>Order {r.suggestedQty} units</div>
                     <div style={{ color: '#6B7280' }}>${r.estimatedCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                   </div>
                 </div>
@@ -220,14 +220,14 @@ export default function ProcurementIntelligencePage() {
           {forecasts.length === 0 && recommendations.length === 0 && !loading && (
             <div style={{ textAlign: 'center', padding: 60, color: '#6B7280', background: '#F9FAFB', borderRadius: 12 }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>📦</div>
-              <h3 style={{ color: '#1B4F72', marginBottom: 8 }}>Getting Started</h3>
+              <h3 style={{ color: '#3E2A1E', marginBottom: 8 }}>Getting Started</h3>
               <p>Add suppliers and sync your product catalog to start receiving AI procurement recommendations.</p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
-                <a href="/ops/vendors" style={{ padding: '10px 20px', background: '#1B4F72', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>Add Suppliers →</a>
+                <a href="/ops/vendors" style={{ padding: '10px 20px', background: '#3E2A1E', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>Add Suppliers →</a>
                 <button onClick={async () => {
                   const res = await fetch('/api/ops/procurement/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'sync_products' }) })
                   if (res.ok) { const d = await res.json(); addToast({ type: 'success', title: 'Sync Complete', message: d.message }); loadTab('overview') }
-                }} style={{ padding: '10px 20px', background: '#E67E22', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
+                }} style={{ padding: '10px 20px', background: '#C9822B', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
                   Sync Products to Inventory →
                 </button>
               </div>
@@ -246,7 +246,7 @@ export default function ProcurementIntelligencePage() {
           {forecasts.map((f, i) => (
             <div key={i} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20, marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, color: '#1B4F72', fontSize: 16 }}>{f.category}</h3>
+                <h3 style={{ margin: 0, color: '#3E2A1E', fontSize: 16 }}>{f.category}</h3>
                 <span style={{ fontSize: 12, color: '#6B7280', background: '#F3F4F6', padding: '4px 10px', borderRadius: 20 }}>{f.historical.uniqueSkus} SKUs</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
@@ -263,7 +263,7 @@ export default function ProcurementIntelligencePage() {
           ))}
           {topProducts.length > 0 && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>🏆 Top 20 Products by Demand</h3>
+              <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>🏆 Top 20 Products by Demand</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr style={{ background: '#F8FAFC' }}>
                   {['#', 'Product', 'SKU', 'Category', '6-Mo Total', 'Avg/Mo'].map(h => (
@@ -273,7 +273,7 @@ export default function ProcurementIntelligencePage() {
                 <tbody>
                   {topProducts.map((p: any, i: number) => (
                     <tr key={i} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: 700, color: i < 3 ? '#E67E22' : '#6B7280' }}>{i + 1}</td>
+                      <td style={{ padding: '8px 10px', fontWeight: 700, color: i < 3 ? '#C9822B' : '#6B7280' }}>{i + 1}</td>
                       <td style={{ padding: '8px 10px', fontWeight: 500 }}>{p.name}</td>
                       <td style={{ padding: '8px 10px', color: '#6B7280', fontFamily: 'monospace', fontSize: 12 }}>{p.sku}</td>
                       <td style={{ padding: '8px 10px' }}>{p.category}</td>
@@ -296,7 +296,7 @@ export default function ProcurementIntelligencePage() {
               <Card label="Need Reorder" value={reorderSummary.totalItemsNeedReorder} color="#D97706" icon="📦" />
               <Card label="Critical" value={reorderSummary.criticalCount} color="#DC2626" icon="🚨" />
               <Card label="Urgent" value={reorderSummary.urgentCount} color="#EA580C" icon="⚠️" />
-              <Card label="Est. Cost" value={`$${reorderSummary.estimatedTotalCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} color="#1B4F72" icon="💰" />
+              <Card label="Est. Cost" value={`$${reorderSummary.estimatedTotalCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} color="#3E2A1E" icon="💰" />
             </div>
           )}
           {recommendations.map((r, i) => (
@@ -315,7 +315,7 @@ export default function ProcurementIntelligencePage() {
                 </div>
               </div>
               <div style={{ background: '#F0F9FF', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#1B4F72', marginBottom: 4 }}>🤖 AI Recommendation</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>🤖 AI Recommendation</div>
                 <p style={{ margin: 0, fontSize: 13, color: '#334155', lineHeight: 1.5 }}>{r.aiReason}</p>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
@@ -347,7 +347,7 @@ export default function ProcurementIntelligencePage() {
           {bestBuyAnalysis.map((cat, ci) => (
             <div key={ci} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20, marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ margin: 0, color: '#1B4F72', fontSize: 16 }}>{cat.category}</h3>
+                <h3 style={{ margin: 0, color: '#3E2A1E', fontSize: 16 }}>{cat.category}</h3>
                 {cat.avgOverseasSavings > 0 && <span style={{ background: '#DCFCE7', color: '#166534', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>Avg {cat.avgOverseasSavings}% overseas savings</span>}
               </div>
               {cat.products.map((p: any, pi: number) => (
@@ -391,9 +391,9 @@ export default function ProcurementIntelligencePage() {
         <div>
           {poSummary && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
-              <Card label="Suggested POs" value={poSummary.totalPOs} color="#1B4F72" icon="📋" />
+              <Card label="Suggested POs" value={poSummary.totalPOs} color="#3E2A1E" icon="📋" />
               <Card label="Urgent POs" value={poSummary.urgentPOs} color="#DC2626" icon="🚨" />
-              <Card label="Total Items" value={poSummary.totalItems} color="#E67E22" icon="📦" />
+              <Card label="Total Items" value={poSummary.totalItems} color="#C9822B" icon="📦" />
               <Card label="Est. Spend" value={`$${poSummary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} color="#16A34A" icon="💰" />
             </div>
           )}
@@ -412,7 +412,7 @@ export default function ProcurementIntelligencePage() {
                   <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{po.itemCount} items • Lead: {po.leadTimeDays}d • ETA: {po.expectedDelivery}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#1B4F72' }}>${po.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#3E2A1E' }}>${po.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                   {!po.meetsMinOrder && <div style={{ fontSize: 11, color: '#DC2626' }}>⚠️ Below min order</div>}
                 </div>
               </div>
@@ -426,7 +426,7 @@ export default function ProcurementIntelligencePage() {
                 {po.items.length > 5 && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>...and {po.items.length - 5} more</div>}
               </div>
               <button onClick={() => createPOFromSuggestion(po)} disabled={creatingPO === po.supplierId}
-                style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: creatingPO === po.supplierId ? '#9CA3AF' : '#1B4F72', color: '#fff', fontWeight: 600, fontSize: 13 }}>
+                style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: creatingPO === po.supplierId ? '#9CA3AF' : '#3E2A1E', color: '#fff', fontWeight: 600, fontSize: 13 }}>
                 {creatingPO === po.supplierId ? '⏳ Creating...' : '📋 Generate Draft PO'}
               </button>
             </div>
@@ -471,7 +471,7 @@ export default function ProcurementIntelligencePage() {
           {scorecards.length === 0 && (
             <div style={{ textAlign: 'center', padding: 60, color: '#6B7280', background: '#F9FAFB', borderRadius: 12 }}>
               <div style={{ fontSize: 48 }}>🏢</div><h3>No suppliers yet</h3><p>Add suppliers to see AI-powered scorecards.</p>
-              <a href="/ops/vendors" style={{ display: 'inline-block', padding: '10px 20px', background: '#1B4F72', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600, marginTop: 12 }}>Add Suppliers →</a>
+              <a href="/ops/vendors" style={{ display: 'inline-block', padding: '10px 20px', background: '#3E2A1E', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600, marginTop: 12 }}>Add Suppliers →</a>
             </div>
           )}
         </div>
@@ -482,13 +482,13 @@ export default function ProcurementIntelligencePage() {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
             <Card label="Health Score" value={`${healthData.healthScore}/100`} color={healthData.healthScore >= 80 ? '#16A34A' : healthData.healthScore >= 60 ? '#D97706' : '#DC2626'} icon="❤️" />
-            <Card label="Total SKUs" value={healthData.totals?.totalSkus || 0} color="#1B4F72" icon="📦" />
+            <Card label="Total SKUs" value={healthData.totals?.totalSkus || 0} color="#3E2A1E" icon="📦" />
             <Card label="Inventory Value" value={`$${Number(healthData.totals?.totalInventoryValue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} color="#16A34A" icon="💰" />
             <Card label="Avg Days Supply" value={healthData.totals?.avgDaysOfSupply || '--'} color="#2563EB" icon="📅" />
           </div>
           {healthData.byCategory?.length > 0 && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>Health by Category</h3>
+              <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>Health by Category</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr style={{ background: '#F8FAFC' }}>
                   {['Category', 'Items', 'Units', 'Value', 'OOS', 'Critical', 'Low', 'Over', 'Days Supply'].map(h => (
@@ -534,7 +534,7 @@ function Stat({ label, value, hl }: { label: string; value: number; hl?: boolean
   return (
     <div style={{ background: hl ? '#FFF7ED' : '#F8FAFC', borderRadius: 8, padding: 12, textAlign: 'center', border: hl ? '1px solid #FED7AA' : '1px solid #E2E8F0' }}>
       <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: hl ? '#E67E22' : '#1B4F72' }}>{value}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: hl ? '#C9822B' : '#3E2A1E' }}>{value}</div>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
+import { auditBuilder } from '@/lib/audit'
 
 // GET /api/builder/chat — List builder's conversations
 export async function GET(request: NextRequest) {
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const builderId = session.builderId
+    auditBuilder(builderId, session.companyName || 'Unknown', 'CREATE', 'ChatConversation').catch(() => {});
     const body = await request.json()
     const { conversationId, message, subject, category } = body
 

@@ -85,7 +85,7 @@ function ResetPasswordInner() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-abel-slate mb-2">Invalid Reset Link</h1>
+          <h1 className="text-2xl font-bold text-abel-charcoal mb-2">Invalid Reset Link</h1>
           <p className="text-gray-500 mb-6">
             This password reset link is missing or invalid. It may have expired. Please request a new one.
           </p>
@@ -105,9 +105,9 @@ function ResetPasswordInner() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-abel-navy p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-abel-walnut p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-abel-orange rounded-xl flex items-center justify-center font-bold text-white">
+          <div className="w-10 h-10 bg-abel-amber rounded-xl flex items-center justify-center font-bold text-white">
             AB
           </div>
           <span className="text-white font-semibold text-xl">Abel Builder</span>
@@ -135,7 +135,7 @@ function ResetPasswordInner() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-abel-slate mb-2">Password updated!</h1>
+              <h1 className="text-2xl font-bold text-abel-charcoal mb-2">Password updated!</h1>
               <p className="text-gray-500 mb-6">
                 Your password has been reset successfully. Redirecting you to sign in…
               </p>
@@ -145,7 +145,7 @@ function ResetPasswordInner() {
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-abel-slate mb-1">Create new password</h1>
+              <h1 className="text-2xl font-bold text-abel-charcoal mb-1">Create new password</h1>
               <p className="text-gray-500 mb-8">
                 Use at least 8 characters. A mix of letters, numbers and symbols is strongest.
               </p>
@@ -186,7 +186,7 @@ function ResetPasswordInner() {
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                       aria-pressed={showPassword}
                       tabIndex={-1}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-abel-orange transition"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-abel-amber transition"
                     >
                       {showPassword ? 'Hide' : 'Show'}
                     </button>
@@ -251,7 +251,7 @@ function ResetPasswordInner() {
 
               <p className="mt-8 text-center text-sm text-gray-500">
                 Remember your password?{' '}
-                <Link href="/login" className="text-abel-orange font-medium hover:underline">
+                <Link href="/login" className="text-abel-amber font-medium hover:underline">
                   Sign in
                 </Link>
               </p>

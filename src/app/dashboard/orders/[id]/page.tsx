@@ -84,7 +84,7 @@ export default function BuilderOrderDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -95,7 +95,7 @@ export default function BuilderOrderDetailPage() {
         <div className="text-5xl mb-4">📦</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Order Not Found</h2>
         <p className="text-gray-500 mb-6">{error || 'This order could not be loaded.'}</p>
-        <Link href="/dashboard/orders" className="text-[#1B4F72] font-semibold hover:underline">
+        <Link href="/dashboard/orders" className="text-[#3E2A1E] font-semibold hover:underline">
           &larr; Back to Orders
         </Link>
       </div>
@@ -110,7 +110,7 @@ export default function BuilderOrderDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
-      <Link href="/dashboard/orders" className="text-sm text-[#1B4F72] hover:underline mb-4 inline-block">
+      <Link href="/dashboard/orders" className="text-sm text-[#3E2A1E] hover:underline mb-4 inline-block">
         &larr; Back to Orders
       </Link>
 
@@ -140,7 +140,7 @@ export default function BuilderOrderDetailPage() {
           {/* Progress line */}
           <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200" />
           <div
-            className="absolute top-4 left-0 h-0.5 bg-[#E67E22] transition-all duration-500"
+            className="absolute top-4 left-0 h-0.5 bg-[#C9822B] transition-all duration-500"
             style={{ width: `${currentIdx >= 0 ? (currentIdx / (steps.length - 1)) * 100 : 0}%` }}
           />
           {steps.map((step, idx) => {
@@ -151,13 +151,13 @@ export default function BuilderOrderDetailPage() {
               <div key={step} className="flex flex-col items-center relative z-10">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                   isComplete
-                    ? 'bg-[#E67E22] border-[#E67E22] text-white'
+                    ? 'bg-[#C9822B] border-[#C9822B] text-white'
                     : 'bg-white border-gray-300 text-gray-400'
-                } ${isCurrent ? 'ring-4 ring-[#E67E22]/20' : ''}`}>
+                } ${isCurrent ? 'ring-4 ring-[#C9822B]/20' : ''}`}>
                   {isComplete ? '✓' : idx + 1}
                 </div>
                 <span className={`text-[10px] mt-2 font-medium text-center max-w-[70px] ${
-                  isComplete ? 'text-[#E67E22]' : 'text-gray-400'
+                  isComplete ? 'text-[#C9822B]' : 'text-gray-400'
                 }`}>
                   {label}
                 </span>
@@ -227,7 +227,7 @@ export default function BuilderOrderDetailPage() {
             )}
             <div className="flex justify-between items-center border-t pt-2">
               <span className="text-sm font-bold text-gray-900">Total</span>
-              <span className="text-lg font-bold text-[#1B4F72]">{fmt(Number(order.total))}</span>
+              <span className="text-lg font-bold text-[#3E2A1E]">{fmt(Number(order.total))}</span>
             </div>
             {order.paymentTerm && (
               <div className="pt-2 border-t">

@@ -124,7 +124,7 @@ export default function PurchasingBriefingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E67E22]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C9822B]" />
       </div>
     )
   }
@@ -164,7 +164,7 @@ export default function PurchasingBriefingPage() {
 
       {/* KPI Cards - 6 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#E67E22] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-[#C9822B] p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">
             Arriving Today
           </p>
@@ -238,7 +238,7 @@ export default function PurchasingBriefingPage() {
                   <div>
                     <Link
                       href={`/ops/purchasing/${po.id}`}
-                      className="font-semibold text-[#E67E22] hover:text-[#D35400]"
+                      className="font-semibold text-[#C9822B] hover:text-[#A86B1F]"
                     >
                       {po.poNumber}
                     </Link>
@@ -289,7 +289,7 @@ export default function PurchasingBriefingPage() {
                     <div>
                       <Link
                         href={`/ops/purchasing/${po.id}`}
-                        className="font-semibold text-[#E67E22] hover:text-[#D35400]"
+                        className="font-semibold text-[#C9822B] hover:text-[#A86B1F]"
                       >
                         {po.poNumber}
                       </Link>
@@ -406,7 +406,7 @@ export default function PurchasingBriefingPage() {
                     <td className="py-3 px-3">
                       <Link
                         href={`/ops/purchasing/${po.id}`}
-                        className="font-semibold text-[#E67E22] hover:text-[#D35400]"
+                        className="font-semibold text-[#C9822B] hover:text-[#A86B1F]"
                       >
                         {po.poNumber}
                       </Link>
@@ -426,7 +426,7 @@ export default function PurchasingBriefingPage() {
                         <button
                           onClick={() => handleApprove(po)}
                           disabled={approvingId === po.id}
-                          className="px-3 py-1 bg-[#E67E22] text-white text-xs rounded hover:bg-[#D35400] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 bg-[#C9822B] text-white text-xs rounded hover:bg-[#A86B1F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {approvingId === po.id ? 'Approving...' : 'Approve'}
                         </button>

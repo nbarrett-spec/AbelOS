@@ -54,8 +54,8 @@ interface ActivityLogEntry {
 }
 
 // Constants
-const ABEL_NAVY = '#1B4F72';
-const ABEL_ORANGE = '#E67E22';
+const ABEL_NAVY = '#3E2A1E';
+const ABEL_ORANGE = '#C9822B';
 const LIGHT_GRAY = '#F5F5F5';
 const BORDER_COLOR = '#DDDDDD';
 

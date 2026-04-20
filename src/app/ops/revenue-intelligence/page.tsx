@@ -158,7 +158,7 @@ export default function RevenueIntelligencePage() {
     return (
       <div style={{ padding: 32, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>💰</div>
-        <h2 style={{ color: '#1B4F72', marginBottom: 8 }}>Loading Revenue Intelligence...</h2>
+        <h2 style={{ color: '#3E2A1E', marginBottom: 8 }}>Loading Revenue Intelligence...</h2>
         <p style={{ color: '#666' }}>Analyzing builder value, pricing optimization, and margin intelligence</p>
       </div>
     )
@@ -170,7 +170,7 @@ export default function RevenueIntelligencePage() {
         <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
         <h2 style={{ color: '#c0392b', marginBottom: 8 }}>Error Loading Data</h2>
         <p style={{ color: '#666', marginBottom: 16 }}>{error}</p>
-        <button onClick={fetchData} style={{ padding: '8px 24px', background: '#1B4F72', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+        <button onClick={fetchData} style={{ padding: '8px 24px', background: '#3E2A1E', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
           Retry
         </button>
       </div>
@@ -182,7 +182,7 @@ export default function RevenueIntelligencePage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1B4F72', margin: 0 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
             💰 AI Revenue Command Center
           </h1>
           <p style={{ color: '#666', margin: '4px 0 0' }}>
@@ -191,7 +191,7 @@ export default function RevenueIntelligencePage() {
         </div>
         <button
           onClick={fetchData}
-          style={{ padding: '10px 20px', background: '#1B4F72', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+          style={{ padding: '10px 20px', background: '#3E2A1E', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
         >
           🔄 Refresh Data
         </button>
@@ -200,9 +200,9 @@ export default function RevenueIntelligencePage() {
       {/* KPI Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
         <KPICard label="Total Lifetime Revenue" value={formatCurrency(totalRevenue)} icon="💵" color="#27ae60" />
-        <KPICard label="Active Builders" value={builderSummary.totalActiveBuilders.toString()} icon="👷" color="#1B4F72" />
-        <KPICard label="Avg Margin" value={`${avgMarginPct.toFixed(1)}%`} icon="📊" color="#E67E22" />
-        <KPICard label="Elite Builders" value={`${platinumCount + goldCount}`} subtitle={`${platinumCount} Platinum · ${goldCount} Gold`} icon="⭐" color="#f39c12" />
+        <KPICard label="Active Builders" value={builderSummary.totalActiveBuilders.toString()} icon="👷" color="#3E2A1E" />
+        <KPICard label="Avg Margin" value={`${avgMarginPct.toFixed(1)}%`} icon="📊" color="#C9822B" />
+        <KPICard label="Elite Builders" value={`${platinumCount + goldCount}`} subtitle={`${platinumCount} Platinum · ${goldCount} Gold`} icon="⭐" color="#D9993F" />
         <KPICard label="Revenue at Risk" value={formatCurrency(atRiskRevenue)} subtitle={`${retention.atRiskBuilders} builders`} icon="⚠️" color="#e74c3c" />
       </div>
 
@@ -219,7 +219,7 @@ export default function RevenueIntelligencePage() {
             onClick={() => setActiveTab(tab.key)}
             style={{
               padding: '10px 20px',
-              background: activeTab === tab.key ? '#1B4F72' : 'transparent',
+              background: activeTab === tab.key ? '#3E2A1E' : 'transparent',
               color: activeTab === tab.key ? '#fff' : '#666',
               border: 'none',
               borderRadius: '8px 8px 0 0',
@@ -301,11 +301,11 @@ function OverviewTab({ builders, segments, retention, pricingRules, pricingStats
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       {/* Segment Distribution */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e8e8e8' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>🏆 Builder Segments</h3>
+        <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>🏆 Builder Segments</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {(['PLATINUM', 'GOLD', 'SILVER', 'STANDARD'] as const).map(seg => {
             const data = segments[seg] || { count: 0, totalRevenue: 0, avgLTV: 0 }
-            const colors: Record<string, string> = { PLATINUM: '#8e44ad', GOLD: '#f39c12', SILVER: '#95a5a6', STANDARD: '#3498db' }
+            const colors: Record<string, string> = { PLATINUM: '#8e44ad', GOLD: '#D9993F', SILVER: '#95a5a6', STANDARD: '#3498db' }
             const totalCount = builders.length || 1
             const pct = (data.count / totalCount * 100)
             return (
@@ -355,7 +355,7 @@ function OverviewTab({ builders, segments, retention, pricingRules, pricingStats
 
       {/* Top Builders */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e8e8e8' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>🏅 Top 10 Builders by LTV</h3>
+        <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>🏅 Top 10 Builders by LTV</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #eee' }}>
@@ -411,7 +411,7 @@ function OverviewTab({ builders, segments, retention, pricingRules, pricingStats
 
         {/* Pricing Rules Summary */}
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #eee' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#1B4F72', fontSize: 14 }}>🏷️ Active Pricing Rules</h4>
+          <h4 style={{ margin: '0 0 12px', color: '#3E2A1E', fontSize: 14 }}>🏷️ Active Pricing Rules</h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {pricingRules.slice(0, 5).map(rule => (
               <div key={rule.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8f9fa', borderRadius: 4 }}>
@@ -519,7 +519,7 @@ function PricingTab({ rules, stats, recommendations }: { rules: PricingRule[]; s
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       {/* Active Rules */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e8e8e8' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>🏷️ Active Pricing Rules</h3>
+        <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>🏷️ Active Pricing Rules</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rules.map(rule => {
             const adj = rule.adjustment || {}
@@ -548,10 +548,10 @@ function PricingTab({ rules, stats, recommendations }: { rules: PricingRule[]; s
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Stats */}
         <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e8e8e8' }}>
-          <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>📊 Optimization Performance (30 Days)</h3>
+          <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>📊 Optimization Performance (30 Days)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{ padding: 12, background: '#f0f8ff', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72' }}>{stats.quotesOptimized}</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E' }}>{stats.quotesOptimized}</div>
               <div style={{ fontSize: 11, color: '#888' }}>Quotes Optimized</div>
             </div>
             <div style={{ padding: 12, background: '#f0fdf4', borderRadius: 8, textAlign: 'center' }}>
@@ -559,7 +559,7 @@ function PricingTab({ rules, stats, recommendations }: { rules: PricingRule[]; s
               <div style={{ fontSize: 11, color: '#888' }}>Avg Margin Improvement</div>
             </div>
             <div style={{ padding: 12, background: '#fef9f0', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: '#E67E22' }}>{formatCurrency(stats.totalRevenueImpact)}</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#C9822B' }}>{formatCurrency(stats.totalRevenueImpact)}</div>
               <div style={{ fontSize: 11, color: '#888' }}>Revenue Impact</div>
             </div>
             <div style={{ padding: 12, background: '#f5f0ff', borderRadius: 8, textAlign: 'center' }}>
@@ -572,12 +572,12 @@ function PricingTab({ rules, stats, recommendations }: { rules: PricingRule[]; s
         {/* Recommendations */}
         {recommendations.length > 0 && (
           <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e8e8e8' }}>
-            <h3 style={{ margin: '0 0 16px', color: '#E67E22', fontSize: 16 }}>💡 AI Recommendations</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#C9822B', fontSize: 16 }}>💡 AI Recommendations</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {recommendations.map((rec, i) => (
                 <div key={i} style={{ padding: 12, background: '#fff8f0', borderRadius: 8, border: '1px solid #fde8d0' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{rec.description}</div>
-                  <div style={{ fontSize: 12, color: '#E67E22' }}>
+                  <div style={{ fontSize: 12, color: '#C9822B' }}>
                     Est. impact: {formatCurrency(rec.estimatedImpact)}
                   </div>
                 </div>
@@ -601,11 +601,11 @@ function MarginsTab({ marginAnalysis }: { marginAnalysis: MarginCategory[] }) {
       {/* Summary Bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
         <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8e8e8', textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#1B4F72' }}>{marginAnalysis.length}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#3E2A1E' }}>{marginAnalysis.length}</div>
           <div style={{ fontSize: 12, color: '#888' }}>Product Categories</div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8e8e8', textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: avgMargin >= 25 ? '#27ae60' : '#E67E22' }}>{avgMargin.toFixed(1)}%</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: avgMargin >= 25 ? '#27ae60' : '#C9822B' }}>{avgMargin.toFixed(1)}%</div>
           <div style={{ fontSize: 12, color: '#888' }}>Average Margin</div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8e8e8', textAlign: 'center' }}>
@@ -616,11 +616,11 @@ function MarginsTab({ marginAnalysis }: { marginAnalysis: MarginCategory[] }) {
 
       {/* Margin Bars */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e8e8e8' }}>
-        <h3 style={{ margin: '0 0 16px', color: '#1B4F72', fontSize: 16 }}>📊 Margin by Product Category</h3>
+        <h3 style={{ margin: '0 0 16px', color: '#3E2A1E', fontSize: 16 }}>📊 Margin by Product Category</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {sortedMargins.map(m => {
             const pct = m.marginPercent
-            const barColor = pct >= 30 ? '#27ae60' : pct >= 20 ? '#E67E22' : '#e74c3c'
+            const barColor = pct >= 30 ? '#27ae60' : pct >= 20 ? '#C9822B' : '#e74c3c'
             return (
               <div key={m.category}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -647,7 +647,7 @@ function MarginsTab({ marginAnalysis }: { marginAnalysis: MarginCategory[] }) {
 function SegmentBadge({ segment }: { segment: string }) {
   const config: Record<string, { bg: string; color: string; icon: string }> = {
     PLATINUM: { bg: '#f3e5f5', color: '#8e44ad', icon: '💎' },
-    GOLD: { bg: '#fff8e1', color: '#f39c12', icon: '🥇' },
+    GOLD: { bg: '#fff8e1', color: '#D9993F', icon: '🥇' },
     SILVER: { bg: '#eceff1', color: '#607d8b', icon: '🥈' },
     STANDARD: { bg: '#e3f2fd', color: '#1976d2', icon: '🔵' },
   }
@@ -660,7 +660,7 @@ function SegmentBadge({ segment }: { segment: string }) {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? '#27ae60' : score >= 40 ? '#E67E22' : '#e74c3c'
+  const color = score >= 70 ? '#27ae60' : score >= 40 ? '#C9822B' : '#e74c3c'
   return (
     <span style={{ fontWeight: 700, color, fontSize: 14 }}>{score}</span>
   )
@@ -669,7 +669,7 @@ function ScoreBadge({ score }: { score: number }) {
 function RiskBadge({ risk }: { risk: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
     HIGH: { bg: '#fde2e2', color: '#e74c3c', label: '🔴 High' },
-    MEDIUM: { bg: '#fef3cd', color: '#f39c12', label: '🟡 Med' },
+    MEDIUM: { bg: '#fef3cd', color: '#D9993F', label: '🟡 Med' },
     LOW: { bg: '#d4edda', color: '#27ae60', label: '🟢 Low' },
   }
   const c = config[risk] || config.LOW

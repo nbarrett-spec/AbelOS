@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 // Helper to generate unique ID
 function generateUniqueId(prefix: string): string {
@@ -71,6 +72,8 @@ export async function POST(
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'CREATE', 'HomeownerAccess', params.id).catch(() => {});
 
     const projectId = params.id
     const { name, email, phone } = await request.json()

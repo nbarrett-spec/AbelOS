@@ -106,7 +106,7 @@ export default function BlueprintsPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -123,7 +123,7 @@ export default function BlueprintsPage() {
         </div>
         <Link
           href="/dashboard/blueprints/new"
-          className="px-5 py-2.5 bg-[#E67E22] hover:bg-[#D35400] text-white font-semibold rounded-xl shadow transition flex items-center gap-2"
+          className="px-5 py-2.5 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold rounded-xl shadow transition flex items-center gap-2"
         >
           <span className="text-lg">📐</span>
           Upload Blueprint
@@ -172,7 +172,7 @@ export default function BlueprintsPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               filter === f.key
-                ? 'bg-[#1B4F72] text-white'
+                ? 'bg-[#3E2A1E] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -203,7 +203,7 @@ export default function BlueprintsPage() {
           </p>
           <Link
             href="/dashboard/blueprints/new"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#E67E22] hover:bg-[#D35400] text-white font-semibold rounded-xl shadow transition"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold rounded-xl shadow transition"
           >
             Upload Your First Blueprint
           </Link>
@@ -230,7 +230,7 @@ export default function BlueprintsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     {/* File Icon */}
-                    <div className="w-12 h-12 rounded-xl bg-[#1B4F72]/10 flex items-center justify-center text-xl flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#3E2A1E]/10 flex items-center justify-center text-xl flex-shrink-0">
                       {bp.fileType === 'pdf' ? '📋' : '🖼️'}
                     </div>
 
@@ -289,7 +289,7 @@ export default function BlueprintsPage() {
                     {bp.processingStatus === 'COMPLETE' && bp.takeoff && (
                       <Link
                         href={`/dashboard/blueprints/${bp.id}`}
-                        className="px-4 py-2 text-sm font-medium text-[#1B4F72] bg-[#1B4F72]/10 hover:bg-[#1B4F72]/20 rounded-lg transition"
+                        className="px-4 py-2 text-sm font-medium text-[#3E2A1E] bg-[#3E2A1E]/10 hover:bg-[#3E2A1E]/20 rounded-lg transition"
                         onClick={(e) => e.stopPropagation()}
                       >
                         View Takeoff →
@@ -298,7 +298,7 @@ export default function BlueprintsPage() {
                     {bp.processingStatus === 'COMPLETE' && !bp.takeoff && (
                       <Link
                         href={`/dashboard/blueprints/${bp.id}`}
-                        className="px-4 py-2 text-sm font-medium text-white bg-[#E67E22] hover:bg-[#D35400] rounded-lg transition"
+                        className="px-4 py-2 text-sm font-medium text-white bg-[#C9822B] hover:bg-[#A86B1F] rounded-lg transition"
                         onClick={(e) => e.stopPropagation()}
                       >
                         Generate Takeoff →
@@ -352,7 +352,7 @@ function StatCard({
         <span className="text-lg">{icon}</span>
         <span className="text-xs font-medium text-gray-500 uppercase">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-[#1B4F72]">{value}</p>
+      <p className="text-2xl font-bold text-[#3E2A1E]">{value}</p>
     </div>
   )
 }

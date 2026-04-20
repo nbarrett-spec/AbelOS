@@ -126,11 +126,11 @@ export default function OnboardingChecklist({ onClose }: OnboardingChecklistProp
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-gray-600">Progress</span>
-            <span className="text-xs font-bold text-[#E67E22]">{data.percentComplete}%</span>
+            <span className="text-xs font-bold text-[#C9822B]">{data.percentComplete}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#1B4F72] to-[#E67E22] h-2 rounded-full transition-all duration-700"
+              className="bg-gradient-to-r from-[#3E2A1E] to-[#C9822B] h-2 rounded-full transition-all duration-700"
               style={{ width: `${data.percentComplete}%` }}
             />
           </div>
@@ -184,7 +184,7 @@ export default function OnboardingChecklist({ onClose }: OnboardingChecklistProp
                     {!step.completed && (
                       <Link
                         href={step.href}
-                        className="px-3 py-1.5 bg-[#E67E22] hover:bg-[#d35400] text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap"
+                        className="px-3 py-1.5 bg-[#C9822B] hover:bg-[#A86B1F] text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap"
                       >
                         {step.ctaText}
                       </Link>
@@ -206,7 +206,7 @@ export default function OnboardingChecklist({ onClose }: OnboardingChecklistProp
       {collapsed && (
         <div className="px-4 py-3 bg-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#E67E22] flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-8 h-8 rounded-full bg-[#C9822B] flex items-center justify-center text-white text-xs font-bold">
               {data.completedCount}
             </div>
             <span className="text-sm text-gray-600">
@@ -215,7 +215,7 @@ export default function OnboardingChecklist({ onClose }: OnboardingChecklistProp
           </div>
           <button
             onClick={() => setCollapsed(false)}
-            className="text-xs text-[#E67E22] font-medium hover:underline"
+            className="text-xs text-[#C9822B] font-medium hover:underline"
           >
             View All
           </button>

@@ -163,7 +163,7 @@ export default function FleetLogisticsHub() {
             </Link>
             <Link
               href="/ops/delivery/route-optimizer"
-              className="bg-[#e67e22] hover:bg-[#d35400] text-white px-4 py-2 rounded-lg text-sm font-medium"
+              className="bg-[#C9822B] hover:bg-[#A86B1F] text-white px-4 py-2 rounded-lg text-sm font-medium"
             >
               Route Optimizer
             </Link>
@@ -186,7 +186,7 @@ export default function FleetLogisticsHub() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-[#e67e22] text-[#e67e22]'
+                  ? 'border-[#C9822B] text-[#C9822B]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -201,7 +201,7 @@ export default function FleetLogisticsHub() {
       <div className="max-w-7xl mx-auto px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
@@ -261,8 +261,8 @@ function OverviewTab({
     <div className="space-y-6">
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <KPICard label="Active Crews" value={crews.length} icon="👷" color="#1B4F72" />
-        <KPICard label="In Transit" value={inTransit.length} icon="🚚" color="#E67E22" />
+        <KPICard label="Active Crews" value={crews.length} icon="👷" color="#3E2A1E" />
+        <KPICard label="In Transit" value={inTransit.length} icon="🚚" color="#C9822B" />
         <KPICard label="Completed Today" value={completed.length} icon="✅" color="#27AE60" />
         <KPICard label="Scheduled" value={scheduled.length} icon="📅" color="#3498DB" />
         <KPICard
@@ -302,13 +302,13 @@ function OverviewTab({
                   </div>
                   <div className="text-xs text-gray-500">{d.crewName || 'Unassigned'}</div>
                   {d.latestTracking?.eta && (
-                    <div className="text-xs font-medium text-[#e67e22]">
+                    <div className="text-xs font-medium text-[#C9822B]">
                       ETA: {new Date(d.latestTracking.eta).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>
                   )}
                   <Link
                     href={`/ops/jobs/${d.job?.id || ''}`}
-                    className="text-xs text-[#1B4F72] hover:underline"
+                    className="text-xs text-[#3E2A1E] hover:underline"
                   >
                     View Job
                   </Link>
@@ -342,13 +342,13 @@ function OverviewTab({
                 <div
                   key={crew.id}
                   className={`rounded-lg border p-4 ${
-                    activeDelivery ? 'border-[#e67e22] bg-orange-50' : 'border-gray-200'
+                    activeDelivery ? 'border-[#C9822B] bg-orange-50' : 'border-gray-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-sm text-[#1e3a5f]">{crew.name}</span>
                     {activeDelivery && (
-                      <span className="text-xs bg-[#e67e22] text-white px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-[#C9822B] text-white px-2 py-0.5 rounded-full">
                         Active
                       </span>
                     )}
@@ -364,7 +364,7 @@ function OverviewTab({
                       ✅ {completedCount} done • 📦 {remainingCount} remaining
                     </div>
                     {activeDelivery && (
-                      <div className="font-medium text-[#e67e22]">
+                      <div className="font-medium text-[#C9822B]">
                         → {activeDelivery.address}
                       </div>
                     )}
@@ -420,7 +420,7 @@ function LiveTrackingTab({
             </p>
             <Link
               href="/ops/jobs/map"
-              className="inline-block bg-[#1B4F72] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#163d5c]"
+              className="inline-block bg-[#3E2A1E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#163d5c]"
             >
               View Jobsite Map Instead →
             </Link>
@@ -452,7 +452,7 @@ function LiveTrackingTab({
                       <div className="text-xs text-gray-500">
                         Last update: {d.latestTracking.location || d.latestTracking.status}
                         {d.latestTracking.eta && (
-                          <span className="ml-2 text-[#e67e22]">
+                          <span className="ml-2 text-[#C9822B]">
                             ETA {new Date(d.latestTracking.eta).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </span>
                         )}
@@ -517,7 +517,7 @@ function RoutePlanningTab({
             />
             <Link
               href="/ops/delivery/route-optimizer"
-              className="bg-[#e67e22] hover:bg-[#d35400] text-white px-4 py-2 rounded-lg text-sm font-medium"
+              className="bg-[#C9822B] hover:bg-[#A86B1F] text-white px-4 py-2 rounded-lg text-sm font-medium"
             >
               Advanced Optimizer →
             </Link>
@@ -574,7 +574,7 @@ function RoutePlanningTab({
                 const statusInfo = STATUS_COLORS[d.status] || STATUS_COLORS.SCHEDULED
                 return (
                   <div key={d.id} className="px-6 py-3 flex items-center gap-4">
-                    <div className="w-6 h-6 rounded-full bg-[#1B4F72] text-white text-xs flex items-center justify-center font-bold">
+                    <div className="w-6 h-6 rounded-full bg-[#3E2A1E] text-white text-xs flex items-center justify-center font-bold">
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -701,7 +701,7 @@ function VehiclesTab({ vehicles, crews }: { vehicles: Vehicle[]; crews: Crew[] }
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-[#1e3a5f]">Vehicle Fleet</h3>
-        <button className="bg-[#1B4F72] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#163d5c]">
+        <button className="bg-[#3E2A1E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#163d5c]">
           + Add Vehicle
         </button>
       </div>
@@ -863,7 +863,7 @@ function GPSTrackerSetup() {
   return (
     <div className="space-y-6">
       {/* Recommendation Banner */}
-      <div className="bg-gradient-to-r from-[#1B4F72] to-[#2980B9] rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#2980B9] rounded-xl p-6 text-white">
         <h3 className="text-xl font-bold mb-2">GPS Tracker Recommendations for Abel Lumber</h3>
         <p className="text-blue-100 text-sm leading-relaxed">
           For a building materials delivery fleet, we recommend <strong>Samsara</strong> for the best
@@ -892,7 +892,7 @@ function GPSTrackerSetup() {
           <div
             key={tracker.name}
             className={`bg-white rounded-xl border overflow-hidden ${
-              tracker.recommended ? 'border-[#e67e22] ring-2 ring-[#e67e22]/20' : 'border-gray-200'
+              tracker.recommended ? 'border-[#C9822B] ring-2 ring-[#C9822B]/20' : 'border-gray-200'
             }`}
           >
             <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
@@ -902,7 +902,7 @@ function GPSTrackerSetup() {
                   <div className="flex items-center gap-2">
                     <h4 className="font-bold text-[#1e3a5f]">{tracker.name}</h4>
                     {tracker.recommended && (
-                      <span className="bg-[#e67e22] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <span className="bg-[#C9822B] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                         RECOMMENDED
                       </span>
                     )}
@@ -937,7 +937,7 @@ function GPSTrackerSetup() {
                 </ul>
               </div>
               <div>
-                <h5 className="text-xs font-bold text-[#1B4F72] mb-2">Aegis Integration</h5>
+                <h5 className="text-xs font-bold text-[#3E2A1E] mb-2">Aegis Integration</h5>
                 <p className="text-xs text-gray-600">{tracker.integration}</p>
               </div>
             </div>
@@ -964,9 +964,9 @@ function GPSTrackerSetup() {
             <div className="text-xs font-bold text-gray-700">Webhook/API</div>
             <div className="text-[10px] text-gray-500 mt-1">Pushes events to Aegis</div>
           </div>
-          <div className="bg-[#1B4F72]/10 rounded-lg p-4 border border-[#1B4F72]/20">
+          <div className="bg-[#3E2A1E]/10 rounded-lg p-4 border border-[#3E2A1E]/20">
             <div className="text-2xl mb-2">🖥️</div>
-            <div className="text-xs font-bold text-[#1B4F72]">Aegis</div>
+            <div className="text-xs font-bold text-[#3E2A1E]">Aegis</div>
             <div className="text-[10px] text-gray-500 mt-1">Shows on Fleet Hub map</div>
           </div>
         </div>

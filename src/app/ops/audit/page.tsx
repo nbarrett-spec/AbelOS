@@ -17,14 +17,14 @@ const ENTITY_OPTIONS = ['', 'Order', 'Invoice', 'Payment', 'Quote', 'Builder', '
 const SEVERITY_OPTIONS = ['', 'INFO', 'WARN', 'CRITICAL']
 
 const severityColors: Record<string, { bg: string; text: string; dot: string }> = {
-  INFO: { bg: '#EBF5FB', text: '#1B4F72', dot: '#3498DB' },
-  WARN: { bg: '#FEF9E7', text: '#7D6608', dot: '#F39C12' },
+  INFO: { bg: '#EBF5FB', text: '#3E2A1E', dot: '#3498DB' },
+  WARN: { bg: '#FEF9E7', text: '#7D6608', dot: '#D9993F' },
   CRITICAL: { bg: '#FDEDEC', text: '#922B21', dot: '#E74C3C' },
 }
 
 const actionColors: Record<string, { bg: string; text: string }> = {
   CREATE: { bg: '#E8F8F5', text: '#1E8449' },
-  UPDATE: { bg: '#EBF5FB', text: '#1B4F72' },
+  UPDATE: { bg: '#EBF5FB', text: '#3E2A1E' },
   DELETE: { bg: '#FDEDEC', text: '#922B21' },
   APPROVE: { bg: '#E8F8F5', text: '#1E8449' },
   DENY: { bg: '#FDEDEC', text: '#922B21' },
@@ -33,7 +33,7 @@ const actionColors: Record<string, { bg: string; text: string }> = {
   ESCALATE: { bg: '#FEF9E7', text: '#7D6608' },
   LOGIN: { bg: '#F4F6F7', text: '#5D6D7E' },
   RECORD_PAYMENT: { bg: '#E8F8F5', text: '#1E8449' },
-  STATUS_CHANGE: { bg: '#EBF5FB', text: '#1B4F72' },
+  STATUS_CHANGE: { bg: '#EBF5FB', text: '#3E2A1E' },
   CANCEL: { bg: '#FEF9E7', text: '#7D6608' },
 }
 
@@ -101,12 +101,12 @@ export default function AuditLogPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1B4F72', margin: 0 }}>Audit Trail</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#3E2A1E', margin: 0 }}>Audit Trail</h1>
           <p style={{ color: '#6b7280', margin: '4px 0 0', fontSize: '14px' }}>
             Every data change tracked with who, what, when, and why
           </p>
         </div>
-        <button onClick={() => fetchLogs(offset)} style={{ background: '#1B4F72', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}>
+        <button onClick={() => fetchLogs(offset)} style={{ background: '#3E2A1E', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}>
           Refresh
         </button>
       </div>
@@ -115,9 +115,9 @@ export default function AuditLogPage() {
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
-            { label: 'Total Events', value: stats.totalLogs, color: '#1B4F72', icon: '\uD83D\uDCCB' },
+            { label: 'Total Events', value: stats.totalLogs, color: '#3E2A1E', icon: '\uD83D\uDCCB' },
             { label: 'Critical', value: stats.criticalCount, color: '#E74C3C', icon: '\uD83D\uDD34' },
-            { label: 'Warnings', value: stats.warnCount, color: '#F39C12', icon: '\u26A0\uFE0F' },
+            { label: 'Warnings', value: stats.warnCount, color: '#D9993F', icon: '\u26A0\uFE0F' },
             { label: 'Today', value: stats.todayCount, color: '#27AE60', icon: '\uD83D\uDCC5' },
             { label: 'This Week', value: stats.weekCount, color: '#8E44AD', icon: '\uD83D\uDCC6' },
             { label: 'Active Users', value: stats.uniqueUsers, color: '#2980B9', icon: '\uD83D\uDC64' },
@@ -199,7 +199,7 @@ export default function AuditLogPage() {
                       {log.details && typeof log.details === 'object' ? Object.entries(log.details).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(', ') : '\u2014'}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
-                      <button onClick={(e) => { e.stopPropagation(); setSelected(log) }} style={{ background: '#EBF5FB', color: '#1B4F72', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>View</button>
+                      <button onClick={(e) => { e.stopPropagation(); setSelected(log) }} style={{ background: '#EBF5FB', color: '#3E2A1E', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>View</button>
                     </td>
                   </tr>
                 )
@@ -213,9 +213,9 @@ export default function AuditLogPage() {
           <div style={{ padding: '12px 16px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: '#6b7280' }}>Showing {offset + 1}\u2013{Math.min(offset + limit, total)} of {total}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => fetchLogs(Math.max(0, offset - limit))} disabled={offset === 0} style={{ padding: '6px 14px', background: offset === 0 ? '#e5e7eb' : '#1B4F72', color: offset === 0 ? '#9ca3af' : 'white', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: offset === 0 ? 'default' : 'pointer' }}>\u2190 Prev</button>
+              <button onClick={() => fetchLogs(Math.max(0, offset - limit))} disabled={offset === 0} style={{ padding: '6px 14px', background: offset === 0 ? '#e5e7eb' : '#3E2A1E', color: offset === 0 ? '#9ca3af' : 'white', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: offset === 0 ? 'default' : 'pointer' }}>\u2190 Prev</button>
               <span style={{ padding: '6px 10px', fontSize: '13px', color: '#374151' }}>Page {page} / {totalPages}</span>
-              <button onClick={() => fetchLogs(offset + limit)} disabled={offset + limit >= total} style={{ padding: '6px 14px', background: offset + limit >= total ? '#e5e7eb' : '#1B4F72', color: offset + limit >= total ? '#9ca3af' : 'white', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: offset + limit >= total ? 'default' : 'pointer' }}>Next \u2192</button>
+              <button onClick={() => fetchLogs(offset + limit)} disabled={offset + limit >= total} style={{ padding: '6px 14px', background: offset + limit >= total ? '#e5e7eb' : '#3E2A1E', color: offset + limit >= total ? '#9ca3af' : 'white', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: offset + limit >= total ? 'default' : 'pointer' }}>Next \u2192</button>
             </div>
           </div>
         )}
@@ -226,7 +226,7 @@ export default function AuditLogPage() {
         <div onClick={() => setSelected(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '24px', maxWidth: '600px', width: '90%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 25px rgba(0,0,0,0.15)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1B4F72', margin: 0 }}>Audit Event Detail</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#3E2A1E', margin: 0 }}>Audit Event Detail</h2>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#6b7280' }}>{'\u00D7'}</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -252,7 +252,7 @@ export default function AuditLogPage() {
                 {JSON.stringify(selected.details, null, 2)}
               </pre>
             </div>
-            <button onClick={() => setSelected(null)} style={{ marginTop: '16px', width: '100%', padding: '10px', background: '#1B4F72', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Close</button>
+            <button onClick={() => setSelected(null)} style={{ marginTop: '16px', width: '100%', padding: '10px', background: '#3E2A1E', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Close</button>
           </div>
         </div>
       )}

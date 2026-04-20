@@ -251,14 +251,14 @@ export default function AlertHistoryPage() {
           </select>
           <Link
             href="/admin/timeline"
-            className="text-sm text-abel-navy hover:text-abel-navy/80 font-medium px-3 py-1.5 border border-abel-navy/30 rounded hover:bg-abel-navy/5"
+            className="text-sm text-abel-walnut hover:text-abel-walnut/80 font-medium px-3 py-1.5 border border-abel-walnut/30 rounded hover:bg-abel-walnut/5"
           >
             Timeline →
           </Link>
           <button
             onClick={load}
             disabled={loading}
-            className="px-3 py-1.5 text-sm text-white bg-abel-navy rounded hover:bg-abel-navy/90 disabled:opacity-50"
+            className="px-3 py-1.5 text-sm text-white bg-abel-walnut rounded hover:bg-abel-walnut/90 disabled:opacity-50"
           >
             {loading ? 'Loading…' : 'Refresh'}
           </button>
@@ -625,7 +625,7 @@ function MuteModal({
             type="button"
             onClick={() => onSubmit(hours, reason)}
             disabled={busy}
-            className="px-4 py-2 text-sm font-medium text-white bg-abel-navy rounded hover:bg-abel-navy/90 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-white bg-abel-walnut rounded hover:bg-abel-walnut/90 disabled:opacity-50"
           >
             {busy ? 'Muting…' : `Mute for ${PRESETS.find((p) => p.hours === hours)?.label || `${hours}h`}`}
           </button>

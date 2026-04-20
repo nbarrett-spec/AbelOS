@@ -62,8 +62,8 @@ interface POItem {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const NAVY = '#1B4F72'
-const ORANGE = '#E67E22'
+const NAVY = '#3E2A1E'
+const ORANGE = '#C9822B'
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: '#FBBF24',

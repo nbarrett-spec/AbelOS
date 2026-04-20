@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/blueprints/[id]/convert
@@ -18,6 +19,8 @@ export async function POST(
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'CREATE', 'BlueprintConversion', params.id).catch(() => {});
 
     const body = await request.json()
     const { action, takeoffId, notes } = body // action: 'quote' | 'order'

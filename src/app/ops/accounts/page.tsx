@@ -101,7 +101,7 @@ export default function BuilderAccountsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B4F72]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
       </div>
     )
   }
@@ -116,7 +116,7 @@ export default function BuilderAccountsPage() {
             CRM view — manage relationships, pricing programs, and account health
           </p>
         </div>
-        <button className="px-3 py-1.5 text-sm bg-[#1B4F72] text-white rounded-lg hover:bg-[#154360]">
+        <button className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]">
           + Add Builder
         </button>
       </div>
@@ -137,7 +137,7 @@ export default function BuilderAccountsPage() {
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase">Total Records</p>
-          <p className="text-2xl font-bold text-[#E67E22]">{total}</p>
+          <p className="text-2xl font-bold text-[#C9822B]">{total}</p>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ export default function BuilderAccountsPage() {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             placeholder="Search by company, contact, email, city..."
-            className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#1B4F72]/20 focus:border-[#1B4F72]"
+            className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
           />
           <select
             value={statusFilter}
@@ -181,10 +181,10 @@ export default function BuilderAccountsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <label className="text-xs text-gray-500 font-medium whitespace-nowrap">From</label>
           <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]" />
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
           <label className="text-xs text-gray-500 font-medium whitespace-nowrap">To</label>
           <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F72]/30 focus:border-[#1B4F72]" />
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
           {(dateFrom || dateTo) && (
             <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
               className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
@@ -232,7 +232,7 @@ export default function BuilderAccountsPage() {
                 <td className="px-4 py-3">
                   <Link
                     href={`/ops/accounts/${builder.id}`}
-                    className="font-medium text-gray-900 hover:text-[#1B4F72]"
+                    className="font-medium text-gray-900 hover:text-[#3E2A1E]"
                   >
                     {builder.companyName}
                   </Link>
@@ -268,7 +268,7 @@ export default function BuilderAccountsPage() {
                 </td>
                 <td className="px-4 py-3 text-center text-sm">
                   {builder._count.customPricing > 0 ? (
-                    <span className="text-[#E67E22] font-medium">
+                    <span className="text-[#C9822B] font-medium">
                       {builder._count.customPricing}
                     </span>
                   ) : (
@@ -287,7 +287,7 @@ export default function BuilderAccountsPage() {
                 <td className="px-4 py-3 text-right">
                   <Link
                     href={`/ops/accounts/${builder.id}`}
-                    className="text-xs text-[#1B4F72] hover:text-[#E67E22]"
+                    className="text-xs text-[#3E2A1E] hover:text-[#C9822B]"
                   >
                     View →
                   </Link>

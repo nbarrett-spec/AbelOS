@@ -238,7 +238,7 @@ export default function DealDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e67e22]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C9822B]" />
       </div>
     )
   }
@@ -263,7 +263,7 @@ export default function DealDetailPage() {
     <div className="space-y-6">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#1B4F72]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
         }`}>
           {toast}
         </div>
@@ -305,7 +305,7 @@ export default function DealDetailPage() {
                   </button>
                 </>
               )}
-              <button onClick={handleAssignToMe} className="px-3 py-2 bg-[#e67e22] text-white rounded-lg hover:bg-[#d46711] text-sm font-medium transition">
+              <button onClick={handleAssignToMe} className="px-3 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-[#d46711] text-sm font-medium transition">
                 Assign to Me
               </button>
               <div className="relative">
@@ -404,7 +404,7 @@ export default function DealDetailPage() {
                   <select
                     value={newActivity.type}
                     onChange={(e) => setNewActivity({ ...newActivity, type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e67e22] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                   >
                     {Object.entries(ACTIVITY_ICONS).map(([key]) => (
                       <option key={key} value={key}>{key.replace(/_/g, ' ')}</option>
@@ -417,7 +417,7 @@ export default function DealDetailPage() {
                     type="text"
                     value={newActivity.subject}
                     onChange={(e) => setNewActivity({ ...newActivity, subject: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e67e22] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                     required
                   />
                 </div>
@@ -426,7 +426,7 @@ export default function DealDetailPage() {
                   <textarea
                     value={newActivity.notes}
                     onChange={(e) => setNewActivity({ ...newActivity, notes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e67e22] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                     rows={3}
                   />
                 </div>
@@ -436,7 +436,7 @@ export default function DealDetailPage() {
                     type="text"
                     value={newActivity.outcome}
                     onChange={(e) => setNewActivity({ ...newActivity, outcome: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e67e22] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -445,7 +445,7 @@ export default function DealDetailPage() {
                     type="date"
                     value={newActivity.followUpDate}
                     onChange={(e) => setNewActivity({ ...newActivity, followUpDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e67e22] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -500,7 +500,7 @@ export default function DealDetailPage() {
               <div>
                 <p className="text-gray-500 text-xs mb-1">Email</p>
                 {deal.contactEmail ? (
-                  <a href={`mailto:${deal.contactEmail}`} className="text-[#e67e22] hover:text-[#d35400] font-medium">
+                  <a href={`mailto:${deal.contactEmail}`} className="text-[#C9822B] hover:text-[#A86B1F] font-medium">
                     {deal.contactEmail}
                   </a>
                 ) : <p className="text-gray-400">—</p>}
@@ -508,7 +508,7 @@ export default function DealDetailPage() {
               <div>
                 <p className="text-gray-500 text-xs mb-1">Phone</p>
                 {deal.contactPhone ? (
-                  <a href={`tel:${deal.contactPhone}`} className="text-[#e67e22] hover:text-[#d35400] font-medium">
+                  <a href={`tel:${deal.contactPhone}`} className="text-[#C9822B] hover:text-[#A86B1F] font-medium">
                     {deal.contactPhone}
                   </a>
                 ) : <p className="text-gray-400">—</p>}

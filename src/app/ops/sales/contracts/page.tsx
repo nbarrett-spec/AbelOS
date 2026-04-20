@@ -162,7 +162,7 @@ export default function ContractsPage() {
           </div>
           <button
             onClick={handleNewContract}
-            className="bg-[#e67e22] hover:bg-[#d46711] text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            className="bg-[#C9822B] hover:bg-[#d46711] text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             + New Contract
           </button>
@@ -179,7 +179,7 @@ export default function ContractsPage() {
             <select
               value={statusFilter}
               onChange={handleStatusFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#e67e22]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             >
               <option value="All">All Statuses</option>
               <option value="DRAFT">Draft</option>
@@ -199,7 +199,7 @@ export default function ContractsPage() {
               placeholder="Contract #, Title, or Company..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#e67e22]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
             />
           </div>
         </div>
@@ -250,7 +250,7 @@ export default function ContractsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleEditContract(contract)}
-                          className="text-[#e67e22] hover:text-[#d46711] font-medium"
+                          className="text-[#C9822B] hover:text-[#d46711] font-medium"
                         >
                           {contract.contractNumber}
                         </button>
@@ -290,7 +290,7 @@ export default function ContractsPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditContract(contract)}
-                            className="text-[#e67e22] hover:text-[#d46711] text-sm font-medium"
+                            className="text-[#C9822B] hover:text-[#d46711] text-sm font-medium"
                           >
                             Edit
                           </button>

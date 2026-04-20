@@ -122,7 +122,7 @@ function CrewBriefingInner() {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
-        <div className="h-32 bg-gradient-to-r from-[#1B4F72] to-[#0D2438] rounded-lg animate-pulse" />
+        <div className="h-32 bg-gradient-to-r from-[#3E2A1E] to-[#0D2438] rounded-lg animate-pulse" />
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="bg-white rounded-lg p-4 h-40 animate-pulse" />
@@ -155,7 +155,7 @@ function CrewBriefingInner() {
   return (
     <div className="p-4 space-y-4 pb-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1B4F72] to-[#0D2438] text-white rounded-lg p-5">
+      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#0D2438] text-white rounded-lg p-5">
         <p className="text-sm text-blue-200 mb-1">Good Morning</p>
         <h1 className="text-2xl font-bold mb-3">{briefing.crewName}</h1>
         <p className="text-lg font-semibold">{formattedDate}</p>
@@ -169,11 +169,11 @@ function CrewBriefingInner() {
         <div className="bg-white rounded-lg p-4 border border-gray-200">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-gray-700">Progress</p>
-            <p className="text-sm font-bold text-[#E67E22]">{progressPercent}%</p>
+            <p className="text-sm font-bold text-[#C9822B]">{progressPercent}%</p>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-[#E67E22] h-2 rounded-full transition-all duration-500"
+              className="bg-[#C9822B] h-2 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -228,7 +228,7 @@ function CrewBriefingInner() {
               <div className={`rounded-lg p-4 border-2 transition-all hover:shadow-md ${
                 stop.status === 'COMPLETED'
                   ? 'bg-green-50 border-green-200'
-                  : 'bg-white border-gray-200 hover:border-[#E67E22]'
+                  : 'bg-white border-gray-200 hover:border-[#C9822B]'
               }`}>
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
@@ -304,7 +304,7 @@ function CrewBriefingInner() {
                       onClick={(e) => {
                         e.preventDefault()
                       }}
-                      className="flex-1 bg-[#E67E22] hover:bg-[#d35400] text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
+                      className="flex-1 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
                     >
                       Start
                     </button>
@@ -325,7 +325,7 @@ function CrewBriefingInner() {
       )}
 
       {/* Helper Text */}
-      <div className="bg-orange-50 border border-[#E67E22] rounded-lg p-4 text-sm">
+      <div className="bg-orange-50 border border-[#C9822B] rounded-lg p-4 text-sm">
         <p className="text-orange-900">
           💡 <strong>Tip:</strong> Tap any stop to view full details. Use the Navigate button to open directions in Maps.
         </p>

@@ -41,12 +41,12 @@ const STATUS_COLORS: Record<string, string> = {
   STORED: '#3B82F6',
   STAGED: '#F59E0B',
   DELIVERED: '#8B5CF6',
-  INSTALLED: '#1B4F72',
+  INSTALLED: '#3E2A1E',
 }
 
 const ZONE_COLORS: Record<string, string> = {
-  MAIN: '#1B4F72',
-  STAGING: '#E67E22',
+  MAIN: '#3E2A1E',
+  STAGING: '#C9822B',
   SHIPPING: '#10B981',
   QC: '#8B5CF6',
   OVERFLOW: '#6B7280',
@@ -188,7 +188,7 @@ export default function WarehouseBayMapPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1B4F72', margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
             🏭 Warehouse Bay Map
           </h1>
           <p style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
@@ -198,13 +198,13 @@ export default function WarehouseBayMapPage() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => setShowCreateModal(true)}
-            style={{ padding: '8px 16px', background: '#1B4F72', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '8px 16px', background: '#3E2A1E', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             + Add Bay
           </button>
           <button
             onClick={() => setShowBulkModal(true)}
-            style={{ padding: '8px 16px', background: '#E67E22', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '8px 16px', background: '#C9822B', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             + Bulk Create
           </button>
@@ -215,11 +215,11 @@ export default function WarehouseBayMapPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Total Bays</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#1B4F72' }}>{bays.length}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#3E2A1E' }}>{bays.length}</div>
         </div>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Doors Stored</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#1B4F72' }}>{totalDoors}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#3E2A1E' }}>{totalDoors}</div>
           <div style={{ fontSize: 11, color: '#6B7280' }}>of {totalCapacity} capacity</div>
         </div>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
@@ -246,7 +246,7 @@ export default function WarehouseBayMapPage() {
           onClick={() => setZoneFilter('')}
           style={{
             padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            background: !zoneFilter ? '#1B4F72' : 'white',
+            background: !zoneFilter ? '#3E2A1E' : 'white',
             color: !zoneFilter ? 'white' : '#374151',
             border: '1px solid #E5E7EB'
           }}
@@ -259,7 +259,7 @@ export default function WarehouseBayMapPage() {
             onClick={() => setZoneFilter(z.zone)}
             style={{
               padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              background: zoneFilter === z.zone ? (ZONE_COLORS[z.zone] || '#1B4F72') : 'white',
+              background: zoneFilter === z.zone ? (ZONE_COLORS[z.zone] || '#3E2A1E') : 'white',
               color: zoneFilter === z.zone ? 'white' : '#374151',
               border: '1px solid #E5E7EB'
             }}
@@ -350,7 +350,7 @@ export default function WarehouseBayMapPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1B4F72', margin: 0 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
                 Bay {selectedBay.bayNumber}
               </h2>
               <p style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
@@ -385,7 +385,7 @@ export default function WarehouseBayMapPage() {
                   {bayDoors.map(door => (
                     <tr key={door.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                       <td style={{ padding: '8px 12px' }}>
-                        <a href={`/door/${door.serialNumber}`} style={{ color: '#1B4F72', fontWeight: 600, textDecoration: 'none' }}>
+                        <a href={`/door/${door.serialNumber}`} style={{ color: '#3E2A1E', fontWeight: 600, textDecoration: 'none' }}>
                           {door.serialNumber}
                         </a>
                       </td>
@@ -458,7 +458,7 @@ export default function WarehouseBayMapPage() {
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 400, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1B4F72', marginBottom: 16 }}>Add Warehouse Bay</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#3E2A1E', marginBottom: 16 }}>Add Warehouse Bay</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Bay Number *</label>
@@ -507,7 +507,7 @@ export default function WarehouseBayMapPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button onClick={() => setShowCreateModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleCreateBay} disabled={creating || !newBay.bayNumber} style={{ padding: '8px 16px', background: '#1B4F72', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !newBay.bayNumber ? 0.6 : 1 }}>
+              <button onClick={handleCreateBay} disabled={creating || !newBay.bayNumber} style={{ padding: '8px 16px', background: '#3E2A1E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !newBay.bayNumber ? 0.6 : 1 }}>
                 {creating ? 'Creating...' : 'Create Bay'}
               </button>
             </div>
@@ -519,7 +519,7 @@ export default function WarehouseBayMapPage() {
       {showBulkModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 440, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1B4F72', marginBottom: 4 }}>Bulk Create Bays</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Bulk Create Bays</h3>
             <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>Creates numbered bays from prefix + start to end number</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -595,7 +595,7 @@ export default function WarehouseBayMapPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button onClick={() => setShowBulkModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleBulkCreate} disabled={creating || !bulkForm.prefix} style={{ padding: '8px 16px', background: '#E67E22', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !bulkForm.prefix ? 0.6 : 1 }}>
+              <button onClick={handleBulkCreate} disabled={creating || !bulkForm.prefix} style={{ padding: '8px 16px', background: '#C9822B', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !bulkForm.prefix ? 0.6 : 1 }}>
                 {creating ? 'Creating...' : 'Create Bays'}
               </button>
             </div>

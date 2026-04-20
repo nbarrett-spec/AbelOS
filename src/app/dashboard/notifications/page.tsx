@@ -202,7 +202,7 @@ export default function NotificationsPage() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-abel-orange text-white rounded-lg hover:bg-abel-orange/90 transition font-medium"
+                className="px-4 py-2 bg-abel-amber text-white rounded-lg hover:bg-abel-amber/90 transition font-medium"
               >
                 Mark All as Read
               </button>
@@ -217,7 +217,7 @@ export default function NotificationsPage() {
             onClick={() => { setFilter('all'); setSelectedNotifs(new Set()) }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'all'
-                ? 'bg-abel-navy text-white'
+                ? 'bg-abel-walnut text-white'
                 : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -227,7 +227,7 @@ export default function NotificationsPage() {
             onClick={() => { setFilter('unread'); setSelectedNotifs(new Set()) }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'unread'
-                ? 'bg-abel-navy text-white'
+                ? 'bg-abel-walnut text-white'
                 : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -240,7 +240,7 @@ export default function NotificationsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-4 border-gray-300 border-t-abel-orange rounded-full animate-spin mx-auto mb-3"></div>
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-abel-amber rounded-full animate-spin mx-auto mb-3"></div>
               <p className="text-gray-500">Loading notifications...</p>
             </div>
           </div>
@@ -256,13 +256,13 @@ export default function NotificationsPage() {
         ) : (
           <div className="space-y-3">
             {selectedNotifs.size > 0 && (
-              <div className="bg-abel-navy/10 border border-abel-navy/20 rounded-lg p-4 flex items-center justify-between">
-                <span className="text-sm font-medium text-abel-navy">
+              <div className="bg-abel-walnut/10 border border-abel-walnut/20 rounded-lg p-4 flex items-center justify-between">
+                <span className="text-sm font-medium text-abel-walnut">
                   {selectedNotifs.size} selected
                 </span>
                 <button
                   onClick={markSelectedAsRead}
-                  className="text-sm px-3 py-1.5 bg-abel-navy text-white rounded hover:bg-abel-navy/90 transition font-medium"
+                  className="text-sm px-3 py-1.5 bg-abel-walnut text-white rounded hover:bg-abel-walnut/90 transition font-medium"
                 >
                   Mark as Read
                 </button>
@@ -279,7 +279,7 @@ export default function NotificationsPage() {
                 <div
                   key={notif.id}
                   className={`${colors.border} bg-white border border-gray-200 rounded-lg p-4 transition hover:shadow-md cursor-pointer ${
-                    !notif.read ? 'ring-1 ring-abel-orange/20' : ''
+                    !notif.read ? 'ring-1 ring-abel-amber/20' : ''
                   }`}
                   onClick={() => handleNotificationClick(notif)}
                 >
@@ -295,7 +295,7 @@ export default function NotificationsPage() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => { }}
-                        className="w-5 h-5 rounded border-gray-300 text-abel-orange focus:ring-abel-orange/20 cursor-pointer"
+                        className="w-5 h-5 rounded border-gray-300 text-abel-amber focus:ring-abel-amber/20 cursor-pointer"
                       />
                     </div>
 
@@ -320,13 +320,13 @@ export default function NotificationsPage() {
 
                         {!notif.read && (
                           <div className="flex-shrink-0">
-                            <span className="inline-block w-3 h-3 bg-abel-orange rounded-full"></span>
+                            <span className="inline-block w-3 h-3 bg-abel-amber rounded-full"></span>
                           </div>
                         )}
                       </div>
 
                       {notif.link && (
-                        <div className="mt-3 flex items-center gap-2 text-sm text-abel-orange hover:text-abel-orange/80 font-medium">
+                        <div className="mt-3 flex items-center gap-2 text-sm text-abel-amber hover:text-abel-amber/80 font-medium">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                           </svg>
@@ -345,7 +345,7 @@ export default function NotificationsPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-2 text-abel-orange hover:text-abel-orange/80 font-medium"
+          className="inline-flex items-center gap-2 text-abel-amber hover:text-abel-amber/80 font-medium"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

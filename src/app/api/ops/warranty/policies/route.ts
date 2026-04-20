@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/lib/audit'
+import { logAudit, audit } from '@/lib/audit'
 import { checkStaffAuth } from '@/lib/api-auth'
 
 function generateId(prefix: string): string {
@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+
+    audit(request, 'CREATE', 'WarrantyPolicy', undefined, { method: 'POST' }).catch(() => {})
 
     // If action is 'seed', create default Abel Lumber warranty policies
     if (body.action === 'seed') {
@@ -197,6 +199,8 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
     const { policyId, ...updates } = body
+
+    audit(request, 'UPDATE', 'WarrantyPolicy', undefined, { method: 'PATCH' }).catch(() => {})
 
     if (!policyId) {
       return NextResponse.json({ error: 'policyId is required' }, { status: 400 })

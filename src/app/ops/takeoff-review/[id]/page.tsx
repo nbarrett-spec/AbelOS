@@ -194,7 +194,7 @@ export default function TakeoffReviewDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#1B4F72] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -228,7 +228,7 @@ export default function TakeoffReviewDetailPage() {
       )}
       {/* Header */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link href="/ops/takeoff-review" className="hover:text-[#1B4F72]">Takeoff Review</Link>
+        <Link href="/ops/takeoff-review" className="hover:text-[#3E2A1E]">Takeoff Review</Link>
         <span>/</span>
         <span className="text-gray-900">{takeoff.project?.name}</span>
       </div>
@@ -255,7 +255,7 @@ export default function TakeoffReviewDetailPage() {
           <button
             onClick={generateQuote}
             disabled={generatingQuote}
-            className="px-6 py-2 bg-[#E67E22] hover:bg-[#D35400] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+            className="px-6 py-2 bg-[#C9822B] hover:bg-[#A86B1F] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
           >
             {generatingQuote ? 'Generating...' : 'Generate Quote →'}
           </button>
@@ -265,7 +265,7 @@ export default function TakeoffReviewDetailPage() {
       {/* Stats Bar */}
       <div className="grid grid-cols-5 gap-3 mb-6">
         <div className="bg-white rounded-lg border p-3 text-center">
-          <p className="text-2xl font-bold text-[#1B4F72]">{items.length}</p>
+          <p className="text-2xl font-bold text-[#3E2A1E]">{items.length}</p>
           <p className="text-xs text-gray-500">Items</p>
         </div>
         <div className="bg-white rounded-lg border p-3 text-center">
@@ -277,7 +277,7 @@ export default function TakeoffReviewDetailPage() {
           <p className="text-xs text-gray-500">Unmatched</p>
         </div>
         <div className="bg-white rounded-lg border p-3 text-center">
-          <p className="text-2xl font-bold text-[#1B4F72]">${estimatedTotal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+          <p className="text-2xl font-bold text-[#3E2A1E]">${estimatedTotal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           <p className="text-xs text-gray-500">Est. Total</p>
         </div>
         <div className="bg-white rounded-lg border p-3 text-center">
@@ -293,7 +293,7 @@ export default function TakeoffReviewDetailPage() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${filter === 'all' ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${filter === 'all' ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             All ({items.length})
           </button>
@@ -301,7 +301,7 @@ export default function TakeoffReviewDetailPage() {
             <button
               key={cat}
               onClick={() => setFilter(filter === cat ? 'all' : cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${filter === cat ? 'bg-[#1B4F72] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${filter === cat ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
             >
               {CATEGORY_ICONS[cat] || '📋'} {cat} ({items.filter(i => i.category === cat).length})
             </button>
@@ -338,7 +338,7 @@ export default function TakeoffReviewDetailPage() {
                               type="text"
                               value={vals.description ?? item.description}
                               onChange={e => setEditValues((p: any) => ({ ...p, [item.id]: { ...vals, description: e.target.value } }))}
-                              className="w-full px-3 py-1.5 border rounded text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+                              className="w-full px-3 py-1.5 border rounded text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
                             />
                           </div>
                           <div className="col-span-2">
@@ -358,7 +358,7 @@ export default function TakeoffReviewDetailPage() {
                               min="0"
                               value={vals.quantity ?? item.quantity}
                               onChange={e => setEditValues((p: any) => ({ ...p, [item.id]: { ...vals, quantity: parseInt(e.target.value) || 0 } }))}
-                              className="w-full px-3 py-1.5 border rounded text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+                              className="w-full px-3 py-1.5 border rounded text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
                             />
                           </div>
                           <div className="col-span-3">
@@ -368,7 +368,7 @@ export default function TakeoffReviewDetailPage() {
                               placeholder="Search SKU or name..."
                               value={productSearch}
                               onChange={e => { setProductSearch(e.target.value); searchProducts(e.target.value) }}
-                              className="w-full px-3 py-1.5 border rounded text-sm focus:ring-2 focus:ring-[#1B4F72]/20"
+                              className="w-full px-3 py-1.5 border rounded text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
                             />
                             {productResults.length > 0 && (
                               <div className="absolute z-10 mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto w-72">
@@ -400,7 +400,7 @@ export default function TakeoffReviewDetailPage() {
                           <button
                             onClick={() => { saveItemEdit(item.id); setProductSearch('') }}
                             disabled={saving}
-                            className="px-4 py-1.5 text-xs bg-[#1B4F72] text-white rounded hover:bg-[#154360] disabled:opacity-50"
+                            className="px-4 py-1.5 text-xs bg-[#3E2A1E] text-white rounded hover:bg-[#2A1C14] disabled:opacity-50"
                           >
                             {saving ? 'Saving...' : 'Save Changes'}
                           </button>
@@ -452,7 +452,7 @@ export default function TakeoffReviewDetailPage() {
                                   [item.id]: { description: item.description, quantity: item.quantity, category: item.category }
                                 }))
                               }}
-                              className="p-1.5 text-gray-400 hover:text-[#1B4F72] hover:bg-blue-50 rounded"
+                              className="p-1.5 text-gray-400 hover:text-[#3E2A1E] hover:bg-blue-50 rounded"
                               title="Edit"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -494,7 +494,7 @@ export default function TakeoffReviewDetailPage() {
           <button
             onClick={generateQuote}
             disabled={generatingQuote}
-            className="px-8 py-2 bg-[#E67E22] hover:bg-[#D35400] text-white font-semibold rounded-lg shadow transition disabled:opacity-50"
+            className="px-8 py-2 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold rounded-lg shadow transition disabled:opacity-50"
           >
             {generatingQuote ? 'Generating...' : 'Generate Quote →'}
           </button>

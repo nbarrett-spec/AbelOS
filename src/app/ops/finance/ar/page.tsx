@@ -242,7 +242,7 @@ export default function AccountsReceivablePage() {
             <tbody>
               {filteredInvoices.map((invoice, idx) => (
                 <tr key={invoice.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td className="py-3 px-4 font-bold text-[#1B4F72]">{invoice.invoiceNumber}</td>
+                  <td className="py-3 px-4 font-bold text-[#3E2A1E]">{invoice.invoiceNumber}</td>
                   <td className="py-3 px-4 text-gray-900">{invoice.builderName}</td>
                   <td className="text-right py-3 px-4 font-bold text-gray-900">{formatCurrency(invoice.amount)}</td>
                   <td className={`text-right py-3 px-4 font-bold ${invoice.balanceDue > 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -264,7 +264,7 @@ export default function AccountsReceivablePage() {
                     {invoice.daysOutstanding}
                   </td>
                   <td className="py-3 px-4 text-xs">
-                    <button className="text-[#E67E22] hover:text-[#E67E22] font-semibold">Send Reminder</button>
+                    <button className="text-[#C9822B] hover:text-[#C9822B] font-semibold">Send Reminder</button>
                   </td>
                 </tr>
               ))}

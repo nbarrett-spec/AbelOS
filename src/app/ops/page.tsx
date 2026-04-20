@@ -101,7 +101,7 @@ export default function OpsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-abel-navy" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-abel-walnut" />
       </div>
     )
   }
@@ -145,14 +145,14 @@ export default function OpsDashboard() {
         <KPICardElite
           label="Builder Accounts"
           value={data?.builders.total || 0}
-          color="navy"
+          color="walnut"
           context={`${data?.products.total?.toLocaleString() || 0} products`}
           href="/ops/accounts"
         />
         <KPICardElite
           label="Sales Orders"
           value={orders?.total || 0}
-          color="orange"
+          color="amber"
           context={`${orders?.active || 0} active · ${orders?.completed || 0} fulfilled`}
           delta={(orders?.active || 0) > 0 ? 5 : 0}
           href="/ops/orders"
@@ -167,7 +167,7 @@ export default function OpsDashboard() {
         <KPICardElite
           label="Purchase Orders"
           value={pos?.total || 0}
-          color="slate"
+          color="charcoal"
           context={`${fmt(pos?.totalSpend || 0)} total spend`}
           href="/ops/purchasing"
         />
@@ -177,10 +177,10 @@ export default function OpsDashboard() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-6 bg-gradient-to-b from-abel-orange to-abel-orange rounded-full" />
+            <div className="w-2 h-6 bg-gradient-to-b from-abel-amber to-abel-amber rounded-full" />
             <h2 className="text-lg font-semibold text-gray-900">AI Recommendations</h2>
           </div>
-          <Link href="/ops/ai/predictive" className="text-sm text-abel-navy hover:text-abel-orange transition-colors font-medium">
+          <Link href="/ops/ai/predictive" className="text-sm text-abel-walnut hover:text-abel-amber transition-colors font-medium">
             View All →
           </Link>
         </div>
@@ -192,10 +192,10 @@ export default function OpsDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <BarChart className="w-5 h-5 text-abel-navy" />
+              <BarChart className="w-5 h-5 text-abel-walnut" />
               Order Pipeline
             </h3>
-            <Link href="/ops/orders" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
+            <Link href="/ops/orders" className="text-sm text-abel-walnut hover:text-abel-amber font-medium">
               View All →
             </Link>
           </div>
@@ -205,10 +205,10 @@ export default function OpsDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-abel-orange" />
+              <Package className="w-5 h-5 text-abel-amber" />
               Recent Orders
             </h3>
-            <Link href="/ops/orders" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
+            <Link href="/ops/orders" className="text-sm text-abel-walnut hover:text-abel-amber font-medium">
               All Orders →
             </Link>
           </div>
@@ -254,7 +254,7 @@ export default function OpsDashboard() {
               color="text-danger-600"
             />
           </div>
-          <Link href="/ops/orders" className="block mt-4 text-center text-sm text-abel-navy hover:text-abel-orange font-medium">
+          <Link href="/ops/orders" className="block mt-4 text-center text-sm text-abel-walnut hover:text-abel-amber font-medium">
             Manage Orders →
           </Link>
         </div>
@@ -276,10 +276,10 @@ export default function OpsDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-abel-slate" />
+              <Package className="w-5 h-5 text-abel-charcoal" />
               Product Catalog
             </h3>
-            <Link href="/ops/products" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
+            <Link href="/ops/products" className="text-sm text-abel-walnut hover:text-abel-amber font-medium">
               View All →
             </Link>
           </div>
@@ -288,7 +288,7 @@ export default function OpsDashboard() {
               data={productCategories.slice(0, 8).map((cat, i) => ({
                 label: cat.name,
                 value: cat.count,
-                color: ['#1B4F72', '#E67E22', '#27AE60', '#8E44AD', '#3498DB', '#E74C3C', '#D97706', '#06B6D4'][i] || '#9CA3AF',
+                color: ['#3E2A1E', '#C9822B', '#27AE60', '#8E44AD', '#3498DB', '#E74C3C', '#D97706', '#06B6D4'][i] || '#9CA3AF',
               }))}
               size={150}
               thickness={22}
@@ -303,10 +303,10 @@ export default function OpsDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-abel-orange" />
+              <Users className="w-5 h-5 text-abel-amber" />
               Top Builders
             </h3>
-            <Link href="/ops/accounts" className="text-sm text-abel-navy hover:text-abel-orange font-medium">
+            <Link href="/ops/accounts" className="text-sm text-abel-walnut hover:text-abel-amber font-medium">
               All Accounts →
             </Link>
           </div>
@@ -315,7 +315,7 @@ export default function OpsDashboard() {
               data={data!.topBuilders.map((b, i) => ({
                 label: b.name.length > 20 ? b.name.slice(0, 18) + '...' : b.name,
                 value: b.totalValue,
-                color: ['#1B4F72', '#E67E22', '#27AE60', '#8E44AD', '#3498DB'][i],
+                color: ['#3E2A1E', '#C9822B', '#27AE60', '#8E44AD', '#3498DB'][i],
               }))}
               formatValue={(v) => fmt(v)}
             />
@@ -329,7 +329,7 @@ export default function OpsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Monthly Revenue</h3>
-          <p className="text-3xl font-bold text-abel-navy">{fmt(orders?.totalRevenue || 0)}</p>
+          <p className="text-3xl font-bold text-abel-walnut">{fmt(orders?.totalRevenue || 0)}</p>
           <p className="text-xs text-gray-500 mb-4">From {orders?.total || 0} orders</p>
           {(orders?.monthlyTrend?.length || 0) > 0 ? (
             <>
@@ -337,8 +337,8 @@ export default function OpsDashboard() {
                 data={orders!.monthlyTrend.map((m) => m.revenue)}
                 width={280}
                 height={60}
-                color="#1B4F72"
-                fillColor="#1B4F72"
+                color="#3E2A1E"
+                fillColor="#3E2A1E"
                 showDots
               />
               <div className="flex justify-between mt-2">
@@ -363,7 +363,7 @@ export default function OpsDashboard() {
             />
             <ProgressRing
               value={orders?.totalRevenue ? Math.round((orders.paidRevenue / orders.totalRevenue) * 100) : 0}
-              color="#1B4F72"
+              color="#3E2A1E"
               label="Collection"
             />
             <ProgressRing
@@ -385,7 +385,7 @@ export default function OpsDashboard() {
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Order Volume</h3>
-          <p className="text-3xl font-bold text-abel-orange">{orders?.total || 0}</p>
+          <p className="text-3xl font-bold text-abel-amber">{orders?.total || 0}</p>
           <p className="text-xs text-gray-500 mb-4">Total orders processed</p>
           {(orders?.monthlyTrend?.length || 0) > 0 ? (
             <>
@@ -393,8 +393,8 @@ export default function OpsDashboard() {
                 data={orders!.monthlyTrend.map((m) => m.count)}
                 width={280}
                 height={60}
-                color="#E67E22"
-                fillColor="#E67E22"
+                color="#C9822B"
+                fillColor="#C9822B"
                 showDots
               />
               <div className="flex justify-between mt-2">
@@ -413,7 +413,7 @@ export default function OpsDashboard() {
       {/* Activity Feed */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-abel-navy" />
+          <ShoppingCart className="w-5 h-5 text-abel-walnut" />
           Live Activity Feed
         </h3>
         <ActivityFeed />
@@ -428,8 +428,8 @@ function OrderPipeline({ byStatus }: { byStatus: Record<string, { count: number;
   const stages = [
     { key: 'RECEIVED', label: 'Received', color: '#95A5A6' },
     { key: 'CONFIRMED', label: 'Confirmed', color: '#3498DB' },
-    { key: 'IN_PRODUCTION', label: 'Production', color: '#E67E22' },
-    { key: 'READY_TO_SHIP', label: 'Ready', color: '#F39C12' },
+    { key: 'IN_PRODUCTION', label: 'Production', color: '#C9822B' },
+    { key: 'READY_TO_SHIP', label: 'Ready', color: '#D9993F' },
     { key: 'SHIPPED', label: 'Shipped', color: '#1ABC9C' },
     { key: 'DELIVERED', label: 'Delivered', color: '#2ECC71' },
     { key: 'COMPLETE', label: 'Complete', color: '#27AE60' },
@@ -450,7 +450,7 @@ function OrderPipeline({ byStatus }: { byStatus: Record<string, { count: number;
           <Link key={stage.key} href={`/ops/orders?status=${stage.key}`} className="block">
             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
-              <span className="text-sm text-gray-600 w-[100px] group-hover:text-abel-navy group-hover:font-medium">{stage.label}</span>
+              <span className="text-sm text-gray-600 w-[100px] group-hover:text-abel-walnut group-hover:font-medium">{stage.label}</span>
               <div className="flex-1 bg-gray-100 rounded-full h-2.5">
                 <div className="h-2.5 rounded-full transition-all" style={{ width: `${Math.max(pct, count > 0 ? 2 : 0)}%`, backgroundColor: stage.color }} />
               </div>
@@ -494,7 +494,7 @@ function RecentOrdersList({ orders }: { orders: DashboardData['recentOrders'] })
         <Link key={order.id} href={`/ops/orders/${order.id}`} className="block">
           <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-abel-navy">{order.builderName}</p>
+              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-abel-walnut">{order.builderName}</p>
               <p className="text-xs text-gray-500">{order.orderNumber}</p>
             </div>
             <span className="text-sm font-medium text-gray-900">{fmt(order.total)}</span>
@@ -516,7 +516,7 @@ function PaymentRow({ label, count, amount, color }: { label: string; count: num
     <Link href={`/ops/orders?payment=${label.toUpperCase()}`} className="block">
       <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors group">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 group-hover:text-abel-navy group-hover:font-medium">{label}</span>
+          <span className="text-sm text-gray-600 group-hover:text-abel-walnut group-hover:font-medium">{label}</span>
           <span className="text-xs text-gray-400">({count})</span>
         </div>
         <span className={`text-sm font-semibold ${color}`}>{fmt(amount)}</span>

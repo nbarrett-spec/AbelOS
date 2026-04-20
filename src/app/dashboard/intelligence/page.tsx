@@ -89,8 +89,8 @@ interface PriceChangeTrend {
 
 // Color constants
 const COLORS = {
-  navy: '#1B4F72',
-  orange: '#E67E22',
+  navy: '#3E2A1E',
+  orange: '#C9822B',
   darkBg: '#0F172A',
   cardBg: '#1E293B',
   text: '#F8FAFC',

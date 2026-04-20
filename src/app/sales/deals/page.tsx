@@ -198,7 +198,7 @@ export default function DealsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e67e22]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C9822B]" />
       </div>
     )
   }
@@ -222,7 +222,7 @@ export default function DealsPage() {
             </button>
             <Link
               href="/sales/deals/new"
-              className="px-4 py-2 bg-[#e67e22] text-white rounded-lg font-semibold hover:bg-[#d35400] transition"
+              className="px-4 py-2 bg-[#C9822B] text-white rounded-lg font-semibold hover:bg-[#A86B1F] transition"
             >
               + New Deal
             </Link>
@@ -236,7 +236,7 @@ export default function DealsPage() {
             placeholder="Search by company name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e67e22]"
+            className="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
           />
           <button
             onClick={() => setShowMyDealsOnly(!showMyDealsOnly)}
@@ -292,7 +292,7 @@ export default function DealsPage() {
                 <th className="px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('company')}
-                    className="text-sm font-semibold text-gray-900 hover:text-[#e67e22] transition flex items-center gap-1"
+                    className="text-sm font-semibold text-gray-900 hover:text-[#C9822B] transition flex items-center gap-1"
                   >
                     Company
                     {sortField === 'company' && (
@@ -305,7 +305,7 @@ export default function DealsPage() {
                 <th className="px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('stage')}
-                    className="text-sm font-semibold text-gray-900 hover:text-[#e67e22] transition flex items-center gap-1"
+                    className="text-sm font-semibold text-gray-900 hover:text-[#C9822B] transition flex items-center gap-1"
                   >
                     Stage
                     {sortField === 'stage' && (
@@ -318,7 +318,7 @@ export default function DealsPage() {
                 <th className="px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('value')}
-                    className="text-sm font-semibold text-gray-900 hover:text-[#e67e22] transition flex items-center gap-1"
+                    className="text-sm font-semibold text-gray-900 hover:text-[#C9822B] transition flex items-center gap-1"
                   >
                     Value
                     {sortField === 'value' && (
@@ -331,7 +331,7 @@ export default function DealsPage() {
                 <th className="px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('closeDate')}
-                    className="text-sm font-semibold text-gray-900 hover:text-[#e67e22] transition flex items-center gap-1"
+                    className="text-sm font-semibold text-gray-900 hover:text-[#C9822B] transition flex items-center gap-1"
                   >
                     Expected Close
                     {sortField === 'closeDate' && (
@@ -344,7 +344,7 @@ export default function DealsPage() {
                 <th className="px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('activity')}
-                    className="text-sm font-semibold text-gray-900 hover:text-[#e67e22] transition flex items-center gap-1"
+                    className="text-sm font-semibold text-gray-900 hover:text-[#C9822B] transition flex items-center gap-1"
                   >
                     Last Activity
                     {sortField === 'activity' && (
@@ -369,7 +369,7 @@ export default function DealsPage() {
                     <td className="px-6 py-4">
                       <Link
                         href={`/sales/deals/${deal.id}`}
-                        className="text-gray-900 font-semibold hover:text-[#e67e22] transition"
+                        className="text-gray-900 font-semibold hover:text-[#C9822B] transition"
                       >
                         {deal.companyName}
                       </Link>

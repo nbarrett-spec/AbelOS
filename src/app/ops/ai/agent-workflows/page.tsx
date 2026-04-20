@@ -163,7 +163,7 @@ export default function AgentWorkflowsPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '8px', color: '#1B4F72' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '8px', color: '#3E2A1E' }}>
           AI Agent Workflows
         </h1>
         <p style={{ color: '#6B7280', fontSize: '16px' }}>
@@ -200,7 +200,7 @@ export default function AgentWorkflowsPage() {
             <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>
               {stat.label}
             </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#1B4F72' }}>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: '#3E2A1E' }}>
               {stat.value}
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function AgentWorkflowsPage() {
           marginBottom: '32px',
         }}
       >
-        <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#1B4F72' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#3E2A1E' }}>
           Quick Actions
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -231,7 +231,7 @@ export default function AgentWorkflowsPage() {
               onClick={() => handleRunScan(action.type)}
               style={{
                 padding: '12px 16px',
-                background: '#1B4F72',
+                background: '#3E2A1E',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
@@ -244,7 +244,7 @@ export default function AgentWorkflowsPage() {
                 ;(e.currentTarget as HTMLButtonElement).style.background = '#143A52'
               }}
               onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = '#1B4F72'
+                ;(e.currentTarget as HTMLButtonElement).style.background = '#3E2A1E'
               }}
             >
               {action.label}
@@ -256,7 +256,7 @@ export default function AgentWorkflowsPage() {
       {/* Workflows List */}
       <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid #E5E7EB' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1B4F72', margin: '0' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#3E2A1E', margin: '0' }}>
             Recent Workflows ({workflows.length})
           </h2>
         </div>

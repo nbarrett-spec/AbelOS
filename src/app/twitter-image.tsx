@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Aegis - AI Blueprint Intelligence for Builders'
+export const alt = 'Abel Lumber — Doors, Trim & Hardware for DFW Builders'
 export const size = {
   width: 1200,
   height: 630,
@@ -15,86 +15,113 @@ export default function TwitterImage() {
         style={{
           width: '100%',
           height: '100%',
-          background: `linear-gradient(135deg, #1B4F72 0%, #2d6a8f 50%, #154360 100%)`,
+          background: `linear-gradient(145deg, #3E2A1E 0%, #5A4233 40%, #2A1C14 100%)`,
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '60px',
-          gap: '20px',
+          padding: '60px 80px',
+          gap: '60px',
           fontFamily: 'system-ui, -apple-system, sans-serif',
+          position: 'relative',
         }}
       >
-        {/* Logo/Initials */}
+        {/* Top accent line */}
         <div
           style={{
-            width: '80px',
-            height: '80px',
-            background: '#E67E22',
-            borderRadius: '16px',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(to right, #C9822B, #D9993F, #C9822B)',
+          }}
+        />
+
+        {/* Left — Logo */}
+        <div
+          style={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '48px',
-            fontWeight: 'bold',
-            color: 'white',
-            marginBottom: '20px',
+            gap: '16px',
           }}
         >
-          A
+          <div
+            style={{
+              width: '100px',
+              height: '100px',
+              background: '#C9822B',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '60px',
+              fontWeight: 'bold',
+              color: 'white',
+              boxShadow: '0 16px 48px rgba(201, 130, 43, 0.35)',
+            }}
+          >
+            A
+          </div>
         </div>
 
-        {/* Main Title */}
-        <h1
+        {/* Right — Text */}
+        <div
           style={{
-            fontSize: '72px',
-            fontWeight: 'bold',
-            color: 'white',
-            margin: '0',
-            textAlign: 'center',
-            lineHeight: '1.1',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
           }}
         >
-          Aegis
-        </h1>
-
-        {/* Subtitle */}
-        <p
-          style={{
-            fontSize: '36px',
-            color: '#E67E22',
-            margin: '0',
-            textAlign: 'center',
-            fontWeight: '600',
-          }}
-        >
-          Blueprint Intelligence, Instantly
-        </p>
-
-        {/* Description */}
-        <p
-          style={{
-            fontSize: '24px',
-            color: 'rgba(255, 255, 255, 0.85)',
-            margin: '20px 0 0 0',
-            textAlign: 'center',
-            maxWidth: '900px',
-            lineHeight: '1.4',
-          }}
-        >
-          Upload your plans. Get material takeoffs and quotes in minutes.
-        </p>
+          <h1
+            style={{
+              fontSize: '56px',
+              fontWeight: 'bold',
+              color: 'white',
+              margin: '0',
+              lineHeight: '1.1',
+              letterSpacing: '-1.5px',
+            }}
+          >
+            Abel Lumber
+          </h1>
+          <p
+            style={{
+              fontSize: '28px',
+              color: '#C9822B',
+              margin: '0',
+              fontWeight: '600',
+            }}
+          >
+            Doors · Trim · Hardware
+          </p>
+          <p
+            style={{
+              fontSize: '20px',
+              color: 'rgba(243, 234, 216, 0.6)',
+              margin: '8px 0 0 0',
+              maxWidth: '600px',
+              lineHeight: '1.5',
+            }}
+          >
+            Your builder portal — order materials, track deliveries, and manage your account online.
+          </p>
+        </div>
 
         {/* Footer */}
         <div
           style={{
-            marginTop: '40px',
-            fontSize: '18px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            textAlign: 'center',
+            position: 'absolute',
+            bottom: '28px',
+            right: '40px',
+            fontSize: '14px',
+            color: 'rgba(243, 234, 216, 0.3)',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
           }}
         >
-          AI-powered builder commerce — Built by Abel Lumber
+          app.abellumber.com
         </div>
       </div>
     ),

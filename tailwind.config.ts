@@ -10,17 +10,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // ── Abel brand palette (source: memory/brand/visual-identity.md) ──
         abel: {
-          navy: '#1B4F72',
-          'navy-light': '#2471A3',
-          'navy-dark': '#154360',
-          orange: '#E67E22',
-          'orange-light': '#F39C12',
-          'orange-dark': '#D35400',
-          green: '#27AE60',
-          'green-light': '#2ECC71',
-          slate: '#2C3E50',
-          'slate-light': '#34495E',
+          // Primary — Walnut (replaces old navy)
+          walnut:       '#3E2A1E',
+          'walnut-light': '#5A4233',
+          'walnut-dark':  '#2A1C14',
+          // Secondary brand accent — Safety Amber (replaces old orange)
+          amber:        '#C9822B',
+          'amber-light':  '#D9993F',
+          'amber-dark':   '#A86B1F',
+          // Neutral — Charcoal
+          charcoal:     '#2C2C2C',
+          'charcoal-light': '#404040',
+          // Background — Cream
+          cream:        '#F3EAD8',
+          'cream-dark':   '#E8DCCA',
+          // Supporting tones
+          'kiln-oak':   '#8B6F47',
+          sky:          '#8CA8B8',
+          dust:         '#B8876B',
+          brass:        '#8B6F2A',
+          oxblood:      '#6E2A24',
+          // Semantic (kept for status indicators)
+          green:        '#27AE60',
+          'green-light':  '#2ECC71',
         },
         // Semantic success palette (emerald-based)
         'success': {
@@ -121,7 +135,7 @@ const config: Config = {
         'elevation-5': '0 16px 32px rgba(0, 0, 0, 0.16)',
         'inset-1': 'inset 0 1px 2px rgba(0, 0, 0, 0.08)',
         'glass': '0 8px 32px rgba(31, 38, 135, 0.15)',
-        'glow-brand': '0 0 20px rgba(27, 79, 114, 0.2)',
+        'glow-brand': '0 0 20px rgba(62, 42, 30, 0.25)',
       },
       transitionDuration: {
         'instant': '75ms',
@@ -157,8 +171,8 @@ const config: Config = {
           '50%': { opacity: '0.8' },
         },
         'glow': {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(27, 79, 114, 0.2)' },
-          '50%': { boxShadow: '0 0 30px rgba(27, 79, 114, 0.35)' },
+          '0%, 100%': { boxShadow: '0 0 20px rgba(62, 42, 30, 0.25)' },
+          '50%': { boxShadow: '0 0 30px rgba(62, 42, 30, 0.4)' },
         },
       },
       animation: {
