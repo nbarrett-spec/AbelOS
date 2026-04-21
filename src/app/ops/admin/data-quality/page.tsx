@@ -60,9 +60,9 @@ export default function DataQualityPage() {
   const runNow = async () => {
     try {
       setRunningCheck(true)
-      const res = await fetch('/api/cron/data-quality', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET || ''}` },
+      // Route through the admin API — never expose CRON_SECRET to the browser
+      const res = await fetch('/api/ops/admin/data-quality/run', {
+        method: 'POST',
       })
       if (!res.ok) throw new Error('Failed to run check')
       await new Promise((r) => setTimeout(r, 1000))
