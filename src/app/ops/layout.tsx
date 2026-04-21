@@ -10,6 +10,7 @@ import { GlobalSearch } from './components/GlobalSearch'
 import AICopilot from './components/AICopilot'
 import ThemeProvider from './components/ThemeProvider'
 import AegisBackground from '@/components/AegisBackground'
+import PortalBackground from '@/components/PortalBackground'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import Tooltip from '@/components/ui/Tooltip'
@@ -508,10 +509,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         <aside
           className={`${
             collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[16rem]'
-          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-glass-border backdrop-blur-xl bg-surface/80 dark:bg-[#0B1120]/85 ${
+          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-glass-border side-panel ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
-          style={{ backdropFilter: 'blur(24px) saturate(1.4)', WebkitBackdropFilter: 'blur(24px) saturate(1.4)' }}
         >
           {/* Sidebar header */}
           <div className="h-[3.25rem] px-3.5 flex items-center justify-between border-b border-border shrink-0">
@@ -750,6 +750,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           {/* Content area */}
           <div className="flex-1 overflow-auto bg-canvas relative">
             <AegisBackground variant="full" orbCount={3} doorBlueprint />
+            <PortalBackground portal="ops" />
             <div className="relative z-[1] p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
               {children}
             </div>

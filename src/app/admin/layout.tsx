@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import CriticalAlertBanner from '@/components/CriticalAlertBanner'
 import AegisBackground from '@/components/AegisBackground'
+import PortalBackground from '@/components/PortalBackground'
 
 export default function AdminLayout({
   children,
@@ -33,6 +34,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-canvas relative">
       <AegisBackground variant="subtle" orbCount={2} />
+      <PortalBackground portal="admin" />
       <div className="relative z-[1]">
         <Navbar />
         <CriticalAlertBanner />
@@ -41,8 +43,7 @@ export default function AdminLayout({
           <aside
             className={`${
               sidebarOpen ? 'w-64' : 'w-20'
-            } transition-all duration-300 min-h-screen border-r border-glass-border`}
-            style={{ background: 'var(--glass)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)' }}
+            } transition-all duration-300 min-h-screen border-r border-glass-border side-panel`}
           >
             <div className="p-4 space-y-6">
               {/* Toggle Button */}

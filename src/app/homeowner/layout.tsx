@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import PortalBackground from '@/components/PortalBackground'
 
 export default function HomeownerLayout({
   children,
@@ -8,7 +9,8 @@ export default function HomeownerLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative">
+      <PortalBackground portal="homeowner" />
       {/* Homeowner Header */}
       <header className="bg-[#0f2a3e] text-white">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">

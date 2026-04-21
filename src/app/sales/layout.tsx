@@ -5,6 +5,7 @@ import { verifyStaffToken, type StaffSessionPayload } from '@/lib/staff-auth'
 import { parseRoles } from '@/lib/permissions'
 import Link from 'next/link'
 import SalesTopNav from './components/SalesTopNav'
+import PortalBackground from '@/components/PortalBackground'
 
 const STAFF_COOKIE_NAME = 'abel_staff_session'
 
@@ -54,7 +55,8 @@ export default async function SalesLayout({
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col relative">
+      <PortalBackground portal="sales" />
       <SalesTopNav
         staffId={session.staffId}
         firstName={session.firstName}

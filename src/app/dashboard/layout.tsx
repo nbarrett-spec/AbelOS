@@ -5,6 +5,7 @@ import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileQuickActions from '@/components/MobileQuickActions'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import AegisBackground from '@/components/AegisBackground'
+import PortalBackground from '@/components/PortalBackground'
 
 export default function DashboardLayout({
   children,
@@ -14,6 +15,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-canvas relative">
       <AegisBackground variant="subtle" orbCount={2} />
+      <PortalBackground portal="dashboard" />
       <div className="relative z-[1]">
         <Navbar />
         <OfflineIndicator />
