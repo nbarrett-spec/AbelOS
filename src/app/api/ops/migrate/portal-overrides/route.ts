@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -13,6 +14,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_MIGRATE_PORTAL_OVERRIDES', 'Database', undefined, { migration: 'RUN_MIGRATE_PORTAL_OVERRIDES' }, 'CRITICAL').catch(() => {})
     const results: string[] = []
 
     // Add portalOverrides JSONB column

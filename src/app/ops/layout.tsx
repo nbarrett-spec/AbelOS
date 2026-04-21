@@ -12,6 +12,13 @@ import ThemeProvider from './components/ThemeProvider'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import Tooltip from '@/components/ui/Tooltip'
+import CommandMenu, { useCommandMenu } from '@/components/ui/CommandMenu'
+import StatusBar from '@/components/ui/StatusBar'
+import LiveClock from '@/components/ui/LiveClock'
+import HealthChip from '@/components/ui/HealthChip'
+import LiveDataIndicator from '@/components/ui/LiveDataIndicator'
+import RecentActivityDrawer from '@/components/ui/RecentActivityDrawer'
+import { useLiveTick } from '@/hooks/useLiveTopic'
 import type { StaffRole } from '@/lib/permissions'
 import {
   BarChart3, Briefcase, Truck, Settings, TrendingUp, Wrench, Calendar, HardHat, Target, FileText,
@@ -81,6 +88,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'JOBS & PROJECTS', id: 'jobs',
     items: [
+      { href: '/ops/projects', label: 'PM Command Center', icon: '🎛️' },
       { href: '/ops/jobs', label: 'Job Pipeline', icon: '🔧' },
       { href: '/ops/schedule', label: 'Schedule & Dispatch', icon: '📅' },
       { href: '/ops/crews', label: 'Crews', icon: '👷' },
@@ -178,6 +186,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/receiving', label: 'Receiving', icon: '📥' },
       { href: '/ops/returns', label: 'Returns', icon: '🔄' },
       { href: '/ops/delivery', label: 'Delivery Center', icon: '🚚' },
+      { href: '/ops/delivery/today', label: 'Today\'s Routes', icon: '🛻' },
+      { href: '/ops/delivery/manifest', label: 'Print Manifest', icon: '🖨️' },
       { href: '/ops/delivery/route-optimizer', label: 'Route Optimizer', icon: '🗺️' },
       { href: '/ops/delivery/optimize', label: 'Delivery Analytics', icon: '📊' },
       { href: '/ops/delivery/curri', label: 'Curri (3rd Party)', icon: '🤝' },
@@ -191,6 +201,8 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'FINANCE', id: 'finance',
     items: [
       { href: '/ops/finance', label: 'Financial Dashboard', icon: '💰' },
+      { href: '/ops/finance/cash', label: 'Cash Command Center', icon: '💹' },
+      { href: '/ops/finance/modeler', label: '$1M Scenario Modeler', icon: '🧮' },
       { href: '/ops/finance/ar', label: 'Accounts Receivable', icon: '📊' },
       { href: '/ops/finance/ap', label: 'Accounts Payable', icon: '📋' },
       { href: '/ops/finance/health', label: 'Company Health', icon: '❤️' },
@@ -398,6 +410,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const cmdMenu = useCommandMenu()
 
   const isAuthPage =
     pathname === '/ops/login' ||
@@ -476,9 +489,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-        {/* ── Top accent bar ─────────────────────────────────── */}
-        <div className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-abel-amber via-abel-amber to-abel-walnut z-[60]" />
+      <div className="flex min-h-screen bg-canvas text-fg">
+        {/* ── Top accent hairline ────────────────────────────── */}
+        <div className="fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent z-[60]" />
 
         {/* ── Mobile overlay ─────────────────────────────────── */}
         {mobileOpen && (
@@ -491,29 +504,29 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         {/* ── Sidebar ────────────────────────────────────────── */}
         <aside
           className={`${
-            collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[17rem]'
-          } fixed lg:static inset-y-0 left-0 z-50 w-[17rem] transition-all duration-300 ease-out flex flex-col border-r border-gray-800/80 bg-[#1a1714] ${
+            collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[16rem]'
+          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-border bg-[#17150F] dark:bg-[#17150F] ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
           {/* Sidebar header */}
-          <div className="h-[3.75rem] px-4 flex items-center justify-between border-b border-gray-800/60 shrink-0">
+          <div className="h-[3.25rem] px-3.5 flex items-center justify-between border-b border-border shrink-0">
             {!collapsed ? (
-              <div className="flex items-center gap-2.5">
-                <Image src="/icon-192.png" alt="Abel Lumber" width={32} height={32} className="rounded-lg" />
+              <div className="flex items-center gap-2">
+                <Image src="/icon-192.png" alt="Abel Lumber" width={26} height={26} className="rounded-md" />
                 <div>
-                  <p className="text-sm font-bold text-white leading-none">Abel Lumber</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">Operations</p>
+                  <p className="text-[13px] font-semibold text-white leading-none tracking-tight">Aegis</p>
+                  <p className="text-[10px] text-[#9A9285] mt-0.5 font-mono">Abel Lumber · Ops</p>
                 </div>
               </div>
             ) : (
               <div className="flex-1 flex justify-center">
-                <Image src="/icon-192.png" alt="Abel Lumber" width={32} height={32} className="rounded-lg" />
+                <Image src="/icon-192.png" alt="Abel Lumber" width={26} height={26} className="rounded-md" />
               </div>
             )}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+              className="hidden lg:flex p-1.5 rounded-md text-[#706B5F] hover:text-[#F5F1E8] hover:bg-white/5 transition-colors"
               aria-label="Toggle sidebar"
             >
               {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -616,30 +629,47 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         {/* ── Main content area ──────────────────────────────── */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="h-[3.75rem] border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 flex items-center justify-between bg-white dark:bg-gray-900 shrink-0">
+          <header className="h-[3.25rem] border-b border-border px-4 sm:px-6 flex items-center justify-between bg-surface shrink-0">
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="lg:hidden p-2 -ml-2 rounded-md hover:bg-surface-muted transition-colors"
                 aria-label="Toggle sidebar"
               >
-                <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <Menu className="w-5 h-5 text-fg-muted" />
               </button>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">Abel Operations</h2>
+              <h2 className="text-[13px] font-semibold text-fg tracking-tight">Aegis</h2>
+              <span className="text-[11px] text-fg-subtle hidden sm:inline font-mono">Abel Operations</span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Command palette trigger */}
+              <button
+                onClick={() => cmdMenu.setOpen(true)}
+                className="hidden sm:flex items-center gap-2 h-8 px-2.5 pr-2 border border-border rounded-md bg-surface-muted text-fg-muted hover:text-fg hover:border-border-strong transition-colors text-xs"
+                aria-label="Open command palette"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Search…</span>
+                <span className="kbd ml-2">⌘K</span>
+              </button>
+
               <GlobalSearch />
               <NotificationBell />
 
               {/* Date */}
-              <span className="text-xs hidden md:inline text-gray-400 dark:text-gray-500 font-medium tabular-nums">
-                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              <span className="text-[11px] hidden md:inline text-fg-subtle font-mono tabular-nums ml-1">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
               </span>
 
+              {/* Live clock — America/Chicago */}
+              <div className="hidden md:flex items-center ml-1">
+                <LiveClock />
+              </div>
+
               {/* Separator */}
-              <div className="hidden sm:block w-px h-6 bg-gray-200 dark:bg-gray-700" />
+              <div className="hidden sm:block w-px h-5 bg-border mx-1" />
 
               {/* User avatar menu */}
               <div className="relative" ref={userMenuRef}>
@@ -701,17 +731,51 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
+          {/* Live data indicator — pulses when any tracked topic publishes */}
+          <LivePulse />
+
           {/* Content area */}
-          <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-950">
+          <div className="flex-1 overflow-auto bg-canvas">
             <div className="p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
               {children}
             </div>
           </div>
+
+          {/* System status bar — live state, bottom of shell */}
+          <StatusBarWithLive />
         </main>
+
+        {/* Command palette (⌘K) */}
+        <CommandMenu open={cmdMenu.open} onClose={() => cmdMenu.setOpen(false)} />
 
         {/* AI Copilot */}
         {staff && <AICopilot />}
+
+        {/* Global recent-activity drawer (toggle with 'A') */}
+        <RecentActivityDrawer />
       </div>
     </ThemeProvider>
+  )
+}
+
+// ── Live-data pulse: 4px bar that fires whenever any topic publishes ───
+function LivePulse() {
+  const tick = useLiveTick(null)
+  return <LiveDataIndicator trigger={tick} />
+}
+
+// ── StatusBar wrapper that adds LiveClock + HealthChip ─────────────────
+function StatusBarWithLive() {
+  return (
+    <div className="flex items-center border-t border-border bg-surface">
+      <div className="flex-1">
+        <StatusBar deployTag="go-live-2026-04-13" lastSyncAt={null} alertCount={0} />
+      </div>
+      <div className="flex items-center gap-3 pr-4 h-7 text-[11px]">
+        <HealthChip />
+        <span className="h-3 w-px bg-border" />
+        <LiveClock />
+      </div>
+    </div>
   )
 }

@@ -4,12 +4,20 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
+export interface ToastAction {
+  /** Button label, e.g. "Undo", "View" */
+  label: string;
+  onClick: () => void;
+}
+
 export interface Toast {
   id: string;
   type: ToastType;
   title: string;
   message?: string;
   duration?: number;
+  /** Optional inline action rendered on the right. */
+  action?: ToastAction;
 }
 
 interface ToastContextType {

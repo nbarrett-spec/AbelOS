@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireDevAdmin } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/cleanup — Remove demo/test data for production launch (DEV ONLY, ADMIN required)
 
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const log: any[] = []
+    audit(request, 'RUN_CLEANUP', 'Database', undefined, { note: 'demo/test data purge' }, 'CRITICAL').catch(() => {})
 
     // ── 1. Identify fake staff ──
     const allStaff: any[] = await prisma.$queryRawUnsafe(

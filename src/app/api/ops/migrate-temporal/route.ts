@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
+import { audit } from '@/lib/audit'
 
 // Migration: Add createdAt/updatedAt columns to models that were missing them
 
@@ -34,6 +35,8 @@ const migrations = [
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request);
   if (authError) return authError;
+
+  audit(request, 'RUN_MIGRATE_TEMPORAL', 'Database', undefined, { migration: 'RUN_MIGRATE_TEMPORAL' }, 'CRITICAL').catch(() => {})
 
   try {
     const results: { table: string; column: string; status: string; error?: string }[] = [];

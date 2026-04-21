@@ -1,6 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  ShoppingCart, Package, CheckCircle2, Clock, RefreshCw, Filter, Eye,
+  DollarSign, AlertTriangle, Building,
+} from 'lucide-react'
+import {
+  PageHeader, KPICard, Badge, StatusBadge, DataTable, EmptyState,
+  Card, CardHeader, CardTitle, CardDescription, CardBody,
+  AnimatedNumber, LiveDataIndicator, InfoTip,
+} from '@/components/ui'
+import { cn } from '@/lib/utils'
+
+// ── Types ────────────────────────────────────────────────────────────────
 
 interface PurchaseOrder {
   id: string
@@ -38,257 +51,290 @@ interface APData {
   }>
 }
 
+// ── Formatters ───────────────────────────────────────────────────────────
+
+const fmtMoney = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+
+const fmtMoneyCompact = (n: number) => {
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
+  if (Math.abs(n) >= 10_000)    return `$${Math.round(n / 1000)}K`
+  if (Math.abs(n) >= 1_000)     return `$${(n / 1000).toFixed(1)}K`
+  return fmtMoney(n)
+}
+
+const fmtDate = (s: string) => s ? new Date(s).toLocaleDateString('en-US') : '—'
+
+// ── Page ─────────────────────────────────────────────────────────────────
+
 export default function AccountsPayablePage() {
+  const router = useRouter()
   const [data, setData] = useState<APData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [sortColumn, setSortColumn] = useState<string>('expectedDate')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [tick, setTick] = useState<number | null>(null)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  useEffect(() => { fetchData() }, [])
 
-  const fetchData = async () => {
+  async function fetchData() {
+    setRefreshing(true)
     try {
-      const response = await fetch('/api/ops/finance/ap')
-      if (!response.ok) throw new Error('Failed to fetch AP data')
-      const result = await response.json()
-      setData(result)
+      const res = await fetch('/api/ops/finance/ap')
+      if (!res.ok) throw new Error('Failed to fetch AP data')
+      setData(await res.json())
+      setTick(Date.now())
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(value)
-  }
+  const filteredPOs = useMemo(() => {
+    if (!data) return []
+    if (statusFilter === 'all') return data.purchaseOrders
+    return data.purchaseOrders.filter(p => p.status.toLowerCase() === statusFilter.toLowerCase())
+  }, [data, statusFilter])
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US')
-  }
+  const billPayTotal = useMemo(() => {
+    if (!data) return 0
+    return data.billPayQueue.reduce((sum, p) => sum + p.amount, 0)
+  }, [data])
 
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortColumn(column)
-      setSortDirection('asc')
-    }
-  }
+  const totalOutstanding = useMemo(() => {
+    if (!data) return 0
+    return data.vendorSpend.reduce((s, v) => s + v.outstandingAmount, 0)
+  }, [data])
 
   if (loading || !data) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-500">Loading AP data...</div>
+      <div className="space-y-5">
+        <PageHeader eyebrow="Finance" title="Accounts Payable" description="Vendor payments · PO pipeline · bill pay queue." />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[0,1,2,3,4].map(i => <KPICard key={i} title="" value="" loading />)}
+        </div>
+        <div className="h-64 skeleton rounded-lg" />
       </div>
     )
   }
 
-  let filteredPOs = data.purchaseOrders
-  if (statusFilter !== 'all') {
-    filteredPOs = filteredPOs.filter(po => po.status.toLowerCase() === statusFilter.toLowerCase())
-  }
-
-  filteredPOs = [...filteredPOs].sort((a, b) => {
-    let aVal: any = a[sortColumn as keyof PurchaseOrder]
-    let bVal: any = b[sortColumn as keyof PurchaseOrder]
-
-    if (typeof aVal === 'string') {
-      aVal = aVal.toLowerCase()
-      bVal = (bVal as string).toLowerCase()
-    }
-
-    const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0
-    return sortDirection === 'asc' ? comparison : -comparison
-  })
+  const sum = data.openPOSummary
+  const totalPipeline = sum.draft + sum.pendingApproval + sum.approved + sum.sent + sum.received
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Accounts Payable</h1>
-        <p className="text-gray-500 mt-1">Manage purchase orders, vendor payments, and AP aging</p>
+    <div className="space-y-5 animate-enter">
+      <LiveDataIndicator trigger={tick} />
+
+      <PageHeader
+        eyebrow="Finance"
+        title="Accounts Payable"
+        description="Vendor payments · PO pipeline · bill pay queue."
+        actions={
+          <button onClick={fetchData} className="btn btn-secondary btn-sm" disabled={refreshing}>
+            <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
+            Refresh
+          </button>
+        }
+      />
+
+      {/* PO status pipeline as KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: 'Draft',            count: sum.draft,            tone: 'neutral' as const },
+          { label: 'Pending',          count: sum.pendingApproval,  tone: 'accent'  as const },
+          { label: 'Approved',         count: sum.approved,         tone: 'forecast' as const },
+          { label: 'Sent',             count: sum.sent,             tone: 'brand'   as const },
+          { label: 'Received',         count: sum.received,         tone: 'positive' as const },
+        ].map((b, i) => {
+          const pct = totalPipeline > 0 ? (b.count / totalPipeline) * 100 : 0
+          return (
+            <KPICard
+              key={b.label}
+              title={b.label}
+              value={<AnimatedNumber value={b.count} />}
+              subtitle={`${pct.toFixed(0)}% of pipeline`}
+              accent={b.tone}
+            />
+          )
+        })}
       </div>
 
-      {/* PO Status Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-400">
-          <div className="text-gray-500 text-xs font-semibold uppercase">Draft</div>
-          <div className="text-2xl font-bold text-gray-900 mt-2">{data.openPOSummary.draft}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
-          <div className="text-gray-500 text-xs font-semibold uppercase">Pending Approval</div>
-          <div className="text-2xl font-bold text-gray-900 mt-2">{data.openPOSummary.pendingApproval}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-          <div className="text-gray-500 text-xs font-semibold uppercase">Approved</div>
-          <div className="text-2xl font-bold text-gray-900 mt-2">{data.openPOSummary.approved}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
-          <div className="text-gray-500 text-xs font-semibold uppercase">Sent to Vendor</div>
-          <div className="text-2xl font-bold text-gray-900 mt-2">{data.openPOSummary.sent}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-          <div className="text-gray-500 text-xs font-semibold uppercase">Received</div>
-          <div className="text-2xl font-bold text-gray-900 mt-2">{data.openPOSummary.received}</div>
-        </div>
+      {/* Key financial KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <KPICard
+          title="Total Outstanding"
+          value={<AnimatedNumber value={totalOutstanding} format={fmtMoneyCompact} />}
+          subtitle={`${data.vendorSpend.length} vendors`}
+          icon={<DollarSign className="w-3.5 h-3.5" />}
+          accent="negative"
+        />
+        <KPICard
+          title="Ready to Pay"
+          value={<AnimatedNumber value={billPayTotal} format={fmtMoneyCompact} />}
+          subtitle={`${data.billPayQueue.length} bills queued`}
+          icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+          accent="positive"
+          badge={data.billPayQueue.length > 0 ? <Badge variant="success" size="xs" dot>Action</Badge> : undefined}
+        />
+        <KPICard
+          title="Awaiting Approval"
+          value={<AnimatedNumber value={sum.pendingApproval} />}
+          subtitle="POs blocking spend"
+          icon={<Clock className="w-3.5 h-3.5" />}
+          accent={sum.pendingApproval > 5 ? 'negative' : 'accent'}
+        />
       </div>
 
-      {/* Vendor Spend Table */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendor Spend Summary</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b-2 border-gray-200">
-              <tr>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Vendor Name</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Total POs</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Paid Amount</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Outstanding</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.vendorSpend.slice(0, 15).map((vendor, idx) => (
-                <tr key={vendor.vendorId} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="py-3 px-4 text-gray-900 font-medium">{vendor.vendorName}</td>
-                  <td className="text-right py-3 px-4 text-gray-600">{vendor.totalPOs}</td>
-                  <td className="text-right py-3 px-4 font-semibold text-green-600">{formatCurrency(vendor.paidAmount)}</td>
-                  <td className="text-right py-3 px-4 font-semibold text-red-600">{formatCurrency(vendor.outstandingAmount)}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                      vendor.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {vendor.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Bill Pay Queue */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Bill Pay Queue (Ready to Pay)</h3>
-        {data.billPayQueue.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No POs ready for payment</div>
-        ) : (
-          <div className="space-y-3">
-            {data.billPayQueue.map((po, idx) => (
-              <div key={idx} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                <div>
-                  <div className="font-semibold text-gray-900">{po.poNumber}</div>
-                  <div className="text-sm text-gray-500">{po.vendorName} • Due {formatDate(po.expectedDate)}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">{formatCurrency(po.amount)}</div>
-                  <button className="mt-1 text-sm text-[#C9822B] hover:text-[#C9822B] font-semibold">Mark Paid →</button>
-                </div>
+      {/* Bill-pay queue + vendor exposure */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Bill pay queue */}
+        <Card variant="default" padding="none" className="lg:col-span-1">
+          <CardHeader>
+            <div>
+              <CardTitle>Bill Pay Queue</CardTitle>
+              <CardDescription>Ready for payment</CardDescription>
+            </div>
+            <Badge variant="brand" size="sm">{data.billPayQueue.length}</Badge>
+          </CardHeader>
+          <CardBody className="pt-3">
+            {data.billPayQueue.length === 0 ? (
+              <EmptyState
+                icon="sparkles"
+                size="compact"
+                title="Caught up"
+                description="No POs ready for payment."
+              />
+            ) : (
+              <div className="space-y-2">
+                {data.billPayQueue.slice(0, 8).map((po, idx) => (
+                  <button
+                    key={`${po.poNumber}-${idx}`}
+                    onClick={() => router.push(`/ops/purchasing?po=${po.poNumber}`)}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-surface-muted transition-colors border border-border"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-mono text-[12px] font-semibold text-fg">{po.poNumber}</div>
+                        <div className="text-[11px] text-fg-muted truncate">{po.vendorName}</div>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <div className="text-[13px] font-semibold tabular-nums text-fg">{fmtMoneyCompact(po.amount)}</div>
+                        <div className="text-[10px] text-fg-subtle">{fmtDate(po.expectedDate)}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Vendor spend */}
+        <Card variant="default" padding="none" className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle>Vendor Spend</CardTitle>
+              <InfoTip label="Vendor Spend">
+                Paid vs outstanding by vendor. Heatmap shades outstanding balances — darker red = higher exposure.
+              </InfoTip>
+            </div>
+            <CardDescription>Top 15</CardDescription>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <DataTable
+              density="compact"
+              data={data.vendorSpend.slice(0, 15)}
+              rowKey={(r) => r.vendorId}
+              onRowClick={(r) => router.push(`/ops/vendors/${r.vendorId}`)}
+              className="!border-0"
+              columns={[
+                { key: 'vendorName', header: 'Vendor',
+                  cell: (r) => <span className="truncate max-w-[220px] block font-medium text-fg">{r.vendorName}</span> },
+                { key: 'totalPOs', header: 'POs', numeric: true, width: '60px',
+                  cell: (r) => <span className="text-fg-muted tabular-nums">{r.totalPOs}</span> },
+                { key: 'paidAmount', header: 'Paid', numeric: true,
+                  cell: (r) => <span className="text-data-positive font-medium">{fmtMoneyCompact(r.paidAmount)}</span> },
+                { key: 'outstandingAmount', header: 'Outstanding', numeric: true, heatmap: true,
+                  heatmapValue: (r) => r.outstandingAmount,
+                  cell: (r) => <span className="font-semibold text-fg">{fmtMoneyCompact(r.outstandingAmount)}</span> },
+                { key: 'status', header: 'Status', width: '110px',
+                  cell: (r) => <Badge variant={r.status === 'active' ? 'success' : 'neutral'} size="xs" dot>{r.status}</Badge> },
+              ]}
+              empty={<EmptyState icon="users" size="compact" title="No vendor activity" description="No PO spend recorded yet." />}
+            />
           </div>
-        )}
+        </Card>
       </div>
 
-      {/* Filter & Controls */}
-      <div className="bg-white rounded-lg shadow p-4 flex items-center gap-4">
-        <label className="flex items-center gap-2 font-medium text-gray-700">
-          Filter by Status:
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          >
-            <option value="all">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="pending_approval">Pending Approval</option>
-            <option value="approved">Approved</option>
-            <option value="sent_to_vendor">Sent to Vendor</option>
-            <option value="partially_received">Partially Received</option>
-            <option value="received">Received</option>
-          </select>
-        </label>
-      </div>
-
-      {/* Purchase Orders List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b-2 border-gray-200">
-              <tr>
-                <th
-                  className="text-left py-3 px-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('poNumber')}
-                >
-                  PO # {sortColumn === 'poNumber' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th
-                  className="text-left py-3 px-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('vendorName')}
-                >
-                  Vendor {sortColumn === 'vendorName' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th
-                  className="text-right py-3 px-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('amount')}
-                >
-                  Amount {sortColumn === 'amount' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Items</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                <th
-                  className="text-right py-3 px-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('expectedDate')}
-                >
-                  Expected {sortColumn === 'expectedDate' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPOs.map((po, idx) => (
-                <tr key={po.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td className="py-3 px-4 font-bold text-[#3E2A1E]">{po.poNumber}</td>
-                  <td className="py-3 px-4 text-gray-900">{po.vendorName}</td>
-                  <td className="text-right py-3 px-4 font-bold text-gray-900">{formatCurrency(po.amount)}</td>
-                  <td className="text-right py-3 px-4 text-gray-600">{po.items}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                      po.status === 'RECEIVED' ? 'bg-green-100 text-green-800' :
-                      po.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
-                      po.status === 'PENDING_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
-                      po.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
-                      'bg-purple-100 text-purple-800'
-                    }`}>
-                      {po.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="text-right py-3 px-4 text-gray-600">{po.expectedDate ? formatDate(po.expectedDate) : '—'}</td>
-                  <td className="py-3 px-4 text-xs">
-                    {po.status === 'PENDING_APPROVAL' && <button className="text-[#C9822B] hover:text-[#C9822B] font-semibold">Approve →</button>}
-                    {po.status === 'RECEIVED' && <button className="text-[#27AE60] hover:text-[#27AE60] font-semibold">Close</button>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {filteredPOs.length === 0 && (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-          No purchase orders found with the selected filters.
-        </div>
-      )}
+      {/* Purchase orders table */}
+      <DataTable
+        density="compact"
+        data={filteredPOs}
+        rowKey={(r) => r.id}
+        onRowClick={(r) => router.push(`/ops/purchasing?po=${r.poNumber}`)}
+        keyboardNav
+        hint
+        toolbar={
+          <div className="flex items-center gap-3 w-full">
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-fg-muted" />
+              <span className="text-[11px] font-medium text-fg-muted">Filter</span>
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input h-7 w-48 text-[12px]"
+            >
+              <option value="all">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="pending_approval">Pending approval</option>
+              <option value="approved">Approved</option>
+              <option value="sent_to_vendor">Sent to vendor</option>
+              <option value="partially_received">Partially received</option>
+              <option value="received">Received</option>
+            </select>
+            <div className="ml-auto text-[11px] text-fg-subtle">
+              {filteredPOs.length} of {data.purchaseOrders.length}
+            </div>
+          </div>
+        }
+        columns={[
+          { key: 'poNumber', header: 'PO', width: '110px', sortable: true,
+            cell: (r) => <span className="font-mono text-[12px] font-semibold text-fg">{r.poNumber}</span> },
+          { key: 'vendorName', header: 'Vendor', sortable: true,
+            cell: (r) => <span className="truncate max-w-[200px] block">{r.vendorName}</span> },
+          { key: 'amount', header: 'Amount', numeric: true, sortable: true, heatmap: true,
+            heatmapValue: (r) => r.amount,
+            cell: (r) => <span className="font-semibold">{fmtMoney(r.amount)}</span> },
+          { key: 'items', header: 'Items', numeric: true, width: '70px',
+            cell: (r) => <span className="text-fg-muted">{r.items}</span> },
+          { key: 'status', header: 'Status', width: '130px',
+            cell: (r) => <StatusBadge status={r.status} size="sm" /> },
+          { key: 'expectedDate', header: 'Expected', numeric: true, sortable: true,
+            cell: (r) => <span className="text-fg-muted text-[12px]">{fmtDate(r.expectedDate)}</span> },
+        ]}
+        rowActions={[
+          { id: 'view', icon: <Eye className="w-3.5 h-3.5" />, label: 'View PO', shortcut: '↵',
+            onClick: (r) => router.push(`/ops/purchasing?po=${r.poNumber}`) },
+          { id: 'approve', icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: 'Approve',
+            onClick: (r) => router.push(`/ops/purchasing?po=${r.poNumber}&action=approve`),
+            show: (r) => r.status === 'PENDING_APPROVAL' },
+          { id: 'vendor', icon: <Building className="w-3.5 h-3.5" />, label: 'Open vendor',
+            onClick: (r) => router.push(`/ops/vendors/${r.vendorId}`) },
+        ]}
+        empty={
+          <EmptyState
+            icon="package"
+            size="compact"
+            title="No purchase orders"
+            description={statusFilter === 'all' ? 'Create your first PO from the Purchasing page.' : `Nothing in status "${statusFilter}".`}
+            action={statusFilter === 'all' ? { label: 'Open purchasing', href: '/ops/purchasing' } : undefined}
+            secondaryAction={statusFilter !== 'all' ? { label: 'Clear filter', onClick: () => setStatusFilter('all') } : undefined}
+          />
+        }
+      />
     </div>
   )
 }

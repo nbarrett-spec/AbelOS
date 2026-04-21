@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 import { safeJson } from '@/lib/safe-json'
 
 // NFC Door Identity & Warehouse Bay System — Database Migration
@@ -10,6 +11,8 @@ import { safeJson } from '@/lib/safe-json'
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  audit(request, 'RUN_MIGRATE_NFC', 'Database', undefined, { migration: 'RUN_MIGRATE_NFC' }, 'CRITICAL').catch(() => {})
 
   const results: { step: string; status: string }[] = []
 

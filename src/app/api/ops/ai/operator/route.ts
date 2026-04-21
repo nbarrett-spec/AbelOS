@@ -25,12 +25,13 @@ export async function GET(request: NextRequest) {
       pendingApprovals,
       actionQueueItems,
     ] = await Promise.all([
+      // Payment has receivedAt (not createdAt) — see prisma/schema.prisma L1671
       prisma.payment.findMany({
-        where: { createdAt: { gte: todayStart } },
+        where: { receivedAt: { gte: todayStart } },
         select: { amount: true },
       }),
       prisma.payment.findMany({
-        where: { createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } },
+        where: { receivedAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } },
         select: { amount: true },
       }),
       prisma.order.findMany({
@@ -59,10 +60,11 @@ export async function GET(request: NextRequest) {
         where: { completedAt: { gte: todayStart } },
         select: { id: true },
       }),
-      prisma.agentTask.findMany({
-        where: { status: 'AWAITING_APPROVAL' },
-        select: { id: true, priority: true },
-      }),
+      // AgentTask model not in schema — read via raw SQL. Returns [] if the
+      // table doesn't exist yet (fresh Neon branch).
+      prisma.$queryRawUnsafe<any[]>(
+        `SELECT "id", "priority" FROM "AgentTask" WHERE "status" = 'AWAITING_APPROVAL' LIMIT 200`
+      ).catch(() => [] as any[]),
       // Action queue items via raw SQL (model may not be generated)
       prisma.$queryRawUnsafe<any[]>(
         `SELECT id, priority, type FROM "ActionQueueItem" WHERE status = 'PENDING' LIMIT 50`
@@ -161,20 +163,18 @@ export async function GET(request: NextRequest) {
       console.error('Failed to fetch recommendations:', err)
     }
 
-    // Fetch recent agent activity (last 24h)
-    const recentActivity = await prisma.agentTask.findMany({
-      where: { completedAt: { gte: yesterdayStart } },
-      take: 10,
-      select: {
-        id: true,
-        agentRole: true,
-        taskType: true,
-        title: true,
-        status: true,
-        completedAt: true,
-      },
-      orderBy: { completedAt: 'desc' },
-    })
+    // Fetch recent agent activity (last 24h) — AgentTask model not in Prisma
+    // schema, so pull via raw SQL. Returns [] if the table doesn't exist yet.
+    const recentActivity = await prisma
+      .$queryRawUnsafe<any[]>(
+        `SELECT "id", "agentRole", "taskType", "title", "status", "completedAt"
+           FROM "AgentTask"
+          WHERE "completedAt" >= $1
+          ORDER BY "completedAt" DESC
+          LIMIT 10`,
+        yesterdayStart
+      )
+      .catch(() => [] as any[])
 
     return NextResponse.json({
       briefing: {

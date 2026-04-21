@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // Growth Opportunities API
 // Identifies and surfaces revenue growth opportunities from live data:
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     if (!opportunityId || !opportunityType) {
       return NextResponse.json({ error: 'opportunityId and opportunityType required' }, { status: 400 })
     }
+    audit(request, 'APPROVE_GROWTH_OPPORTUNITY', 'GrowthOpportunity', opportunityId, { opportunityType, builderName, estimatedImpact, priority }).catch(() => {})
 
     // Create an AgentTask from the approved opportunity
     // We need to find a staff member to assign to (default to the first SALES_REP or ops user)

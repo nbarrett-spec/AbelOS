@@ -149,14 +149,12 @@ export function CreateJobModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Create Job" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-            {error}
-          </div>
+          <div className="panel panel-live p-3 text-sm text-data-negative">{error}</div>
         )}
 
         {/* Builder Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="label">
             Builder <span className="text-red-500">*</span>
           </label>
           <select
@@ -164,7 +162,7 @@ export function CreateJobModal({
             value={formData.builderName}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+            className="input"
           >
             <option value="">Select a builder</option>
             {builders.map((builder) => (
@@ -177,7 +175,7 @@ export function CreateJobModal({
 
         {/* Community */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="label">
             Community
           </label>
           <input
@@ -186,13 +184,13 @@ export function CreateJobModal({
             value={formData.community}
             onChange={handleChange}
             placeholder="e.g., Canyon Ridge"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+            className="input"
           />
         </div>
 
         {/* Lot/Block */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="label">
             Lot/Block
           </label>
           <input
@@ -201,13 +199,13 @@ export function CreateJobModal({
             value={formData.lotBlock}
             onChange={handleChange}
             placeholder="e.g., Lot 14 Block 3"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+            className="input"
           />
         </div>
 
         {/* Job Address */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="label">
             Job Address
           </label>
           <input
@@ -216,21 +214,21 @@ export function CreateJobModal({
             value={formData.jobAddress}
             onChange={handleChange}
             placeholder="e.g., 1234 Main Street"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+            className="input"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           {/* Scope Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="label">
               Scope <span className="text-red-500">*</span>
             </label>
             <select
               name="scopeType"
               value={formData.scopeType}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+              className="input"
             >
               {SCOPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -242,14 +240,14 @@ export function CreateJobModal({
 
           {/* Drop Plan */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="label">
               Drop Plan
             </label>
             <select
               name="dropPlan"
               value={formData.dropPlan}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+              className="input"
             >
               {DROP_PLAN_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -263,14 +261,14 @@ export function CreateJobModal({
         <div className="grid grid-cols-2 gap-4">
           {/* Assigned PM */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="label">
               Assigned PM
             </label>
             <select
               name="assignedPMId"
               value={formData.assignedPMId}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+              className="input"
             >
               <option value="">Unassigned</option>
               {pms.map((pm) => (
@@ -283,7 +281,7 @@ export function CreateJobModal({
 
           {/* Scheduled Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="label">
               Scheduled Date
             </label>
             <input
@@ -291,14 +289,14 @@ export function CreateJobModal({
               name="scheduledDate"
               value={formData.scheduledDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+              className="input"
             />
           </div>
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="label">
             Notes
           </label>
           <textarea
@@ -307,7 +305,7 @@ export function CreateJobModal({
             onChange={handleChange}
             placeholder="Any additional notes or special instructions"
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+            className="input"
           />
         </div>
 
@@ -316,14 +314,14 @@ export function CreateJobModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="btn btn-ghost btn-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn btn-primary btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating...' : 'Create Job'}
           </button>

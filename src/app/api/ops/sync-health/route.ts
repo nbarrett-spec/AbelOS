@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/sync-health
@@ -264,6 +265,7 @@ export async function POST(request: NextRequest) {
     if (!cronPath) {
       return NextResponse.json({ error: `Unknown provider: ${provider}` }, { status: 400 })
     }
+    audit(request, `MANUAL_SYNC_${String(provider).toUpperCase()}`, 'IntegrationConfig', undefined, { provider, cronPath }).catch(() => {})
 
     // Trigger the cron endpoint internally
     const cronSecret = process.env.CRON_SECRET

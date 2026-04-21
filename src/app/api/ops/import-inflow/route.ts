@@ -5,6 +5,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as crypto from 'crypto'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // CSV parsing utility - handles BOM and quoted fields
 function parseCSVLine(line: string): string[] {
@@ -924,6 +925,7 @@ export async function POST(request: NextRequest) {
     if (!validTypes.includes(importType)) {
       return NextResponse.json({ error: `Invalid importType. Must be one of: ${validTypes.join(', ')}` }, { status: 400 })
     }
+    audit(request, `IMPORT_INFLOW_${String(importType).toUpperCase()}`, 'InflowImport', undefined, { importType }, 'WARN').catch(() => {})
 
     // Resolve InFlow exports directory relative to project root
     const baseDir = path.resolve(process.cwd(), '..', 'In Flow Exports')
@@ -1008,6 +1010,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const results: Record<string, any> = { timestamp: new Date().toISOString() }
+    audit(request, 'INFLOW_CLEANUP', 'Database', undefined, { note: 'vendor/po dedupe' }, 'WARN').catch(() => {})
 
     // 1. Remove corrupted vendor records (CSV parsing artifacts)
     const corruptedVendors = await prisma.vendor.findMany({

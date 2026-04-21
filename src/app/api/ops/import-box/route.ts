@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 import bcrypt from 'bcryptjs'
 import * as XLSX from 'xlsx'
 import fs from 'fs'
@@ -371,6 +372,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    audit(request, `IMPORT_BOX_${String(importType).toUpperCase()}`, 'BoxImport', undefined, { importType }, 'WARN').catch(() => {})
 
     const validTypes = ['customers', 'pricing', 'financial', 'all']
     if (!validTypes.includes(importType)) {

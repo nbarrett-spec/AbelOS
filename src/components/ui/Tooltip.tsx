@@ -9,6 +9,8 @@ export interface TooltipProps {
   side?: 'top' | 'bottom' | 'left' | 'right'
   delay?: number
   className?: string
+  /** Allow rich content to wrap (instead of whitespace-nowrap). Auto-on when content is not a string. */
+  wrap?: boolean
 }
 
 const positions = {
@@ -25,7 +27,8 @@ const arrows = {
   right: 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 border-y-transparent border-l-transparent',
 }
 
-export default function Tooltip({ content, children, side = 'top', delay = 200, className }: TooltipProps) {
+export default function Tooltip({ content, children, side = 'top', delay = 200, className, wrap }: TooltipProps) {
+  const shouldWrap = wrap ?? typeof content !== 'string'
   const [visible, setVisible] = useState(false)
   const timeout = useRef<ReturnType<typeof setTimeout>>()
 
@@ -47,7 +50,8 @@ export default function Tooltip({ content, children, side = 'top', delay = 200, 
           className={clsx(
             'absolute z-50 pointer-events-none',
             'px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700',
-            'rounded-lg shadow-lg whitespace-nowrap',
+            'rounded-lg shadow-lg',
+            shouldWrap ? 'max-w-xs' : 'whitespace-nowrap',
             'animate-[fadeIn_100ms_ease-out]',
             positions[side],
             className

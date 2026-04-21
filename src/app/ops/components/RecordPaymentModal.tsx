@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Modal } from './Modal'
+import { AlertTriangle } from 'lucide-react'
 
 interface RecordPaymentModalProps {
   isOpen: boolean
@@ -76,54 +77,50 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
       {invoice && (
         <div className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{error}</div>
+            <div className="panel panel-live p-3 flex items-start gap-2 text-sm text-data-negative">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
           )}
 
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="panel px-4 py-3 bg-surface-muted/50">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Invoice Total</span>
-              <span className="font-semibold">${invoice.total.toFixed(2)}</span>
+              <span className="text-fg-muted">Invoice Total</span>
+              <span className="font-semibold tabular-nums text-fg">${invoice.total.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-600">Balance Due</span>
-              <span className="font-bold text-red-600">${invoice.balanceDue.toFixed(2)}</span>
+              <span className="text-fg-muted">Balance Due</span>
+              <span className="font-bold tabular-nums text-data-negative">${invoice.balanceDue.toFixed(2)}</span>
             </div>
             {invoice.builderName && (
-              <p className="text-xs text-gray-500 mt-2">{invoice.builderName}</p>
+              <p className="text-xs text-fg-subtle mt-2">{invoice.builderName}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Payment Amount</label>
+            <label className="label">Payment Amount</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle">$</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full border rounded-lg pl-7 pr-3 py-2 text-sm"
+                  className="input pl-7"
                   placeholder="0.00"
                 />
               </div>
-              <button
-                onClick={handlePayFull}
-                className="px-3 py-2 text-xs bg-gray-100 border rounded-lg hover:bg-gray-200 text-gray-700 font-medium whitespace-nowrap"
-              >
+              <button onClick={handlePayFull} className="btn btn-secondary btn-sm whitespace-nowrap">
                 Pay in Full
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Payment Method</label>
-            <select
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            >
+            <label className="label">Payment Method</label>
+            <select value={method} onChange={(e) => setMethod(e.target.value)} className="input">
               {PAYMENT_METHODS.map((m) => (
                 <option key={m} value={m}>{m.replace(/_/g, ' ')}</option>
               ))}
@@ -131,23 +128,23 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Reference # (optional)</label>
+            <label className="label">Reference # (optional)</label>
             <input
               type="text"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="input"
               placeholder="Check number, transaction ID..."
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Notes (optional)</label>
+            <label className="label">Notes (optional)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="input"
               placeholder="Payment notes..."
             />
           </div>
@@ -156,14 +153,11 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="flex-1 px-4 py-2 bg-[#27AE60] text-white rounded-lg text-sm font-medium hover:bg-[#229954] disabled:opacity-50"
+              className="btn btn-primary btn-sm flex-1 disabled:opacity-40"
             >
               {saving ? 'Recording...' : 'Record Payment'}
             </button>
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200"
-            >
+            <button onClick={handleClose} className="btn btn-ghost btn-sm">
               Cancel
             </button>
           </div>

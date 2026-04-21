@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireDevAdmin } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/seed-workflow — Seeds jobs and invoices from existing orders
@@ -17,6 +18,7 @@ function toTsSql(val: string | Date | null): string {
 
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_SEED_WORKFLOW', 'Database', undefined, { migration: 'RUN_SEED_WORKFLOW' }, 'CRITICAL').catch(() => {})
     const guard = requireDevAdmin(request)
     if (guard) return guard
 

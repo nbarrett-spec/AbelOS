@@ -17,5 +17,15 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "audit-products.ts", "prisma/seed.ts", "prisma/seed-real-data.ts", "vitest.config.ts"]
+  "exclude": [
+    "node_modules",
+    "audit-products.ts",
+    "prisma/seed.ts",
+    "prisma/seed-real-data.ts",
+    "vitest.config.ts",
+    "src/**/__tests__/**/*.test.ts",
+    "src/**/__tests__/**/*.test.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
 }

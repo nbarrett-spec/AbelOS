@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   // SECURITY: Check authentication first
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
     if (body.seedKey !== 'abel-lumber-seed-2024') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    audit(request, 'RUN_DIAGNOSTIC', 'Database', undefined, { endpoint: 'auth/diagnose' }, 'WARN').catch(() => {})
 
     const results: { query: string; status: string; error?: string; rows?: number }[] = []
 

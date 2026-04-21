@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/auto-po
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
       productIds?: string[]
       all?: boolean
     }
+    audit(req, 'GENERATE_DRAFT_POS', 'PurchaseOrder', undefined, { productIds, all }).catch(() => {})
 
     // Fetch candidate products
     let candidateProducts = await prisma.$queryRaw`

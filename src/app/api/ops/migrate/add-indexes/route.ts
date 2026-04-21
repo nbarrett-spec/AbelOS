@@ -2,11 +2,14 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/migrate/add-indexes — Add missing performance indexes
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  audit(request, 'RUN_MIGRATE_ADD_INDEXES', 'Database', undefined, { migration: 'RUN_MIGRATE_ADD_INDEXES' }, 'CRITICAL').catch(() => {})
 
   const results: string[] = []
   let passed = 0

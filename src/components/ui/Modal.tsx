@@ -108,47 +108,45 @@ export default function Modal({
       <div
         ref={panelRef}
         className={clsx(
-          'relative w-full bg-white dark:bg-gray-900 rounded-2xl shadow-elevation-5',
-          'border border-gray-200 dark:border-gray-800',
-          'animate-[slideUp_250ms_ease-out]',
-          'flex flex-col max-h-[85vh]',
+          'relative w-full panel panel-elevated',
+          'animate-[slideUp_220ms_var(--ease-out)]',
+          'flex flex-col max-h-[85vh] shadow-[0_24px_48px_rgba(0,0,0,0.35)]',
           sizeClasses[size]
         )}
       >
         {/* Header */}
         {(title || showClose) && (
-          <div className="flex items-start justify-between px-6 pt-6 pb-0">
-            <div>
+          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-border">
+            <div className="min-w-0">
               {title && (
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
+                <h2 className="text-base font-semibold text-fg tracking-tight">{title}</h2>
               )}
               {description && (
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+                <p className="mt-1 text-[12.5px] text-fg-muted leading-snug">{description}</p>
               )}
             </div>
             {showClose && (
               <button
                 onClick={onClose}
                 className={clsx(
-                  'ml-4 -mt-1 p-1.5 rounded-lg text-gray-400',
-                  'hover:bg-gray-100 hover:text-gray-600',
-                  'dark:hover:bg-gray-800 dark:hover:text-gray-300',
-                  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/40'
+                  'ml-4 -mt-0.5 p-1.5 rounded-md text-fg-subtle',
+                  'hover:bg-surface-muted hover:text-fg',
+                  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-canvas'
                 )}
                 aria-label="Close"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
         )}
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-border bg-surface-muted/40">
             {footer}
           </div>
         )}

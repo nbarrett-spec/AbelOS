@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/data-fix — Run data cleanup and cross-linking tasks
 export async function POST(request: NextRequest) {
@@ -11,6 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { action } = body
+    audit(request, `DATA_FIX_${String(action || 'unknown').toUpperCase()}`, 'Database', undefined, { action }, 'WARN').catch(() => {})
 
     switch (action) {
       case 'crosslink-bolt-jobs':

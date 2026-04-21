@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
 
   async function runStep(name: string, sql: string) {
     try {
+    audit(request, 'RUN_SALES_MIGRATE', 'Database', undefined, { migration: 'RUN_SALES_MIGRATE' }, 'CRITICAL').catch(() => {})
       await prisma.$executeRawUnsafe(sql)
       results.push({ step: name, status: 'ok' })
     } catch (err: any) {

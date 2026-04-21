@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireDevAdmin } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 import bcrypt from 'bcryptjs'
 
 // Real Abel Lumber employees
@@ -27,6 +28,8 @@ const REAL_EMPLOYEES = [
 export async function POST(request: NextRequest) {
   const guard = requireDevAdmin(request)
   if (guard) return guard
+
+  audit(request, 'RUN_SEED_EMPLOYEES', 'Database', undefined, { migration: 'RUN_SEED_EMPLOYEES' }, 'CRITICAL').catch(() => {})
 
   try {
     const defaultPasswordHash = await bcrypt.hash('abel2026', 12)

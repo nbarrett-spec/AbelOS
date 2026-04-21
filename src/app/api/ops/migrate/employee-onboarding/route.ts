@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -13,6 +14,7 @@ import { randomUUID } from 'crypto'
  */
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_MIGRATE_EMPLOYEE_ONBOARDING', 'Database', undefined, { migration: 'RUN_MIGRATE_EMPLOYEE_ONBOARDING' }, 'CRITICAL').catch(() => {})
     const results: string[] = []
 
     // Step 1: Add new columns

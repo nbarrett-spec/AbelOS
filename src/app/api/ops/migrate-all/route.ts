@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/migrate-all
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     sql: string
   ) {
     try {
+    audit(request, 'RUN_MIGRATE_ALL', 'Database', undefined, { migration: 'RUN_MIGRATE_ALL' }, 'CRITICAL').catch(() => {})
       await prisma.$executeRawUnsafe(sql)
       results.push({ phase, step: name, status: 'OK' })
     } catch (e: any) {

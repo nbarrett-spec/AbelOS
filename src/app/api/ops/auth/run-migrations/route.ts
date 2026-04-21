@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/auth/run-migrations
@@ -12,7 +13,8 @@ import { checkStaffAuth } from '@/lib/api-auth'
  * Migration history preserved below for reference. If you need to run
  * new migrations, use prisma migrate or a new versioned endpoint.
  */
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
+  audit(request, 'ATTEMPT_RETIRED_RUN_MIGRATIONS', 'Database', undefined, { note: 'endpoint retired' }, 'WARN').catch(() => {})
   return NextResponse.json(
     {
       error: 'This migration endpoint has been retired. All migrations have been applied.',

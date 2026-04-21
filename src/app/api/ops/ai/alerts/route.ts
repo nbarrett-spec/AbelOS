@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuthWithFallback } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
+import { audit } from '@/lib/audit';
 
 interface InboxItem {
   id: string;
@@ -124,6 +125,10 @@ export async function PATCH(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    audit(request, `UPDATE_STATUS_${body.status}`, 'InboxItem', body.alertId, {
+      newStatus: body.status,
+    }).catch(() => {});
 
     // Fetch updated alerts for response
     const updatedAlerts = await prisma.$queryRawUnsafe<InboxItem[]>(

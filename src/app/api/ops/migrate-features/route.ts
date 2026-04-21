@@ -2,10 +2,13 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  audit(request, 'RUN_MIGRATE_FEATURES', 'Database', undefined, { migration: 'RUN_MIGRATE_FEATURES' }, 'CRITICAL').catch(() => {})
 
   const results: { table: string; status: string; error?: string }[] = []
 

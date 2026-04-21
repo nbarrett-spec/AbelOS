@@ -1,52 +1,63 @@
 'use client'
 
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
-import { clsx } from 'clsx'
+import { forwardRef, type HTMLAttributes } from 'react'
+import { cn } from '@/lib/utils'
 
 // ── Variants ──────────────────────────────────────────────────────────────
 
 const variants = {
-  default: 'bg-white border border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-800',
-  elevated: 'bg-white border border-gray-200 shadow-elevation-3 dark:bg-gray-900 dark:border-gray-800',
-  glass: 'bg-white/60 backdrop-blur-xl border border-white/30 shadow-glass dark:bg-gray-900/60 dark:border-gray-700/30',
-  interactive:
-    'bg-white border border-gray-200 shadow-sm cursor-pointer ' +
-    'hover:shadow-elevation-2 hover:border-gray-300 hover:-translate-y-0.5 ' +
-    'active:translate-y-0 active:shadow-sm ' +
-    'dark:bg-gray-900 dark:border-gray-800 dark:hover:border-gray-700',
-  ghost: 'bg-transparent',
-  filled: 'shadow-sm', // Use with custom bg color
+  default:     'panel',
+  elevated:    'panel panel-elevated',
+  interactive: 'panel panel-interactive',
+  live:        'panel panel-live',
+  glass:       'card-glass',
+  ghost:       'bg-transparent',
+  filled:      '',
 } as const
 
 const paddings = {
   none: '',
-  sm: 'p-4',
-  md: 'p-6',
-  lg: 'p-8',
+  xs:   'p-3',
+  sm:   'p-4',
+  md:   'p-5',
+  lg:   'p-6',
 } as const
 
-// ── Types ─────────────────────────────────────────────────────────────────
+// Corner-radius variants. The panel/glass styles already set a default
+// radius; `rounded` overrides it for callers that want a tighter or looser
+// shape (dashboards use `xl` for the hero cards, `none` for flush strips).
+const roundeds = {
+  none: 'rounded-none',
+  sm:   'rounded-sm',
+  md:   'rounded-md',
+  lg:   'rounded-lg',
+  xl:   'rounded-xl',
+  '2xl':'rounded-2xl',
+  full: 'rounded-full',
+} as const
 
 export type CardVariant = keyof typeof variants
 export type CardPadding = keyof typeof paddings
+export type CardRounded = keyof typeof roundeds
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant
   padding?: CardPadding
-  rounded?: 'md' | 'lg' | 'xl' | '2xl' | '3xl'
+  /** Override the default corner radius from the variant */
+  rounded?: CardRounded
+  /** Mark as containing forecast/projected data — shows dashed border */
+  forecast?: boolean
 }
 
-// ── Component ─────────────────────────────────────────────────────────────
-
 const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ variant = 'default', padding = 'md', rounded = 'xl', className, children, ...props }, ref) => (
+  ({ variant = 'default', padding = 'md', rounded, forecast = false, className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={clsx(
-        'transition-all duration-200',
-        `rounded-${rounded}`,
+      className={cn(
         variants[variant],
         paddings[padding],
+        rounded && roundeds[rounded],
+        forecast && 'border-dashed',
         className
       )}
       {...props}
@@ -67,9 +78,9 @@ interface CardSectionProps extends HTMLAttributes<HTMLDivElement> {
 export function CardHeader({ className, children, border = true, ...props }: CardSectionProps) {
   return (
     <div
-      className={clsx(
-        'px-6 py-4',
-        border && 'border-b border-gray-100 dark:border-gray-800',
+      className={cn(
+        'px-5 py-3.5 flex items-center justify-between gap-3',
+        border && 'border-b border-border',
         className
       )}
       {...props}
@@ -79,9 +90,28 @@ export function CardHeader({ className, children, border = true, ...props }: Car
   )
 }
 
+export function CardTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3
+      className={cn('text-[13px] font-semibold text-fg tracking-tight', className)}
+      {...props}
+    >
+      {children}
+    </h3>
+  )
+}
+
+export function CardDescription({ className, children, ...props }: HTMLAttributes<HTMLParagraphElement>) {
+  return (
+    <p className={cn('text-xs text-fg-muted mt-0.5', className)} {...props}>
+      {children}
+    </p>
+  )
+}
+
 export function CardBody({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx('px-6 py-5', className)} {...props}>
+    <div className={cn('px-5 py-4', className)} {...props}>
       {children}
     </div>
   )
@@ -90,9 +120,9 @@ export function CardBody({ className, children, ...props }: HTMLAttributes<HTMLD
 export function CardFooter({ className, children, border = true, ...props }: CardSectionProps) {
   return (
     <div
-      className={clsx(
-        'px-6 py-4',
-        border && 'border-t border-gray-100 dark:border-gray-800',
+      className={cn(
+        'px-5 py-3',
+        border && 'border-t border-border',
         className
       )}
       {...props}

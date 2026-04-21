@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireDevAdmin } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // GET /api/ops/seed — Check current data counts (dev only, ADMIN only)
 export async function GET(request: NextRequest) {
@@ -86,6 +87,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_SEED', 'Database', undefined, { migration: 'RUN_SEED' }, 'CRITICAL').catch(() => {})
     const guard = requireDevAdmin(request)
     if (guard) return guard
 

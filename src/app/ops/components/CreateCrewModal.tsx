@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { X, AlertTriangle } from 'lucide-react'
+import { Badge } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface StaffMember {
   id: string
@@ -16,8 +19,6 @@ interface CreateCrewModalProps {
   onClose: () => void
   onCrewCreated: () => void
 }
-
-const CREW_TYPES = ['DELIVERY', 'INSTALLATION', 'DELIVERY_AND_INSTALL']
 
 export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps) {
   const [formData, setFormData] = useState({
@@ -55,17 +56,12 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const toggleMember = (staffId: string) => {
     setMemberIds((prev) =>
-      prev.includes(staffId)
-        ? prev.filter((id) => id !== staffId)
-        : [...prev, staffId]
+      prev.includes(staffId) ? prev.filter((id) => id !== staffId) : [...prev, staffId]
     )
   }
 
@@ -104,33 +100,32 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
   const availableStaff = staff.filter((s) => s.active)
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Create New Crew</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-          >
-            ×
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="panel panel-elevated max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+        <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between z-10">
+          <div>
+            <div className="eyebrow">Operations</div>
+            <h2 className="text-lg font-semibold text-fg">Create New Crew</h2>
+          </div>
+          <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-              {error}
+            <div className="panel panel-live p-3 flex items-start gap-2 text-sm text-data-negative">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
           {/* Basic Info */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 text-sm">Basic Information</h3>
+          <section className="space-y-4">
+            <h3 className="eyebrow">Basic Information</h3>
 
             <div>
-              <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-                Crew Name *
-              </label>
+              <label className="label">Crew Name <span className="text-data-negative">*</span></label>
               <input
                 type="text"
                 name="name"
@@ -138,114 +133,107 @@ export function CreateCrewModal({ onClose, onCrewCreated }: CreateCrewModalProps
                 onChange={handleChange}
                 required
                 placeholder="e.g., Delivery Team A, Install Crew - Sean"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="input"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-                Crew Type *
-              </label>
-              <select
-                name="crewType"
-                value={formData.crewType}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
-              >
+              <label className="label">Crew Type <span className="text-data-negative">*</span></label>
+              <select name="crewType" value={formData.crewType} onChange={handleChange} className="input">
                 <option value="DELIVERY">Delivery</option>
                 <option value="INSTALLATION">Installation</option>
                 <option value="DELIVERY_AND_INSTALL">Delivery & Installation</option>
               </select>
             </div>
-          </div>
+          </section>
+
+          <div className="divider" />
 
           {/* Vehicle Info */}
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-gray-900 text-sm">Vehicle Information (Optional)</h3>
+          <section className="space-y-4">
+            <h3 className="eyebrow">Vehicle Information (Optional)</h3>
 
             <div>
-              <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-                Vehicle ID
-              </label>
+              <label className="label">Vehicle ID</label>
               <input
                 type="text"
                 name="vehicleId"
                 value={formData.vehicleId}
                 onChange={handleChange}
                 placeholder="Vehicle ID"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="input"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-                License Plate
-              </label>
+              <label className="label">License Plate</label>
               <input
                 type="text"
                 name="vehiclePlate"
                 value={formData.vehiclePlate}
                 onChange={handleChange}
                 placeholder="e.g., ABC-123"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] font-mono"
+                className="input font-mono"
               />
             </div>
-          </div>
+          </section>
+
+          <div className="divider" />
 
           {/* Team Members */}
-          <div className="space-y-4 border-t pt-4">
+          <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 text-sm">Team Members</h3>
-              <span className="text-xs bg-[#C9822B] text-white px-2.5 py-1 rounded-full">
-                {selectedStaffCount} selected
-              </span>
+              <h3 className="eyebrow">Team Members</h3>
+              <Badge variant="orange" size="sm">{selectedStaffCount} selected</Badge>
             </div>
 
             {fetchingStaff ? (
-              <div className="p-4 text-center text-sm text-gray-500">Loading staff...</div>
+              <div className="p-4 text-center text-sm text-fg-muted">Loading staff...</div>
             ) : availableStaff.length === 0 ? (
-              <div className="p-4 text-center text-sm text-gray-500">No active staff available</div>
+              <div className="p-4 text-center text-sm text-fg-muted">No active staff available</div>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3 bg-gray-50">
-                {availableStaff.map((staffMember) => (
-                  <label
-                    key={staffMember.id}
-                    className="flex items-start gap-3 p-2 rounded hover:bg-white transition-colors cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={memberIds.includes(staffMember.id)}
-                      onChange={() => toggleMember(staffMember.id)}
-                      className="mt-0.5 w-4 h-4 rounded accent-[#C9822B]"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm text-gray-900">
-                        {staffMember.firstName} {staffMember.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{staffMember.email}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {staffMember.role}
-                        {staffMember.department && ` • ${staffMember.department}`}
-                      </p>
-                    </div>
-                  </label>
-                ))}
+              <div className="max-h-64 overflow-y-auto scrollbar-thin panel p-2 space-y-1">
+                {availableStaff.map((staffMember) => {
+                  const checked = memberIds.includes(staffMember.id)
+                  return (
+                    <label
+                      key={staffMember.id}
+                      className={cn(
+                        'flex items-start gap-3 p-2 rounded-md transition-colors cursor-pointer',
+                        checked ? 'bg-accent-subtle' : 'hover:bg-surface-muted'
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleMember(staffMember.id)}
+                        className="mt-0.5 w-4 h-4 rounded accent-accent"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm text-fg">
+                          {staffMember.firstName} {staffMember.lastName}
+                        </p>
+                        <p className="text-xs text-fg-subtle truncate">{staffMember.email}</p>
+                        <p className="text-xs text-fg-muted mt-0.5">
+                          {staffMember.role}
+                          {staffMember.department && ` · ${staffMember.department}`}
+                        </p>
+                      </div>
+                    </label>
+                  )
+                })}
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="border-t pt-4 flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+          <div className="border-t border-border pt-4 flex gap-2 justify-end">
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.name || !formData.crewType}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#C9822B] rounded-lg hover:bg-[#D46D1A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Crew'}
             </button>

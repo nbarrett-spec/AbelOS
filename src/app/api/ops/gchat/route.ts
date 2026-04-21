@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Google Chat Integration API
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
     if (!action || !channelId) {
       return NextResponse.json({ error: 'Missing action or channelId' }, { status: 400 })
     }
+    audit(request, `GCHAT_${String(action).toUpperCase()}`, 'GChatChannel', channelId, { action }).catch(() => {})
 
     // ── Configure ──
     if (action === 'configure') {

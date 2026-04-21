@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/staff-auth'
 import { requireDevAdmin } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/auth/seed-staff — Create staff accounts (dev only, ADMIN only)
 export async function POST(request: NextRequest) {
@@ -68,6 +69,11 @@ export async function POST(request: NextRequest) {
         results.push({ email: s.email, status: 'error', error: e.message?.substring(0, 100) })
       }
     }
+
+    audit(request, 'SEED_STAFF', 'Staff', undefined, {
+      count: results.length,
+      okCount: results.filter((r) => r.status === 'ok').length,
+    }, 'CRITICAL').catch(() => {})
 
     return NextResponse.json({ results })
   } catch (error: any) {

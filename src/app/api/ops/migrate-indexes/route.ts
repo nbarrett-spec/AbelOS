@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth';
+import { audit } from '@/lib/audit'
 
 // Migration: Add composite indexes for common query patterns
 // These improve performance on the most frequently used list/filter queries
@@ -78,6 +79,8 @@ const indexMigrations = [
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request);
   if (authError) return authError;
+
+  audit(request, 'RUN_MIGRATE_INDEXES', 'Database', undefined, { migration: 'RUN_MIGRATE_INDEXES' }, 'CRITICAL').catch(() => {})
 
   try {
     const results: { index: number; name: string; status: string; error?: string }[] = [];

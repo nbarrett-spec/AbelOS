@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit'
 
 // POST /api/ops/auth/forgot-password — generate a reset token for staff
 export async function POST(request: NextRequest) {
@@ -48,6 +49,23 @@ export async function POST(request: NextRequest) {
         resetTokenExpiry,
         staff.id
       )
+
+      // Audit: someone initiated a password reset for this staff account.
+      // CRITICAL severity so it surfaces on the security dashboard — abuse
+      // of this flow is a classic phishing vector.
+      logAudit({
+        staffId: staff.id,
+        staffName: `${staff.firstName} ${staff.lastName}`.trim(),
+        action: 'REQUEST_PASSWORD_RESET',
+        entity: 'Staff',
+        entityId: staff.id,
+        ipAddress:
+          request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+          request.headers.get('x-real-ip') ||
+          undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+        severity: 'CRITICAL',
+      }).catch(() => {})
 
       // Build reset URL
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''

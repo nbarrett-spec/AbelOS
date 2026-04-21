@@ -18,6 +18,7 @@ export const maxDuration = 60
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 const migrations: { name: string; sql: string }[] = [
   // ═══════════════════════════════════════════════════════════════════
@@ -236,6 +237,8 @@ const migrations: { name: string; sql: string }[] = [
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  audit(request, 'RUN_MIGRATE_PRODUCT_EXPANSION', 'Database', undefined, { migration: 'RUN_MIGRATE_PRODUCT_EXPANSION' }, 'CRITICAL').catch(() => {})
 
   const results: { name: string; status: 'ok' | 'error'; error?: string }[] = []
 

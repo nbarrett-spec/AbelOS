@@ -620,6 +620,14 @@ export async function syncMaterialSelections(): Promise<SyncResult> {
 
 // ─── Webhook Signature Verification ────────────────────────────────────────
 
+/**
+ * Verify a BuilderTrend webhook signature with constant-time comparison.
+ *
+ * Header format: `X-BuilderTrend-Signature: sha256=<hex>`. BT signs the raw
+ * body with the shared `clientSecret`. This check was previously implemented
+ * with `computed === expectedSignature`, which leaks timing. Now uses
+ * `crypto.timingSafeEqual` after length-matching both buffers.
+ */
 export async function verifyWebhookSignature(
   payload: string,
   signature: string
@@ -628,20 +636,23 @@ export async function verifyWebhookSignature(
     const config = await getBuilderTrendConfig()
     if (!config) return false
 
-    // BuilderTrend uses HMAC-SHA256
-    // Signature format: "sha256=<hex>"
-    const [algorithm, expectedSignature] = signature.split('=')
+    const [algorithm, expectedSignature] = (signature || '').split('=')
+    if (algorithm !== 'sha256' || !expectedSignature) return false
 
-    if (algorithm !== 'sha256') {
-      return false
-    }
-
-    const computed = crypto
+    const computedHex = crypto
       .createHmac('sha256', config.clientSecret)
       .update(payload)
       .digest('hex')
 
-    return computed === expectedSignature
+    let providedBuf: Buffer
+    try {
+      providedBuf = Buffer.from(expectedSignature, 'hex')
+    } catch {
+      return false
+    }
+    const expectedBuf = Buffer.from(computedHex, 'hex')
+    if (providedBuf.length !== expectedBuf.length) return false
+    return crypto.timingSafeEqual(providedBuf, expectedBuf)
   } catch (error) {
     console.error('Error verifying webhook signature:', error)
     return false

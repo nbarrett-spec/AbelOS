@@ -1,7 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Plus, RefreshCw, Users, Search, X } from 'lucide-react'
+import {
+  PageHeader, KPICard, Card, CardHeader, CardTitle, CardDescription, CardBody,
+  DataTable, Badge, StatusBadge, EmptyState, AnimatedNumber, LiveDataIndicator,
+  InfoTip,
+} from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface BuilderAccount {
   id: string
@@ -32,30 +39,32 @@ const TERM_LABELS: Record<string, string> = {
   NET_30: 'Net 30',
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: 'bg-green-100 text-green-700',
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  SUSPENDED: 'bg-red-100 text-red-700',
-  CLOSED: 'bg-gray-100 text-gray-500',
+const fmtMoneyCompact = (n: number) => {
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
+  if (Math.abs(n) >= 10_000)    return `$${Math.round(n / 1000)}K`
+  if (Math.abs(n) >= 1_000)     return `$${(n / 1000).toFixed(1)}K`
+  return `$${Math.round(n)}`
 }
 
 export default function BuilderAccountsPage() {
   const [builders, setBuilders] = useState<BuilderAccount[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [termFilter, setTermFilter] = useState('ALL')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sortBy, setSortBy] = useState('createdAt')
-  const [sortDir, setSortDir] = useState('desc')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [refreshTick, setRefreshTick] = useState<number | null>(null)
 
   useEffect(() => {
     async function load() {
-      setLoading(true)
+      setRefreshing(true)
       try {
         const params = new URLSearchParams()
         if (search) params.append('search', search)
@@ -75,251 +84,322 @@ export default function BuilderAccountsPage() {
           setTotal(data.pagination.total)
           setTotalPages(data.pagination.pages)
         }
+        setRefreshTick(Date.now())
       } catch (err) {
         console.error('Failed to load builders:', err)
       } finally {
         setLoading(false)
+        setRefreshing(false)
       }
     }
     load()
   }, [search, statusFilter, termFilter, dateFrom, dateTo, sortBy, sortDir, page])
 
-  const toggleSort = (col: string) => {
-    if (sortBy === col) {
-      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+  const toggleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     } else {
-      setSortBy(col)
+      setSortBy(key)
       setSortDir('desc')
     }
     setPage(1)
   }
 
-  const SortIcon = ({ col }: { col: string }) => (
-    <span className="ml-1 text-[10px]">{sortBy === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}</span>
-  )
+  const activeCount = useMemo(() => builders.filter((b) => b.status === 'ACTIVE').length, [builders])
+  const withPricing = useMemo(() => builders.filter((b) => b._count.customPricing > 0).length, [builders])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
-      </div>
-    )
-  }
+  const STATUSES = ['ALL', 'ACTIVE', 'PENDING', 'SUSPENDED', 'CLOSED']
+  const TERMS = ['ALL', 'PAY_AT_ORDER', 'PAY_ON_DELIVERY', 'NET_15', 'NET_30']
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Builder Accounts</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            CRM view — manage relationships, pricing programs, and account health
-          </p>
-        </div>
-        <button className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]">
-          + Add Builder
-        </button>
+    <div className="space-y-5 animate-enter">
+      <LiveDataIndicator trigger={refreshTick} />
+
+      <PageHeader
+        eyebrow="CRM"
+        title="Builder Accounts"
+        description="Manage relationships, pricing programs, account health and exposure."
+        actions={
+          <>
+            <button
+              onClick={() => { setPage((p) => p) }}
+              className="btn btn-secondary btn-sm"
+              disabled={refreshing}
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
+              Refresh
+            </button>
+            <button className="btn btn-primary btn-sm">
+              <Plus className="w-3.5 h-3.5" /> Add Builder
+            </button>
+          </>
+        }
+      />
+
+      {/* ── Summary KPIs ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard
+          title="Total Accounts"
+          accent="brand"
+          value={<AnimatedNumber value={total} />}
+          subtitle={`${builders.length} on page`}
+          icon={<Users className="w-3.5 h-3.5" />}
+        />
+        <KPICard
+          title="Active"
+          accent="positive"
+          value={<AnimatedNumber value={activeCount} />}
+          subtitle={`${total > 0 ? Math.round((activeCount / Math.max(1, builders.length)) * 100) : 0}% of page`}
+        />
+        <KPICard
+          title="With Custom Pricing"
+          accent="accent"
+          value={<AnimatedNumber value={withPricing} />}
+          subtitle="Pricing programs attached"
+        />
+        <KPICard
+          title="Pagination"
+          accent="neutral"
+          value={`${page}/${totalPages}`}
+          subtitle={`50 per page`}
+        />
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs text-gray-500 uppercase">Total Accounts</p>
-          <p className="text-2xl font-bold text-gray-900">{total}</p>
-        </div>
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs text-gray-500 uppercase">Page Results</p>
-          <p className="text-2xl font-bold text-green-600">{builders.length}</p>
-        </div>
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs text-gray-500 uppercase">Current Page</p>
-          <p className="text-2xl font-bold text-gray-900">{page} of {totalPages}</p>
-        </div>
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs text-gray-500 uppercase">Total Records</p>
-          <p className="text-2xl font-bold text-[#C9822B]">{total}</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-xl border p-4 space-y-3">
-        <div className="flex items-center gap-4 flex-wrap">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Search by company, contact, email, city..."
-            className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-            className="px-3 py-2 border rounded-lg text-sm"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="PENDING">Pending</option>
-            <option value="SUSPENDED">Suspended</option>
-            <option value="CLOSED">Closed</option>
-          </select>
-          <select
-            value={termFilter}
-            onChange={(e) => { setTermFilter(e.target.value); setPage(1) }}
-            className="px-3 py-2 border rounded-lg text-sm"
-          >
-            <option value="ALL">All Terms</option>
-            <option value="PAY_AT_ORDER">Pay at Order</option>
-            <option value="PAY_ON_DELIVERY">Pay on Delivery</option>
-            <option value="NET_15">Net 15</option>
-            <option value="NET_30">Net 30</option>
-          </select>
-          <span className="text-xs text-gray-400 whitespace-nowrap">
-            {builders.length} of {total} accounts
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-xs text-gray-500 font-medium whitespace-nowrap">From</label>
-          <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
-          <label className="text-xs text-gray-500 font-medium whitespace-nowrap">To</label>
-          <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
-          {(dateFrom || dateTo) && (
-            <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-              className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
-          )}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('companyName')}>
-                Company<SortIcon col="companyName" />
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('contactName')}>
-                Contact<SortIcon col="contactName" />
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                Location
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                Org / Division
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('paymentTerm')}>
-                Terms<SortIcon col="paymentTerm" />
-              </th>
-              <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                Projects
-              </th>
-              <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                Pricing
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('status')}>
-                Status<SortIcon col="status" />
-              </th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {builders.map((builder) => (
-              <tr key={builder.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/ops/accounts/${builder.id}`}
-                    className="font-medium text-gray-900 hover:text-[#3E2A1E]"
-                  >
-                    {builder.companyName}
-                  </Link>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="text-sm text-gray-600">{builder.contactName}</div>
-                  <div className="text-xs text-gray-400">{builder.email}</div>
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {builder.city && builder.state
-                    ? `${builder.city}, ${builder.state}`
-                    : builder.city || builder.state || '—'}
-                </td>
-                <td className="px-4 py-3">
-                  {builder.organizationName ? (
-                    <div>
-                      <div className="text-sm text-gray-900 font-medium">{builder.organizationName}</div>
-                      {builder.divisionName && (
-                        <div className="text-xs text-gray-400">{builder.divisionName}</div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                    {TERM_LABELS[builder.paymentTerm] || builder.paymentTerm}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-center text-sm">
-                  {builder._count.projects}
-                </td>
-                <td className="px-4 py-3 text-center text-sm">
-                  {builder._count.customPricing > 0 ? (
-                    <span className="text-[#C9822B] font-medium">
-                      {builder._count.customPricing}
-                    </span>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      STATUS_COLORS[builder.status] || 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {builder.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/ops/accounts/${builder.id}`}
-                    className="text-xs text-[#3E2A1E] hover:text-[#C9822B]"
-                  >
-                    View →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {builders.length === 0 && (
-          <div className="text-center text-gray-400 text-sm py-12">
-            No builders match your filters
+      {/* ── Filters ───────────────────────────────────────────────────── */}
+      <Card variant="default" padding="md">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                placeholder="Search company, contact, email, city..."
+                className="input w-full pl-8"
+              />
+            </div>
+            <span className="text-xs text-fg-subtle tabular-nums whitespace-nowrap">
+              {builders.length} / {total}
+            </span>
           </div>
-        )}
-      </div>
 
-      {/* Pagination */}
+          {/* Status chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-fg-subtle uppercase tracking-wide mr-1">Status</span>
+            {STATUSES.map((s) => (
+              <button
+                key={s}
+                onClick={() => { setStatusFilter(s); setPage(1) }}
+                className={cn(
+                  'text-[11px] px-2 py-1 rounded-md transition-colors',
+                  statusFilter === s
+                    ? 'bg-accent text-fg-on-accent font-medium'
+                    : 'text-fg-muted hover:bg-surface-muted'
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-fg-subtle uppercase tracking-wide mr-1">Terms</span>
+            {TERMS.map((t) => (
+              <button
+                key={t}
+                onClick={() => { setTermFilter(t); setPage(1) }}
+                className={cn(
+                  'text-[11px] px-2 py-1 rounded-md transition-colors',
+                  termFilter === t
+                    ? 'bg-brand text-fg-on-accent font-medium'
+                    : 'text-fg-muted hover:bg-surface-muted'
+                )}
+              >
+                {t === 'ALL' ? 'ALL' : (TERM_LABELS[t] ?? t)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="label mb-0 whitespace-nowrap">From</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+              className="input"
+            />
+            <label className="label mb-0 whitespace-nowrap">To</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+              className="input"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
+                className="btn btn-ghost btn-sm"
+              >
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Data Table ────────────────────────────────────────────────── */}
+      <DataTable
+        density="default"
+        data={builders}
+        loading={loading}
+        rowKey={(b) => b.id}
+        sortBy={sortBy}
+        sortDir={sortDir as any}
+        onSort={toggleSort}
+        keyboardNav
+        empty={
+          <EmptyState
+            icon="users"
+            title="No builders match your filters"
+            description="Try widening date range or clearing the search."
+            size="default"
+            secondaryAction={{
+              label: 'Clear filters',
+              onClick: () => {
+                setSearch('')
+                setStatusFilter('ALL')
+                setTermFilter('ALL')
+                setDateFrom('')
+                setDateTo('')
+                setPage(1)
+              },
+            }}
+          />
+        }
+        columns={[
+          {
+            key: 'companyName',
+            header: 'Company',
+            sortable: true,
+            cell: (b) => (
+              <Link href={`/ops/accounts/${b.id}`} className="font-medium text-fg hover:text-accent">
+                {b.companyName}
+              </Link>
+            ),
+          },
+          {
+            key: 'contactName',
+            header: 'Contact',
+            sortable: true,
+            cell: (b) => (
+              <div>
+                <div className="text-sm text-fg">{b.contactName}</div>
+                <div className="text-xs text-fg-subtle truncate max-w-[220px]">{b.email}</div>
+              </div>
+            ),
+          },
+          {
+            key: 'location',
+            header: 'Location',
+            hideOnMobile: true,
+            cell: (b) =>
+              b.city && b.state
+                ? `${b.city}, ${b.state}`
+                : b.city || b.state || <span className="text-fg-subtle">—</span>,
+          },
+          {
+            key: 'organizationName',
+            header: 'Org / Division',
+            hideOnMobile: true,
+            cell: (b) =>
+              b.organizationName ? (
+                <div>
+                  <div className="text-sm text-fg">{b.organizationName}</div>
+                  {b.divisionName && <div className="text-xs text-fg-subtle">{b.divisionName}</div>}
+                </div>
+              ) : (
+                <span className="text-fg-subtle">—</span>
+              ),
+          },
+          {
+            key: 'paymentTerm',
+            header: 'Terms',
+            sortable: true,
+            cell: (b) => (
+              <Badge variant="neutral" size="sm">
+                {TERM_LABELS[b.paymentTerm] || b.paymentTerm}
+              </Badge>
+            ),
+          },
+          {
+            key: 'projects',
+            header: 'Projects',
+            numeric: true,
+            hideOnMobile: true,
+            cell: (b) => <span className="tabular-nums">{b._count.projects}</span>,
+          },
+          {
+            key: 'orders',
+            header: 'Orders',
+            numeric: true,
+            cell: (b) => <span className="tabular-nums">{b._count.orders}</span>,
+          },
+          {
+            key: 'customPricing',
+            header: 'Pricing',
+            numeric: true,
+            hideOnMobile: true,
+            cell: (b) =>
+              b._count.customPricing > 0 ? (
+                <span className="tabular-nums text-accent font-medium">{b._count.customPricing}</span>
+              ) : (
+                <span className="text-fg-subtle">—</span>
+              ),
+          },
+          {
+            key: 'accountBalance',
+            header: 'Balance',
+            numeric: true,
+            heatmap: true,
+            heatmapValue: (b) => -(b.accountBalance || 0), // reversed: high = red
+            cell: (b) => (
+              <span
+                className={cn(
+                  'tabular-nums',
+                  b.accountBalance > 0 ? 'text-data-negative' : 'text-fg-muted'
+                )}
+              >
+                {fmtMoneyCompact(b.accountBalance)}
+              </span>
+            ),
+          },
+          {
+            key: 'status',
+            header: 'Status',
+            sortable: true,
+            cell: (b) => <StatusBadge status={b.status} size="sm" />,
+          },
+        ]}
+      />
+
+      {/* ── Pagination ────────────────────────────────────────────────── */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-xl border p-4 flex items-center justify-between">
+        <div className="panel px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="px-4 py-2 text-sm font-medium border rounded-lg disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="btn btn-secondary btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ← Previous
           </button>
-          <span className="text-sm text-gray-600">
-            Page {page} of {totalPages}
+          <span className="text-xs text-fg-muted tabular-nums">
+            Page {page} of {totalPages} · {total} total
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
-            className="px-4 py-2 text-sm font-medium border rounded-lg disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="btn btn-secondary btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next →
           </button>

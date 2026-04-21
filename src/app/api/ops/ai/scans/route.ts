@@ -1,6 +1,7 @@
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { audit } from '@/lib/audit'
 
 // ─── SCAN TYPE DEFINITIONS ───────────────────────────────────────────────
 
@@ -159,6 +160,8 @@ export async function POST(req: NextRequest) {
       'MEDIUM',
       JSON.stringify({ scanId: scanInfo.id, name: scanInfo.name })
     )
+
+    audit(req, 'TRIGGER_SCAN', 'AgentTask', taskId, { scanKey, scanId: scanInfo.id }).catch(() => {})
 
     return NextResponse.json({
       success: true,

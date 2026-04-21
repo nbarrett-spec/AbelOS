@@ -11,13 +11,14 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'light',
+  theme: 'dark',
   toggleTheme: () => {},
-  isDark: false,
+  isDark: true,
 })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light')
+  // Dark is the canonical Aegis experience; light is opt-in.
+  const [theme, setTheme] = useState<Theme>('dark')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -25,8 +26,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('abel-theme') as Theme | null
     if (stored === 'dark' || stored === 'light') {
       setTheme(stored)
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      // only flip to light if the user has explicitly chosen light at OS level
+      setTheme('light')
     }
   }, [])
 

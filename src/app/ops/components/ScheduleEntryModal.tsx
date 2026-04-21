@@ -151,7 +151,7 @@ export function ScheduleEntryModal({ isOpen, entryId, onClose, onUpdate }: Sched
       ) : entry ? (
         <div className="space-y-5">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{error}</div>
+            <div className="panel panel-live p-3 text-sm text-data-negative">{error}</div>
           )}
 
           {/* Type & Status badges */}

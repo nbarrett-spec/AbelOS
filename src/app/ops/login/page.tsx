@@ -3,6 +3,7 @@
 import { useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import { Loader2 } from 'lucide-react'
 
 function StaffLoginInner() {
   const [email, setEmail] = useState<string>('')
@@ -43,152 +44,129 @@ function StaffLoginInner() {
   const showSessionExpiredBanner = redirect && redirect !== '/ops'
 
   return (
-    <div className="min-h-screen flex font-sans">
-      {/* Left panel — brand accent (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[45%] bg-abel-walnut relative items-center justify-center overflow-hidden">
-        {/* Subtle wood-grain texture overlay */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: `repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 2px,
-            rgba(255,255,255,0.1) 2px,
-            rgba(255,255,255,0.1) 4px
-          )`,
-        }} />
-        {/* Content */}
+    <div className="min-h-screen flex font-sans bg-canvas">
+      {/* Left panel — brand */}
+      <div
+        className="hidden lg:flex lg:w-[44%] relative items-center justify-center overflow-hidden"
+        style={{ background: 'linear-gradient(180deg, #2A1C14 0%, #17150F 100%)' }}
+      >
+        {/* Wood-grain texture */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.12) 2px, rgba(255,255,255,0.12) 3px)`,
+          }}
+        />
+        {/* Amber accent line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+        <div className="absolute top-16 left-16 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-soft" />
+          <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-400/80">
+            Aegis · v1
+          </span>
+        </div>
+
         <div className="relative z-10 px-16 max-w-lg">
-          <div className="w-20 h-20 mb-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg">
-            <Image
-              src="/icon-192.png"
-              alt="Abel Lumber"
-              width={56}
-              height={56}
-              className="rounded-lg"
-            />
+          <div className="w-14 h-14 mb-10 rounded-md bg-white/10 flex items-center justify-center backdrop-blur-sm">
+            <Image src="/icon-192.png" alt="Abel Lumber" width={40} height={40} className="rounded" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
-            Abel Operations
+          <h2 className="text-[28px] font-semibold text-white mb-4 tracking-tight leading-tight">
+            The operations platform
+            <br />
+            for Abel Lumber.
           </h2>
-          <p className="text-abel-cream/70 text-base leading-relaxed">
-            Doors, trim, and hardware — delivered right, every time. Manage your accounts, orders, and deliveries from one place.
+          <p className="text-white/60 text-[13px] leading-relaxed max-w-md">
+            Orders, MRP, collections, sales, and supply chain — one surface, built for the people who run the business.
           </p>
-          <div className="mt-12 pt-8 border-t border-white/10">
-            <p className="text-abel-cream/40 text-xs font-medium tracking-wider uppercase">
-              Abel Doors & Trim · DFW
-            </p>
+          <div className="mt-12 pt-6 border-t border-white/10 flex items-center gap-6 text-[10px] font-mono tracking-wider uppercase text-white/40">
+            <span>Abel Doors & Trim</span>
+            <span className="w-1 h-1 rounded-full bg-white/20" />
+            <span>DFW</span>
+            <span className="w-1 h-1 rounded-full bg-white/20" />
+            <span>Est. 2021</span>
           </div>
         </div>
       </div>
 
       {/* Right panel — login form */}
-      <div className="flex-1 flex items-center justify-center bg-abel-cream px-6 sm:px-12 relative">
-        {/* Session Expiry Banner */}
+      <div className="flex-1 flex items-center justify-center bg-canvas px-6 sm:px-12 relative">
         {showSessionExpiredBanner && (
           <div className="absolute top-6 left-6 right-6 flex justify-center z-20">
-            <div className="max-w-sm w-full px-4 py-3 bg-warning-100 border border-warning-300 rounded-xl text-warning-800 text-sm font-medium text-center">
+            <div className="max-w-sm w-full px-3 py-2 bg-data-warning-bg border border-data-warning/30 rounded-md text-data-warning-fg text-xs font-medium text-center">
               Your session has expired. Please sign in again.
             </div>
           </div>
         )}
 
         <div className="w-full max-w-sm">
-          {/* Mobile logo (visible only on small screens) */}
-          <div className="flex lg:hidden items-center gap-3 mb-10">
-            <Image
-              src="/icon-192.png"
-              alt="Abel Lumber"
-              width={40}
-              height={40}
-              className="rounded-lg"
-            />
-            <span className="text-xl font-bold text-abel-walnut tracking-tight">
-              Abel Operations
-            </span>
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center gap-2.5 mb-10">
+            <Image src="/icon-192.png" alt="Abel Lumber" width={32} height={32} className="rounded-md" />
+            <span className="text-sm font-semibold text-fg tracking-tight">Aegis</span>
           </div>
 
-          {/* Heading */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-abel-charcoal tracking-tight mb-2">
-              Sign in to your account
-            </h1>
-            <p className="text-sm text-abel-kiln-oak">
-              Staff portal access
-            </p>
+            <div className="eyebrow mb-2">Staff Portal</div>
+            <h1 className="text-display-lg text-fg mb-1">Sign in</h1>
+            <p className="text-sm text-fg-muted">Abel Lumber operations · abellumber.com</p>
           </div>
 
-          {/* Login Card */}
-          <div className="bg-white rounded-2xl border border-gray-200/60 shadow-elevation-3 p-8">
-            <form onSubmit={handleSubmit}>
-              {/* Email */}
-              <div className="mb-5">
-                <label className="block text-sm font-semibold text-abel-charcoal mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@abellumber.com"
-                  required
-                  className="w-full px-4 py-3 bg-abel-cream/50 border border-gray-200 rounded-xl text-sm text-abel-charcoal outline-none transition-all duration-200 focus:border-abel-amber focus:ring-2 focus:ring-abel-amber/20 placeholder:text-gray-400"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="label">Email address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@abellumber.com"
+                required
+                autoFocus
+                className="input"
+              />
+            </div>
 
-              {/* Password */}
-              <div className="mb-5">
-                <label className="block text-sm font-semibold text-abel-charcoal mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  className="w-full px-4 py-3 bg-abel-cream/50 border border-gray-200 rounded-xl text-sm text-abel-charcoal outline-none transition-all duration-200 focus:border-abel-amber focus:ring-2 focus:ring-abel-amber/20 placeholder:text-gray-400"
-                />
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="px-4 py-3 bg-danger-50 border border-danger-200 rounded-xl text-danger-700 text-sm mb-5">
-                  {error}
-                </div>
-              )}
-
-              {/* Forgot Password */}
-              <div className="text-right mb-6">
-                <a
-                  href="/ops/forgot-password"
-                  className="text-sm text-abel-amber font-medium hover:text-abel-amber-dark transition-colors"
-                >
-                  Forgot password?
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label !mb-0">Password</label>
+                <a href="/ops/forgot-password" className="text-xs text-accent hover:text-accent-hover transition-colors">
+                  Forgot?
                 </a>
               </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="input"
+              />
+            </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-6 bg-abel-walnut hover:bg-abel-walnut-light text-white font-semibold rounded-xl transition-all duration-200 shadow-elevation-2 hover:shadow-elevation-3 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none text-sm tracking-wide"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Signing in…
-                  </span>
-                ) : 'Sign In'}
-              </button>
-            </form>
-          </div>
+            {error && (
+              <div className="px-3 py-2 bg-data-negative-bg border border-data-negative/20 rounded-md text-data-negative-fg text-xs">
+                {error}
+              </div>
+            )}
 
-          {/* Footer */}
-          <p className="text-center text-xs text-gray-400 mt-8 font-medium">
-            Abel Doors & Trim · Operations Platform
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary w-full btn-lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-[11px] text-fg-subtle mt-8 font-mono tracking-wider">
+            Abel Doors & Trim · Aegis v1.0
           </p>
         </div>
       </div>
@@ -198,17 +176,13 @@ function StaffLoginInner() {
 
 export default function StaffLoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-abel-cream font-sans">
-        <div className="flex items-center gap-3 text-abel-kiln-oak">
-          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <span className="text-sm font-medium">Loading…</span>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-canvas">
+          <Loader2 className="w-5 h-5 animate-spin text-accent" />
         </div>
-      </div>
-    }>
+      }
+    >
       <StaffLoginInner />
     </Suspense>
   )

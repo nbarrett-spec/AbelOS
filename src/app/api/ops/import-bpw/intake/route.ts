@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/import-bpw/intake — Raw data intake from BPW scraper
@@ -37,6 +38,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { dataType, chunk, totalChunks, data } = body
+    audit(request, 'IMPORT_BPW_INTAKE', 'BpwStagingData', undefined, {
+      dataType, chunk, totalChunks, recordCount: Array.isArray(data) ? data.length : 0,
+    }).catch(() => {})
 
     if (!dataType || chunk === undefined || !data) {
       return NextResponse.json({ error: 'Missing dataType, chunk, or data' }, { status: 400 })

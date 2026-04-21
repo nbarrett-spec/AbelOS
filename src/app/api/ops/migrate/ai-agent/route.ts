@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -6,6 +7,7 @@ export async function POST(request: NextRequest) {
   const results: string[] = []
 
   try {
+    audit(request, 'RUN_MIGRATE_AI_AGENT', 'Database', undefined, { migration: 'RUN_MIGRATE_AI_AGENT' }, 'CRITICAL').catch(() => {})
     // 1. AgentConversation — tracks each chat session
     try {
       await prisma.$queryRawUnsafe(`

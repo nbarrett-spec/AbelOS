@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ToastContainer } from '@/components/ToastContainer'
+import ShortcutsOverlay from '@/components/ui/ShortcutsOverlay'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -97,15 +98,30 @@ export default function RootLayout({
   const requestId = headers().get('x-request-id') || ''
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <link rel="apple-touch-icon" href="/images/logos/abel-logo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Aegis" />
         {requestId && <meta name="x-request-id" content={requestId} />}
+        {/* Inline theme bootstrap — avoid FOUC, honor user's saved preference */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                try {
+                  var stored = localStorage.getItem('abel-theme');
+                  var theme = stored === 'light' ? 'light' : 'dark';
+                  if (theme === 'dark') document.documentElement.classList.add('dark');
+                  else document.documentElement.classList.remove('dark');
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className="min-h-screen bg-white text-gray-900 transition-colors">
+      <body className="min-h-screen bg-canvas text-fg transition-colors">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only fixed top-0 left-0 z-[10000] px-4 py-2 bg-[#3E2A1E] text-white font-semibold rounded-br"
@@ -118,6 +134,8 @@ export default function RootLayout({
               {children}
             </main>
             <ToastContainer />
+            {/* Global keyboard shortcut cheat sheet — press `?` to open */}
+            <ShortcutsOverlay />
           </ToastProvider>
         </ThemeProvider>
       </body>

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/staff-auth'
+import { logAudit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/auth/setup-account — Complete employee account setup
@@ -93,6 +94,21 @@ export async function POST(request: NextRequest) {
     }
 
     const completedStaff = updatedStaff[0]
+
+    logAudit({
+      staffId: completedStaff.id,
+      staffName: `${completedStaff.firstName} ${completedStaff.lastName}`.trim(),
+      action: 'COMPLETE_ACCOUNT_SETUP',
+      entity: 'Staff',
+      entityId: completedStaff.id,
+      details: { signatureName, handbookVersion: '2025-v1' },
+      ipAddress:
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('x-real-ip') ||
+        undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+      severity: 'CRITICAL',
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,

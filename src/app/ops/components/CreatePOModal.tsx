@@ -163,7 +163,7 @@ export function CreatePOModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Create Purchase Order" size="xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+          <div className="panel panel-live p-3 text-sm text-data-negative">
             {error}
           </div>
         )}
@@ -171,7 +171,7 @@ export function CreatePOModal({
         <div className="grid grid-cols-2 gap-4">
           {/* Vendor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="label">
               Vendor <span className="text-red-500">*</span>
             </label>
             <select
@@ -179,7 +179,7 @@ export function CreatePOModal({
               value={formData.vendorId}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+              className="input"
             >
               <option value="">Select a vendor</option>
               {vendors.map((vendor) => (
@@ -192,7 +192,7 @@ export function CreatePOModal({
 
           {/* Expected Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="label">
               Expected Delivery Date
             </label>
             <input
@@ -200,20 +200,16 @@ export function CreatePOModal({
               name="expectedDate"
               value={formData.expectedDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+              className="input"
             />
           </div>
         </div>
 
         {/* Line Items */}
-        <div className="border-t pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-gray-900">Line Items</h3>
-            <button
-              type="button"
-              onClick={addItem}
-              className="px-3 py-1 text-sm bg-[#C9822B] text-white rounded-lg hover:bg-[#A86B1F] transition-colors"
-            >
+            <h3 className="eyebrow">Line Items</h3>
+            <button type="button" onClick={addItem} className="btn btn-secondary btn-sm">
               + Add Item
             </button>
           </div>
@@ -227,7 +223,7 @@ export function CreatePOModal({
                     value={item.vendorSku}
                     onChange={(e) => handleItemChange(index, 'vendorSku', e.target.value)}
                     placeholder="Vendor SKU"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="input"
                   />
                 </div>
                 <div className="flex-1">
@@ -236,7 +232,7 @@ export function CreatePOModal({
                     value={item.description}
                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                     placeholder="Description"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="input"
                   />
                 </div>
                 <div className="w-20">
@@ -246,7 +242,7 @@ export function CreatePOModal({
                     onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                     placeholder="Qty"
                     min="1"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="input"
                   />
                 </div>
                 <div className="w-24">
@@ -257,7 +253,7 @@ export function CreatePOModal({
                     placeholder="Cost"
                     step="0.01"
                     min="0"
-                    className="w-full px-2 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="input"
                   />
                 </div>
                 <div className="w-24 text-right">
@@ -277,15 +273,15 @@ export function CreatePOModal({
             ))}
           </div>
 
-          <div className="flex justify-end mt-3 pt-3 border-t">
+          <div className="flex justify-end mt-3 pt-3 border-t border-border">
             <div className="w-48">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Subtotal:</span>
-                <span className="font-medium">${calculateTotal().toFixed(2)}</span>
+                <span className="text-fg-muted">Subtotal</span>
+                <span className="font-medium font-numeric tabular-nums text-fg">${calculateTotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-base font-bold">
-                <span>Total:</span>
-                <span className="text-[#3E2A1E]">${calculateTotal().toFixed(2)}</span>
+                <span className="text-fg">Total</span>
+                <span className="text-brand font-numeric tabular-nums">${calculateTotal().toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -293,32 +289,26 @@ export function CreatePOModal({
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Notes
-          </label>
+          <label className="label">Notes</label>
           <textarea
             name="notes"
             value={formData.notes}
             onChange={handleChange}
             placeholder="Special instructions, shipping notes, etc."
             rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+            className="input"
           />
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 justify-end pt-4 border-t">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
+        <div className="flex gap-2 justify-end pt-4 border-t border-border">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn btn-primary btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating...' : 'Create PO'}
           </button>

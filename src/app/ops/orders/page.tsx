@@ -1,6 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import {
+  Search, Calendar, FileText, Inbox, Factory, Package, DollarSign,
+  Truck, CheckCircle, ChevronDown, ChevronUp, X, Receipt, CreditCard
+} from 'lucide-react'
+import { PageHeader, KPICard, StatusBadge, Badge } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface OrderItem {
   id: string
@@ -31,15 +38,19 @@ interface Order {
   jobs?: { id: string; jobNumber: string; status: string }[]
 }
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string; ring: string }> = {
-  RECEIVED:       { bg: 'bg-blue-50',    text: 'text-blue-700',    ring: 'ring-blue-200',    label: 'Received' },
-  CONFIRMED:      { bg: 'bg-indigo-50',  text: 'text-indigo-700',  ring: 'ring-indigo-200',  label: 'Confirmed' },
-  IN_PRODUCTION:  { bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'ring-amber-200',   label: 'In Production' },
-  READY_TO_SHIP:  { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', label: 'Ready to Ship' },
-  SHIPPED:        { bg: 'bg-cyan-50',    text: 'text-cyan-700',    ring: 'ring-cyan-200',    label: 'Shipped' },
-  DELIVERED:      { bg: 'bg-violet-50',  text: 'text-violet-700',  ring: 'ring-violet-200',  label: 'Delivered' },
-  COMPLETE:       { bg: 'bg-green-50',   text: 'text-green-700',   ring: 'ring-green-200',   label: 'Complete' },
+// Status label map (semantic Badge handles the color)
+const STATUS_LABEL: Record<string, string> = {
+  RECEIVED:      'Received',
+  CONFIRMED:     'Confirmed',
+  IN_PRODUCTION: 'In Production',
+  READY_TO_SHIP: 'Ready to Ship',
+  SHIPPED:       'Shipped',
+  DELIVERED:     'Delivered',
+  COMPLETE:      'Complete',
 }
+const STATUS_CONFIG: Record<string, { label: string }> = Object.fromEntries(
+  Object.entries(STATUS_LABEL).map(([k, label]) => [k, { label }])
+)
 
 const PAYMENT_LABELS: Record<string, string> = {
   PAY_AT_ORDER: 'Pay at Order', PAY_ON_DELIVERY: 'Pay on Delivery',
@@ -207,7 +218,9 @@ export default function OpsOrdersPage() {
     setPage(1)
   }
   const SortIcon = ({ col }: { col: string }) => (
-    <span className="ml-1 text-[10px]">{sortBy === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}</span>
+    <span className={cn('ml-1 text-[9px]', sortBy === col ? 'text-accent' : 'text-fg-subtle/50')}>
+      {sortBy === col ? (sortDir === 'asc' ? '▲' : '▼') : '◇'}
+    </span>
   )
 
   const statuses = Object.keys(STATUS_CONFIG)
@@ -218,288 +231,334 @@ export default function OpsOrdersPage() {
   const totalPages = Math.ceil(total / 50)
 
   return (
-    <div className="max-w-[1400px]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Track orders from receipt through production, shipping, and delivery</p>
-        </div>
+    <div className="max-w-[1400px] animate-enter">
+      <PageHeader
+        eyebrow="Operations"
+        title="Orders"
+        description="Track orders from receipt through production, shipping, and delivery."
+        crumbs={[{ label: 'Operations', href: '/ops' }, { label: 'Orders' }]}
+      />
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <KPICard
+          title="Total Orders"
+          value={new Intl.NumberFormat('en-US').format(total || orders.length)}
+          accent="brand"
+          icon={<FileText className="w-3.5 h-3.5" />}
+          subtitle="All statuses"
+        />
+        <KPICard
+          title="Awaiting Confirm"
+          value={received}
+          accent="forecast"
+          icon={<Inbox className="w-3.5 h-3.5" />}
+          subtitle="Needs review"
+        />
+        <KPICard
+          title="In Production"
+          value={inProd}
+          accent="accent"
+          icon={<Factory className="w-3.5 h-3.5" />}
+          subtitle="Active builds"
+        />
+        <KPICard
+          title="Pipeline Value"
+          value={fmt(totalValue)}
+          accent="positive"
+          icon={<DollarSign className="w-3.5 h-3.5" />}
+          subtitle={`${orders.length} on page`}
+        />
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Orders', value: total || orders.length, color: 'text-[#3E2A1E]', icon: '📋' },
-          { label: 'Awaiting Confirm', value: received, color: 'text-blue-600', icon: '📥' },
-          { label: 'In Production', value: inProd, color: 'text-amber-600', icon: '🏭' },
-          { label: 'Pipeline Value', value: fmt(totalValue), color: 'text-emerald-600', icon: '💰' },
-        ].map(c => (
-          <div key={c.label} className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">{c.icon}</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{c.label}</span>
-            </div>
-            <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Invoice generation toast */}
+      {/* Toast */}
       {invoiceMsg && (
-        <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2 ${
+        <div className={cn(
+          'mb-4 px-4 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 border',
           invoiceMsg.type === 'success'
-            ? 'bg-green-50 text-green-800 border border-green-200'
-            : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
-          <span>{invoiceMsg.type === 'success' ? '✓' : '!'}</span>
+            ? 'bg-data-positive-bg text-data-positive-fg border-transparent'
+            : 'bg-data-negative-bg text-data-negative-fg border-transparent'
+        )}>
+          {invoiceMsg.type === 'success'
+            ? <CheckCircle className="w-4 h-4 shrink-0" />
+            : <X className="w-4 h-4 shrink-0" />}
           <span>{invoiceMsg.text}</span>
-          <button onClick={() => setInvoiceMsg(null)} className="ml-auto text-lg leading-none opacity-50 hover:opacity-100">&times;</button>
+          <button onClick={() => setInvoiceMsg(null)} className="ml-auto opacity-60 hover:opacity-100">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="mb-4 px-4 py-3 bg-[#3E2A1E]/5 border border-[#3E2A1E]/20 rounded-lg flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-[#3E2A1E]">{selectedIds.size} order{selectedIds.size > 1 ? 's' : ''} selected</span>
-          <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)}
-            className="px-3 py-1.5 text-sm border rounded-lg">
-            <option value="">Choose action...</option>
+        <div className="mb-4 panel panel-live px-4 py-2.5 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-fg">
+            <span className="font-numeric tabular-nums text-accent">{selectedIds.size}</span> order{selectedIds.size > 1 ? 's' : ''} selected
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)} className="input" style={{ width: 'auto', height: 32 }}>
+            <option value="">Choose action…</option>
             {statuses.map(s => (
               <option key={s} value={s}>Move to {STATUS_CONFIG[s].label}</option>
             ))}
           </select>
-          <button onClick={handleBulkUpdate} disabled={!bulkAction || bulkUpdating}
-            className="px-3 py-1.5 text-sm bg-[#C9822B] text-white font-medium rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 transition">
-            {bulkUpdating ? 'Updating...' : 'Apply'}
+          <button onClick={handleBulkUpdate} disabled={!bulkAction || bulkUpdating} className="btn btn-primary btn-sm">
+            {bulkUpdating ? 'Updating…' : 'Apply'}
           </button>
-          <button onClick={() => setSelectedIds(new Set())}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800">Clear Selection</button>
+          <button onClick={() => setSelectedIds(new Set())} className="btn btn-ghost btn-sm">
+            Clear
+          </button>
         </div>
       )}
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 mb-5">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="Search orders, builders, PO numbers..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]"
-          />
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-fg-subtle pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search orders, builders, PO numbers…"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+              className="input pl-9"
+            />
+          </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 font-medium whitespace-nowrap">From</label>
+            <Calendar className="w-3.5 h-3.5 text-fg-subtle" />
             <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
-            <label className="text-xs text-gray-500 font-medium whitespace-nowrap">To</label>
+              className="input font-numeric" style={{ width: 'auto' }} />
+            <span className="text-xs text-fg-subtle">→</span>
             <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
+              className="input font-numeric" style={{ width: 'auto' }} />
             {(dateFrom || dateTo) && (
-              <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-                className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
+              <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }} className="btn btn-ghost btn-sm text-data-negative">
+                <X className="w-3 h-3" /> Clear
+              </button>
             )}
           </div>
         </div>
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1 flex-wrap">
           <button
             onClick={() => setStatusFilter('')}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              !statusFilter ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-            }`}
+            className={cn(
+              'px-2.5 py-1 rounded-sm text-[11px] font-semibold uppercase tracking-wide transition-colors border',
+              !statusFilter
+                ? 'bg-accent text-fg-on-accent border-transparent'
+                : 'bg-surface text-fg-muted border-border hover:border-border-strong hover:text-fg'
+            )}
           >
             All
           </button>
-          {statuses.map(s => {
-            const sc = STATUS_CONFIG[s]
-            return (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s === statusFilter ? '' : s)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  statusFilter === s
-                    ? `${sc.bg} ${sc.text} ring-1 ${sc.ring}`
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
-              >
-                {sc.label}
-              </button>
-            )
-          })}
+          {statuses.map(s => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s === statusFilter ? '' : s)}
+              className={cn(
+                'px-2.5 py-1 rounded-sm text-[11px] font-semibold uppercase tracking-wide transition-colors border',
+                statusFilter === s
+                  ? 'bg-accent text-fg-on-accent border-transparent'
+                  : 'bg-surface text-fg-muted border-border hover:border-border-strong hover:text-fg'
+              )}
+            >
+              {STATUS_CONFIG[s].label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Sortable Column Headers */}
-      <div className="bg-white rounded-t-xl border border-gray-200 border-b-0 px-5 py-2 flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+      <div className="panel border-b-0 rounded-b-none px-5 py-2 flex items-center gap-4 eyebrow">
         <div className="w-8" />
-        <button onClick={() => toggleSort('orderNumber')} className="w-32 text-left hover:text-gray-600 flex items-center">
+        <button onClick={() => toggleSort('orderNumber')} className="w-32 text-left hover:text-fg flex items-center transition-colors">
           Order #<SortIcon col="orderNumber" />
         </button>
-        <button onClick={() => toggleSort('status')} className="w-28 text-left hover:text-gray-600 flex items-center">
+        <button onClick={() => toggleSort('status')} className="w-32 text-left hover:text-fg flex items-center transition-colors">
           Status<SortIcon col="status" />
         </button>
-        <button onClick={() => toggleSort('builder')} className="flex-1 text-left hover:text-gray-600 flex items-center">
+        <button onClick={() => toggleSort('builder')} className="flex-1 text-left hover:text-fg flex items-center transition-colors">
           Builder<SortIcon col="builder" />
         </button>
-        <button onClick={() => toggleSort('total')} className="w-28 text-right hover:text-gray-600 flex items-center justify-end">
+        <button onClick={() => toggleSort('total')} className="w-28 text-right hover:text-fg flex items-center justify-end transition-colors">
           Total<SortIcon col="total" />
         </button>
-        <button onClick={() => toggleSort('createdAt')} className="w-28 text-right hover:text-gray-600 flex items-center justify-end">
+        <button onClick={() => toggleSort('createdAt')} className="w-28 text-right hover:text-fg flex items-center justify-end transition-colors">
           Date<SortIcon col="createdAt" />
         </button>
       </div>
 
       {/* Orders List */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="panel border-t-0 rounded-t-none">
+          {[0,1,2,3,4].map(i => (
+            <div key={i} className="px-5 py-4 flex items-center gap-4 border-b border-grid-line animate-pulse">
+              <div className="w-4 h-4 skeleton" />
+              <div className="w-24 h-4 skeleton" />
+              <div className="w-20 h-4 skeleton" />
+              <div className="flex-1 h-4 skeleton" />
+              <div className="w-24 h-4 skeleton" />
+            </div>
+          ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-          <p className="text-lg text-gray-500 mb-2">No orders found</p>
-          <p className="text-sm text-gray-400">Orders are created when approved quotes are converted</p>
+        <div className="panel border-t-0 rounded-t-none text-center py-16">
+          <FileText className="w-10 h-10 text-fg-subtle mx-auto mb-3" />
+          <p className="text-sm font-medium text-fg">No orders found</p>
+          <p className="text-xs text-fg-muted mt-1">Orders are created when approved quotes are converted</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="panel border-t-0 rounded-t-none overflow-hidden">
           {/* Select all */}
-          <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-2 px-5 py-2 border-b border-grid-line bg-surface-muted">
             <input type="checkbox" checked={selectedIds.size === orders.length && orders.length > 0}
-              onChange={toggleSelectAll} className="w-4 h-4 rounded border-gray-300" />
-            <span className="text-xs text-gray-500">Select all ({orders.length})</span>
+              onChange={toggleSelectAll}
+              className="w-3.5 h-3.5 rounded-sm border-border-strong accent-accent" />
+            <span className="text-[11px] text-fg-muted">Select all on page ({orders.length})</span>
           </div>
           {orders.map(order => {
             const isExpanded = expandedOrder === order.id
-            const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.RECEIVED
             const project = order.quote?.project
 
             return (
-              <div key={order.id} className={`bg-white rounded-xl border overflow-hidden hover:shadow-sm transition-shadow ${selectedIds.has(order.id) ? 'border-[#C9822B] ring-1 ring-[#C9822B]/30' : 'border-gray-200'}`}>
+              <div
+                key={order.id}
+                className={cn(
+                  'border-b border-grid-line last:border-b-0 transition-colors',
+                  selectedIds.has(order.id) ? 'bg-accent-subtle' : 'hover:bg-row-hover',
+                )}
+                style={selectedIds.has(order.id) ? { background: 'var(--row-selected)' } : undefined}
+              >
                 {/* Header Row */}
-                <div
-                  className="px-5 py-4 cursor-pointer flex items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <input type="checkbox" checked={selectedIds.has(order.id)}
-                      onChange={() => toggleSelect(order.id)} onClick={(e) => e.stopPropagation()}
-                      className="w-4 h-4 rounded border-gray-300 flex-shrink-0" />
-                    <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-[#3E2A1E] font-mono">{order.orderNumber}</span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${sc.bg} ${sc.text}`}>
-                          {sc.label}
-                        </span>
-                        {order.quote && (
-                          <span className="text-[11px] text-gray-400">from {order.quote.quoteNumber}</span>
-                        )}
-                        {order.deliveryDate && (
-                          <span className="text-[11px] text-gray-400 hidden sm:inline">
-                            📅 {new Date(order.deliveryDate).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1 truncate">
-                        {order.builder?.companyName || 'Unknown'}
-                        {project?.name && <span className="text-gray-400"> — {project.name}</span>}
-                        {order.poNumber && <span className="text-gray-400 ml-2">PO: {order.poNumber}</span>}
-                      </p>
-                    </div>
+                <div className="px-5 py-3 cursor-pointer flex items-center gap-4">
+                  <input type="checkbox" checked={selectedIds.has(order.id)}
+                    onChange={() => toggleSelect(order.id)} onClick={(e) => e.stopPropagation()}
+                    className="w-3.5 h-3.5 rounded-sm border-border-strong accent-accent flex-shrink-0" />
+                  <div className="w-32 min-w-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
+                    <span className="text-[13px] font-mono font-semibold text-fg block truncate">{order.orderNumber}</span>
+                    {order.quote && (
+                      <span className="text-[10px] text-fg-subtle font-mono">← {order.quote.quoteNumber}</span>
+                    )}
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-bold text-gray-900">{fmt(order.total)}</p>
-                    <p className="text-[11px] text-gray-400">
-                      {PAYMENT_LABELS[order.paymentTerm] || order.paymentTerm} · {new Date(order.createdAt).toLocaleDateString()}
+                  <div className="w-32 shrink-0">
+                    <StatusBadge status={order.status} size="sm" />
+                  </div>
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
+                    <p className="text-sm text-fg truncate font-medium">
+                      {order.builder?.companyName || 'Unknown'}
+                    </p>
+                    <p className="text-[11px] text-fg-muted truncate">
+                      {project?.name && <span>{project.name}</span>}
+                      {order.poNumber && <span className="ml-2">· PO {order.poNumber}</span>}
+                      {order.deliveryDate && (
+                        <span className="ml-2 inline-flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(order.deliveryDate).toLocaleDateString()}
+                        </span>
+                      )}
                     </p>
                   </div>
+                  <div className="w-28 text-right shrink-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
+                    <p className="text-sm font-semibold text-fg font-numeric tabular-nums">{fmt(order.total)}</p>
+                    <p className="text-[10px] text-fg-subtle">
+                      {PAYMENT_LABELS[order.paymentTerm] || order.paymentTerm}
+                    </p>
+                  </div>
+                  <div className="w-28 text-right shrink-0 cursor-pointer text-[11px] text-fg-muted font-numeric tabular-nums" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
+                    {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    <div className="text-[10px] text-fg-subtle">
+                      {new Date(order.createdAt).getFullYear()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                    className="p-1 rounded text-fg-muted hover:text-fg hover:bg-surface-muted transition-colors"
+                    aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
                 </div>
 
                 {/* Expanded Detail */}
                 {isExpanded && (
-                  <div className="border-t border-gray-100 px-5 py-4">
+                  <div className="border-t border-border bg-surface-muted/40 px-5 py-4 animate-slide-down">
                     {/* Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                      {/* Builder Info */}
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Builder</p>
-                        <p className="text-sm font-medium text-gray-900">{order.builder?.companyName}</p>
-                        <p className="text-xs text-gray-500">{order.builder?.contactName}</p>
-                        {order.builder?.email && <p className="text-xs text-gray-400 mt-1">{order.builder.email}</p>}
-                        {order.builder?.phone && <p className="text-xs text-gray-400">{order.builder.phone}</p>}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                      <div className="panel p-3">
+                        <p className="eyebrow mb-1.5">Builder</p>
+                        <p className="text-sm font-medium text-fg">{order.builder?.companyName}</p>
+                        <p className="text-xs text-fg-muted">{order.builder?.contactName}</p>
+                        {order.builder?.email && <p className="text-xs text-fg-subtle mt-1">{order.builder.email}</p>}
+                        {order.builder?.phone && <p className="text-xs text-fg-subtle font-mono">{order.builder.phone}</p>}
                       </div>
 
-                      {/* Project/Delivery Info */}
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Project & Delivery</p>
-                        {project?.name && <p className="text-sm font-medium text-gray-900">{project.name}</p>}
+                      <div className="panel p-3">
+                        <p className="eyebrow mb-1.5">Project · Delivery</p>
+                        {project?.name && <p className="text-sm font-medium text-fg">{project.name}</p>}
                         {project?.jobAddress && (
-                          <p className="text-xs text-gray-500">{project.jobAddress}, {project.city} {project.state}</p>
+                          <p className="text-xs text-fg-muted">{project.jobAddress}, {project.city} {project.state}</p>
                         )}
                         {order.deliveryDate ? (
-                          <p className="text-xs text-emerald-600 font-medium mt-1">
-                            📅 Scheduled: {new Date(order.deliveryDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          <p className="text-xs text-data-positive-fg mt-1 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Scheduled: {new Date(order.deliveryDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </p>
                         ) : (
-                          <p className="text-xs text-amber-600 mt-1">No delivery date scheduled</p>
+                          <p className="text-xs text-data-warning-fg mt-1">No delivery date scheduled</p>
                         )}
-                        {order.deliveryNotes && <p className="text-xs text-gray-400 mt-1 italic">{order.deliveryNotes}</p>}
+                        {order.deliveryNotes && <p className="text-xs text-fg-subtle mt-1 italic">{order.deliveryNotes}</p>}
                         {order.deliveryConfirmedAt && (
-                          <p className="text-xs text-green-600 font-semibold mt-1">
-                            ✓ Delivered {new Date(order.deliveryConfirmedAt).toLocaleDateString()}
+                          <p className="text-xs text-data-positive-fg font-semibold mt-1 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Delivered {new Date(order.deliveryConfirmedAt).toLocaleDateString()}
                           </p>
                         )}
                       </div>
 
-                      {/* Payment Info */}
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Payment</p>
-                        <p className="text-sm font-medium text-gray-900">{fmt(order.total)}</p>
-                        <p className="text-xs text-gray-500">{PAYMENT_LABELS[order.paymentTerm] || order.paymentTerm}</p>
-                        <div className="mt-1">
-                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700'
-                            : order.paymentStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-700'
-                            : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {order.paymentStatus || 'PENDING'}
-                          </span>
+                      <div className="panel p-3">
+                        <p className="eyebrow mb-1.5">Payment</p>
+                        <p className="text-sm font-semibold text-fg font-numeric tabular-nums">{fmt(order.total)}</p>
+                        <p className="text-xs text-fg-muted">{PAYMENT_LABELS[order.paymentTerm] || order.paymentTerm}</p>
+                        <div className="mt-1.5">
+                          <StatusBadge status={order.paymentStatus || 'UNPAID'} size="sm" />
                         </div>
                       </div>
                     </div>
 
                     {/* Line Items */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-                      <table className="w-full text-sm">
+                    <div className="panel overflow-hidden mb-4">
+                      <table className="datatable density-compact">
                         <thead>
-                          <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="text-left px-4 py-2 text-[10px] font-bold text-gray-400 uppercase">Item</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-bold text-gray-400 uppercase">Qty</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-bold text-gray-400 uppercase hidden sm:table-cell">Unit</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-bold text-gray-400 uppercase">Total</th>
+                          <tr>
+                            <th>Item</th>
+                            <th className="num">Qty</th>
+                            <th className="num hidden sm:table-cell">Unit</th>
+                            <th className="num">Total</th>
                           </tr>
                         </thead>
                         <tbody>
                           {order.items.slice(0, 10).map(item => (
-                            <tr key={item.id} className="border-b border-gray-50">
-                              <td className="px-4 py-2 text-gray-700">
+                            <tr key={item.id}>
+                              <td className="text-fg">
                                 {item.description}
-                                {item.product?.sku && <span className="text-gray-400 ml-2 text-xs">{item.product.sku}</span>}
+                                {item.product?.sku && <span className="text-fg-subtle ml-2 text-xs font-mono">{item.product.sku}</span>}
                               </td>
-                              <td className="px-4 py-2 text-right text-gray-600">{item.quantity}</td>
-                              <td className="px-4 py-2 text-right text-gray-600 hidden sm:table-cell">{fmt(item.unitPrice)}</td>
-                              <td className="px-4 py-2 text-right font-medium text-gray-900">{fmt(item.lineTotal)}</td>
+                              <td className="num text-fg-muted">{item.quantity}</td>
+                              <td className="num text-fg-muted hidden sm:table-cell">{fmt(item.unitPrice)}</td>
+                              <td className="num font-medium text-fg">{fmt(item.lineTotal)}</td>
                             </tr>
                           ))}
                           {order.items.length > 10 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-center text-xs text-gray-400">
+                              <td colSpan={4} className="text-center text-xs text-fg-subtle">
                                 + {order.items.length - 10} more items
                               </td>
                             </tr>
                           )}
                         </tbody>
                         <tfoot>
-                          <tr className="border-t-2 border-gray-200 bg-gray-50">
-                            <td colSpan={3} className="px-4 py-2 text-right font-bold text-gray-700">Total</td>
-                            <td className="px-4 py-2 text-right font-bold text-[#3E2A1E] text-base">{fmt(order.total)}</td>
+                          <tr className="bg-surface-muted">
+                            <td colSpan={3} className="text-right eyebrow">Total</td>
+                            <td className="num font-semibold text-accent text-base">{fmt(order.total)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -507,80 +566,65 @@ export default function OpsOrdersPage() {
 
                     {/* Linked Jobs */}
                     {order.jobs && order.jobs.length > 0 && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">Linked Jobs</p>
-                        {order.jobs.map(job => (
-                          <p key={job.id} className="text-sm text-gray-700">
-                            {job.jobNumber} — <span className="text-green-600 font-medium">{job.status}</span>
-                          </p>
-                        ))}
+                      <div className="panel p-3 mb-3">
+                        <p className="eyebrow mb-1.5">Linked Jobs</p>
+                        <div className="flex flex-wrap gap-2">
+                          {order.jobs.map(job => (
+                            <Badge key={job.id} variant="success" size="sm" dot>
+                              <span className="font-mono">{job.jobNumber}</span>
+                              <span className="ml-1 text-fg-muted">· {job.status}</span>
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
 
                     {/* Actions Bar */}
-                    <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
-                      {/* Schedule Delivery — always available */}
-                      <button
-                        onClick={() => openScheduleModal(order)}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-                      >
-                        📅 Schedule Delivery
+                    <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
+                      <button onClick={() => openScheduleModal(order)} className="btn btn-secondary btn-sm">
+                        <Calendar className="w-3.5 h-3.5" /> Schedule Delivery
                       </button>
 
-                      {/* Status progression buttons */}
                       {order.status === 'RECEIVED' && (
-                        <button onClick={() => updateOrder(order.id, { status: 'CONFIRMED' })}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">
-                          ✅ Confirm Order
+                        <button onClick={() => updateOrder(order.id, { status: 'CONFIRMED' })} className="btn btn-primary btn-sm">
+                          <CheckCircle className="w-3.5 h-3.5" /> Confirm
                         </button>
                       )}
                       {order.status === 'CONFIRMED' && (
-                        <button onClick={() => updateOrder(order.id, { status: 'IN_PRODUCTION' })}
-                          className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
-                          🏭 Start Production
+                        <button onClick={() => updateOrder(order.id, { status: 'IN_PRODUCTION' })} className="btn btn-primary btn-sm">
+                          <Factory className="w-3.5 h-3.5" /> Start Production
                         </button>
                       )}
                       {order.status === 'IN_PRODUCTION' && (
-                        <button onClick={() => updateOrder(order.id, { status: 'READY_TO_SHIP' })}
-                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
-                          📦 Mark Ready to Ship
+                        <button onClick={() => updateOrder(order.id, { status: 'READY_TO_SHIP' })} className="btn btn-primary btn-sm">
+                          <Package className="w-3.5 h-3.5" /> Ready to Ship
                         </button>
                       )}
                       {order.status === 'READY_TO_SHIP' && (
-                        <button onClick={() => updateOrder(order.id, { status: 'SHIPPED' })}
-                          className="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 transition-colors">
-                          🚚 Mark Shipped
+                        <button onClick={() => updateOrder(order.id, { status: 'SHIPPED' })} className="btn btn-primary btn-sm">
+                          <Truck className="w-3.5 h-3.5" /> Mark Shipped
                         </button>
                       )}
                       {order.status === 'SHIPPED' && (
-                        <button onClick={() => updateOrder(order.id, { status: 'DELIVERED', confirmDelivery: true })}
-                          className="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">
-                          🏠 Confirm Delivery
+                        <button onClick={() => updateOrder(order.id, { status: 'DELIVERED', confirmDelivery: true })} className="btn btn-primary btn-sm">
+                          <CheckCircle className="w-3.5 h-3.5" /> Confirm Delivery
                         </button>
                       )}
                       {order.status === 'DELIVERED' && (
-                        <button onClick={() => updateOrder(order.id, { status: 'COMPLETE' })}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
-                          ✓ Mark Complete
+                        <button onClick={() => updateOrder(order.id, { status: 'COMPLETE' })} className="btn btn-success btn-sm">
+                          <CheckCircle className="w-3.5 h-3.5" /> Mark Complete
                         </button>
                       )}
 
-                      {/* Generate Invoice */}
                       {['CONFIRMED', 'IN_PRODUCTION', 'READY_TO_SHIP', 'SHIPPED', 'DELIVERED', 'COMPLETE'].includes(order.status) && (
-                        <button
-                          onClick={() => generateInvoice(order.id)}
-                          disabled={saving}
-                          className="px-4 py-2 bg-white border border-[#3E2A1E] text-[#3E2A1E] rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors disabled:opacity-50"
-                        >
-                          🧾 Generate Invoice
+                        <button onClick={() => generateInvoice(order.id)} disabled={saving} className="btn btn-secondary btn-sm">
+                          <Receipt className="w-3.5 h-3.5" /> Invoice
                         </button>
                       )}
 
-                      {/* Payment actions */}
                       {order.paymentStatus !== 'PAID' && (
-                        <button onClick={() => updateOrder(order.id, { paymentStatus: 'PAID' })}
-                          className="px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors ml-auto">
-                          💵 Mark Paid
+                        <button onClick={() => updateOrder(order.id, { paymentStatus: 'PAID' })} className="btn btn-secondary btn-sm ml-auto">
+                          <CreditCard className="w-3.5 h-3.5" /> Mark Paid
                         </button>
                       )}
                     </div>
@@ -594,63 +638,58 @@ export default function OpsOrdersPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 px-1">
-          <p className="text-sm text-gray-500">
+        <div className="flex items-center justify-between mt-3 px-1">
+          <p className="text-xs text-fg-muted font-numeric tabular-nums">
             Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, total)} of {total} orders
           </p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-gray-50">← Prev</button>
-            <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-gray-50">Next →</button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn btn-secondary btn-sm">
+              ← Prev
+            </button>
+            <span className="text-xs text-fg-muted font-numeric tabular-nums px-2">Page {page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn btn-secondary btn-sm">
+              Next →
+            </button>
           </div>
         </div>
       )}
 
       {/* Delivery Scheduling Modal */}
       {scheduleModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        <div className="fixed inset-0 bg-stone-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
           onClick={() => setScheduleModal(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">Schedule Delivery</h3>
-              <p className="text-sm text-gray-500 mt-0.5">{scheduleModal.orderNumber} — {scheduleModal.builder?.companyName}</p>
+          <div className="panel panel-elevated w-full max-w-md animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-3.5 border-b border-border">
+              <h3 className="text-sm font-semibold text-fg">Schedule Delivery</h3>
+              <p className="text-xs text-fg-muted mt-0.5 font-mono">{scheduleModal.orderNumber} · {scheduleModal.builder?.companyName}</p>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-5 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
-                <input
-                  type="date"
-                  value={schedDate}
-                  onChange={e => setSchedDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]"
-                />
+                <label className="label">Delivery Date</label>
+                <input type="date" value={schedDate} onChange={e => setSchedDate(e.target.value)} className="input font-numeric" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Notes</label>
+                <label className="label">Delivery Notes</label>
                 <textarea
                   value={schedNotes}
                   onChange={e => setSchedNotes(e.target.value)}
-                  placeholder="Gate code, contact on site, special instructions..."
+                  placeholder="Gate code, contact on site, special instructions…"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E] resize-none"
+                  className="input resize-none"
+                  style={{ height: 'auto', padding: '8px 12px' }}
                 />
               </div>
               {scheduleModal.quote?.project?.jobAddress && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">Delivery Address</p>
-                  <p className="text-sm text-gray-700 mt-1">
+                <div className="panel p-3">
+                  <p className="eyebrow mb-1">Delivery Address</p>
+                  <p className="text-sm text-fg">
                     {scheduleModal.quote.project.jobAddress}, {scheduleModal.quote.project.city} {scheduleModal.quote.project.state}
                   </p>
                 </div>
               )}
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                onClick={() => setScheduleModal(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
-              >
+            <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
+              <button onClick={() => setScheduleModal(null)} className="btn btn-ghost btn-sm">
                 Cancel
               </button>
               <button
@@ -659,9 +698,9 @@ export default function OpsOrdersPage() {
                   deliveryNotes: schedNotes || null,
                 })}
                 disabled={saving}
-                className="px-5 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm font-semibold hover:bg-[#163d5a] transition-colors disabled:opacity-50"
+                className="btn btn-primary btn-sm"
               >
-                {saving ? 'Saving...' : 'Save Schedule'}
+                {saving ? 'Saving…' : 'Save Schedule'}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit'
 
 // POST /api/ops/auth/reset-password — validate token and set new password for staff
 export async function POST(request: NextRequest) {
@@ -68,6 +69,21 @@ export async function POST(request: NextRequest) {
       passwordHash,
       staff.id
     )
+
+    // Audit: CRITICAL — password was actually changed via the token flow.
+    logAudit({
+      staffId: staff.id,
+      staffName: staff.firstName,
+      action: 'RESET_PASSWORD',
+      entity: 'Staff',
+      entityId: staff.id,
+      ipAddress:
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('x-real-ip') ||
+        undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+      severity: 'CRITICAL',
+    }).catch(() => {})
 
     return NextResponse.json({
       message: 'Password reset successfully. You can now sign in with your new password.',

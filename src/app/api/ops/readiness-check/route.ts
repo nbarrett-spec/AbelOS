@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────
 // PRODUCTION READINESS CHECKLIST (T-72)
@@ -118,6 +119,8 @@ export async function POST(request: NextRequest) {
       `UPDATE "Job" SET "${field}" = $2, "updatedAt" = NOW() WHERE "id" = $1`,
       jobId, value !== false
     )
+
+    audit(request, `READINESS_${String(field).toUpperCase()}`, 'Job', jobId, { field, value: value !== false }).catch(() => {})
 
     return safeJson({ success: true, jobId, field, value: value !== false })
   } catch (error: any) {

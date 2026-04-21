@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { parseDollar } from '@/lib/hyphen/parse-dollar'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/import-hyphen — Import scraped Hyphen Solutions data
@@ -42,15 +44,9 @@ function safeParseDate(s: string | null | undefined): string | null {
   } catch { return null }
 }
 
-/** Parse dollar amounts: "$1,234.56", "($1,234.56)" (negative), etc. */
-function parseDollar(s: string | null | undefined): number {
-  if (!s) return 0
-  const cleaned = s.replace(/[$,\s]/g, '')
-  // Handle parenthesized negatives: ($644.83) → -644.83
-  const match = cleaned.match(/^\((.+)\)$/)
-  if (match) return -parseFloat(match[1]) || 0
-  return parseFloat(cleaned) || 0
-}
+// parseDollar extracted to '@/lib/hyphen/parse-dollar' — see that module for
+// full semantics and unit tests. Always returns a non-negative magnitude;
+// sign semantics are owned by the caller (e.g. paymentType = 'Void').
 
 /** Parse Hyphen date pairs from the dates field: "RS: 5/3/2024\nRE: 5/3/2024\nAS: 5/3/2024\nAE: 5/3/2024" */
 function parseDateField(dates: string | null | undefined): {
@@ -176,6 +172,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { orders = [], payments } = body
+    audit(request, 'IMPORT_HYPHEN', 'HyphenImport', undefined, {
+      orderCount: orders?.length || 0,
+      paymentCount: payments?.data?.length || 0,
+    }, 'WARN').catch(() => {})
 
     const results: any = {
       orders: { created: 0, updated: 0, skipped: 0, errors: [] as string[] },
@@ -304,19 +304,29 @@ export async function POST(request: NextRequest) {
             results.jobs.updated++
           } else if (streetAddress) {
             try {
+              // Hyphen order end dates are the best proxy for scheduledDate.
+              // Prefer the actual end date (the builder-confirmed target),
+              // fall back to requested end. Prevents Job.scheduledDate from
+              // landing null — see scripts/backfill-job-schedules.mjs for the
+              // one-time patch of existing rows.
+              const scheduledDate =
+                dates.actualEnd ? new Date(dates.actualEnd) :
+                dates.requestedEnd ? new Date(dates.requestedEnd) :
+                null
               await prisma.$executeRawUnsafe(
                 `INSERT INTO "Job" (
                   "id", "name", "builderName", "community", "address", "city", "state",
-                  "status", "scope", "boltJobId",
+                  "status", "scope", "boltJobId", "scheduledDate",
                   "createdAt", "updatedAt"
                 ) VALUES (
                   gen_random_uuid()::text, $1, $2, $3, $4, '', 'TX',
-                  'SCHEDULED'::"JobStatus", 'TRIM'::"JobScope", $5,
+                  'SCHEDULED'::"JobStatus", 'TRIM'::"JobScope", $5, $6,
                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT DO NOTHING`,
                 jobName, builderName, order.subdivision || null,
-                streetAddress, `HYP-${hyphId}`
+                streetAddress, `HYP-${hyphId}`,
+                scheduledDate
               )
               results.jobs.created++
             } catch (err: any) {

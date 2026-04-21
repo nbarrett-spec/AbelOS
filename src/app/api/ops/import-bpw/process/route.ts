@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/import-bpw/process — Process staged BPW data into Abel OS
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
     const { dataTypes } = body
+    audit(request, 'IMPORT_BPW_PROCESS', 'BpwStagingData', undefined, { dataTypes }, 'WARN').catch(() => {})
 
     // Ensure target tables exist
     await ensureBpwTables()

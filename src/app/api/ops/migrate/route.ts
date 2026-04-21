@@ -1,9 +1,11 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_MIGRATE', 'Database', undefined, { migration: 'RUN_MIGRATE' }, 'CRITICAL').catch(() => {})
     // Add displayName column if it doesn't exist
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "displayName" TEXT;

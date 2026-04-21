@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/import-bolt — Import scraped Bolt Tech data into Abel platform
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
       woTypes = [],
       workOrders = [],
     } = body
+    audit(request, 'IMPORT_BOLT', 'BoltImport', undefined, {
+      customers: customers.length, employees: employees.length, crews: crews.length,
+      communities: communities.length, jobs: jobs.length, floorplans: floorplans.length,
+      woTypes: woTypes.length, workOrders: workOrders.length,
+    }, 'WARN').catch(() => {})
 
     const results: any = {
       customers: { imported: 0, skipped: 0, errors: [] as string[] },

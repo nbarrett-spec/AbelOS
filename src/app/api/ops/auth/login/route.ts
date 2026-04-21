@@ -9,6 +9,7 @@ import {
 } from '@/lib/staff-auth'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logSecurityEvent } from '@/lib/security-events'
+import { logAudit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/auth/login — Staff login
@@ -139,6 +140,19 @@ export async function POST(request: NextRequest) {
 
     const token = await createStaffToken(payload)
     await setStaffSessionCookie(token)
+
+    // Audit: successful staff login. Failures already logged via SecurityEvent.
+    logAudit({
+      staffId: staff.id,
+      staffName: `${staff.firstName} ${staff.lastName}`.trim(),
+      action: 'LOGIN',
+      entity: 'Staff',
+      entityId: staff.id,
+      details: { roles: allRoles, department: staff.department },
+      ipAddress: clientIp(request),
+      userAgent: request.headers.get('user-agent') || undefined,
+      severity: 'INFO',
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,29 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  PageHeader,
+  KPICard,
+  Card,
+  Badge,
+  DataTable,
+  Tabs,
+  Button,
+  EmptyState,
+  AnimatedNumber,
+  LiveDataIndicator,
+  InfoTip,
+} from '@/components/ui'
+import { useLiveTick } from '@/hooks/useLiveTopic'
+
+type Tab =
+  | 'overview'
+  | 'heatmap'
+  | 'stockouts'
+  | 'queue'
+  | 'explode'
+  | 'daily'
+  | 'about'
 
 interface Stockout {
   productId: string
@@ -8,9 +31,6 @@ interface Stockout {
   name: string
   category: string | null
   onHand: number
-  committed: number
-  safetyStock: number
-  reorderQty: number
   totalDemand: number
   totalInbound: number
   endingBalance: number
@@ -25,14 +45,11 @@ interface Stockout {
     vendorCost: number | null
     minOrderQty: number
   } | null
-  drivingJobIds: string[]
-  schedule: { date: string; demand: number; inbound: number; balance: number }[]
 }
 
 interface StockoutsResponse {
   asOf: string
   horizonDays: number
-  leadBufferDays: number
   unscheduledJobCount: number
   summary: {
     total: number
@@ -45,499 +62,969 @@ interface StockoutsResponse {
   stockouts: Stockout[]
 }
 
-interface ProjectionProduct {
+interface HeatmapRow {
   productId: string
   sku: string
   name: string
   category: string | null
-  onHand: number
-  totalDemand: number
-  totalInbound: number
-  endingBalance: number
-  stockoutDate: string | null
-  daysUntilStockout: number | null
-  schedule: { date: string; balance: number }[]
+  buckets: number[]
+  total: number
 }
 
-type Tab = 'stockouts' | 'projection' | 'about'
+interface HeatmapResponse {
+  weeks: number
+  weekLabels: string[]
+  maxCellValue: number
+  rows: HeatmapRow[]
+  totalSkus: number
+}
+
+interface QueueItem {
+  id: string
+  orderNumber: string
+  poNumber: string | null
+  status: string
+  column: 'RECEIVED' | 'CONFIRMED' | 'IN_PRODUCTION' | 'READY_TO_SHIP'
+  total: number
+  deliveryDate: string | null
+  daysToDelivery: number | null
+  urgency: 'RED' | 'AMBER' | 'GREEN' | 'NONE'
+  builderName: string
+  builderId: string | null
+  lineCount: number
+  unitCount: number
+  jobNumbers: string[]
+  flagged: boolean
+}
+
+interface QueueResponse {
+  columns: Array<QueueItem['column']>
+  buckets: Record<QueueItem['column'], QueueItem[]>
+  totals: {
+    RECEIVED: number
+    CONFIRMED: number
+    IN_PRODUCTION: number
+    READY_TO_SHIP: number
+    AWAITING_MATERIAL: number
+  }
+}
+
+interface DailyOutput {
+  yesterday: { date: string; orders: number; units: number; onTime: number; late: number }
+  rolling7: { avgOrdersPerDay: number; avgUnitsPerDay: number; onTimeRate: number | null }
+  spark: Array<{ date: string; units: number; orders: number }>
+  pmProductivity: Array<{ pmId: string; pmName: string; completed: number }>
+}
+
+interface ExplodeRow {
+  productId: string
+  sku: string
+  name: string
+  category: string | null
+  quantity: number
+  unitCost: number
+  extendedCost: number
+  onHand: number
+  available: number
+  shortfall: number
+  fullyAvailable: boolean
+}
+
+interface ExplodeResponse {
+  order: {
+    id: string
+    orderNumber: string
+    status: string
+    deliveryDate: string | null
+    builderName: string | null
+  }
+  summary: {
+    lineCount: number
+    terminalCount: number
+    totalExtendedCost: number
+    shortfallCount: number
+  }
+  components: ExplodeRow[]
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 
 export default function MrpPage() {
-  const [tab, setTab] = useState<Tab>('stockouts')
+  const [tab, setTab] = useState<Tab>('overview')
+  const [stockouts, setStockouts] = useState<StockoutsResponse | null>(null)
+  const [heatmap, setHeatmap] = useState<HeatmapResponse | null>(null)
+  const [queue, setQueue] = useState<QueueResponse | null>(null)
+  const [daily, setDaily] = useState<DailyOutput | null>(null)
   const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<StockoutsResponse | null>(null)
-  const [projectionData, setProjectionData] = useState<ProjectionProduct[]>([])
-  const [setupRan, setSetupRan] = useState(false)
-  const [generating, setGenerating] = useState(false)
-  const [genResult, setGenResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [flash, setFlash] = useState<string | null>(null)
+  const [refreshTick, setRefreshTick] = useState<number | null>(null)
+  const liveTick = useLiveTick('orders')
 
-  // Run the idempotent setup once on mount
-  useEffect(() => {
-    fetch('/api/ops/mrp/setup', { method: 'POST' })
-      .then(() => setSetupRan(true))
-      .catch(() => setSetupRan(true))
-  }, [])
-
-  const loadStockouts = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/ops/mrp/stockouts')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setData(json)
+      const [so, hm, q, d] = await Promise.allSettled([
+        fetch('/api/ops/mrp/stockouts').then((r) => (r.ok ? r.json() : null)),
+        fetch('/api/ops/mrp/demand-heatmap').then((r) => (r.ok ? r.json() : null)),
+        fetch('/api/ops/mrp/production-queue').then((r) => (r.ok ? r.json() : null)),
+        fetch('/api/ops/mrp/daily-output').then((r) => (r.ok ? r.json() : null)),
+      ])
+      if (so.status === 'fulfilled') setStockouts(so.value)
+      if (hm.status === 'fulfilled') setHeatmap(hm.value)
+      if (q.status === 'fulfilled') setQueue(q.value)
+      if (d.status === 'fulfilled') setDaily(d.value)
+      setRefreshTick(Date.now())
     } catch (e: any) {
-      setError(e?.message || 'Failed to load stockouts')
+      setError(e?.message || 'Failed to load')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const loadProjection = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/ops/mrp/projection')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setProjectionData(json.products || [])
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load projection')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  useEffect(() => { if (liveTick > 0) loadAll() /* eslint-disable-next-line */ }, [liveTick])
 
+  // Run setup + initial load once
   useEffect(() => {
-    if (tab === 'stockouts') loadStockouts()
-    if (tab === 'projection') loadProjection()
-  }, [tab, loadStockouts, loadProjection])
+    fetch('/api/ops/mrp/setup', { method: 'POST' }).catch(() => {})
+    loadAll()
+  }, [loadAll])
 
-  const handleGenerateDrafts = async () => {
-    setGenerating(true)
-    setGenResult(null)
+  // Clear flash banner
+  useEffect(() => {
+    if (!flash) return
+    const t = setTimeout(() => setFlash(null), 4000)
+    return () => clearTimeout(t)
+  }, [flash])
+
+  async function handleGeneratePO(productId: string, sku: string) {
     try {
-      const res = await fetch('/api/ops/mrp/draft-pos', {
+      const res = await fetch('/api/ops/mrp/suggest-po', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ productId }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`)
-      setGenResult(
-        `Created ${json.created} new MRP recommendation${json.created === 1 ? '' : 's'}` +
-          (json.skipped ? ` (${json.skipped} already pending)` : '') +
-          `. Estimated spend: $${(json.totalEstimatedSpend || 0).toLocaleString()}.`
-      )
-      // Refresh
-      loadStockouts()
+      setFlash(`Drafted ${json.po.poNumber} for ${sku}`)
     } catch (e: any) {
-      setGenResult(`Error: ${e?.message || 'failed'}`)
-    } finally {
-      setGenerating(false)
+      setFlash(`PO failed: ${e?.message || 'error'}`)
     }
   }
 
-  const filteredStockouts = data?.stockouts.filter((s) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      s.sku.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q) ||
-      (s.category || '').toLowerCase().includes(q)
-    )
-  })
-
-  const filteredProjection = projectionData.filter((p) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      p.sku.toLowerCase().includes(q) ||
-      p.name.toLowerCase().includes(q) ||
-      (p.category || '').toLowerCase().includes(q)
-    )
-  })
+  async function handleAdvanceOrder(orderId: string, newStatus: string) {
+    try {
+      const res = await fetch('/api/ops/mrp/production-queue', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const updated = await fetch('/api/ops/mrp/production-queue').then((r) => r.json())
+      setQueue(updated)
+      setFlash(`Moved to ${newStatus}`)
+    } catch (e: any) {
+      setFlash(`Move failed: ${e?.message}`)
+    }
+  }
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <span>🎯</span>
-          <span>MRP — Forward Demand Planning</span>
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Walks active jobs through BOM expansion to project a 90-day inventory
-          balance per product. Surfaces stockouts before they happen and drafts POs
-          to cover them.
-        </p>
+    <div className="min-h-screen bg-canvas text-fg">
+      <div className="max-w-[1800px] mx-auto p-6 space-y-5">
+        <LiveDataIndicator trigger={refreshTick} />
+        <PageHeader
+          eyebrow="Manufacturing"
+          title="Material Requirements Planning"
+          description="Forward-looking demand, stockout risk, BOM explosion, and floor throughput — all in one place."
+          crumbs={[{ label: 'Ops', href: '/ops' }, { label: 'MRP' }]}
+          actions={
+            <>
+              <Button variant="ghost" size="sm" onClick={loadAll} loading={loading}>
+                Refresh
+              </Button>
+            </>
+          }
+        />
+
+        {flash && (
+          <Card padding="xs" className="border-accent/40 bg-accent-subtle text-accent-fg">
+            {flash}
+          </Card>
+        )}
+        {error && (
+          <Card padding="xs" className="border-data-negative/40 bg-data-negative-bg text-data-negative-fg">
+            {error}
+          </Card>
+        )}
+
+        <Tabs
+          tabs={[
+            { id: 'overview', label: 'Overview' },
+            { id: 'heatmap', label: 'Demand Heatmap' },
+            { id: 'stockouts', label: 'Stockout Risk' },
+            { id: 'queue', label: 'Production Queue' },
+            { id: 'explode', label: 'BOM Explode' },
+            { id: 'daily', label: 'Daily Output' },
+            { id: 'about', label: 'About' },
+          ] as any}
+          activeTab={tab}
+          onChange={(t) => setTab(t as Tab)}
+        />
+
+        {tab === 'overview' && (
+          <OverviewTab
+            stockouts={stockouts}
+            queue={queue}
+            daily={daily}
+            heatmap={heatmap}
+          />
+        )}
+
+        {tab === 'heatmap' && (
+          <HeatmapTab heatmap={heatmap} search={search} setSearch={setSearch} />
+        )}
+
+        {tab === 'stockouts' && (
+          <StockoutsTab
+            data={stockouts}
+            search={search}
+            setSearch={setSearch}
+            onSuggestPO={handleGeneratePO}
+          />
+        )}
+
+        {tab === 'queue' && <QueueTab queue={queue} onAdvance={handleAdvanceOrder} />}
+
+        {tab === 'explode' && <ExplodeTab />}
+
+        {tab === 'daily' && <DailyTab daily={daily} />}
+
+        {tab === 'about' && <AboutTab />}
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: Overview
+// ──────────────────────────────────────────────────────────────────────────
+function OverviewTab({
+  stockouts,
+  queue,
+  daily,
+  heatmap,
+}: {
+  stockouts: StockoutsResponse | null
+  queue: QueueResponse | null
+  daily: DailyOutput | null
+  heatmap: HeatmapResponse | null
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPICard
+          title="Critical Stockouts"
+          value={stockouts ? <AnimatedNumber value={stockouts.summary.critical} /> : '—'}
+          subtitle="< 7 days runway"
+          accent="negative"
+          badge={
+            <InfoTip label="Stockout Risk">
+              Critical = projected to run out within 7 days based on demand forecast + lead time.
+              Generate a PO from the Stockout Risk tab.
+            </InfoTip>
+          }
+        />
+        <KPICard
+          title="Est. Reorder Spend"
+          value={
+            stockouts
+              ? <AnimatedNumber value={stockouts.summary.estimatedReorderValue} format={(v) => `$${Math.round(v / 1000)}k`} />
+              : '—'
+          }
+          subtitle="to cover projected shortfalls"
+          accent="accent"
+        />
+        <KPICard
+          title="In Production"
+          value={queue ? <AnimatedNumber value={queue.totals.IN_PRODUCTION} /> : '—'}
+          subtitle={`${queue?.totals.AWAITING_MATERIAL ?? 0} awaiting material`}
+          accent="brand"
+        />
+        <KPICard
+          title="Yesterday's Output"
+          value={daily ? <AnimatedNumber value={daily.yesterday.units} /> : '—'}
+          delta={
+            daily && daily.rolling7.avgUnitsPerDay
+              ? `${
+                  daily.yesterday.units >= daily.rolling7.avgUnitsPerDay ? '+' : ''
+                }${Math.round(
+                  ((daily.yesterday.units - daily.rolling7.avgUnitsPerDay) /
+                    Math.max(daily.rolling7.avgUnitsPerDay, 1)) *
+                    100
+                )}% vs 7d avg`
+              : undefined
+          }
+          accent={
+            daily &&
+            daily.rolling7.avgUnitsPerDay &&
+            daily.yesterday.units >= daily.rolling7.avgUnitsPerDay
+              ? 'positive'
+              : 'negative'
+          }
+          sparkline={daily?.spark.map((s) => s.units)}
+        />
       </div>
 
-      {data?.unscheduledJobCount && data.unscheduledJobCount > 0 ? (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
-          ⚠️ {data.unscheduledJobCount} active jobs have no scheduled date and were
-          excluded from the projection. They&apos;re still consuming inventory but
-          can&apos;t be time-phased.
-        </div>
-      ) : null}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card padding="md">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-fg">Top stockout risks</h3>
+            <a href="#" className="text-[11px] text-fg-muted hover:text-fg">
+              {stockouts?.summary.total ?? 0} total
+            </a>
+          </div>
+          <div className="space-y-1.5">
+            {(stockouts?.stockouts || []).slice(0, 6).map((s) => (
+              <div
+                key={s.productId}
+                className="flex items-center justify-between py-1.5 border-b border-border last:border-0"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-mono text-fg-muted">{s.sku}</div>
+                  <div className="text-sm text-fg truncate">{s.name}</div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-fg-muted font-numeric">
+                    {s.daysUntilStockout ?? '—'}d
+                  </span>
+                  <UrgencyBadge urgency={s.urgency} />
+                </div>
+              </div>
+            ))}
+            {!stockouts?.stockouts.length && (
+              <div className="text-xs text-fg-subtle py-4 text-center">No stockouts projected.</div>
+            )}
+          </div>
+        </Card>
 
-      {/* Tab nav */}
-      <div className="flex gap-2 mb-4 border-b border-gray-200">
-        {(['stockouts', 'projection', 'about'] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === t
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+        <Card padding="md">
+          <h3 className="text-sm font-semibold text-fg mb-3">Production queue pulse</h3>
+          <div className="grid grid-cols-4 gap-2">
+            {(['RECEIVED', 'CONFIRMED', 'IN_PRODUCTION', 'READY_TO_SHIP'] as const).map((c) => (
+              <div key={c} className="panel p-3 rounded-md">
+                <div className="eyebrow">{c.replace('_', ' ')}</div>
+                <div className="metric metric-md mt-1">
+                  {queue?.totals[c] ?? 0}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-xs text-fg-muted">
+            {heatmap
+              ? `Top-${heatmap.rows.length} SKUs in demand over next ${heatmap.weeks} weeks.`
+              : 'Loading demand…'}
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: Heatmap
+// ──────────────────────────────────────────────────────────────────────────
+function HeatmapTab({
+  heatmap,
+  search,
+  setSearch,
+}: {
+  heatmap: HeatmapResponse | null
+  search: string
+  setSearch: (s: string) => void
+}) {
+  if (!heatmap) {
+    return <Card padding="lg">Loading heatmap…</Card>
+  }
+  const rows = heatmap.rows.filter((r) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      r.sku.toLowerCase().includes(q) ||
+      r.name.toLowerCase().includes(q) ||
+      (r.category || '').toLowerCase().includes(q)
+    )
+  })
+
+  // Narrow heatmap for inner closures (TS can't carry the null-check across them).
+  const hm = heatmap
+
+  function cellStyle(v: number): React.CSSProperties {
+    if (v === 0) return { background: 'var(--surface)' }
+    const t = Math.min(1, v / Math.max(hm.maxCellValue, 1))
+    const alpha = (0.12 + t * 0.78).toFixed(2)
+    return {
+      background: `color-mix(in oklab, var(--accent) ${Math.round(parseFloat(alpha) * 100)}%, transparent)`,
+    }
+  }
+
+  return (
+    <Card padding="none" className="overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filter SKU, product, category…"
+          className="input w-64 text-sm"
+        />
+        <div className="text-xs text-fg-muted">
+          {rows.length} of {heatmap.totalSkus} SKUs · max cell = {heatmap.maxCellValue}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-surface-muted/50">
+            <tr>
+              <th className="text-left px-3 py-2 text-xs font-medium text-fg-muted sticky left-0 bg-surface-muted/80 backdrop-blur">
+                SKU / Product
+              </th>
+              {heatmap.weekLabels.map((w, i) => (
+                <th
+                  key={i}
+                  className="px-2 py-2 text-xs font-medium text-fg-muted text-center whitespace-nowrap"
+                >
+                  {w}
+                </th>
+              ))}
+              <th className="px-3 py-2 text-xs font-medium text-fg-muted text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.productId} className="border-t border-border">
+                <td className="px-3 py-1.5 sticky left-0 bg-canvas">
+                  <div className="text-[11px] font-mono text-fg-muted">{r.sku}</div>
+                  <div className="text-sm text-fg truncate max-w-[260px]">{r.name}</div>
+                </td>
+                {r.buckets.map((v, i) => (
+                  <td
+                    key={i}
+                    className="px-1 py-1 text-center text-xs font-numeric"
+                    style={cellStyle(v)}
+                    title={`Week ${i + 1}: ${v} units`}
+                  >
+                    {v > 0 ? v : ''}
+                  </td>
+                ))}
+                <td className="px-3 py-1.5 text-right font-numeric text-sm">{r.total}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: Stockouts
+// ──────────────────────────────────────────────────────────────────────────
+function StockoutsTab({
+  data,
+  search,
+  setSearch,
+  onSuggestPO,
+}: {
+  data: StockoutsResponse | null
+  search: string
+  setSearch: (s: string) => void
+  onSuggestPO: (productId: string, sku: string) => void
+}) {
+  const rows = useMemo(() => {
+    if (!data?.stockouts) return []
+    if (!search) return data.stockouts
+    const q = search.toLowerCase()
+    return data.stockouts.filter(
+      (s) =>
+        s.sku.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        (s.category || '').toLowerCase().includes(q)
+    )
+  }, [data, search])
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KPICard title="Total stockouts" value={data?.summary.total ?? '—'} accent="neutral" />
+        <KPICard title="Critical" value={data?.summary.critical ?? '—'} accent="negative" subtitle="< 7d" />
+        <KPICard title="High" value={data?.summary.high ?? '—'} accent="accent" subtitle="< 14d" />
+        <KPICard title="Normal" value={data?.summary.normal ?? '—'} accent="neutral" subtitle="< 30d" />
+        <KPICard
+          title="Reorder spend"
+          value={
+            data ? `$${Math.round(data.summary.estimatedReorderValue).toLocaleString()}` : '—'
+          }
+          accent="forecast"
+        />
+      </div>
+
+      <DataTable
+        data={rows}
+        rowKey={(r) => r.productId}
+        toolbar={
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter SKU / product / category…"
+            className="input w-64 text-sm"
+          />
+        }
+        empty="No stockouts projected. Inventory is healthy."
+        columns={[
+          {
+            key: 'urgency',
+            header: 'Urgency',
+            cell: (r) => <UrgencyBadge urgency={r.urgency} />,
+            width: '96px',
+          },
+          { key: 'sku', header: 'SKU', cell: (r) => <span className="font-mono text-xs">{r.sku}</span> },
+          {
+            key: 'name',
+            header: 'Product',
+            cell: (r) => (
+              <>
+                <div className="text-sm">{r.name}</div>
+                <div className="text-[11px] text-fg-subtle">{r.category}</div>
+              </>
+            ),
+          },
+          { key: 'onHand', header: 'On Hand', numeric: true, cell: (r) => r.onHand },
+          {
+            key: 'demand',
+            header: 'Demand',
+            numeric: true,
+            cell: (r) => <span className="text-data-negative">−{r.totalDemand}</span>,
+          },
+          {
+            key: 'inbound',
+            header: 'Inbound',
+            numeric: true,
+            cell: (r) => <span className="text-data-positive">+{r.totalInbound}</span>,
+          },
+          {
+            key: 'endingBalance',
+            header: 'Ending',
+            numeric: true,
+            cell: (r) => (
+              <span className={r.endingBalance < 0 ? 'text-data-negative font-semibold' : ''}>
+                {r.endingBalance}
+              </span>
+            ),
+          },
+          {
+            key: 'stocksOut',
+            header: 'Stocks Out',
+            cell: (r) => (
+              <>
+                <div className="text-xs">{r.stockoutDate}</div>
+                <div className="text-[11px] text-fg-subtle">in {r.daysUntilStockout}d</div>
+              </>
+            ),
+          },
+          {
+            key: 'vendor',
+            header: 'Vendor',
+            cell: (r) =>
+              r.preferredVendor ? (
+                <>
+                  <div className="text-xs">{r.preferredVendor.name}</div>
+                  <div className="text-[11px] text-fg-subtle">
+                    {r.preferredVendor.leadTimeDays
+                      ? `${r.preferredVendor.leadTimeDays}d lead`
+                      : 'lead unknown'}
+                  </div>
+                </>
+              ) : (
+                <span className="text-[11px] text-accent-fg">No preferred</span>
+              ),
+          },
+          {
+            key: 'action',
+            header: '',
+            cell: (r) => (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onSuggestPO(r.productId, r.sku)}
+                disabled={!r.preferredVendor}
+              >
+                Draft PO
+              </Button>
+            ),
+          },
+        ]}
+      />
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: Production Queue
+// ──────────────────────────────────────────────────────────────────────────
+function QueueTab({
+  queue,
+  onAdvance,
+}: {
+  queue: QueueResponse | null
+  onAdvance: (orderId: string, newStatus: string) => void
+}) {
+  if (!queue) return <Card padding="lg">Loading…</Card>
+
+  const NEXT: Record<QueueItem['column'], string | null> = {
+    RECEIVED: 'CONFIRMED',
+    CONFIRMED: 'IN_PRODUCTION',
+    IN_PRODUCTION: 'READY_TO_SHIP',
+    READY_TO_SHIP: 'SHIPPED',
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      {queue.columns.map((col) => (
+        <Card key={col} padding="none" className="flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-muted/40">
+            <div className="text-xs font-semibold text-fg uppercase tracking-wider">
+              {col.replace('_', ' ')}
+            </div>
+            <Badge variant="neutral" size="sm">
+              {queue.buckets[col].length}
+            </Badge>
+          </div>
+          <div className="p-2 space-y-2 min-h-[300px] max-h-[70vh] overflow-y-auto">
+            {queue.buckets[col].map((o) => (
+              <QueueCard key={o.id} order={o} nextStatus={NEXT[col]} onAdvance={onAdvance} />
+            ))}
+            {!queue.buckets[col].length && (
+              <div className="text-xs text-fg-subtle text-center py-6">Empty</div>
+            )}
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+function QueueCard({
+  order,
+  nextStatus,
+  onAdvance,
+}: {
+  order: QueueItem
+  nextStatus: string | null
+  onAdvance: (id: string, s: string) => void
+}) {
+  const urgencyColor: Record<QueueItem['urgency'], string> = {
+    RED: 'border-l-data-negative',
+    AMBER: 'border-l-data-warning',
+    GREEN: 'border-l-data-positive',
+    NONE: 'border-l-border',
+  }
+  return (
+    <div className={`panel panel-interactive border-l-2 ${urgencyColor[order.urgency]} p-2.5`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[11px] font-mono text-fg-muted">{order.orderNumber}</div>
+          <div className="text-sm font-medium text-fg truncate">{order.builderName}</div>
+        </div>
+        {order.flagged && (
+          <Badge variant="warning" size="xs">
+            MATL
+          </Badge>
+        )}
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-[11px] text-fg-muted">
+        <span>
+          {order.lineCount} lines · {order.unitCount} units
+        </span>
+        {order.daysToDelivery != null && (
+          <span
+            className={
+              order.daysToDelivery < 0
+                ? 'text-data-negative'
+                : order.daysToDelivery <= 3
+                  ? 'text-data-warning'
+                  : ''
+            }
           >
-            {t === 'stockouts' && 'Stockouts'}
-            {t === 'projection' && '90-Day Projection'}
-            {t === 'about' && 'How it works'}
-          </button>
-        ))}
+            {order.daysToDelivery < 0
+              ? `${Math.abs(order.daysToDelivery)}d late`
+              : `${order.daysToDelivery}d out`}
+          </span>
+        )}
       </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-          {error}
-        </div>
+      <div className="mt-1 font-numeric text-sm text-fg">${order.total.toLocaleString()}</div>
+      {nextStatus && (
+        <button
+          onClick={() => onAdvance(order.id, nextStatus)}
+          className="mt-2 w-full text-[11px] px-2 py-1 rounded-sm border border-border hover:border-border-strong hover:bg-surface-muted transition-colors"
+        >
+          Advance → {nextStatus.replace('_', ' ')}
+        </button>
       )}
+    </div>
+  )
+}
 
-      {tab === 'stockouts' && (
-        <>
-          {/* Summary cards */}
-          {data?.summary && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-              <Card label="Total stockouts" value={String(data.summary.total)} accent="default" />
-              <Card label="Critical (<7d)" value={String(data.summary.critical)} accent="red" />
-              <Card label="High (<14d)" value={String(data.summary.high)} accent="orange" />
-              <Card label="Normal (<30d)" value={String(data.summary.normal)} accent="yellow" />
-              <Card
-                label="Est. spend"
-                value={`$${Math.round(data.summary.estimatedReorderValue).toLocaleString()}`}
-                accent="default"
-              />
-            </div>
-          )}
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: BOM Explode
+// ──────────────────────────────────────────────────────────────────────────
+function ExplodeTab() {
+  const [orderSearch, setOrderSearch] = useState('')
+  const [orderOptions, setOrderOptions] = useState<
+    Array<{ id: string; orderNumber: string; builderName: string }>
+  >([])
+  const [explode, setExplode] = useState<ExplodeResponse | null>(null)
+  const [busy, setBusy] = useState(false)
 
-          {/* Action bar */}
-          <div className="flex items-center justify-between gap-3 mb-4">
+  async function searchOrders(q: string) {
+    if (q.length < 2) {
+      setOrderOptions([])
+      return
+    }
+    try {
+      const res = await fetch(`/api/orders?search=${encodeURIComponent(q)}&limit=10`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      const rows = (json.orders || json.data || []).map((o: any) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        builderName: o.builder?.companyName || o.builderName || '—',
+      }))
+      setOrderOptions(rows)
+    } catch {
+      setOrderOptions([])
+    }
+  }
+
+  async function explodeOrder(orderId: string) {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/ops/mrp/bom-explode/${orderId}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setExplode(await res.json())
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card padding="md">
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <label className="eyebrow">Pick an order</label>
             <input
-              type="text"
-              placeholder="Search SKU, product, or category..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 max-w-sm px-3 py-2 border border-gray-300 rounded text-sm"
+              className="input w-full text-sm mt-1"
+              value={orderSearch}
+              onChange={(e) => {
+                setOrderSearch(e.target.value)
+                searchOrders(e.target.value)
+              }}
+              placeholder="Order #, PO #, builder..."
             />
-            <div className="flex gap-2">
-              <button
-                onClick={loadStockouts}
-                disabled={loading}
-                className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
-              >
-                {loading ? 'Refreshing…' : 'Refresh'}
-              </button>
-              <button
-                onClick={handleGenerateDrafts}
-                disabled={generating || !data?.stockouts.length}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-              >
-                {generating ? 'Generating…' : 'Generate Draft POs'}
-              </button>
-            </div>
-          </div>
-
-          {genResult && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-800">
-              {genResult}{' '}
-              <a
-                href="/ops/procurement-intelligence"
-                className="underline font-medium"
-              >
-                Review in AI Procurement Brain →
-              </a>
-            </div>
-          )}
-
-          {/* Stockouts table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">Urgency</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">SKU</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">Product</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">On Hand</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">Demand</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">Inbound</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">Ending</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">Stocks Out</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">Vendor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredStockouts?.length === 0 && (
-                    <tr>
-                      <td colSpan={9} className="text-center py-8 text-gray-500">
-                        {loading
-                          ? 'Loading…'
-                          : 'No stockouts projected. Inventory is healthy.'}
-                      </td>
-                    </tr>
-                  )}
-                  {filteredStockouts?.map((s) => (
-                    <tr key={s.productId} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-3 py-2">
-                        <UrgencyBadge urgency={s.urgency} />
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">{s.sku}</td>
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-gray-900">{s.name}</div>
-                        <div className="text-xs text-gray-500">{s.category}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{s.onHand}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-red-600">
-                        −{s.totalDemand}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-green-600">
-                        +{s.totalInbound}
-                      </td>
-                      <td
-                        className={`px-3 py-2 text-right tabular-nums font-medium ${
-                          s.endingBalance < 0 ? 'text-red-700' : 'text-gray-900'
-                        }`}
-                      >
-                        {s.endingBalance}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div>{s.stockoutDate}</div>
-                        <div className="text-xs text-gray-500">
-                          in {s.daysUntilStockout}d
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        {s.preferredVendor ? (
-                          <div>
-                            <div className="font-medium">{s.preferredVendor.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {s.preferredVendor.leadTimeDays
-                                ? `${s.preferredVendor.leadTimeDays}d lead`
-                                : 'lead unknown'}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-amber-600">No preferred vendor</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
-
-      {tab === 'projection' && (
-        <>
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search SKU, product, or category..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full max-w-sm px-3 py-2 border border-gray-300 rounded text-sm"
-            />
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">SKU</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">Product</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">On Hand</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">Demand</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">Inbound</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-700">90-day end</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-700">Trajectory</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProjection.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-500">
-                        {loading ? 'Loading…' : 'No products with active demand or inbound.'}
-                      </td>
-                    </tr>
-                  )}
-                  {filteredProjection.slice(0, 200).map((p) => (
-                    <tr key={p.productId} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-gray-900">{p.name}</div>
-                        <div className="text-xs text-gray-500">{p.category}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{p.onHand}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-red-600">
-                        −{p.totalDemand}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-green-600">
-                        +{p.totalInbound}
-                      </td>
-                      <td
-                        className={`px-3 py-2 text-right tabular-nums font-medium ${
-                          p.endingBalance < 0 ? 'text-red-700' : 'text-gray-900'
-                        }`}
-                      >
-                        {p.endingBalance}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Sparkline schedule={p.schedule} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {filteredProjection.length > 200 && (
-              <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-100">
-                Showing first 200 of {filteredProjection.length}. Refine search to narrow.
+            {orderOptions.length > 0 && (
+              <div className="panel mt-1 max-h-56 overflow-y-auto">
+                {orderOptions.map((o) => (
+                  <button
+                    key={o.id}
+                    className="w-full text-left px-3 py-2 hover:bg-surface-muted text-sm border-b border-border last:border-0"
+                    onClick={() => {
+                      setOrderSearch(o.orderNumber)
+                      setOrderOptions([])
+                      explodeOrder(o.id)
+                    }}
+                  >
+                    <span className="font-mono">{o.orderNumber}</span>
+                    <span className="text-fg-muted ml-2">{o.builderName}</span>
+                  </button>
+                ))}
               </div>
             )}
           </div>
+        </div>
+      </Card>
+
+      {busy && <Card padding="lg">Exploding BOM…</Card>}
+      {!busy && explode && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KPICard title="Lines" value={explode.summary.lineCount} accent="neutral" />
+            <KPICard
+              title="Terminal Components"
+              value={explode.summary.terminalCount}
+              accent="brand"
+            />
+            <KPICard
+              title="Extended Cost"
+              value={`$${Math.round(explode.summary.totalExtendedCost).toLocaleString()}`}
+              accent="accent"
+            />
+            <KPICard
+              title="Shortfalls"
+              value={explode.summary.shortfallCount}
+              accent={explode.summary.shortfallCount > 0 ? 'negative' : 'positive'}
+            />
+          </div>
+          <DataTable
+            data={explode.components}
+            rowKey={(r) => r.productId}
+            empty="No components."
+            columns={[
+              { key: 'sku', header: 'SKU', cell: (r) => <span className="font-mono text-xs">{r.sku}</span> },
+              { key: 'name', header: 'Component', cell: (r) => r.name },
+              { key: 'qty', header: 'Qty Needed', numeric: true, cell: (r) => r.quantity },
+              { key: 'onHand', header: 'On Hand', numeric: true, cell: (r) => r.onHand },
+              {
+                key: 'short',
+                header: 'Shortfall',
+                numeric: true,
+                cell: (r) =>
+                  r.shortfall > 0 ? (
+                    <span className="text-data-negative font-semibold">{r.shortfall}</span>
+                  ) : (
+                    <span className="text-data-positive">0</span>
+                  ),
+              },
+              {
+                key: 'extCost',
+                header: 'Ext. Cost',
+                numeric: true,
+                cell: (r) => `$${r.extendedCost.toLocaleString()}`,
+              },
+            ]}
+          />
         </>
       )}
-
-      {tab === 'about' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6 prose max-w-none">
-          <h2>How MRP works</h2>
-          <p>
-            For each active job (status not in COMPLETE/CLOSED/CANCELLED) with a
-            scheduled date, the system walks <code>Job → Order → OrderItem</code> and
-            recursively expands each line through any matching <code>BomEntry</code>{' '}
-            relationships (up to 4 levels deep). Components with no further BOM
-            children are treated as terminal — they consume themselves.
-          </p>
-          <p>
-            Demand is bucketed on{' '}
-            <code>scheduledDate − leadBufferDays</code> (default 3) so material is
-            on hand before install. Inbound supply comes from open Purchase Orders
-            (status APPROVED, SENT_TO_VENDOR, PARTIALLY_RECEIVED) using{' '}
-            <code>expectedDate</code> if set, otherwise <code>orderedAt + 14d</code>.
-          </p>
-          <p>
-            For each product and each day in the horizon (default 90), we compute:
-          </p>
-          <pre className="bg-gray-50 p-3 rounded text-xs">
-{`projected_balance(d) =
-    onHand
-  + Σ inbound(d') for d' ≤ d
-  − Σ demand(d')  for d' ≤ d`}
-          </pre>
-          <p>
-            A product <strong>stocks out</strong> on the first day where the
-            projected balance falls below safety stock. The Generate Draft POs
-            button writes <code>SmartPORecommendation</code> rows tagged{' '}
-            <code>MRP_FORWARD</code> that show up in the existing AI Procurement
-            Brain approval channel.
-          </p>
-          <p>
-            A nightly cron at <code>/api/cron/mrp-nightly</code> runs the same
-            projection, drafts new recommendations for new stockouts, and resolves
-            stale recommendations whose stockout has been covered by a received PO.
-          </p>
-          <p className="text-xs text-gray-500">
-            See <code>docs/MRP_SPEC.md</code> for the full architecture.
-          </p>
-        </div>
-      )}
     </div>
   )
 }
 
-function Card({
-  label,
-  value,
-  accent,
-}: {
-  label: string
-  value: string
-  accent: 'default' | 'red' | 'orange' | 'yellow' | 'green'
-}) {
-  const accentClasses = {
-    default: 'bg-white border-gray-200',
-    red: 'bg-red-50 border-red-200',
-    orange: 'bg-orange-50 border-orange-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    green: 'bg-green-50 border-green-200',
-  }
-  return (
-    <div className={`p-3 rounded border ${accentClasses[accent]}`}>
-      <div className="text-xs text-gray-600 uppercase tracking-wide">{label}</div>
-      <div className="text-2xl font-bold text-gray-900 mt-1">{value}</div>
-    </div>
-  )
-}
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: Daily Output
+// ──────────────────────────────────────────────────────────────────────────
+function DailyTab({ daily }: { daily: DailyOutput | null }) {
+  if (!daily) return <Card padding="lg">Loading…</Card>
+  const onTimePct = daily.rolling7.onTimeRate != null ? Math.round(daily.rolling7.onTimeRate * 100) : null
 
-function UrgencyBadge({ urgency }: { urgency: 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW' }) {
-  const styles = {
-    CRITICAL: 'bg-red-100 text-red-800 border-red-200',
-    HIGH: 'bg-orange-100 text-orange-800 border-orange-200',
-    NORMAL: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    LOW: 'bg-gray-100 text-gray-700 border-gray-200',
-  }
   return (
-    <span
-      className={`inline-block px-2 py-0.5 text-xs font-medium rounded border ${styles[urgency]}`}
-    >
-      {urgency}
-    </span>
-  )
-}
-
-function Sparkline({ schedule }: { schedule: { balance: number }[] }) {
-  if (!schedule || schedule.length === 0) return null
-  const max = Math.max(...schedule.map((s) => s.balance), 1)
-  const min = Math.min(...schedule.map((s) => s.balance), 0)
-  const range = max - min || 1
-  const width = 120
-  const height = 24
-  const step = width / Math.max(schedule.length - 1, 1)
-  const points = schedule
-    .map((s, i) => {
-      const x = i * step
-      const y = height - ((s.balance - min) / range) * height
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    })
-    .join(' ')
-  const last = schedule[schedule.length - 1].balance
-  const stroke = last < 0 ? '#dc2626' : '#2563eb'
-  return (
-    <svg width={width} height={height} className="inline-block">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={stroke}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {min < 0 && (
-        <line
-          x1="0"
-          y1={height - ((0 - min) / range) * height}
-          x2={width}
-          y2={height - ((0 - min) / range) * height}
-          stroke="#fca5a5"
-          strokeWidth="0.5"
-          strokeDasharray="2 2"
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPICard
+          title="Yesterday — Units"
+          value={daily.yesterday.units}
+          subtitle={`${daily.yesterday.orders} orders`}
+          accent="brand"
+          sparkline={daily.spark.map((s) => s.units)}
         />
-      )}
-    </svg>
+        <KPICard
+          title="7-day Avg Units/Day"
+          value={daily.rolling7.avgUnitsPerDay}
+          subtitle={`${daily.rolling7.avgOrdersPerDay} orders/day`}
+          accent="accent"
+        />
+        <KPICard
+          title="On-Time %"
+          value={onTimePct != null ? `${onTimePct}%` : '—'}
+          accent={onTimePct == null ? 'neutral' : onTimePct >= 90 ? 'positive' : onTimePct >= 75 ? 'accent' : 'negative'}
+        />
+        <KPICard
+          title="Late Yesterday"
+          value={daily.yesterday.late}
+          subtitle={`${daily.yesterday.onTime} on time`}
+          accent={daily.yesterday.late === 0 ? 'positive' : 'negative'}
+        />
+      </div>
+
+      <Card padding="md">
+        <h3 className="text-sm font-semibold text-fg mb-3">PM productivity — last 7 days</h3>
+        {daily.pmProductivity.length === 0 ? (
+          <EmptyState title="No completed jobs" description="No jobs hit COMPLETE/CLOSED in the last 7 days." />
+        ) : (
+          <div className="space-y-2">
+            {daily.pmProductivity.map((p) => {
+              const max = Math.max(...daily.pmProductivity.map((x) => x.completed), 1)
+              return (
+                <div key={p.pmId}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-fg">{p.pmName}</span>
+                    <span className="text-fg-muted font-numeric">{p.completed}</span>
+                  </div>
+                  <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-brand"
+                      style={{ width: `${(p.completed / max) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tab: About
+// ──────────────────────────────────────────────────────────────────────────
+function AboutTab() {
+  return (
+    <Card padding="lg">
+      <div className="prose prose-invert max-w-none text-sm">
+        <h2 className="text-fg">How MRP works</h2>
+        <p className="text-fg-muted">
+          For each active job with a scheduled date, the engine walks
+          <code className="mx-1 text-accent-fg">Job → Order → OrderItem</code>
+          and recursively expands each line through matching{' '}
+          <code className="mx-1 text-accent-fg">BomEntry</code> relationships (up to 4
+          levels). Components with no further BOM children are terminal — they consume
+          themselves.
+        </p>
+        <p className="text-fg-muted">
+          Demand is bucketed on <code>scheduledDate − leadBufferDays</code> so material
+          is on hand before install. Inbound supply comes from open Purchase Orders
+          (APPROVED / SENT / PARTIALLY_RECEIVED).
+        </p>
+        <p className="text-fg-muted">
+          The Demand Heatmap rolls OrderItem quantities into ISO weeks based on
+          <code className="mx-1">Order.deliveryDate</code>. Cell intensity scales with
+          max-cell across the visible grid.
+        </p>
+        <p className="text-fg-subtle text-xs">
+          See <code>docs/MRP_SPEC.md</code> for the full spec.
+        </p>
+        {/* TODO: replace with AI insight once NUC brain is wired */}
+      </div>
+    </Card>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Shared
+// ──────────────────────────────────────────────────────────────────────────
+function UrgencyBadge({ urgency }: { urgency: 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW' }) {
+  const variantMap = {
+    CRITICAL: 'danger',
+    HIGH: 'warning',
+    NORMAL: 'info',
+    LOW: 'neutral',
+  } as const
+  return (
+    <Badge variant={variantMap[urgency]} size="sm">
+      {urgency}
+    </Badge>
   )
 }

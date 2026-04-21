@@ -3,10 +3,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/staff-auth'
 import { requireDevAdmin } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // POST /api/ops/sales/seed-reps — Create SALES_REP staff accounts (DEV ONLY, ADMIN required)
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_SALES_SEED_REPS', 'Database', undefined, { migration: 'RUN_SALES_SEED_REPS' }, 'CRITICAL').catch(() => {})
     const guard = requireDevAdmin(request)
     if (guard) return guard
 

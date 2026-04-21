@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // AI INSIGHTS API — Real-time intelligence from autonomous scans
@@ -414,6 +415,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // For now, acknowledge is fire-and-forget
     // In production, store dismissals in a table so they don't re-surface
     if (action === 'dismiss' || action === 'acknowledge') {
+      audit(request, `INSIGHT_${action.toUpperCase()}`, 'Insight', insightId).catch(() => {})
       return NextResponse.json(
         { success: true, message: `Insight ${action}ed` },
         { status: 200 }

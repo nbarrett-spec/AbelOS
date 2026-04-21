@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -16,6 +17,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(request: NextRequest) {
   try {
+    audit(request, 'RUN_MIGRATE_FIX_ORDER_TOTALS', 'Database', undefined, { migration: 'RUN_MIGRATE_FIX_ORDER_TOTALS' }, 'CRITICAL').catch(() => {})
     const results: string[] = []
     let ordersFixed = 0
     let itemsFixed = 0

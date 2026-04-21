@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BarChart, Briefcase, TrendingUp, ShoppingCart, Users, Package, AlertCircle } from 'lucide-react'
+import { BarChart, Briefcase, TrendingUp, ShoppingCart, Users, Package, AlertCircle, Building2, FileText, DollarSign } from 'lucide-react'
 import { WorkflowAlerts } from './components/WorkflowAlerts'
 import { ActionQueue } from './components/ActionQueue'
 import { AIRecommendations } from './components/AIRecommendations'
 import { DonutChart, HBarChart, Sparkline, ProgressRing } from './components/Charts'
-import { ContextStrip } from './components/ContextStrip'
 import { AlertRail } from './components/AlertRail'
-import { KPICardElite } from './components/KPICardElite'
 import { ActivityFeed } from './components/ActivityFeed'
+import { KPICard, PageHeader } from '@/components/ui'
 
 interface DashboardData {
   builders: { total: number }
@@ -100,8 +99,11 @@ export default function OpsDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-abel-walnut" />
+      <div className="space-y-5">
+        <PageHeader eyebrow="Loading" title="Operations" description="Fetching live data…" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {[0,1,2,3].map(i => <KPICard key={i} title="" value="" loading />)}
+        </div>
       </div>
     )
   }
@@ -124,57 +126,56 @@ export default function OpsDashboard() {
   })
 
   return (
-    <div className="space-y-6">
-      {/* Greeting + Context Strip */}
-      <ContextStrip
-        greeting="Welcome back to Operations"
-        currentDate={todayDate}
-        kpis={[
-          { label: 'Orders Open', value: orders?.active || 0, severity: 'neutral' },
-          { label: 'Deliveries Today', value: 0, severity: 'positive' },
-          { label: 'Revenue MTD', value: fmt(orders?.totalRevenue || 0), severity: 'positive' },
-          { label: 'Outstanding AR', value: fmt(orders?.pendingRevenue || 0), severity: 'warning' },
-        ]}
+    <div className="space-y-5 animate-enter">
+      <PageHeader
+        eyebrow={todayDate}
+        title="Operations"
+        description="System-wide view — orders, purchasing, builders, inventory."
       />
 
-      {/* Alert Rail */}
+      {/* Alert rail */}
       <AlertRail alerts={systemAlerts} />
 
-      {/* KPI Grid — 2x2 desktop, 1 mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICardElite
-          label="Builder Accounts"
-          value={data?.builders.total || 0}
-          color="walnut"
-          context={`${data?.products.total?.toLocaleString() || 0} products`}
-          href="/ops/accounts"
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard
+          title="Builder Accounts"
+          accent="brand"
+          value={new Intl.NumberFormat('en-US').format(data?.builders.total || 0)}
+          subtitle={`${(data?.products.total || 0).toLocaleString()} products`}
+          icon={<Building2 className="w-3.5 h-3.5" />}
+          onClick={() => (window.location.href = '/ops/accounts')}
         />
-        <KPICardElite
-          label="Sales Orders"
-          value={orders?.total || 0}
-          color="amber"
-          context={`${orders?.active || 0} active · ${orders?.completed || 0} fulfilled`}
-          delta={(orders?.active || 0) > 0 ? 5 : 0}
-          href="/ops/orders"
+        <KPICard
+          title="Sales Orders"
+          accent="accent"
+          value={new Intl.NumberFormat('en-US').format(orders?.total || 0)}
+          subtitle={`${orders?.active || 0} active · ${orders?.completed || 0} fulfilled`}
+          icon={<FileText className="w-3.5 h-3.5" />}
+          onClick={() => (window.location.href = '/ops/orders')}
+          sparkline={orders?.monthlyTrend?.map(m => m.count) ?? []}
         />
-        <KPICardElite
-          label="Order Revenue"
+        <KPICard
+          title="Order Revenue"
+          accent="positive"
           value={fmt(orders?.totalRevenue || 0)}
-          color="green"
-          context={`${fmt(orders?.paidRevenue || 0)} collected`}
-          href="/ops/orders"
+          subtitle={`${fmt(orders?.paidRevenue || 0)} collected`}
+          icon={<DollarSign className="w-3.5 h-3.5" />}
+          onClick={() => (window.location.href = '/ops/orders')}
+          sparkline={orders?.monthlyTrend?.map(m => m.revenue) ?? []}
         />
-        <KPICardElite
-          label="Purchase Orders"
-          value={pos?.total || 0}
-          color="charcoal"
-          context={`${fmt(pos?.totalSpend || 0)} total spend`}
-          href="/ops/purchasing"
+        <KPICard
+          title="Purchase Orders"
+          accent="neutral"
+          value={new Intl.NumberFormat('en-US').format(pos?.total || 0)}
+          subtitle={`${fmt(pos?.totalSpend || 0)} total spend`}
+          icon={<ShoppingCart className="w-3.5 h-3.5" />}
+          onClick={() => (window.location.href = '/ops/purchasing')}
         />
       </div>
 
       {/* Top section: AI Recommendations */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="panel p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-2 h-6 bg-gradient-to-b from-abel-amber to-abel-amber rounded-full" />
@@ -189,7 +190,7 @@ export default function OpsDashboard() {
 
       {/* Two-column: Pipeline + Recent Orders */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <BarChart className="w-5 h-5 text-abel-walnut" />
@@ -202,7 +203,7 @@ export default function OpsDashboard() {
           <OrderPipeline byStatus={orders?.byStatus || {}} />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Package className="w-5 h-5 text-abel-amber" />
@@ -218,7 +219,7 @@ export default function OpsDashboard() {
 
       {/* Three-column: Alerts + Payment + Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-danger-500" />
             Workflow Alerts
@@ -226,7 +227,7 @@ export default function OpsDashboard() {
           <WorkflowAlerts />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Status</h3>
           <div className="space-y-3">
             <PaymentRow
@@ -259,7 +260,7 @@ export default function OpsDashboard() {
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             <span className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-abel-green" />
@@ -273,7 +274,7 @@ export default function OpsDashboard() {
 
       {/* Product Catalog + Top Builders */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Package className="w-5 h-5 text-abel-charcoal" />
@@ -300,7 +301,7 @@ export default function OpsDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Users className="w-5 h-5 text-abel-amber" />
@@ -327,7 +328,7 @@ export default function OpsDashboard() {
 
       {/* Revenue + Operations Health + PO Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Monthly Revenue</h3>
           <p className="text-3xl font-bold text-abel-walnut">{fmt(orders?.totalRevenue || 0)}</p>
           <p className="text-xs text-gray-500 mb-4">From {orders?.total || 0} orders</p>
@@ -353,7 +354,7 @@ export default function OpsDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Ops Health</h3>
           <div className="flex items-center justify-around mb-5">
             <ProgressRing
@@ -383,7 +384,7 @@ export default function OpsDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="panel p-5">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Order Volume</h3>
           <p className="text-3xl font-bold text-abel-amber">{orders?.total || 0}</p>
           <p className="text-xs text-gray-500 mb-4">Total orders processed</p>
@@ -411,7 +412,7 @@ export default function OpsDashboard() {
       </div>
 
       {/* Activity Feed */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="panel p-5">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-abel-walnut" />
           Live Activity Feed

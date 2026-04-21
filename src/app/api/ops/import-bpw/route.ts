@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/import-bpw — Import scraped BPW Pulte data into Abel OS
@@ -55,6 +56,10 @@ export async function POST(request: NextRequest) {
       fpos = [],
       schedules = [],
     } = body
+    audit(request, 'IMPORT_BPW', 'BpwImport', undefined, {
+      jobs: jobs.length, communities: communities.length, invoices: invoices.length,
+      checks: checks.length, fpos: fpos.length, schedules: schedules.length,
+    }, 'WARN').catch(() => {})
 
     const results: any = {
       communities: { created: 0, updated: 0, skipped: 0, errors: [] as string[] },

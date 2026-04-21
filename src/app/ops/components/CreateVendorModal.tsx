@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { X, AlertTriangle } from 'lucide-react'
 
 interface CreateVendorModalProps {
   onClose: () => void
@@ -27,10 +28,7 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,29 +67,28 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Add New Vendor</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-          >
-            ×
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="panel panel-elevated max-w-md w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+        <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between z-10">
+          <div>
+            <div className="eyebrow">Procurement</div>
+            <h2 className="text-lg font-semibold text-fg">Add New Vendor</h2>
+          </div>
+          <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-              {error}
+            <div className="panel panel-live p-3 flex items-start gap-2 text-sm text-data-negative">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Vendor Name *
-            </label>
+            <label className="label">Vendor Name <span className="text-data-negative">*</span></label>
             <input
               type="text"
               name="name"
@@ -99,14 +96,12 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               onChange={handleChange}
               required
               placeholder="e.g., DW Distribution"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Vendor Code *
-            </label>
+            <label className="label">Vendor Code <span className="text-data-negative">*</span></label>
             <input
               type="text"
               name="code"
@@ -114,121 +109,105 @@ export function CreateVendorModal({ onClose, onVendorCreated }: CreateVendorModa
               onChange={handleChange}
               required
               placeholder="e.g., DW, BC, MASO"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] font-mono"
+              className="input font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Contact Name
-            </label>
+            <label className="label">Contact Name</label>
             <input
               type="text"
               name="contactName"
               value={formData.contactName}
               onChange={handleChange}
               placeholder="John Smith"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="input"
             />
           </div>
 
-          <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="contact@vendor.com"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="contact@vendor.com"
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label">Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="(555) 123-4567"
+                className="input"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Phone
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="(555) 123-4567"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Address
-            </label>
+            <label className="label">Address</label>
             <input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleChange}
               placeholder="123 Main St, City, State 12345"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Website
-            </label>
+            <label className="label">Website</label>
             <input
               type="url"
               name="website"
               value={formData.website}
               onChange={handleChange}
               placeholder="https://www.vendor.com"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="input"
             />
           </div>
 
-          <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Account Number
-            </label>
-            <input
-              type="text"
-              name="accountNumber"
-              value={formData.accountNumber}
-              onChange={handleChange}
-              placeholder="Abel's account number with vendor"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Account Number</label>
+              <input
+                type="text"
+                name="accountNumber"
+                value={formData.accountNumber}
+                onChange={handleChange}
+                placeholder="Abel's acct #"
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label">Avg Lead Days</label>
+              <input
+                type="number"
+                name="avgLeadDays"
+                value={formData.avgLeadDays}
+                onChange={handleChange}
+                placeholder="5"
+                min="0"
+                className="input"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-              Average Lead Days
-            </label>
-            <input
-              type="number"
-              name="avgLeadDays"
-              value={formData.avgLeadDays}
-              onChange={handleChange}
-              placeholder="5"
-              min="0"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
-            />
-          </div>
-
-          <div className="border-t pt-4 flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+          <div className="border-t border-border pt-4 flex gap-2 justify-end">
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#C9822B] rounded-lg hover:bg-[#D46D1A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !formData.name || !formData.code}
+              className="btn btn-primary btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Vendor'}
             </button>

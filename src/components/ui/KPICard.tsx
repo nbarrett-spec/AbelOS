@@ -1,126 +1,83 @@
 'use client'
 
 import { type ReactNode } from 'react'
-import { clsx } from 'clsx'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
+import Sparkline from './Sparkline'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 export interface KPICardProps {
   title: string
-  value: string | number
+  /** Can be a primitive string/number OR a ReactNode (for AnimatedNumber, etc.) */
+  value: string | number | ReactNode
   /** e.g. "+12.5%" or "-3.2%" or "0%" */
   delta?: string
   deltaDirection?: 'up' | 'down' | 'flat'
-  /** Color accent for the left border / icon area */
-  accent?: 'navy' | 'orange' | 'green' | 'slate' | 'danger' | 'info'
+  /** Semantic accent — maps to data-positive / data-negative / forecast / accent / brand / neutral */
+  accent?: 'brand' | 'accent' | 'positive' | 'negative' | 'forecast' | 'neutral' | 'navy' | 'orange' | 'green' | 'slate' | 'danger' | 'info'
   icon?: ReactNode
-  /** Optional sparkline data (array of numbers) rendered as mini SVG */
+  /** Sparkline data (array of numbers) rendered as mini SVG */
   sparkline?: number[]
+  /** Subtitle or footnote — shown below delta */
   subtitle?: string
+  /** Indicates this KPI is a forecast/projected value (shows dashed border hint) */
+  forecast?: boolean
   loading?: boolean
+  onClick?: () => void
   className?: string
+  /** Extra badge slot (top-right) — e.g. "LIVE" or time-window */
+  badge?: ReactNode
 }
 
-const accentColors = {
-  navy: {
-    border: 'border-l-abel-walnut',
-    iconBg: 'bg-abel-walnut/8 text-abel-walnut dark:bg-abel-walnut/20',
-    sparkStroke: '#3E2A1E',
-  },
-  orange: {
-    border: 'border-l-abel-amber',
-    iconBg: 'bg-abel-amber/8 text-abel-amber dark:bg-abel-amber/20',
-    sparkStroke: '#C9822B',
-  },
-  green: {
-    border: 'border-l-success-500',
-    iconBg: 'bg-success-50 text-success-600 dark:bg-success-900/30',
-    sparkStroke: '#22c55e',
-  },
-  slate: {
-    border: 'border-l-gray-500',
-    iconBg: 'bg-gray-100 text-gray-600 dark:bg-gray-800',
-    sparkStroke: '#64748b',
-  },
-  danger: {
-    border: 'border-l-danger-500',
-    iconBg: 'bg-danger-50 text-danger-600 dark:bg-danger-900/30',
-    sparkStroke: '#ef4444',
-  },
-  info: {
-    border: 'border-l-info-500',
-    iconBg: 'bg-info-50 text-info-600 dark:bg-info-900/30',
-    sparkStroke: '#0ea5e9',
-  },
+// Legacy accent names map to semantic ones
+function normalizeAccent(a: KPICardProps['accent']): 'brand' | 'accent' | 'positive' | 'negative' | 'forecast' | 'neutral' {
+  switch (a) {
+    case 'navy':     return 'brand'
+    case 'orange':   return 'accent'
+    case 'green':    return 'positive'
+    case 'danger':   return 'negative'
+    case 'info':     return 'forecast'
+    case 'slate':    return 'neutral'
+    default:         return a ?? 'neutral'
+  }
 }
 
-// ── Mini sparkline SVG ────────────────────────────────────────────────────
+const ACCENT_STROKE: Record<string, string> = {
+  brand:    'var(--brand)',
+  accent:   'var(--accent)',
+  positive: 'var(--data-positive)',
+  negative: 'var(--data-negative)',
+  forecast: 'var(--forecast)',
+  neutral:  'var(--fg-muted)',
+}
 
-function Sparkline({ data, color }: { data: number[]; color: string }) {
-  if (data.length < 2) return null
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const range = max - min || 1
-  const w = 80
-  const h = 28
-  const pad = 2
+const ACCENT_RAIL: Record<string, string> = {
+  brand:    'bg-brand',
+  accent:   'bg-accent',
+  positive: 'bg-data-positive',
+  negative: 'bg-data-negative',
+  forecast: 'bg-forecast',
+  neutral:  'bg-border-strong',
+}
 
-  const points = data.map((v, i) => {
-    const x = pad + (i / (data.length - 1)) * (w - pad * 2)
-    const y = pad + (1 - (v - min) / range) * (h - pad * 2)
-    return `${x},${y}`
-  })
-
-  const fillPoints = [...points, `${w - pad},${h - pad}`, `${pad},${h - pad}`]
-
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
-      <defs>
-        <linearGradient id={`spark-fill-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.15} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <polygon
-        points={fillPoints.join(' ')}
-        fill={`url(#spark-fill-${color.replace('#', '')})`}
-      />
-      <polyline
-        points={points.join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* End dot */}
-      {data.length > 0 && (
-        <circle
-          cx={Number(points[points.length - 1].split(',')[0])}
-          cy={Number(points[points.length - 1].split(',')[1])}
-          r={2.5}
-          fill={color}
-        />
-      )}
-    </svg>
-  )
+const ACCENT_ICON_BG: Record<string, string> = {
+  brand:    'bg-brand-subtle text-accent-fg',
+  accent:   'bg-accent-subtle text-accent-fg',
+  positive: 'bg-data-positive-bg text-data-positive-fg',
+  negative: 'bg-data-negative-bg text-data-negative-fg',
+  forecast: 'bg-forecast-bg text-forecast-fg',
+  neutral:  'bg-surface-muted text-fg-muted',
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────
 
 function KPICardSkeleton({ className }: { className?: string }) {
   return (
-    <div
-      className={clsx(
-        'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800',
-        'border-l-4 border-l-gray-200 dark:border-l-gray-700 p-5 animate-pulse',
-        className
-      )}
-    >
-      <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-      <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-      <div className="h-3 w-16 bg-gray-100 dark:bg-gray-800 rounded" />
+    <div className={cn('panel p-4 flex flex-col gap-3 animate-pulse', className)}>
+      <div className="h-2.5 w-24 skeleton" />
+      <div className="h-8 w-32 skeleton" />
+      <div className="h-2.5 w-16 skeleton" />
     </div>
   )
 }
@@ -132,67 +89,88 @@ export default function KPICard({
   value,
   delta,
   deltaDirection,
-  accent = 'navy',
+  accent = 'neutral',
   icon,
   sparkline,
   subtitle,
+  forecast = false,
   loading = false,
+  onClick,
   className,
+  badge,
 }: KPICardProps) {
   if (loading) return <KPICardSkeleton className={className} />
 
-  const colors = accentColors[accent]
+  const semAccent = normalizeAccent(accent)
+  const strokeColor = ACCENT_STROKE[semAccent]
+  const rail = ACCENT_RAIL[semAccent]
+  const iconBg = ACCENT_ICON_BG[semAccent]
 
   // Auto-detect direction from delta string
   const dir = deltaDirection || (delta?.startsWith('+') ? 'up' : delta?.startsWith('-') ? 'down' : 'flat')
 
+  const interactive = !!onClick
+  const Tag = interactive ? 'button' : 'div'
+
   return (
-    <div
-      className={clsx(
-        'bg-white dark:bg-gray-900 rounded-xl',
-        'border border-gray-200 dark:border-gray-800',
-        'border-l-4',
-        colors.border,
-        'p-5 flex flex-col gap-1',
-        'transition-shadow duration-200 hover:shadow-elevation-2',
+    <Tag
+      onClick={onClick}
+      className={cn(
+        'relative panel overflow-hidden text-left w-full',
+        'px-4 pt-4 pb-4',
+        'flex flex-col gap-1',
+        'transition-[border-color,box-shadow] duration-fast ease-out',
+        interactive && 'cursor-pointer hover:border-border-strong hover:shadow-elevation-2',
+        forecast && 'border-dashed',
         className
       )}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</span>
-        {icon && (
-          <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center', colors.iconBg)}>
-            {icon}
-          </div>
-        )}
-      </div>
+      {/* Left accent rail */}
+      <span aria-hidden className={cn('absolute left-0 top-0 bottom-0 w-[2px]', rail)} />
 
-      <div className="flex items-end justify-between gap-3 mt-1">
-        <div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            {value}
-          </div>
-          {delta && (
-            <div
-              className={clsx('flex items-center gap-1 text-sm font-medium mt-1', {
-                'text-success-600 dark:text-success-400': dir === 'up',
-                'text-danger-600 dark:text-danger-400': dir === 'down',
-                'text-gray-500': dir === 'flat',
-              })}
-            >
-              {dir === 'up' && <TrendingUp className="h-3.5 w-3.5" />}
-              {dir === 'down' && <TrendingDown className="h-3.5 w-3.5" />}
-              {dir === 'flat' && <Minus className="h-3.5 w-3.5" />}
-              {delta}
-            </div>
-          )}
-          {subtitle && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <span className="eyebrow">{title}</span>
+        <div className="flex items-center gap-1.5 -mt-0.5">
+          {badge}
+          {icon && (
+            <span className={cn('w-7 h-7 rounded-md flex items-center justify-center', iconBg)}>
+              {icon}
+            </span>
           )}
         </div>
-
-        {sparkline && <Sparkline data={sparkline} color={colors.sparkStroke} />}
       </div>
-    </div>
+
+      {/* Value + sparkline */}
+      <div className="flex items-end justify-between gap-3 mt-1">
+        <div className="min-w-0">
+          <div className="metric metric-lg truncate">{value}</div>
+          {(delta || subtitle) && (
+            <div className="flex items-center gap-2 mt-1.5 min-w-0">
+              {delta && (
+                <span
+                  className={cn('delta shrink-0', {
+                    'delta-up':   dir === 'up',
+                    'delta-down': dir === 'down',
+                    'delta-flat': dir === 'flat',
+                  })}
+                >
+                  {dir === 'up' && <ArrowUpRight className="w-3 h-3" />}
+                  {dir === 'down' && <ArrowDownRight className="w-3 h-3" />}
+                  {dir === 'flat' && <Minus className="w-3 h-3" />}
+                  <span className="font-numeric">{delta}</span>
+                </span>
+              )}
+              {subtitle && (
+                <span className="text-[11px] text-fg-subtle truncate">{subtitle}</span>
+              )}
+            </div>
+          )}
+        </div>
+        {sparkline && sparkline.length > 1 && (
+          <Sparkline data={sparkline} color={strokeColor} width={72} height={28} />
+        )}
+      </div>
+    </Tag>
   )
 }

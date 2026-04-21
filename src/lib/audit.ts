@@ -1,6 +1,27 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest } from 'next/server'
 import { logger } from './logger'
+import { publishEvent } from './redis'
+
+// Entity → topic map for the live stream. Covers the common cases — anything
+// not listed here still publishes under its lowercased entity name so pages
+// can subscribe generically.
+const TOPIC_MAP: Record<string, string> = {
+  Order: 'orders',
+  PurchaseOrder: 'pos',
+  Invoice: 'ar',
+  Payment: 'ar',
+  Builder: 'builders',
+  Quote: 'quotes',
+  Delivery: 'deliveries',
+  Staff: 'staff',
+  Activity: 'activity',
+  AccountingAI: 'ai',
+}
+
+function topicFor(entity: string): string {
+  return TOPIC_MAP[entity] ?? entity.toLowerCase()
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 // Audit Log — tracks ALL sensitive changes across the platform.
@@ -83,6 +104,16 @@ export async function logAudit(params: {
       params.userAgent || null,
       params.severity || 'INFO'
     )
+    // Fan out a live event. Never blocks; never throws.
+    publishEvent({
+      topic: topicFor(params.entity),
+      entity: params.entity,
+      entityId: params.entityId,
+      action: params.action,
+      staffId: params.staffId,
+      at: new Date().toISOString(),
+      id,
+    }).catch(() => {})
     return id
   } catch (e) {
     logger.error('audit_log_write_failed', e, { action: params.action, entity: params.entity })

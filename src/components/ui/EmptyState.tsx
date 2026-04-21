@@ -91,33 +91,39 @@ export default function EmptyState({
 }: EmptyStateProps) {
   const s = sizeClasses[size]
 
-  // Determine the icon to render
-  let IconElement: ReactNode
+  // Determine the icon element
+  let FinalIcon: ReactNode
   if (typeof icon === 'string' && icon in iconMap) {
     const IconComp = iconMap[icon as EmptyStateIcon]
-    IconElement = <IconComp className={clsx(s.iconSize, 'text-gray-400 dark:text-gray-500')} />
+    FinalIcon = <IconComp className={clsx(s.iconSize, 'text-fg-subtle')} />
   } else {
-    IconElement = icon
+    FinalIcon = icon
   }
 
   return (
     <div className={clsx('flex flex-col items-center text-center', s.wrapper, className)}>
-      {/* Icon container with subtle gradient */}
+      {/* Icon container with depth — layered gradient + ring + subtle inner highlight */}
       <div
         className={clsx(
           s.iconBox,
-          'bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/50',
-          'flex items-center justify-center mb-4',
-          'ring-1 ring-gray-200/50 dark:ring-gray-700/50'
+          'relative flex items-center justify-center mb-4',
+          'bg-gradient-to-br from-surface-muted to-surface',
+          'ring-1 ring-border',
+          'shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_1px_2px_rgba(0,0,0,0.05)]',
         )}
       >
-        {IconElement}
+        {/* Subtle amber halo */}
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-[inherit] bg-accent-subtle opacity-40 blur-[1px]"
+        />
+        <span className="relative">{FinalIcon}</span>
       </div>
 
       {/* Text */}
-      <h3 className={clsx(s.title, 'font-semibold text-gray-900 dark:text-white')}>{title}</h3>
+      <h3 className={clsx(s.title, 'font-semibold text-fg tracking-tight')}>{title}</h3>
       {description && (
-        <p className={clsx(s.description, 'text-gray-500 dark:text-gray-400 mt-1.5 mx-auto')}>
+        <p className={clsx(s.description, 'text-fg-muted mt-1.5 mx-auto leading-snug')}>
           {description}
         </p>
       )}
@@ -138,14 +144,14 @@ export default function EmptyState({
             secondaryAction.href ? (
               <a
                 href={secondaryAction.href}
-                className="text-sm font-medium text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark transition-colors"
+                className="text-sm font-medium text-accent hover:text-accent-hover transition-colors"
               >
                 {secondaryAction.label}
               </a>
             ) : (
               <button
                 onClick={secondaryAction.onClick}
-                className="text-sm font-medium text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark transition-colors"
+                className="text-sm font-medium text-accent hover:text-accent-hover transition-colors"
               >
                 {secondaryAction.label}
               </button>

@@ -2892,3 +2892,27 @@ model InboxItem {
   @@index([entityType, entityId])
   @@index([createdAt(sort: Desc)])
 }
+
+// ─── AI INVOCATION LEDGER ────────────────────────────────────────────
+// Every Anthropic API call (via src/lib/ai/insights.ts) is recorded here so
+// we can rollup spend per endpoint, per staff, per day. The table is also
+// auto-created at runtime inside the helper so local/dev works without a
+// migration. A migration will be generated at the next `prisma migrate dev`.
+model AIInvocation {
+  id                String   @id @default(cuid())
+  endpoint          String
+  inputHash         String
+  model             String?
+  promptTokens      Int      @default(0)
+  completionTokens  Int      @default(0)
+  cacheReadTokens   Int      @default(0)
+  cacheWriteTokens  Int      @default(0)
+  costEstimate      Float    @default(0)
+  durationMs        Int      @default(0)
+  staffId           String?
+  createdAt         DateTime @default(now())
+
+  @@index([endpoint])
+  @@index([staffId])
+  @@index([createdAt(sort: Desc)])
+}

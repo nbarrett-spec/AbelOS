@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
   }
 
-  // Verify webhook signature
+  // Verify webhook signature. verifyWebhookSignature now uses
+  // crypto.timingSafeEqual (see src/lib/stripe.ts). Missing STRIPE_WEBHOOK_SECRET
+  // is treated as a hard failure everywhere — silently "processing in dev"
+  // was an audit-log gap.
   try {
     const valid = await verifyWebhookSignature(body, sig)
     if (!valid) {
@@ -26,11 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
   } catch (e: any) {
-    // If webhook secret isn't configured, log but still process in dev
-    console.warn('Webhook verification error:', e.message)
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Webhook verification failed' }, { status: 400 })
-    }
+    console.warn('Stripe webhook verification error:', e.message)
+    return NextResponse.json({ error: 'Webhook verification failed' }, { status: 400 })
   }
 
   const event = JSON.parse(body)

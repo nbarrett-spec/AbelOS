@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // ONE-TIME seed endpoint — create the initial admin account
 // DELETE THIS FILE after use for security
@@ -45,6 +46,8 @@ export async function POST(request: NextRequest) {
         hireDate: new Date(),
       },
     })
+
+    audit(request, 'SEED_ADMIN_ACCOUNT', 'Staff', staff.id, { email: staff.email, role: staff.role }, 'CRITICAL').catch(() => {})
 
     return NextResponse.json({
       success: true,

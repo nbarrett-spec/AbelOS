@@ -2,12 +2,15 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth';
+import { audit } from '@/lib/audit'
 
 // One-time migration: adds credit management columns to Vendor table
 // and creates InventoryAllocation table for SO-specific inventory
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request);
   if (authError) return authError;
+
+  audit(request, 'RUN_MIGRATE_VENDOR_CREDIT', 'Database', undefined, { migration: 'RUN_MIGRATE_VENDOR_CREDIT' }, 'CRITICAL').catch(() => {})
 
   const results: string[] = [];
 

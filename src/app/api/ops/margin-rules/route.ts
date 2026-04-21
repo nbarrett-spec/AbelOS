@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
 
 // Default margin protection rules (can be overridden via SystemConfig in future)
 const DEFAULT_RULES = [
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    audit(request, 'VALIDATE_MARGIN', 'Product', productId, { proposedPrice, quantity, builderId }).catch(() => {})
 
     // Fetch product
     const product: any[] = await prisma.$queryRawUnsafe(

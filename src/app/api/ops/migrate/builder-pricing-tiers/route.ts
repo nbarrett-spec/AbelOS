@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -6,6 +7,7 @@ export async function POST(request: NextRequest) {
   const results: string[] = []
 
   try {
+    audit(request, 'RUN_MIGRATE_BUILDER_PRICING_TIERS', 'Database', undefined, { migration: 'RUN_MIGRATE_BUILDER_PRICING_TIERS' }, 'CRITICAL').catch(() => {})
     // 1. Add pricingTier column to Builder
     try {
       await prisma.$queryRawUnsafe(`
