@@ -839,6 +839,11 @@ model Staff {
   // missing = use role-based default
   portalOverrides Json?    @default("{}")
 
+  // Per-user Aegis preferences (density, feature flags, first-view trackers).
+  // Shape: { density, featureFlags: { AEGIS_V2_DRAFTING_ROOM: boolean }, hasSeen: {...} }
+  // Migration: prisma/migrations/pending_staff_preferences.sql (not yet applied).
+  preferences     Json?
+
   // Relationships
   assignedJobs         Job[]                     @relation("AssignedPM")
   activities           Activity[]

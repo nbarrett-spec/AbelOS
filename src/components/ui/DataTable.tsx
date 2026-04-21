@@ -1,130 +1,119 @@
 'use client'
 
-import { type ReactNode, type HTMLAttributes, useState, useRef, useEffect, useCallback } from 'react'
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react'
+import Sparkline from './Sparkline'
 
-// ── Types ─────────────────────────────────────────────────────────────────
+// ── Aegis v2 "Drafting Room" DataTable ───────────────────────────────────
+// Virtualized with @tanstack/react-virtual. Sticky mono-overline header.
+// Gold active-sort underline. Row actions slide in on hover (120ms).
+// Density-aware row heights via --density-row-height token.
+// 80ms opacity content-fade on load.
+// ─────────────────────────────────────────────────────────────────────────
 
 export type SortDir = 'asc' | 'desc' | null
 
 export interface DataTableColumn<T> {
   key: string
   header: ReactNode
-  /** Render the cell — defaults to (row as any)[col.key] */
   cell?: (row: T, index: number) => ReactNode
-  /** Right-align + tabular-nums */
   numeric?: boolean
-  /** Sortable */
   sortable?: boolean
-  /** Server-side sort key (defaults to col.key) */
   sortKey?: string
-  /** CSS width value */
   width?: string
-  /** Hide on mobile */
   hideOnMobile?: boolean
-  /** Additional className for the column (applied to both th + td) */
   className?: string
-  /** Apply subtle percentile-based heatmap shading to numeric values.
-   *  Requires the column's cell() to return a number — or the cell value to be
-   *  a number on the row when no cell renderer is provided. */
   heatmap?: boolean
-  /** Raw value extractor for heatmap computation (optional). */
   heatmapValue?: (row: T) => number | null
+  /** Render as a Sparkline — expects number[] from the row */
+  sparkline?: boolean
+  sparklineValue?: (row: T) => number[] | null
 }
 
 export interface DataTableRowAction<T> {
-  /** Unique id, e.g. 'edit', 'email' */
   id: string
-  /** Icon element */
   icon: ReactNode
-  /** Accessible label / tooltip */
   label: string
-  /** Click handler */
   onClick: (row: T, index: number) => void
-  /** Optional keyboard shortcut hint (e.g. 'E', 'M') — purely for tooltip */
   shortcut?: string
-  /** Optional tone to color icon on hover */
   tone?: 'default' | 'danger'
-  /** Show only for rows that pass this predicate */
   show?: (row: T) => boolean
 }
 
 export interface DataTableProps<T> {
   columns: DataTableColumn<T>[]
   data: T[]
-  /** Unique row id — defaults to row.id */
   rowKey?: (row: T, index: number) => string
-  /** Row click handler */
   onRowClick?: (row: T, index: number) => void
-  /** Currently selected row IDs (controlled) */
   selectedKeys?: Set<string>
-  /** Density preset */
   density?: 'compact' | 'default' | 'comfortable'
-  /** Current sort column */
   sortBy?: string
   sortDir?: SortDir
-  /** Called when a sortable header is clicked */
   onSort?: (key: string) => void
-  /** Loading state — renders skeleton rows */
   loading?: boolean
   skeletonRows?: number
-  /** Empty state content */
   empty?: ReactNode
-  /** Keyboard nav hint shown in an overline row above the table */
   hint?: boolean
-  /** Rendered inside the sticky header on top */
   toolbar?: ReactNode
-  /** Footer row (for totals, pagination, etc.) */
   footer?: ReactNode
-  /** ClassName for the scrollable wrapper */
   className?: string
-  /** Test id */
   'data-testid'?: string
-  /** Inline row actions — fade in on row hover. Keyboard shortcuts trigger
-   *  for the focused/selected row (Enter=click, then action.shortcut char) */
   rowActions?: DataTableRowAction<T>[]
-  /** Enable keyboard row navigation (↑↓ / j/k, Enter to click) */
   keyboardNav?: boolean
+  /** Turn on virtualization (default: true when data.length > 50) */
+  virtualize?: boolean
+  /** Viewport max-height for the scroll container */
+  maxHeight?: number | string
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+const ROW_HEIGHT: Record<'compact' | 'default' | 'comfortable', number> = {
+  compact: 32,
+  default: 40,
+  comfortable: 48,
+}
 
-function computePercentiles<T>(rows: T[], col: DataTableColumn<T>): Map<number, number> {
+function computePercentiles<T>(
+  rows: T[],
+  col: DataTableColumn<T>,
+): Map<number, number> {
   const getter =
     col.heatmapValue ??
     ((r: T) => {
-      const v = (r as any)[col.key]
+      const v = (r as unknown as Record<string, unknown>)[col.key]
       return typeof v === 'number' ? v : null
     })
-  const values = rows.map(getter).filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
+  const values = rows
+    .map(getter)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
   if (values.length === 0) return new Map()
   const sorted = [...values].sort((a, b) => a - b)
-  const pctByIdx = new Map<number, number>()
+  const out = new Map<number, number>()
   rows.forEach((r, i) => {
     const v = getter(r)
     if (typeof v !== 'number' || !Number.isFinite(v)) return
-    // Find rank — equal values get equal percentile.
     const rank = sorted.indexOf(v)
-    pctByIdx.set(i, sorted.length <= 1 ? 0.5 : rank / (sorted.length - 1))
+    out.set(i, sorted.length <= 1 ? 0.5 : rank / (sorted.length - 1))
   })
-  return pctByIdx
+  return out
 }
 
-/** Build a subtle bg color for a given percentile (0..1). */
 function heatmapBg(pct: number): string {
-  // Mid (.5) = transparent, high = positive tint, low = negative tint.
-  // Cap alpha at 0.14 so values never feel garish on a dark canvas.
   if (pct >= 0.5) {
     const a = ((pct - 0.5) / 0.5) * 0.14
-    return `rgba(67, 153, 79, ${a.toFixed(3)})` // data-green-400
-  } else {
-    const a = ((0.5 - pct) / 0.5) * 0.12
-    return `rgba(182, 78, 61, ${a.toFixed(3)})` // data-red-400
+    return `rgba(67, 153, 79, ${a.toFixed(3)})`
   }
+  const a = ((0.5 - pct) / 0.5) * 0.12
+  return `rgba(182, 78, 61, ${a.toFixed(3)})`
 }
-
-// ── Component ─────────────────────────────────────────────────────────────
 
 export function DataTable<T>({
   columns,
@@ -145,55 +134,73 @@ export function DataTable<T>({
   className,
   rowActions,
   keyboardNav = true,
+  virtualize,
+  maxHeight = 600,
   ...props
 }: DataTableProps<T>) {
-  const getKey = (row: T, index: number): string => {
-    if (rowKey) return rowKey(row, index)
-    const id = (row as any)?.id
-    return id != null ? String(id) : String(index)
-  }
+  const rowHeight = ROW_HEIGHT[density]
+  const shouldVirtualize = virtualize ?? data.length > 50
 
-  // Precompute percentiles for heatmap columns once per render.
-  const heatmapMaps: Record<string, Map<number, number>> = {}
-  for (const col of columns) {
-    if (col.heatmap) heatmapMaps[col.key] = computePercentiles(data, col)
-  }
+  const getKey = useCallback(
+    (row: T, index: number): string => {
+      if (rowKey) return rowKey(row, index)
+      const id = (row as unknown as Record<string, unknown>)?.id
+      return id != null ? String(id) : String(index)
+    },
+    [rowKey],
+  )
 
-  // Keyboard nav state
-  const [focusIdx, setFocusIdx] = useState<number>(-1)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  const handleKey = useCallback((e: KeyboardEvent) => {
-    if (!keyboardNav) return
-    const isTyping = (e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA'
-    if (isTyping) return
-    // Only handle keys when user is focused on the table container or page
-    if (data.length === 0) return
-
-    if (e.key === 'ArrowDown' || e.key === 'j') {
-      e.preventDefault()
-      setFocusIdx(i => Math.min(data.length - 1, (i < 0 ? -1 : i) + 1))
-    } else if (e.key === 'ArrowUp' || e.key === 'k') {
-      e.preventDefault()
-      setFocusIdx(i => Math.max(0, (i < 0 ? 0 : i) - 1))
-    } else if (e.key === 'Enter' && focusIdx >= 0 && focusIdx < data.length) {
-      e.preventDefault()
-      onRowClick?.(data[focusIdx], focusIdx)
-    } else if (rowActions && focusIdx >= 0 && focusIdx < data.length) {
-      const char = e.key.toLowerCase()
-      const match = rowActions.find(a => a.shortcut?.toLowerCase() === char)
-      if (match && (!match.show || match.show(data[focusIdx]))) {
-        e.preventDefault()
-        match.onClick(data[focusIdx], focusIdx)
-      }
+  const heatmapMaps = useMemo(() => {
+    const out: Record<string, Map<number, number>> = {}
+    for (const col of columns) {
+      if (col.heatmap) out[col.key] = computePercentiles(data, col)
     }
-  }, [data, focusIdx, keyboardNav, onRowClick, rowActions])
+    return out
+  }, [columns, data])
+
+  const [focusIdx, setFocusIdx] = useState<number>(-1)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const virtualizer = useVirtualizer({
+    count: data.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => rowHeight,
+    overscan: 8,
+    enabled: shouldVirtualize,
+  })
+
+  const handleKey = useCallback(
+    (e: KeyboardEvent) => {
+      if (!keyboardNav) return
+      const tgt = e.target as HTMLElement | null
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA')) return
+      if (data.length === 0) return
+
+      if (e.key === 'ArrowDown' || e.key === 'j') {
+        e.preventDefault()
+        setFocusIdx((i) => Math.min(data.length - 1, (i < 0 ? -1 : i) + 1))
+      } else if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault()
+        setFocusIdx((i) => Math.max(0, (i < 0 ? 0 : i) - 1))
+      } else if (e.key === 'Enter' && focusIdx >= 0 && focusIdx < data.length) {
+        e.preventDefault()
+        onRowClick?.(data[focusIdx], focusIdx)
+      } else if (rowActions && focusIdx >= 0 && focusIdx < data.length) {
+        const char = e.key.toLowerCase()
+        const match = rowActions.find((a) => a.shortcut?.toLowerCase() === char)
+        if (match && (!match.show || match.show(data[focusIdx]))) {
+          e.preventDefault()
+          match.onClick(data[focusIdx], focusIdx)
+        }
+      }
+    },
+    [data, focusIdx, keyboardNav, onRowClick, rowActions],
+  )
 
   useEffect(() => {
     if (!keyboardNav) return
-    const el = containerRef.current
+    const el = scrollRef.current
     if (!el) return
-    // Only register when table is in viewport / focused.
     const onDocKey = (e: KeyboardEvent) => {
       if (!el.matches(':hover') && !el.contains(document.activeElement)) return
       handleKey(e)
@@ -202,24 +209,128 @@ export function DataTable<T>({
     return () => document.removeEventListener('keydown', onDocKey)
   }, [handleKey, keyboardNav])
 
+  const colsWithActions = rowActions ? columns.length + 1 : columns.length
+
+  function renderRow(row: T, i: number) {
+    const k = getKey(row, i)
+    const selected = selectedKeys?.has(k) ?? false
+    const focused = focusIdx === i
+    return (
+      <tr
+        key={k}
+        data-selected={selected || undefined}
+        data-focused={focused || undefined}
+        onClick={onRowClick ? () => onRowClick(row, i) : undefined}
+        onMouseEnter={keyboardNav ? () => setFocusIdx(i) : undefined}
+        className={cn('aegis-dt-row group/row', onRowClick && 'cursor-pointer')}
+        style={{ height: rowHeight }}
+      >
+        {columns.map((col) => {
+          let content: ReactNode
+          if (col.sparkline) {
+            const values =
+              col.sparklineValue?.(row) ??
+              ((row as unknown as Record<string, unknown>)[col.key] as
+                | number[]
+                | undefined)
+            content =
+              Array.isArray(values) && values.length > 1 ? (
+                <Sparkline data={values} width={48} height={16} />
+              ) : (
+                '—'
+              )
+          } else {
+            content = col.cell
+              ? col.cell(row, i)
+              : ((row as unknown as Record<string, unknown>)?.[col.key] as ReactNode) ?? '—'
+          }
+          let bgStyle: React.CSSProperties | undefined
+          if (col.heatmap) {
+            const p = heatmapMaps[col.key]?.get(i)
+            if (typeof p === 'number') bgStyle = { backgroundColor: heatmapBg(p) }
+          }
+          return (
+            <td
+              key={col.key}
+              className={cn(
+                'px-3 align-middle border-b border-border text-[13px]',
+                col.numeric && 'num text-right font-mono tabular-nums',
+                col.hideOnMobile && 'hidden sm:table-cell',
+                col.className,
+              )}
+              style={bgStyle}
+            >
+              {content}
+            </td>
+          )
+        })}
+        {rowActions && (
+          <td
+            className="row-actions-cell border-b border-border align-middle"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="aegis-dt-actions flex items-center gap-0.5 justify-end pr-2">
+              {rowActions
+                .filter((a) => !a.show || a.show(row))
+                .map((action) => (
+                  <button
+                    key={action.id}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      action.onClick(row, i)
+                    }}
+                    title={
+                      action.shortcut
+                        ? `${action.label} (${action.shortcut})`
+                        : action.label
+                    }
+                    aria-label={action.label}
+                    className={cn(
+                      'inline-flex items-center justify-center w-7 h-7 rounded-md text-fg-subtle',
+                      'hover:bg-surface-muted transition-colors',
+                      action.tone === 'danger'
+                        ? 'hover:text-[var(--ember)]'
+                        : 'hover:text-[var(--signal)]',
+                    )}
+                  >
+                    {action.icon}
+                  </button>
+                ))}
+            </div>
+          </td>
+        )}
+      </tr>
+    )
+  }
+
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 10)
+    return () => clearTimeout(t)
+  }, [])
+
   return (
-    <div ref={containerRef} className={cn('panel overflow-hidden flex flex-col', className)} {...props}>
+    <div
+      className={cn('panel overflow-hidden flex flex-col aegis-dt', className)}
+      data-density={density}
+      {...props}
+    >
       {toolbar && (
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border bg-surface">
           {toolbar}
         </div>
       )}
 
-      <div className="overflow-x-auto scrollbar-thin">
-        <table
-          className={cn(
-            'datatable',
-            density === 'compact' && 'density-compact',
-            density === 'comfortable' && 'density-comfortable',
-            rowActions && 'has-row-actions',
-          )}
-        >
-          <thead>
+      <div
+        ref={scrollRef}
+        className="overflow-auto scrollbar-thin"
+        style={{
+          maxHeight,
+          ['--density-row-height' as string]: `${rowHeight}px`,
+        }}
+      >
+        <table className="w-full border-separate border-spacing-0" style={{ minWidth: '100%' }}>
+          <thead className="sticky top-0 z-[1]">
             <tr>
               {columns.map((col) => {
                 const isSorted = sortBy === (col.sortKey ?? col.key)
@@ -227,118 +338,151 @@ export function DataTable<T>({
                 return (
                   <th
                     key={col.key}
+                    scope="col"
                     className={cn(
-                      col.numeric && 'num',
+                      'relative px-3 py-2.5 text-left align-middle',
+                      'text-[10px] font-mono font-semibold uppercase',
+                      'text-fg-muted',
+                      'bg-[var(--bg-raised,var(--surface-elevated))]',
+                      'border-b border-[var(--border-strong)]',
+                      col.numeric && 'text-right',
                       col.hideOnMobile && 'hidden sm:table-cell',
-                      col.className
+                      canSort && 'cursor-pointer select-none hover:text-fg transition-colors',
+                      isSorted && 'text-fg',
+                      col.className,
                     )}
-                    style={col.width ? { width: col.width } : undefined}
-                    aria-sort={isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    style={{
+                      letterSpacing: '0.22em',
+                      width: col.width,
+                    }}
+                    aria-sort={
+                      isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
+                    }
                     onClick={canSort ? () => onSort!(col.sortKey ?? col.key) : undefined}
                   >
-                    <span className={cn(
-                      'inline-flex items-center gap-1',
-                      col.numeric && 'justify-end w-full',
-                      canSort && 'cursor-pointer select-none'
-                    )}>
-                      {col.header}
-                      {canSort && (
-                        isSorted
-                          ? sortDir === 'asc'
-                            ? <ArrowUp className="w-3 h-3 text-accent" />
-                            : <ArrowDown className="w-3 h-3 text-accent" />
-                          : <ChevronsUpDown className="w-3 h-3 text-fg-subtle opacity-0 group-hover:opacity-100" />
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1',
+                        col.numeric && 'justify-end w-full',
                       )}
+                    >
+                      {col.header}
+                      {canSort &&
+                        (isSorted ? (
+                          sortDir === 'asc' ? (
+                            <ArrowUp className="w-3 h-3 text-[var(--signal)]" />
+                          ) : (
+                            <ArrowDown className="w-3 h-3 text-[var(--signal)]" />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="w-3 h-3 opacity-40" />
+                        ))}
                     </span>
+                    {isSorted && (
+                      <span
+                        aria-hidden
+                        className="absolute left-0 right-0 bottom-0 h-[2px]"
+                        style={{ background: 'var(--signal, var(--gold))' }}
+                      />
+                    )}
                   </th>
                 )
               })}
-              {rowActions && <th style={{ width: 1 }} aria-label="Actions" className="!bg-surface-muted" />}
+              {rowActions && (
+                <th
+                  style={{ width: 1 }}
+                  aria-label="Actions"
+                  className="bg-[var(--bg-raised,var(--surface-elevated))] border-b border-[var(--border-strong)]"
+                />
+              )}
             </tr>
           </thead>
-          <tbody>
+          <tbody
+            className="transition-opacity"
+            style={{
+              opacity: mounted ? 1 : 0,
+              transitionDuration: '80ms',
+              transitionTimingFunction: 'var(--ease)',
+            }}
+          >
             {loading && data.length === 0 ? (
               Array.from({ length: skeletonRows }).map((_, i) => (
-                <tr key={`sk-${i}`}>
+                <tr key={`sk-${i}`} style={{ height: rowHeight }}>
                   {columns.map((col) => (
-                    <td key={col.key} className={cn(col.numeric && 'num', col.hideOnMobile && 'hidden sm:table-cell')}>
-                      <span className="skeleton block h-3.5 w-[70%]" />
+                    <td
+                      key={col.key}
+                      className={cn(
+                        'px-3 border-b border-border',
+                        col.numeric && 'num text-right',
+                        col.hideOnMobile && 'hidden sm:table-cell',
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className="block h-3 rounded-sm"
+                        style={{
+                          background: 'var(--bg-sunken, var(--surface-muted))',
+                          width: '70%',
+                        }}
+                      />
                     </td>
                   ))}
-                  {rowActions && <td />}
+                  {rowActions && <td className="border-b border-border" />}
                 </tr>
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (rowActions ? 1 : 0)} className="text-center py-12 text-fg-muted">
-                  {empty ?? 'No results.'}
+                <td colSpan={colsWithActions} className="text-center py-12 text-fg-muted border-b-0">
+                  {empty ?? (
+                    <div className="flex flex-col items-center gap-3">
+                      <svg
+                        width="56"
+                        height="32"
+                        viewBox="0 0 56 32"
+                        aria-hidden
+                        className="text-[var(--signal)]"
+                      >
+                        <path
+                          d="M 4 28 L 20 8 L 36 20 L 52 4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeOpacity="0.5"
+                          strokeWidth="1.25"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <circle cx="52" cy="4" r="2" fill="currentColor" />
+                      </svg>
+                      <p className="text-[13px]">No data yet</p>
+                    </div>
+                  )}
                 </td>
               </tr>
-            ) : (
-              data.map((row, i) => {
-                const k = getKey(row, i)
-                const selected = selectedKeys?.has(k) ?? false
-                const focused = focusIdx === i
+            ) : shouldVirtualize ? (
+              (() => {
+                const items = virtualizer.getVirtualItems()
+                if (items.length === 0) return null
+                const totalSize = virtualizer.getTotalSize()
+                const paddingTop = items[0].start
+                const paddingBottom = totalSize - items[items.length - 1].end
                 return (
-                  <tr
-                    key={k}
-                    data-selected={selected || undefined}
-                    data-focused={focused || undefined}
-                    onClick={onRowClick ? () => onRowClick(row, i) : undefined}
-                    onMouseEnter={keyboardNav ? () => setFocusIdx(i) : undefined}
-                    className={cn(onRowClick && 'cursor-pointer group/row')}
-                  >
-                    {columns.map((col) => {
-                      const content = col.cell ? col.cell(row, i) : ((row as any)?.[col.key] ?? '—')
-                      let bgStyle: React.CSSProperties | undefined
-                      if (col.heatmap) {
-                        const p = heatmapMaps[col.key]?.get(i)
-                        if (typeof p === 'number') bgStyle = { backgroundColor: heatmapBg(p) }
-                      }
-                      return (
-                        <td
-                          key={col.key}
-                          className={cn(
-                            col.numeric && 'num',
-                            col.hideOnMobile && 'hidden sm:table-cell',
-                            col.className,
-                          )}
-                          style={bgStyle}
-                        >
-                          {content}
-                        </td>
-                      )
-                    })}
-                    {rowActions && (
-                      <td
-                        className="row-actions-cell"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="row-actions opacity-0 group-hover/row:opacity-100 group-[[data-focused=true]]/row:opacity-100 transition-opacity duration-fast flex items-center gap-0.5 justify-end pr-2">
-                          {rowActions.filter(a => !a.show || a.show(row)).map(action => (
-                            <button
-                              key={action.id}
-                              onClick={(e) => { e.stopPropagation(); action.onClick(row, i) }}
-                              title={action.shortcut ? `${action.label} (${action.shortcut})` : action.label}
-                              aria-label={action.label}
-                              className={cn(
-                                'inline-flex items-center justify-center w-7 h-7 rounded-md',
-                                'text-fg-subtle hover:bg-surface-muted',
-                                action.tone === 'danger'
-                                  ? 'hover:text-data-negative'
-                                  : 'hover:text-accent',
-                                'transition-colors',
-                              )}
-                            >
-                              {action.icon}
-                            </button>
-                          ))}
-                        </div>
-                      </td>
+                  <>
+                    {paddingTop > 0 && (
+                      <tr style={{ height: paddingTop }} aria-hidden>
+                        <td colSpan={colsWithActions} />
+                      </tr>
                     )}
-                  </tr>
+                    {items.map((vi) => renderRow(data[vi.index], vi.index))}
+                    {paddingBottom > 0 && (
+                      <tr style={{ height: paddingBottom }} aria-hidden>
+                        <td colSpan={colsWithActions} />
+                      </tr>
+                    )}
+                  </>
                 )
-              })
+              })()
+            ) : (
+              data.map((row, i) => renderRow(row, i))
             )}
           </tbody>
           {footer && <tfoot>{footer}</tfoot>}
@@ -347,18 +491,54 @@ export function DataTable<T>({
 
       {hint && (
         <div className="flex items-center justify-end gap-2 px-4 py-2 text-[11px] text-fg-subtle border-t border-border">
-          <span className="kbd">↑↓</span>
+          <kbd className="kbd">↑↓</kbd>
           <span>navigate</span>
-          <span className="kbd">↵</span>
+          <kbd className="kbd">↵</kbd>
           <span>open</span>
-          {rowActions?.map(a => a.shortcut ? (
-            <span key={a.id} className="inline-flex items-center gap-1">
-              <span className="kbd">{a.shortcut}</span>
-              <span>{a.label.toLowerCase()}</span>
-            </span>
-          ) : null)}
+          {rowActions?.map((a) =>
+            a.shortcut ? (
+              <span key={a.id} className="inline-flex items-center gap-1">
+                <kbd className="kbd">{a.shortcut}</kbd>
+                <span>{a.label.toLowerCase()}</span>
+              </span>
+            ) : null,
+          )}
         </div>
       )}
+
+      <style jsx>{`
+        .aegis-dt-row {
+          transition: background-color 120ms var(--ease);
+        }
+        .aegis-dt-row:hover {
+          background: var(--signal-subtle);
+        }
+        .aegis-dt-row[data-selected='true'] {
+          background: var(--signal-glow);
+        }
+        .aegis-dt-row[data-focused='true'] {
+          background: var(--signal-subtle);
+          box-shadow: inset 2px 0 0 var(--signal);
+        }
+        .aegis-dt-actions {
+          opacity: 0;
+          transform: translateX(8px);
+          transition:
+            opacity 120ms var(--ease),
+            transform 120ms var(--ease);
+        }
+        .aegis-dt-row:hover .aegis-dt-actions,
+        .aegis-dt-row[data-focused='true'] .aegis-dt-actions {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .aegis-dt-row,
+          .aegis-dt-actions {
+            transition-duration: 80ms !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

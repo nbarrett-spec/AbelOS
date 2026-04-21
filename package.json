@@ -15,14 +15,18 @@
     "db:seed-real": "tsx prisma/seed-real-data.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
     "@neondatabase/serverless": "^1.1.0",
+    "@number-flow/react": "^0.6.0",
     "@prisma/client": "^5.14.0",
     "@sentry/nextjs": "^10.47.0",
     "@sentry/node": "^10.47.0",
+    "@tanstack/react-virtual": "^3.13.24",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "bcryptjs": "^2.4.3",
@@ -51,6 +55,15 @@
     "prisma": "^5.14.0",
     "tailwindcss": "^3.4.3",
     "tsx": "^4.11.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "@storybook/addon-essentials": "^8.3.0",
+    "@storybook/addon-interactions": "^8.3.0",
+    "@storybook/addon-links": "^8.3.0",
+    "@storybook/addon-themes": "^8.3.0",
+    "@storybook/blocks": "^8.3.0",
+    "@storybook/nextjs": "^8.3.0",
+    "@storybook/react": "^8.3.0",
+    "@storybook/test": "^8.3.0",
+    "storybook": "^8.3.0"
   }
 }

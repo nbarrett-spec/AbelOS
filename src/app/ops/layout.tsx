@@ -18,6 +18,8 @@ import LiveClock from '@/components/ui/LiveClock'
 import HealthChip from '@/components/ui/HealthChip'
 import LiveDataIndicator from '@/components/ui/LiveDataIndicator'
 import RecentActivityDrawer from '@/components/ui/RecentActivityDrawer'
+import DensityToggle from '@/components/ui/DensityToggle'
+import SyncChip from '@/components/ui/SyncChip'
 import { useLiveTick } from '@/hooks/useLiveTopic'
 import type { StaffRole } from '@/lib/permissions'
 import {
@@ -656,6 +658,10 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
               </button>
 
               <GlobalSearch />
+
+              {/* Sync chip — live/catching-up/offline with dropdown */}
+              <SyncChip className="hidden sm:inline-flex" />
+
               <NotificationBell />
 
               {/* Date */}
@@ -666,6 +672,11 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
               {/* Live clock — America/Chicago */}
               <div className="hidden md:flex items-center ml-1">
                 <LiveClock />
+              </div>
+
+              {/* Density toggle — persists to localStorage + Staff.preferences */}
+              <div className="hidden md:flex items-center ml-1">
+                <DensityToggle role={staff?.role} compactLabels />
               </div>
 
               {/* Separator */}

@@ -4,6 +4,7 @@ import { type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 import Sparkline from './Sparkline'
+import NumberFlow from './NumberFlow'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,94 @@ const ACCENT_ICON_BG: Record<string, string> = {
   negative: 'bg-data-negative-bg text-data-negative-fg',
   forecast: 'bg-forecast-bg text-forecast-fg',
   neutral:  'bg-surface-muted text-fg-muted',
+}
+
+// ── Smart value renderer ──────────────────────────────────────────────────
+// If the value is a number, render via NumberFlow (integer).
+// If the value is a string matching a known numeric format ($X, X%, $X.XK, X,XXX),
+// parse and render via NumberFlow with appropriate format.
+// Otherwise, render as-is (e.g. for "—", "N/A", or ReactNodes).
+function renderValue(value: string | number | ReactNode): ReactNode {
+  if (typeof value === 'number') {
+    return <NumberFlow value={value} format="integer" />
+  }
+  if (typeof value !== 'string') {
+    return value
+  }
+
+  const s = value.trim()
+  if (!s || s === '—' || s === 'N/A' || /^[•]+$/.test(s)) return value
+
+  // Currency compact: $1.2M / $42K / $4.2K
+  const compactCurrency = s.match(/^\$(-?\d+(?:\.\d+)?)([MKB])$/i)
+  if (compactCurrency) {
+    const num = parseFloat(compactCurrency[1])
+    const unit = compactCurrency[2].toUpperCase()
+    const multiplier = unit === 'M' ? 1_000_000 : unit === 'K' ? 1_000 : 1_000_000_000
+    return (
+      <NumberFlow
+        value={num * multiplier}
+        format="currency"
+        formatOptions={{
+          style: 'currency',
+          currency: 'USD',
+          notation: 'compact',
+          maximumFractionDigits: 1,
+        }}
+      />
+    )
+  }
+
+  // Currency full: $1,234.56 / $1234
+  const fullCurrency = s.match(/^\$(-?[\d,]+(?:\.\d+)?)$/)
+  if (fullCurrency) {
+    const num = parseFloat(fullCurrency[1].replace(/,/g, ''))
+    if (Number.isFinite(num)) {
+      return <NumberFlow value={num} format="currency" />
+    }
+  }
+
+  // Percentage: 23.4% / +12.5% / -3.2%
+  const pct = s.match(/^([+\-]?\d+(?:\.\d+)?)%$/)
+  if (pct) {
+    const num = parseFloat(pct[1])
+    if (Number.isFinite(num)) {
+      return (
+        <NumberFlow
+          value={num}
+          format="decimal"
+          formatOptions={{ maximumFractionDigits: 1, minimumFractionDigits: 0 }}
+          suffix="%"
+        />
+      )
+    }
+  }
+
+  // Plain integer or comma-int: 1,847 / 42
+  const plainInt = s.match(/^(-?[\d,]+)$/)
+  if (plainInt) {
+    const num = parseFloat(plainInt[1].replace(/,/g, ''))
+    if (Number.isFinite(num)) {
+      return <NumberFlow value={num} format="integer" />
+    }
+  }
+
+  // Decimal with suffix unit: "4.2 days" / "120 units"
+  const numWithUnit = s.match(/^(-?\d+(?:\.\d+)?)\s+(.+)$/)
+  if (numWithUnit) {
+    const num = parseFloat(numWithUnit[1])
+    if (Number.isFinite(num)) {
+      return (
+        <NumberFlow
+          value={num}
+          format="decimal"
+          suffix={` ${numWithUnit[2]}`}
+        />
+      )
+    }
+  }
+
+  return value
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -144,7 +233,7 @@ export default function KPICard({
       {/* Value + sparkline */}
       <div className="flex items-end justify-between gap-3 mt-1">
         <div className="min-w-0">
-          <div className="metric metric-lg truncate">{value}</div>
+          <div className="metric metric-lg truncate">{renderValue(value)}</div>
           {(delta || subtitle) && (
             <div className="flex items-center gap-2 mt-1.5 min-w-0">
               {delta && (

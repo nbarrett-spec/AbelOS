@@ -9,7 +9,7 @@ import {
 import {
   PageHeader, KPICard, Badge, StatusBadge, DataTable, EmptyState,
   Card, CardHeader, CardTitle, CardDescription, CardBody,
-  AnimatedNumber, LiveDataIndicator, InfoTip,
+  NumberFlow, AnimatedNumber, LiveDataIndicator, InfoTip,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -159,14 +159,14 @@ export default function AccountsReceivablePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPICard
           title="Total Outstanding"
-          value={<AnimatedNumber value={totalOutstanding} format={fmtMoneyCompact} />}
+          value={fmtMoneyCompact(totalOutstanding)}
           subtitle={`${data.invoices.length} invoices`}
           icon={<Wallet className="w-3.5 h-3.5" />}
           accent="brand"
         />
         <KPICard
           title="Overdue"
-          value={<AnimatedNumber value={overdue} format={fmtMoneyCompact} />}
+          value={fmtMoneyCompact(overdue)}
           delta={`${overduePct.toFixed(1)}%`}
           deltaDirection={overduePct > 20 ? 'up' : 'flat'}
           subtitle="of total AR"
@@ -175,7 +175,7 @@ export default function AccountsReceivablePage() {
         />
         <KPICard
           title="60+ Day Exposure"
-          value={<AnimatedNumber value={data.agingBuckets.days60plus.amount} format={fmtMoneyCompact} />}
+          value={fmtMoneyCompact(data.agingBuckets.days60plus.amount)}
           subtitle={`${data.agingBuckets.days60plus.count} invoices`}
           icon={<Clock className="w-3.5 h-3.5" />}
           accent={data.agingBuckets.days60plus.amount > 0 ? 'negative' : 'positive'}
@@ -224,7 +224,7 @@ export default function AccountsReceivablePage() {
                 : b.tone === 'negative' ? 'text-data-negative'
                 : 'text-accent'
               )}>
-                <AnimatedNumber value={b.amount} format={fmtMoneyCompact} />
+                <NumberFlow value={b.amount} format="currency" formatOptions={{ style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }} />
               </div>
               <div className="text-[11px] text-fg-subtle flex items-center justify-between">
                 <span>{b.count} invoices</span>

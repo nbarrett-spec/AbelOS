@@ -1,15 +1,24 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
-import { clsx } from 'clsx'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import { cn } from '@/lib/utils'
 
-// ── Types ─────────────────────────────────────────────────────────────────
+// ── Aegis v2 "Drafting Room" Tabs ────────────────────────────────────────
+// Underline style: 2px gold bottom on active. Gold underline slides 180ms.
+// Inter 13px weight 500. Horizontal scroll with fade edges on mobile.
+// ─────────────────────────────────────────────────────────────────────────
 
 export interface Tab {
   id: string
   label: string
   icon?: ReactNode
   badge?: string | number
+  disabled?: boolean
 }
 
 export interface TabsProps {
@@ -22,9 +31,7 @@ export interface TabsProps {
   className?: string
 }
 
-// ── Component ─────────────────────────────────────────────────────────────
-
-export default function Tabs({
+export function Tabs({
   tabs,
   activeTab,
   onChange,
@@ -33,74 +40,130 @@ export default function Tabs({
   fullWidth = false,
   className,
 }: TabsProps) {
-  return (
-    <div
-      className={clsx(
-        'flex',
-        variant === 'underline' && 'border-b border-gray-200 dark:border-gray-800',
-        variant === 'pills' && 'bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1',
-        variant === 'enclosed' && 'bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5',
-        fullWidth && 'w-full',
-        className
-      )}
-      role="tablist"
-    >
-      {tabs.map((tab) => {
-        const active = tab.id === activeTab
+  const listRef = useRef<HTMLDivElement>(null)
+  const btnRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const [underline, setUnderline] = useState<{ left: number; width: number } | null>(null)
 
-        return (
-          <button
-            key={tab.id}
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(tab.id)}
-            className={clsx(
-              'relative inline-flex items-center justify-center gap-1.5 font-medium transition-all duration-150',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
-              fullWidth && 'flex-1',
-              // Size
-              size === 'sm' && 'px-3 py-1.5 text-xs',
-              size === 'md' && 'px-4 py-2 text-sm',
-              // Underline variant
-              variant === 'underline' && [
-                '-mb-px',
-                active
-                  ? 'text-brand dark:text-brand-hover border-b-2 border-brand dark:border-brand-hover'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border-b-2 border-transparent',
-              ],
-              // Pills variant
-              variant === 'pills' && [
-                'rounded-lg',
-                active
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
-              ],
-              // Enclosed variant
-              variant === 'enclosed' && [
-                'rounded-lg',
-                active
-                  ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700',
-              ]
-            )}
-          >
-            {tab.icon && <span className="shrink-0">{tab.icon}</span>}
-            {tab.label}
-            {tab.badge !== undefined && (
-              <span
-                className={clsx(
-                  'ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full leading-none',
+  useEffect(() => {
+    if (variant !== 'underline') return
+    const btn = btnRefs.current[activeTab]
+    const list = listRef.current
+    if (!btn || !list) {
+      setUnderline(null)
+      return
+    }
+    const listRect = list.getBoundingClientRect()
+    const btnRect = btn.getBoundingClientRect()
+    setUnderline({
+      left: btnRect.left - listRect.left + list.scrollLeft,
+      width: btnRect.width,
+    })
+  }, [activeTab, tabs, variant])
+
+  return (
+    <div className={cn('relative', className)}>
+      <div
+        ref={listRef}
+        role="tablist"
+        className={cn(
+          'flex relative overflow-x-auto scrollbar-thin',
+          variant === 'underline' && 'border-b border-border',
+          variant === 'pills' && 'bg-surface-muted rounded-lg p-1 gap-1',
+          variant === 'enclosed' && 'bg-surface-muted rounded-lg p-1 gap-0.5',
+          fullWidth && 'w-full',
+        )}
+        style={
+          variant === 'underline'
+            ? {
+                maskImage:
+                  'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)',
+                WebkitMaskImage:
+                  'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)',
+              }
+            : undefined
+        }
+      >
+        {tabs.map((tab) => {
+          const active = tab.id === activeTab
+          return (
+            <button
+              key={tab.id}
+              ref={(el) => { btnRefs.current[tab.id] = el }}
+              role="tab"
+              aria-selected={active}
+              aria-controls={`panel-${tab.id}`}
+              id={`tab-${tab.id}`}
+              disabled={tab.disabled}
+              onClick={() => !tab.disabled && onChange(tab.id)}
+              className={cn(
+                'relative inline-flex items-center justify-center gap-1.5 whitespace-nowrap',
+                'font-medium transition-colors duration-[180ms]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2',
+                tab.disabled && 'opacity-40 cursor-not-allowed',
+                fullWidth && 'flex-1',
+                size === 'sm' && 'px-3 py-1.5 text-[12px]',
+                size === 'md' && 'px-4 py-2 text-[13px]',
+                // Underline
+                variant === 'underline' && [
+                  '-mb-px',
                   active
-                    ? 'bg-brand/10 text-brand dark:bg-brand/30 dark:text-brand-hover'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                )}
-              >
-                {tab.badge}
-              </span>
-            )}
-          </button>
-        )
-      })}
+                    ? 'text-fg'
+                    : 'text-fg-muted hover:text-[var(--signal)]',
+                ],
+                // Pills
+                variant === 'pills' && [
+                  'rounded-md',
+                  active
+                    ? 'bg-surface text-fg shadow-sm'
+                    : 'text-fg-muted hover:text-fg',
+                ],
+                // Enclosed
+                variant === 'enclosed' && [
+                  'rounded-md',
+                  active
+                    ? 'bg-surface text-fg shadow-sm'
+                    : 'text-fg-muted hover:text-fg',
+                ],
+              )}
+              style={{
+                transitionTimingFunction: 'var(--ease)',
+                letterSpacing: '-0.005em',
+              }}
+            >
+              {tab.icon && <span className="shrink-0">{tab.icon}</span>}
+              {tab.label}
+              {tab.badge !== undefined && (
+                <span
+                  className={cn(
+                    'ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full leading-none tabular-nums',
+                    active
+                      ? 'bg-[var(--signal-subtle)] text-[var(--signal)]'
+                      : 'bg-surface-muted text-fg-muted',
+                  )}
+                >
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          )
+        })}
+
+        {variant === 'underline' && underline && (
+          <span
+            aria-hidden
+            className="absolute bottom-0 h-[2px] rounded-full pointer-events-none"
+            style={{
+              left: underline.left,
+              width: underline.width,
+              background: 'var(--signal, var(--gold))',
+              transition:
+                'left 180ms var(--ease), width 180ms var(--ease)',
+            }}
+          />
+        )}
+      </div>
     </div>
   )
 }
+
+export default Tabs

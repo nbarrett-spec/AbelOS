@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aegis v2 — The Drafting Room — Phase 1 Mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   AEGIS v2 — "THE DRAFTING ROOM"
+   Phase 1: Token System + Two Mocked Screens
+   Palette: OKLCH navy / gold / cream / walnut
+   ============================================================================ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── LAYER 1: PRIMITIVES (OKLCH with hex fallbacks) ────────────────────── */
+:root {
+  /* Navy scale — the room at dusk */
+  --navy-deep:   #050d16;   /* oklch(14% 0.03 250) */
+  --navy:        #0a1a28;   /* oklch(20% 0.035 245) */
+  --navy-mid:    #132d42;   /* oklch(27% 0.04 240) */
+  --navy-light:  #1a3d56;   /* oklch(34% 0.05 235) */
+
+  /* Paper — the mylar and onion-skin */
+  --mylar:       #f5f2eb;   /* oklch(98% 0.01 85) */
+  --onion:       #f9f5ec;   /* oklch(96% 0.015 80) */
+  --cream:       #F3EAD8;
+
+  /* Wood — the walnut desk */
+  --walnut:      #3E2A1E;   /* oklch(24% 0.045 50) */
+  --walnut-ink:  #2A1C14;
+  --kiln-oak:    #8B6F47;   /* oklch(48% 0.06 60) */
+
+  /* Metal — the brass hardware */
+  --brass:       #8B6F2A;   /* oklch(54% 0.1 75) */
+  --gold-dark:   #a88a3a;   /* oklch(58% 0.11 75) */
+  --gold:        #c6a24e;   /* oklch(70% 0.13 75) — primary signal */
+  --gold-light:  #e4c77a;   /* oklch(82% 0.1 80) — glow, shimmer */
+  --gold-glow:   rgba(198, 162, 78, 0.25);
+
+  /* Status */
+  --oxblood:     #6E2A24;   /* oklch(32% 0.09 22) */
+  --ember:       #b64e3d;   /* oklch(55% 0.18 32) */
+  --moss:        #2f7c3a;   /* oklch(55% 0.12 145) */
+  --sage:        #5caa68;   /* oklch(70% 0.1 145) */
+  --sky:         #8CA8B8;   /* oklch(70% 0.07 230) */
+  --dust:        #B8876B;   /* oklch(65% 0.07 50) */
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Motion */
+  --ease:        cubic-bezier(.2, .8, .2, 1);
+  --ease-draft:  cubic-bezier(0.6, 0.1, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-press:  cubic-bezier(0.22, 1.4, 0.36, 1);
+
+  /* Radii */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Spacing base: 4px */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px;
+}
+
+/* ── LAYER 2: SEMANTIC — DARK (primary, "Gainesville at dusk") ─────────── */
+:root.dark {
+  --bg-canvas:     var(--navy-deep);
+  --bg-surface:    var(--navy);
+  --bg-raised:     var(--navy-mid);
+  --bg-sunken:     var(--navy-deep);
+
+  --fg:            #f5f1e8;
+  --fg-muted:      #8a9aaa;
+  --fg-subtle:     #5a6a7a;
+  --fg-inverse:    var(--walnut);
+  --fg-on-accent:  var(--navy-deep);
+
+  --signal:        var(--gold);
+  --signal-hover:  var(--gold-light);
+  --signal-subtle: rgba(198, 162, 78, 0.12);
+  --signal-glow:   rgba(198, 162, 78, 0.25);
+
+  --border:        rgba(198, 162, 78, 0.08);
+  --border-strong: rgba(198, 162, 78, 0.18);
+  --border-focus:  var(--gold);
+
+  --ink-pencil:    var(--kiln-oak);
+  --grid-ink:      rgba(198, 162, 78, 0.06);
+
+  --success:       var(--sage);
+  --success-bg:    rgba(92, 170, 104, 0.10);
+  --danger:        var(--ember);
+  --danger-bg:     rgba(182, 78, 61, 0.12);
+  --warn:          var(--gold);
+  --warn-bg:       rgba(198, 162, 78, 0.10);
+  --info:          var(--sky);
+  --info-bg:       rgba(140, 168, 184, 0.10);
+
+  /* Elevation */
+  --elev-1: 0 1px 3px rgba(0,0,0,0.40), 0 1px 1px rgba(0,0,0,0.25);
+  --elev-2: 0 3px 8px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.30);
+  --elev-3: 0 8px 20px rgba(0,0,0,0.55), 0 3px 6px rgba(0,0,0,0.30);
+  --elev-4: 0 20px 48px rgba(0,0,0,0.60), 0 6px 14px rgba(0,0,0,0.35);
+  --elev-glow: 0 0 24px rgba(198, 162, 78, 0.15);
+
+  color-scheme: dark;
+}
+
+/* ── LAYER 2: SEMANTIC — LIGHT ("onion skin under task lighting") ──────── */
+:root.light {
+  --bg-canvas:     var(--mylar);
+  --bg-surface:    var(--onion);
+  --bg-raised:     #ffffff;
+  --bg-sunken:     #ede8dd;
+
+  --fg:            var(--walnut);
+  --fg-muted:      #6b5d4e;
+  --fg-subtle:     #9a8e7e;
+  --fg-inverse:    #f5f1e8;
+  --fg-on-accent:  #ffffff;
+
+  --signal:        var(--gold-dark);
+  --signal-hover:  var(--gold);
+  --signal-subtle: rgba(168, 138, 58, 0.08);
+  --signal-glow:   rgba(168, 138, 58, 0.15);
+
+  --border:        rgba(62, 42, 30, 0.10);
+  --border-strong: rgba(62, 42, 30, 0.20);
+  --border-focus:  var(--gold-dark);
+
+  --ink-pencil:    var(--walnut-ink);
+  --grid-ink:      rgba(168, 138, 58, 0.06);
+
+  --success:       var(--moss);
+  --success-bg:    rgba(47, 124, 58, 0.08);
+  --danger:        var(--oxblood);
+  --danger-bg:     rgba(110, 42, 36, 0.08);
+  --warn:          var(--gold-dark);
+  --warn-bg:       rgba(168, 138, 58, 0.08);
+  --info:          #5a7a8a;
+  --info-bg:       rgba(90, 122, 138, 0.08);
+
+  --elev-1: 0 1px 3px rgba(62, 42, 30, 0.06), 0 1px 1px rgba(62, 42, 30, 0.04);
+  --elev-2: 0 3px 8px rgba(62, 42, 30, 0.08), 0 1px 3px rgba(62, 42, 30, 0.05);
+  --elev-3: 0 8px 20px rgba(62, 42, 30, 0.10), 0 3px 6px rgba(62, 42, 30, 0.06);
+  --elev-4: 0 20px 48px rgba(62, 42, 30, 0.12), 0 6px 14px rgba(62, 42, 30, 0.07);
+  --elev-glow: 0 0 24px rgba(168, 138, 58, 0.10);
+
+  color-scheme: light;
+}
+
+/* ── BASE ──────────────────────────────────────────────────────────────── */
+html {
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'zero';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-canvas);
+  color: var(--fg);
+  line-height: 1.55;
+  font-size: 14px;
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--fg-on-accent);
+}
+
+/* ── PAPER GRAIN (Abel fingerprint) ────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.64 0 0 0 0 0.30 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+}
+
+/* ── DRAFTING GRID ─────────────────────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-ink) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 40%, transparent 85%);
+}
+
+/* ── LAYOUT ────────────────────────────────────────────────────────────── */
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 56px 1fr;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────────── */
+.header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-6);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(1.4) blur(16px);
+  -webkit-backdrop-filter: saturate(1.4) blur(16px);
+  position: relative;
+  z-index: 10;
+}
+
+.header-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--fg);
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-logo em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--signal);
+  font-size: 14px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.sync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-muted);
+  letter-spacing: 0.5px;
+}
+.sync-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.cmd-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--signal-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--fg-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 180ms var(--ease);
+}
+.cmd-trigger:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+.cmd-trigger kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 5px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-xs);
+  color: var(--fg-subtle);
+}
+
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--kiln-oak);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cream);
+  border: 2px solid transparent;
+  transition: border-color 240ms var(--ease);
+}
+.avatar.live {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 2px var(--signal-glow);
+}
+
+/* ── SIDEBAR ───────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding: var(--sp-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 0 var(--sp-3);
+}
+
+.sidebar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  padding: var(--sp-4) var(--sp-3) var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-label::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--signal);
+  opacity: 0.5;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: all 150ms var(--ease);
+  text-decoration: none;
+  position: relative;
+}
+.nav-item:hover {
+  background: var(--signal-subtle);
+  color: var(--fg);
+}
+.nav-item.active {
+  background: var(--signal-subtle);
+  color: var(--signal);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px; bottom: 6px;
+  width: 2px;
+  background: var(--signal);
+  border-radius: 1px;
+}
+.nav-icon {
+  width: 16px; height: 16px;
+  opacity: 0.65;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+
+.nav-badge {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ── MAIN CANVAS ───────────────────────────────────────────────────────── */
+.main {
+  padding: var(--sp-6);
+  overflow-y: auto;
+  position: relative;
+}
+
+/* ── EYEBROW (section label — port from Bloomfield) ────────────────────── */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--sp-2);
+}
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--signal);
+  opacity: 0.5;
+}
+
+/* ── PAGE TITLE (Playfair italic gold accent) ──────────────────────────── */
+.page-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  margin-bottom: var(--sp-1);
+}
+.page-title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--signal);
+}
+
+.page-subtitle {
+  color: var(--fg-muted);
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: var(--sp-6);
+}
+
+/* ── KPI STRIP ─────────────────────────────────────────────────────────── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4) var(--sp-5);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+.kpi-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--elev-2), var(--elev-glow);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.64 0 0 0 0 0.30 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.kpi-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  margin-bottom: var(--sp-2);
+}
+
+.kpi-value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: var(--sp-1);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+}
+.kpi-value .currency {
+  font-size: 18px;
+  color: var(--fg-muted);
+  font-weight: 500;
+  position: relative;
+  top: -4px;
+  margin-right: 2px;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+.delta-up { color: var(--success); }
+.delta-down { color: var(--danger); }
+.delta-flat { color: var(--fg-muted); }
+
+/* ── PANEL (workhorse card) ────────────────────────────────────────────── */
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='5'/%3E%3CfeColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.64 0 0 0 0 0.30 0 0 0 0.025 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 0;
+}
+.panel > * { position: relative; z-index: 1; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.panel-body {
+  padding: var(--sp-5);
+}
+
+/* Live rail — left 2px gold accent */
+.panel-live {
+  border-left: 2px solid var(--signal);
+}
+
+/* ── BADGE ─────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-danger  { background: var(--danger-bg);  color: var(--danger); }
+.badge-warn    { background: var(--warn-bg);    color: var(--warn); }
+.badge-info    { background: var(--info-bg);     color: var(--info); }
+
+/* ── BUTTON ────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 180ms var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: var(--fg-on-accent);
+  box-shadow: 0 2px 8px rgba(198, 162, 78, 0.25);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s var(--ease);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(198, 162, 78, 0.35);
+}
+.btn-primary:hover::before { left: 140%; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fg-muted);
+  border-color: var(--border);
+}
+.btn-ghost:hover {
+  color: var(--fg);
+  border-color: var(--border-strong);
+  background: var(--signal-subtle);
+}
+
+/* ── TABLE ─────────────────────────────────────────────────────────────── */
+.datatable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.datatable thead th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface);
+  z-index: 2;
+}
+.datatable thead th.num { text-align: right; }
+.datatable tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.datatable tbody td.num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+}
+.datatable tbody tr {
+  transition: background 150ms var(--ease);
+}
+.datatable tbody tr:hover {
+  background: var(--signal-subtle);
+}
+.datatable tbody tr:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--signal);
+}
+
+/* ── SPARKLINE (placeholder) ───────────────────────────────────────────── */
+.sparkline {
+  display: inline-block;
+  width: 48px;
+  height: 16px;
+  vertical-align: middle;
+}
+.sparkline svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── THEME TOGGLE ──────────────────────────────────────────────────────── */
+.theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  gap: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  box-shadow: var(--elev-3);
+}
+.theme-toggle button {
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 180ms var(--ease);
+  background: transparent;
+  color: var(--fg-muted);
+}
+.theme-toggle button.active {
+  background: var(--signal);
+  color: var(--fg-on-accent);
+}
+
+/* ── SCREEN SWITCHER ───────────────────────────────────────────────────── */
+.screen-switcher {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  gap: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  box-shadow: var(--elev-3);
+}
+.screen-switcher button {
+  padding: 8px 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 180ms var(--ease);
+  background: transparent;
+  color: var(--fg-muted);
+}
+.screen-switcher button.active {
+  background: var(--signal);
+  color: var(--fg-on-accent);
+}
+
+/* ── HERO SLOT (Yard Twin placeholder) ─────────────────────────────────── */
+.yard-twin-hero {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  background:
+    radial-gradient(ellipse 70% 50% at 20% 30%, rgba(198,162,78,0.08), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 70%, rgba(26,61,86,0.25), transparent 60%),
+    var(--bg-canvas);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--sp-6);
+}
+.yard-twin-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-ink) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 40%, transparent 85%);
+}
+.yard-twin-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-subtle);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── QUOTE DRAWER MOCK ─────────────────────────────────────────────────── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 13, 22, 0.7);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  z-index: 50;
+  display: none;
+}
+.drawer-overlay.visible { display: flex; justify-content: flex-end; }
+
+.drawer {
+  width: 580px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  position: relative;
+  animation: drawer-in 320ms var(--ease-spring) both;
+}
+@keyframes drawer-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.drawer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.64 0 0 0 0 0.30 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 0;
+}
+.drawer > * { position: relative; z-index: 1; }
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--sp-6);
+  border-bottom: 1px solid var(--border);
+}
+.drawer-close {
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 150ms var(--ease);
+}
+.drawer-close:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+/* Door explosion placeholder */
+.door-explosion {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(198,162,78,0.06), transparent),
+    var(--bg-canvas);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  position: relative;
+  overflow: hidden;
+}
+.door-explosion::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-ink) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+}
+
+.door-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-subtle);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+.door-name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--signal);
+  position: relative;
+  z-index: 1;
+}
+
+.drawer-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 var(--sp-5);
+}
+.drawer-tab {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 150ms var(--ease);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: var(--font-sans);
+}
+.drawer-tab:hover { color: var(--fg); }
+.drawer-tab.active {
+  color: var(--signal);
+  border-bottom-color: var(--signal);
+}
+
+.drawer-section {
+  padding: var(--sp-5);
+}
+
+.line-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  align-items: center;
+}
+.line-item:last-child { border-bottom: none; }
+
+.line-item-name { color: var(--fg); font-weight: 500; }
+.line-item-qty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.line-item-price {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-total {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-4) 0 0;
+  margin-top: var(--sp-3);
+  border-top: 2px solid var(--border-strong);
+}
+.line-total-label {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg);
+}
+.line-total-value {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--signal);
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.margin-bar {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--success-bg);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.margin-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--success);
+}
+.margin-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* ── REVEAL ANIMATION ──────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: revealUp 600ms var(--ease) forwards;
+}
+@keyframes revealUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal-d1 { animation-delay: 60ms; }
+.reveal-d2 { animation-delay: 120ms; }
+.reveal-d3 { animation-delay: 180ms; }
+.reveal-d4 { animation-delay: 240ms; }
+.reveal-d5 { animation-delay: 300ms; }
+
+/* ── SCREEN VISIBILITY ─────────────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── REDUCED MOTION ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 80ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     SCREEN 1: DASHBOARD SHELL
+     ════════════════════════════════════════════════════════════════════════ -->
+
+<div class="app-shell">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-logo">ABEL <em>Aegis</em></div>
+    <div class="header-right">
+      <div class="sync-chip"><span class="sync-dot"></span> Live · 2s</div>
+      <div class="cmd-trigger">Search… <kbd>⌘K</kbd></div>
+      <div class="avatar live">NB</div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Operations</div>
+      <a class="nav-item active" id="nav-dashboard">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
+        Orders
+      </a>
+      <a class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>
+        MRP
+      </a>
+      <a class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-5"/></svg>
+        Production
+      </a>
+      <a class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="4"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Logistics
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Revenue</div>
+      <a class="nav-item" id="nav-sales">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v12M5 5l3-3 3 3M4 9h8"/></svg>
+        Sales
+      </a>
+      <a class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2v12h12"/><path d="M5 10l3-3 2 2 4-4"/></svg>
+        Collections
+        <span class="nav-badge">3</span>
+      </a>
+      <a class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="8" rx="1"/><path d="M2 7h12"/></svg>
+        Finance
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ═══ DASHBOARD SCREEN ═══ -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="eyebrow reveal">Live Operations</div>
+      <h1 class="page-title reveal reveal-d1"><em>Live</em> Operations</h1>
+      <p class="page-subtitle reveal reveal-d2">Monday, April 20, 2026 · Gainesville, TX</p>
+
+      <!-- Yard Twin Hero Placeholder -->
+      <div class="yard-twin-hero reveal reveal-d3">
+        <span class="yard-twin-label">3D Yard Digital Twin · Module A · Phase 4b</span>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card reveal reveal-d3">
+          <div class="kpi-label">Open POs</div>
+          <div class="kpi-value">47</div>
+          <div class="delta delta-up">↑ 12% vs last wk</div>
+        </div>
+        <div class="kpi-card reveal reveal-d4">
+          <div class="kpi-label">AR &gt; 60 Days</div>
+          <div class="kpi-value"><span class="currency">$</span>182k</div>
+          <div class="delta delta-down">↓ 8% vs last mo</div>
+        </div>
+        <div class="kpi-card reveal reveal-d4">
+          <div class="kpi-label">DSO</div>
+          <div class="kpi-value">34<span style="font-size:16px;font-style:normal;color:var(--fg-subtle);margin-left:2px">d</span></div>
+          <div class="delta delta-flat">→ flat</div>
+        </div>
+        <div class="kpi-card reveal reveal-d5">
+          <div class="kpi-label">Today's Deliveries</div>
+          <div class="kpi-value">12</div>
+          <div class="delta delta-up">↑ 3 vs avg</div>
+        </div>
+        <div class="kpi-card reveal reveal-d5">
+          <div class="kpi-label">WIP Orders</div>
+          <div class="kpi-value">89</div>
+          <div class="delta delta-up">↑ 6%</div>
+        </div>
+      </div>
+
+      <!-- Exceptions Panel -->
+      <div class="panel panel-live reveal reveal-d5" style="margin-bottom:var(--sp-6)">
+        <div class="panel-header">
+          <span class="panel-title">Today's Exceptions</span>
+          <span class="badge badge-danger">4 Critical</span>
+        </div>
+        <div class="panel-body" style="padding:0">
+          <table class="datatable">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Builder</th>
+                <th>Issue</th>
+                <th>Status</th>
+                <th class="num">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">SO-24891</td>
+                <td>Pulte — Frisco Lakes Ph 4</td>
+                <td>Material shortage — 2-panel Shaker 2/8</td>
+                <td><span class="badge badge-danger">Short</span></td>
+                <td class="num">$4,280</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">SO-24903</td>
+                <td>Brookfield — Windsong Ranch</td>
+                <td>Delivery refused — wrong hardware spec</td>
+                <td><span class="badge badge-warn">Return</span></td>
+                <td class="num">$2,150</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">SO-24887</td>
+                <td>Bloomfield — Celina Lot 142</td>
+                <td>AR overdue — 67 days</td>
+                <td><span class="badge badge-danger">Overdue</span></td>
+                <td class="num">$8,940</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">SO-24912</td>
+                <td>Taylor Morrison — Light Farms</td>
+                <td>Production delay — trim casing backordered</td>
+                <td><span class="badge badge-warn">Delayed</span></td>
+                <td class="num">$3,620</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ QUOTE DRAWER TRIGGER (in Sales screen) ═══ -->
+    <div class="screen" id="screen-sales">
+      <div class="eyebrow reveal">Sales Pipeline</div>
+      <h1 class="page-title reveal reveal-d1"><em>Active</em> Quotes</h1>
+      <p class="page-subtitle reveal reveal-d2">Click any row to open the quote drawer</p>
+
+      <div class="panel reveal reveal-d3">
+        <div class="panel-body" style="padding:0">
+          <table class="datatable">
+            <thead>
+              <tr>
+                <th>Quote</th>
+                <th>Builder</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th class="num">Total</th>
+                <th class="num">Margin</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr onclick="openDrawer()" style="cursor:pointer">
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">QT-2026-0147</td>
+                <td>Bloomfield Homes</td>
+                <td>Ashford 2450 — Celina Ph 3</td>
+                <td><span class="badge badge-success">Approved</span></td>
+                <td class="num">$9,260</td>
+                <td class="num" style="color:var(--success)">52.8%</td>
+              </tr>
+              <tr style="cursor:pointer">
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">QT-2026-0148</td>
+                <td>Pulte Group</td>
+                <td>Hartford 3200 — Frisco Lakes</td>
+                <td><span class="badge badge-warn">Pending</span></td>
+                <td class="num">$14,880</td>
+                <td class="num" style="color:var(--success)">49.1%</td>
+              </tr>
+              <tr style="cursor:pointer">
+                <td style="font-family:var(--font-mono);font-size:12px;color:var(--signal)">QT-2026-0149</td>
+                <td>Brookfield</td>
+                <td>Monarch 2800 — Windsong</td>
+                <td><span class="badge badge-info">Draft</span></td>
+                <td class="num">$11,420</td>
+                <td class="num" style="color:var(--success)">51.3%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     QUOTE DRAWER (slides in from right)
+     ════════════════════════════════════════════════════════════════════════ -->
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <div class="eyebrow">Quote Detail</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-top:4px">QT-2026-0147</div>
+        <div style="font-size:13px;color:var(--fg-muted);margin-top:2px">Bloomfield Homes · Ashford 2450 · Celina Ph 3</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">×</button>
+    </div>
+
+    <!-- Door Explosion Placeholder -->
+    <div class="door-explosion">
+      <span class="door-label">3D Exploded View · Module D · Phase 4c</span>
+      <span class="door-name">Masonite 6-Panel Hollow Core</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="drawer-tabs">
+      <button class="drawer-tab active">Line Items</button>
+      <button class="drawer-tab">BoM</button>
+      <button class="drawer-tab">Timeline</button>
+      <button class="drawer-tab">Files</button>
+      <button class="drawer-tab">Audit</button>
+    </div>
+
+    <!-- Line Items -->
+    <div class="drawer-section">
+      <div class="line-item">
+        <span class="line-item-name">Interior Doors — 6P Hollow Core 2/8</span>
+        <span class="line-item-qty">× 15</span>
+        <span class="line-item-price">$2,250.00</span>
+      </div>
+      <div class="line-item">
+        <span class="line-item-name">Interior Doors — Shaker 1P Solid 2/8</span>
+        <span class="line-item-qty">× 3</span>
+        <span class="line-item-price">$1,080.00</span>
+      </div>
+      <div class="line-item">
+        <span class="line-item-name">Exterior — Therma-Tru Smooth-Star 3/0</span>
+        <span class="line-item-qty">× 1</span>
+        <span class="line-item-price">$1,420.00</span>
+      </div>
+      <div class="line-item">
+        <span class="line-item-name">Trim — Metrie Very Square 3¼" Base</span>
+        <span class="line-item-qty">× 840 LF</span>
+        <span class="line-item-price">$2,310.00</span>
+      </div>
+      <div class="line-item">
+        <span class="line-item-name">Trim — Metrie Very Square 2¼" Casing</span>
+        <span class="line-item-qty">× 520 LF</span>
+        <span class="line-item-price">$1,040.00</span>
+      </div>
+      <div class="line-item">
+        <span class="line-item-name">Hardware — Passage / Privacy / Dummy</span>
+        <span class="line-item-qty">× 18 sets</span>
+        <span class="line-item-price">$1,160.00</span>
+      </div>
+
+      <div class="line-total">
+        <span class="line-total-label">Total</span>
+        <span class="line-total-value">$9,260.00</span>
+      </div>
+
+      <div class="margin-bar">
+        <span class="margin-label">Gross Margin</span>
+        <span class="margin-value">52.8% · $4,889</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THEME TOGGLE -->
+<div class="theme-toggle">
+  <button class="active" id="btn-dark" onclick="setTheme('dark')">Dark</button>
+  <button id="btn-light" onclick="setTheme('light')">Light</button>
+</div>
+
+<!-- SCREEN SWITCHER -->
+<div class="screen-switcher">
+  <button class="active" id="sw-dashboard" onclick="showScreen('dashboard')">Dashboard</button>
+  <button id="sw-sales" onclick="showScreen('sales')">Quote Drawer</button>
+</div>
+
+<script>
+function setTheme(t) {
+  document.documentElement.className = t;
+  document.getElementById('btn-dark').classList.toggle('active', t === 'dark');
+  document.getElementById('btn-light').classList.toggle('active', t === 'light');
+}
+
+function showScreen(s) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  document.getElementById('screen-' + s).classList.add('active');
+  document.querySelectorAll('.screen-switcher button').forEach(el => el.classList.remove('active'));
+  document.getElementById('sw-' + s).classList.add('active');
+
+  // Update sidebar active state
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (s === 'dashboard') document.getElementById('nav-dashboard').classList.add('active');
+  if (s === 'sales') document.getElementById('nav-sales').classList.add('active');
+}
+
+function openDrawer() {
+  document.getElementById('drawerOverlay').classList.add('visible');
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('visible');
+}
+document.getElementById('drawerOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeDrawer();
+});
+
+// Nav items
+document.getElementById('nav-dashboard').addEventListener('click', () => showScreen('dashboard'));
+document.getElementById('nav-sales').addEventListener('click', () => showScreen('sales'));
+</script>
+</body>
+</html>

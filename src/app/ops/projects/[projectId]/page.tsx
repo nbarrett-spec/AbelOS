@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { PageHeader, Card, Badge, Button, KPICard } from '@/components/ui'
+import PresenceAvatars from '@/components/ui/PresenceAvatars'
 
 interface Milestone {
   kind: 'QUOTE' | 'ORDER' | 'JOB' | 'DELIVERY'
@@ -109,9 +110,12 @@ export default function ProjectTimelinePage() {
             { label: data.project.name },
           ]}
           actions={
-            <Badge variant="neutral" size="lg">
-              {data.project.status.replace('_', ' ')}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <PresenceAvatars recordId={data.project.id} recordType="project" />
+              <Badge variant="neutral" size="lg">
+                {data.project.status.replace('_', ' ')}
+              </Badge>
+            </div>
           }
         />
 

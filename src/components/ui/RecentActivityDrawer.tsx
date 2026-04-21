@@ -1,9 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Activity, X } from 'lucide-react'
 import { useLiveTick } from '@/hooks/useLiveTopic'
+import Avatar from './Avatar'
+import Sparkline from './Sparkline'
 
 interface LiveEventRow {
   topic: string
@@ -13,6 +15,28 @@ interface LiveEventRow {
   at: string
   staffId?: string
   id?: string
+  /** Optional actor display name */
+  actorName?: string
+  /** Optional numeric metric for inline sparkline */
+  metric?: number
+  /** Optional 30-day series for inline sparkline */
+  series?: number[]
+  /** Optional amount (for payment-like events) */
+  amount?: number
+}
+
+// Format "2m ago" / "3h ago" / "just now"
+function formatRelative(iso: string, nowMs: number): string {
+  const then = new Date(iso).getTime()
+  const ageSec = Math.max(0, Math.round((nowMs - then) / 1000))
+  if (ageSec < 5) return 'just now'
+  if (ageSec < 60) return `${ageSec}s ago`
+  const mins = Math.round(ageSec / 60)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.round(hrs / 24)
+  return `${days}d ago`
 }
 
 export interface RecentActivityDrawerProps {
@@ -34,6 +58,13 @@ export default function RecentActivityDrawer({ className }: RecentActivityDrawer
   const [loading, setLoading] = useState(false)
 
   const tick = useLiveTick(null)
+  const [nowMs, setNowMs] = useState(() => Date.now())
+
+  // Tick every 20s so relative timestamps update ("2m ago" → "3m ago")
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 20_000)
+    return () => clearInterval(t)
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -124,27 +155,57 @@ export default function RecentActivityDrawer({ className }: RecentActivityDrawer
             </div>
           )}
           <ul className="divide-y divide-border">
-            {events.map((e, i) => (
-              <li key={`${e.id || ''}-${i}`} className="px-4 py-2.5 hover:bg-surface-muted">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-fg-subtle">
-                    {new Date(e.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wide text-fg-subtle">{e.topic}</span>
-                </div>
-                <div className="text-[12px] text-fg mt-0.5">
-                  <span className="font-medium">{e.action}</span>
-                  {e.entity && <span className="text-fg-muted"> · {e.entity}</span>}
-                  {e.entityId && (
-                    <span className="font-mono text-fg-subtle"> · {e.entityId.slice(0, 8)}</span>
+            {events.map((e, i) => {
+              const actor = e.actorName || e.staffId || 'system'
+              const rel = formatRelative(e.at, nowMs)
+              return (
+                <li
+                  key={`${e.id || ''}-${i}`}
+                  className={cn(
+                    'px-4 py-2.5 hover:bg-surface-muted',
+                    'animate-[activityIn_240ms_var(--ease-spring,cubic-bezier(.34,1.56,.64,1))_both]',
                   )}
-                </div>
-                {e.staffId && e.staffId !== 'unknown' && (
-                  <div className="text-[10px] text-fg-subtle mt-0.5">by {e.staffId}</div>
-                )}
-              </li>
-            ))}
+                  style={{ animationDelay: i < 5 ? `${i * 18}ms` : '0ms' }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <Avatar name={actor} size="sm" className="mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] uppercase tracking-wide text-fg-subtle">{e.topic}</span>
+                        <span className="text-[11px] font-mono text-fg-subtle" suppressHydrationWarning>
+                          {rel}
+                        </span>
+                      </div>
+                      <div className="text-[12px] text-fg mt-0.5 flex items-center gap-2">
+                        <span className="font-medium">{actor}</span>
+                        <span className="text-fg-muted">{e.action}</span>
+                        {e.entity && <span className="text-fg-muted">{e.entity}</span>}
+                        {e.entityId && (
+                          <span className="font-mono text-fg-subtle">
+                            {e.entityId.slice(0, 8)}
+                          </span>
+                        )}
+                      </div>
+                      {Array.isArray(e.series) && e.series.length > 1 && (
+                        <div className="mt-1">
+                          <Sparkline data={e.series} width={140} height={20} showDot />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
+          <style jsx>{`
+            @keyframes activityIn {
+              0%   { opacity: 0; transform: translateY(-6px); }
+              100% { opacity: 1; transform: translateY(0); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              li { animation: none !important; }
+            }
+          `}</style>
         </div>
 
         <footer className="px-4 py-2 border-t border-border text-[10px] text-fg-subtle">

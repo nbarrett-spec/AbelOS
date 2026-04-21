@@ -1,134 +1,189 @@
 'use client'
 
-import { type ReactNode, type HTMLAttributes, type ThHTMLAttributes, type TdHTMLAttributes } from 'react'
-import { clsx } from 'clsx'
+import {
+  type HTMLAttributes,
+  type ReactNode,
+  type TdHTMLAttributes,
+  type ThHTMLAttributes,
+} from 'react'
+import { cn } from '@/lib/utils'
 
-// ── Root ──────────────────────────────────────────────────────────────────
+// ── Aegis v2 "Drafting Room" Table primitives ────────────────────────────
+// Dense, zebra-less, sticky header with mono overline. Rows separated by
+// 1px borders. Numeric cols right-aligned mono tabular-nums.
+// ─────────────────────────────────────────────────────────────────────────
 
-interface TableProps extends HTMLAttributes<HTMLDivElement> {
+interface TableProps extends HTMLAttributes<HTMLTableElement> {
   /** Wrap in a scrollable container */
   scrollable?: boolean
+  density?: 'compact' | 'default' | 'comfortable'
 }
 
-export function Table({ scrollable = true, className, children, ...props }: TableProps) {
+export function Table({
+  scrollable = true,
+  density = 'default',
+  className,
+  children,
+  ...props
+}: TableProps) {
   const table = (
-    <table className={clsx('w-full text-sm text-left', className)} {...props}>
+    <table
+      {...props}
+      className={cn(
+        'datatable w-full text-left',
+        density === 'compact' && 'density-compact',
+        density === 'comfortable' && 'density-comfortable',
+        className,
+      )}
+    >
       {children}
     </table>
   )
 
   if (!scrollable) return table
-
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+    <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-border">
       {table}
     </div>
   )
 }
 
-// ── Head ──────────────────────────────────────────────────────────────────
-
-export function TableHead({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
+export function TableHead({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <thead
-      className={clsx(
-        'bg-gray-50/80 dark:bg-gray-800/50',
-        'border-b border-gray-200 dark:border-gray-700',
-        className
-      )}
-      {...props}
-    >
+    <thead className={cn(className)} {...props}>
       {children}
     </thead>
   )
 }
 
-// ── Header cell ───────────────────────────────────────────────────────────
-
 interface TableHeaderProps extends ThHTMLAttributes<HTMLTableCellElement> {
   sortable?: boolean
   sorted?: 'asc' | 'desc' | false
+  numeric?: boolean
 }
 
-export function TableHeader({ sortable, sorted, className, children, ...props }: TableHeaderProps) {
+export function TableHeader({
+  sortable,
+  sorted,
+  numeric,
+  className,
+  children,
+  ...props
+}: TableHeaderProps) {
   return (
     <th
-      className={clsx(
-        'px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider',
-        sortable && 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200 transition-colors',
-        className
-      )}
       {...props}
+      aria-sort={
+        sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined
+      }
+      className={cn(
+        'px-3 py-2.5 text-[10px] font-mono font-semibold uppercase',
+        'tracking-[0.22em] leading-none',
+        'bg-[var(--bg-raised,var(--surface-elevated))] text-fg-muted',
+        'border-b border-[var(--border-strong)]',
+        numeric && 'num text-right',
+        sortable &&
+          'cursor-pointer select-none hover:text-fg transition-colors',
+        sorted && 'text-fg',
+        className,
+      )}
     >
-      <div className="flex items-center gap-1.5">
+      <span
+        className={cn(
+          'inline-flex items-center gap-1',
+          numeric && 'justify-end w-full',
+        )}
+      >
         {children}
-        {sorted === 'asc' && <span className="text-brand">↑</span>}
-        {sorted === 'desc' && <span className="text-brand">↓</span>}
-      </div>
+        {sorted === 'asc' && <span aria-hidden>↑</span>}
+        {sorted === 'desc' && <span aria-hidden>↓</span>}
+      </span>
+      {sorted && (
+        <span
+          aria-hidden
+          className="absolute left-0 right-0 bottom-0 h-[2px]"
+          style={{ background: 'var(--signal, var(--gold))' }}
+        />
+      )}
     </th>
   )
 }
 
-// ── Body ──────────────────────────────────────────────────────────────────
-
-export function TableBody({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
+export function TableBody({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <tbody
-      className={clsx('divide-y divide-gray-100 dark:divide-gray-800', className)}
-      {...props}
-    >
+    <tbody className={className} {...props}>
       {children}
     </tbody>
   )
 }
-
-// ── Row ───────────────────────────────────────────────────────────────────
 
 interface TableRowProps extends HTMLAttributes<HTMLTableRowElement> {
   clickable?: boolean
   selected?: boolean
 }
 
-export function TableRow({ clickable, selected, className, children, ...props }: TableRowProps) {
+export function TableRow({
+  clickable,
+  selected,
+  className,
+  children,
+  ...props
+}: TableRowProps) {
   return (
     <tr
-      className={clsx(
-        'transition-colors',
-        clickable && 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
-        selected && 'bg-brand/5 dark:bg-brand/10',
-        className
-      )}
       {...props}
+      data-selected={selected || undefined}
+      className={cn(
+        'transition-colors',
+        clickable && 'cursor-pointer',
+        className,
+      )}
     >
       {children}
     </tr>
   )
 }
 
-// ── Cell ──────────────────────────────────────────────────────────────────
-
 interface TableCellProps extends TdHTMLAttributes<HTMLTableCellElement> {
   mono?: boolean
   muted?: boolean
+  numeric?: boolean
 }
 
-export function TableCell({ mono, muted, className, children, ...props }: TableCellProps) {
+export function TableCell({
+  mono,
+  muted,
+  numeric,
+  className,
+  children,
+  ...props
+}: TableCellProps) {
   return (
     <td
-      className={clsx(
-        'px-4 py-3.5 text-gray-900 dark:text-gray-100',
-        mono && 'font-mono text-xs',
-        muted && 'text-gray-500 dark:text-gray-400',
-        className
-      )}
       {...props}
+      className={cn(
+        'px-3 py-2.5 text-[13px] border-b border-border',
+        'align-middle text-fg',
+        (mono || numeric) && 'font-mono tabular-nums',
+        numeric && 'num text-right',
+        muted && 'text-fg-muted',
+        className,
+      )}
     >
       {children}
     </td>
   )
 }
 
-// ── Empty state ───────────────────────────────────────────────────────────
+// ── Empty state — single drafting-line illustration ──────────────────────
 
 interface TableEmptyProps {
   icon?: ReactNode
@@ -140,24 +195,39 @@ interface TableEmptyProps {
 
 export function TableEmpty({
   icon,
-  title = 'No results',
+  title = 'No data yet',
   description,
   action,
   colSpan = 99,
 }: TableEmptyProps) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-16 text-center">
+      <td colSpan={colSpan} className="px-4 py-16 text-center border-0">
         <div className="flex flex-col items-center gap-3">
-          {icon && (
-            <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
-              {icon}
-            </div>
+          {icon ?? (
+            <svg
+              width="56"
+              height="32"
+              viewBox="0 0 56 32"
+              aria-hidden
+              className="text-[var(--signal)]"
+            >
+              <path
+                d="M 4 28 L 20 8 L 36 20 L 52 4"
+                fill="none"
+                stroke="currentColor"
+                strokeOpacity="0.5"
+                strokeWidth="1.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="52" cy="4" r="2" fill="currentColor" />
+            </svg>
           )}
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
+            <p className="text-[13px] font-medium text-fg-muted">{title}</p>
             {description && (
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{description}</p>
+              <p className="text-[12px] text-fg-subtle mt-1">{description}</p>
             )}
           </div>
           {action}
@@ -166,3 +236,5 @@ export function TableEmpty({
     </tr>
   )
 }
+
+export default Table

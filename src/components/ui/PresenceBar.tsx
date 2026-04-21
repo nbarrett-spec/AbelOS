@@ -106,7 +106,7 @@ export default function PresenceBar({
         {visible.map(u => (
           <Tooltip key={u.id} content={u.name}>
             <span className="ring-2 ring-canvas rounded-full inline-block">
-              <Avatar name={u.name} src={u.avatarUrl} size={compact ? 'xs' : 'sm'} />
+              <Avatar name={u.name} src={u.avatarUrl} size={compact ? 'sm' : 'md'} />
             </span>
           </Tooltip>
         ))}

@@ -129,7 +129,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Aegis" />
         {requestId && <meta name="x-request-id" content={requestId} />}
-        {/* Inline theme bootstrap — avoid FOUC, honor user's saved preference */}
+        {/* Inline theme + density bootstrap — avoid FOUC, honor user's saved preference */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -140,6 +140,13 @@ export default function RootLayout({
                   if (theme === 'dark') document.documentElement.classList.add('dark');
                   else document.documentElement.classList.remove('dark');
                 } catch(e) {}
+                try {
+                  var d = localStorage.getItem('aegis.density');
+                  if (d !== 'comfortable' && d !== 'default' && d !== 'compact') d = 'default';
+                  document.documentElement.setAttribute('data-density', d);
+                } catch(e) {
+                  document.documentElement.setAttribute('data-density', 'default');
+                }
               })();
             `,
           }}

@@ -3,17 +3,22 @@
 import { type HTMLAttributes, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-// ── Semantic variants (token-driven) ──────────────────────────────────────
+// ── Aegis v2 "Drafting Room" Badge ───────────────────────────────────────
+// Pill shape, 10px JetBrains Mono uppercase, leading 6px colored dot.
+// ─────────────────────────────────────────────────────────────────────────
+
+// Variants (canonical) + legacy aliases for back-compat
 const variants = {
-  neutral:  'bg-surface-muted text-fg-muted border-border',
+  default:  'bg-signal-subtle  text-accent-fg    border-transparent',
   success:  'bg-data-positive-bg text-data-positive-fg border-transparent',
-  warning:  'bg-data-warning-bg text-data-warning-fg border-transparent',
   danger:   'bg-data-negative-bg text-data-negative-fg border-transparent',
-  info:     'bg-data-info-bg text-data-info-fg border-transparent',
-  brand:    'bg-brand-subtle text-accent-fg border-transparent',
-  orange:   'bg-accent-subtle text-accent-fg border-transparent',
-  forecast: 'bg-forecast-bg text-forecast-fg border border-dashed border-forecast',
-  // Solid variants (high contrast)
+  warning:  'bg-data-warning-bg  text-data-warning-fg  border-transparent',
+  info:     'bg-data-info-bg     text-data-info-fg     border-transparent',
+  neutral:  'bg-surface-muted    text-fg-muted         border-border',
+  // Legacy aliases retained
+  brand:    'bg-brand-subtle     text-accent-fg        border-transparent',
+  orange:   'bg-signal-subtle    text-accent-fg        border-transparent',
+  forecast: 'bg-forecast-bg      text-forecast-fg      border border-dashed border-forecast',
   'success-solid': 'bg-data-positive text-white border-transparent',
   'danger-solid':  'bg-data-negative text-white border-transparent',
   'warning-solid': 'bg-accent text-fg-on-accent border-transparent',
@@ -21,25 +26,26 @@ const variants = {
 } as const
 
 const sizes = {
-  xs: 'px-1.5 py-0.5 text-[10px] gap-0.5',
-  sm: 'px-1.5 py-0.5 text-[11px] gap-1',
-  md: 'px-2 py-0.5 text-[11px] gap-1',
-  lg: 'px-2.5 py-1 text-xs gap-1.5',
+  xs: 'h-[16px] px-1.5  text-[9px]  gap-1',
+  sm: 'h-[18px] px-2    text-[10px] gap-1',
+  md: 'h-[20px] px-2.5  text-[10px] gap-1.5',
+  lg: 'h-[24px] px-3    text-[11px] gap-1.5',
 } as const
 
 const DOT_COLORS: Record<keyof typeof variants, string> = {
-  neutral:          'bg-fg-subtle',
-  success:          'bg-data-positive',
-  warning:          'bg-data-warning',
-  danger:           'bg-data-negative',
-  info:             'bg-data-info',
-  brand:            'bg-brand',
-  orange:           'bg-accent',
-  forecast:         'bg-forecast',
-  'success-solid':  'bg-white',
-  'danger-solid':   'bg-white',
-  'warning-solid':  'bg-white',
-  'brand-solid':    'bg-white',
+  default:  'bg-signal',
+  success:  'bg-data-positive',
+  danger:   'bg-data-negative',
+  warning:  'bg-signal',
+  info:     'bg-data-info',
+  neutral:  'bg-fg-subtle',
+  brand:    'bg-brand',
+  orange:   'bg-signal',
+  forecast: 'bg-forecast',
+  'success-solid': 'bg-white',
+  'danger-solid':  'bg-white',
+  'warning-solid': 'bg-white',
+  'brand-solid':   'bg-white',
 }
 
 export type BadgeVariant = keyof typeof variants
@@ -54,31 +60,38 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   pill?: boolean
 }
 
-export default function Badge({
-  variant = 'neutral',
+export function Badge({
+  variant = 'default',
   size = 'md',
   dot = false,
   icon,
-  pill = false,
+  pill = true,
   className,
   children,
   ...props
 }: BadgeProps) {
   return (
     <span
+      {...props}
       className={cn(
-        'inline-flex items-center font-medium leading-none border tabular-nums',
+        'inline-flex items-center justify-center font-mono font-semibold uppercase leading-none',
+        'tabular-nums whitespace-nowrap',
         pill ? 'rounded-full' : 'rounded-sm',
+        'border',
         variants[variant],
         sizes[size],
-        className
+        className,
       )}
-      {...props}
+      style={{
+        letterSpacing: '0.06em',
+        ...(props.style ?? {}),
+      }}
     >
       {dot && (
         <span
-          className={cn('w-1.5 h-1.5 rounded-full shrink-0', DOT_COLORS[variant])}
           aria-hidden
+          className={cn('shrink-0 rounded-full', DOT_COLORS[variant])}
+          style={{ width: 6, height: 6 }}
         />
       )}
       {icon && <span className="shrink-0 -ml-0.5">{icon}</span>}
@@ -88,9 +101,7 @@ export default function Badge({
 }
 
 // ── Status badge — maps Abel OS order statuses to semantic colors ─────────
-
 const STATUS_MAP: Record<string, { variant: BadgeVariant; label: string }> = {
-  // Orders
   RECEIVED:       { variant: 'info',     label: 'Received' },
   CONFIRMED:      { variant: 'brand',    label: 'Confirmed' },
   IN_PRODUCTION:  { variant: 'warning',  label: 'In Production' },
@@ -102,15 +113,13 @@ const STATUS_MAP: Record<string, { variant: BadgeVariant; label: string }> = {
   STALLED:        { variant: 'danger',   label: 'Stalled' },
   OVERDUE:        { variant: 'danger',   label: 'Overdue' },
   FORECAST:       { variant: 'forecast', label: 'Forecast' },
-  // Payment
   UNPAID:         { variant: 'warning',  label: 'Unpaid' },
   PARTIAL:        { variant: 'warning',  label: 'Partial' },
   PAID:           { variant: 'success',  label: 'Paid' },
   REFUNDED:       { variant: 'neutral',  label: 'Refunded' },
-  // PO
   OPEN:           { variant: 'brand',    label: 'Open' },
   ORDERED:        { variant: 'info',     label: 'Ordered' },
-  PARTIAL_RECEIVED: { variant: 'warning',label: 'Partial' },
+  PARTIAL_RECEIVED: { variant: 'warning', label: 'Partial' },
   CLOSED:         { variant: 'neutral',  label: 'Closed' },
 }
 
@@ -129,3 +138,5 @@ export function StatusBadge({ status, size = 'sm', label, className }: StatusBad
     </Badge>
   )
 }
+
+export default Badge

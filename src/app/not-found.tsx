@@ -1,36 +1,101 @@
+/**
+ * 404 — Aegis v2 "Drafting Room" styling.
+ * Navy canvas, a half-open Dutch-door blueprint (using the shared library),
+ * and "Nothing here" in Playfair Display italic.
+ */
+
 import Link from 'next/link'
+import BlueprintAnimation from '@/components/BlueprintAnimation'
 
 export default function NotFound() {
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-6 py-16 bg-gray-50">
-      <div className="max-w-lg w-full text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-brand/10 text-brand mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
+    <div
+      className="min-h-screen flex items-center justify-center px-6 py-12 relative overflow-hidden"
+      style={{ backgroundColor: 'var(--navy-deep, #050d16)', color: '#f5f1e8' }}
+    >
+      {/* Drafting grid */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(198,162,78,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(198,162,78,0.06) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+          maskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%)',
+        }}
+      />
+
+      <div className="relative flex flex-col lg:flex-row items-center gap-12 max-w-4xl w-full">
+        <div
+          className="w-full max-w-[320px] mx-auto"
+          style={{ color: 'var(--gold, #c6a24e)' }}
+        >
+          <BlueprintAnimation
+            id="dutch"
+            loop={false}
+            duration={4200}
+            strokeWidth={1.2}
+            ariaLabel="An open Dutch door"
+          />
         </div>
-        <p className="text-sm font-semibold tracking-wider text-signal uppercase mb-2">404</p>
-        <h1 className="text-3xl font-bold text-brand mb-3">Page not found</h1>
-        <p className="text-gray-600 mb-8 leading-relaxed">
-          The page you&rsquo;re looking for doesn&rsquo;t exist or may have been moved. Let&rsquo;s get you back on track.
-        </p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <Link href="/portal" className="btn-primary">
-            Builder portal
-          </Link>
-          <Link href="/ops" className="btn-outline">
-            Admin
-          </Link>
-          <Link href="/" className="btn-outline">
-            Home
-          </Link>
+
+        <div className="flex-1 text-center lg:text-left">
+          <p
+            className="font-mono text-[10px] uppercase tracking-[0.24em] mb-3"
+            style={{ color: '#c6a24e' }}
+          >
+            <span
+              aria-hidden
+              className="inline-block w-7 h-px align-middle mr-2"
+              style={{ background: '#c6a24e' }}
+            />
+            404
+          </p>
+          <h1
+            className="text-[44px] leading-[1.02] tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display, Georgia, serif)',
+              fontStyle: 'italic',
+              color: '#f5f1e8',
+            }}
+          >
+            Nothing here.
+          </h1>
+          <p className="mt-4 text-[13px] leading-relaxed max-w-md mx-auto lg:mx-0" style={{ color: '#8a9aaa' }}>
+            The page you&rsquo;re looking for doesn&rsquo;t exist — or it moved.
+            Let&rsquo;s get you back to somewhere useful.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center h-10 px-5 rounded-md font-semibold text-[13px]"
+              style={{
+                background: 'linear-gradient(3deg, #c6a24e, #a88a3a)',
+                color: '#050d16',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3), 0 0 16px rgba(198,162,78,0.12)',
+              }}
+            >
+              Back to dashboard
+            </Link>
+            <Link
+              href="/ops"
+              className="inline-flex items-center justify-center h-10 px-5 rounded-md font-medium text-[13px]"
+              style={{
+                border: '1px solid rgba(198,162,78,0.25)',
+                color: '#f5f1e8',
+              }}
+            >
+              Ops portal
+            </Link>
+          </div>
+
+          <p className="mt-8 text-[11px] font-mono" style={{ color: '#5a6a7a' }}>
+            Need help? <a href="mailto:support@abellumber.com" className="underline" style={{ color: '#c6a24e' }}>support@abellumber.com</a>
+          </p>
         </div>
-        <p className="mt-8 text-sm text-gray-500">
-          Need help? Contact{' '}
-          <a href="mailto:support@abellumber.com" className="text-brand hover:underline font-medium">
-            support@abellumber.com
-          </a>
-        </p>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DocumentPanel from '@/components/DocumentPanel'
+import PresenceAvatars from '@/components/ui/PresenceAvatars'
 
 const STATUS_COLORS: Record<string, string> = {
   CREATED: '#95A5A6',
@@ -291,6 +292,7 @@ export default function JobDetailPage() {
           <p className="text-gray-500 mt-1">{job.builderName} — {job.community || 'No community'}{job.lotBlock ? ` • ${job.lotBlock}` : ''}</p>
         </div>
         <div className="flex items-center gap-2">
+          <PresenceAvatars recordId={job.id} recordType="job" />
           {nextStatus && (
             <button
               onClick={advanceStatus}

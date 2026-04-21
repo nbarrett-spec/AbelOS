@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import PresenceAvatars from '@/components/ui/PresenceAvatars'
 
 interface BuilderDetail {
   id: string
@@ -561,6 +562,7 @@ export default function AccountDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <PresenceAvatars recordId={builder.id} recordType="account" />
             {builder.builderType === 'PRODUCTION' && (
               <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">
                 Production
