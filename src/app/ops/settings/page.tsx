@@ -21,8 +21,8 @@ interface SystemSettings {
   [key: string]: string
 }
 
-const BLUE = '#3E2A1E'
-const ORANGE = '#C9822B'
+const BLUE = '#0f2a3e'
+const ORANGE = '#C6A24E'
 const WHITE = '#FFFFFF'
 
 export default function SettingsPage() {

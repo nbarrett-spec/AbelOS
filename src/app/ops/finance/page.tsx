@@ -134,7 +134,7 @@ export default function FinancialDashboard() {
 
       {/* Cash Position Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <Link href="/ops/finance/ar" className="block bg-white rounded-lg shadow p-6 border-l-4 border-[#3E2A1E] hover:shadow-lg transition-shadow cursor-pointer">
+        <Link href="/ops/finance/ar" className="block bg-white rounded-lg shadow p-6 border-l-4 border-[#0f2a3e] hover:shadow-lg transition-shadow cursor-pointer">
           <div className="text-gray-500 text-sm font-medium">Total AR (Outstanding)</div>
           <div className="text-2xl font-bold text-gray-900 mt-2">
             {canViewFinancials ? formatCurrency(data.cashPosition.totalAR) : restricted}
@@ -142,7 +142,7 @@ export default function FinancialDashboard() {
           <p className="text-xs text-gray-400 mt-2">Accounts receivable due</p>
         </Link>
 
-        <Link href="/ops/finance/ap" className="block bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B] hover:shadow-lg transition-shadow cursor-pointer">
+        <Link href="/ops/finance/ap" className="block bg-white rounded-lg shadow p-6 border-l-4 border-[#C6A24E] hover:shadow-lg transition-shadow cursor-pointer">
           <div className="text-gray-500 text-sm font-medium">Total AP (Open)</div>
           <div className="text-2xl font-bold text-gray-900 mt-2">
             {canViewFinancials ? formatCurrency(data.cashPosition.totalAP) : restricted}
@@ -187,7 +187,7 @@ export default function FinancialDashboard() {
 
       {/* AI Cash Flow Intelligence */}
       {cashFlowHealth && (
-        <div className="bg-gradient-to-r from-[#3E2A1E] to-[#2E86C1] rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-[#0f2a3e] to-[#2E86C1] rounded-lg shadow p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">🧠</span>
@@ -326,7 +326,7 @@ export default function FinancialDashboard() {
           <div className="mt-4 pt-4 border-t">
             <div className="flex justify-between items-center">
               <div className="text-sm font-medium text-gray-600">Total Open POs</div>
-              <div className="text-lg font-bold text-[#C9822B]">
+              <div className="text-lg font-bold text-[#C6A24E]">
                 {canViewFinancials ? formatCurrency(data.apSummary.reduce((sum, v) => sum + v.total, 0)) : restricted}
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function FinancialDashboard() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
-                    className="h-3 rounded-full bg-gradient-to-r from-[#3E2A1E] to-[#C9822B] transition-all"
+                    className="h-3 rounded-full bg-gradient-to-r from-[#0f2a3e] to-[#C6A24E] transition-all"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
@@ -429,7 +429,7 @@ export default function FinancialDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#0D2847] rounded-lg shadow p-6 text-white">
+      <div className="bg-gradient-to-r from-[#0f2a3e] to-[#0D2847] rounded-lg shadow p-6 text-white">
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <button onClick={() => router.push('/ops/invoices')} className="bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded font-semibold transition">

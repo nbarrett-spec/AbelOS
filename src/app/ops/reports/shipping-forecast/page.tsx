@@ -127,7 +127,7 @@ export default function ShippingForecastPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <a href="/ops/reports" className="text-sm text-gray-400 hover:text-[#3E2A1E] transition">&larr; Reports</a>
+            <a href="/ops/reports" className="text-sm text-gray-400 hover:text-[#0f2a3e] transition">&larr; Reports</a>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Shipping Forecast</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -146,7 +146,7 @@ export default function ShippingForecastPage() {
                 key={opt.value}
                 onClick={() => setDays(opt.value)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
-                  days === opt.value ? 'bg-white shadow text-[#3E2A1E]' : 'text-gray-500 hover:text-gray-700'
+                  days === opt.value ? 'bg-white shadow text-[#0f2a3e]' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 {opt.label}
@@ -157,7 +157,7 @@ export default function ShippingForecastPage() {
             onClick={handleDownload}
             disabled={downloading || loading || !data?.orders?.length}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition disabled:opacity-50"
-            style={{ backgroundColor: '#3E2A1E' }}
+            style={{ backgroundColor: '#0f2a3e' }}
           >
             {downloading ? (
               <>
@@ -176,7 +176,7 @@ export default function ShippingForecastPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : !data || !data.orders?.length ? (
         <div className="bg-white rounded-xl border p-12 text-center">
@@ -190,12 +190,12 @@ export default function ShippingForecastPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <div className="bg-white rounded-xl border p-5">
               <p className="text-sm text-gray-500">Orders Shipping</p>
-              <p className="text-3xl font-bold text-[#3E2A1E] mt-1">{fmt(data.meta.orderCount)}</p>
+              <p className="text-3xl font-bold text-[#0f2a3e] mt-1">{fmt(data.meta.orderCount)}</p>
               <p className="text-xs text-gray-400 mt-1">Next {days} days</p>
             </div>
             <div className="bg-white rounded-xl border p-5">
               <p className="text-sm text-gray-500">Total Revenue</p>
-              <p className="text-3xl font-bold text-[#C9822B] mt-1">{fmtCurrency(totalRevenue)}</p>
+              <p className="text-3xl font-bold text-[#C6A24E] mt-1">{fmtCurrency(totalRevenue)}</p>
               <p className="text-xs text-gray-400 mt-1">Across all orders</p>
             </div>
             <div className="bg-white rounded-xl border p-5">
@@ -222,7 +222,7 @@ export default function ShippingForecastPage() {
                 key={t.key}
                 onClick={() => setTab(t.key)}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${
-                  tab === t.key ? 'bg-white shadow text-[#3E2A1E]' : 'text-gray-500 hover:text-gray-700'
+                  tab === t.key ? 'bg-white shadow text-[#0f2a3e]' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 {t.label}
@@ -237,7 +237,7 @@ export default function ShippingForecastPage() {
                 const dayTotal = rows.reduce((s, r) => s + (r.total || 0), 0)
                 return (
                   <div key={date} className="bg-white rounded-xl border overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-[#3E2A1E] to-[#2980B9]">
+                    <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-[#0f2a3e] to-[#2980B9]">
                       <div className="flex items-center gap-3">
                         <span className="text-white text-lg">📅</span>
                         <span className="text-white font-semibold">{fmtDate(date)}</span>
@@ -257,7 +257,7 @@ export default function ShippingForecastPage() {
                       <tbody>
                         {rows.map((r, i) => (
                           <tr key={r.orderNumber} className={i % 2 ? 'bg-gray-50/50' : ''}>
-                            <td className="px-5 py-2.5 font-medium text-[#3E2A1E]">{r.orderNumber}</td>
+                            <td className="px-5 py-2.5 font-medium text-[#0f2a3e]">{r.orderNumber}</td>
                             <td className="px-5 py-2.5 text-gray-700">{r.customer}</td>
                             <td className="px-5 py-2.5 text-gray-500 text-right">{r.productCount}</td>
                             <td className="px-5 py-2.5 font-semibold text-gray-900 text-right">{fmtCurrency(r.total)}</td>
@@ -290,7 +290,7 @@ export default function ShippingForecastPage() {
                   {data.orders.map((o, i) => (
                     <tr key={o.orderNumber} className={`${i % 2 ? 'bg-gray-50/50' : ''} hover:bg-blue-50/30 transition`}>
                       <td className="px-5 py-2.5">
-                        <a href={`/ops/orders/${o.orderNumber}`} className="font-medium text-[#3E2A1E] hover:underline">
+                        <a href={`/ops/orders/${o.orderNumber}`} className="font-medium text-[#0f2a3e] hover:underline">
                           {o.orderNumber}
                         </a>
                       </td>
@@ -309,11 +309,11 @@ export default function ShippingForecastPage() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-[#3E2A1E]/5 font-bold">
-                    <td className="px-5 py-3 text-[#3E2A1E]" colSpan={5}>Grand Total</td>
+                  <tr className="bg-[#0f2a3e]/5 font-bold">
+                    <td className="px-5 py-3 text-[#0f2a3e]" colSpan={5}>Grand Total</td>
                     <td className="px-5 py-3 text-right">{fmtCurrency(data.orders.reduce((s, o) => s + (o.subtotal || 0), 0))}</td>
                     <td className="px-5 py-3 text-right">{fmtCurrency(data.orders.reduce((s, o) => s + (o.tax || 0), 0))}</td>
-                    <td className="px-5 py-3 text-right text-[#3E2A1E]">{fmtCurrency(totalRevenue)}</td>
+                    <td className="px-5 py-3 text-right text-[#0f2a3e]">{fmtCurrency(totalRevenue)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -343,7 +343,7 @@ export default function ShippingForecastPage() {
                       <tr key={b.component} className={i % 2 ? 'bg-gray-50/50' : ''}>
                         <td className="px-5 py-2.5 text-gray-400">{i + 1}</td>
                         <td className="px-5 py-2.5 font-medium text-gray-800">{b.component}</td>
-                        <td className="px-5 py-2.5 text-right font-semibold text-[#3E2A1E]">{fmt(b.totalNeeded)}</td>
+                        <td className="px-5 py-2.5 text-right font-semibold text-[#0f2a3e]">{fmt(b.totalNeeded)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -378,7 +378,7 @@ export default function ShippingForecastPage() {
                   <tbody>
                     {data.adtDoors.map((d, i) => (
                       <tr key={`${d.orderNumber}-${d.sku}-${i}`} className={i % 2 ? 'bg-gray-50/50' : ''}>
-                        <td className="px-5 py-2.5 font-medium text-[#3E2A1E]">{d.orderNumber}</td>
+                        <td className="px-5 py-2.5 font-medium text-[#0f2a3e]">{d.orderNumber}</td>
                         <td className="px-5 py-2.5 text-gray-700">{d.customer}</td>
                         <td className="px-5 py-2.5 text-gray-600">{fmtDate(d.shipDate)}</td>
                         <td className="px-5 py-2.5 font-mono text-xs text-gray-500">{d.sku}</td>

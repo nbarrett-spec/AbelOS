@@ -157,7 +157,7 @@ export default function ProductProfitabilityPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-abel-walnut">Product Profitability</h1>
+          <h1 className="text-3xl font-bold text-brand">Product Profitability</h1>
           <p className="text-gray-600 mt-1">A-F grades across margin, revenue, volume, and trend</p>
         </div>
       </div>
@@ -183,7 +183,7 @@ export default function ProductProfitabilityPage() {
             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Total Products
             </div>
-            <div className="text-2xl font-bold text-abel-walnut mt-2">{summary.totalProducts}</div>
+            <div className="text-2xl font-bold text-brand mt-2">{summary.totalProducts}</div>
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-elevation-1">
@@ -217,7 +217,7 @@ export default function ProductProfitabilityPage() {
             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               90-Day Revenue
             </div>
-            <div className="text-xl font-bold text-abel-walnut mt-2">
+            <div className="text-xl font-bold text-brand mt-2">
               {formatCurrency(summary.totalRevenue90d)}
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function ProductProfitabilityPage() {
                 placeholder="Name or SKU..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-abel-amber"
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               />
             </div>
 
@@ -274,7 +274,7 @@ export default function ProductProfitabilityPage() {
               <select
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-abel-amber"
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(cat => (
@@ -290,7 +290,7 @@ export default function ProductProfitabilityPage() {
               <select
                 value={gradeFilter}
                 onChange={e => setGradeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-abel-amber"
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               >
                 <option value="ALL">All Grades</option>
                 {(['A', 'B', 'C', 'D', 'F'] as const).map(g => (
@@ -306,7 +306,7 @@ export default function ProductProfitabilityPage() {
               <select
                 value={flagFilter}
                 onChange={e => setFlagFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-abel-amber"
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               >
                 <option value="ALL">All Products</option>
                 <option value="NEGATIVE_MARGIN">Negative Margin</option>
@@ -322,7 +322,7 @@ export default function ProductProfitabilityPage() {
               <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">
                 Results
               </label>
-              <div className="text-2xl font-bold text-abel-walnut">
+              <div className="text-2xl font-bold text-brand">
                 {filtered.length}
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function ProductProfitabilityPage() {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Left: Score Breakdown */}
                             <div>
-                              <h4 className="font-bold text-abel-walnut mb-4">Score Breakdown</h4>
+                              <h4 className="font-bold text-brand mb-4">Score Breakdown</h4>
                               <div className="space-y-3">
                                 <div className="flex justify-between items-center pb-2 border-b border-gray-300">
                                   <span className="text-gray-700">Margin Score (40%)</span>
@@ -484,8 +484,8 @@ export default function ProductProfitabilityPage() {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="flex justify-between items-center pt-2 border-t-2 border-abel-walnut">
-                                  <span className="font-bold text-abel-walnut">Composite Score</span>
+                                <div className="flex justify-between items-center pt-2 border-t-2 border-brand">
+                                  <span className="font-bold text-brand">Composite Score</span>
                                   <span className={`px-3 py-1 rounded font-bold text-lg ${GRADE_COLORS[product.grade]}`}>
                                     {product.compositeScore}/100 {product.grade}
                                   </span>
@@ -495,7 +495,7 @@ export default function ProductProfitabilityPage() {
 
                             {/* Right: Inventory & Suggested Action */}
                             <div>
-                              <h4 className="font-bold text-abel-walnut mb-4">Inventory & Action</h4>
+                              <h4 className="font-bold text-brand mb-4">Inventory & Action</h4>
                               <div className="space-y-3 text-sm">
                                 <div className="flex justify-between pb-2 border-b border-gray-300">
                                   <span className="text-gray-700">On Hand</span>
@@ -521,7 +521,7 @@ export default function ProductProfitabilityPage() {
                                 </div>
 
                                 <div className="pt-4 bg-abel-cream rounded p-3">
-                                  <h5 className="font-bold text-abel-walnut mb-2">Suggested Action</h5>
+                                  <h5 className="font-bold text-brand mb-2">Suggested Action</h5>
                                   <ul className="text-xs space-y-1 text-gray-700">
                                     {product.marginPct < 0 && (
                                       <li>• Reprice immediately — losing money on each sale</li>

@@ -205,7 +205,7 @@ export default function InvoicesPage() {
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]"
+            className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
           >
             + Create Invoice
           </button>
@@ -225,11 +225,11 @@ export default function InvoicesPage() {
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-xs text-gray-500 uppercase">1-30 Days</p>
-            <p className="text-2xl font-bold text-[#D9993F]">{formatCurrency(data.aging.days1to30)}</p>
+            <p className="text-2xl font-bold text-[#D4B96A]">{formatCurrency(data.aging.days1to30)}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-xs text-gray-500 uppercase">31-60 Days</p>
-            <p className="text-2xl font-bold text-[#C9822B]">{formatCurrency(data.aging.days31to60)}</p>
+            <p className="text-2xl font-bold text-[#C6A24E]">{formatCurrency(data.aging.days31to60)}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-xs text-gray-500 uppercase">60+ Days</p>
@@ -271,7 +271,7 @@ export default function InvoicesPage() {
 
       {/* AI Cash Flow Intelligence Panel */}
       {cashFlowHealth && (
-        <div className="bg-gradient-to-r from-[#3E2A1E] to-[#2E86C1] rounded-xl p-5 text-white">
+        <div className="bg-gradient-to-r from-[#0f2a3e] to-[#2E86C1] rounded-xl p-5 text-white">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">🧠</span>
@@ -332,7 +332,7 @@ export default function InvoicesPage() {
             </div>
             <Link
               href="/ops/cash-flow-optimizer"
-              className="text-xs text-[#3E2A1E] hover:underline"
+              className="text-xs text-[#0f2a3e] hover:underline"
             >
               View all in Collections →
             </Link>
@@ -362,7 +362,7 @@ export default function InvoicesPage() {
               onClick={() => { setStatusFilter(status.key); setPage(1) }}
               className={`px-3 py-1.5 text-sm rounded-t transition-colors ${
                 statusFilter === status.key
-                  ? 'bg-white text-[#3E2A1E] font-medium border border-b-0'
+                  ? 'bg-white text-[#0f2a3e] font-medium border border-b-0'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -380,10 +380,10 @@ export default function InvoicesPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <label className="text-xs text-gray-500 font-medium whitespace-nowrap">From</label>
           <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]/30 focus:border-[#0f2a3e]" />
           <label className="text-xs text-gray-500 font-medium whitespace-nowrap">To</label>
           <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]/30 focus:border-[#3E2A1E]" />
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]/30 focus:border-[#0f2a3e]" />
           {(dateFrom || dateTo) && (
             <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
               className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
@@ -405,7 +405,7 @@ export default function InvoicesPage() {
             <div className="flex gap-3 justify-center mt-6">
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]"
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
               >
                 Create Invoice
               </button>
@@ -461,7 +461,7 @@ export default function InvoicesPage() {
               <tbody className="divide-y">
                 {filteredInvoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-[#3E2A1E]">{invoice.invoiceNumber}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-[#0f2a3e]">{invoice.invoiceNumber}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{invoice.builderName || 'Unknown'}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.total)}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{invoice.dueDate ? formatDate(invoice.dueDate) : '-'}</td>
@@ -524,7 +524,7 @@ export default function InvoicesPage() {
             { step: '4', label: 'Payment Received', desc: 'Record check/ACH/wire payment, update AR aging' },
           ].map((item) => (
             <div key={item.step} className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#3E2A1E] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#0f2a3e] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                 {item.step}
               </div>
               <div>

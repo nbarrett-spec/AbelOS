@@ -191,7 +191,7 @@ export default function ProductionSchedule(): JSX.Element {
     const colors: Record<string, string> = {
       PASS: 'bg-emerald-500',
       FAIL: 'bg-red-500',
-      CONDITIONAL: 'bg-amber-500',
+      CONDITIONAL: 'bg-signal',
     }
     return (
       <div
@@ -291,7 +291,7 @@ export default function ProductionSchedule(): JSX.Element {
               <div className="text-gray-400 text-xs font-semibold uppercase">
                 Backlog
               </div>
-              <div className="text-2xl font-bold text-amber-400 mt-2">
+              <div className="text-2xl font-bold text-signal-hover mt-2">
                 {data.capacity.backlog}
               </div>
               <div className="text-xs text-gray-500 mt-1">pending work</div>
@@ -338,7 +338,7 @@ export default function ProductionSchedule(): JSX.Element {
                   week.utilization > 100
                     ? 'bg-red-500'
                     : week.utilization > 80
-                      ? 'bg-amber-500'
+                      ? 'bg-signal'
                       : 'bg-emerald-500'
                 return (
                   <div key={week.week} className="flex items-center gap-4">

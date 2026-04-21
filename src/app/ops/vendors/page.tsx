@@ -75,11 +75,11 @@ export default function VendorsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>🏢 Supplier Management</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>🏢 Supplier Management</h1>
           <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>Manage domestic and overseas suppliers for procurement</p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)}
-          style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#3E2A1E', color: '#fff', fontWeight: 600, fontSize: 14 }}>
+          style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#0f2a3e', color: '#fff', fontWeight: 600, fontSize: 14 }}>
           + Add Supplier
         </button>
       </div>
@@ -104,8 +104,8 @@ export default function VendorsPage() {
 
       {/* Add Supplier Form */}
       {showAdd && (
-        <div style={{ background: '#fff', borderRadius: 12, border: '2px solid #3E2A1E', padding: 24, marginBottom: 24 }}>
-          <h2 style={{ margin: '0 0 20px', color: '#3E2A1E', fontSize: 18 }}>Add New Supplier</h2>
+        <div style={{ background: '#fff', borderRadius: 12, border: '2px solid #0f2a3e', padding: 24, marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 20px', color: '#0f2a3e', fontSize: 18 }}>Add New Supplier</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
             <Field label="Company Name *" value={form.name} onChange={v => setForm({ ...form, name: v })} />
             <Field label="Supplier Code" value={form.code} onChange={v => setForm({ ...form, code: v })} placeholder="Auto-generated" />
@@ -146,7 +146,7 @@ export default function VendorsPage() {
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Product Categories</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               {form.categories.map((c: string, i: number) => (
-                <span key={i} style={{ background: '#EBF5FB', color: '#3E2A1E', padding: '4px 10px', borderRadius: 16, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span key={i} style={{ background: '#EBF5FB', color: '#0f2a3e', padding: '4px 10px', borderRadius: 16, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                   {c}
                   <button onClick={() => setForm({ ...form, categories: form.categories.filter((_: string, j: number) => j !== i) })}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: 14, padding: 0 }}>×</button>
@@ -157,7 +157,7 @@ export default function VendorsPage() {
               <input value={catInput} onChange={e => setCatInput(e.target.value)} placeholder="e.g. Trim, Hardware, MDF"
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCategory())}
                 style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14, flex: 1 }} />
-              <button onClick={addCategory} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#C9822B', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>Add</button>
+              <button onClick={addCategory} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#C6A24E', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>Add</button>
             </div>
           </div>
 
@@ -170,7 +170,7 @@ export default function VendorsPage() {
 
           <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
             <button onClick={saveSupplier} disabled={saving || !form.name}
-              style={{ padding: '10px 24px', borderRadius: 8, border: 'none', cursor: 'pointer', background: !form.name ? '#9CA3AF' : '#3E2A1E', color: '#fff', fontWeight: 600 }}>
+              style={{ padding: '10px 24px', borderRadius: 8, border: 'none', cursor: 'pointer', background: !form.name ? '#9CA3AF' : '#0f2a3e', color: '#fff', fontWeight: 600 }}>
               {saving ? '⏳ Saving...' : 'Save Supplier'}
             </button>
             <button onClick={() => setShowAdd(false)}
@@ -185,7 +185,7 @@ export default function VendorsPage() {
       ) : suppliers.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, background: '#F9FAFB', borderRadius: 12 }}>
           <div style={{ fontSize: 48 }}>🏢</div>
-          <h3 style={{ color: '#3E2A1E' }}>No suppliers yet</h3>
+          <h3 style={{ color: '#0f2a3e' }}>No suppliers yet</h3>
           <p style={{ color: '#6B7280' }}>Add your first supplier to start building your procurement network.</p>
         </div>
       ) : (
@@ -204,7 +204,7 @@ export default function VendorsPage() {
                 {s.categories?.length > 0 && (
                   <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
                     {s.categories.map((c, i) => (
-                      <span key={i} style={{ background: '#EBF5FB', color: '#3E2A1E', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>{c}</span>
+                      <span key={i} style={{ background: '#EBF5FB', color: '#0f2a3e', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>{c}</span>
                     ))}
                   </div>
                 )}
@@ -212,11 +212,11 @@ export default function VendorsPage() {
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6B7280' }}>Products</div>
-                  <div style={{ fontWeight: 700, fontSize: 18, color: '#3E2A1E' }}>{s.productCount}</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, color: '#0f2a3e' }}>{s.productCount}</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6B7280' }}>POs</div>
-                  <div style={{ fontWeight: 700, fontSize: 18, color: '#3E2A1E' }}>{s.poCount}</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, color: '#0f2a3e' }}>{s.poCount}</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6B7280' }}>12mo Spend</div>

@@ -116,12 +116,12 @@ export default function ManufacturingCommandCenter() {
   ): string => {
     if (type === 'passRate') {
       if (value > 95) return 'text-emerald-400';
-      if (value > 85) return 'text-amber-400';
+      if (value > 85) return 'text-signal-hover';
       return 'text-red-400';
     }
     if (type === 'onTime') {
       if (value > 90) return 'text-emerald-400';
-      if (value > 75) return 'text-amber-400';
+      if (value > 75) return 'text-signal-hover';
       return 'text-red-400';
     }
     return 'text-gray-400';
@@ -133,12 +133,12 @@ export default function ManufacturingCommandCenter() {
   ): string => {
     if (type === 'passRate') {
       if (value > 95) return 'bg-emerald-400/10 border-emerald-400/30';
-      if (value > 85) return 'bg-amber-400/10 border-amber-400/30';
+      if (value > 85) return 'bg-signal-hover/10 border-amber-400/30';
       return 'bg-red-400/10 border-red-400/30';
     }
     if (type === 'onTime') {
       if (value > 90) return 'bg-emerald-400/10 border-emerald-400/30';
-      if (value > 75) return 'bg-amber-400/10 border-amber-400/30';
+      if (value > 75) return 'bg-signal-hover/10 border-amber-400/30';
       return 'bg-red-400/10 border-red-400/30';
     }
     return 'bg-gray-800/50 border-gray-700';
@@ -288,7 +288,7 @@ export default function ManufacturingCommandCenter() {
               <div className="text-gray-400 text-xs font-semibold uppercase">
                 Jobs Staged
               </div>
-              <div className="text-2xl font-bold text-amber-400 mt-2">
+              <div className="text-2xl font-bold text-signal-hover mt-2">
                 {overviewData.kpi.jobsStaged.toLocaleString()}
               </div>
             </div>
@@ -480,7 +480,7 @@ export default function ManufacturingCommandCenter() {
                     <div className="text-gray-400 text-xs uppercase mb-2">
                       Conditional
                     </div>
-                    <div className="text-3xl font-bold text-amber-400">
+                    <div className="text-3xl font-bold text-signal-hover">
                       {overviewData.qcSummary.conditionalCount}
                     </div>
                   </div>
@@ -627,7 +627,7 @@ export default function ManufacturingCommandCenter() {
                 </Link>
                 <Link
                   href="/ops/manufacturing/picks"
-                  className="bg-gray-800 border border-gray-700 rounded p-3 text-center text-sm font-semibold hover:border-amber-400 hover:bg-amber-400/10 transition"
+                  className="bg-gray-800 border border-gray-700 rounded p-3 text-center text-sm font-semibold hover:border-amber-400 hover:bg-signal-hover/10 transition"
                 >
                   Generate Picks
                 </Link>
@@ -676,7 +676,7 @@ export default function ManufacturingCommandCenter() {
               <div className="text-gray-400 text-sm uppercase font-semibold mb-2">
                 Avg Days In Production
               </div>
-              <div className="text-3xl font-bold text-amber-400">
+              <div className="text-3xl font-bold text-signal-hover">
                 {efficiencyData.metrics.avgDaysInProduction.toFixed(1)}
               </div>
             </div>

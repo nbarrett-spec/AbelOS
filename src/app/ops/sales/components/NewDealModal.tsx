@@ -125,7 +125,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               value={formData.companyName}
               onChange={handleInputChange}
               placeholder="Enter company name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -141,7 +141,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               value={formData.contactName}
               onChange={handleInputChange}
               placeholder="Enter contact name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -157,7 +157,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               value={formData.contactEmail}
               onChange={handleInputChange}
               placeholder="Enter email address"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -173,7 +173,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               value={formData.contactPhone}
               onChange={handleInputChange}
               placeholder="Enter phone number"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -189,7 +189,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               value={formData.address}
               onChange={handleInputChange}
               placeholder="Street address"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -198,15 +198,15 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-              <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" disabled={loading} />
+              <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" disabled={loading} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-              <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="TX" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" disabled={loading} />
+              <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="TX" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" disabled={loading} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Zip</label>
-              <input type="text" name="zip" value={formData.zip} onChange={handleInputChange} placeholder="75001" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" disabled={loading} />
+              <input type="text" name="zip" value={formData.zip} onChange={handleInputChange} placeholder="75001" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" disabled={loading} />
             </div>
           </div>
 
@@ -214,11 +214,11 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Deal Value</label>
-              <input type="number" name="dealValue" value={formData.dealValue} onChange={handleInputChange} placeholder="$0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" disabled={loading} />
+              <input type="number" name="dealValue" value={formData.dealValue} onChange={handleInputChange} placeholder="$0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" disabled={loading} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Expected Close Date</label>
-              <input type="date" name="expectedCloseDate" value={formData.expectedCloseDate} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" disabled={loading} />
+              <input type="date" name="expectedCloseDate" value={formData.expectedCloseDate} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" disabled={loading} />
             </div>
           </div>
 
@@ -231,7 +231,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               name="source"
               value={formData.source}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             >
               <option value="INBOUND">Inbound</option>
@@ -255,7 +255,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
               onChange={handleInputChange}
               placeholder="Enter deal description"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               disabled={loading}
             />
           </div>
@@ -273,7 +273,7 @@ export function NewDealModal({ isOpen, onClose, onSuccess }: NewDealModalProps) 
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 text-white bg-[#C9822B] hover:bg-[#d46711] rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 text-white bg-[#C6A24E] hover:bg-[#d46711] rounded-lg font-medium transition-colors disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Deal'}
             </button>

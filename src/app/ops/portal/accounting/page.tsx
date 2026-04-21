@@ -165,7 +165,7 @@ export default function AccountingCommandCenter() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-pulse text-amber-400 text-lg">Loading Accounting Command Center...</div>
+        <div className="animate-pulse text-signal-hover text-lg">Loading Accounting Command Center...</div>
       </div>
     )
   }
@@ -176,7 +176,7 @@ export default function AccountingCommandCenter() {
         <div className="text-center py-12">
           <div className="text-4xl mb-4">⚠️</div>
           <p className="text-gray-600 font-medium">{error}</p>
-          <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm">
+          <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
             Retry
           </button>
         </div>
@@ -192,7 +192,7 @@ export default function AccountingCommandCenter() {
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-3">
               <h1 className="text-3xl font-bold text-white">Accounting Command Center</h1>
-              <span className="text-amber-400 text-sm font-semibold">For: Dawn</span>
+              <span className="text-signal-hover text-sm font-semibold">For: Dawn</span>
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -227,7 +227,7 @@ export default function AccountingCommandCenter() {
               </Link>
               <button
                 onClick={() => setAiPanelOpen(!aiPanelOpen)}
-                className="px-4 py-2 text-sm font-medium text-amber-400 hover:text-amber-300 hover:bg-gray-800 rounded-lg transition-colors border border-amber-400/30"
+                className="px-4 py-2 text-sm font-medium text-signal-hover hover:text-amber-300 hover:bg-gray-800 rounded-lg transition-colors border border-amber-400/30"
               >
                 {aiPanelOpen ? 'Hide' : 'Show'} AI Assistant
               </button>
@@ -244,7 +244,7 @@ export default function AccountingCommandCenter() {
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Total AR</p>
               <p className="text-white text-xl font-bold mt-2">{formatCurrency(kpis.totalAR)}</p>
-              <p className="text-amber-400 text-xs mt-2 flex items-center">
+              <p className="text-signal-hover text-xs mt-2 flex items-center">
                 <TrendArrow value={kpis.arTrend} />
               </p>
             </div>
@@ -351,7 +351,7 @@ export default function AccountingCommandCenter() {
                       let bgColor = 'bg-gray-600'
                       if (status === 'DRAFT') bgColor = 'bg-gray-600'
                       if (status === 'ISSUED') bgColor = 'bg-blue-600'
-                      if (status === 'SENT') bgColor = 'bg-amber-600'
+                      if (status === 'SENT') bgColor = 'bg-signal'
                       if (status === 'OVERDUE') bgColor = 'bg-red-600'
                       if (status === 'PAID') bgColor = 'bg-emerald-600'
                       return (
@@ -383,7 +383,7 @@ export default function AccountingCommandCenter() {
                         <p className="text-gray-400 text-sm mt-1">Balance due</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-amber-400 font-bold text-lg">{formatCurrency(builder.balance)}</p>
+                        <p className="text-signal-hover font-bold text-lg">{formatCurrency(builder.balance)}</p>
                         <button className="text-xs text-gray-400 hover:text-gray-300 mt-1 underline">Send Reminder</button>
                       </div>
                     </div>
@@ -434,7 +434,7 @@ export default function AccountingCommandCenter() {
                       <div
                         className={`max-w-xs rounded-lg px-4 py-2 text-sm ${
                           msg.role === 'user'
-                            ? 'bg-amber-400/20 text-amber-200 border border-amber-400/30'
+                            ? 'bg-signal-hover/20 text-amber-200 border border-amber-400/30'
                             : 'bg-emerald-400/10 text-emerald-200 border border-emerald-400/20'
                         }`}
                       >
@@ -466,7 +466,7 @@ export default function AccountingCommandCenter() {
                   <button
                     type="submit"
                     disabled={chatLoading}
-                    className="px-4 py-2 bg-amber-400 text-gray-950 font-medium rounded-lg hover:bg-amber-300 disabled:bg-gray-700 disabled:text-gray-500 transition-colors text-sm"
+                    className="px-4 py-2 bg-signal-hover text-gray-950 font-medium rounded-lg hover:bg-amber-300 disabled:bg-gray-700 disabled:text-gray-500 transition-colors text-sm"
                   >
                     Send
                   </button>
@@ -529,7 +529,7 @@ export default function AccountingCommandCenter() {
                 {Object.entries(overview.poStatusCounts).map(([status, count]: [string, number]) => {
                   let colorClass = 'bg-gray-700 text-gray-200'
                   if (status === 'DRAFT') colorClass = 'bg-gray-700 text-gray-200'
-                  if (status === 'PENDING_APPROVAL') colorClass = 'bg-amber-600/20 text-amber-300'
+                  if (status === 'PENDING_APPROVAL') colorClass = 'bg-signal/20 text-amber-300'
                   if (status === 'APPROVED') colorClass = 'bg-blue-600/20 text-blue-300'
                   if (status === 'SENT_TO_VENDOR') colorClass = 'bg-cyan-600/20 text-cyan-300'
                   if (status === 'PARTIALLY_RECEIVED') colorClass = 'bg-orange-600/20 text-orange-300'

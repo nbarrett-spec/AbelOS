@@ -54,7 +54,7 @@ interface CategoryCount {
 
 const CATEGORIES = [
   { value: 'QUOTE', label: 'Quotes', icon: '📋', color: '#3498DB' },
-  { value: 'ORDER', label: 'Orders', icon: '📦', color: '#C9822B' },
+  { value: 'ORDER', label: 'Orders', icon: '📦', color: '#C6A24E' },
   { value: 'INVOICE', label: 'Invoices', icon: '💰', color: '#27AE60' },
   { value: 'PURCHASE_ORDER', label: 'Purchase Orders', icon: '🛒', color: '#8E44AD' },
   { value: 'CONTRACT', label: 'Contracts', icon: '📝', color: '#2C2C2C' },
@@ -62,8 +62,8 @@ const CATEGORIES = [
   { value: 'FLOOR_PLAN', label: 'Floor Plans', icon: '📐', color: '#16A085' },
   { value: 'SPEC_SHEET', label: 'Spec Sheets', icon: '📊', color: '#2980B9' },
   { value: 'PHOTO', label: 'Photos', icon: '📷', color: '#E74C3C' },
-  { value: 'DELIVERY_PROOF', label: 'Delivery Proof', icon: '🚚', color: '#D9993F' },
-  { value: 'WARRANTY', label: 'Warranty', icon: '🛡️', color: '#3E2A1E' },
+  { value: 'DELIVERY_PROOF', label: 'Delivery Proof', icon: '🚚', color: '#D4B96A' },
+  { value: 'WARRANTY', label: 'Warranty', icon: '🛡️', color: '#0f2a3e' },
   { value: 'SERVICE_REQUEST', label: 'Service Requests', icon: '🔧', color: '#C0392B' },
   { value: 'CORRESPONDENCE', label: 'Correspondence', icon: '✉️', color: '#7F8C8D' },
   { value: 'REPORT', label: 'Reports', icon: '📈', color: '#404040' },
@@ -318,7 +318,7 @@ export default function DocumentVaultPage() {
         <button
           onClick={() => setUploadModal(true)}
           className="px-5 py-2.5 text-white rounded-lg font-medium flex items-center gap-2"
-          style={{ backgroundColor: '#C9822B' }}
+          style={{ backgroundColor: '#C6A24E' }}
         >
           <span className="text-lg">+</span> Upload Documents
         </button>
@@ -328,11 +328,11 @@ export default function DocumentVaultPage() {
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white border rounded-xl p-4">
-            <div className="text-2xl font-bold" style={{ color: '#3E2A1E' }}>{summary.activeDocuments}</div>
+            <div className="text-2xl font-bold" style={{ color: '#0f2a3e' }}>{summary.activeDocuments}</div>
             <div className="text-sm text-gray-500">Active Documents</div>
           </div>
           <div className="bg-white border rounded-xl p-4">
-            <div className="text-2xl font-bold" style={{ color: '#C9822B' }}>{formatFileSize(summary.totalSizeBytes)}</div>
+            <div className="text-2xl font-bold" style={{ color: '#C6A24E' }}>{formatFileSize(summary.totalSizeBytes)}</div>
             <div className="text-sm text-gray-500">Total Storage</div>
           </div>
           <div className="bg-white border rounded-xl p-4">
@@ -665,7 +665,7 @@ export default function DocumentVaultPage() {
                 onClick={handleUpload}
                 disabled={uploading || selectedFiles.length === 0}
                 className="px-5 py-2 text-white rounded-lg font-medium disabled:opacity-50"
-                style={{ backgroundColor: '#3E2A1E' }}
+                style={{ backgroundColor: '#0f2a3e' }}
               >
                 {uploading ? 'Uploading...' : `Upload ${selectedFiles.length} file(s)`}
               </button>
@@ -769,7 +769,7 @@ export default function DocumentVaultPage() {
                 <a
                   href={`/api/ops/documents/vault/${detailDoc.id}?mode=download`}
                   className="flex-1 text-center px-4 py-2 text-white rounded-lg font-medium text-sm"
-                  style={{ backgroundColor: '#3E2A1E' }}
+                  style={{ backgroundColor: '#0f2a3e' }}
                 >
                   Download
                 </a>

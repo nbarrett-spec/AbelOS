@@ -66,7 +66,7 @@ const STAGE_COLORS: Record<string, string> = {
   DISCOVERY: '#8B5CF6',
   WALKTHROUGH: '#EC4899',
   BID_SUBMITTED: '#F59E0B',
-  BID_REVIEW: '#C9822B',
+  BID_REVIEW: '#C6A24E',
   NEGOTIATION: '#6366F1',
   WON: '#10B981',
   LOST: '#EF4444',
@@ -157,8 +157,8 @@ export default function SalesReportsPage() {
               onClick={() => setPeriod(p)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 period === p
-                  ? 'bg-[#C9822B] text-white'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:border-[#C9822B]'
+                  ? 'bg-[#C6A24E] text-white'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:border-[#C6A24E]'
               }`}
             >
               {p === 'this_month'
@@ -193,7 +193,7 @@ export default function SalesReportsPage() {
           {/* Win Rate */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <p className="text-gray-600 text-sm font-medium mb-2">Win Rate</p>
-            <p className="text-2xl font-bold text-[#C9822B]">{data.summary.winRate}%</p>
+            <p className="text-2xl font-bold text-[#C6A24E]">{data.summary.winRate}%</p>
             <p className="text-gray-400 text-xs mt-2">of closed deals</p>
           </div>
 
@@ -368,7 +368,7 @@ export default function SalesReportsPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{rep.repName}</span>
                         {topPerformer && rep.repId === topPerformer.repId && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#C9822B] text-white text-xs font-semibold">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#C6A24E] text-white text-xs font-semibold">
                             ⭐ Top
                           </span>
                         )}
@@ -382,7 +382,7 @@ export default function SalesReportsPage() {
                     <td className="text-right py-3 px-4 text-gray-900 font-medium">
                       {formatCurrency(rep.wonValue)}
                     </td>
-                    <td className="text-right py-3 px-4 text-[#C9822B] font-bold">{rep.winRate}%</td>
+                    <td className="text-right py-3 px-4 text-[#C6A24E] font-bold">{rep.winRate}%</td>
                   </tr>
                 ))}
                 {data.byRep.length === 0 && (

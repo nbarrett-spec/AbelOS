@@ -303,7 +303,7 @@ export default function ARManagementPage() {
                       <td className="px-4 py-3 text-gray-200 font-medium">{row.builder}</td>
                       <td className="px-4 py-3 text-right text-emerald-400">{formatCurrency(row.current)}</td>
                       <td className="px-4 py-3 text-right text-amber-300">{formatCurrency(row.days1to30)}</td>
-                      <td className="px-4 py-3 text-right text-amber-500">{formatCurrency(row.days31to60)}</td>
+                      <td className="px-4 py-3 text-right text-signal">{formatCurrency(row.days31to60)}</td>
                       <td className="px-4 py-3 text-right text-orange-500">{formatCurrency(row.days61to90)}</td>
                       <td className="px-4 py-3 text-right text-red-500">{formatCurrency(row.days90plus)}</td>
                       <td className="px-4 py-3 text-right text-white font-semibold">{formatCurrency(row.total)}</td>

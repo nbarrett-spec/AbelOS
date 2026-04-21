@@ -108,7 +108,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
           style={{
             fontSize: '16px',
             fontWeight: 700,
-            color: '#3E2A1E',
+            color: '#0f2a3e',
             margin: 0,
           }}
         >
@@ -152,18 +152,18 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3E2A1E',
+              color: '#0f2a3e',
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLButtonElement
-              el.style.backgroundColor = '#3E2A1E'
+              el.style.backgroundColor = '#0f2a3e'
               el.style.color = '#fff'
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLButtonElement
               el.style.backgroundColor = '#fff'
-              el.style.color = '#3E2A1E'
+              el.style.color = '#0f2a3e'
             }}
           >
             ‹
@@ -212,8 +212,8 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                     fontWeight: 600,
                     padding: '3px 8px',
                     borderRadius: '12px',
-                    backgroundColor: '#C9822B15',
-                    color: '#C9822B',
+                    backgroundColor: '#C6A24E15',
+                    color: '#C6A24E',
                     marginBottom: '8px',
                   }}
                 >
@@ -244,7 +244,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                   style={{
                     fontSize: '15px',
                     fontWeight: 700,
-                    color: '#3E2A1E',
+                    color: '#0f2a3e',
                     marginBottom: '12px',
                   }}
                 >
@@ -259,7 +259,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: 'none',
-                    backgroundColor: '#3E2A1E',
+                    backgroundColor: '#0f2a3e',
                     color: '#fff',
                     fontSize: '12px',
                     fontWeight: 600,
@@ -272,7 +272,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget as HTMLButtonElement
-                    el.style.backgroundColor = '#3E2A1E'
+                    el.style.backgroundColor = '#0f2a3e'
                   }}
                 >
                   Add to Cart
@@ -297,18 +297,18 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3E2A1E',
+              color: '#0f2a3e',
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLButtonElement
-              el.style.backgroundColor = '#3E2A1E'
+              el.style.backgroundColor = '#0f2a3e'
               el.style.color = '#fff'
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLButtonElement
               el.style.backgroundColor = '#fff'
-              el.style.color = '#3E2A1E'
+              el.style.color = '#0f2a3e'
             }}
           >
             ›

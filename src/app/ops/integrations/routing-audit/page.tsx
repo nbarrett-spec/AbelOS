@@ -151,7 +151,7 @@ export default function RoutingAuditPage() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">Running integration health audit...</p>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function RoutingAuditPage() {
         </div>
         <button
           onClick={loadHealth}
-          className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg text-sm hover:bg-[#163d5a] transition flex items-center gap-2"
+          className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg text-sm hover:bg-[#163d5a] transition flex items-center gap-2"
         >
           <span>↻</span> Re-Audit
         </button>
@@ -214,7 +214,7 @@ export default function RoutingAuditPage() {
             onClick={() => setTab(t)}
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition ${
               tab === t
-                ? 'border-[#C9822B] text-[#C9822B]'
+                ? 'border-[#C6A24E] text-[#C6A24E]'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -296,7 +296,7 @@ export default function RoutingAuditPage() {
                             <td className="px-4 py-3">
                               <button
                                 onClick={() => setSelectedRoute(route)}
-                                className="text-[#3E2A1E] hover:text-[#C9822B] text-xs font-medium"
+                                className="text-[#0f2a3e] hover:text-[#C6A24E] text-xs font-medium"
                               >
                                 Details
                               </button>
@@ -718,7 +718,7 @@ function CoverageCard({ title, icon, stats, fields }: {
         <div className="pt-2 border-t">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-[#3E2A1E] h-2 rounded-full transition-all"
+              className="bg-[#0f2a3e] h-2 rounded-full transition-all"
               style={{ width: `${Math.min((linked / total) * 100, 100)}%` }}
             />
           </div>

@@ -100,7 +100,7 @@ export default function ProductsPage() {
       case 'active':
         return '#27AE60';
       case 'inactive':
-        return '#C9822B';
+        return '#C6A24E';
       case 'discontinued':
         return '#E74C3C';
       default:
@@ -126,7 +126,7 @@ export default function ProductsPage() {
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ color: '#3E2A1E', fontSize: '2rem', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
+          <h1 style={{ color: '#0f2a3e', fontSize: '2rem', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
             Products
           </h1>
           <p style={{ color: '#7F8C8D', fontSize: '0.95rem', margin: 0 }}>
@@ -152,7 +152,7 @@ export default function ProductsPage() {
                 display: 'block',
                 fontSize: '0.875rem',
                 fontWeight: '600',
-                color: '#3E2A1E',
+                color: '#0f2a3e',
                 marginBottom: '0.5rem',
               }}
             >
@@ -187,7 +187,7 @@ export default function ProductsPage() {
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s',
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = '#3E2A1E')}
+                onFocus={(e) => (e.currentTarget.style.borderColor = '#0f2a3e')}
                 onBlur={(e) => (e.currentTarget.style.borderColor = '#BDC3C7')}
               />
             </div>
@@ -201,7 +201,7 @@ export default function ProductsPage() {
                 display: 'block',
                 fontSize: '0.875rem',
                 fontWeight: '600',
-                color: '#3E2A1E',
+                color: '#0f2a3e',
                 marginBottom: '0.5rem',
               }}
             >
@@ -224,7 +224,7 @@ export default function ProductsPage() {
                 boxSizing: 'border-box',
                 transition: 'border-color 0.2s',
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#3E2A1E')}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#0f2a3e')}
               onBlur={(e) => (e.currentTarget.style.borderColor = '#BDC3C7')}
             >
               <option value="">All Categories</option>
@@ -281,7 +281,7 @@ export default function ProductsPage() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#3E2A1E',
+                color: '#0f2a3e',
               }}
             >
               <Loader size={32} style={{ marginBottom: '1rem', animation: 'spin 1s linear infinite' }} />
@@ -322,7 +322,7 @@ export default function ProductsPage() {
                           padding: '1rem',
                           textAlign: 'left',
                           fontWeight: '600',
-                          color: '#3E2A1E',
+                          color: '#0f2a3e',
                           fontSize: '0.875rem',
                         }}
                       >
@@ -333,7 +333,7 @@ export default function ProductsPage() {
                           padding: '1rem',
                           textAlign: 'left',
                           fontWeight: '600',
-                          color: '#3E2A1E',
+                          color: '#0f2a3e',
                           fontSize: '0.875rem',
                         }}
                       >
@@ -344,7 +344,7 @@ export default function ProductsPage() {
                           padding: '1rem',
                           textAlign: 'left',
                           fontWeight: '600',
-                          color: '#3E2A1E',
+                          color: '#0f2a3e',
                           fontSize: '0.875rem',
                         }}
                       >
@@ -355,7 +355,7 @@ export default function ProductsPage() {
                           padding: '1rem',
                           textAlign: 'right',
                           fontWeight: '600',
-                          color: '#3E2A1E',
+                          color: '#0f2a3e',
                           fontSize: '0.875rem',
                         }}
                       >
@@ -366,7 +366,7 @@ export default function ProductsPage() {
                           padding: '1rem',
                           textAlign: 'center',
                           fontWeight: '600',
-                          color: '#3E2A1E',
+                          color: '#0f2a3e',
                           fontSize: '0.875rem',
                         }}
                       >
@@ -468,7 +468,7 @@ export default function ProductsPage() {
                       borderRadius: '6px',
                       border: '1px solid #BDC3C7',
                       backgroundColor: currentPage === 1 ? '#ECF0F1' : 'white',
-                      color: currentPage === 1 ? '#BDC3C7' : '#3E2A1E',
+                      color: currentPage === 1 ? '#BDC3C7' : '#0f2a3e',
                       cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s',
                       fontSize: '0.875rem',
@@ -476,14 +476,14 @@ export default function ProductsPage() {
                     }}
                     onMouseEnter={(e) => {
                       if (currentPage > 1) {
-                        e.currentTarget.style.backgroundColor = '#3E2A1E';
+                        e.currentTarget.style.backgroundColor = '#0f2a3e';
                         e.currentTarget.style.color = 'white';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (currentPage > 1) {
                         e.currentTarget.style.backgroundColor = 'white';
-                        e.currentTarget.style.color = '#3E2A1E';
+                        e.currentTarget.style.color = '#0f2a3e';
                       }
                     }}
                   >
@@ -506,7 +506,7 @@ export default function ProductsPage() {
                       borderRadius: '6px',
                       border: '1px solid #BDC3C7',
                       backgroundColor: currentPage === totalPages ? '#ECF0F1' : 'white',
-                      color: currentPage === totalPages ? '#BDC3C7' : '#3E2A1E',
+                      color: currentPage === totalPages ? '#BDC3C7' : '#0f2a3e',
                       cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s',
                       fontSize: '0.875rem',
@@ -514,14 +514,14 @@ export default function ProductsPage() {
                     }}
                     onMouseEnter={(e) => {
                       if (currentPage < totalPages) {
-                        e.currentTarget.style.backgroundColor = '#3E2A1E';
+                        e.currentTarget.style.backgroundColor = '#0f2a3e';
                         e.currentTarget.style.color = 'white';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (currentPage < totalPages) {
                         e.currentTarget.style.backgroundColor = 'white';
-                        e.currentTarget.style.color = '#3E2A1E';
+                        e.currentTarget.style.color = '#0f2a3e';
                       }
                     }}
                   >

@@ -99,7 +99,7 @@ export default function JobPacketPage() {
   if (!data) {
     return (
       <div style={{ maxWidth: 600, margin: '40px auto', padding: '0 20px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>🖨️ Print Job Packet</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>🖨️ Print Job Packet</h1>
         <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 24 }}>Select a job to generate a printable pick list, build sheets, and delivery info</p>
         {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12, color: '#991B1B', marginBottom: 16 }}>{error}</div>}
         <input
@@ -137,7 +137,7 @@ export default function JobPacketPage() {
       {/* ── Screen-only toolbar ── */}
       <div className="no-print" style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span style={{ fontWeight: 700, color: '#3E2A1E' }}>{data.job.jobNumber}</span>
+          <span style={{ fontWeight: 700, color: '#0f2a3e' }}>{data.job.jobNumber}</span>
           <span style={{ color: '#6B7280', marginLeft: 8 }}>{data.job.builderName}</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -146,7 +146,7 @@ export default function JobPacketPage() {
             Change Job
           </button>
           <button onClick={handlePrint}
-            style={{ padding: '8px 16px', background: '#3E2A1E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             🖨️ Print Job Packet
           </button>
         </div>
@@ -167,8 +167,8 @@ export default function JobPacketPage() {
           #job-packet th, #job-packet td { border: 1px solid #D1D5DB; padding: 6px 10px; font-size: 12px; }
           #job-packet th { background: #F3F4F6; font-weight: 700; text-transform: uppercase; font-size: 10px; color: #374151; }
           .check-box { width: 16px; height: 16px; border: 2px solid #6B7280; display: inline-block; border-radius: 2px; vertical-align: middle; }
-          .section-header { background: #3E2A1E; color: white; padding: 8px 14px; font-size: 14px; font-weight: 700; margin: 0; }
-          .sub-header { background: #C9822B; color: white; padding: 6px 14px; font-size: 12px; font-weight: 700; margin: 0; }
+          .section-header { background: #0f2a3e; color: white; padding: 8px 14px; font-size: 14px; font-weight: 700; margin: 0; }
+          .sub-header { background: #C6A24E; color: white; padding: 6px 14px; font-size: 12px; font-weight: 700; margin: 0; }
         `}</style>
 
         {/* ════════════════════════════════════════════════════════════════
@@ -176,13 +176,13 @@ export default function JobPacketPage() {
         ════════════════════════════════════════════════════════════════ */}
         <div style={{ padding: 20 }}>
           {/* Abel header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #3E2A1E', paddingBottom: 12, marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #0f2a3e', paddingBottom: 12, marginBottom: 16 }}>
             <div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: '#3E2A1E', margin: 0 }}>ABEL LUMBER</h1>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>ABEL LUMBER</h1>
               <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Manufacturing Job Packet</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#C9822B' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#C6A24E' }}>{data.job.jobNumber}</div>
               <div style={{ fontSize: 11, color: '#6B7280' }}>Printed: {today}</div>
             </div>
           </div>
@@ -296,13 +296,13 @@ export default function JobPacketPage() {
             PAGE 2+: PICK LIST (sorted by zone for walk path)
         ════════════════════════════════════════════════════════════════ */}
         <div className="page-break" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #3E2A1E', paddingBottom: 8, marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#3E2A1E', margin: 0 }}>PICK LIST</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>PICK LIST</h2>
               <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Sorted by zone → bin for warehouse walk path</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#C9822B' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
               <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName}</div>
             </div>
           </div>
@@ -389,20 +389,20 @@ export default function JobPacketPage() {
         {data.assemblyGroups.map((group, gIdx) => (
           <div key={gIdx} className="page-break" style={{ padding: 20 }}>
             {/* Unit header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #3E2A1E', paddingBottom: 8, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#3E2A1E', margin: 0 }}>BUILD SHEET</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>BUILD SHEET</h2>
                 <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Unit {gIdx + 1} of {data.assemblyGroups.length}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#C9822B' }}>{data.job.jobNumber}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
                 <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName}</div>
               </div>
             </div>
 
             {/* Door identity */}
-            <div style={{ border: '2px solid #3E2A1E', borderRadius: 4, marginBottom: 16, overflow: 'hidden' }}>
-              <div style={{ background: '#3E2A1E', color: 'white', padding: '8px 14px', fontSize: 16, fontWeight: 700 }}>
+            <div style={{ border: '2px solid #0f2a3e', borderRadius: 4, marginBottom: 16, overflow: 'hidden' }}>
+              <div style={{ background: '#0f2a3e', color: 'white', padding: '8px 14px', fontSize: 16, fontWeight: 700 }}>
                 {group.parent.name}
               </div>
               <div style={{ padding: 12 }}>
@@ -540,13 +540,13 @@ export default function JobPacketPage() {
             FINAL PAGE: DELIVERY & INSTALL INFO
         ════════════════════════════════════════════════════════════════ */}
         <div className="page-break" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #3E2A1E', paddingBottom: 8, marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#3E2A1E', margin: 0 }}>DELIVERY & INSTALLATION</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>DELIVERY & INSTALLATION</h2>
               <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Pre-delivery checklist and install details</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#C9822B' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
               <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName}</div>
             </div>
           </div>

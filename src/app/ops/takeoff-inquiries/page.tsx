@@ -25,9 +25,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   NEW: { label: 'New', color: '#3B82F6', bg: '#EFF6FF' },
   REVIEWING: { label: 'Reviewing', color: '#F59E0B', bg: '#FFFBEB' },
   ASSIGNED: { label: 'Assigned', color: '#8B5CF6', bg: '#F5F3FF' },
-  TAKEOFF_IN_PROGRESS: { label: 'Takeoff Running', color: '#C9822B', bg: '#FFF7ED' },
+  TAKEOFF_IN_PROGRESS: { label: 'Takeoff Running', color: '#C6A24E', bg: '#FFF7ED' },
   TAKEOFF_COMPLETE: { label: 'Takeoff Done', color: '#10B981', bg: '#ECFDF5' },
-  QUOTE_SENT: { label: 'Quote Sent', color: '#3E2A1E', bg: '#EBF5FB' },
+  QUOTE_SENT: { label: 'Quote Sent', color: '#0f2a3e', bg: '#EBF5FB' },
   CONVERTED: { label: 'Converted', color: '#059669', bg: '#D1FAE5' },
   DECLINED: { label: 'Declined', color: '#EF4444', bg: '#FEF2F2' },
   STALE: { label: 'Stale', color: '#9CA3AF', bg: '#F3F4F6' },
@@ -133,7 +133,7 @@ export default function TakeoffInquiriesPage() {
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <p style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E' }}>{totalActive}</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e' }}>{totalActive}</p>
           <p style={{ fontSize: 11, color: '#9ca3af' }}>Active Inquiries</p>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function TakeoffInquiriesPage() {
             padding: '6px 14px',
             borderRadius: 20,
             border: 'none',
-            backgroundColor: !filter ? '#3E2A1E' : '#f3f4f6',
+            backgroundColor: !filter ? '#0f2a3e' : '#f3f4f6',
             color: !filter ? 'white' : '#374151',
             fontSize: 12,
             fontWeight: 600,
@@ -259,7 +259,7 @@ export default function TakeoffInquiriesPage() {
                       ) : (
                         <button
                           onClick={() => setAssigning(inquiry.id)}
-                          style={{ fontSize: 12, padding: '4px 12px', backgroundColor: '#C9822B', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+                          style={{ fontSize: 12, padding: '4px 12px', backgroundColor: '#C6A24E', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
                         >
                           Assign
                         </button>

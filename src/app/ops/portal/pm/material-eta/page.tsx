@@ -29,7 +29,7 @@ export default function MaterialETAPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -58,7 +58,7 @@ export default function MaterialETAPage() {
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
           {[7, 14, 30].map(d => (
-            <button key={d} onClick={() => setDays(d)} className={`px-3 py-1.5 text-sm rounded-md font-medium transition ${days === d ? 'bg-white shadow text-[#3E2A1E]' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button key={d} onClick={() => setDays(d)} className={`px-3 py-1.5 text-sm rounded-md font-medium transition ${days === d ? 'bg-white shadow text-[#0f2a3e]' : 'text-gray-500 hover:text-gray-700'}`}>
               {d}d
             </button>
           ))}
@@ -68,7 +68,7 @@ export default function MaterialETAPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white rounded-xl border p-4 text-center">
-          <p className="text-3xl font-bold text-[#3E2A1E]">{s.uniquePOs}</p>
+          <p className="text-3xl font-bold text-[#0f2a3e]">{s.uniquePOs}</p>
           <p className="text-xs text-gray-500">Open POs</p>
         </div>
         <div className="bg-white rounded-xl border p-4 text-center">
@@ -80,7 +80,7 @@ export default function MaterialETAPage() {
           <p className="text-xs text-gray-500">Overdue</p>
         </div>
         <div className="bg-white rounded-xl border p-4 text-center">
-          <p className="text-3xl font-bold text-[#C9822B]">{s.arrivingSoonItems}</p>
+          <p className="text-3xl font-bold text-[#C6A24E]">{s.arrivingSoonItems}</p>
           <p className="text-xs text-gray-500">Arriving Soon</p>
         </div>
       </div>

@@ -137,7 +137,7 @@ export default function BuilderMessagesOpsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <button onClick={() => setFilter('ALL')} className={`bg-white rounded-lg shadow-sm border p-4 text-left transition hover:shadow ${filter === 'ALL' ? 'ring-2 ring-[#C9822B]' : ''}`}>
+        <button onClick={() => setFilter('ALL')} className={`bg-white rounded-lg shadow-sm border p-4 text-left transition hover:shadow ${filter === 'ALL' ? 'ring-2 ring-[#C6A24E]' : ''}`}>
           <div className="text-2xl font-bold text-gray-900">{totalOpen + totalReplied + totalClosed}</div>
           <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Total Messages</div>
         </button>
@@ -198,7 +198,7 @@ export default function BuilderMessagesOpsPage() {
                         {msg.status === 'OPEN' && (
                           <button
                             onClick={() => { setSelectedMessage(msg); setReplyText('') }}
-                            className="px-3 py-1 bg-[#C9822B] text-white text-xs font-medium rounded hover:bg-[#A86B1F] transition"
+                            className="px-3 py-1 bg-[#C6A24E] text-white text-xs font-medium rounded hover:bg-[#A8882A] transition"
                           >
                             Reply
                           </button>
@@ -206,7 +206,7 @@ export default function BuilderMessagesOpsPage() {
                         {msg.status === 'REPLIED' && (
                           <button
                             onClick={() => { setSelectedMessage(msg); setReplyText('') }}
-                            className="px-3 py-1 bg-[#3E2A1E] text-white text-xs font-medium rounded hover:bg-[#1a2f4e] transition"
+                            className="px-3 py-1 bg-[#0f2a3e] text-white text-xs font-medium rounded hover:bg-[#1a2f4e] transition"
                           >
                             Update Reply
                           </button>
@@ -264,7 +264,7 @@ export default function BuilderMessagesOpsPage() {
                 onChange={(e) => setReplyText(e.target.value)}
                 rows={4}
                 placeholder="Type your reply to the builder..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
               />
             </div>
 
@@ -273,7 +273,7 @@ export default function BuilderMessagesOpsPage() {
               <button
                 onClick={handleReply}
                 disabled={sending || !replyText.trim()}
-                className="px-4 py-2 bg-[#C9822B] text-white text-sm font-medium rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 transition"
+                className="px-4 py-2 bg-[#C6A24E] text-white text-sm font-medium rounded-lg hover:bg-[#A8882A] disabled:opacity-50 transition"
               >
                 {sending ? 'Sending...' : 'Send Reply'}
               </button>

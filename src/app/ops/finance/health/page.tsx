@@ -99,17 +99,17 @@ export default function CompanyHealthPage() {
           <p className="text-xs text-gray-400 mt-2">Product margin</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#3E2A1E]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#0f2a3e]">
           <div className="text-gray-500 text-sm font-medium">Revenue per Job</div>
-          <div className="text-2xl font-bold text-[#3E2A1E] mt-2">
+          <div className="text-2xl font-bold text-[#0f2a3e] mt-2">
             {formatCurrency(data.keyMetrics.revenuePerJob)}
           </div>
           <p className="text-xs text-gray-400 mt-2">Average job value</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C6A24E]">
           <div className="text-gray-500 text-sm font-medium">AR Collection Rate</div>
-          <div className="text-3xl font-bold text-[#C9822B] mt-2">
+          <div className="text-3xl font-bold text-[#C6A24E] mt-2">
             {Math.round(data.keyMetrics.arCollectionRate * 100)}%
           </div>
           <p className="text-xs text-gray-400 mt-2">Paid / Total Billed</p>
@@ -196,7 +196,7 @@ export default function CompanyHealthPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
-                    className="h-3 rounded-full bg-gradient-to-r from-[#3E2A1E] to-[#C9822B]"
+                    className="h-3 rounded-full bg-gradient-to-r from-[#0f2a3e] to-[#C6A24E]"
                     style={{ width: `${scope.percent}%` }}
                   />
                 </div>

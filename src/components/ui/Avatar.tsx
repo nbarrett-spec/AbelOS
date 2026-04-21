@@ -38,8 +38,8 @@ function getInitials(name: string): string {
 /** Deterministic warm color from a name string */
 function nameToColor(name: string): string {
   const colors = [
-    'bg-abel-walnut', 'bg-abel-amber', 'bg-success-600', 'bg-info-600',
-    'bg-abel-charcoal', 'bg-warning-600', 'bg-danger-500', 'bg-abel-walnut-light',
+    'bg-brand', 'bg-signal', 'bg-success-600', 'bg-info-600',
+    'bg-navy', 'bg-warning-600', 'bg-danger-500', 'bg-brand-hover',
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) {

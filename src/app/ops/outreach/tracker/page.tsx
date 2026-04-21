@@ -7,7 +7,7 @@ const STAGE_COLORS: Record<string, string> = {
   CONTACTED: '#3498db',
   INTERESTED: '#2ecc71',
   MEETING_SCHEDULED: '#8e44ad',
-  PROPOSAL_SENT: '#C9822B',
+  PROPOSAL_SENT: '#C6A24E',
   CONVERTED: '#27ae60',
   LOST: '#e74c3c',
   NOT_INTERESTED: '#7f8c8d',
@@ -24,9 +24,9 @@ const TYPE_ICONS: Record<string, string> = {
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -78,13 +78,13 @@ export default function OutreachTrackerPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Cold Outreach & Prospecting</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Cold Outreach & Prospecting</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Track prospecting efforts, manage outreach pipeline, and measure conversion effectiveness</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -112,7 +112,7 @@ function DashboardView({ data }: { data: any }) {
         <KPICard label="Total Prospects" value={Number(s.totalProspects || 0)} sub={`${s.newThisMonth || 0} new this month`} />
         <KPICard label="Active Pipeline" value={`$${Number(s.activePipelineValue || 0).toLocaleString()}`} color="#8e44ad" sub="Interested + Meeting + Proposal" />
         <KPICard label="Converted" value={Number(s.converted || 0)} color="#27ae60" />
-        <KPICard label="Activities (30d)" value={Number(a.thisMonth || 0)} sub={`${a.thisWeek || 0} this week`} color="#C9822B" />
+        <KPICard label="Activities (30d)" value={Number(a.thisMonth || 0)} sub={`${a.thisWeek || 0} this week`} color="#C6A24E" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
@@ -133,7 +133,7 @@ function DashboardView({ data }: { data: any }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Activity Breakdown</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Activity Breakdown</h3>
           <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             {[
               { label: 'Calls', value: Number(a.calls || 0), color: '#e74c3c' },
@@ -150,7 +150,7 @@ function DashboardView({ data }: { data: any }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Upcoming Follow-Ups</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Upcoming Follow-Ups</h3>
           <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', maxHeight: 300, overflowY: 'auto' }}>
             {(data.upcomingFollowUps || []).length === 0 ? (
               <div style={{ textAlign: 'center', color: '#999', padding: 20 }}>No upcoming follow-ups</div>
@@ -158,7 +158,7 @@ function DashboardView({ data }: { data: any }) {
               <div key={f.id} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 600, fontSize: 13 }}>{f.companyName}</span>
-                  <span style={{ fontSize: 12, color: '#C9822B', fontWeight: 600 }}>{new Date(f.followUpDate).toLocaleDateString()}</span>
+                  <span style={{ fontSize: 12, color: '#C6A24E', fontWeight: 600 }}>{new Date(f.followUpDate).toLocaleDateString()}</span>
                 </div>
                 <div style={{ fontSize: 12, color: '#666' }}>{f.contactName} — {f.type} {f.subject ? `: ${f.subject}` : ''}</div>
               </div>
@@ -226,19 +226,19 @@ function PipelineView({ data }: { data: any }) {
   const maxFunnel = Number(funnel.totalProspects || 1)
   return (
     <div>
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#3E2A1E' }}>Conversion Funnel</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#0f2a3e' }}>Conversion Funnel</h3>
       <div style={{ background: '#fff', borderRadius: 10, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <FunnelBar label="Total Prospects" value={Number(funnel.totalProspects || 0)} max={maxFunnel} color="#95a5a6" />
         <FunnelBar label="Contacted" value={Number(funnel.contacted || 0)} max={maxFunnel} color="#3498db" />
         <FunnelBar label="Interested" value={Number(funnel.interested || 0)} max={maxFunnel} color="#2ecc71" />
         <FunnelBar label="Meeting Held" value={Number(funnel.meetingHeld || 0)} max={maxFunnel} color="#8e44ad" />
-        <FunnelBar label="Proposal Sent" value={Number(funnel.proposalSent || 0)} max={maxFunnel} color="#C9822B" />
+        <FunnelBar label="Proposal Sent" value={Number(funnel.proposalSent || 0)} max={maxFunnel} color="#C6A24E" />
         <FunnelBar label="Converted" value={Number(funnel.converted || 0)} max={maxFunnel} color="#27ae60" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Pipeline Stages</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Pipeline Stages</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -264,7 +264,7 @@ function PipelineView({ data }: { data: any }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Source Effectiveness</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Source Effectiveness</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -297,7 +297,7 @@ function ActivityView({ data }: { data: any }) {
   const OUTCOME_COLORS: Record<string, string> = {
     POSITIVE: '#27ae60',
     NEGATIVE: '#e74c3c',
-    NEUTRAL: '#D9993F',
+    NEUTRAL: '#D4B96A',
     NO_RESPONSE: '#95a5a6',
     PENDING: '#3498db',
   }
@@ -307,7 +307,7 @@ function ActivityView({ data }: { data: any }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
           {(data.byType || []).map((t: any) => (
             <div key={t.type} style={{ background: '#fff', borderRadius: 10, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>{t.type} (30d)</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>{t.type} (30d)</div>
               <div style={{ fontSize: 24, fontWeight: 700 }}>{Number(t.count)}</div>
               <div style={{ fontSize: 12, color: '#27ae60' }}>+{Number(t.positive || 0)} positive</div>
               <div style={{ fontSize: 12, color: '#95a5a6' }}>{Number(t.noResponse || 0)} no response</div>
@@ -336,7 +336,7 @@ function ActivityView({ data }: { data: any }) {
                   <div style={{ fontWeight: 600 }}>{a.companyName}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>{a.contactName}</div>
                 </td>
-                <td style={{ padding: '10px 14px' }}><Badge text={a.type} color="#3E2A1E" /></td>
+                <td style={{ padding: '10px 14px' }}><Badge text={a.type} color="#0f2a3e" /></td>
                 <td style={{ padding: '10px 14px' }}>{a.subject || '—'}</td>
                 <td style={{ padding: '10px 14px' }}><Badge text={a.outcome || 'PENDING'} color={OUTCOME_COLORS[a.outcome] || '#999'} /></td>
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{a.followUpDate ? new Date(a.followUpDate).toLocaleDateString() : '—'}</td>
@@ -360,7 +360,7 @@ function EffectivenessView({ data }: { data: any }) {
         <KPICard label="Converted Prospects" value={(data.touchesToConvert || []).length} color="#27ae60" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Avg Touches by Outcome</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Avg Touches by Outcome</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -384,7 +384,7 @@ function EffectivenessView({ data }: { data: any }) {
 
       {(data.touchesToConvert || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Conversion Details</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Conversion Details</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -414,7 +414,7 @@ function EffectivenessView({ data }: { data: any }) {
 
       {(data.monthlyVolume || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Monthly Outreach Volume</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Monthly Outreach Volume</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>

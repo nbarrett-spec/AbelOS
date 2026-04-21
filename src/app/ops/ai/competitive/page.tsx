@@ -74,11 +74,11 @@ export default function CompetitiveIntelligencePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[#3E2A1E] text-white px-8 py-12">
+      <div className="bg-[#0f2a3e] text-white px-8 py-12">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-2">Competitive Intelligence</h1>
           <p className="text-gray-300 text-lg">Market positioning and competitor analysis</p>
-          <button className="mt-6 px-4 py-2 bg-[#C9822B] text-white rounded font-medium hover:bg-[#B87520] transition">
+          <button className="mt-6 px-4 py-2 bg-[#C6A24E] text-white rounded font-medium hover:bg-[#B87520] transition">
             + Add Competitor
           </button>
         </div>
@@ -105,7 +105,7 @@ export default function CompetitiveIntelligencePage() {
               <div className="text-4xl font-bold text-gray-900">{data.marketPosition.totalDealsLost}</div>
               <div className="text-xs text-gray-500 mt-2">Lost</div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C6A24E]">
               <div className="text-sm font-medium text-gray-600 mb-2">Total Deals</div>
               <div className="text-4xl font-bold text-gray-900">
                 {data.marketPosition.totalDealsWon + data.marketPosition.totalDealsLost}
@@ -150,7 +150,7 @@ export default function CompetitiveIntelligencePage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Competitors</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {data.competitors.map((comp) => (
-              <div key={comp.id} className="bg-white rounded-lg shadow p-6 border-t-4 border-[#C9822B]">
+              <div key={comp.id} className="bg-white rounded-lg shadow p-6 border-t-4 border-[#C6A24E]">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-bold text-gray-900">{comp.name}</h3>
@@ -227,7 +227,7 @@ export default function CompetitiveIntelligencePage() {
                     <ul className="space-y-1">
                       {comp.recentMoves.map((move, idx) => (
                         <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                          <span className="text-[#C9822B] font-bold">•</span>
+                          <span className="text-[#C6A24E] font-bold">•</span>
                           {move}
                         </li>
                       ))}

@@ -65,7 +65,7 @@ export default function NewProjectPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-abel-charcoal mb-1">
+        <h1 className="text-2xl font-bold text-navy mb-1">
           New Project
         </h1>
         <p className="text-gray-500 mb-8">

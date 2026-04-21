@@ -72,13 +72,13 @@ function RouteViewInner() {
       {/* Back Button */}
       <Link
         href="/crew"
-        className="inline-flex items-center text-[#3E2A1E] hover:text-[#0D2438] font-medium text-sm mb-2"
+        className="inline-flex items-center text-[#0f2a3e] hover:text-[#0D2438] font-medium text-sm mb-2"
       >
         ← Back to Today
       </Link>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#0D2438] text-white rounded-lg p-4">
+      <div className="bg-gradient-to-r from-[#0f2a3e] to-[#0D2438] text-white rounded-lg p-4">
         <h2 className="text-sm text-blue-200 mb-1">Today's Delivery Route</h2>
         <p className="text-2xl font-bold">
           {new Date(date).toLocaleDateString('en-US', {

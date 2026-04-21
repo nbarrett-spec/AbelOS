@@ -80,7 +80,7 @@ export default function KPIDashboard() {
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
         </div>
       </div>
     )
@@ -103,7 +103,7 @@ export default function KPIDashboard() {
   }
 
   // Determine health colors
-  const onTimeColor = data.onTimeDeliveryRate >= 95 ? 'text-green-600' : data.onTimeDeliveryRate >= 90 ? 'text-amber-600' : 'text-red-600'
+  const onTimeColor = data.onTimeDeliveryRate >= 95 ? 'text-green-600' : data.onTimeDeliveryRate >= 90 ? 'text-signal' : 'text-red-600'
   const onTimeBg = data.onTimeDeliveryRate >= 95 ? 'bg-green-50' : data.onTimeDeliveryRate >= 90 ? 'bg-amber-50' : 'bg-red-50'
   const onTimeArrow = data.onTimeDeliveryRate >= 95 ? '↑' : data.onTimeDeliveryRate >= 85 ? '→' : '↓'
 
@@ -153,7 +153,7 @@ export default function KPIDashboard() {
 
         {/* Open Orders */}
         <Link href="/ops/orders" className="group">
-          <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer group-hover:border-[#3E2A1E]">
+          <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer group-hover:border-[#0f2a3e]">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Open Orders</p>
             <p className="text-3xl font-bold text-gray-900 mt-3">{data.openOrders}</p>
             <p className="text-xs text-gray-400 mt-2">Ready for action →</p>
@@ -215,9 +215,9 @@ export default function KPIDashboard() {
               'CREATED': '#95A5A6',
               'READINESS_CHECK': '#3498DB',
               'MATERIALS_LOCKED': '#3498DB',
-              'IN_PRODUCTION': '#C9822B',
-              'STAGED': '#D9993F',
-              'LOADED': '#D9993F',
+              'IN_PRODUCTION': '#C6A24E',
+              'STAGED': '#D4B96A',
+              'LOADED': '#D4B96A',
               'IN_TRANSIT': '#F1C40F',
               'DELIVERED': '#2ECC71',
               'INSTALLING': '#1ABC9C',

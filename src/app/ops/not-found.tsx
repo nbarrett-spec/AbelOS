@@ -12,14 +12,14 @@ export default function NotFound() {
     }}>
       <div style={{ textAlign: 'center', maxWidth: 500 }}>
         <div style={{ fontSize: 72, marginBottom: 16, color: '#999' }}>404</div>
-        <h1 style={{ fontSize: 28, marginBottom: 8, color: '#3E2A1E' }}>Page not found</h1>
+        <h1 style={{ fontSize: 28, marginBottom: 8, color: '#0f2a3e' }}>Page not found</h1>
         <p style={{ fontSize: 16, color: '#666', marginBottom: 32 }}>
           The page you're looking for doesn't exist in the operations section.
         </p>
         <Link href="/ops" style={{
           display: 'inline-block',
           padding: '12px 32px',
-          backgroundColor: '#3E2A1E',
+          backgroundColor: '#0f2a3e',
           color: 'white',
           textDecoration: 'none',
           borderRadius: 6,

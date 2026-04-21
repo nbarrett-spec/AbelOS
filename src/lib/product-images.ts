@@ -4,8 +4,8 @@
  */
 
 // Abel Brand Colors
-const ABEL_NAVY = '#3E2A1E'
-const ABEL_ORANGE = '#C9822B'
+const ABEL_NAVY = '#0f2a3e'
+const ABEL_ORANGE = '#C6A24E'
 const ABEL_GREEN = '#27AE60'
 const ABEL_LIGHT_GRAY = '#ECF0F1'
 const ABEL_DARK_GRAY = '#404040'

@@ -122,7 +122,7 @@ export default function AIAssistantPage() {
   return (
     <div className="h-full flex flex-col bg-white rounded-xl border overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#2A1C14] px-6 py-4 text-white">
+      <div className="bg-gradient-to-r from-[#0f2a3e] to-[#0a1a28] px-6 py-4 text-white">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <span className="text-2xl">🤖</span>
           AI Assistant
@@ -150,7 +150,7 @@ export default function AIAssistantPage() {
               <div
                 className={`max-w-md lg:max-w-lg px-4 py-3 rounded-lg ${
                   msg.role === 'user'
-                    ? 'bg-[#3E2A1E] text-white rounded-br-none'
+                    ? 'bg-[#0f2a3e] text-white rounded-br-none'
                     : 'bg-gray-200 text-gray-900 rounded-bl-none'
                 }`}
               >
@@ -182,7 +182,7 @@ export default function AIAssistantPage() {
                 key={action.text}
                 onClick={() => handleSendMessage(action.text)}
                 disabled={loading}
-                className="px-3 py-2 text-sm rounded-full bg-blue-50 text-[#3E2A1E] border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all disabled:opacity-50"
+                className="px-3 py-2 text-sm rounded-full bg-blue-50 text-[#0f2a3e] border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all disabled:opacity-50"
               >
                 <span>{action.emoji}</span> {action.text}
               </button>
@@ -206,12 +206,12 @@ export default function AIAssistantPage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything about scheduling, invoices, jobs, materials..."
             disabled={loading}
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#3E2A1E] disabled:bg-gray-100"
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0f2a3e] disabled:bg-gray-100"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] transition-colors disabled:bg-gray-300 font-medium"
+            className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors disabled:bg-gray-300 font-medium"
           >
             Send
           </button>

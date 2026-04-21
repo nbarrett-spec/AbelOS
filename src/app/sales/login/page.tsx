@@ -47,39 +47,39 @@ function SalesLoginInner() {
         className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1e3a5f] via-[#2c5aa0] to-[#1a2f4e] flex-col items-center justify-center p-12 relative overflow-hidden"
       >
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#C9822B] opacity-10 rounded-full -mr-48 -mt-48" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#C9822B] opacity-5 rounded-full -ml-48 -mb-48" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#C6A24E] opacity-10 rounded-full -mr-48 -mt-48" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#C6A24E] opacity-5 rounded-full -ml-48 -mb-48" />
 
         <div className="relative z-10 text-center">
           <div className="mb-8">
-            <div className="w-24 h-24 rounded-xl bg-[#C9822B] flex items-center justify-center mx-auto shadow-lg">
+            <div className="w-24 h-24 rounded-xl bg-[#C6A24E] flex items-center justify-center mx-auto shadow-lg">
               <span className="text-5xl font-bold text-white">A</span>
             </div>
           </div>
 
           <h1 className="text-4xl font-bold text-white mb-4">Abel Sales Portal</h1>
-          <p className="text-xl text-[#C9822B] font-semibold mb-2">Track. Close. Win.</p>
+          <p className="text-xl text-[#C6A24E] font-semibold mb-2">Track. Close. Win.</p>
           <p className="text-white/70 text-lg">
             Your dedicated platform for managing deals and growing your pipeline
           </p>
 
           <div className="mt-12 space-y-4 text-left">
             <div className="flex items-start gap-3">
-              <span className="text-[#C9822B] text-2xl">✓</span>
+              <span className="text-[#C6A24E] text-2xl">✓</span>
               <div>
                 <p className="font-semibold text-white">Real-time Pipeline Visibility</p>
                 <p className="text-white/60 text-sm">Track all your deals at a glance</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-[#C9822B] text-2xl">✓</span>
+              <span className="text-[#C6A24E] text-2xl">✓</span>
               <div>
                 <p className="font-semibold text-white">Deal Management Tools</p>
                 <p className="text-white/60 text-sm">Organize and manage your opportunities</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-[#C9822B] text-2xl">✓</span>
+              <span className="text-[#C6A24E] text-2xl">✓</span>
               <div>
                 <p className="font-semibold text-white">Instant Document Access</p>
                 <p className="text-white/60 text-sm">Get contracts and materials when you need them</p>
@@ -94,11 +94,11 @@ function SalesLoginInner() {
         <div className="w-full max-w-md">
           {/* Mobile header */}
           <div className="lg:hidden mb-8 text-center">
-            <div className="w-16 h-16 rounded-lg bg-[#C9822B] flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-lg bg-[#C6A24E] flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl font-bold text-white">A</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Abel Sales</h1>
-            <p className="text-[#C9822B] font-semibold">Track. Close. Win.</p>
+            <p className="text-[#C6A24E] font-semibold">Track. Close. Win.</p>
           </div>
 
           <div>
@@ -119,7 +119,7 @@ function SalesLoginInner() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@abellumber.com"
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent transition"
                 />
               </div>
 
@@ -134,7 +134,7 @@ function SalesLoginInner() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent transition"
                 />
               </div>
 

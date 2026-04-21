@@ -157,21 +157,21 @@ export default function AgentDashboard() {
       .replace(/"/g, '&quot;')
   }
 
-  const channelColors: Record<string, string> = { PORTAL: '#3E2A1E', SMS: '#27AE60', EMAIL: '#8E44AD' }
-  const statusColors: Record<string, string> = { ACTIVE: '#27AE60', ESCALATED: '#E74C3C', RESOLVED: '#95A5A6', PENDING: '#D9993F', APPROVED: '#27AE60', DENIED: '#E74C3C' }
+  const channelColors: Record<string, string> = { PORTAL: '#0f2a3e', SMS: '#27AE60', EMAIL: '#8E44AD' }
+  const statusColors: Record<string, string> = { ACTIVE: '#27AE60', ESCALATED: '#E74C3C', RESOLVED: '#95A5A6', PENDING: '#D4B96A', APPROVED: '#27AE60', DENIED: '#E74C3C' }
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#3E2A1E', margin: 0 }}>AI Agent Dashboard</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0f2a3e', margin: 0 }}>AI Agent Dashboard</h1>
           <p style={{ color: '#6b7280', margin: '4px 0 0' }}>
             Monitor conversations, approve schedule changes, manage escalations
-            {loading && <span style={{ marginLeft: '8px', color: '#D9993F' }}>{'\u2022'} Refreshing...</span>}
+            {loading && <span style={{ marginLeft: '8px', color: '#D4B96A' }}>{'\u2022'} Refreshing...</span>}
           </p>
         </div>
-        <button onClick={loadData} style={{ background: '#3E2A1E', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}>
+        <button onClick={loadData} style={{ background: '#0f2a3e', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}>
           Refresh
         </button>
       </div>
@@ -181,7 +181,7 @@ export default function AgentDashboard() {
         {(['overview', 'conversations', 'schedule-requests'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: '10px 20px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600',
-            background: tab === t ? '#3E2A1E' : 'transparent',
+            background: tab === t ? '#0f2a3e' : 'transparent',
             color: tab === t ? 'white' : '#6b7280',
             borderRadius: '8px 8px 0 0',
             transition: 'all 0.2s',
@@ -199,8 +199,8 @@ export default function AgentDashboard() {
             {[
               { label: 'Active Chats', value: stats.activeConversations, color: '#27AE60', icon: '\uD83D\uDCAC' },
               { label: 'Escalated', value: stats.escalatedConversations, color: '#E74C3C', icon: '\uD83D\uDD34' },
-              { label: 'Pending Approvals', value: stats.pendingScheduleChanges, color: '#D9993F', icon: '\u23F3' },
-              { label: "Today's Chats", value: stats.todayConversations, color: '#3E2A1E', icon: '\uD83D\uDCCA' },
+              { label: 'Pending Approvals', value: stats.pendingScheduleChanges, color: '#D4B96A', icon: '\u23F3' },
+              { label: "Today's Chats", value: stats.todayConversations, color: '#0f2a3e', icon: '\uD83D\uDCCA' },
               { label: "Today's Messages", value: stats.todayMessages, color: '#8E44AD', icon: '\u2709\uFE0F' },
               { label: 'Auto-Approved', value: stats.autoApproved, color: '#27AE60', icon: '\u2705' },
             ].map((s, i) => (
@@ -224,7 +224,7 @@ export default function AgentDashboard() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => handleConvAction(c.id, 'take_over')} style={{ background: '#3E2A1E', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Take Over</button>
+                    <button onClick={() => handleConvAction(c.id, 'take_over')} style={{ background: '#0f2a3e', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Take Over</button>
                     <button onClick={() => handleConvAction(c.id, 'resolve')} style={{ background: '#27AE60', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Resolve</button>
                   </div>
                 </div>
@@ -309,9 +309,9 @@ export default function AgentDashboard() {
             {selectedConv && (
               <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', maxHeight: '600px' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', color: '#3E2A1E' }}>Conversation</h3>
+                  <h3 style={{ margin: 0, fontSize: '16px', color: '#0f2a3e' }}>Conversation</h3>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => handleConvAction(selectedConv, 'take_over')} style={{ background: '#3E2A1E', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Take Over</button>
+                    <button onClick={() => handleConvAction(selectedConv, 'take_over')} style={{ background: '#0f2a3e', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Take Over</button>
                     <button onClick={() => handleConvAction(selectedConv, 'resolve')} style={{ background: '#27AE60', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Resolve</button>
                     <button onClick={() => setSelectedConv(null)} style={{ background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Close</button>
                   </div>
@@ -342,7 +342,7 @@ export default function AgentDashboard() {
                     placeholder="Type a staff reply..."
                     style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '13px', outline: 'none' }}
                   />
-                  <button onClick={sendStaffReply} disabled={!staffReply.trim()} style={{ background: '#3E2A1E', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px', opacity: staffReply.trim() ? 1 : 0.5 }}>Send</button>
+                  <button onClick={sendStaffReply} disabled={!staffReply.trim()} style={{ background: '#0f2a3e', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontSize: '13px', opacity: staffReply.trim() ? 1 : 0.5 }}>Send</button>
                 </div>
               </div>
             )}
@@ -375,7 +375,7 @@ export default function AgentDashboard() {
                   <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>No schedule requests found</td></tr>
                 ) : scheduleRequests.map(r => (
                   <tr key={r.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: '600', color: '#3E2A1E' }}>{escapeHtml(r.requestNumber)}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f2a3e' }}>{escapeHtml(r.requestNumber)}</td>
                     <td style={{ padding: '12px 16px' }}>
                       <div>{escapeHtml(r.companyName)}</div>
                       <div style={{ fontSize: '12px', color: '#6b7280' }}>{escapeHtml(r.contactName)}</div>

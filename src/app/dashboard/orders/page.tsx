@@ -178,7 +178,7 @@ export default function BuilderOrdersPage() {
           placeholder="Search by order #, product name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]"
+          className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
         />
       </div>
 
@@ -188,7 +188,7 @@ export default function BuilderOrdersPage() {
           onClick={() => setStatusFilter('')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             statusFilter === ''
-              ? 'bg-[#3E2A1E] text-white'
+              ? 'bg-[#0f2a3e] text-white'
               : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
           }`}
         >
@@ -200,7 +200,7 @@ export default function BuilderOrdersPage() {
             onClick={() => setStatusFilter(status)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               statusFilter === status
-                ? 'bg-[#3E2A1E] text-white'
+                ? 'bg-[#0f2a3e] text-white'
                 : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
             }`}
           >
@@ -211,7 +211,7 @@ export default function BuilderOrdersPage() {
           onClick={() => setStatusFilter('COMPLETE')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             statusFilter === 'COMPLETE'
-              ? 'bg-[#3E2A1E] text-white'
+              ? 'bg-[#0f2a3e] text-white'
               : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
           }`}
         >
@@ -221,7 +221,7 @@ export default function BuilderOrdersPage() {
 
       {loading && !orders.length ? (
         <div className="bg-white rounded-lg border p-16 flex items-center justify-center">
-          <div className="w-6 h-6 border-3 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-lg border p-16 text-center">
@@ -256,7 +256,7 @@ export default function BuilderOrdersPage() {
                   onClick={() => searchOrders(searchQuery, statusFilter, p)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
                     p === page
-                      ? 'bg-[#3E2A1E] text-white'
+                      ? 'bg-[#0f2a3e] text-white'
                       : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -317,14 +317,14 @@ export default function BuilderOrdersPage() {
                             <div className="font-medium text-gray-900">{item.productName}</div>
                             <div className="text-xs text-gray-500">SKU: {item.sku}</div>
                             {item.discontinued && <div className="text-xs text-red-600">Discontinued</div>}
-                            {!item.inStock && !item.discontinued && <div className="text-xs text-amber-600">Out of stock</div>}
+                            {!item.inStock && !item.discontinued && <div className="text-xs text-signal">Out of stock</div>}
                           </td>
                           <td className="px-3 py-3 text-center text-gray-900">{item.quantity}</td>
                           <td className="px-3 py-3 text-right text-gray-900">{fmt(item.originalUnitPrice)}</td>
-                          <td className={`px-3 py-3 text-right font-medium ${item.priceChanged ? 'text-[#C9822B]' : 'text-gray-900'}`}>
+                          <td className={`px-3 py-3 text-right font-medium ${item.priceChanged ? 'text-[#C6A24E]' : 'text-gray-900'}`}>
                             {fmt(item.currentUnitPrice)}
                             {item.priceChanged && (
-                              <div className="text-xs text-[#C9822B]">
+                              <div className="text-xs text-[#C6A24E]">
                                 {item.currentUnitPrice > item.originalUnitPrice ? '+' : ''}
                                 {fmt(item.currentUnitPrice - item.originalUnitPrice)}
                               </div>
@@ -339,7 +339,7 @@ export default function BuilderOrdersPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={addToCart}
-                    className="flex-1 px-4 py-2 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold rounded-lg transition"
+                    className="flex-1 px-4 py-2 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-lg transition"
                   >
                     Add Available Items to Cart
                   </button>
@@ -460,7 +460,7 @@ function OrderCard({
                       e.stopPropagation()
                       onReorder()
                     }}
-                    className="flex-1 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold text-sm py-2 rounded transition"
+                    className="flex-1 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold text-sm py-2 rounded transition"
                   >
                     Reorder
                   </button>
@@ -469,7 +469,7 @@ function OrderCard({
                       e.stopPropagation()
                       setShowSaveTemplate(true)
                     }}
-                    className="flex-1 bg-[#3E2A1E] hover:bg-[#3E2A1E]/90 text-white font-semibold text-sm py-2 rounded transition"
+                    className="flex-1 bg-[#0f2a3e] hover:bg-[#0f2a3e]/90 text-white font-semibold text-sm py-2 rounded transition"
                   >
                     Save as Template
                   </button>
@@ -495,7 +495,7 @@ function OrderCard({
                 value={templateName}
                 onChange={e => setTemplateName(e.target.value)}
                 placeholder={`${order.orderNumber} Template`}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 autoFocus
               />
             </div>
@@ -508,7 +508,7 @@ function OrderCard({
                 value={templateDesc}
                 onChange={e => setTemplateDesc(e.target.value)}
                 placeholder="e.g., Standard items for this project type..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3E2A1E]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 rows={3}
               />
             </div>
@@ -541,7 +541,7 @@ function OrderCard({
               <button
                 onClick={handleSaveTemplate}
                 disabled={savingTemplate || !templateName.trim()}
-                className="flex-1 px-4 py-2 bg-[#3E2A1E] hover:bg-[#3E2A1E]/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-[#0f2a3e] hover:bg-[#0f2a3e]/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {savingTemplate && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {savingTemplate ? 'Saving...' : 'Save Template'}

@@ -230,7 +230,7 @@ export default function BlueprintUploadPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -267,7 +267,7 @@ export default function BlueprintUploadPage() {
                   isDone
                     ? 'bg-green-500 text-white'
                     : isActive
-                    ? 'bg-[#3E2A1E] text-white'
+                    ? 'bg-[#0f2a3e] text-white'
                     : 'bg-gray-200 text-gray-500'
                 }`}
               >
@@ -305,7 +305,7 @@ export default function BlueprintUploadPage() {
               </p>
               <Link
                 href="/projects/new"
-                className="px-5 py-2.5 bg-[#3E2A1E] hover:bg-[#15405e] text-white font-semibold rounded-xl transition"
+                className="px-5 py-2.5 bg-[#0f2a3e] hover:bg-[#15405e] text-white font-semibold rounded-xl transition"
               >
                 Create Project First
               </Link>
@@ -321,7 +321,7 @@ export default function BlueprintUploadPage() {
                   }}
                   className={`w-full text-left p-4 rounded-xl border-2 transition ${
                     selectedProject === project.id
-                      ? 'border-[#3E2A1E] bg-[#3E2A1E]/5'
+                      ? 'border-[#0f2a3e] bg-[#0f2a3e]/5'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -338,7 +338,7 @@ export default function BlueprintUploadPage() {
       {step === 'upload' && (
         <div className="space-y-4">
           {/* Selected Project Banner */}
-          <div className="bg-[#3E2A1E]/5 border border-[#3E2A1E]/20 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-[#0f2a3e]/5 border border-[#0f2a3e]/20 rounded-xl p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase font-medium">Project</p>
               <p className="font-medium text-gray-900">
@@ -347,7 +347,7 @@ export default function BlueprintUploadPage() {
             </div>
             <button
               onClick={() => setStep('select-project')}
-              className="text-sm text-[#3E2A1E] hover:underline"
+              className="text-sm text-[#0f2a3e] hover:underline"
             >
               Change
             </button>
@@ -362,8 +362,8 @@ export default function BlueprintUploadPage() {
             onClick={() => fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition ${
               isDragging
-                ? 'border-[#C9822B] bg-orange-50'
-                : 'border-gray-300 hover:border-[#3E2A1E] hover:bg-gray-50'
+                ? 'border-[#C6A24E] bg-orange-50'
+                : 'border-gray-300 hover:border-[#0f2a3e] hover:bg-gray-50'
             }`}
           >
             <input
@@ -450,7 +450,7 @@ export default function BlueprintUploadPage() {
             <button
               onClick={handleUploadAndAnalyze}
               disabled={uploading}
-              className="w-full py-3.5 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 text-lg"
+              className="w-full py-3.5 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 text-lg"
             >
               Upload & Analyze {files.length > 1 ? `${files.length} Files` : 'Blueprint'}
             </button>
@@ -503,7 +503,7 @@ export default function BlueprintUploadPage() {
                           ? 'bg-red-400'
                           : f.progress === 100
                           ? 'bg-green-500'
-                          : 'bg-[#C9822B]'
+                          : 'bg-[#C6A24E]'
                       }`}
                       style={{ width: `${f.progress}%` }}
                     />

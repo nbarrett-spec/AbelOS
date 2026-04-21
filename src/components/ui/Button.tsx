@@ -7,9 +7,9 @@ import { clsx } from 'clsx'
 
 const variants = {
   primary:
-    'bg-abel-walnut text-white hover:bg-abel-walnut-dark active:bg-abel-walnut-dark shadow-sm hover:shadow-md',
+    'bg-brand text-white hover:bg-navy-deep active:bg-navy-deep shadow-sm hover:shadow-md',
   accent:
-    'bg-abel-amber text-white hover:bg-abel-amber-dark active:bg-abel-amber-dark shadow-sm hover:shadow-md',
+    'bg-signal text-white hover:bg-signal-dark active:bg-signal-dark shadow-sm hover:shadow-md',
   outline:
     'border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800',
   ghost:
@@ -19,7 +19,7 @@ const variants = {
   success:
     'bg-success-600 text-white hover:bg-success-700 active:bg-success-800 shadow-sm hover:shadow-md',
   'navy-outline':
-    'border border-abel-walnut/30 text-abel-walnut hover:bg-abel-walnut/5 active:bg-abel-walnut/10 dark:text-abel-walnut-light',
+    'border border-brand/30 text-brand hover:bg-brand/5 active:bg-brand/10 dark:text-brand-hover',
 } as const
 
 const sizes = {
@@ -72,7 +72,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           // Base
           'relative inline-flex items-center justify-center font-medium',
           'transition-all duration-150 ease-out',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/40 focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2',
           'select-none whitespace-nowrap',
           // Variant + Size
           variants[variant],

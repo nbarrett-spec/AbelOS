@@ -117,7 +117,7 @@ export function AccountStatement() {
         <h2 style={{
           fontSize: '18px',
           fontWeight: 'bold',
-          color: '#3E2A1E',
+          color: '#0f2a3e',
           marginBottom: '16px',
         }}>
           Account Statement
@@ -223,7 +223,7 @@ export function AccountStatement() {
             disabled={loading || !startDate || !endDate}
             style={{
               padding: '10px 16px',
-              backgroundColor: '#C9822B',
+              backgroundColor: '#C6A24E',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -244,7 +244,7 @@ export function AccountStatement() {
             disabled={loading || !startDate || !endDate}
             style={{
               padding: '10px 16px',
-              backgroundColor: '#3E2A1E',
+              backgroundColor: '#0f2a3e',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -275,7 +275,7 @@ export function AccountStatement() {
           {/* Statement Header */}
           <div
             style={{
-              backgroundColor: '#3E2A1E',
+              backgroundColor: '#0f2a3e',
               color: 'white',
               padding: '24px',
               textAlign: 'center',
@@ -387,7 +387,7 @@ export function AccountStatement() {
                   style={{
                     fontSize: '18px',
                     fontWeight: 'bold',
-                    color: statement.summary.balanceDue > 0 ? '#C9822B' : '#16a34a',
+                    color: statement.summary.balanceDue > 0 ? '#C6A24E' : '#16a34a',
                   }}
                 >
                   {formatCurrency(statement.summary.balanceDue)}
@@ -519,7 +519,7 @@ export function AccountStatement() {
                       style={{
                         padding: '12px 16px',
                         textAlign: 'right',
-                        color: entry.charges > 0 ? '#C9822B' : '#9ca3af',
+                        color: entry.charges > 0 ? '#C6A24E' : '#9ca3af',
                         fontWeight: entry.charges > 0 ? '500' : '400',
                       }}
                     >
@@ -560,7 +560,7 @@ export function AccountStatement() {
             style={{
               padding: '16px',
               backgroundColor: '#f9fafb',
-              borderTop: '2px solid #3E2A1E',
+              borderTop: '2px solid #0f2a3e',
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
               gap: '24px',
@@ -581,7 +581,7 @@ export function AccountStatement() {
                 style={{
                   fontSize: '16px',
                   fontWeight: 'bold',
-                  color: '#C9822B',
+                  color: '#C6A24E',
                 }}
               >
                 {formatCurrency(statement.summary.totalCharges)}
@@ -623,7 +623,7 @@ export function AccountStatement() {
                 style={{
                   fontSize: '16px',
                   fontWeight: 'bold',
-                  color: statement.summary.balanceDue > 0 ? '#3E2A1E' : '#16a34a',
+                  color: statement.summary.balanceDue > 0 ? '#0f2a3e' : '#16a34a',
                 }}
               >
                 {formatCurrency(statement.summary.balanceDue)}

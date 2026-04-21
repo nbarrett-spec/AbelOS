@@ -64,7 +64,7 @@ function dotClass(type: HealthStatus | SystemAlert['type'] | 'ok'): string {
     case 'info':
       return 'bg-blue-500'
     case 'warning':
-      return 'bg-amber-500'
+      return 'bg-signal'
     case 'critical':
     case 'not_ready':
     case 'error':
@@ -220,7 +220,7 @@ export function SystemPulse() {
                     a.type === 'critical'
                       ? 'text-red-600'
                       : a.type === 'warning'
-                      ? 'text-amber-600'
+                      ? 'text-signal'
                       : 'text-blue-600'
                   }`}
                 >

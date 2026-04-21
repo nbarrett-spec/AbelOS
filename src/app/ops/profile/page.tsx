@@ -144,7 +144,7 @@ export default function StaffProfilePage() {
     return (
       <div className="p-6 max-w-3xl mx-auto">
         <div className="flex items-center justify-center py-16">
-          <div className="w-6 h-6 border-3 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     )
@@ -154,7 +154,7 @@ export default function StaffProfilePage() {
     <div className="p-6 max-w-3xl mx-auto">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#3E2A1E] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
@@ -182,7 +182,7 @@ export default function StaffProfilePage() {
               {(profile?.roles?.length ? profile.roles : [profile?.role].filter(Boolean)).map((r) => (
                 <span
                   key={r}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#3E2A1E]/10 text-[#3E2A1E]"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#0f2a3e]/10 text-[#0f2a3e]"
                 >
                   {ROLE_LABELS[r || ''] || r}
                 </span>
@@ -204,7 +204,7 @@ export default function StaffProfilePage() {
             <button
               onClick={saveProfile}
               disabled={savingProfile}
-              className="bg-[#C9822B] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#A86B1F] transition disabled:opacity-50"
+              className="bg-[#C6A24E] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition disabled:opacity-50"
             >
               {savingProfile ? 'Saving...' : 'Save Changes'}
             </button>
@@ -290,7 +290,7 @@ export default function StaffProfilePage() {
           <button
             onClick={changePassword}
             disabled={savingPassword || !currentPassword || !newPassword || newPassword !== confirmPassword}
-            className="bg-[#3E2A1E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[#0f2a3e] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {savingPassword ? 'Changing...' : 'Change Password'}
           </button>

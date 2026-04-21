@@ -81,7 +81,7 @@ const TILE_COLORS: Record<TileStatus, string> = {
 
 const TILE_DOTS: Record<TileStatus, string> = {
   green: 'bg-green-500',
-  yellow: 'bg-amber-500',
+  yellow: 'bg-signal',
   red: 'bg-rose-500',
   gray: 'bg-gray-400',
 }
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                         key={quote.id}
                         className="border-b border-gray-100 hover:bg-gray-50 transition"
                       >
-                        <td className="py-3 px-4 font-medium text-abel-walnut">
+                        <td className="py-3 px-4 font-medium text-brand">
                           {quote.quoteNumber}
                         </td>
                         <td className="py-3 px-4">{quote.builderName}</td>
@@ -365,7 +365,7 @@ export default function AdminDashboard() {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full animate-pulse ${isCritical ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                              <span className={`w-2 h-2 rounded-full animate-pulse ${isCritical ? 'bg-rose-500' : 'bg-signal'}`} />
                               <span className="text-sm font-semibold">
                                 {inc.title}
                               </span>

@@ -95,7 +95,7 @@ export default function AccountHealthPanel({
           {/* Outstanding */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Outstanding</p>
-            <p className={`text-xl font-bold ${outstandingBalance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-success-600 dark:text-success-400'}`}>
+            <p className={`text-xl font-bold ${outstandingBalance > 0 ? 'text-signal dark:text-signal-hover' : 'text-success-600 dark:text-success-400'}`}>
               {formatCurrency(outstandingBalance)}
             </p>
             {overdueCount > 0 && (
@@ -120,7 +120,7 @@ export default function AccountHealthPanel({
           {/* Active Orders */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Active Orders</p>
-            <p className="text-xl font-bold text-abel-walnut dark:text-abel-walnut-light">{activeOrders}</p>
+            <p className="text-xl font-bold text-brand dark:text-brand-hover">{activeOrders}</p>
           </div>
 
           {/* Account Balance */}
@@ -148,7 +148,7 @@ export default function AccountHealthPanel({
         {/* Action */}
         <Link
           href="/dashboard/invoices"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark dark:hover:text-white transition-colors group"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand dark:text-brand-hover hover:text-navy-deep dark:hover:text-white transition-colors group"
         >
           View All Invoices
           <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

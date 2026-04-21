@@ -120,7 +120,7 @@ export default function FinancialReportsPage() {
 
   const getMarginColor = (margin: number): string => {
     if (margin < 15) return 'text-red-400';
-    if (margin < 30) return 'text-amber-400';
+    if (margin < 30) return 'text-signal-hover';
     return 'text-emerald-400';
   };
 
@@ -149,7 +149,7 @@ export default function FinancialReportsPage() {
         <div className="mb-6">
           <Link
             href="/ops/portal/accounting"
-            className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300"
+            className="inline-flex items-center gap-2 text-signal-hover hover:text-amber-300"
           >
             <ChevronLeft size={20} />
             Back to Accounting
@@ -174,7 +174,7 @@ export default function FinancialReportsPage() {
       <div className="mb-8">
         <Link
           href="/ops/portal/accounting"
-          className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 mb-4"
+          className="inline-flex items-center gap-2 text-signal-hover hover:text-amber-300 mb-4"
         >
           <ChevronLeft size={20} />
           Back to Accounting
@@ -200,7 +200,7 @@ export default function FinancialReportsPage() {
               {tab === 'cash-flow' && 'Cash Flow'}
               {tab === 'job-profitability' && 'Job Profitability'}
               {activeTab === tab && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-400"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-signal-hover"></div>
               )}
             </button>
           ))}
@@ -219,7 +219,7 @@ export default function FinancialReportsPage() {
                 {/* Gross Margin Card */}
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
                   <h2 className="text-sm font-semibold text-gray-400 mb-2">Overall Gross Margin</h2>
-                  <div className="text-5xl font-bold text-amber-400">
+                  <div className="text-5xl font-bold text-signal-hover">
                     {formatPercent(pnlData.grossMarginPercent)}
                   </div>
                 </div>
@@ -273,7 +273,7 @@ export default function FinancialReportsPage() {
                           <td className="px-6 py-4 text-right text-emerald-400">
                             {formatCurrency(pnlData.monthlyData.reduce((sum: number, m: MonthlyPnL) => sum + m.netIncome, 0))}
                           </td>
-                          <td className="px-6 py-4 text-right text-amber-400">
+                          <td className="px-6 py-4 text-right text-signal-hover">
                             {formatPercent(
                               (pnlData.monthlyData.reduce((sum: number, m: MonthlyPnL) => sum + m.netIncome, 0) /
                                 pnlData.monthlyData.reduce((sum: number, m: MonthlyPnL) => sum + m.revenue, 0)) *
@@ -297,11 +297,11 @@ export default function FinancialReportsPage() {
                         <div key={idx} className="space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-white font-medium">{builder.builderName}</span>
-                            <span className="text-amber-400 font-semibold">{formatCurrency(builder.revenue)}</span>
+                            <span className="text-signal-hover font-semibold">{formatCurrency(builder.revenue)}</span>
                           </div>
                           <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
                             <div
-                              className="bg-amber-400 h-full rounded-full"
+                              className="bg-signal-hover h-full rounded-full"
                               style={{ width: `${percentage}%` }}
                             ></div>
                           </div>
@@ -434,7 +434,7 @@ export default function FinancialReportsPage() {
                 {/* Average Margin Card */}
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
                   <h2 className="text-sm font-semibold text-gray-400 mb-2">Overall Average Margin</h2>
-                  <div className="text-5xl font-bold text-amber-400">
+                  <div className="text-5xl font-bold text-signal-hover">
                     {formatPercent(jobProfitabilityData.averageMargin)}
                   </div>
                 </div>

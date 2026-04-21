@@ -10,11 +10,11 @@ export default function HomeownerLayout({
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Homeowner Header */}
-      <header className="bg-[#3E2A1E] text-white">
+      <header className="bg-[#0f2a3e] text-white">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight">ABEL LUMBER</h1>
-            <p className="text-[#C9822B] text-xs font-medium">Door & Hardware Selection Portal</p>
+            <p className="text-[#C6A24E] text-xs font-medium">Door & Hardware Selection Portal</p>
           </div>
           <a href="tel:18002235667" className="text-sm text-white/80 hover:text-white hidden sm:block">
             Need help? Call 1-800-ABEL-DOORS
@@ -33,9 +33,9 @@ export default function HomeownerLayout({
           <div className="text-center sm:text-left">
             <p className="text-sm text-gray-500">Contact Abel Lumber</p>
             <p className="text-xs text-gray-400">
-              <a href="tel:18002235667" className="hover:text-[#3E2A1E]">1-800-ABEL-DOORS</a>
+              <a href="tel:18002235667" className="hover:text-[#0f2a3e]">1-800-ABEL-DOORS</a>
               {' · '}
-              <a href="mailto:homeowners@abellumber.com" className="hover:text-[#3E2A1E]">homeowners@abellumber.com</a>
+              <a href="mailto:homeowners@abellumber.com" className="hover:text-[#0f2a3e]">homeowners@abellumber.com</a>
             </p>
           </div>
           <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} Abel Lumber. All rights reserved.</p>

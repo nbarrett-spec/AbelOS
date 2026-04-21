@@ -119,7 +119,7 @@ export default function AgentChat() {
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br/>')
       .replace(/\u2022 /g, '&bull; ')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#C9822B;text-decoration:underline" target="_blank" rel="noopener">$1</a>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#C6A24E;text-decoration:underline" target="_blank" rel="noopener">$1</a>')
     return safe
   }
 
@@ -141,7 +141,7 @@ export default function AgentChat() {
           width: '60px',
           height: '60px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #3E2A1E 0%, #2E86C1 100%)',
+          background: 'linear-gradient(135deg, #0f2a3e 0%, #2E86C1 100%)',
           color: 'white',
           border: 'none',
           cursor: 'pointer',
@@ -169,7 +169,7 @@ export default function AgentChat() {
             position: 'absolute',
             top: '-4px',
             right: '-4px',
-            background: '#C9822B',
+            background: '#C6A24E',
             color: 'white',
             borderRadius: '50%',
             width: '22px',
@@ -206,7 +206,7 @@ export default function AgentChat() {
           border: window.innerWidth < 640 ? 'none' : '1px solid #e5e7eb',
         }}>
           <div style={{
-            background: 'linear-gradient(135deg, #3E2A1E 0%, #2E86C1 100%)',
+            background: 'linear-gradient(135deg, #0f2a3e 0%, #2E86C1 100%)',
             padding: '16px 20px',
             color: 'white',
             display: 'flex',
@@ -273,7 +273,7 @@ export default function AgentChat() {
                     ? '14px 14px 4px 14px'
                     : '14px 14px 14px 4px',
                   background: msg.role === 'user'
-                    ? 'linear-gradient(135deg, #3E2A1E 0%, #2E86C1 100%)'
+                    ? 'linear-gradient(135deg, #0f2a3e 0%, #2E86C1 100%)'
                     : 'white',
                   color: msg.role === 'user' ? 'white' : '#1f2937',
                   fontSize: '13.5px',
@@ -344,9 +344,9 @@ export default function AgentChat() {
                     transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#3E2A1E'
+                    e.currentTarget.style.background = '#0f2a3e'
                     e.currentTarget.style.color = 'white'
-                    e.currentTarget.style.borderColor = '#3E2A1E'
+                    e.currentTarget.style.borderColor = '#0f2a3e'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'white'
@@ -389,7 +389,7 @@ export default function AgentChat() {
                 transition: 'border-color 0.2s',
                 background: loading ? '#f9fafb' : 'white',
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3E2A1E' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#0f2a3e' }}
               onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db' }}
             />
             <button
@@ -399,7 +399,7 @@ export default function AgentChat() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                background: input.trim() ? 'linear-gradient(135deg, #3E2A1E 0%, #2E86C1 100%)' : '#e5e7eb',
+                background: input.trim() ? 'linear-gradient(135deg, #0f2a3e 0%, #2E86C1 100%)' : '#e5e7eb',
                 color: 'white',
                 border: 'none',
                 cursor: input.trim() ? 'pointer' : 'default',

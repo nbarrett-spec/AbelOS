@@ -45,8 +45,8 @@ interface BulkAllocationResult {
 
 export default function AllocationManagementPage() {
   const router = useRouter()
-  const NAVY = '#3E2A1E'
-  const ORANGE = '#C9822B'
+  const NAVY = '#0f2a3e'
+  const ORANGE = '#C6A24E'
 
   // Summary data
   const [stats, setStats] = useState({

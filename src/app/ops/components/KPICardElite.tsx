@@ -15,17 +15,17 @@ interface KPICardEliteProps {
 }
 
 const colorMap: Record<string, { border: string; bg: string }> = {
-  walnut: { border: 'border-l-abel-walnut', bg: 'hover:bg-abel-walnut/5' },
-  amber: { border: 'border-l-abel-amber', bg: 'hover:bg-abel-amber/5' },
+  walnut: { border: 'border-l-brand', bg: 'hover:bg-brand/5' },
+  amber: { border: 'border-l-signal', bg: 'hover:bg-signal/5' },
   green: { border: 'border-l-abel-green', bg: 'hover:bg-abel-green/5' },
-  charcoal: { border: 'border-l-abel-charcoal', bg: 'hover:bg-abel-charcoal/5' },
+  charcoal: { border: 'border-l-navy', bg: 'hover:bg-navy/5' },
   info: { border: 'border-l-info-500', bg: 'hover:bg-info-50' },
   warning: { border: 'border-l-warning-500', bg: 'hover:bg-warning-50' },
   danger: { border: 'border-l-danger-500', bg: 'hover:bg-danger-50' },
   // Legacy aliases
-  navy: { border: 'border-l-abel-walnut', bg: 'hover:bg-abel-walnut/5' },
-  orange: { border: 'border-l-abel-amber', bg: 'hover:bg-abel-amber/5' },
-  slate: { border: 'border-l-abel-charcoal', bg: 'hover:bg-abel-charcoal/5' },
+  navy: { border: 'border-l-brand', bg: 'hover:bg-brand/5' },
+  orange: { border: 'border-l-signal', bg: 'hover:bg-signal/5' },
+  slate: { border: 'border-l-navy', bg: 'hover:bg-navy/5' },
 }
 
 export function KPICardElite({
@@ -80,18 +80,18 @@ export function KPICardElite({
 
 function SparklineEmbedded({ data, color }: { data: number[]; color: string }) {
   const colorVal: Record<string, string> = {
-    walnut: '#3E2A1E',
-    amber: '#C9822B',
+    walnut: '#0f2a3e',
+    amber: '#C6A24E',
     green: '#27AE60',
     charcoal: '#2C2C2C',
     info: '#0ea5e9',
     warning: '#f59e0b',
     danger: '#ef4444',
-    navy: '#3E2A1E',
-    orange: '#C9822B',
+    navy: '#0f2a3e',
+    orange: '#C6A24E',
     slate: '#2C2C2C',
   }
-  const strokeColor = colorVal[color] || '#3E2A1E'
+  const strokeColor = colorVal[color] || '#0f2a3e'
 
   const max = Math.max(...data)
   const min = Math.min(...data)

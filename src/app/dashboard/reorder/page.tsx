@@ -324,7 +324,7 @@ export default function ReorderPage() {
                           <button
                             onClick={() => addFrequentItemToCart(product)}
                             disabled={!product.inStock}
-                            className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium py-1 rounded transition"
+                            className="flex-1 bg-signal hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium py-1 rounded transition"
                           >
                             Add to Cart
                           </button>
@@ -481,7 +481,7 @@ export default function ReorderPage() {
                     <button
                       onClick={submitReorder}
                       disabled={submitting || cart.length === 0}
-                      className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded transition"
+                      className="w-full bg-signal hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded transition"
                     >
                       {submitting ? 'Submitting...' : 'Place Reorder'}
                     </button>

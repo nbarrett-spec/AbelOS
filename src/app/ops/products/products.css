@@ -1,12 +1,12 @@
-/* Abel Lumber Brand Colors */
+/* Drafting Room Brand Colors */
 :root {
-  --abel-walnut: #3E2A1E;
-  --abel-amber: #C9822B;
-  --abel-green: #27ae60;
-  --abel-light-gray: #ecf0f1;
+  --brand-navy: #0f2a3e;
+  --brand-gold: #C6A24E;
+  --brand-green: #27ae60;
+  --brand-light-gray: #ecf0f1;
   --abel-dark-gray: #404040;
   --abel-success: #27ae60;
-  --abel-warning: #D9993F;
+  --abel-warning: #D4B96A;
   --abel-danger: #e74c3c;
   --abel-white: #ffffff;
   --abel-border: #bdc3c7;
@@ -25,7 +25,7 @@
 
 .products-header h1 {
   font-size: 2rem;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   margin-bottom: 0.5rem;
   font-weight: 700;
 }
@@ -47,12 +47,12 @@
   background: var(--abel-white);
   padding: 1.5rem;
   border-radius: 8px;
-  border-left: 4px solid var(--abel-walnut);
+  border-left: 4px solid var(--brand-navy);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .stat-card.success {
-  border-left-color: var(--abel-green);
+  border-left-color: var(--brand-green);
 }
 
 .stat-card.warning {
@@ -62,7 +62,7 @@
 .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   margin-bottom: 0.5rem;
 }
 
@@ -93,7 +93,7 @@
 .control-group label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -112,7 +112,7 @@
 .input-text:focus,
 .input-select:focus {
   outline: none;
-  border-color: var(--abel-walnut);
+  border-color: var(--brand-navy);
   box-shadow: 0 0 0 3px rgba(62, 42, 30, 0.1);
 }
 
@@ -135,14 +135,14 @@
 }
 
 .toggle-btn.active {
-  background: var(--abel-walnut);
+  background: var(--brand-navy);
   color: var(--abel-white);
-  border-color: var(--abel-walnut);
+  border-color: var(--brand-navy);
 }
 
 .toggle-btn:hover:not(.active) {
-  border-color: var(--abel-walnut);
-  color: var(--abel-walnut);
+  border-color: var(--brand-navy);
+  color: var(--brand-navy);
 }
 
 /* Products Content */
@@ -201,7 +201,7 @@
   position: relative;
   width: 100%;
   height: 200px;
-  background: var(--abel-light-gray);
+  background: var(--brand-light-gray);
   overflow: hidden;
 }
 
@@ -229,7 +229,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--abel-green);
+  background: var(--brand-green);
 }
 
 .image-status.needs-image .status-dot {
@@ -251,7 +251,7 @@
 
 .product-name {
   font-size: 0.95rem;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   margin: 0.5rem 0;
   font-weight: 600;
   line-height: 1.3;
@@ -266,7 +266,7 @@
 
 .category-badge {
   display: inline-block;
-  background: var(--abel-walnut);
+  background: var(--brand-navy);
   color: var(--abel-white);
   padding: 0.3rem 0.6rem;
   border-radius: 3px;
@@ -277,7 +277,7 @@
 
 .subcategory-badge {
   display: inline-block;
-  background: var(--abel-amber);
+  background: var(--brand-gold);
   color: var(--abel-white);
   padding: 0.3rem 0.6rem;
   border-radius: 3px;
@@ -288,7 +288,7 @@
 
 .product-price {
   font-size: 1.3rem;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   font-weight: 700;
   margin: 0.75rem 0;
 }
@@ -329,7 +329,7 @@
 }
 
 .products-table thead {
-  background: var(--abel-walnut);
+  background: var(--brand-navy);
   color: var(--abel-white);
 }
 
@@ -348,7 +348,7 @@
 }
 
 .products-table tbody tr:hover {
-  background: var(--abel-light-gray);
+  background: var(--brand-light-gray);
 }
 
 .list-image {
@@ -379,7 +379,7 @@
 
 .action-btn {
   padding: 0.5rem 1rem;
-  background: var(--abel-amber);
+  background: var(--brand-gold);
   color: var(--abel-white);
   border: none;
   border-radius: 4px;
@@ -390,7 +390,7 @@
 }
 
 .action-btn:hover {
-  background: #A86B1F;
+  background: #A8882A;
 }
 
 /* Pagination */
@@ -405,7 +405,7 @@
 
 .pagination-btn {
   padding: 0.6rem 1.2rem;
-  background: var(--abel-walnut);
+  background: var(--brand-navy);
   color: var(--abel-white);
   border: none;
   border-radius: 4px;
@@ -460,12 +460,12 @@
   justify-content: space-between;
   padding: 1.5rem;
   border-bottom: 1px solid var(--abel-border);
-  background: var(--abel-light-gray);
+  background: var(--brand-light-gray);
 }
 
 .modal-header h2 {
   margin: 0;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   font-size: 1.5rem;
 }
 
@@ -485,7 +485,7 @@
 }
 
 .modal-close:hover {
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
 }
 
 .modal-body {
@@ -497,7 +497,7 @@
 }
 
 .modal-section h3 {
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   font-size: 1.1rem;
   margin-bottom: 1rem;
   font-weight: 600;
@@ -505,7 +505,7 @@
 
 .modal-section label {
   display: block;
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
   font-weight: 600;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
@@ -529,7 +529,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  background: var(--abel-light-gray);
+  background: var(--brand-light-gray);
   padding: 1.5rem;
   border-radius: 8px;
 }
@@ -555,7 +555,7 @@
 }
 
 .preview-info strong {
-  color: var(--abel-walnut);
+  color: var(--brand-navy);
 }
 
 .status-line {
@@ -581,7 +581,7 @@
   justify-content: flex-end;
   padding: 1.5rem;
   border-top: 1px solid var(--abel-border);
-  background: var(--abel-light-gray);
+  background: var(--brand-light-gray);
 }
 
 .btn-primary,
@@ -596,7 +596,7 @@
 }
 
 .btn-primary {
-  background: var(--abel-walnut);
+  background: var(--brand-navy);
   color: var(--abel-white);
 }
 

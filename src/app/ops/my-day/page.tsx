@@ -73,7 +73,7 @@ export default function MyDayPage() {
       case 'HIGH':
         return 'bg-red-600'
       case 'MEDIUM':
-        return 'bg-amber-600'
+        return 'bg-signal'
       case 'LOW':
         return 'bg-green-600'
     }
@@ -171,7 +171,7 @@ export default function MyDayPage() {
                     .map(([category, tasks]) => (
                       <div key={category}>
                         <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                          <span className="inline-block w-1 h-6 rounded-full" style={{ backgroundColor: '#3E2A1E' }} />
+                          <span className="inline-block w-1 h-6 rounded-full" style={{ backgroundColor: '#0f2a3e' }} />
                           {category}
                         </h2>
                         <div className="space-y-2">

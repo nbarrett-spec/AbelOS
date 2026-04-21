@@ -166,7 +166,7 @@ export function RequestDocumentModal({
               name="type"
               value={formData.type}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             >
               {DOCUMENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -187,7 +187,7 @@ export function RequestDocumentModal({
               value={formData.title}
               onChange={handleInputChange}
               placeholder="Document title"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
 
@@ -202,7 +202,7 @@ export function RequestDocumentModal({
               value={formData.company}
               onChange={handleInputChange}
               placeholder="Company name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
 
@@ -218,7 +218,7 @@ export function RequestDocumentModal({
                 value={formData.dealId}
                 onChange={handleInputChange}
                 placeholder="Deal ID (optional)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
               />
             </div>
 
@@ -232,7 +232,7 @@ export function RequestDocumentModal({
                 value={formData.builderId}
                 onChange={handleInputChange}
                 placeholder="Builder ID (optional)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
               />
             </div>
           </div>
@@ -247,7 +247,7 @@ export function RequestDocumentModal({
               name="dueDate"
               value={formData.dueDate}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
 
@@ -262,7 +262,7 @@ export function RequestDocumentModal({
               onChange={handleInputChange}
               placeholder="Provide any additional context or requirements..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
 
@@ -277,7 +277,7 @@ export function RequestDocumentModal({
               onChange={handleInputChange}
               placeholder="Internal notes..."
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
 
@@ -294,7 +294,7 @@ export function RequestDocumentModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-[#C9822B] hover:bg-[#d46711] text-white rounded-lg font-medium disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-[#C6A24E] hover:bg-[#d46711] text-white rounded-lg font-medium disabled:opacity-50"
             >
               {loading ? 'Requesting...' : 'Request Document'}
             </button>

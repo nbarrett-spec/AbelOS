@@ -33,7 +33,7 @@ export function StaffAuthGuard({ children, requiredRoles, fallback }: StaffAuthG
             width: 40,
             height: 40,
             border: '3px solid #e5e7eb',
-            borderTopColor: '#3E2A1E',
+            borderTopColor: '#0f2a3e',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
             margin: '0 auto 12px',
@@ -92,7 +92,7 @@ export function StaffAuthGuard({ children, requiredRoles, fallback }: StaffAuthG
               style={{
                 display: 'inline-block',
                 padding: '8px 20px',
-                background: '#3E2A1E',
+                background: '#0f2a3e',
                 color: 'white',
                 borderRadius: 6,
                 fontSize: 13,

@@ -536,7 +536,7 @@ export default function ProactiveAccountManagementPage() {
         <button
           onClick={handleGenerateTriggers}
           disabled={generating}
-          className="px-4 py-2 bg-[#3E2A1E] text-white text-sm rounded-lg hover:bg-[#3E2A1E]/90 disabled:opacity-50"
+          className="px-4 py-2 bg-[#0f2a3e] text-white text-sm rounded-lg hover:bg-[#0f2a3e]/90 disabled:opacity-50"
         >
           {generating ? 'Scanning...' : '🔍 Generate Triggers'}
         </button>
@@ -550,7 +550,7 @@ export default function ProactiveAccountManagementPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.id
-                ? 'border-[#C9822B] text-[#C9822B]'
+                ? 'border-[#C6A24E] text-[#C6A24E]'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -563,7 +563,7 @@ export default function ProactiveAccountManagementPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-[#C9822B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <div className="w-8 h-8 border-2 border-[#C6A24E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-sm text-gray-500">Loading data...</p>
           </div>
         </div>

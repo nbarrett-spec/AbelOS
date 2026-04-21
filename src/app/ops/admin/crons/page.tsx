@@ -139,7 +139,7 @@ export default function CronsPage() {
         </div>
         <button
           onClick={loadSummary}
-          className="px-4 py-2 bg-abel-walnut text-white rounded hover:bg-abel-walnut/90 text-sm font-medium"
+          className="px-4 py-2 bg-brand text-white rounded hover:bg-brand/90 text-sm font-medium"
         >
           Refresh
         </button>
@@ -235,7 +235,7 @@ export default function CronsPage() {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-xs uppercase text-gray-500 font-semibold">Never Run</div>
-          <div className={`text-3xl font-bold mt-1 ${neverRan > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+          <div className={`text-3xl font-bold mt-1 ${neverRan > 0 ? 'text-signal' : 'text-gray-400'}`}>
             {neverRan}
           </div>
         </div>

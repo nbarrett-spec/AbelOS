@@ -113,7 +113,7 @@ export default function Breadcrumbs({ currentLabel, className = '' }: Breadcrumb
             </svg>
           )}
           {i < items.length - 1 ? (
-            <Link href={item.href} className="hover:text-[#3E2A1E] transition-colors">
+            <Link href={item.href} className="hover:text-[#0f2a3e] transition-colors">
               {item.label}
             </Link>
           ) : (

@@ -16,7 +16,7 @@ export default function CrewClientLayout({
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-[#3E2A1E] text-white px-4 py-4 shadow-md">
+      <header className="bg-[#0f2a3e] text-white px-4 py-4 shadow-md">
         <div className="max-w-md mx-auto">
           <Image
             src="/images/logos/abel-logo.png"
@@ -42,7 +42,7 @@ export default function CrewClientLayout({
             href="/crew"
             className={`flex flex-col items-center justify-center w-20 h-20 rounded-lg transition-colors ${
               isActive('/crew') && pathname !== '/crew/route' && pathname !== '/crew/profile'
-                ? 'text-[#C9822B] bg-orange-50'
+                ? 'text-[#C6A24E] bg-orange-50'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -57,7 +57,7 @@ export default function CrewClientLayout({
             href="/crew/route"
             className={`flex flex-col items-center justify-center w-20 h-20 rounded-lg transition-colors ${
               isActive('/crew/route')
-                ? 'text-[#C9822B] bg-orange-50'
+                ? 'text-[#C6A24E] bg-orange-50'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -72,7 +72,7 @@ export default function CrewClientLayout({
             href="/crew/profile"
             className={`flex flex-col items-center justify-center w-20 h-20 rounded-lg transition-colors ${
               isActive('/crew/profile')
-                ? 'text-[#C9822B] bg-orange-50'
+                ? 'text-[#C6A24E] bg-orange-50'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >

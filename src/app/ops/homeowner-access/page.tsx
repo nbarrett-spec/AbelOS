@@ -158,7 +158,7 @@ export default function HomeownerAccessPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C9822B]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C6A24E]" />
       </div>
     )
   }
@@ -166,7 +166,7 @@ export default function HomeownerAccessPage() {
   return (
     <div className="space-y-6">
       {toast && (
-        <div className="fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white bg-[#3E2A1E]"
+        <div className="fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white bg-[#0f2a3e]"
           onClick={() => setToast('')}>
           {toast}
         </div>
@@ -182,7 +182,7 @@ export default function HomeownerAccessPage() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-5 py-2.5 bg-[#C9822B] text-white rounded-lg hover:bg-[#D46D1A] transition-colors font-semibold text-sm"
+          className="px-5 py-2.5 bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A] transition-colors font-semibold text-sm"
         >
           + Generate Access Code
         </button>
@@ -192,7 +192,7 @@ export default function HomeownerAccessPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Total Access Codes</p>
-          <p className="text-3xl font-bold text-[#3E2A1E] mt-2">{entries.length}</p>
+          <p className="text-3xl font-bold text-[#0f2a3e] mt-2">{entries.length}</p>
         </div>
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Active Portals</p>
@@ -200,7 +200,7 @@ export default function HomeownerAccessPage() {
         </div>
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Total Upgrades Selected</p>
-          <p className="text-3xl font-bold text-[#C9822B] mt-2">{totalUpgrades}</p>
+          <p className="text-3xl font-bold text-[#C6A24E] mt-2">{totalUpgrades}</p>
         </div>
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Unique Builders</p>
@@ -215,7 +215,7 @@ export default function HomeownerAccessPage() {
           placeholder="Search by homeowner, builder, project, or access code..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+          className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
         />
       </div>
 
@@ -228,7 +228,7 @@ export default function HomeownerAccessPage() {
             <p className="text-sm text-gray-500 mb-4">Generate an access code to give homeowners access to their upgrade portal</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-[#D46D1A] text-sm font-semibold"
+              className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A] text-sm font-semibold"
             >
               + Generate First Access Code
             </button>
@@ -264,11 +264,11 @@ export default function HomeownerAccessPage() {
               <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-semibold">Access Code</p>
-                  <p className="text-lg font-mono font-bold text-[#3E2A1E]">{entry.accessToken}</p>
+                  <p className="text-lg font-mono font-bold text-[#0f2a3e]">{entry.accessToken}</p>
                 </div>
                 <button
                   onClick={() => copyCode(entry.accessToken, entry.id)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
                 >
                   {copiedId === entry.id ? '✓ Copied!' : 'Copy Link'}
                 </button>
@@ -278,14 +278,14 @@ export default function HomeownerAccessPage() {
               <div className="flex items-center justify-between">
                 <div className="flex gap-4 text-xs text-gray-500">
                   <span>{entry.selectionCount} selections</span>
-                  <span className="text-[#C9822B] font-semibold">{entry.upgradeCount} upgrades</span>
+                  <span className="text-[#C6A24E] font-semibold">{entry.upgradeCount} upgrades</span>
                   {entry.lastVisitAt && <span>Last visit: {new Date(entry.lastVisitAt).toLocaleDateString()}</span>}
                 </div>
                 <div className="flex gap-2">
                   <Link
                     href={`/homeowner/${entry.accessToken}`}
                     target="_blank"
-                    className="px-3 py-1 text-xs font-medium text-[#3E2A1E] border border-[#3E2A1E] rounded hover:bg-[#3E2A1E]/5 transition-colors"
+                    className="px-3 py-1 text-xs font-medium text-[#0f2a3e] border border-[#0f2a3e] rounded hover:bg-[#0f2a3e]/5 transition-colors"
                   >
                     Preview Portal
                   </Link>
@@ -324,7 +324,7 @@ export default function HomeownerAccessPage() {
                     if (e.target.value) fetchProjects(e.target.value)
                   }}
                   required
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
                 >
                   <option value="">Select a builder...</option>
                   {builders.map(b => <option key={b.id} value={b.id}>{b.companyName}</option>)}
@@ -337,7 +337,7 @@ export default function HomeownerAccessPage() {
                   value={form.projectId}
                   onChange={(e) => setForm({ ...form, projectId: e.target.value })}
                   required
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
                 >
                   <option value="">Select a project...</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -352,7 +352,7 @@ export default function HomeownerAccessPage() {
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required
                     placeholder="John Smith"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
                   />
                 </div>
                 <div>
@@ -363,7 +363,7 @@ export default function HomeownerAccessPage() {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     required
                     placeholder="john@email.com"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
                   />
                 </div>
               </div>
@@ -375,7 +375,7 @@ export default function HomeownerAccessPage() {
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     placeholder="(214) 555-1234"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
                   />
                 </div>
                 <div>
@@ -383,7 +383,7 @@ export default function HomeownerAccessPage() {
                   <select
                     value={form.expiresInDays}
                     onChange={(e) => setForm({ ...form, expiresInDays: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
                   >
                     <option value="30">30 days</option>
                     <option value="60">60 days</option>
@@ -402,7 +402,7 @@ export default function HomeownerAccessPage() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2.5 bg-[#C9822B] text-white rounded-lg hover:bg-[#D46D1A] font-semibold text-sm transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A] font-semibold text-sm transition-colors"
                 >
                   Generate Access Code
                 </button>

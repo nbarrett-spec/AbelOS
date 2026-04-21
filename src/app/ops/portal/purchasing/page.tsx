@@ -170,7 +170,7 @@ export default function PurchasingPortal() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C9822B]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C6A24E]" />
       </div>
     )
   }
@@ -180,7 +180,7 @@ export default function PurchasingPortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm">
+        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
           Retry
         </button>
       </div>
@@ -196,7 +196,7 @@ export default function PurchasingPortal() {
           <p className="text-gray-600 mt-1">Purchase orders, inventory, and vendor management</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/ops/purchasing" className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-[#A86B1F] transition-colors text-sm font-medium">
+          <Link href="/ops/purchasing" className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#A8882A] transition-colors text-sm font-medium">
             + Create PO
           </Link>
           <Link href="/ops/reports" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
@@ -207,7 +207,7 @@ export default function PurchasingPortal() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#C9822B] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-[#C6A24E] p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">POs Pending Approval</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{posPending.length}</p>
           <p className="text-xs text-gray-400 mt-1">Awaiting signature</p>
@@ -235,7 +235,7 @@ export default function PurchasingPortal() {
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">POs Needing Approval</h2>
-            <Link href="/ops/purchasing" className="text-sm text-[#C9822B] hover:text-[#A86B1F]">
+            <Link href="/ops/purchasing" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
               View All →
             </Link>
           </div>
@@ -260,7 +260,7 @@ export default function PurchasingPortal() {
                   {posPending.map((po) => (
                     <tr key={po.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-3">
-                        <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-[#C9822B] hover:text-[#A86B1F]">
+                        <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-[#C6A24E] hover:text-[#A8882A]">
                           {po.poNumber}
                         </Link>
                       </td>
@@ -272,7 +272,7 @@ export default function PurchasingPortal() {
                         <button
                           onClick={() => handleApprove(po)}
                           disabled={approvingId === po.id}
-                          className="px-3 py-1 bg-[#C9822B] text-white text-xs rounded hover:bg-[#A86B1F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 bg-[#C6A24E] text-white text-xs rounded hover:bg-[#A8882A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {approvingId === po.id ? 'Approving...' : 'Approve'}
                         </button>
@@ -289,7 +289,7 @@ export default function PurchasingPortal() {
         <div className="bg-white rounded-xl border p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-2">
-            <Link href="/ops/purchasing" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C9822B] transition-all text-sm font-medium text-gray-900">
+            <Link href="/ops/purchasing" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C6A24E] transition-all text-sm font-medium text-gray-900">
               🆕 Create PO
             </Link>
             <Link href="/ops/inventory" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-500 transition-all text-sm font-medium text-gray-900">
@@ -309,7 +309,7 @@ export default function PurchasingPortal() {
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Low Stock Alerts</h2>
-          <Link href="/ops/inventory" className="text-sm text-[#C9822B] hover:text-[#A86B1F]">
+          <Link href="/ops/inventory" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
             Full Inventory →
           </Link>
         </div>
@@ -366,7 +366,7 @@ export default function PurchasingPortal() {
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Top Vendors</h2>
-          <Link href="/ops/vendors" className="text-sm text-[#C9822B] hover:text-[#A86B1F]">
+          <Link href="/ops/vendors" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
             All Vendors →
           </Link>
         </div>
@@ -380,7 +380,7 @@ export default function PurchasingPortal() {
             {vendors.map((vendor) => {
               const perf = vendorPerformance[vendor.id]
               return (
-                <div key={vendor.id || vendor.name} className="p-4 rounded-lg border border-gray-200 hover:border-[#C9822B] transition-all">
+                <div key={vendor.id || vendor.name} className="p-4 rounded-lg border border-gray-200 hover:border-[#C6A24E] transition-all">
                   <p className="font-semibold text-gray-900 text-sm mb-1">{vendor.name}</p>
                   {vendor.code && (
                     <p className="text-xs text-gray-400 font-mono mb-3">{vendor.code}</p>
@@ -480,7 +480,7 @@ export default function PurchasingPortal() {
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Recent Purchase Orders</h2>
-          <Link href="/ops/purchasing" className="text-sm text-[#C9822B] hover:text-[#A86B1F]">
+          <Link href="/ops/purchasing" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
             All Orders →
           </Link>
         </div>
@@ -500,7 +500,7 @@ export default function PurchasingPortal() {
               {recentPos.map((po) => (
                 <tr key={po.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-3">
-                    <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-[#C9822B] hover:text-[#A86B1F]">
+                    <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-[#C6A24E] hover:text-[#A8882A]">
                       {po.poNumber}
                     </Link>
                   </td>

@@ -181,7 +181,7 @@ export default function InsightsPage() {
       {/* Header */}
       <div className="border-b border-slate-200 bg-white px-6 py-8 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold" style={{ color: '#3E2A1E' }}>
+          <h1 className="text-4xl font-bold" style={{ color: '#0f2a3e' }}>
             AI Insights
           </h1>
           <p className="text-slate-600 mt-1">Intelligence from autonomous scans</p>
@@ -201,7 +201,7 @@ export default function InsightsPage() {
           {/* Warning */}
           <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
             <p className="text-slate-600 text-sm font-medium">Warning</p>
-            <p className="text-3xl font-bold" style={{ color: '#C9822B' }}>
+            <p className="text-3xl font-bold" style={{ color: '#C6A24E' }}>
               {summary.warning}
             </p>
             <p className="text-xs text-slate-500 mt-1">Attention needed</p>
@@ -329,7 +329,7 @@ export default function InsightsPage() {
 
                       {/* Impact + Entity Link + Source + Timestamp */}
                       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
-                        <div className="font-semibold" style={{ color: '#C9822B' }}>
+                        <div className="font-semibold" style={{ color: '#C6A24E' }}>
                           {insight.impact}
                         </div>
 

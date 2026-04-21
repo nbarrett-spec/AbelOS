@@ -91,8 +91,8 @@ interface ApiResponse {
 // ============================================================================
 
 const COLORS = {
-  navy: '#3E2A1E',
-  orange: '#C9822B',
+  navy: '#0f2a3e',
+  orange: '#C6A24E',
   white: '#FFFFFF',
   lightGray: '#F9FAFB',
   borderGray: '#E5E7EB',

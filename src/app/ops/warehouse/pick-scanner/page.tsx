@@ -246,7 +246,7 @@ export default function PickScannerPage() {
           <p style={{ marginBottom: '1rem', color: '#ccc' }}>
             No jobs loaded. In production, select an active job to begin picking.
           </p>
-          <Link href="/ops/manufacturing" style={{ color: '#C9822B' }}>
+          <Link href="/ops/manufacturing" style={{ color: '#C6A24E' }}>
             ← Back to Manufacturing
           </Link>
         </div>
@@ -265,7 +265,7 @@ export default function PickScannerPage() {
                 padding: '1.5rem',
                 fontSize: '1.5rem',
                 backgroundColor: '#2a2a3e',
-                border: '3px solid #C9822B',
+                border: '3px solid #C6A24E',
                 borderRadius: '0.5rem',
                 color: '#fff',
                 fontWeight: 'bold',
@@ -371,7 +371,7 @@ export default function PickScannerPage() {
                     key={pick.id}
                     style={{
                       backgroundColor: isNext ? '#3a3a4e' : '#2a2a3e',
-                      border: isNext ? '3px solid #C9822B' : '1px solid #444',
+                      border: isNext ? '3px solid #C6A24E' : '1px solid #444',
                       borderRadius: '0.75rem',
                       padding: '1.5rem',
                       opacity: pick.status === 'VERIFIED' ? 0.6 : 1,
@@ -383,7 +383,7 @@ export default function PickScannerPage() {
                       style={{
                         fontSize: '1.5rem',
                         fontWeight: 'bold',
-                        color: '#C9822B',
+                        color: '#C6A24E',
                         marginBottom: '0.75rem',
                         fontFamily: 'monospace',
                       }}

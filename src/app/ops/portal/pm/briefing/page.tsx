@@ -57,7 +57,7 @@ export default function PMBriefingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -96,14 +96,14 @@ export default function PMBriefingPage() {
           <h1 className="text-2xl font-bold text-gray-900">{greeting} — Today's Briefing</h1>
           <p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
         </div>
-        <Link href="/ops/portal/pm" className="text-sm text-[#3E2A1E] hover:underline">← Back to Dashboard</Link>
+        <Link href="/ops/portal/pm" className="text-sm text-[#0f2a3e] hover:underline">← Back to Dashboard</Link>
       </div>
 
       {/* Quick KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Active Jobs', value: s.totalActive, color: '#3E2A1E' },
-          { label: "Today's Deliveries", value: s.todaysDeliveries, color: '#C9822B' },
+          { label: 'Active Jobs', value: s.totalActive, color: '#0f2a3e' },
+          { label: "Today's Deliveries", value: s.todaysDeliveries, color: '#C6A24E' },
           { label: "Today's Installs", value: s.todaysInstallations, color: '#27AE60' },
           { label: 'At Risk', value: s.atRiskCount, color: s.atRiskCount > 0 ? '#E74C3C' : '#95A5A6' },
           { label: 'Overdue Tasks', value: s.overdueTasks, color: s.overdueTasks > 0 ? '#E74C3C' : '#95A5A6' },
@@ -144,7 +144,7 @@ export default function PMBriefingPage() {
                     <span className="text-xs text-gray-500">{formatTime(d.scheduledTime)}</span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1">{d.builderName} — {d.jobAddress || d.community || '—'}</p>
-                  {d.crewName && <p className="text-xs text-[#3E2A1E] mt-1">Crew: {d.crewName}</p>}
+                  {d.crewName && <p className="text-xs text-[#0f2a3e] mt-1">Crew: {d.crewName}</p>}
                 </Link>
               ))}
             </div>
@@ -167,7 +167,7 @@ export default function PMBriefingPage() {
                     <span className={`text-xs px-2 py-0.5 rounded ${i.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{i.status.replace(/_/g, ' ')}</span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1">{i.builderName} — {i.jobAddress || '—'}</p>
-                  {i.crewName && <p className="text-xs text-[#3E2A1E] mt-1">Crew: {i.crewName}</p>}
+                  {i.crewName && <p className="text-xs text-[#0f2a3e] mt-1">Crew: {i.crewName}</p>}
                 </Link>
               ))}
             </div>
@@ -184,7 +184,7 @@ export default function PMBriefingPage() {
           ) : (
             <div className="space-y-2">
               {data.approachingDelivery.map((j: any) => (
-                <Link key={j.id} href={`/ops/jobs/${j.id}`} className="block p-3 rounded-lg border hover:border-[#C9822B] transition">
+                <Link key={j.id} href={`/ops/jobs/${j.id}`} className="block p-3 rounded-lg border hover:border-[#C6A24E] transition">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-gray-900">{j.jobNumber}</span>
                     <span className="text-xs text-gray-500">{formatDate(j.scheduledDate)}</span>

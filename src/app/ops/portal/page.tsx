@@ -18,7 +18,7 @@ const portals = [
     description: 'Project management, job tracking, and delivery scheduling',
     icon: '👷',
     href: '/ops/portal/pm',
-    color: 'from-[#3E2A1E] to-[#2A1C14]',
+    color: 'from-[#0f2a3e] to-[#0a1a28]',
     countKey: 'pm',
     countField: 'openJobs',
   },
@@ -28,7 +28,7 @@ const portals = [
     description: 'Purchase orders, vendor management, and inventory',
     icon: '📋',
     href: '/ops/portal/purchasing',
-    color: 'from-[#C9822B] to-[#A86B1F]',
+    color: 'from-[#C6A24E] to-[#A8882A]',
     countKey: 'purchasing',
     countField: 'posPendingApproval',
   },
@@ -104,7 +104,7 @@ export default function PortalSelector() {
       {/* Portal cards grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

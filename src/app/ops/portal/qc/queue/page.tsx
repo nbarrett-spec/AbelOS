@@ -116,7 +116,7 @@ export default function QCQueuePage() {
   const priorityColors: Record<string, { badge: string; bg: string }> = {
     CRITICAL: { badge: 'bg-red-100 text-[#C0392B]', bg: 'hover:bg-red-50' },
     HIGH: { badge: 'bg-orange-100 text-orange-700', bg: 'hover:bg-orange-50' },
-    NORMAL: { badge: 'bg-blue-100 text-[#3E2A1E]', bg: 'hover:bg-blue-50' },
+    NORMAL: { badge: 'bg-blue-100 text-[#0f2a3e]', bg: 'hover:bg-blue-50' },
   }
 
   return (

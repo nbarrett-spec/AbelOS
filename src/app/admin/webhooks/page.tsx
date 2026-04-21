@@ -163,7 +163,7 @@ export default function AdminWebhooksPage() {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-xs uppercase text-gray-500 font-semibold">Pending Retry</div>
-          <div className={`text-3xl font-bold mt-1 ${countByStatus('FAILED') > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+          <div className={`text-3xl font-bold mt-1 ${countByStatus('FAILED') > 0 ? 'text-signal' : 'text-gray-400'}`}>
             {countByStatus('FAILED')}
           </div>
         </div>
@@ -273,7 +273,7 @@ export default function AdminWebhooksPage() {
                       <button
                         onClick={() => resurrect(e.id)}
                         disabled={busyId === e.id}
-                        className="text-amber-600 hover:underline disabled:opacity-50"
+                        className="text-signal hover:underline disabled:opacity-50"
                       >
                         Resurrect
                       </button>

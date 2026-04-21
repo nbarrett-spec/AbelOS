@@ -120,7 +120,7 @@ export default function EstimatorBriefingPage() {
           { label: 'Quotes in Draft', value: s.quotesInDraft, color: '#3498DB' },
           { label: 'Expiring Soon', value: s.quotesExpiringSoon, color: s.quotesExpiringSoon > 0 ? '#E74C3C' : '#95A5A6' },
           { label: 'New Requests', value: s.newRequestsToday, color: '#27AE60' },
-          { label: 'Avg Confidence', value: `${s.avgConfidenceScore}%`, color: '#D9993F', isPercent: true },
+          { label: 'Avg Confidence', value: `${s.avgConfidenceScore}%`, color: '#D4B96A', isPercent: true },
           { label: 'Completed (7d)', value: data.recentCompletions?.length || 0, color: '#9B59B6' },
         ].map(kpi => (
           <div key={kpi.label} className="bg-white rounded-xl border p-4 text-center">

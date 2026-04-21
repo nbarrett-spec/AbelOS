@@ -107,7 +107,7 @@ export default function BOMManagementPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
       </div>
     )
   }
@@ -119,7 +119,7 @@ export default function BOMManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Bill of Materials</h1>
           <p className="text-gray-600 text-sm mt-1">Define component breakdowns for assembled products (prehung doors, etc.)</p>
         </div>
-        <Link href="/ops/manufacturing" className="text-sm text-[#3E2A1E] hover:text-[#C9822B]">← Manufacturing Dashboard</Link>
+        <Link href="/ops/manufacturing" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">← Manufacturing Dashboard</Link>
       </div>
 
       {msg && <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700 text-sm">{msg}</div>}
@@ -131,7 +131,7 @@ export default function BOMManagementPage() {
           <input
             type="text"
             placeholder="Search products..."
-            className="w-full px-3 py-2 border rounded-lg text-sm mb-3 focus:ring-2 focus:ring-[#3E2A1E] focus:outline-none"
+            className="w-full px-3 py-2 border rounded-lg text-sm mb-3 focus:ring-2 focus:ring-[#0f2a3e] focus:outline-none"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -142,7 +142,7 @@ export default function BOMManagementPage() {
                 key={p.id}
                 onClick={() => loadBOM(p.id)}
                 className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                  selectedParent?.id === p.id ? 'border-[#3E2A1E] bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
+                  selectedParent?.id === p.id ? 'border-[#0f2a3e] bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >
                 <p className="font-semibold text-sm">{p.name}</p>
@@ -251,7 +251,7 @@ export default function BOMManagementPage() {
                     <input
                       type="text"
                       placeholder="Search for component product..."
-                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E] focus:outline-none"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e] focus:outline-none"
                       value={compSearch}
                       onChange={(e) => setCompSearch(e.target.value)}
                     />
@@ -273,7 +273,7 @@ export default function BOMManagementPage() {
                   <select
                     value={addType}
                     onChange={(e) => setAddType(e.target.value)}
-                    className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E] focus:outline-none"
+                    className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e] focus:outline-none"
                   >
                     <option value="">Component Type...</option>
                     {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
@@ -283,7 +283,7 @@ export default function BOMManagementPage() {
                     min={1}
                     value={addQty}
                     onChange={(e) => setAddQty(Number(e.target.value))}
-                    className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E] focus:outline-none"
+                    className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e] focus:outline-none"
                     placeholder="Qty"
                   />
                 </div>

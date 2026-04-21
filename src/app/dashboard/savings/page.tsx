@@ -113,7 +113,7 @@ export default function SavingsPage() {
     },
     cardHighlight: {
       backgroundColor: '#FFF9F0',
-      borderColor: '#C9822B',
+      borderColor: '#C6A24E',
     },
     tierBadge: {
       display: 'flex',
@@ -123,7 +123,7 @@ export default function SavingsPage() {
       marginBottom: '1rem',
     },
     tierIcon: { fontSize: '3rem' },
-    tierName: { fontSize: '1.5rem', fontWeight: '600', color: '#3E2A1E' },
+    tierName: { fontSize: '1.5rem', fontWeight: '600', color: '#0f2a3e' },
     headline: { fontSize: '1.3rem', fontWeight: '600', color: '#333', marginBottom: '0.5rem' },
     subtext: { color: '#666', fontSize: '0.95rem', marginBottom: '1rem' },
     progressBar: {
@@ -136,12 +136,12 @@ export default function SavingsPage() {
     },
     progressFill: {
       height: '100%',
-      backgroundColor: '#C9822B',
+      backgroundColor: '#C6A24E',
       transition: 'width 0.3s ease',
     },
     label: { fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' },
     metric: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.95rem' },
-    metricValue: { fontWeight: '600', color: '#3E2A1E' },
+    metricValue: { fontWeight: '600', color: '#0f2a3e' },
     sliderContainer: { marginTop: '1.5rem' },
     slider: { width: '100%', marginTop: '0.5rem' },
     table: {
@@ -175,7 +175,7 @@ export default function SavingsPage() {
 
   return (
     <div style={styles.container}>
-      <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#3E2A1E', marginBottom: '2rem' }}>Volume Savings</h1>
+      <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#0f2a3e', marginBottom: '2rem' }}>Volume Savings</h1>
 
       {/* Current Tier Card */}
       <div style={{ ...styles.card, ...styles.cardHighlight } as any}>
@@ -228,7 +228,7 @@ export default function SavingsPage() {
       {/* Savings Calculator */}
       <div style={styles.grid}>
         <div style={styles.card}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3E2A1E', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#0f2a3e', marginBottom: '1rem' }}>
             Savings Calculator
           </h3>
           <p style={styles.subtext}>How much could you save?</p>
@@ -283,7 +283,7 @@ export default function SavingsPage() {
 
         {/* All Tiers Comparison */}
         <div style={styles.card}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3E2A1E', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#0f2a3e', marginBottom: '1rem' }}>
             All Tiers
           </h3>
           <p style={styles.subtext}>Potential savings at each tier level</p>
@@ -294,9 +294,9 @@ export default function SavingsPage() {
                 key={tier.tier}
                 style={{
                   padding: '1rem',
-                  backgroundColor: tier.tier === data.currentTier ? '#C9822B20' : '#f9f9f9',
+                  backgroundColor: tier.tier === data.currentTier ? '#C6A24E20' : '#f9f9f9',
                   borderRadius: '8px',
-                  border: tier.tier === data.currentTier ? '1px solid #C9822B' : '1px solid #e0e0e0',
+                  border: tier.tier === data.currentTier ? '1px solid #C6A24E' : '1px solid #e0e0e0',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -311,7 +311,7 @@ export default function SavingsPage() {
                   </p>
                 </div>
                 {tier.tier === data.currentTier && (
-                  <p style={{ fontSize: '0.75rem', color: '#C9822B', marginTop: '0.5rem', fontWeight: '600' }}>
+                  <p style={{ fontSize: '0.75rem', color: '#C6A24E', marginTop: '0.5rem', fontWeight: '600' }}>
                     ✓ Your current tier
                   </p>
                 )}
@@ -323,7 +323,7 @@ export default function SavingsPage() {
 
       {/* Savings History */}
       <div style={styles.card}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3E2A1E', marginBottom: '1rem' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#0f2a3e', marginBottom: '1rem' }}>
           Savings History (Last 6 Months)
         </h3>
 

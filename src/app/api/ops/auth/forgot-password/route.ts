@@ -82,14 +82,14 @@ export async function POST(request: NextRequest) {
           <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
           <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
             <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-              <div style="background-color: #3E2A1E; padding: 24px 32px; text-align: left;">
+              <div style="background-color: #0f2a3e; padding: 24px 32px; text-align: left;">
                 <table><tr>
-                  <td style="background-color: #C9822B; border-radius: 8px; width: 36px; height: 36px; text-align: center; vertical-align: middle; font-weight: bold; color: white; font-size: 14px;">AB</td>
+                  <td style="background-color: #C6A24E; border-radius: 8px; width: 36px; height: 36px; text-align: center; vertical-align: middle; font-weight: bold; color: white; font-size: 14px;">AB</td>
                   <td style="padding-left: 12px; color: white; font-size: 18px; font-weight: 600;">Abel Operations</td>
                 </tr></table>
               </div>
               <div style="padding: 32px;">
-                <h2 style="color: #3E2A1E; margin-top: 0;">Reset Your Password</h2>
+                <h2 style="color: #0f2a3e; margin-top: 0;">Reset Your Password</h2>
                 <p style="color: #333; font-size: 15px; line-height: 1.6;">
                   Hi ${staff.firstName},
                 </p>
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
                   We received a request to reset your staff portal password. Click the button below to create a new one:
                 </p>
                 <div style="text-align: center; margin: 32px 0;">
-                  <a href="${resetUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+                  <a href="${resetUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
                     Reset Password
                   </a>
                 </div>
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
                 </p>
                 <p style="color: #999; font-size: 12px; margin-top: 24px;">
                   Can't click the button? Copy and paste this link: <br>
-                  <a href="${resetUrl}" style="color: #C9822B; word-break: break-all;">${resetUrl}</a>
+                  <a href="${resetUrl}" style="color: #C6A24E; word-break: break-all;">${resetUrl}</a>
                 </p>
               </div>
               <div style="padding: 24px 32px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee;">

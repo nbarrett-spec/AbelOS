@@ -161,7 +161,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
-            <select value={activityType} onChange={(e) => setActivityType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]">
+            <select value={activityType} onChange={(e) => setActivityType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]">
               <option value="CALL">Call</option>
               <option value="EMAIL">Email</option>
               <option value="MEETING">Meeting</option>
@@ -178,7 +178,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g., Discussed pricing options"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
               required
             />
           </div>
@@ -190,7 +190,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional details..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] resize-none"
             />
           </div>
 
@@ -200,7 +200,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
               type="date"
               value={followUpDate}
               onChange={(e) => setFollowUpDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
 
@@ -211,7 +211,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
             <button
               type="submit"
               disabled={submitting || !subject.trim()}
-              className="flex-1 px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-medium hover:bg-[#d46711] disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711] disabled:opacity-50 transition-colors"
             >
               {submitting ? 'Logging...' : 'Log Activity'}
             </button>
@@ -331,7 +331,7 @@ export default function SalesPipelinePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[#3E2A1E] text-white px-8 py-8">
+      <div className="bg-[#0f2a3e] text-white px-8 py-8">
         <div className="max-w-full">
           <h1 className="text-3xl font-bold">Sales Pipeline</h1>
           <p className="text-amber-100 mt-2">Kanban view of all deals in progress</p>
@@ -340,7 +340,7 @@ export default function SalesPipelinePage() {
 
       <div className="max-w-full px-8 py-8">
         {/* Summary Stats */}
-        <div className="bg-gradient-to-r from-[#3E2A1E] to-[#5a3f2a] text-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-gradient-to-r from-[#0f2a3e] to-[#5a3f2a] text-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex gap-12">
               <div>
@@ -366,13 +366,13 @@ export default function SalesPipelinePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Company or contact..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Owner</label>
-              <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]">
+              <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]">
                 <option value="">All owners</option>
                 {Object.entries(owners).map(([id, name]) => (
                   <option key={id} value={id}>
@@ -388,7 +388,7 @@ export default function SalesPipelinePage() {
                 type="date"
                 value={dateRangeStart}
                 onChange={(e) => setDateRangeStart(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
               />
             </div>
 
@@ -398,7 +398,7 @@ export default function SalesPipelinePage() {
                 type="date"
                 value={dateRangeEnd}
                 onChange={(e) => setDateRangeEnd(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
               />
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function SalesPipelinePage() {
                   setDateRangeStart('')
                   setDateRangeEnd('')
                 }}
-                className="text-sm text-[#C9822B] hover:underline font-medium"
+                className="text-sm text-[#C6A24E] hover:underline font-medium"
               >
                 Clear filters
               </button>
@@ -472,7 +472,7 @@ export default function SalesPipelinePage() {
                           </div>
 
                           {/* Deal Value */}
-                          <p className="font-bold text-base text-[#C9822B] mb-2">{formatCurrency(deal.dealValue)}</p>
+                          <p className="font-bold text-base text-[#C6A24E] mb-2">{formatCurrency(deal.dealValue)}</p>
 
                           {/* Probability Badge + Expected Close */}
                           <div className="flex items-center justify-between mb-2 gap-2">
@@ -489,7 +489,7 @@ export default function SalesPipelinePage() {
 
                           {/* Owner Initials */}
                           <div className="flex items-center gap-1 pt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#3E2A1E] text-white text-xs font-bold">{deal.owner?.initials || 'U'}</div>
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#0f2a3e] text-white text-xs font-bold">{deal.owner?.initials || 'U'}</div>
                             <p className="text-xs text-gray-500">{deal.owner?.firstName || 'Unknown'}</p>
                           </div>
 
@@ -503,7 +503,7 @@ export default function SalesPipelinePage() {
                                   <button
                                     key={nextStage}
                                     onClick={() => handleMoveStage(deal.id, nextStage)}
-                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-[#C9822B] hover:text-white transition-colors font-medium"
+                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-[#C6A24E] hover:text-white transition-colors font-medium"
                                   >
                                     {STAGE_NAMES[nextStage].split(' ')[0]}
                                   </button>

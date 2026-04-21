@@ -18,13 +18,13 @@ import Link from 'next/link'
 declare const L: any
 
 const JOB_STATUSES = [
-  { key: 'ALL', label: 'All', color: '#3E2A1E' },
+  { key: 'ALL', label: 'All', color: '#0f2a3e' },
   { key: 'CREATED', label: 'New', color: '#95A5A6' },
   { key: 'READINESS_CHECK', label: 'T-72', color: '#3498DB' },
   { key: 'MATERIALS_LOCKED', label: 'T-48', color: '#4B0082' },
   { key: 'IN_PRODUCTION', label: 'Production', color: '#9B59B6' },
   { key: 'STAGED', label: 'Staged', color: '#F1C40F' },
-  { key: 'LOADED', label: 'Loaded', color: '#C9822B' },
+  { key: 'LOADED', label: 'Loaded', color: '#C6A24E' },
   { key: 'IN_TRANSIT', label: 'Transit', color: '#FFA500' },
   { key: 'DELIVERED', label: 'Delivered', color: '#1ABC9C' },
   { key: 'INSTALLING', label: 'Installing', color: '#00BCD4' },
@@ -34,7 +34,7 @@ const JOB_STATUSES = [
 ]
 
 const TRUCK_STATUSES: Record<string, { label: string; color: string }> = {
-  EN_ROUTE: { label: 'En Route', color: '#C9822B' },
+  EN_ROUTE: { label: 'En Route', color: '#C6A24E' },
   AT_STOP: { label: 'At Stop', color: '#3498DB' },
   RETURNING: { label: 'Returning', color: '#8E44AD' },
   IDLE: { label: 'Idle', color: '#95A5A6' },
@@ -538,7 +538,7 @@ function JobPanel({ job }: { job: GeocodedJob }) {
       <div className="pt-2 space-y-2">
         <Link
           href={`/ops/jobs/${job.id}`}
-          className="block w-full text-center px-4 py-2.5 rounded-xl bg-[#3E2A1E] text-white text-sm font-semibold hover:bg-[#2A1C14] transition-colors"
+          className="block w-full text-center px-4 py-2.5 rounded-xl bg-[#0f2a3e] text-white text-sm font-semibold hover:bg-[#0a1a28] transition-colors"
         >
           Open Job Profile →
         </Link>
@@ -595,7 +595,7 @@ function TruckPanel({ truck }: { truck: TruckLocation }) {
           <div className="space-y-1.5">
             {truck.crew.members.map((m, i) => (
               <div key={i} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
-                <div className="w-7 h-7 rounded-full bg-[#3E2A1E] flex items-center justify-center text-xs font-bold text-white">
+                <div className="w-7 h-7 rounded-full bg-[#0f2a3e] flex items-center justify-center text-xs font-bold text-white">
                   {m.staff.firstName[0]}{m.staff.lastName[0]}
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">

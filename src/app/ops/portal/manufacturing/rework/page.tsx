@@ -223,11 +223,11 @@ export default function ReworkDefectTrackingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">In Rework</p>
-              <p className="text-3xl font-bold text-amber-500 mt-1">
+              <p className="text-3xl font-bold text-signal mt-1">
                 {data.inRework.count}
               </p>
             </div>
-            <div className="text-amber-500 text-3xl">🔧</div>
+            <div className="text-signal text-3xl">🔧</div>
           </div>
         </div>
 

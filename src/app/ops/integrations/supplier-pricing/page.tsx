@@ -195,8 +195,8 @@ export default function SupplierPricingPage() {
             animation: 'spin 1s linear infinite',
             width: '32px',
             height: '32px',
-            border: '4px solid #3E2A1E',
-            borderTop: '4px solid #C9822B',
+            border: '4px solid #0f2a3e',
+            borderTop: '4px solid #C6A24E',
             borderRadius: '50%',
           }}
         />
@@ -320,7 +320,7 @@ export default function SupplierPricingPage() {
           style={{
             borderRadius: '12px',
             padding: '40px 20px',
-            border: `2px dashed ${dragActive ? '#C9822B' : '#D1D5DB'}`,
+            border: `2px dashed ${dragActive ? '#C6A24E' : '#D1D5DB'}`,
             textAlign: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s',

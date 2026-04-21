@@ -27,7 +27,7 @@ const ACTIONS: QuickAction[] = [
     href: '/dashboard/orders',
     icon: <Package className="w-5 h-5" />,
     label: 'Orders',
-    color: 'text-amber-600 dark:text-amber-400',
+    color: 'text-signal dark:text-signal-hover',
     hoverBg: 'group-hover:bg-amber-50 dark:group-hover:bg-amber-950/20',
   },
   {
@@ -62,8 +62,8 @@ const ACTIONS: QuickAction[] = [
     href: '/catalog',
     icon: <Book className="w-5 h-5" />,
     label: 'Catalog',
-    color: 'text-abel-walnut dark:text-abel-walnut-light',
-    hoverBg: 'group-hover:bg-abel-walnut/5 dark:group-hover:bg-abel-walnut/10',
+    color: 'text-brand dark:text-brand-hover',
+    hoverBg: 'group-hover:bg-brand/5 dark:group-hover:bg-brand/10',
   },
   {
     href: '/dashboard/warranty',

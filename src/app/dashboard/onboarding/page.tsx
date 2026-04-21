@@ -176,7 +176,7 @@ export default function OnboardingPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-abel-walnut/5 via-white to-abel-amber/5 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-brand/5 via-white to-signal/5 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-abel-green/10 flex items-center justify-center">
             <svg
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
           </p>
           <Link
             href="/dashboard"
-            className="inline-block bg-abel-walnut hover:bg-abel-walnut/90 text-white px-6 py-2 rounded font-medium transition"
+            className="inline-block bg-brand hover:bg-brand/90 text-white px-6 py-2 rounded font-medium transition"
           >
             Go to Dashboard
           </Link>
@@ -207,7 +207,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-abel-walnut/5 via-white to-abel-amber/5 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand/5 via-white to-signal/5 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition ${
                       isActive
-                        ? 'bg-abel-walnut text-white'
+                        ? 'bg-brand text-white'
                         : isPast
                         ? 'bg-abel-green text-white'
                         : 'bg-gray-200 text-gray-600'
@@ -370,7 +370,7 @@ export default function OnboardingPage() {
           {currentStep === 'credit' && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Credit Application</h2>
-              <div className="bg-abel-amber/5 border border-abel-amber/20 rounded p-4 mb-6 text-sm text-gray-700">
+              <div className="bg-signal/5 border border-signal/20 rounded p-4 mb-6 text-sm text-gray-700">
                 We'll use this information to set up your credit terms with us.
               </div>
               <div className="col-span-2">
@@ -461,7 +461,7 @@ export default function OnboardingPage() {
                       type="checkbox"
                       checked={data.catalog[cat.key as keyof typeof data.catalog]}
                       onChange={() => handleCatalogChange(cat.key as keyof typeof data.catalog)}
-                      className="w-4 h-4 rounded border-gray-300 text-abel-walnut"
+                      className="w-4 h-4 rounded border-gray-300 text-brand"
                     />
                     <span className="ml-3 text-base">{cat.icon}</span>
                     <span className="ml-2 font-medium text-gray-900">{cat.label}</span>
@@ -487,8 +487,8 @@ export default function OnboardingPage() {
                       onClick={() => toggleDeliveryDay(day)}
                       className={`py-2 px-3 rounded text-sm font-medium border transition ${
                         data.delivery.preferredDays.includes(day)
-                          ? 'bg-abel-walnut text-white border-abel-walnut'
-                          : 'bg-white text-gray-900 border-gray-300 hover:border-abel-walnut'
+                          ? 'bg-brand text-white border-brand'
+                          : 'bg-white text-gray-900 border-gray-300 hover:border-brand'
                       }`}
                     >
                       {day.slice(0, 3)}
@@ -544,7 +544,7 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Review Your Information</h2>
 
-              <div className="border-l-4 border-abel-amber bg-amber-50 p-4 rounded">
+              <div className="border-l-4 border-signal bg-amber-50 p-4 rounded">
                 <h3 className="font-semibold text-gray-900 text-sm mb-2">Company Info</h3>
                 <dl className="text-sm text-gray-700 space-y-1">
                   <div><dt className="font-medium inline">Name: </dt><dd className="inline">{data.company.name}</dd></div>
@@ -553,7 +553,7 @@ export default function OnboardingPage() {
                 </dl>
               </div>
 
-              <div className="border-l-4 border-abel-walnut bg-amber-50 p-4 rounded">
+              <div className="border-l-4 border-brand bg-amber-50 p-4 rounded">
                 <h3 className="font-semibold text-gray-900 text-sm mb-2">Credit Application</h3>
                 <dl className="text-sm text-gray-700 space-y-1">
                   <div><dt className="font-medium inline">Requested Limit: </dt><dd className="inline">{data.credit.creditLimit || '—'}</dd></div>
@@ -612,7 +612,7 @@ export default function OnboardingPage() {
             {!isLastStep ? (
               <button
                 onClick={handleNext}
-                className="flex-1 py-2 px-4 rounded font-medium bg-abel-walnut text-white hover:bg-abel-walnut/90 transition"
+                className="flex-1 py-2 px-4 rounded font-medium bg-brand text-white hover:bg-brand/90 transition"
               >
                 Next
               </button>

@@ -61,9 +61,9 @@ interface OperatorBriefing {
 }
 
 const COLORS = {
-  navy: '#3E2A1E',
-  walnut: '#3E2A1E',
-  amber: '#C9822B',
+  navy: '#0f2a3e',
+  walnut: '#0f2a3e',
+  amber: '#C6A24E',
   green: '#27AE60',
   cream: '#F3EAD8',
   red: '#E74C3C',

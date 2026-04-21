@@ -65,8 +65,8 @@ const TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
 }
 
 const ABEL_COLORS = {
-  walnut: '#3E2A1E',
-  amber: '#C9822B',
+  walnut: '#0f2a3e',
+  amber: '#C6A24E',
   green: '#27AE60',
   cream: '#F3EAD8',
 }

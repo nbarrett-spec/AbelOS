@@ -13,7 +13,7 @@ function scorePassword(pw: string): { score: 0 | 1 | 2 | 3 | 4; label: string; c
   if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++
   const bounded = Math.min(4, score) as 0 | 1 | 2 | 3 | 4
   const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'] as const
-  const colors = ['bg-gray-200', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-green-500']
+  const colors = ['bg-gray-200', 'bg-red-500', 'bg-signal', 'bg-blue-500', 'bg-green-500']
   return { score: bounded, label: labels[bounded], color: colors[bounded] }
 }
 
@@ -151,10 +151,10 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-abel-walnut p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-brand p-12 flex-col justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-abel-amber rounded-xl flex items-center justify-center font-bold text-white">
+            <div className="w-10 h-10 bg-signal rounded-xl flex items-center justify-center font-bold text-white">
               AB
             </div>
             <span className="text-white font-semibold text-xl">Abel Builder</span>
@@ -177,7 +177,7 @@ export default function SignupPage() {
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <h1 className="text-2xl font-bold text-abel-charcoal mb-1">
+          <h1 className="text-2xl font-bold text-navy mb-1">
             Create your account
           </h1>
           <p className="text-gray-500 mb-8">
@@ -190,7 +190,7 @@ export default function SignupPage() {
               <div
                 key={s}
                 className={`h-1.5 flex-1 rounded-full transition ${
-                  s <= step ? 'bg-abel-amber' : 'bg-gray-200'
+                  s <= step ? 'bg-signal' : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -314,7 +314,7 @@ export default function SignupPage() {
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
                     tabIndex={-1}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-abel-amber transition text-sm font-medium"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-signal transition text-sm font-medium"
                   >
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
@@ -335,8 +335,8 @@ export default function SignupPage() {
                   </div>
                 )}
                 {capsLockOn && (
-                  <p className="mt-1.5 text-xs text-amber-600" aria-live="polite">
-                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" />
+                  <p className="mt-1.5 text-xs text-signal" aria-live="polite">
+                    <span className="inline-block w-2 h-2 rounded-full bg-signal mr-1.5 align-middle" />
                     Caps Lock is on
                   </p>
                 )}
@@ -508,12 +508,12 @@ export default function SignupPage() {
                   onClick={() => updateForm('paymentTerm', opt.value)}
                   className={`w-full text-left p-4 rounded-xl border-2 transition ${
                     form.paymentTerm === opt.value
-                      ? 'border-abel-amber bg-orange-50'
+                      ? 'border-signal bg-orange-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-abel-charcoal">
+                    <span className="font-medium text-navy">
                       {opt.label}
                     </span>
                     {opt.badge && (
@@ -542,7 +542,7 @@ export default function SignupPage() {
 
           <p className="mt-8 text-center text-sm text-gray-500">
             Already have an account?{' '}
-            <Link href="/login" className="text-abel-amber font-medium hover:underline">
+            <Link href="/login" className="text-signal font-medium hover:underline">
               Sign in
             </Link>
           </p>

@@ -83,7 +83,7 @@ export default function APManagementPage() {
   const getStatusBgColor = (status: string) => {
     const bgColors: Record<string, string> = {
       DRAFT: 'bg-gray-500',
-      PENDING_APPROVAL: 'bg-amber-500',
+      PENDING_APPROVAL: 'bg-signal',
       APPROVED: 'bg-blue-500',
       SENT_TO_VENDOR: 'bg-sky-500',
       PARTIALLY_RECEIVED: 'bg-purple-500',

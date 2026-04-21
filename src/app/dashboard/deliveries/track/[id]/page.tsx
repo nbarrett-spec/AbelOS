@@ -125,7 +125,7 @@ export default function DeliveryTrackingPage() {
 
   const S = {
     page: { minHeight: '100vh', backgroundColor: '#f5f6fa', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' } as React.CSSProperties,
-    header: { backgroundColor: '#3E2A1E', color: '#fff', padding: '20px 32px' } as React.CSSProperties,
+    header: { backgroundColor: '#0f2a3e', color: '#fff', padding: '20px 32px' } as React.CSSProperties,
     breadcrumb: { fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 8 } as React.CSSProperties,
     title: { fontSize: 24, fontWeight: 700, margin: 0 } as React.CSSProperties,
     container: { maxWidth: 900, margin: '0 auto', padding: '24px 32px' } as React.CSSProperties,
@@ -140,9 +140,9 @@ export default function DeliveryTrackingPage() {
     stepDot: (active: boolean, current: boolean) => ({
       width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: 14, flexShrink: 0,
-      backgroundColor: active ? (current ? '#C9822B' : '#10b981') : '#e5e7eb',
+      backgroundColor: active ? (current ? '#C6A24E' : '#10b981') : '#e5e7eb',
       color: active ? '#fff' : '#9ca3af',
-      border: current ? '3px solid #C9822B' : 'none',
+      border: current ? '3px solid #C6A24E' : 'none',
       boxShadow: current ? '0 0 0 4px rgba(230,126,34,0.2)' : 'none',
     }) as React.CSSProperties,
     stepLine: (active: boolean) => ({
@@ -160,7 +160,7 @@ export default function DeliveryTrackingPage() {
     crewCard: { display: 'flex', gap: 16, alignItems: 'center', padding: '16px 20px', backgroundColor: '#f9fafb', borderRadius: 8 } as React.CSSProperties,
     etaBanner: { padding: '12px 24px', backgroundColor: '#fffbeb', borderTop: '1px solid #fde68a', textAlign: 'center' as const, fontSize: 15, fontWeight: 600, color: '#92400e' } as React.CSSProperties,
     refreshBadge: { padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, backgroundColor: autoRefresh ? '#dcfce7' : '#f3f4f6', color: autoRefresh ? '#166534' : '#6b7280', cursor: 'pointer', border: 'none' } as React.CSSProperties,
-    link: { color: '#3E2A1E', textDecoration: 'none', fontWeight: 600 } as React.CSSProperties,
+    link: { color: '#0f2a3e', textDecoration: 'none', fontWeight: 600 } as React.CSSProperties,
     empty: { textAlign: 'center' as const, padding: 60, color: '#9ca3af' } as React.CSSProperties,
   }
 
@@ -265,7 +265,7 @@ export default function DeliveryTrackingPage() {
               {delivery.crew && (
                 <div style={{ padding: '0 24px 16px' }}>
                   <div style={S.crewCard}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#3E2A1E', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#0f2a3e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
                       🚛
                     </div>
                     <div style={{ flex: 1 }}>

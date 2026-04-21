@@ -34,7 +34,7 @@ export default function SalesScorecardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -64,7 +64,7 @@ export default function SalesScorecardPage() {
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
           {[30, 90, 180, 365].map(d => (
-            <button key={d} onClick={() => setPeriod(d)} className={`px-3 py-1.5 text-sm rounded-md font-medium transition ${period === d ? 'bg-white shadow text-[#3E2A1E]' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button key={d} onClick={() => setPeriod(d)} className={`px-3 py-1.5 text-sm rounded-md font-medium transition ${period === d ? 'bg-white shadow text-[#0f2a3e]' : 'text-gray-500 hover:text-gray-700'}`}>
               {d === 365 ? '1yr' : `${d}d`}
             </button>
           ))}
@@ -118,7 +118,7 @@ export default function SalesScorecardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-[#3E2A1E]">{rep.score}</p>
+                  <p className="text-2xl font-bold text-[#0f2a3e]">{rep.score}</p>
                   <p className="text-xs text-gray-400">score</p>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function SalesScorecardPage() {
                   {
                     label: 'Win Rate',
                     value: rep.winRate,
-                    color: '#3E2A1E',
+                    color: '#0f2a3e',
                     benchmark: companyAvg.avgWinRate || 50,
                   },
                   {
@@ -163,7 +163,7 @@ export default function SalesScorecardPage() {
                   {
                     label: 'Activity Level',
                     value: Math.min(100, (rep.activitiesThisWeek / 5) * 100),
-                    color: '#C9822B',
+                    color: '#C6A24E',
                     benchmark: 100,
                   },
                 ].map(metric => (

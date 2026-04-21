@@ -24,12 +24,12 @@ export default function Error({
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-6 py-16 bg-gray-50">
       <div className="max-w-lg w-full text-center card p-8 sm:p-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-abel-amber/10 text-abel-amber mb-6">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-signal/10 text-signal mb-6">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         </div>
-        <p className="text-sm font-semibold tracking-wider text-abel-amber uppercase mb-2">Abel Lumber</p>
+        <p className="text-sm font-semibold tracking-wider text-signal uppercase mb-2">Abel Lumber</p>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Something went wrong</h1>
         <p className="text-gray-600 mb-6 leading-relaxed">
           We hit an unexpected error. The team has been notified. You can try again or head back to a known-good page.
@@ -49,7 +49,7 @@ export default function Error({
         </div>
         <p className="mt-6 text-sm text-gray-500">
           Still broken? Email{' '}
-          <a href="mailto:support@abellumber.com" className="text-abel-walnut hover:underline font-medium">
+          <a href="mailto:support@abellumber.com" className="text-brand hover:underline font-medium">
             support@abellumber.com
           </a>
           {error.digest && ` with error ID above.`}

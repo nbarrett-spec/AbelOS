@@ -37,7 +37,7 @@ export function WorkflowAlerts() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#3E2A1E]" />
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
       </div>
     )
   }

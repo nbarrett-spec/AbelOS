@@ -188,7 +188,7 @@ export default function AdminTrendsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3E2A1E]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0f2a3e]" />
       </div>
     )
   }
@@ -204,7 +204,7 @@ export default function AdminTrendsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[#3E2A1E] text-white py-8 px-6">
+      <div className="bg-[#0f2a3e] text-white py-8 px-6">
         <h1 className="text-3xl font-bold">Business Trends</h1>
         <p className="text-gray-300 mt-2">12-month metric tracking across all operations</p>
       </div>
@@ -216,7 +216,7 @@ export default function AdminTrendsPage() {
             onClick={() => setPeriod('6')}
             className={`px-4 py-2 rounded font-medium transition ${
               period === '6'
-                ? 'bg-[#C9822B] text-white'
+                ? 'bg-[#C6A24E] text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -226,7 +226,7 @@ export default function AdminTrendsPage() {
             onClick={() => setPeriod('12')}
             className={`px-4 py-2 rounded font-medium transition ${
               period === '12'
-                ? 'bg-[#C9822B] text-white'
+                ? 'bg-[#C6A24E] text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -247,7 +247,7 @@ export default function AdminTrendsPage() {
               onClick={() =>
                 setExpandedId(expandedId === metric.id ? null : metric.id)
               }
-              className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition border-l-4 border-[#C9822B]"
+              className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition border-l-4 border-[#C6A24E]"
             >
               {/* Metric name */}
               <h3 className="text-sm font-semibold text-gray-700 truncate">
@@ -255,7 +255,7 @@ export default function AdminTrendsPage() {
               </h3>
 
               {/* Current value */}
-              <p className="text-2xl font-bold text-[#3E2A1E] mt-3">
+              <p className="text-2xl font-bold text-[#0f2a3e] mt-3">
                 {formatValue(metric.currentValue, metric.format)}
               </p>
 
@@ -293,9 +293,9 @@ export default function AdminTrendsPage() {
 
         {/* Expanded view */}
         {expandedId && (
-          <div className="mt-8 bg-white rounded-lg shadow p-6 border-l-4 border-[#C9822B]">
+          <div className="mt-8 bg-white rounded-lg shadow p-6 border-l-4 border-[#C6A24E]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-[#3E2A1E]">
+              <h2 className="text-2xl font-bold text-[#0f2a3e]">
                 {data.metrics.find((m) => m.id === expandedId)?.name}
               </h2>
               <button

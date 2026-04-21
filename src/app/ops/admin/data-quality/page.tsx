@@ -27,7 +27,7 @@ function getSeverityColor(severity: string) {
 
 function getHealthColor(score: number) {
   if (score > 80) return 'text-green-600'
-  if (score >= 50) return 'text-amber-600'
+  if (score >= 50) return 'text-signal'
   return 'text-red-600'
 }
 
@@ -114,7 +114,7 @@ export default function DataQualityPage() {
         <button
           onClick={runNow}
           disabled={runningCheck}
-          className="px-4 py-2 bg-abel-walnut text-white rounded hover:bg-abel-walnut/90 text-sm font-medium disabled:opacity-50"
+          className="px-4 py-2 bg-brand text-white rounded hover:bg-brand/90 text-sm font-medium disabled:opacity-50"
         >
           {runningCheck ? 'Running...' : 'Run Now'}
         </button>
@@ -131,8 +131,8 @@ export default function DataQualityPage() {
           <div className="text-3xl font-bold text-red-600 mt-1">{data.summary.criticalIssues}</div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs uppercase text-amber-600 font-semibold">Warnings</div>
-          <div className="text-3xl font-bold text-amber-600 mt-1">{data.summary.warningIssues}</div>
+          <div className="text-xs uppercase text-signal font-semibold">Warnings</div>
+          <div className="text-3xl font-bold text-signal mt-1">{data.summary.warningIssues}</div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-xs uppercase text-gray-500 font-semibold">Auto-Fixed (7d)</div>

@@ -56,25 +56,25 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
-      {/* ── Left panel: immersive brand experience ─────────────────── */}
-      <div className="hidden lg:flex lg:w-[55%] relative bg-abel-walnut overflow-hidden">
+      {/* ── Left panel: immersive Drafting Room experience ────────── */}
+      <div className="hidden lg:flex lg:w-[55%] relative bg-navy overflow-hidden">
         {/* Layered background */}
         <div className="absolute inset-0">
           {/* Gradient base */}
-          <div className="absolute inset-0 bg-gradient-to-br from-abel-walnut-dark via-abel-walnut to-abel-walnut-light" />
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-deep via-navy to-navy-mid" />
 
-          {/* Subtle grid pattern */}
+          {/* Drafting grid */}
           <div
-            className="absolute inset-0 opacity-[0.04]"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-              backgroundSize: '60px 60px',
+              backgroundImage: `linear-gradient(rgba(198,162,78,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(198,162,78,0.3) 1px, transparent 1px)`,
+              backgroundSize: '40px 40px',
             }}
           />
 
-          {/* Warm glow from bottom-right */}
-          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-abel-amber/15 rounded-full blur-[120px]" />
-          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-abel-walnut-light/20 rounded-full blur-[100px]" />
+          {/* Warm gold glow from bottom-right */}
+          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-gold/15 rounded-full blur-[120px]" />
+          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-navy-light/30 rounded-full blur-[100px]" />
 
           {/* Floating wood grain lines */}
           <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
@@ -105,7 +105,7 @@ export default function LoginPage() {
           <div className="max-w-md">
             <h1 className="animate-enter animate-enter-delay-1 text-4xl xl:text-5xl font-bold text-white leading-[1.1] tracking-tight">
               Built for the
-              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-abel-amber to-abel-amber-light">
+              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-light">
                 builders who
               </span>
               <span className="block mt-1">build Texas.</span>
@@ -137,7 +137,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel: login form ────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 sm:p-10">
+      <div className="flex-1 flex items-center justify-center bg-canvas p-6 sm:p-10">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-10 animate-enter">
@@ -217,7 +217,7 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-abel-walnut focus:ring-abel-walnut/30 cursor-pointer transition"
+                  className="w-4 h-4 rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-signal focus:ring-signal-subtle cursor-pointer transition"
                 />
                 <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                   Remember me
@@ -225,7 +225,7 @@ export default function LoginPage() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark dark:hover:text-white transition-colors"
+                className="text-sm font-medium text-signal hover:text-signal-hover transition-colors"
               >
                 Forgot password?
               </Link>
@@ -240,7 +240,7 @@ export default function LoginPage() {
               loading={loading}
               disabled={!email || !password}
               icon={!loading ? <LogIn className="w-4.5 h-4.5" /> : undefined}
-              className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-abel-amber/20 hover:shadow-xl hover:shadow-abel-amber/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
+              className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-gold/20 hover:shadow-xl hover:shadow-gold/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>

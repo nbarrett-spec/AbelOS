@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 
-const URGENCY_COLORS: Record<string, string> = { URGENT: '#e74c3c', SOON: '#C9822B', UPCOMING: '#3498db' }
-const STATUS_COLORS: Record<string, string> = { OPEN: '#3498db', IN_PROGRESS: '#C9822B', RESOLVED: '#27ae60', DENIED: '#e74c3c', ACTIVE: '#27ae60', EXPIRED: '#95a5a6' }
+const URGENCY_COLORS: Record<string, string> = { URGENT: '#e74c3c', SOON: '#C6A24E', UPCOMING: '#3498db' }
+const STATUS_COLORS: Record<string, string> = { OPEN: '#3498db', IN_PROGRESS: '#C6A24E', RESOLVED: '#27ae60', DENIED: '#e74c3c', ACTIVE: '#27ae60', EXPIRED: '#95a5a6' }
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -42,13 +42,13 @@ export default function WarrantyAutomationPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Warranty Automation</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Warranty Automation</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Automated warranty tracking, expiration alerts, claim analysis, and cost management</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -75,13 +75,13 @@ function DashView({ data }: { data: any }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
         <KPICard label="Active Warranties" value={Number(o.activeWarranties || 0)} color="#27ae60" />
         <KPICard label="Expiring (30d)" value={Number(o.expiring30d || 0)} color="#e74c3c" />
-        <KPICard label="Expiring (90d)" value={Number(o.expiring90d || 0)} color="#C9822B" />
+        <KPICard label="Expiring (90d)" value={Number(o.expiring90d || 0)} color="#C6A24E" />
         <KPICard label="Open Claims" value={Number(c.openClaims || 0)} color="#3498db" sub={`${c.inProgressClaims || 0} in progress`} />
         <KPICard label="Claims (30d)" value={Number(c.newThisMonth || 0)} color="#8e44ad" />
         <KPICard label="Total Resolved" value={Number(c.resolvedClaims || 0)} color="#27ae60" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Recent Claims</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Recent Claims</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead><tr style={{ background: '#f8f9fa' }}>
@@ -115,11 +115,11 @@ function ExpiringView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <KPICard label="Urgent (30d)" value={s.urgent || 0} color="#e74c3c" />
-        <KPICard label="Soon (60d)" value={s.soon || 0} color="#C9822B" />
+        <KPICard label="Soon (60d)" value={s.soon || 0} color="#C6A24E" />
         <KPICard label="Upcoming (90d)" value={s.upcoming || 0} color="#3498db" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Warranties Expiring Soon</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Warranties Expiring Soon</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead><tr style={{ background: '#f8f9fa' }}>
@@ -150,7 +150,7 @@ function ExpiringView({ data }: { data: any }) {
 
       {(data.recentlyExpired || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#C9822B' }}>Recently Expired — Extended Warranty Opportunity</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#C6A24E' }}>Recently Expired — Extended Warranty Opportunity</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -182,7 +182,7 @@ function PatternsView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Claims by Category</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Claims by Category</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -206,7 +206,7 @@ function PatternsView({ data }: { data: any }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Repeat Claimers</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Repeat Claimers</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -231,7 +231,7 @@ function PatternsView({ data }: { data: any }) {
 
       {(data.monthly || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Monthly Claim Volume</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Monthly Claim Volume</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -318,7 +318,7 @@ function BuilderView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700 }}>{Number(b.warrantyCount)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right', color: '#27ae60' }}>{Number(b.activeCount)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right', color: '#95a5a6' }}>{Number(b.expiredCount)}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', color: Number(b.expiringSoon) > 0 ? '#C9822B' : '#333', fontWeight: Number(b.expiringSoon) > 0 ? 700 : 400 }}>{Number(b.expiringSoon)}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'right', color: Number(b.expiringSoon) > 0 ? '#C6A24E' : '#333', fontWeight: Number(b.expiringSoon) > 0 ? 700 : 400 }}>{Number(b.expiringSoon)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.totalClaims)}</td>
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{b.latestExpiry ? new Date(b.latestExpiry).toLocaleDateString() : '—'}</td>
               </tr>

@@ -325,7 +325,7 @@ export default function GoogleChatPage() {
               <button
                 onClick={() => handleSave(channel.id)}
                 disabled={channel.loading}
-                className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                className="flex-1 bg-signal hover:bg-amber-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
               >
                 {channel.loading ? 'Saving...' : 'Save'}
               </button>

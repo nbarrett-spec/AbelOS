@@ -140,7 +140,7 @@ export function NotificationBell() {
         {unreadCount > 0 && (
           <span
             className="absolute top-0 right-0 w-5 h-5 text-white text-xs flex items-center justify-center rounded-full font-bold"
-            style={{ backgroundColor: '#C9822B' }}
+            style={{ backgroundColor: '#C6A24E' }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -152,7 +152,7 @@ export function NotificationBell() {
           className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50"
           style={{ maxHeight: '500px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)' }}
         >
-          <div className="border-b p-4 flex items-center justify-between" style={{ borderColor: '#C9822B' }}>
+          <div className="border-b p-4 flex items-center justify-between" style={{ borderColor: '#C6A24E' }}>
             <h3 className="font-semibold" style={{ color: '#1e3a5f' }}>
               Notifications
             </h3>
@@ -160,7 +160,7 @@ export function NotificationBell() {
               <button
                 onClick={markAllAsRead}
                 className="text-sm px-2 py-1 rounded transition-colors"
-                style={{ color: '#C9822B', backgroundColor: '#fff3e0' }}
+                style={{ color: '#C6A24E', backgroundColor: '#fff3e0' }}
               >
                 Mark all as read
               </button>
@@ -189,7 +189,7 @@ export function NotificationBell() {
                         {!notif.read && (
                           <span
                             className="inline-block w-2 h-2 rounded-full"
-                            style={{ backgroundColor: '#C9822B' }}
+                            style={{ backgroundColor: '#C6A24E' }}
                           />
                         )}
                       </div>

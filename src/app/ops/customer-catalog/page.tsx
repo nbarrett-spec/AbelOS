@@ -21,10 +21,10 @@ export default function CustomerCatalogPage() {
   return (
     <div className={isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'flex flex-col h-full'}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#3E2A1E] text-white border-b border-[#163d5c]">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#0f2a3e] text-white border-b border-[#163d5c]">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-semibold tracking-tight">Abel Digital Catalog</h1>
-          <span className="text-xs bg-[#C9822B] text-white px-2 py-0.5 rounded-full font-medium">
+          <span className="text-xs bg-[#C6A24E] text-white px-2 py-0.5 rounded-full font-medium">
             V2 — Phase 3
           </span>
           <span className="text-xs text-blue-200">

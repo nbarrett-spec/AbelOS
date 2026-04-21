@@ -158,7 +158,7 @@ function formatTime(iso: string): string {
 function durationClass(ms: number): string {
   if (ms >= 5000) return 'text-red-700 font-bold'
   if (ms >= 2000) return 'text-red-600 font-semibold'
-  if (ms >= 1000) return 'text-amber-600 font-semibold'
+  if (ms >= 1000) return 'text-signal font-semibold'
   return 'text-gray-700'
 }
 
@@ -236,19 +236,19 @@ export default function AdminHealthPage() {
           </select>
           <Link
             href="/admin/timeline"
-            className="text-sm text-abel-walnut hover:text-abel-walnut/80 font-medium px-3 py-1.5 border border-abel-walnut/30 rounded hover:bg-abel-walnut/5"
+            className="text-sm text-brand hover:text-brand/80 font-medium px-3 py-1.5 border border-brand/30 rounded hover:bg-brand/5"
           >
             Timeline →
           </Link>
           <Link
             href="/admin/alert-history"
-            className="text-sm text-abel-walnut hover:text-abel-walnut/80 font-medium px-3 py-1.5 border border-abel-walnut/30 rounded hover:bg-abel-walnut/5"
+            className="text-sm text-brand hover:text-brand/80 font-medium px-3 py-1.5 border border-brand/30 rounded hover:bg-brand/5"
           >
             Alert history →
           </Link>
           <button
             onClick={load}
-            className="text-sm text-white bg-abel-walnut hover:bg-abel-walnut/90 px-3 py-1.5 rounded"
+            className="text-sm text-white bg-brand hover:bg-brand/90 px-3 py-1.5 rounded"
           >
             Refresh
           </button>
@@ -262,7 +262,7 @@ export default function AdminHealthPage() {
             <h2 className="text-xl font-bold text-gray-900">Uptime</h2>
             <p className="text-sm text-gray-500 mt-1">
               Probed every 5 minutes by <span className="font-mono">/api/cron/uptime-probe</span>.
-              {uptime?.note && <span className="text-amber-600"> {uptime.note}</span>}
+              {uptime?.note && <span className="text-signal"> {uptime.note}</span>}
             </p>
           </div>
           <div
@@ -285,7 +285,7 @@ export default function AdminHealthPage() {
                 (uptime?.summary.uptimePct ?? 0) >= 99.9
                   ? 'text-green-600'
                   : (uptime?.summary.uptimePct ?? 0) >= 99
-                  ? 'text-amber-600'
+                  ? 'text-signal'
                   : 'text-red-600'
               }`}
             >
@@ -330,7 +330,7 @@ export default function AdminHealthPage() {
                 (uptime?.summary.p95DbMs ?? 0) >= 500
                   ? 'text-red-600'
                   : (uptime?.summary.p95DbMs ?? 0) >= 200
-                  ? 'text-amber-600'
+                  ? 'text-signal'
                   : 'text-gray-900'
               }`}
             >
@@ -353,7 +353,7 @@ export default function AdminHealthPage() {
                   pct >= 99.9
                     ? 'bg-green-500'
                     : pct >= 99
-                    ? 'bg-amber-500'
+                    ? 'bg-signal'
                     : pct > 0
                     ? 'bg-red-500'
                     : 'bg-gray-300'
@@ -383,7 +383,7 @@ export default function AdminHealthPage() {
             <span className="font-mono">SlowQueryLog</span>.
           </p>
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-4xl font-bold text-abel-walnut">
+            <span className="text-4xl font-bold text-brand">
               {data?.thresholdMs ?? 500}
               <span className="text-xl font-normal text-gray-500 ml-1">ms</span>
             </span>
@@ -441,7 +441,7 @@ export default function AdminHealthPage() {
           </div>
           <Link
             href="/admin/errors"
-            className="text-sm text-abel-walnut underline hover:no-underline"
+            className="text-sm text-brand underline hover:no-underline"
           >
             Drill down →
           </Link>
@@ -608,7 +608,7 @@ export default function AdminHealthPage() {
           <h2 className="text-xl font-bold text-gray-900">Recent Slow Queries</h2>
           <Link
             href="/admin/errors"
-            className="text-sm text-abel-walnut underline hover:no-underline"
+            className="text-sm text-brand underline hover:no-underline"
           >
             View client errors →
           </Link>
@@ -672,7 +672,7 @@ export default function AdminHealthPage() {
           Rate-limit rejections and security-relevant events. Fire-and-forget
           writes from route handlers — expect some undercount during traffic spikes.
           {security?.note && (
-            <span className="text-amber-600 block mt-1">{security.note}</span>
+            <span className="text-signal block mt-1">{security.note}</span>
           )}
         </p>
 
@@ -686,7 +686,7 @@ export default function AdminHealthPage() {
                 <div
                   className={`text-2xl font-bold mt-1 ${
                     k.kind === 'RATE_LIMIT'
-                      ? 'text-amber-600'
+                      ? 'text-signal'
                       : k.kind === 'CSRF'
                       ? 'text-red-600'
                       : k.kind === 'AUTH_FAIL'
@@ -712,7 +712,7 @@ export default function AdminHealthPage() {
               </div>
               <div className="flex items-center gap-3 text-[11px] text-gray-500">
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 bg-amber-500 rounded-sm" />
+                  <span className="inline-block w-2 h-2 bg-signal rounded-sm" />
                   rate limit
                 </span>
                 <span className="flex items-center gap-1">
@@ -746,7 +746,7 @@ export default function AdminHealthPage() {
                       >
                         {rateH > 0 && (
                           <div
-                            className="bg-amber-500 w-full"
+                            className="bg-signal w-full"
                             style={{ height: `${rateH}%` }}
                           />
                         )}
@@ -915,7 +915,7 @@ function ErrorTile({
     total >= 20
       ? 'text-red-600'
       : total >= 5
-      ? 'text-amber-600'
+      ? 'text-signal'
       : total >= 1
       ? 'text-gray-900'
       : 'text-green-600'

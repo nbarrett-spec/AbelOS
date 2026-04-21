@@ -227,7 +227,7 @@ export default function WarrantyPage() {
         {/* Toast */}
         {toast && (
           <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-            toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
+            toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
           }`}>
             {toast}
           </div>

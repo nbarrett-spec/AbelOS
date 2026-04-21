@@ -19,8 +19,8 @@ export default function InsightsStrip({ insights, ytdSavings, reorderCount }: In
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-100/50 dark:border-gray-800/50 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-abel-amber/10 to-amber-100/50 dark:from-abel-amber/20 dark:to-amber-900/20 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-abel-amber" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-signal/10 to-amber-100/50 dark:from-signal/20 dark:to-amber-900/20 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-signal" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Smart Insights</h3>
@@ -29,7 +29,7 @@ export default function InsightsStrip({ insights, ytdSavings, reorderCount }: In
         </div>
         <Link
           href="/dashboard/intelligence"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-abel-walnut dark:text-abel-walnut-light hover:text-abel-walnut-dark dark:hover:text-white transition-colors group"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-brand dark:text-brand-hover hover:text-navy-deep dark:hover:text-white transition-colors group"
         >
           View All
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

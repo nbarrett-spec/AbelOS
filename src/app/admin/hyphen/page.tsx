@@ -379,7 +379,7 @@ export default function HyphenAdminPage() {
             setJustMinted(null)
             setError('')
           }}
-          className="px-4 py-2 bg-abel-amber text-white rounded hover:bg-abel-amber/90 text-sm font-medium"
+          className="px-4 py-2 bg-signal text-white rounded hover:bg-signal/90 text-sm font-medium"
         >
           {showMintForm ? 'Cancel' : 'Mint New Credential'}
         </button>
@@ -420,7 +420,7 @@ export default function HyphenAdminPage() {
           <button
             onClick={mint}
             disabled={minting || !mintLabel.trim()}
-            className="px-4 py-2 bg-abel-walnut text-white rounded text-sm font-medium disabled:opacity-50"
+            className="px-4 py-2 bg-brand text-white rounded text-sm font-medium disabled:opacity-50"
           >
             {minting ? 'Minting…' : 'Mint Credential'}
           </button>
@@ -553,7 +553,7 @@ export default function HyphenAdminPage() {
                     {e.mappedOrderId ? (
                       <a
                         href={`/admin/orders/${e.mappedOrderId}`}
-                        className="text-abel-amber hover:underline"
+                        className="text-signal hover:underline"
                       >
                         {e.mappedOrderId.slice(0, 12)}…
                       </a>
@@ -565,7 +565,7 @@ export default function HyphenAdminPage() {
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
                       onClick={() => viewPayload(e.id)}
-                      className="text-abel-walnut hover:underline text-xs font-medium mr-3"
+                      className="text-brand hover:underline text-xs font-medium mr-3"
                     >
                       View
                     </button>
@@ -593,7 +593,7 @@ export default function HyphenAdminPage() {
           </h2>
           <button
             onClick={() => setShowBuilderAliasForm((s) => !s)}
-            className="px-3 py-1.5 bg-abel-walnut text-white rounded text-xs font-medium"
+            className="px-3 py-1.5 bg-brand text-white rounded text-xs font-medium"
           >
             {showBuilderAliasForm ? 'Cancel' : '+ Add Builder Alias'}
           </button>
@@ -649,7 +649,7 @@ export default function HyphenAdminPage() {
             <button
               onClick={saveBuilderAlias}
               disabled={!baValue.trim() || !baBuilderId}
-              className="px-4 py-2 bg-abel-amber text-white rounded text-sm font-medium disabled:opacity-50"
+              className="px-4 py-2 bg-signal text-white rounded text-sm font-medium disabled:opacity-50"
             >
               Save Alias
             </button>
@@ -706,7 +706,7 @@ export default function HyphenAdminPage() {
           </h2>
           <button
             onClick={() => setShowProductAliasForm((s) => !s)}
-            className="px-3 py-1.5 bg-abel-walnut text-white rounded text-xs font-medium"
+            className="px-3 py-1.5 bg-brand text-white rounded text-xs font-medium"
           >
             {showProductAliasForm ? 'Cancel' : '+ Add Product Alias'}
           </button>
@@ -774,7 +774,7 @@ export default function HyphenAdminPage() {
             <button
               onClick={saveProductAlias}
               disabled={!paValue.trim() || !paProductId}
-              className="px-4 py-2 bg-abel-amber text-white rounded text-sm font-medium disabled:opacity-50"
+              className="px-4 py-2 bg-signal text-white rounded text-sm font-medium disabled:opacity-50"
             >
               Save Alias
             </button>

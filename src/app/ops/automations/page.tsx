@@ -328,7 +328,7 @@ export default function AutomationsPage() {
   if (loading) {
     return (
       <div style={{ padding: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: 18, color: '#3E2A1E' }}>Loading automations...</div>
+        <div style={{ fontSize: 18, color: '#0f2a3e' }}>Loading automations...</div>
       </div>
     )
   }
@@ -338,13 +338,13 @@ export default function AutomationsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>Automations & AI Tasks</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>Automations & AI Tasks</h1>
           <p style={{ color: '#666', margin: '4px 0 0' }}>Create automated workflows, AI-powered tasks, and role-based actions</p>
         </div>
         <button
           onClick={() => { setShowCreateForm(true); setActiveTab('rules') }}
           style={{
-            background: '#C9822B', color: '#fff', border: 'none', borderRadius: 8,
+            background: '#C6A24E', color: '#fff', border: 'none', borderRadius: 8,
             padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 14,
           }}
         >
@@ -355,10 +355,10 @@ export default function AutomationsPage() {
       {/* Stats Bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { label: 'Total Rules', value: rules.length, color: '#3E2A1E' },
+          { label: 'Total Rules', value: rules.length, color: '#0f2a3e' },
           { label: 'Active', value: rules.filter(r => r.enabled).length, color: '#27ae60' },
           { label: 'Disabled', value: rules.filter(r => !r.enabled).length, color: '#95a5a6' },
-          { label: 'Total Executions', value: rules.reduce((s, r) => s + (r.runCount || 0), 0), color: '#C9822B' },
+          { label: 'Total Executions', value: rules.reduce((s, r) => s + (r.runCount || 0), 0), color: '#C6A24E' },
         ].map((stat, i) => (
           <div key={i} style={{
             background: '#fff', borderRadius: 10, padding: '16px 20px',
@@ -382,7 +382,7 @@ export default function AutomationsPage() {
             onClick={() => setActiveTab(tab.key)}
             style={{
               padding: '10px 24px', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600,
-              background: activeTab === tab.key ? '#3E2A1E' : 'transparent',
+              background: activeTab === tab.key ? '#0f2a3e' : 'transparent',
               color: activeTab === tab.key ? '#fff' : '#666',
               borderRadius: '8px 8px 0 0',
             }}
@@ -412,10 +412,10 @@ export default function AutomationsPage() {
           {/* Create Form */}
           {showCreateForm && (
             <div style={{
-              background: '#f8f9fa', border: '2px solid #3E2A1E', borderRadius: 12,
+              background: '#f8f9fa', border: '2px solid #0f2a3e', borderRadius: 12,
               padding: 24, marginBottom: 24,
             }}>
-              <h3 style={{ margin: '0 0 16px', color: '#3E2A1E' }}>Create New Automation Rule</h3>
+              <h3 style={{ margin: '0 0 16px', color: '#0f2a3e' }}>Create New Automation Rule</h3>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
@@ -456,8 +456,8 @@ export default function AutomationsPage() {
                     <button key={role} onClick={() => toggleFormRole(role)}
                       style={{
                         padding: '4px 10px', borderRadius: 12, fontSize: 11, cursor: 'pointer', fontWeight: 500,
-                        border: formRoles.includes(role) ? '2px solid #3E2A1E' : '1px solid #ccc',
-                        background: formRoles.includes(role) ? '#3E2A1E' : '#fff',
+                        border: formRoles.includes(role) ? '2px solid #0f2a3e' : '1px solid #ccc',
+                        background: formRoles.includes(role) ? '#0f2a3e' : '#fff',
                         color: formRoles.includes(role) ? '#fff' : '#555',
                       }}
                     >
@@ -477,7 +477,7 @@ export default function AutomationsPage() {
                         style={{
                           padding: '8px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
                           textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
-                          border: selected ? '2px solid #C9822B' : '1px solid #ddd',
+                          border: selected ? '2px solid #C6A24E' : '1px solid #ddd',
                           background: selected ? '#FFF3E6' : '#fff',
                           color: '#333',
                         }}
@@ -508,7 +508,7 @@ export default function AutomationsPage() {
                     roles: formRoles, actions: formActions, frequency: formFrequency,
                   })}
                   style={{
-                    background: (!formName || !formTrigger) ? '#ccc' : '#3E2A1E', color: '#fff',
+                    background: (!formName || !formTrigger) ? '#ccc' : '#0f2a3e', color: '#fff',
                     border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 600, cursor: 'pointer',
                   }}
                 >
@@ -540,7 +540,7 @@ export default function AutomationsPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E' }}>{rule.name}</span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e' }}>{rule.name}</span>
                         <span style={{
                           padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600,
                           background: rule.enabled ? '#e8f5e9' : '#f5f5f5',
@@ -571,7 +571,7 @@ export default function AutomationsPage() {
                       <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
                         {(rule.roles || []).map((r: string) => (
                           <span key={r} style={{
-                            padding: '2px 8px', background: '#EBF5FB', color: '#3E2A1E',
+                            padding: '2px 8px', background: '#EBF5FB', color: '#0f2a3e',
                             borderRadius: 10, fontSize: 10, fontWeight: 500,
                           }}>
                             {r.replace(/_/g, ' ')}
@@ -584,7 +584,7 @@ export default function AutomationsPage() {
                             const opt = ACTION_OPTIONS.find(o => o.value === a.type)
                             return (
                               <span key={i} style={{
-                                padding: '2px 8px', background: '#FFF3E6', color: '#C9822B',
+                                padding: '2px 8px', background: '#FFF3E6', color: '#C6A24E',
                                 borderRadius: 10, fontSize: 10, fontWeight: 500,
                               }}>
                                 {opt?.icon} {opt?.label || a.type}
@@ -620,8 +620,8 @@ export default function AutomationsPage() {
             <button onClick={() => setTemplateFilter('')}
               style={{
                 padding: '6px 14px', borderRadius: 16, fontSize: 12, cursor: 'pointer', fontWeight: 600,
-                border: !templateFilter ? '2px solid #3E2A1E' : '1px solid #ccc',
-                background: !templateFilter ? '#3E2A1E' : '#fff',
+                border: !templateFilter ? '2px solid #0f2a3e' : '1px solid #ccc',
+                background: !templateFilter ? '#0f2a3e' : '#fff',
                 color: !templateFilter ? '#fff' : '#555',
               }}>
               All
@@ -630,8 +630,8 @@ export default function AutomationsPage() {
               <button key={cat} onClick={() => setTemplateFilter(cat)}
                 style={{
                   padding: '6px 14px', borderRadius: 16, fontSize: 12, cursor: 'pointer', fontWeight: 600,
-                  border: templateFilter === cat ? '2px solid #3E2A1E' : '1px solid #ccc',
-                  background: templateFilter === cat ? '#3E2A1E' : '#fff',
+                  border: templateFilter === cat ? '2px solid #0f2a3e' : '1px solid #ccc',
+                  background: templateFilter === cat ? '#0f2a3e' : '#fff',
                   color: templateFilter === cat ? '#fff' : '#555',
                 }}>
                 {cat}
@@ -655,7 +655,7 @@ export default function AutomationsPage() {
                       }}>
                         {template.category}
                       </span>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#3E2A1E', marginTop: 4 }}>{template.name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a3e', marginTop: 4 }}>{template.name}</div>
                     </div>
                     {installed ? (
                       <span style={{ padding: '4px 12px', background: '#e8f5e9', color: '#2e7d32', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>
@@ -664,7 +664,7 @@ export default function AutomationsPage() {
                     ) : (
                       <button onClick={() => installTemplate(template)} disabled={saving}
                         style={{
-                          padding: '6px 16px', background: '#C9822B', color: '#fff', border: 'none',
+                          padding: '6px 16px', background: '#C6A24E', color: '#fff', border: 'none',
                           borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                         }}>
                         {saving ? '...' : 'Install'}
@@ -675,7 +675,7 @@ export default function AutomationsPage() {
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
                     {template.roles.map(r => (
                       <span key={r} style={{
-                        padding: '2px 6px', background: '#EBF5FB', color: '#3E2A1E',
+                        padding: '2px 6px', background: '#EBF5FB', color: '#0f2a3e',
                         borderRadius: 8, fontSize: 9, fontWeight: 500,
                       }}>
                         {r.replace(/_/g, ' ')}
@@ -687,7 +687,7 @@ export default function AutomationsPage() {
                       const opt = ACTION_OPTIONS.find(o => o.value === a.type)
                       return (
                         <span key={i} style={{
-                          padding: '2px 6px', background: '#FFF3E6', color: '#C9822B',
+                          padding: '2px 6px', background: '#FFF3E6', color: '#C6A24E',
                           borderRadius: 8, fontSize: 9, fontWeight: 500,
                         }}>
                           {opt?.icon} {opt?.label || a.type}
@@ -731,7 +731,7 @@ export default function AutomationsPage() {
                   {logs.map(log => (
                     <tr key={log.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                       <td style={{ padding: '10px 16px', color: '#888' }}>{formatDate(log.executedAt)}</td>
-                      <td style={{ padding: '10px 16px', fontWeight: 600, color: '#3E2A1E' }}>{log.ruleName || '—'}</td>
+                      <td style={{ padding: '10px 16px', fontWeight: 600, color: '#0f2a3e' }}>{log.ruleName || '—'}</td>
                       <td style={{ padding: '10px 16px' }}>{triggerLabel(log.trigger)}</td>
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>{log.actionsRun}</td>
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>

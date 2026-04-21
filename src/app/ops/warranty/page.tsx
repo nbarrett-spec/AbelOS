@@ -241,7 +241,7 @@ export default function WarrantyDashboard() {
     <div>
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
         }`}>
           {toast}
         </div>
@@ -261,7 +261,7 @@ export default function WarrantyDashboard() {
           </Link>
           <button
             onClick={() => setShowNewClaimModal(true)}
-            className="px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]"
+            className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]"
           >
             + New Claim
           </button>
@@ -371,7 +371,7 @@ export default function WarrantyDashboard() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openClaimDetail(claim)}
-                        className="text-[#C9822B] hover:text-[#d46711] font-medium text-sm"
+                        className="text-[#C6A24E] hover:text-[#d46711] font-medium text-sm"
                       >
                         {claim.claimNumber}
                       </button>
@@ -513,7 +513,7 @@ export default function WarrantyDashboard() {
                     rows={2} className="border rounded px-2 py-1 text-sm w-full" placeholder="Add internal notes..." />
                 </div>
                 <button onClick={handleSaveEdits} disabled={saving}
-                  className="mt-2 px-3 py-1.5 bg-[#3E2A1E] text-white rounded text-xs font-medium hover:bg-[#2A1C14] disabled:opacity-50">
+                  className="mt-2 px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-xs font-medium hover:bg-[#0a1a28] disabled:opacity-50">
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -658,7 +658,7 @@ export default function WarrantyDashboard() {
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={() => setShowNewClaimModal(false)} className="px-4 py-2 border rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]">Submit Claim</button>
+                <button type="submit" className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]">Submit Claim</button>
               </div>
             </form>
           </div>

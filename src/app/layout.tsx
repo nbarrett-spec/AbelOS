@@ -1,16 +1,40 @@
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
+import { Inter, JetBrains_Mono, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ToastContainer } from '@/components/ToastContainer'
 import ShortcutsOverlay from '@/components/ui/ShortcutsOverlay'
 
+/* ── Self-hosted fonts (downloaded at build time, served from same domain) ── */
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+})
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-display',
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#3E2A1E' }],
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0a1a28' },
+    { media: '(prefers-color-scheme: light)', color: '#f5f2eb' },
+  ],
   colorScheme: 'light dark',
 }
 
@@ -98,7 +122,7 @@ export default function RootLayout({
   const requestId = headers().get('x-request-id') || ''
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/images/logos/abel-logo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -124,7 +148,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-canvas text-fg transition-colors">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only fixed top-0 left-0 z-[10000] px-4 py-2 bg-[#3E2A1E] text-white font-semibold rounded-br"
+          className="sr-only focus:not-sr-only fixed top-0 left-0 z-[10000] px-4 py-2 bg-signal text-fg-on-accent font-semibold rounded-br"
         >
           Skip to main content
         </a>

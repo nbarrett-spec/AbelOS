@@ -66,7 +66,7 @@ export default function SyncHealthPage() {
     return (
       <div style={{ padding: 32, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 20, height: 20, border: '3px solid #C9822B', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ width: 20, height: 20, border: '3px solid #C6A24E', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <span style={{ color: '#6B5A4E', fontSize: 15 }}>Loading sync health data...</span>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -101,7 +101,7 @@ export default function SyncHealthPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>Sync Health & Data Freshness</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>Sync Health & Data Freshness</h1>
           <p style={{ fontSize: 13, color: '#8B7355', margin: '4px 0 0' }}>
             Live status of all data integrations — what's current, what's stale, what's broken
           </p>
@@ -114,7 +114,7 @@ export default function SyncHealthPage() {
           )}
           <button
             onClick={fetchData}
-            style={{ padding: '8px 16px', background: '#3E2A1E', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+            style={{ padding: '8px 16px', background: '#0f2a3e', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           >
             Refresh
           </button>
@@ -153,7 +153,7 @@ export default function SyncHealthPage() {
       </div>
 
       {/* Integration Status Cards */}
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E', marginBottom: 12 }}>Integration Status</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e', marginBottom: 12 }}>Integration Status</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 32 }}>
         {providers.map(prov => {
           const config = data.integrations.find((i: any) => i.provider === prov.key.toUpperCase() || i.provider === prov.key)
@@ -278,7 +278,7 @@ export default function SyncHealthPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
         {/* Record counts */}
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#3E2A1E', marginTop: 0, marginBottom: 12 }}>Record Counts</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f2a3e', marginTop: 0, marginBottom: 12 }}>Record Counts</h3>
           <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #E5E7EB' }}>
@@ -316,7 +316,7 @@ export default function SyncHealthPage() {
 
         {/* Data sources breakdown */}
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#3E2A1E', marginTop: 0, marginBottom: 12 }}>Data Sources</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f2a3e', marginTop: 0, marginBottom: 12 }}>Data Sources</h3>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Products</div>
             <SourceBar
@@ -336,7 +336,7 @@ export default function SyncHealthPage() {
             />
           </div>
 
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#3E2A1E', marginTop: 20, marginBottom: 12 }}>Cron Run History</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f2a3e', marginTop: 20, marginBottom: 12 }}>Cron Run History</h3>
           {Object.entries(data.cronRuns).map(([cronName, runs]) => {
             const recent = (runs as any[]).slice(0, 5)
             const lastRun = recent[0]

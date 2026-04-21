@@ -373,13 +373,13 @@ function SidebarSection({
                 onClick={onNavigate}
                 className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 group ${
                   isActive
-                    ? 'bg-abel-amber/15 text-abel-amber dark:text-abel-amber-light border-l-[3px] border-abel-amber ml-0 pl-[9px]'
+                    ? 'bg-signal/15 text-signal dark:text-signal-light border-l-[3px] border-signal ml-0 pl-[9px]'
                     : 'text-gray-400 hover:text-white hover:bg-white/[0.04] border-l-[3px] border-transparent'
                 }`}
               >
                 <IconComponent
                   className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-abel-amber' : 'text-gray-500 group-hover:text-gray-300'
+                    isActive ? 'text-signal' : 'text-gray-500 group-hover:text-gray-300'
                   }`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
@@ -675,7 +675,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-abel-walnut/30 rounded-full"
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 rounded-full"
                   aria-label="User menu"
                 >
                   <Avatar

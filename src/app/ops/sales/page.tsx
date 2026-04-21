@@ -231,7 +231,7 @@ export default function SalesDashboardPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-[#C9822B] hover:bg-[#d46711] text-white px-8 py-3 rounded-lg font-bold text-base transition-colors transform hover:scale-105"
+            className="bg-[#C6A24E] hover:bg-[#d46711] text-white px-8 py-3 rounded-lg font-bold text-base transition-colors transform hover:scale-105"
           >
             + New Deal
           </button>
@@ -328,7 +328,7 @@ export default function SalesDashboardPage() {
                         <p className="font-bold text-sm text-gray-900 truncate">{deal.companyName}</p>
                         <p className="text-xs text-gray-500 mb-2">{deal.contactName}</p>
                         <div className="flex items-center justify-between">
-                          <p className="text-lg font-bold text-[#C9822B]">{formatCurrency(deal.dealValue)}</p>
+                          <p className="text-lg font-bold text-[#C6A24E]">{formatCurrency(deal.dealValue)}</p>
                           <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#1e3a5f] text-white text-xs font-semibold">
                             {deal.owner.initials}
                           </div>
@@ -338,7 +338,7 @@ export default function SalesDashboardPage() {
                           {['BID_SUBMITTED', 'BID_REVIEW', 'NEGOTIATION', 'WON'].map((s, i) => (
                             <div key={s} className={`h-1.5 flex-1 rounded-full ${
                               PIPELINE_STAGES.indexOf(deal.stage) >= PIPELINE_STAGES.indexOf(s)
-                                ? 'bg-[#C9822B]' : 'bg-gray-200'
+                                ? 'bg-[#C6A24E]' : 'bg-gray-200'
                             }`} />
                           ))}
                         </div>
@@ -375,7 +375,7 @@ export default function SalesDashboardPage() {
                       </div>
                       <p className="font-bold text-sm text-gray-900 truncate">{deal.companyName}</p>
                       <p className="text-xs text-gray-600 truncate mb-3">{deal.contactName}</p>
-                      <p className="text-lg font-bold text-[#C9822B] mb-2">{formatCurrency(deal.dealValue)}</p>
+                      <p className="text-lg font-bold text-[#C6A24E] mb-2">{formatCurrency(deal.dealValue)}</p>
                       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                         <p className="text-xs text-gray-500">
                           {new Date(deal.expectedCloseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -467,7 +467,7 @@ export default function SalesDashboardPage() {
                                 <p className="text-xs text-gray-600 truncate">
                                   {deal.contactName}
                                 </p>
-                                <p className="font-bold text-sm text-[#C9822B] mt-2">
+                                <p className="font-bold text-sm text-[#C6A24E] mt-2">
                                   {formatCurrency(deal.dealValue)}
                                 </p>
                                 <div className="flex items-center justify-between mt-3">
@@ -521,7 +521,7 @@ export default function SalesDashboardPage() {
                             {STAGE_NAMES[deal.stage]}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-[#C9822B]">{formatCurrency(deal.dealValue)}</td>
+                        <td className="px-6 py-4 text-sm font-bold text-[#C6A24E]">{formatCurrency(deal.dealValue)}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {new Date(deal.expectedCloseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
@@ -590,13 +590,13 @@ export default function SalesDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-bold text-[#C9822B]">{formatCurrency(rep.pipelineValue)}</p>
+                        <p className="text-sm font-bold text-[#C6A24E]">{formatCurrency(rep.pipelineValue)}</p>
                         <p className="text-xs text-gray-500">pipeline</p>
                       </div>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-[#1e3a5f] to-[#C9822B] h-2 rounded-full"
+                        className="bg-gradient-to-r from-[#1e3a5f] to-[#C6A24E] h-2 rounded-full"
                         style={{
                           width: `${
                             stats && stats.pipelineValue > 0

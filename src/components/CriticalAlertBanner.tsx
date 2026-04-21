@@ -132,7 +132,7 @@ export default function CriticalAlertBanner() {
   const hasCritical = criticalCount > 0
   const bannerCls = hasCritical
     ? 'bg-rose-600 text-white border-rose-700'
-    : 'bg-amber-500 text-white border-amber-600'
+    : 'bg-signal text-white border-amber-600'
 
   return (
     <div

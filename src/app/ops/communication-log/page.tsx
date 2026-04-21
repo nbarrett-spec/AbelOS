@@ -41,7 +41,7 @@ const CHANNEL_CONFIG: Record<string, { icon: string; label: string; color: strin
   TEXT: { icon: '💬', label: 'Text', color: '#8B5CF6', bg: '#F5F3FF' },
   IN_PERSON: { icon: '🤝', label: 'In Person', color: '#F59E0B', bg: '#FFFBEB' },
   VIDEO_CALL: { icon: '📹', label: 'Video Call', color: '#EC4899', bg: '#FDF2F8' },
-  HYPHEN_NOTIFICATION: { icon: '🔗', label: 'Hyphen', color: '#C9822B', bg: '#FFF7ED' },
+  HYPHEN_NOTIFICATION: { icon: '🔗', label: 'Hyphen', color: '#C6A24E', bg: '#FFF7ED' },
   SYSTEM: { icon: '🤖', label: 'System', color: '#6B7280', bg: '#F3F4F6' },
 }
 
@@ -218,7 +218,7 @@ export default function CommunicationLogPage() {
             </button>
             <button
               onClick={() => setShowLogForm(!showLogForm)}
-              className="bg-[#C9822B] hover:bg-[#A86B1F] text-white px-4 py-2 rounded-lg text-sm font-medium"
+              className="bg-[#C6A24E] hover:bg-[#A8882A] text-white px-4 py-2 rounded-lg text-sm font-medium"
             >
               + Log Communication
             </button>
@@ -421,7 +421,7 @@ export default function CommunicationLogPage() {
               <div className="mt-4 flex gap-3">
                 <button
                   type="submit"
-                  className="bg-[#3E2A1E] hover:bg-[#163d5c] text-white px-5 py-2 rounded-lg text-sm font-semibold"
+                  className="bg-[#0f2a3e] hover:bg-[#163d5c] text-white px-5 py-2 rounded-lg text-sm font-semibold"
                 >
                   Save Communication
                 </button>
@@ -447,7 +447,7 @@ export default function CommunicationLogPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by subject, sender, builder, content..."
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
               />
               <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -459,7 +459,7 @@ export default function CommunicationLogPage() {
               <button
                 onClick={() => setChannelFilter('')}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                  !channelFilter ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  !channelFilter ? 'bg-[#0f2a3e] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 All
@@ -485,7 +485,7 @@ export default function CommunicationLogPage() {
         {/* Communication Entries */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
@@ -506,7 +506,7 @@ export default function CommunicationLogPage() {
                 <div
                   key={log.id}
                   className={`bg-white rounded-xl border transition-all cursor-pointer ${
-                    isExpanded ? 'border-[#3E2A1E] shadow-md' : 'border-gray-200 hover:border-gray-300'
+                    isExpanded ? 'border-[#0f2a3e] shadow-md' : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setExpanded(isExpanded ? null : log.id)}
                 >
@@ -628,7 +628,7 @@ export default function CommunicationLogPage() {
                         <div className="mt-3">
                           <Link
                             href={`/ops/accounts/${log.builder.id}`}
-                            className="text-xs text-[#3E2A1E] hover:underline font-medium"
+                            className="text-xs text-[#0f2a3e] hover:underline font-medium"
                             onClick={(e) => e.stopPropagation()}
                           >
                             View Builder: {log.builder.companyName} →

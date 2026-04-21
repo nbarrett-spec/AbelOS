@@ -161,7 +161,7 @@ export default function PaymentsPage() {
   if (authLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ width: 32, height: 32, border: '4px solid #3E2A1E', borderTop: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{ width: 32, height: 32, border: '4px solid #0f2a3e', borderTop: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
@@ -170,7 +170,7 @@ export default function PaymentsPage() {
     return (
       <div style={{ textAlign: 'center', paddingTop: 80 }}>
         <p style={{ color: '#666', marginBottom: 16 }}>Please sign in to access your payments.</p>
-        <Link href="/login" style={{ display: 'inline-block', padding: '8px 24px', backgroundColor: '#C9822B', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>
+        <Link href="/login" style={{ display: 'inline-block', padding: '8px 24px', backgroundColor: '#C6A24E', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>
       </div>
     )
   }
@@ -190,13 +190,13 @@ export default function PaymentsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
         <div style={{ backgroundColor: 'white', border: '1px solid #e5e5e5', borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: 12, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Total Outstanding</p>
-          <p style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>{formatCurrency(totalOutstanding)}</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>{formatCurrency(totalOutstanding)}</p>
           <p style={{ fontSize: 12, color: '#666' }}>{invoices.length} unpaid invoice{invoices.length !== 1 ? 's' : ''}</p>
         </div>
 
         <div style={{ backgroundColor: 'white', border: '1px solid #e5e5e5', borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: 12, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Overdue Invoices</p>
-          <p style={{ fontSize: 24, fontWeight: 700, color: overdueInvoices.length > 0 ? '#E74C3C' : '#3E2A1E', marginBottom: 4 }}>
+          <p style={{ fontSize: 24, fontWeight: 700, color: overdueInvoices.length > 0 ? '#E74C3C' : '#0f2a3e', marginBottom: 4 }}>
             {overdueInvoices.length}
           </p>
           <p style={{ fontSize: 12, color: '#666' }}>
@@ -208,7 +208,7 @@ export default function PaymentsPage() {
 
         <div style={{ backgroundColor: 'white', border: '1px solid #e5e5e5', borderRadius: 12, padding: 20 }}>
           <p style={{ fontSize: 12, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Next Payment Due</p>
-          <p style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>
+          <p style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>
             {nextDueInvoice ? formatDate(nextDueInvoice.dueDate) : '-'}
           </p>
           <p style={{ fontSize: 12, color: '#666' }}>
@@ -291,7 +291,7 @@ export default function PaymentsPage() {
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#3E2A1E', fontFamily: 'monospace' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0f2a3e', fontFamily: 'monospace' }}>
                         {invoice.invoiceNumber}
                       </span>
                       {isOverdue && (
@@ -336,7 +336,7 @@ export default function PaymentsPage() {
               <p style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
                 {selectedIds.size} invoice{selectedIds.size !== 1 ? 's' : ''} selected
               </p>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#3E2A1E' }}>Total: {formatCurrency(selectedTotal)}</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#0f2a3e' }}>Total: {formatCurrency(selectedTotal)}</p>
             </div>
 
             <select
@@ -379,7 +379,7 @@ export default function PaymentsPage() {
               disabled={submitting}
               style={{
                 padding: '10px 24px',
-                backgroundColor: submitting ? '#9ca3af' : '#3E2A1E',
+                backgroundColor: submitting ? '#9ca3af' : '#0f2a3e',
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,

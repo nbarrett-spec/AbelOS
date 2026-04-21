@@ -65,7 +65,7 @@ const STATUS_COLORS: Record<
     border: 'border-amber-200',
     text: 'text-amber-800',
     badge: 'bg-amber-100 text-amber-700 border-amber-300',
-    gaugeFill: 'bg-amber-500',
+    gaugeFill: 'bg-signal',
   },
   critical: {
     bg: 'bg-rose-50',
@@ -272,7 +272,7 @@ export default function SloPage() {
                             slo.burnRate > 1
                               ? 'text-rose-600'
                               : slo.burnRate > 0.7
-                                ? 'text-amber-600'
+                                ? 'text-signal'
                                 : 'text-green-600'
                           }
                         >

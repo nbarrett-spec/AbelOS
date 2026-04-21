@@ -204,7 +204,7 @@ export default function FloorPlansPage() {
         </div>
         <button
           onClick={() => { setUploadOpen(true); resetUploadForm() }}
-          className="px-4 py-2.5 bg-[#3E2A1E] text-white text-sm rounded-lg hover:bg-[#2A1C14] font-medium"
+          className="px-4 py-2.5 bg-[#0f2a3e] text-white text-sm rounded-lg hover:bg-[#0a1a28] font-medium"
         >
           + Upload Floor Plan
         </button>
@@ -218,7 +218,7 @@ export default function FloorPlansPage() {
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase">Page Results</p>
-          <p className="text-2xl font-bold text-[#3E2A1E] mt-1">{floorPlans.length}</p>
+          <p className="text-2xl font-bold text-[#0f2a3e] mt-1">{floorPlans.length}</p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase">Current Page</p>
@@ -226,7 +226,7 @@ export default function FloorPlansPage() {
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase">Total Records</p>
-          <p className="text-2xl font-bold text-[#C9822B] mt-1">{total}</p>
+          <p className="text-2xl font-bold text-[#C6A24E] mt-1">{total}</p>
         </div>
       </div>
 
@@ -237,9 +237,9 @@ export default function FloorPlansPage() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search by label, filename, project, or builder..."
-          className="flex-1 px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+          className="flex-1 px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
         />
-        <button type="submit" className="px-6 py-2.5 bg-[#3E2A1E] text-white text-sm rounded-lg hover:bg-[#2A1C14]">
+        <button type="submit" className="px-6 py-2.5 bg-[#0f2a3e] text-white text-sm rounded-lg hover:bg-[#0a1a28]">
           Search
         </button>
       </form>
@@ -248,7 +248,7 @@ export default function FloorPlansPage() {
       <div className="bg-white rounded-xl border overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
           </div>
         ) : floorPlans.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
@@ -307,7 +307,7 @@ export default function FloorPlansPage() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setViewPlan(fp)}
-                          className="text-xs text-[#3E2A1E] hover:text-[#C9822B] px-2 py-1 rounded hover:bg-gray-100"
+                          className="text-xs text-[#0f2a3e] hover:text-[#C6A24E] px-2 py-1 rounded hover:bg-gray-100"
                         >
                           View
                         </button>
@@ -366,7 +366,7 @@ export default function FloorPlansPage() {
       {uploadOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-xl">
-            <div className="px-6 py-4 border-b bg-[#3E2A1E]">
+            <div className="px-6 py-4 border-b bg-[#0f2a3e]">
               <h2 className="text-lg font-semibold text-white">Upload Floor Plan</h2>
             </div>
 
@@ -402,7 +402,7 @@ export default function FloorPlansPage() {
                       value={projectSearch}
                       onChange={(e) => setProjectSearch(e.target.value)}
                       placeholder="Search projects by name or address..."
-                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                     />
                     {projectResults.length > 0 && (
                       <div className="mt-1 border rounded-lg max-h-40 overflow-y-auto">
@@ -428,7 +428,7 @@ export default function FloorPlansPage() {
                       value={uploadProjectId}
                       onChange={(e) => setUploadProjectId(e.target.value)}
                       placeholder="Or paste project ID directly..."
-                      className="w-full mt-2 px-3 py-2 border rounded-lg text-xs text-gray-500 focus:ring-2 focus:ring-[#3E2A1E]/20"
+                      className="w-full mt-2 px-3 py-2 border rounded-lg text-xs text-gray-500 focus:ring-2 focus:ring-[#0f2a3e]/20"
                     />
                   </div>
                 )}
@@ -442,7 +442,7 @@ export default function FloorPlansPage() {
                   value={uploadLabel}
                   onChange={(e) => setUploadLabel(e.target.value)}
                   placeholder="e.g. Main Floor, Second Floor, Basement..."
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                 />
               </div>
 
@@ -493,7 +493,7 @@ export default function FloorPlansPage() {
                   onChange={(e) => setUploadNotes(e.target.value)}
                   placeholder="Optional notes about this floor plan..."
                   rows={2}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                 />
               </div>
             </div>
@@ -508,7 +508,7 @@ export default function FloorPlansPage() {
               <button
                 onClick={handleUpload}
                 disabled={uploading || !uploadFile || !uploadProjectId}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
               >
                 {uploading ? 'Uploading...' : 'Upload Floor Plan'}
               </button>
@@ -531,7 +531,7 @@ export default function FloorPlansPage() {
                   type="text"
                   value={editLabel}
                   onChange={(e) => setEditLabel(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                 />
               </div>
               <div>
@@ -540,7 +540,7 @@ export default function FloorPlansPage() {
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                 />
               </div>
             </div>
@@ -548,7 +548,7 @@ export default function FloorPlansPage() {
               <button onClick={() => setEditPlan(null)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
                 Cancel
               </button>
-              <button onClick={handleEditSave} disabled={editSaving} className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50">
+              <button onClick={handleEditSave} disabled={editSaving} className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50">
                 {editSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
@@ -570,7 +570,7 @@ export default function FloorPlansPage() {
                   href={`/api/ops/floor-plans/serve/${viewPlan.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]"
+                  className="px-3 py-1.5 text-xs bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
                 >
                   Open Full Size
                 </a>
@@ -604,7 +604,7 @@ export default function FloorPlansPage() {
                     href={`/api/ops/floor-plans/serve/${viewPlan.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#3E2A1E] text-sm mt-2 inline-block"
+                    className="text-[#0f2a3e] text-sm mt-2 inline-block"
                   >
                     Download file
                   </a>

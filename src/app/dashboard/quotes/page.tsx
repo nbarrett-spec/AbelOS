@@ -267,7 +267,7 @@ export default function QuotesPage() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[#C9822B] text-white rounded-lg font-semibold hover:bg-[#A86B1F] transition-colors"
+          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
         >
           Request a Quote
         </button>
@@ -291,13 +291,13 @@ export default function QuotesPage() {
           onClick={() => setActiveTab('quotes')}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
             activeTab === 'quotes'
-              ? 'bg-white text-[#3E2A1E] shadow-sm'
+              ? 'bg-white text-[#0f2a3e] shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           Formal Quotes
           {actionableQuotes > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-[#C9822B] text-white text-[10px] rounded-full font-bold">
+            <span className="ml-2 px-2 py-0.5 bg-[#C6A24E] text-white text-[10px] rounded-full font-bold">
               {actionableQuotes}
             </span>
           )}
@@ -306,7 +306,7 @@ export default function QuotesPage() {
           onClick={() => setActiveTab('requests')}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
             activeTab === 'requests'
-              ? 'bg-white text-[#3E2A1E] shadow-sm'
+              ? 'bg-white text-[#0f2a3e] shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -335,7 +335,7 @@ export default function QuotesPage() {
               <p className="text-gray-500 mb-6">Once Abel Lumber prepares a quote for you, it will appear here for review and approval.</p>
               <button
                 onClick={() => { setActiveTab('requests'); setShowModal(true) }}
-                className="px-4 py-2 bg-[#C9822B] text-white rounded-lg font-semibold hover:bg-[#A86B1F] transition-colors"
+                className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
               >
                 Request a Quote
               </button>
@@ -363,7 +363,7 @@ export default function QuotesPage() {
                     return (
                       <tr key={q.id} className={`hover:bg-gray-50 transition-colors ${needsAction ? 'bg-blue-50/30' : ''}`}>
                         <td className="px-6 py-4">
-                          <Link href={`/dashboard/quotes/${q.id}`} className="text-sm font-mono font-semibold text-[#3E2A1E] hover:underline">
+                          <Link href={`/dashboard/quotes/${q.id}`} className="text-sm font-mono font-semibold text-[#0f2a3e] hover:underline">
                             {q.quoteNumber}
                           </Link>
                           <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(q.createdAt)}</p>
@@ -391,7 +391,7 @@ export default function QuotesPage() {
                               <button
                                 onClick={() => convertToOrder(q.id)}
                                 disabled={convertingId === q.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#3E2A1E] text-white text-xs font-semibold rounded-lg hover:bg-[#163d59] transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0f2a3e] text-white text-xs font-semibold rounded-lg hover:bg-[#163d59] transition-colors disabled:opacity-50"
                               >
                                 {convertingId === q.id ? (
                                   <>
@@ -406,14 +406,14 @@ export default function QuotesPage() {
                             {needsAction && !isExpired ? (
                               <Link
                                 href={`/dashboard/quotes/${q.id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C9822B] text-white text-xs font-semibold rounded-lg hover:bg-[#A86B1F] transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C6A24E] text-white text-xs font-semibold rounded-lg hover:bg-[#A8882A] transition-colors"
                               >
                                 Review
                               </Link>
                             ) : (
                               <Link
                                 href={`/dashboard/quotes/${q.id}`}
-                                className="text-sm text-[#3E2A1E] font-medium hover:underline"
+                                className="text-sm text-[#0f2a3e] font-medium hover:underline"
                               >
                                 View
                               </Link>
@@ -446,7 +446,7 @@ export default function QuotesPage() {
               <p className="text-gray-500 mb-6">Submit a new quote request for your project.</p>
               <button
                 onClick={() => setShowModal(true)}
-                className="px-4 py-2 bg-[#C9822B] text-white rounded-lg font-semibold hover:bg-[#A86B1F] transition-colors"
+                className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
               >
                 Request a Quote
               </button>
@@ -584,31 +584,31 @@ export default function QuotesPage() {
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Project Name *</label>
                 <input type="text" name="projectName" value={formData.projectName} onChange={handleInputChange}
                   placeholder="e.g., Downtown Commercial Complex"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Project Address *</label>
                 <input type="text" name="projectAddress" value={formData.projectAddress} onChange={handleInputChange}
                   placeholder="e.g., 123 Main St"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-1">City</label>
                   <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-1">State</label>
                   <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="TX" maxLength={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-1">Zip</label>
                   <input type="text" name="zip" value={formData.zip} onChange={handleInputChange} placeholder="75001"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
                 </div>
               </div>
 
@@ -616,34 +616,34 @@ export default function QuotesPage() {
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Project Description *</label>
                 <textarea name="description" value={formData.description} onChange={handleInputChange}
                   placeholder="Describe your project, scope, and requirements..." rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent resize-none" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Product Categories * (comma-separated)</label>
                 <input type="text" name="productCategories" value={formData.productCategories} onChange={handleInputChange}
                   placeholder="e.g., Interior Doors, Hardware, Trim"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Estimated Square Footage</label>
                 <input type="number" name="estimatedSquareFootage" value={formData.estimatedSquareFootage} onChange={handleInputChange}
                   placeholder="e.g., 5000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Preferred Delivery Date</label>
                 <input type="date" name="preferredDeliveryDate" value={formData.preferredDeliveryDate} onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1">Additional Notes</label>
                 <textarea name="notes" value={formData.notes} onChange={handleInputChange}
                   placeholder="Any additional information..." rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B] focus:border-transparent resize-none" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
               </div>
 
               <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
@@ -652,7 +652,7 @@ export default function QuotesPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting}
-                  className="px-4 py-2 bg-[#C9822B] text-white rounded-lg font-semibold hover:bg-[#A86B1F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   {submitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>

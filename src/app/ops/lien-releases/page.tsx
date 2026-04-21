@@ -87,7 +87,7 @@ export default function LienReleasesPage() {
           <p className="text-sm text-gray-500 mt-1">Conditional and unconditional lien release tracking</p>
         </div>
         <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#3E2A1E] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2A1C14]">
+          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
           <Plus className="w-4 h-4" /> New Lien Release
         </button>
       </div>
@@ -230,7 +230,7 @@ export default function LienReleasesPage() {
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
               <button onClick={createRelease} disabled={!newRelease.jobId || !newRelease.amount}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50">
                 Create Release
               </button>
             </div>

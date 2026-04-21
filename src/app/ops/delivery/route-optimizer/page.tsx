@@ -146,7 +146,7 @@ export default function RouteOptimizerPage() {
   if (loading && !routeData) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
-        <div style={{ animation: 'spin 1s linear infinite', width: '32px', height: '32px', border: '3px solid #3E2A1E', borderTop: '3px solid transparent', borderRadius: '50%' }} />
+        <div style={{ animation: 'spin 1s linear infinite', width: '32px', height: '32px', border: '3px solid #0f2a3e', borderTop: '3px solid transparent', borderRadius: '50%' }} />
       </div>
     )
   }
@@ -221,7 +221,7 @@ export default function RouteOptimizerPage() {
               style={{
                 width: '100%',
                 padding: '10px 20px',
-                backgroundColor: selectedCrew && !loading ? '#C9822B' : '#ccc',
+                backgroundColor: selectedCrew && !loading ? '#C6A24E' : '#ccc',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -232,12 +232,12 @@ export default function RouteOptimizerPage() {
               }}
               onMouseEnter={(e) => {
                 if (selectedCrew && !loading) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#A86B1F'
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#A8882A'
                 }
               }}
               onMouseLeave={(e) => {
                 if (selectedCrew && !loading) {
-                  (e.target as HTMLButtonElement).style.backgroundColor = '#C9822B'
+                  (e.target as HTMLButtonElement).style.backgroundColor = '#C6A24E'
                 }
               }}
             >
@@ -278,7 +278,7 @@ export default function RouteOptimizerPage() {
                 <p style={{
                   fontSize: '20px',
                   fontWeight: 'bold',
-                  color: card.highlight ? '#27AE60' : '#3E2A1E',
+                  color: card.highlight ? '#27AE60' : '#0f2a3e',
                 }}>
                   {card.value}
                 </p>
@@ -306,13 +306,13 @@ export default function RouteOptimizerPage() {
                 <tbody>
                   {routeData.stops.map((stop) => (
                     <tr key={stop.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '12px', fontSize: '14px', fontWeight: '600', color: '#3E2A1E' }}>
+                      <td style={{ padding: '12px', fontSize: '14px', fontWeight: '600', color: '#0f2a3e' }}>
                         {stop.stopNumber}
                       </td>
                       <td style={{ padding: '12px', fontSize: '14px', color: '#333' }}>
                         <a
                           href={`/ops/delivery/${stop.deliveryId}`}
-                          style={{ color: '#3E2A1E', textDecoration: 'none', cursor: 'pointer' }}
+                          style={{ color: '#0f2a3e', textDecoration: 'none', cursor: 'pointer' }}
                         >
                           {stop.address}
                           <br />
@@ -360,7 +360,7 @@ export default function RouteOptimizerPage() {
                 <p style={{ fontSize: '13px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
                   Recommended Fuel Stop
                 </p>
-                <p style={{ fontSize: '16px', fontWeight: '600', color: '#3E2A1E', marginBottom: '4px' }}>
+                <p style={{ fontSize: '16px', fontWeight: '600', color: '#0f2a3e', marginBottom: '4px' }}>
                   After Stop {routeData.recommendedFuelStop.afterStop}
                 </p>
                 <p style={{ fontSize: '14px', color: '#666' }}>
@@ -381,7 +381,7 @@ export default function RouteOptimizerPage() {
                 <p style={{ fontSize: '13px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
                   Fuel Price (Used in Calculations)
                 </p>
-                <p style={{ fontSize: '16px', fontWeight: '600', color: '#3E2A1E' }}>
+                <p style={{ fontSize: '16px', fontWeight: '600', color: '#0f2a3e' }}>
                   ${routeData.currentFuelPrice.toFixed(2)}/gal
                 </p>
               </div>
@@ -461,7 +461,7 @@ export default function RouteOptimizerPage() {
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: '#3E2A1E',
+                color: '#0f2a3e',
                 cursor: 'pointer',
                 textAlign: 'left',
                 display: 'flex',
@@ -566,7 +566,7 @@ export default function RouteOptimizerPage() {
                     style={{
                       width: '100%',
                       padding: '10px 16px',
-                      backgroundColor: savingSettings ? '#ccc' : '#3E2A1E',
+                      backgroundColor: savingSettings ? '#ccc' : '#0f2a3e',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',

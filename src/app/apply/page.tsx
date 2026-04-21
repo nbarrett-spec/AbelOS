@@ -177,22 +177,22 @@ export default function ApplyPage() {
           </p>
           <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
             <p className="text-sm text-gray-500 mb-1">Your Reference Number</p>
-            <p className="text-2xl font-mono font-bold text-[#3E2A1E]">{refNumber}</p>
+            <p className="text-2xl font-mono font-bold text-[#0f2a3e]">{refNumber}</p>
             <p className="text-xs text-gray-400 mt-2">Save this for your records</p>
           </div>
-          <div className="bg-[#3E2A1E]/5 rounded-2xl p-6 text-left">
-            <h3 className="font-semibold text-[#3E2A1E] mb-3">What happens next?</h3>
+          <div className="bg-[#0f2a3e]/5 rounded-2xl p-6 text-left">
+            <h3 className="font-semibold text-[#0f2a3e] mb-3">What happens next?</h3>
             <ol className="space-y-3 text-sm text-gray-600">
               <li className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#C9822B] text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                <span className="w-6 h-6 rounded-full bg-[#C6A24E] text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
                 <span>Our team reviews your application and verifies your business details</span>
               </li>
               <li className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#C9822B] text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                <span className="w-6 h-6 rounded-full bg-[#C6A24E] text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
                 <span>You&apos;ll receive an email with your account credentials and login details</span>
               </li>
               <li className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-[#C9822B] text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                <span className="w-6 h-6 rounded-full bg-[#C6A24E] text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
                 <span>Access your builder portal with AI-powered takeoffs, instant quoting, and real-time order tracking</span>
               </li>
             </ol>
@@ -201,7 +201,7 @@ export default function ApplyPage() {
             <Link href="/" className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition font-medium">
               Back to Home
             </Link>
-            <Link href="/login" className="px-6 py-3 rounded-xl bg-[#3E2A1E] text-white hover:bg-[#3E2A1E]/90 transition font-medium">
+            <Link href="/login" className="px-6 py-3 rounded-xl bg-[#0f2a3e] text-white hover:bg-[#0f2a3e]/90 transition font-medium">
               Sign In
             </Link>
           </div>
@@ -217,12 +217,12 @@ export default function ApplyPage() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#C9822B] rounded-xl flex items-center justify-center font-bold text-white text-sm">
+            <div className="w-10 h-10 bg-[#C6A24E] rounded-xl flex items-center justify-center font-bold text-white text-sm">
               AB
             </div>
-            <span className="font-semibold text-xl text-[#3E2A1E]">Abel Builder</span>
+            <span className="font-semibold text-xl text-[#0f2a3e]">Abel Builder</span>
           </Link>
-          <Link href="/login" className="text-sm text-[#3E2A1E] hover:text-[#C9822B] transition font-medium">
+          <Link href="/login" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E] transition font-medium">
             Already have an account? Sign in
           </Link>
         </div>
@@ -250,7 +250,7 @@ export default function ApplyPage() {
               <div className="flex flex-col items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                   step >= s.n
-                    ? 'bg-[#C9822B] text-white'
+                    ? 'bg-[#C6A24E] text-white'
                     : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step > s.n ? (
@@ -259,12 +259,12 @@ export default function ApplyPage() {
                     </svg>
                   ) : s.n}
                 </div>
-                <span className={`text-xs mt-1.5 font-medium ${step >= s.n ? 'text-[#3E2A1E]' : 'text-gray-400'}`}>
+                <span className={`text-xs mt-1.5 font-medium ${step >= s.n ? 'text-[#0f2a3e]' : 'text-gray-400'}`}>
                   {s.label}
                 </span>
               </div>
               {i < 3 && (
-                <div className={`w-16 sm:w-24 h-0.5 mx-2 mb-5 ${step > s.n ? 'bg-[#C9822B]' : 'bg-gray-200'}`} />
+                <div className={`w-16 sm:w-24 h-0.5 mx-2 mb-5 ${step > s.n ? 'bg-[#C6A24E]' : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
@@ -287,7 +287,7 @@ export default function ApplyPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                     placeholder="Your Building Company, LLC"
                     value={form.companyName}
                     onChange={e => update('companyName', e.target.value)}
@@ -298,7 +298,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="John Smith"
                       value={form.contactName}
                       onChange={e => update('contactName', e.target.value)}
@@ -308,7 +308,7 @@ export default function ApplyPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
                     <input
                       type="email"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="john@yourcompany.com"
                       value={form.contactEmail}
                       onChange={e => update('contactEmail', e.target.value)}
@@ -320,7 +320,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="(214) 555-0100"
                       value={form.contactPhone}
                       onChange={e => update('contactPhone', e.target.value)}
@@ -329,7 +329,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="www.yourcompany.com"
                       value={form.website}
                       onChange={e => update('website', e.target.value)}
@@ -340,7 +340,7 @@ export default function ApplyPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                     placeholder="1234 Commerce Dr"
                     value={form.address}
                     onChange={e => update('address', e.target.value)}
@@ -351,7 +351,7 @@ export default function ApplyPage() {
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="Dallas"
                       value={form.city}
                       onChange={e => update('city', e.target.value)}
@@ -360,7 +360,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       value={form.state}
                       onChange={e => update('state', e.target.value)}
                     />
@@ -368,7 +368,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="75201"
                       value={form.zip}
                       onChange={e => update('zip', e.target.value)}
@@ -378,7 +378,7 @@ export default function ApplyPage() {
               </div>
 
               <div className="mt-8 flex justify-end">
-                <button onClick={nextStep} className="px-8 py-3 bg-[#C9822B] text-white rounded-xl font-semibold hover:bg-[#A86B1F] transition">
+                <button onClick={nextStep} className="px-8 py-3 bg-[#C6A24E] text-white rounded-xl font-semibold hover:bg-[#A8882A] transition">
                   Continue
                 </button>
               </div>
@@ -402,7 +402,7 @@ export default function ApplyPage() {
                         onClick={() => update('businessType', type)}
                         className={`text-left px-4 py-3 rounded-xl border-2 transition text-sm font-medium ${
                           form.businessType === type
-                            ? 'border-[#C9822B] bg-orange-50 text-[#3E2A1E]'
+                            ? 'border-[#C6A24E] bg-orange-50 text-[#0f2a3e]'
                             : 'border-gray-200 text-gray-700 hover:border-gray-300'
                         }`}
                       >
@@ -416,7 +416,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Years in Business</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="e.g. 12"
                       value={form.yearsInBusiness}
                       onChange={e => update('yearsInBusiness', e.target.value)}
@@ -425,7 +425,7 @@ export default function ApplyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Business License #</label>
                     <input
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder="Optional"
                       value={form.businessLicense}
                       onChange={e => update('businessLicense', e.target.value)}
@@ -436,7 +436,7 @@ export default function ApplyPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID / EIN</label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                     placeholder="XX-XXXXXXX"
                     value={form.taxId}
                     onChange={e => update('taxId', e.target.value)}
@@ -446,7 +446,7 @@ export default function ApplyPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Current Material Suppliers</label>
                   <textarea
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition resize-none"
                     rows={3}
                     placeholder="List your current door, trim, window, and lumber suppliers (e.g. DW Distribution, 84 Lumber, Home Depot Pro)"
                     value={form.currentSuppliers}
@@ -460,7 +460,7 @@ export default function ApplyPage() {
                 <button onClick={() => { setStep(1); window.scrollTo(0,0) }} className="px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium">
                   Back
                 </button>
-                <button onClick={nextStep} className="px-8 py-3 bg-[#C9822B] text-white rounded-xl font-semibold hover:bg-[#A86B1F] transition">
+                <button onClick={nextStep} className="px-8 py-3 bg-[#C6A24E] text-white rounded-xl font-semibold hover:bg-[#A8882A] transition">
                   Continue
                 </button>
               </div>
@@ -484,13 +484,13 @@ export default function ApplyPage() {
                         onClick={() => toggleProduct(p.id)}
                         className={`text-left px-4 py-3 rounded-xl border-2 transition text-sm ${
                           form.productInterests.includes(p.id)
-                            ? 'border-[#C9822B] bg-orange-50'
+                            ? 'border-[#C6A24E] bg-orange-50'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         <span className="font-medium text-gray-800">{p.label}</span>
                         {form.productInterests.includes(p.id) && (
-                          <svg className="w-4 h-4 text-[#C9822B] inline ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-4 h-4 text-[#C6A24E] inline ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
@@ -509,7 +509,7 @@ export default function ApplyPage() {
                         onClick={() => update('estimatedAnnualVolume', vol)}
                         className={`text-left px-4 py-3 rounded-xl border-2 transition text-sm font-medium ${
                           form.estimatedAnnualVolume === vol
-                            ? 'border-[#C9822B] bg-orange-50 text-[#3E2A1E]'
+                            ? 'border-[#C6A24E] bg-orange-50 text-[#0f2a3e]'
                             : 'border-gray-200 text-gray-700 hover:border-gray-300'
                         }`}
                       >
@@ -522,7 +522,7 @@ export default function ApplyPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">How did you hear about us?</label>
                   <select
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                     value={form.referralSource}
                     onChange={e => update('referralSource', e.target.value)}
                   >
@@ -533,7 +533,7 @@ export default function ApplyPage() {
                   </select>
                   {(form.referralSource === 'Another Builder' || form.referralSource === 'Abel Sales Rep' || form.referralSource === 'Other') && (
                     <input
-                      className="w-full mt-3 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition"
+                      className="w-full mt-3 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition"
                       placeholder={form.referralSource === 'Another Builder' ? 'Builder name' : form.referralSource === 'Abel Sales Rep' ? 'Rep name' : 'Please specify'}
                       value={form.referralDetail}
                       onChange={e => update('referralDetail', e.target.value)}
@@ -544,7 +544,7 @@ export default function ApplyPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Anything else we should know?</label>
                   <textarea
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C9822B]/30 focus:border-[#C9822B] outline-none transition resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#C6A24E]/30 focus:border-[#C6A24E] outline-none transition resize-none"
                     rows={3}
                     placeholder="Special requirements, delivery preferences, project timeline, etc."
                     value={form.notes}
@@ -557,7 +557,7 @@ export default function ApplyPage() {
                 <button onClick={() => { setStep(2); window.scrollTo(0,0) }} className="px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium">
                   Back
                 </button>
-                <button onClick={nextStep} className="px-8 py-3 bg-[#C9822B] text-white rounded-xl font-semibold hover:bg-[#A86B1F] transition">
+                <button onClick={nextStep} className="px-8 py-3 bg-[#C6A24E] text-white rounded-xl font-semibold hover:bg-[#A8882A] transition">
                   Review Application
                 </button>
               </div>
@@ -575,8 +575,8 @@ export default function ApplyPage() {
                   {/* Company Info */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-[#3E2A1E]">Company Information</h3>
-                      <button onClick={() => setStep(1)} className="text-sm text-[#C9822B] hover:underline">Edit</button>
+                      <h3 className="font-semibold text-[#0f2a3e]">Company Information</h3>
+                      <button onClick={() => setStep(1)} className="text-sm text-[#C6A24E] hover:underline">Edit</button>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -609,8 +609,8 @@ export default function ApplyPage() {
                   {/* Business Details */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-[#3E2A1E]">Business Details</h3>
-                      <button onClick={() => setStep(2)} className="text-sm text-[#C9822B] hover:underline">Edit</button>
+                      <h3 className="font-semibold text-[#0f2a3e]">Business Details</h3>
+                      <button onClick={() => setStep(2)} className="text-sm text-[#C6A24E] hover:underline">Edit</button>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -635,8 +635,8 @@ export default function ApplyPage() {
                   {/* Products & Volume */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-[#3E2A1E]">Products & Volume</h3>
-                      <button onClick={() => setStep(3)} className="text-sm text-[#C9822B] hover:underline">Edit</button>
+                      <h3 className="font-semibold text-[#0f2a3e]">Products & Volume</h3>
+                      <button onClick={() => setStep(3)} className="text-sm text-[#C6A24E] hover:underline">Edit</button>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                       {form.productInterests.length > 0 && (
@@ -646,7 +646,7 @@ export default function ApplyPage() {
                             {form.productInterests.map(id => {
                               const product = PRODUCT_INTERESTS.find(p => p.id === id)
                               return (
-                                <span key={id} className="inline-flex px-3 py-1 bg-[#3E2A1E]/10 text-[#3E2A1E] rounded-full text-xs font-medium">
+                                <span key={id} className="inline-flex px-3 py-1 bg-[#0f2a3e]/10 text-[#0f2a3e] rounded-full text-xs font-medium">
                                   {product?.label || id}
                                 </span>
                               )
@@ -666,31 +666,31 @@ export default function ApplyPage() {
               </div>
 
               {/* Value Props */}
-              <div className="bg-[#3E2A1E]/5 rounded-2xl p-6">
-                <h3 className="font-semibold text-[#3E2A1E] mb-3">What you get with Abel Builder</h3>
+              <div className="bg-[#0f2a3e]/5 rounded-2xl p-6">
+                <h3 className="font-semibold text-[#0f2a3e] mb-3">What you get with Abel Builder</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
                   <div className="flex gap-2">
-                    <svg className="w-5 h-5 text-[#C9822B] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-5 h-5 text-[#C6A24E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span>AI-powered takeoffs from blueprints</span>
                   </div>
                   <div className="flex gap-2">
-                    <svg className="w-5 h-5 text-[#C9822B] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-5 h-5 text-[#C6A24E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span>Instant quotes with real-time pricing</span>
                   </div>
                   <div className="flex gap-2">
-                    <svg className="w-5 h-5 text-[#C9822B] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-5 h-5 text-[#C6A24E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span>Real-time order & delivery tracking</span>
                   </div>
                   <div className="flex gap-2">
-                    <svg className="w-5 h-5 text-[#C9822B] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-5 h-5 text-[#C6A24E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span>Flexible payment terms (NET 15/30)</span>
                   </div>
                   <div className="flex gap-2">
-                    <svg className="w-5 h-5 text-[#C9822B] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-5 h-5 text-[#C6A24E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span>Dedicated account manager</span>
                   </div>
                   <div className="flex gap-2">
-                    <svg className="w-5 h-5 text-[#C9822B] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-5 h-5 text-[#C6A24E] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span>Volume discounts & rebate programs</span>
                   </div>
                 </div>
@@ -703,7 +703,7 @@ export default function ApplyPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="px-10 py-3 bg-[#C9822B] text-white rounded-xl font-bold hover:bg-[#A86B1F] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-10 py-3 bg-[#C6A24E] text-white rounded-xl font-bold hover:bg-[#A8882A] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Submitting...' : 'Submit Application'}
                 </button>

@@ -175,7 +175,7 @@ export default function DocumentsPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-[#C9822B] hover:bg-[#d46711] text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            className="bg-[#C6A24E] hover:bg-[#d46711] text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             + Request Document
           </button>
@@ -219,7 +219,7 @@ export default function DocumentsPage() {
             <select
               value={statusFilter}
               onChange={handleStatusFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             >
               <option value="All">All Statuses</option>
               <option value="PENDING">Pending</option>
@@ -238,7 +238,7 @@ export default function DocumentsPage() {
             <select
               value={typeFilter}
               onChange={handleTypeFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             >
               <option value="All">All Types</option>
               {Object.entries(DOCUMENT_TYPES).map(([key, value]) => (
@@ -258,7 +258,7 @@ export default function DocumentsPage() {
               placeholder="Title, company, or staff..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function DocumentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
-                          <button className="text-[#C9822B] hover:text-[#d46711] text-sm font-medium">
+                          <button className="text-[#C6A24E] hover:text-[#d46711] text-sm font-medium">
                             Update
                           </button>
                           <button className="text-[#1e3a5f] hover:text-[#153250] text-sm font-medium">

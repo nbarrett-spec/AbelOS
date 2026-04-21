@@ -1,10 +1,10 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * Aegis Design System — Tailwind config
+ * Aegis v2 — "The Drafting Room" Tailwind config
  * Colors reference CSS variables from globals.css. Three-layer tokens:
- *   Primitive  — raw palette scales (walnut-*, amber-*, stone-*, data-*, forecast-*)
- *   Semantic   — canvas, surface, fg, border, accent, data-positive, forecast, etc.
+ *   Primitive  — navy, gold, walnut, amber, cream, status colors
+ *   Semantic   — canvas, surface, fg, border, signal, data-positive, forecast, etc.
  *   Component  — kpi-card, panel-live, badge, datatable (defined in globals.css)
  */
 const config: Config = {
@@ -31,6 +31,14 @@ const config: Config = {
           inverse:   'var(--fg-inverse)',
           'on-accent':'var(--fg-on-accent)',
         },
+        // Signal = the Drafting Room's primary interactive color (gold)
+        signal: {
+          DEFAULT:   'var(--signal)',
+          hover:     'var(--signal-hover)',
+          subtle:    'var(--signal-subtle)',
+          glow:      'var(--signal-glow)',
+        },
+        // Accent aliases (backward compat — maps to signal)
         accent: {
           DEFAULT:   'var(--accent)',
           hover:     'var(--accent-hover)',
@@ -68,7 +76,23 @@ const config: Config = {
           fg:      'var(--forecast-fg)',
         },
 
-        // ── Brand primitive (legacy-compatible aliases) ────────────────────
+        // ── Drafting Room primitives ──────────────────────────────────────
+        navy: {
+          deep:  '#050d16',
+          DEFAULT: '#0a1a28',
+          mid:   '#132d42',
+          light: '#1a3d56',
+        },
+        gold: {
+          dark:    '#a88a3a',
+          DEFAULT: '#c6a24e',
+          light:   '#e4c77a',
+        },
+        cream: '#F3EAD8',
+        mylar: '#f5f2eb',
+        onion: '#f9f5ec',
+
+        // ── Brand primitives (legacy-compatible) ──────────────────────────
         abel: {
           walnut:       '#3E2A1E',
           'walnut-light': '#5A4233',
@@ -76,8 +100,6 @@ const config: Config = {
           amber:        '#C9822B',
           'amber-light':  '#D9993F',
           'amber-dark':   '#A86B1F',
-          charcoal:     '#2C2C2C',
-          'charcoal-light': '#404040',
           cream:        '#F3EAD8',
           'cream-dark':   '#E8DCCA',
           'kiln-oak':   '#8B6F47',
@@ -89,21 +111,21 @@ const config: Config = {
           'green-light':  '#43994F',
         },
 
-        // ── Walnut primitive scale ─────────────────────────────────────────
+        // ── Walnut primitive scale ────────────────────────────────────────
         walnut: {
           50: '#F5EFE9', 100: '#E8D9C9', 200: '#C9A98C', 300: '#9C7A5C',
           400: '#6E543D', 500: '#5A4233', 600: '#3E2A1E', 700: '#2A1C14',
           800: '#1C120C', 900: '#0F0906',
         },
 
-        // ── Amber primitive scale ──────────────────────────────────────────
+        // ── Amber primitive scale ─────────────────────────────────────────
         amber: {
           50: '#FDF6E8', 100: '#F9E4BB', 200: '#F3CC85', 300: '#E9AE4F',
           400: '#D9993F', 500: '#C9822B', 600: '#A86B1F', 700: '#865415',
           800: '#5E3A0E', 900: '#3A2408',
         },
 
-        // ── Legacy semantic palettes retained ──────────────────────────────
+        // ── Legacy semantic palettes (retained for existing references) ───
         success: {
           50: '#EEF7EF', 100: '#D4EBD6', 200: '#A7D6AB', 300: '#6FBA78',
           400: '#43994F', 500: '#2F7C3A', 600: '#23632C', 700: '#1A4B21',
@@ -126,9 +148,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'JetBrains Mono', 'ui-monospace', 'monospace'],
-        numeric: ['var(--font-numeric)', 'Inter', 'system-ui', 'sans-serif'],
+        sans:    ['var(--font-sans, Inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono:    ['var(--font-mono, JetBrains Mono)', 'ui-monospace', 'monospace'],
+        display: ['var(--font-display, Playfair Display)', 'Georgia', 'serif'],
+        numeric: ['var(--font-mono, JetBrains Mono)', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         'display-2xl': ['3rem',    { lineHeight: '1.05', letterSpacing: '-0.03em', fontWeight: '600' }],
@@ -142,7 +165,7 @@ const config: Config = {
         'body':        ['0.875rem',{ lineHeight: '1.55', letterSpacing: '0em' }],
         'body-sm':     ['0.8125rem',{ lineHeight: '1.5', letterSpacing: '0em' }],
         'caption':     ['0.75rem', { lineHeight: '1.4',  letterSpacing: '0.01em' }],
-        'overline':    ['0.625rem',{ lineHeight: '1.4',  letterSpacing: '0.14em',   fontWeight: '600' }],
+        'overline':    ['0.625rem',{ lineHeight: '1.4',  letterSpacing: '0.22em',  fontWeight: '600' }],
         'metric-xl':   ['2.25rem', { lineHeight: '1',    letterSpacing: '-0.02em',  fontWeight: '600' }],
         'metric-lg':   ['1.75rem', { lineHeight: '1',    letterSpacing: '-0.02em',  fontWeight: '600' }],
       },
@@ -169,33 +192,45 @@ const config: Config = {
         'elevation-3': 'var(--elev-3)',
         'elevation-4': 'var(--elev-4)',
         'elevation-5': 'var(--elev-4)',
+        'elevation-glow': 'var(--elev-glow)',
         'inset-1':     'inset 0 1px 2px rgba(0, 0, 0, 0.08)',
-        'glass':       '0 8px 32px rgba(14, 13, 11, 0.25)',
+        'glass':       '0 8px 32px rgba(5, 13, 22, 0.35)',
+        'glow-signal': '0 0 0 1px var(--signal), 0 0 20px var(--signal-subtle)',
         'glow-accent': '0 0 0 1px var(--accent), 0 0 20px var(--accent-subtle)',
       },
       transitionDuration: {
-        'instant': '75ms',
+        'instant': '80ms',
         'fast':    '150ms',
         'base':    '200ms',
         'slow':    '320ms',
+        'drawer':  '480ms',
+        'scene':   '720ms',
       },
       transitionTimingFunction: {
-        'out':   'cubic-bezier(0.22, 1, 0.36, 1)',
-        'in-out':'cubic-bezier(0.65, 0, 0.35, 1)',
+        'house':  'cubic-bezier(.2, .8, .2, 1)',
+        'draft':  'cubic-bezier(0.6, 0.1, 0.2, 1)',
+        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'press':  'cubic-bezier(0.22, 1.4, 0.36, 1)',
+        'out':    'cubic-bezier(.2, .8, .2, 1)',
+        'in-out': 'cubic-bezier(0.65, 0, 0.35, 1)',
       },
       keyframes: {
-        shimmer:   { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } },
-        'fade-in': { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-        'slide-up':{ '0%': { transform: 'translateY(6px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+        shimmer:      { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } },
+        'fade-in':    { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+        'slide-up':   { '0%': { transform: 'translateY(6px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
         'slide-down': { '0%': { transform: 'translateY(-6px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
         'pulse-soft': { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.55' } },
+        'gold-flash': { '0%': { backgroundColor: 'var(--signal-subtle)' }, '100%': { backgroundColor: 'transparent' } },
+        'drawer-in':  { '0%': { opacity: '0', transform: 'translateX(100%)' }, '100%': { opacity: '1', transform: 'translateX(0)' } },
       },
       animation: {
         shimmer:      'shimmer 1.4s ease-in-out infinite',
-        'fade-in':    'fade-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both',
-        'slide-up':   'slide-up 200ms cubic-bezier(0.22, 1, 0.36, 1) both',
-        'slide-down': 'slide-down 200ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'fade-in':    'fade-in 200ms cubic-bezier(.2, .8, .2, 1) both',
+        'slide-up':   'slide-up 200ms cubic-bezier(.2, .8, .2, 1) both',
+        'slide-down': 'slide-down 200ms cubic-bezier(.2, .8, .2, 1) both',
         'pulse-soft': 'pulse-soft 2s cubic-bezier(0.65, 0, 0.35, 1) infinite',
+        'gold-flash': 'gold-flash 180ms cubic-bezier(.2, .8, .2, 1) both',
+        'drawer-in':  'drawer-in 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
       },
     },
   },

@@ -248,7 +248,7 @@ export default function CommunitiesPage() {
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#3E2A1E', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0f2a3e', marginBottom: '8px' }}>
           Community Management
         </h1>
         <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '24px' }}>
@@ -296,7 +296,7 @@ export default function CommunitiesPage() {
             onClick={handleOpenModal}
             style={{
               padding: '12px 24px',
-              backgroundColor: '#C9822B',
+              backgroundColor: '#C6A24E',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -307,12 +307,12 @@ export default function CommunitiesPage() {
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#A86B1F'
+              e.currentTarget.style.backgroundColor = '#A8882A'
               e.currentTarget.style.boxShadow = '0 4px 12px rgba(230, 126, 34, 0.3)'
               e.currentTarget.style.transform = 'translateY(-2px)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#C9822B'
+              e.currentTarget.style.backgroundColor = '#C6A24E'
               e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'
               e.currentTarget.style.transform = 'translateY(0)'
             }}
@@ -357,7 +357,7 @@ export default function CommunitiesPage() {
                 style={{
                   backgroundColor: 'white',
                   borderRadius: '12px',
-                  border: expandedId === community.id ? `2px solid #C9822B` : '1px solid #e5e7eb',
+                  border: expandedId === community.id ? `2px solid #C6A24E` : '1px solid #e5e7eb',
                   overflow: 'hidden',
                   boxShadow: expandedId === community.id ? '0 4px 12px rgba(230, 126, 34, 0.2)' : '0 1px 3px rgba(0,0,0,0.1)',
                   transition: 'all 0.2s',
@@ -385,7 +385,7 @@ export default function CommunitiesPage() {
                       {community.orgName}
                     </p>
                     {community.divisionName && (
-                      <p style={{ fontSize: '11px', color: '#C9822B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <p style={{ fontSize: '11px', color: '#C6A24E', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         {community.divisionName}
                       </p>
                     )}
@@ -399,7 +399,7 @@ export default function CommunitiesPage() {
                   {/* Community Name */}
                   <div style={{ marginBottom: '12px' }}>
                     <Link href={`/ops/communities/${community.id}`} style={{ textDecoration: 'none' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#3E2A1E', marginBottom: '4px', cursor: 'pointer' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f2a3e', marginBottom: '4px', cursor: 'pointer' }}>
                         {community.name}
                       </h3>
                     </Link>
@@ -415,7 +415,7 @@ export default function CommunitiesPage() {
                   {/* Stats Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>
                     <div>
-                      <p style={{ fontSize: '20px', fontWeight: 700, color: '#C9822B' }}>
+                      <p style={{ fontSize: '20px', fontWeight: 700, color: '#C6A24E' }}>
                         {community.totalLots}
                       </p>
                       <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
@@ -423,7 +423,7 @@ export default function CommunitiesPage() {
                       </p>
                     </div>
                     <div>
-                      <p style={{ fontSize: '20px', fontWeight: 700, color: '#3E2A1E' }}>
+                      <p style={{ fontSize: '20px', fontWeight: 700, color: '#0f2a3e' }}>
                         {community.activeLots}
                       </p>
                       <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
@@ -450,7 +450,7 @@ export default function CommunitiesPage() {
 
                   {/* Expand Indicator */}
                   <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '12px', color: '#C9822B', fontWeight: 600 }}>
+                    <span style={{ fontSize: '12px', color: '#C6A24E', fontWeight: 600 }}>
                       {expandedId === community.id ? '▲ Hide Floor Plans' : '▼ View Floor Plans'}
                     </span>
                   </div>
@@ -470,7 +470,7 @@ export default function CommunitiesPage() {
                   }}
                 >
                   <div style={{ padding: '20px' }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#3E2A1E', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#0f2a3e', marginBottom: '16px' }}>
                       Floor Plans
                     </h4>
 
@@ -484,29 +484,29 @@ export default function CommunitiesPage() {
                           }}
                         >
                           <thead>
-                            <tr style={{ borderBottom: '2px solid #C9822B' }}>
-                              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 700, color: '#3E2A1E' }}>
+                            <tr style={{ borderBottom: '2px solid #C6A24E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 700, color: '#0f2a3e' }}>
                                 Name
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#0f2a3e' }}>
                                 Sq Ft
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#0f2a3e' }}>
                                 Beds
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#0f2a3e' }}>
                                 Baths
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#0f2a3e' }}>
                                 Stories
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#0f2a3e' }}>
                                 Int Doors
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#0f2a3e' }}>
                                 Ext Doors
                               </th>
-                              <th style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#3E2A1E' }}>
+                              <th style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#0f2a3e' }}>
                                 Base Price
                               </th>
                             </tr>
@@ -541,7 +541,7 @@ export default function CommunitiesPage() {
                                 <td style={{ padding: '12px 8px', textAlign: 'center', color: '#6b7280' }}>
                                   {plan.exteriorDoorCount}
                                 </td>
-                                <td style={{ padding: '12px 8px', textAlign: 'right', color: '#C9822B', fontWeight: 600 }}>
+                                <td style={{ padding: '12px 8px', textAlign: 'right', color: '#C6A24E', fontWeight: 600 }}>
                                   ${plan.basePackagePrice.toLocaleString()}
                                 </td>
                               </tr>
@@ -593,7 +593,7 @@ export default function CommunitiesPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#3E2A1E', marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#0f2a3e', marginBottom: '8px' }}>
               Add Community
             </h2>
             <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px' }}>
@@ -611,8 +611,8 @@ export default function CommunitiesPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
               {/* Organization - Required */}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
-                  Organization <span style={{ color: '#C9822B' }}>*</span>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
+                  Organization <span style={{ color: '#C6A24E' }}>*</span>
                 </label>
                 <select
                   value={formData.organizationId}
@@ -641,7 +641,7 @@ export default function CommunitiesPage() {
 
               {/* Division - Optional */}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   Division
                 </label>
                 <select
@@ -671,8 +671,8 @@ export default function CommunitiesPage() {
 
               {/* Name - Required */}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
-                  Name <span style={{ color: '#C9822B' }}>*</span>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
+                  Name <span style={{ color: '#C6A24E' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -694,7 +694,7 @@ export default function CommunitiesPage() {
 
               {/* Code */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   Code
                 </label>
                 <input
@@ -717,7 +717,7 @@ export default function CommunitiesPage() {
 
               {/* City */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   City
                 </label>
                 <input
@@ -740,7 +740,7 @@ export default function CommunitiesPage() {
 
               {/* State */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   State
                 </label>
                 <input
@@ -763,7 +763,7 @@ export default function CommunitiesPage() {
 
               {/* Zip */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   Zip
                 </label>
                 <input
@@ -786,7 +786,7 @@ export default function CommunitiesPage() {
 
               {/* Address */}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   Address
                 </label>
                 <input
@@ -809,7 +809,7 @@ export default function CommunitiesPage() {
 
               {/* Total Lots */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   Total Lots
                 </label>
                 <input
@@ -832,7 +832,7 @@ export default function CommunitiesPage() {
 
               {/* Notes */}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#3E2A1E', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f2a3e', marginBottom: '6px' }}>
                   Notes
                 </label>
                 <textarea
@@ -889,7 +889,7 @@ export default function CommunitiesPage() {
                 disabled={submitting}
                 style={{
                   padding: '12px 24px',
-                  backgroundColor: '#3E2A1E',
+                  backgroundColor: '#0f2a3e',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -907,7 +907,7 @@ export default function CommunitiesPage() {
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#3E2A1E'
+                  e.currentTarget.style.backgroundColor = '#0f2a3e'
                   e.currentTarget.style.boxShadow = 'none'
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}

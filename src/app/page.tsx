@@ -44,7 +44,7 @@ export default function Home(): JSX.Element {
           {/* Left Side */}
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold text-white">Abel Lumber</span>
-            <span className="text-sm text-amber-400 font-medium">Builder Platform</span>
+            <span className="text-sm text-signal-hover font-medium">Builder Platform</span>
           </div>
 
           {/* Right Side */}
@@ -63,7 +63,7 @@ export default function Home(): JSX.Element {
             </Link>
             <Link
               href="/apply"
-              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-4 py-2 rounded-lg text-sm transition-colors duration-200"
+              className="bg-signal hover:bg-signal-hover text-black font-semibold px-4 py-2 rounded-lg text-sm transition-colors duration-200"
             >
               Apply Now
             </Link>
@@ -86,8 +86,8 @@ export default function Home(): JSX.Element {
         <div className="relative z-10 text-center max-w-4xl mx-auto">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
-            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-sm font-medium text-amber-400">
+            <div className="w-2 h-2 rounded-full bg-signal-hover animate-pulse" />
+            <span className="text-sm font-medium text-signal-hover">
               AI-Powered Blueprint Intelligence
             </span>
           </div>
@@ -96,7 +96,7 @@ export default function Home(): JSX.Element {
           <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">
             Upload a Blueprint.
           </h1>
-          <h2 className="text-5xl md:text-7xl font-bold text-amber-400 leading-tight mb-8">
+          <h2 className="text-5xl md:text-7xl font-bold text-signal-hover leading-tight mb-8">
             Get a Quote in Minutes.
           </h2>
 
@@ -109,7 +109,7 @@ export default function Home(): JSX.Element {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link
               href="/apply"
-              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-8 py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg shadow-amber-500/20"
+              className="bg-signal hover:bg-signal-hover text-black font-semibold px-8 py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg shadow-amber-500/20"
             >
               Apply for Builder Account
             </Link>
@@ -167,7 +167,7 @@ export default function Home(): JSX.Element {
                 title: 'Review AI Takeoff',
                 desc: 'Get a room-by-room material list with confidence scores. Edit or approve in seconds.',
                 color: 'from-amber-500/20',
-                dotColor: 'bg-amber-500',
+                dotColor: 'bg-signal',
               },
               {
                 step: '3',
@@ -289,7 +289,7 @@ export default function Home(): JSX.Element {
                     item.badge === 'emerald'
                       ? 'bg-emerald-500/20 text-emerald-300'
                       : item.badge === 'amber'
-                        ? 'bg-amber-500/20 text-amber-300'
+                        ? 'bg-signal/20 text-amber-300'
                         : item.badge === 'orange'
                           ? 'bg-orange-500/20 text-orange-300'
                           : 'bg-white/10 text-white'
@@ -314,7 +314,7 @@ export default function Home(): JSX.Element {
           </p>
           <Link
             href="/apply"
-            className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-semibold px-8 py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg shadow-amber-500/30"
+            className="inline-block bg-signal hover:bg-signal-hover text-black font-semibold px-8 py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg shadow-amber-500/30"
           >
             Create Free Account
           </Link>

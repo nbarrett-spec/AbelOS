@@ -32,7 +32,7 @@ const TYPE_ICONS: Record<string, string> = {
 
 const PRIORITY_STYLES: Record<string, { dot: string; bg: string }> = {
   HIGH: { dot: 'bg-red-500', bg: 'border-l-red-400' },
-  MEDIUM: { dot: 'bg-amber-400', bg: 'border-l-amber-400' },
+  MEDIUM: { dot: 'bg-signal-hover', bg: 'border-l-amber-400' },
   LOW: { dot: 'bg-blue-400', bg: 'border-l-blue-300' },
 }
 
@@ -90,8 +90,8 @@ export function ActionQueue() {
           </span>
         )}
         {summary.medium > 0 && (
-          <span className="flex items-center gap-1 text-xs text-amber-600">
-            <span className="w-2 h-2 bg-amber-400 rounded-full" />
+          <span className="flex items-center gap-1 text-xs text-signal">
+            <span className="w-2 h-2 bg-signal-hover rounded-full" />
             {summary.medium} pending
           </span>
         )}
@@ -117,13 +117,13 @@ export function ActionQueue() {
             >
               <span className="text-base flex-shrink-0">{icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#3E2A1E]">{action.title}</p>
+                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#0f2a3e]">{action.title}</p>
                 <p className="text-[11px] text-gray-500 truncate">{action.subtitle}</p>
               </div>
               {action.age && (
                 <span className={`text-[10px] font-medium flex-shrink-0 px-2 py-0.5 rounded-full ${
                   action.priority === 'HIGH' ? 'bg-red-50 text-red-600' :
-                  action.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600' :
+                  action.priority === 'MEDIUM' ? 'bg-amber-50 text-signal' :
                   'bg-gray-100 text-gray-500'
                 }`}>
                   {action.age}

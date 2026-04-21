@@ -93,7 +93,7 @@ export default function ScanControlPanel() {
 
   // Get status indicator class
   const getStatusColor = (status: string) => {
-    if (status === 'RUNNING') return 'bg-abel-amber'
+    if (status === 'RUNNING') return 'bg-signal'
     if (status === 'ERROR') return 'bg-red-500'
     return 'bg-abel-green'
   }
@@ -112,8 +112,8 @@ export default function ScanControlPanel() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-abel-walnut border-t-abel-amber"></div>
-          <p className="mt-4 text-abel-walnut font-medium">Loading NUC Scan Control Panel...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-signal"></div>
+          <p className="mt-4 text-brand font-medium">Loading NUC Scan Control Panel...</p>
         </div>
       </div>
     )
@@ -122,17 +122,17 @@ export default function ScanControlPanel() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-abel-walnut to-abel-amber px-6 py-8 text-white">
+      <div className="bg-gradient-to-r from-brand to-signal px-6 py-8 text-white">
         <h1 className="text-4xl font-bold">NUC Scan Control Panel</h1>
-        <p className="mt-2 text-abel-amber text-lg">11 autonomous intelligence scanners</p>
+        <p className="mt-2 text-signal text-lg">11 autonomous intelligence scanners</p>
       </div>
 
       {/* Status Bar */}
       <div className="px-6 py-6 bg-white border-b border-gray-200">
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-abel-amber/10 to-abel-amber/5 rounded-lg p-4 border border-abel-amber/20">
+          <div className="bg-gradient-to-br from-signal/10 to-signal/5 rounded-lg p-4 border border-signal/20">
             <p className="text-sm text-gray-600 font-medium">Active Scans</p>
-            <p className="text-3xl font-bold text-abel-amber mt-1">{activeScanCount}</p>
+            <p className="text-3xl font-bold text-signal mt-1">{activeScanCount}</p>
           </div>
           <div className="bg-gradient-to-br from-abel-green/10 to-abel-green/5 rounded-lg p-4 border border-abel-green/20">
             <p className="text-sm text-gray-600 font-medium">Last 24h Findings</p>
@@ -157,7 +157,7 @@ export default function ScanControlPanel() {
               {/* Card Header */}
               <div className="p-6 pb-4">
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-bold text-abel-walnut flex-1">{scan.name}</h3>
+                  <h3 className="text-lg font-bold text-brand flex-1">{scan.name}</h3>
                   <div className={`w-3 h-3 rounded-full ${getStatusColor(scan.status)}`} title={`Status: ${scan.status}`}></div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">{scan.description}</p>
@@ -180,7 +180,7 @@ export default function ScanControlPanel() {
 
                 {/* Findings Badge */}
                 <div className="mb-4">
-                  <span className="inline-block bg-abel-amber/15 text-abel-amber px-3 py-1 rounded-full text-xs font-semibold">
+                  <span className="inline-block bg-signal/15 text-signal px-3 py-1 rounded-full text-xs font-semibold">
                     {scan.findingsCount} finding{scan.findingsCount !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -189,7 +189,7 @@ export default function ScanControlPanel() {
                 <button
                   onClick={() => triggerScan(scan.scanId)}
                   disabled={triggering === scan.scanId}
-                  className="w-full bg-abel-walnut hover:bg-abel-walnut/90 disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded transition-colors text-sm"
+                  className="w-full bg-brand hover:bg-brand/90 disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded transition-colors text-sm"
                 >
                   {triggering === scan.scanId ? 'Running...' : 'Run Now'}
                 </button>
@@ -198,7 +198,7 @@ export default function ScanControlPanel() {
               {/* Expandable Findings Section */}
               <button
                 onClick={() => toggleExpand(scan.scanId)}
-                className="w-full px-6 py-3 text-left text-sm font-medium text-abel-amber border-t border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-between"
+                className="w-full px-6 py-3 text-left text-sm font-medium text-signal border-t border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-between"
               >
                 <span>Recent Findings</span>
                 <span className={`transition-transform ${expandedScan === scan.scanId ? 'rotate-180' : ''}`}>▼</span>

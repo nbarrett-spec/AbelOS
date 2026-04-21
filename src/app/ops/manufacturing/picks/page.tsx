@@ -109,7 +109,7 @@ export default function PickListPage() {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
           <p className="mt-4 text-gray-600">Loading material picks...</p>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function PickListPage() {
         </div>
         <Link
           href="/ops/manufacturing"
-          className="text-xs text-[#3E2A1E] hover:underline"
+          className="text-xs text-[#0f2a3e] hover:underline"
         >
           ← Back to Dashboard
         </Link>
@@ -153,7 +153,7 @@ export default function PickListPage() {
             onClick={() => setGroupByJob(!groupByJob)}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               groupByJob
-                ? 'bg-[#3E2A1E] text-white'
+                ? 'bg-[#0f2a3e] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -168,7 +168,7 @@ export default function PickListPage() {
           onClick={() => setActiveFilter('ALL')}
           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
             activeFilter === 'ALL'
-              ? 'bg-[#3E2A1E] text-white border-transparent'
+              ? 'bg-[#0f2a3e] text-white border-transparent'
               : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
           }`}
         >
@@ -296,7 +296,7 @@ function PickRow({
           <td className="px-4 py-3 text-sm text-gray-900 font-medium">
             <Link
               href={`/ops/jobs/${pick.job.id}`}
-              className="text-[#3E2A1E] hover:underline"
+              className="text-[#0f2a3e] hover:underline"
             >
               {pick.job.jobNumber}
             </Link>
@@ -309,7 +309,7 @@ function PickRow({
         <div className="w-24">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-[#C9822B] h-2 rounded-full"
+              className="bg-[#C6A24E] h-2 rounded-full"
               style={{ width: `${pickProgress}%` }}
             />
           </div>
@@ -322,7 +322,7 @@ function PickRow({
           value={pick.status}
           onChange={(e) => onStatusChange(pick.id, e.target.value)}
           disabled={isUpdating}
-          className="px-2 py-1 rounded text-xs font-medium border border-gray-300 focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E] disabled:opacity-50"
+          className="px-2 py-1 rounded text-xs font-medium border border-gray-300 focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e] disabled:opacity-50"
           style={{
             backgroundColor: statusConfig?.color || '#95A5A6',
             color: 'white',

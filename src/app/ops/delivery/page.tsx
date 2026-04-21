@@ -247,7 +247,7 @@ export default function DeliveryCommandCenter() {
           style={{
             width: '40px',
             height: '40px',
-            border: '4px solid #3E2A1E',
+            border: '4px solid #0f2a3e',
             borderTop: '4px solid transparent',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
@@ -300,14 +300,14 @@ export default function DeliveryCommandCenter() {
           border: none;
           borderRadius: 6px;
           cursor: pointer;
-          backgroundColor: #3E2A1E;
+          backgroundColor: #0f2a3e;
           color: white;
           marginRight: 6px;
           marginBottom: 6px;
           transition: background-color 0.2s;
         }
         .action-button:hover {
-          backgroundColor: #2A1C14;
+          backgroundColor: #0a1a28;
         }
         .action-button:disabled {
           opacity: 0.6;
@@ -326,13 +326,13 @@ export default function DeliveryCommandCenter() {
           transition: all 0.2s;
         }
         .filter-button.active {
-          backgroundColor: #3E2A1E;
+          backgroundColor: #0f2a3e;
           color: white;
-          borderColor: #3E2A1E;
+          borderColor: #0f2a3e;
         }
         .filter-button:hover {
-          borderColor: #3E2A1E;
-          color: #3E2A1E;
+          borderColor: #0f2a3e;
+          color: #0f2a3e;
         }
         .delivery-row {
           backgroundColor: white;
@@ -394,8 +394,8 @@ export default function DeliveryCommandCenter() {
         }
         .move-button:hover {
           backgroundColor: #F3F4F6;
-          borderColor: #3E2A1E;
-          color: #3E2A1E;
+          borderColor: #0f2a3e;
+          color: #0f2a3e;
         }
         .move-button:disabled {
           opacity: 0.4;
@@ -425,7 +425,7 @@ export default function DeliveryCommandCenter() {
           style={{
             padding: '8px 16px',
             fontSize: '14px',
-            backgroundColor: '#C9822B',
+            backgroundColor: '#C6A24E',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
@@ -442,7 +442,7 @@ export default function DeliveryCommandCenter() {
         const s = d.latestTracking?.status || d.status
         return !['COMPLETE', 'ARRIVED'].includes(s)
       }).length > 0 && (
-        <div style={{ background: 'linear-gradient(135deg, #3E2A1E 0%, #2E86C1 100%)', borderRadius: 12, padding: 20, marginBottom: 24, color: '#fff' }}>
+        <div style={{ background: 'linear-gradient(135deg, #0f2a3e 0%, #2E86C1 100%)', borderRadius: 12, padding: 20, marginBottom: 24, color: '#fff' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Quick Dispatch</h3>
             <span style={{ fontSize: 12, opacity: 0.8 }}>Click to advance each delivery</span>
@@ -513,7 +513,7 @@ export default function DeliveryCommandCenter() {
       >
         <div className="stat-card">
           <div className="stat-label">Today's Deliveries</div>
-          <div className="stat-value" style={{ color: '#3E2A1E' }}>
+          <div className="stat-value" style={{ color: '#0f2a3e' }}>
             {stats.todayCount}
           </div>
         </div>
@@ -611,7 +611,7 @@ export default function DeliveryCommandCenter() {
         <button
           onClick={startNextDelivery}
           style={{
-            backgroundColor: '#C9822B',
+            backgroundColor: '#C6A24E',
             color: 'white',
             padding: '14px 24px',
             fontSize: '15px',
@@ -625,7 +625,7 @@ export default function DeliveryCommandCenter() {
             textAlign: 'center',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D46711')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#C9822B')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#C6A24E')}
         >
           Start Next Delivery
         </button>
@@ -644,9 +644,9 @@ export default function DeliveryCommandCenter() {
                 padding: '6px 12px',
                 fontSize: '12px',
                 fontWeight: '500',
-                backgroundColor: viewMode === 'list' ? '#3E2A1E' : 'white',
+                backgroundColor: viewMode === 'list' ? '#0f2a3e' : 'white',
                 color: viewMode === 'list' ? 'white' : '#6B7280',
-                border: `1px solid ${viewMode === 'list' ? '#3E2A1E' : '#E5E7EB'}`,
+                border: `1px solid ${viewMode === 'list' ? '#0f2a3e' : '#E5E7EB'}`,
                 borderRadius: '6px',
                 cursor: 'pointer',
               }}
@@ -659,9 +659,9 @@ export default function DeliveryCommandCenter() {
                 padding: '6px 12px',
                 fontSize: '12px',
                 fontWeight: '500',
-                backgroundColor: viewMode === 'reorder' ? '#3E2A1E' : 'white',
+                backgroundColor: viewMode === 'reorder' ? '#0f2a3e' : 'white',
                 color: viewMode === 'reorder' ? 'white' : '#6B7280',
-                border: `1px solid ${viewMode === 'reorder' ? '#3E2A1E' : '#E5E7EB'}`,
+                border: `1px solid ${viewMode === 'reorder' ? '#0f2a3e' : '#E5E7EB'}`,
                 borderRadius: '6px',
                 cursor: 'pointer',
               }}
@@ -675,7 +675,7 @@ export default function DeliveryCommandCenter() {
                   fontSize: '12px',
                   fontWeight: '500',
                   backgroundColor: '#F3F4F6',
-                  color: '#3E2A1E',
+                  color: '#0f2a3e',
                   border: '1px solid #E5E7EB',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -752,7 +752,7 @@ export default function DeliveryCommandCenter() {
                     <div className="delivery-sub">
                       Crew: {delivery.crewName || 'Unassigned'}
                     </div>
-                    <div className="delivery-sub" style={{ marginTop: '4px', color: '#3E2A1E', fontWeight: '500' }}>
+                    <div className="delivery-sub" style={{ marginTop: '4px', color: '#0f2a3e', fontWeight: '500' }}>
                       Est. Time: {delivery.eta
                         ? formatDate(delivery.eta)
                         : delivery.latestTracking?.eta
@@ -907,7 +907,7 @@ export default function DeliveryCommandCenter() {
                     <div
                       style={{
                         fontSize: '12px',
-                        color: '#3E2A1E',
+                        color: '#0f2a3e',
                         marginTop: '8px',
                         fontWeight: '500',
                       }}

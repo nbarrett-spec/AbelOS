@@ -7,14 +7,14 @@ const STATUS_COLORS: Record<string, string> = {
   SCHEDULED: '#3498db',
   ACTIVE: '#27ae60',
   SENT: '#8e44ad',
-  PAUSED: '#D9993F',
+  PAUSED: '#D4B96A',
 }
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -51,13 +51,13 @@ export default function MarketingCampaignsPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Marketing Automation</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Marketing Automation</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Campaign management, builder segmentation, drip sequences, and engagement tracking</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -85,17 +85,17 @@ function DashboardView({ data }: { data: any }) {
         <KPICard label="Total Campaigns" value={Number(s.totalCampaigns || 0)} sub={`${s.activeCampaigns || 0} active, ${s.draftCampaigns || 0} drafts`} />
         <KPICard label="Emails Sent" value={Number(s.totalSent || 0).toLocaleString()} color="#8e44ad" />
         <KPICard label="Avg Open Rate" value={`${s.avgOpenRate || 0}%`} color="#27ae60" />
-        <KPICard label="Avg Click Rate" value={`${s.avgClickRate || 0}%`} color="#C9822B" />
+        <KPICard label="Avg Click Rate" value={`${s.avgClickRate || 0}%`} color="#C6A24E" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <KPICard label="Reachable Builders" value={Number(r.activeReachable || 0)} sub={`of ${r.totalBuilders || 0} total`} color="#3498db" />
         <KPICard label="With Email" value={Number(r.withEmail || 0)} color="#27ae60" />
-        <KPICard label="With Phone" value={Number(r.withPhone || 0)} sub="SMS capable" color="#D9993F" />
+        <KPICard label="With Phone" value={Number(r.withPhone || 0)} sub="SMS capable" color="#D4B96A" />
         <KPICard label="Conversions" value={Number(s.totalConversions || 0)} color="#e74c3c" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Recent Campaigns</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Recent Campaigns</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -182,7 +182,7 @@ function SegmentsView({ data }: { data: any }) {
     'high-value': '#8e44ad',
     'new-90d': '#27ae60',
     'at-risk': '#e74c3c',
-    'never-ordered': '#D9993F',
+    'never-ordered': '#D4B96A',
     'quote-pending': '#3498db',
   }
   return (
@@ -193,7 +193,7 @@ function SegmentsView({ data }: { data: any }) {
         {(data.segments || []).map((s: any) => (
           <div key={s.key} style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderTop: `4px solid ${SEGMENT_COLORS[s.key] || '#999'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#3E2A1E' }}>{s.name}</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#0f2a3e' }}>{s.name}</h3>
               <span style={{ fontSize: 24, fontWeight: 700, color: SEGMENT_COLORS[s.key] || '#999' }}>{s.count}</span>
             </div>
             <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>{s.description}</p>
@@ -228,12 +228,12 @@ function TemplatesView({ data }: { data: any }) {
           <div key={t.id} style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#3E2A1E' }}>{t.name}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#0f2a3e' }}>{t.name}</h3>
                 <p style={{ fontSize: 13, color: '#666', margin: '4px 0' }}>{t.description}</p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <Badge text={t.type} color={TYPE_COLORS[t.type] || '#999'} />
-                <Badge text={`Target: ${t.targetSegment}`} color="#3E2A1E" />
+                <Badge text={`Target: ${t.targetSegment}`} color="#0f2a3e" />
               </div>
             </div>
 
@@ -260,16 +260,16 @@ function PerformanceView({ data }: { data: any }) {
     <div>
       {(data.byType || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Performance by Type</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Performance by Type</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 24 }}>
             {(data.byType || []).map((t: any) => (
               <div key={t.type} style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>{t.type}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>{t.type}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
                   <div>Campaigns: <strong>{Number(t.campaignCount)}</strong></div>
                   <div>Sent: <strong>{Number(t.totalSent).toLocaleString()}</strong></div>
                   <div>Open Rate: <strong style={{ color: '#27ae60' }}>{t.avgOpenRate}%</strong></div>
-                  <div>Click Rate: <strong style={{ color: '#C9822B' }}>{t.avgClickRate}%</strong></div>
+                  <div>Click Rate: <strong style={{ color: '#C6A24E' }}>{t.avgClickRate}%</strong></div>
                 </div>
               </div>
             ))}
@@ -277,7 +277,7 @@ function PerformanceView({ data }: { data: any }) {
         </>
       )}
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Campaign Results</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Campaign Results</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>

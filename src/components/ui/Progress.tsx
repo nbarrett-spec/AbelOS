@@ -3,8 +3,8 @@
 import { clsx } from 'clsx'
 
 const colorMap = {
-  navy: 'bg-abel-walnut',
-  orange: 'bg-abel-amber',
+  navy: 'bg-brand',
+  orange: 'bg-signal',
   green: 'bg-success-500',
   danger: 'bg-danger-500',
   info: 'bg-info-500',
@@ -102,8 +102,8 @@ export function StepProgress({ steps, currentStep, className }: StepProgressProp
               <div
                 className={clsx(
                   'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300',
-                  isComplete && 'bg-abel-walnut text-white',
-                  isCurrent && 'bg-abel-amber text-white ring-4 ring-abel-amber/20',
+                  isComplete && 'bg-brand text-white',
+                  isCurrent && 'bg-signal text-white ring-4 ring-signal/20',
                   !isComplete && !isCurrent && 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                 )}
               >
@@ -118,7 +118,7 @@ export function StepProgress({ steps, currentStep, className }: StepProgressProp
               <span
                 className={clsx(
                   'mt-1.5 text-xs font-medium whitespace-nowrap',
-                  isCurrent ? 'text-abel-walnut dark:text-abel-walnut-light' : 'text-gray-500 dark:text-gray-400'
+                  isCurrent ? 'text-brand dark:text-brand-hover' : 'text-gray-500 dark:text-gray-400'
                 )}
               >
                 {step}
@@ -128,7 +128,7 @@ export function StepProgress({ steps, currentStep, className }: StepProgressProp
               <div
                 className={clsx(
                   'flex-1 h-0.5 mx-3 mt-[-18px] rounded-full transition-colors duration-500',
-                  isComplete ? 'bg-abel-walnut' : 'bg-gray-200 dark:bg-gray-700'
+                  isComplete ? 'bg-brand' : 'bg-gray-200 dark:bg-gray-700'
                 )}
               />
             )}

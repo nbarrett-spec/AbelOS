@@ -62,8 +62,8 @@ export function TableHeader({ sortable, sorted, className, children, ...props }:
     >
       <div className="flex items-center gap-1.5">
         {children}
-        {sorted === 'asc' && <span className="text-abel-walnut">↑</span>}
-        {sorted === 'desc' && <span className="text-abel-walnut">↓</span>}
+        {sorted === 'asc' && <span className="text-brand">↑</span>}
+        {sorted === 'desc' && <span className="text-brand">↓</span>}
       </div>
     </th>
   )
@@ -95,7 +95,7 @@ export function TableRow({ clickable, selected, className, children, ...props }:
       className={clsx(
         'transition-colors',
         clickable && 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
-        selected && 'bg-abel-walnut/5 dark:bg-abel-walnut/10',
+        selected && 'bg-brand/5 dark:bg-brand/10',
         className
       )}
       {...props}

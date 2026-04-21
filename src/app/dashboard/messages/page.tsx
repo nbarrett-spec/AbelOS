@@ -116,7 +116,7 @@ export default function BuilderMessagesPage() {
     <div className="max-w-5xl mx-auto">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#3E2A1E] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
@@ -129,7 +129,7 @@ export default function BuilderMessagesPage() {
         </div>
         <button
           onClick={() => { setShowCompose(true); setSelected(null) }}
-          className="bg-[#C9822B] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A86B1F] transition flex items-center gap-2"
+          className="bg-[#C6A24E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition flex items-center gap-2"
         >
           <span>+</span> New Message
         </button>
@@ -187,7 +187,7 @@ export default function BuilderMessagesPage() {
               <button
                 onClick={sendMessage}
                 disabled={sending || !subject.trim() || !body.trim()}
-                className="bg-[#3E2A1E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#0f2a3e] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? 'Sending...' : 'Send Message'}
               </button>
@@ -201,7 +201,7 @@ export default function BuilderMessagesPage() {
         <div className={`${selected ? 'flex-1' : 'w-full'}`}>
           {loading ? (
             <div className="bg-white rounded-lg border p-16 flex items-center justify-center">
-              <div className="w-6 h-6 border-3 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : messages.length === 0 ? (
             <div className="bg-white rounded-lg border p-16 text-center">
@@ -210,7 +210,7 @@ export default function BuilderMessagesPage() {
               <p className="text-gray-500 text-sm mb-4">Send a message to Abel Lumber about orders, deliveries, billing, or anything else.</p>
               <button
                 onClick={() => setShowCompose(true)}
-                className="bg-[#C9822B] text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-[#A86B1F] transition"
+                className="bg-[#C6A24E] text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-[#A8882A] transition"
               >
                 Send Your First Message
               </button>
@@ -224,7 +224,7 @@ export default function BuilderMessagesPage() {
                     key={msg.id}
                     onClick={() => setSelected(msg)}
                     className={`bg-white rounded-lg border p-4 cursor-pointer hover:shadow-sm transition ${
-                      selected?.id === msg.id ? 'ring-2 ring-[#3E2A1E]' : ''
+                      selected?.id === msg.id ? 'ring-2 ring-[#0f2a3e]' : ''
                     } ${msg.status === 'REPLIED' && !msg.readByBuilder ? 'border-l-4 border-l-green-500' : ''}`}
                   >
                     <div className="flex items-center justify-between mb-1">

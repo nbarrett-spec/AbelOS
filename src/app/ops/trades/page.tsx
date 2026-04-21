@@ -84,7 +84,7 @@ export default function TradeFinderPage() {
           <p className="text-sm text-gray-500 mt-1">Find and manage trusted subcontractors and trade partners in DFW</p>
         </div>
         <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#3E2A1E] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2A1C14]">
+          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
           <Plus className="w-4 h-4" /> Add Trade
         </button>
       </div>
@@ -131,7 +131,7 @@ export default function TradeFinderPage() {
                     {trade.companyName}
                     {trade.verified && <Shield className="w-4 h-4 text-green-500" />}
                   </h3>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-[#3E2A1E]/10 text-[#3E2A1E] rounded text-xs font-medium">
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-[#0f2a3e]/10 text-[#0f2a3e] rounded text-xs font-medium">
                     {formatType(trade.tradeType)}
                   </span>
                 </div>
@@ -243,7 +243,7 @@ export default function TradeFinderPage() {
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
               <button onClick={createTrade} disabled={!newTrade.companyName || !newTrade.tradeType}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50">
                 Add Trade
               </button>
             </div>

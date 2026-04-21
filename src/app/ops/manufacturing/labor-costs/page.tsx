@@ -166,7 +166,7 @@ export default function LaborCostsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
             Labor &amp; Overhead Costs
           </h1>
           <p style={{ color: '#666', margin: '6px 0 0', fontSize: 14 }}>
@@ -188,7 +188,7 @@ export default function LaborCostsPage() {
             disabled={saving || !anyChanges}
             style={{
               padding: '8px 20px', borderRadius: 6, border: 'none',
-              background: anyChanges ? '#C9822B' : '#ccc',
+              background: anyChanges ? '#C6A24E' : '#ccc',
               color: 'white', fontWeight: 600, cursor: anyChanges ? 'pointer' : 'default',
               fontSize: 14, opacity: saving ? 0.6 : 1,
             }}
@@ -204,7 +204,7 @@ export default function LaborCostsPage() {
           background: '#F0F7FF', border: '1px solid #BDD7EE', borderRadius: 8,
           padding: 20, marginBottom: 20, fontSize: 13, lineHeight: 1.7, color: '#333',
         }}>
-          <strong style={{ color: '#3E2A1E' }}>How labor costs flow through the system:</strong>
+          <strong style={{ color: '#0f2a3e' }}>How labor costs flow through the system:</strong>
           <div style={{ marginTop: 8 }}>
             Each assembled door's true cost = Component Costs (from BOM) + Labor Cost + Overhead Cost.
             This total is calculated by the <code>bom_cost()</code> function in the database and automatically used
@@ -234,13 +234,13 @@ export default function LaborCostsPage() {
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#3E2A1E' }}>
+            <tr style={{ background: '#0f2a3e' }}>
               {['Category', 'Products', 'Has BOM', 'Avg Component Cost', 'Labor Cost', 'Overhead Cost',
                 'Total Labor+OH', 'Avg Base Price', 'Margin w/o Labor', 'Margin w/ Labor', ''].map((h, i) => (
                 <th key={i} style={{
                   padding: '10px 12px', color: 'white', fontWeight: 600,
                   textAlign: i >= 2 ? 'right' : 'left', fontSize: 12,
-                  borderBottom: '2px solid #2A1C14', whiteSpace: 'nowrap',
+                  borderBottom: '2px solid #0a1a28', whiteSpace: 'nowrap',
                 }}>
                   {h}
                 </th>
@@ -264,7 +264,7 @@ export default function LaborCostsPage() {
                   background: changed ? '#FFF8E1' : idx % 2 === 0 ? 'white' : '#F8F9FA',
                   borderBottom: '1px solid #E5E7EB',
                 }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#3E2A1E' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0f2a3e' }}>
                     {rate.category}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: '#666' }}>
@@ -320,7 +320,7 @@ export default function LaborCostsPage() {
                   </td>
                   <td style={{
                     padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace',
-                    fontWeight: 600, color: totalLabor > 0 ? '#3E2A1E' : '#ccc',
+                    fontWeight: 600, color: totalLabor > 0 ? '#0f2a3e' : '#ccc',
                   }}>
                     ${totalLabor.toFixed(2)}
                   </td>
@@ -329,13 +329,13 @@ export default function LaborCostsPage() {
                   </td>
                   <td style={{
                     padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace',
-                    color: marginWithout === null ? '#ccc' : marginWithout < 20 ? '#C0392B' : marginWithout < 30 ? '#C9822B' : '#27AE60',
+                    color: marginWithout === null ? '#ccc' : marginWithout < 20 ? '#C0392B' : marginWithout < 30 ? '#C6A24E' : '#27AE60',
                   }}>
                     {marginWithout !== null ? `${marginWithout.toFixed(1)}%` : '—'}
                   </td>
                   <td style={{
                     padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600,
-                    color: marginWith === null ? '#ccc' : marginWith < 20 ? '#C0392B' : marginWith < 30 ? '#C9822B' : '#1E8449',
+                    color: marginWith === null ? '#ccc' : marginWith < 20 ? '#C0392B' : marginWith < 30 ? '#C6A24E' : '#1E8449',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                       <span>{marginWith !== null ? `${marginWith.toFixed(1)}%` : '—'}</span>
@@ -376,12 +376,12 @@ export default function LaborCostsPage() {
         <SummaryCard
           label="Categories with Labor Set"
           value={`${rates.filter(r => (r.avgLaborCost || 0) > 0 || parseFloat(editing[r.category]?.laborCost || '0') > 0).length} / ${rates.length}`}
-          color="#3E2A1E"
+          color="#0f2a3e"
         />
         <SummaryCard
           label="Avg Labor + Overhead / Door"
           value={`$${(rates.reduce((s, r) => s + (r.avgLaborCost || 0) + (r.avgOverheadCost || 0), 0) / Math.max(rates.filter(r => (r.avgLaborCost || 0) > 0).length, 1)).toFixed(2)}`}
-          color="#C9822B"
+          color="#C6A24E"
         />
         <SummaryCard
           label="Products with BOM"

@@ -48,7 +48,7 @@ function StaffLoginInner() {
       {/* Left panel — brand */}
       <div
         className="hidden lg:flex lg:w-[44%] relative items-center justify-center overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #2A1C14 0%, #17150F 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #0a1a28 0%, #17150F 100%)' }}
       >
         {/* Wood-grain texture */}
         <div
@@ -61,8 +61,8 @@ function StaffLoginInner() {
         {/* Amber accent line */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
         <div className="absolute top-16 left-16 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-soft" />
-          <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-400/80">
+          <div className="w-1.5 h-1.5 rounded-full bg-signal-hover animate-pulse-soft" />
+          <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-signal-hover/80">
             Aegis · v1
           </span>
         </div>

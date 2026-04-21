@@ -157,13 +157,13 @@ export default function BlueprintAnalyzePage() {
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 80) return 'text-green-600 bg-green-50'
-    if (confidence >= 50) return 'text-amber-600 bg-amber-50'
+    if (confidence >= 50) return 'text-signal bg-amber-50'
     return 'text-red-600 bg-red-50'
   }
 
   const getConfidenceBgColor = (confidence: number) => {
     if (confidence >= 80) return 'bg-green-500'
-    if (confidence >= 50) return 'bg-amber-500'
+    if (confidence >= 50) return 'bg-signal'
     return 'bg-red-500'
   }
 
@@ -186,7 +186,7 @@ export default function BlueprintAnalyzePage() {
             ref={dragDropRef}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-[#3E2A1E] hover:bg-blue-50 transition"
+            className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-[#0f2a3e] hover:bg-blue-50 transition"
             onClick={() => fileInputRef.current?.click()}
           >
             <svg
@@ -256,7 +256,7 @@ export default function BlueprintAnalyzePage() {
             <button
               onClick={analyzeBlueprint}
               disabled={analysisState.loading}
-              className="w-full bg-[#3E2A1E] text-white py-3 rounded-lg font-semibold hover:bg-[#163d5c] disabled:opacity-50 transition flex items-center justify-center gap-2"
+              className="w-full bg-[#0f2a3e] text-white py-3 rounded-lg font-semibold hover:bg-[#163d5c] disabled:opacity-50 transition flex items-center justify-center gap-2"
             >
               {analysisState.loading ? (
                 <>
@@ -288,25 +288,25 @@ export default function BlueprintAnalyzePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-500 mb-1">Total Doors</p>
-              <p className="text-2xl font-bold text-[#3E2A1E]">
+              <p className="text-2xl font-bold text-[#0f2a3e]">
                 {analysisState.analysis.summary.totalDoors}
               </p>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-500 mb-1">Total Windows</p>
-              <p className="text-2xl font-bold text-[#3E2A1E]">
+              <p className="text-2xl font-bold text-[#0f2a3e]">
                 {analysisState.analysis.summary.totalWindows}
               </p>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-500 mb-1">Closets</p>
-              <p className="text-2xl font-bold text-[#3E2A1E]">
+              <p className="text-2xl font-bold text-[#0f2a3e]">
                 {analysisState.analysis.summary.totalClosets}
               </p>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-500 mb-1">Floor Plan</p>
-              <p className="text-2xl font-bold text-[#3E2A1E]">
+              <p className="text-2xl font-bold text-[#0f2a3e]">
                 {analysisState.analysis.summary.floorPlanSqFt.toLocaleString()} sf
               </p>
             </div>
@@ -327,7 +327,7 @@ export default function BlueprintAnalyzePage() {
               />
             </div>
             {analysisState.analysis.confidence < 80 && (
-              <p className="text-sm text-amber-600 mt-2">
+              <p className="text-sm text-signal mt-2">
                 Low confidence: Please review analysis results carefully before generating takeoff.
               </p>
             )}
@@ -441,7 +441,7 @@ export default function BlueprintAnalyzePage() {
             <button
               onClick={generateTakeoff}
               disabled={takeoffState.loading}
-              className="w-full bg-[#C9822B] text-white py-3 rounded-lg font-semibold hover:bg-[#d46d1a] disabled:opacity-50 transition flex items-center justify-center gap-2"
+              className="w-full bg-[#C6A24E] text-white py-3 rounded-lg font-semibold hover:bg-[#d46d1a] disabled:opacity-50 transition flex items-center justify-center gap-2"
             >
               {takeoffState.loading ? (
                 <>

@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   MATERIALS_LOCKED: { label: 'T-48 Lock', color: '#4B0082', bg: 'bg-indigo-100 text-indigo-700' },
   IN_PRODUCTION: { label: 'Production', color: '#9B59B6', bg: 'bg-purple-100 text-purple-700' },
   STAGED: { label: 'Staged', color: '#F1C40F', bg: 'bg-yellow-100 text-yellow-800' },
-  LOADED: { label: 'T-24 Loaded', color: '#C9822B', bg: 'bg-orange-100 text-orange-700' },
+  LOADED: { label: 'T-24 Loaded', color: '#C6A24E', bg: 'bg-orange-100 text-orange-700' },
   IN_TRANSIT: { label: 'In Transit', color: '#FFA500', bg: 'bg-amber-100 text-amber-700' },
   DELIVERED: { label: 'Delivered', color: '#1ABC9C', bg: 'bg-teal-100 text-teal-700' },
   INSTALLING: { label: 'Installing', color: '#00BCD4', bg: 'bg-cyan-100 text-cyan-700' },
@@ -196,7 +196,7 @@ export default function JobProfilePage() {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? 'border-[#3E2A1E] text-[#3E2A1E] dark:text-blue-400 dark:border-blue-400'
+                  ? 'border-[#0f2a3e] text-[#0f2a3e] dark:text-blue-400 dark:border-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
@@ -319,7 +319,7 @@ function OverviewTab({ job, builder, community, phaseSummary, invoices }: any) {
         {job.assignedPM && (
           <SectionCard title="Project Manager">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#3E2A1E] flex items-center justify-center text-sm font-bold text-white">
+              <div className="w-10 h-10 rounded-full bg-[#0f2a3e] flex items-center justify-center text-sm font-bold text-white">
                 {job.assignedPM.firstName[0]}{job.assignedPM.lastName[0]}
               </div>
               <div>
@@ -363,7 +363,7 @@ function OverviewTab({ job, builder, community, phaseSummary, invoices }: any) {
                     phase.status === 'PAID' ? 'bg-green-500' :
                     phase.status === 'INVOICED' ? 'bg-emerald-500' :
                     phase.status === 'ACTIVE' ? 'bg-blue-500 animate-pulse' :
-                    phase.status === 'READY' ? 'bg-amber-500' :
+                    phase.status === 'READY' ? 'bg-signal' :
                     phase.status === 'SKIPPED' ? 'bg-gray-300' :
                     'bg-gray-300'
                   }`} />

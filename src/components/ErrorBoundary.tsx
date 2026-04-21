@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           fontFamily: 'Arial, sans-serif'
         }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <h2 style={{ color: '#3E2A1E', marginBottom: 8 }}>Something went wrong</h2>
+          <h2 style={{ color: '#0f2a3e', marginBottom: 8 }}>Something went wrong</h2>
           <p style={{ color: '#666', marginBottom: 16 }}>
             {this.state.error?.message || 'An unexpected error occurred'}
           </p>
@@ -45,7 +45,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             onClick={() => this.setState({ hasError: false, error: null })}
             style={{
               padding: '10px 24px',
-              backgroundColor: '#C9822B',
+              backgroundColor: '#C6A24E',
               color: 'white',
               border: 'none',
               borderRadius: 6,

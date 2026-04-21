@@ -214,7 +214,7 @@ export default function ProductsCatalogPage() {
     <div className="products-page">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
         }`}>
           {toast}
         </div>
@@ -229,7 +229,7 @@ export default function ProductsCatalogPage() {
           onClick={() => { setShowCatCleanup(true); loadCategoryPreview() }}
           style={{
             padding: '10px 20px',
-            backgroundColor: '#C9822B',
+            backgroundColor: '#C6A24E',
             color: '#fff',
             border: 'none',
             borderRadius: '8px',
@@ -594,7 +594,7 @@ export default function ProductsCatalogPage() {
             <div className="modal-body">
               {catLoading ? (
                 <div style={{ textAlign: 'center', padding: '32px' }}>
-                  <div style={{ width: '24px', height: '24px', border: '3px solid #3E2A1E', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '24px', height: '24px', border: '3px solid #0f2a3e', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto', animation: 'spin 1s linear infinite' }} />
                   <p style={{ marginTop: '12px', color: '#6b7280', fontSize: '14px' }}>Loading category analysis...</p>
                 </div>
               ) : catData && catData.categories ? (
@@ -651,7 +651,7 @@ export default function ProductsCatalogPage() {
                 className="btn-primary"
                 onClick={runCategoryNormalization}
                 disabled={catNormalizing || catLoading || !catData}
-                style={{ background: '#C9822B' }}
+                style={{ background: '#C6A24E' }}
               >
                 {catNormalizing ? 'Cleaning Up...' : `Normalize ${catData?.categories?.filter(c => c.willChange).length || 0} Categories`}
               </button>

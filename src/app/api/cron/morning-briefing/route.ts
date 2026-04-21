@@ -208,7 +208,7 @@ function buildBriefingHTML(params: {
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1f2937; line-height: 1.6;">
 
-      <h1 style="font-size: 24px; font-weight: 700; color: #3E2A1E; margin: 0 0 8px 0;">
+      <h1 style="font-size: 24px; font-weight: 700; color: #0f2a3e; margin: 0 0 8px 0;">
         Morning Briefing
       </h1>
       <p style="margin: 0 0 24px 0; color: #6b7280; font-size: 14px;">
@@ -216,7 +216,7 @@ function buildBriefingHTML(params: {
       </p>
 
       <!-- Revenue Section -->
-      <div style="background: #f9fafb; border-left: 4px solid #C9822B; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+      <div style="background: #f9fafb; border-left: 4px solid #C6A24E; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
         <h2 style="font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0;">
           Revenue Snapshot
         </h2>
@@ -237,7 +237,7 @@ function buildBriefingHTML(params: {
       </div>
 
       <!-- Orders Section -->
-      <div style="background: #f9fafb; border-left: 4px solid #C9822B; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+      <div style="background: #f9fafb; border-left: 4px solid #C6A24E; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
         <h2 style="font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0;">
           Orders
         </h2>
@@ -264,7 +264,7 @@ function buildBriefingHTML(params: {
       </div>
 
       <!-- AR Health Section -->
-      <div style="background: #f9fafb; border-left: 4px solid #C9822B; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+      <div style="background: #f9fafb; border-left: 4px solid #C6A24E; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
         <h2 style="font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0;">
           AR Health
         </h2>
@@ -291,7 +291,7 @@ function buildBriefingHTML(params: {
       </div>
 
       <!-- Pipeline Section -->
-      <div style="background: #f9fafb; border-left: 4px solid #C9822B; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+      <div style="background: #f9fafb; border-left: 4px solid #C6A24E; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
         <h2 style="font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0;">
           Pipeline
         </h2>
@@ -319,7 +319,7 @@ function buildBriefingHTML(params: {
 
       <!-- Alerts & Schedule Section -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div style="background: #f9fafb; border-left: 4px solid #C9822B; padding: 20px; border-radius: 4px;">
+        <div style="background: #f9fafb; border-left: 4px solid #C6A24E; padding: 20px; border-radius: 4px;">
           <h2 style="font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">
             Alerts
           </h2>
@@ -327,7 +327,7 @@ function buildBriefingHTML(params: {
             ${formatMetric(alerts)} High Priority
           </p>
         </div>
-        <div style="background: #f9fafb; border-left: 4px solid #C9822B; padding: 20px; border-radius: 4px;">
+        <div style="background: #f9fafb; border-left: 4px solid #C6A24E; padding: 20px; border-radius: 4px;">
           <h2 style="font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">
             Today's Schedule
           </h2>

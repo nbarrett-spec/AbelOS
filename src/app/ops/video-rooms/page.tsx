@@ -16,8 +16,8 @@ interface VideoRoom {
 }
 
 const BRAND_COLORS = {
-  walnut: '#3E2A1E',
-  amber: '#C9822B',
+  walnut: '#0f2a3e',
+  amber: '#C6A24E',
   green: '#27AE60',
 }
 

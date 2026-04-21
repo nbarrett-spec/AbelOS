@@ -139,7 +139,7 @@ export default function ExecutiveDashboard() {
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
             Monthly Revenue
           </p>
-          <p className="text-3xl font-bold text-[#3E2A1E]">
+          <p className="text-3xl font-bold text-[#0f2a3e]">
             {formatCurrency(data.pnl.current.revenue)}
           </p>
           <p
@@ -154,7 +154,7 @@ export default function ExecutiveDashboard() {
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
             Gross Margin
           </p>
-          <p className="text-3xl font-bold text-[#C9822B]">
+          <p className="text-3xl font-bold text-[#C6A24E]">
             {formatPercent(data.pnl.current.grossMarginPct)}
           </p>
           <p className="text-sm text-gray-500 mt-2">
@@ -167,7 +167,7 @@ export default function ExecutiveDashboard() {
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
             AR Outstanding
           </p>
-          <p className="text-3xl font-bold text-[#3E2A1E]">
+          <p className="text-3xl font-bold text-[#0f2a3e]">
             {formatCurrency(data.cashPosition.totalAR)}
           </p>
           <p className="text-sm text-gray-500 mt-2">
@@ -194,7 +194,7 @@ export default function ExecutiveDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-[#3E2A1E] mb-4 uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-[#0f2a3e] mb-4 uppercase tracking-wide">
             12-Month Revenue Trend
           </h2>
           <svg className="w-full h-48" viewBox="0 0 400 200">
@@ -247,7 +247,7 @@ export default function ExecutiveDashboard() {
                     y={150 - barHeight}
                     width={barWidth}
                     height={barHeight}
-                    fill="#C9822B"
+                    fill="#C6A24E"
                     rx="2"
                   />
                 </g>
@@ -281,7 +281,7 @@ export default function ExecutiveDashboard() {
 
         {/* AR Aging Waterfall */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-[#3E2A1E] mb-4 uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-[#0f2a3e] mb-4 uppercase tracking-wide">
             AR Aging
           </h2>
           <div className="space-y-3">
@@ -303,7 +303,7 @@ export default function ExecutiveDashboard() {
               <div className="w-24 text-xs font-medium text-gray-700">1-30 days</div>
               <div className="flex-1 bg-gray-100 rounded h-6 overflow-hidden">
                 <div
-                  className="bg-[#C9822B] h-full"
+                  className="bg-[#C6A24E] h-full"
                   style={{
                     width: `${(data.arAging.days_1_30 / arAgingTotal) * 100 || 0}%`,
                   }}
@@ -366,7 +366,7 @@ export default function ExecutiveDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Builders */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-[#3E2A1E] mb-4 uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-[#0f2a3e] mb-4 uppercase tracking-wide">
             Top 5 Builder Exposure
           </h2>
           <div className="space-y-3">
@@ -413,7 +413,7 @@ export default function ExecutiveDashboard() {
 
         {/* Cash Position Summary */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-[#3E2A1E] mb-6 uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-[#0f2a3e] mb-6 uppercase tracking-wide">
             Cash Position
           </h2>
           <div className="space-y-6">
@@ -429,7 +429,7 @@ export default function ExecutiveDashboard() {
               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
                 Accounts Payable
               </p>
-              <p className="text-4xl font-bold text-[#C9822B]">
+              <p className="text-4xl font-bold text-[#C6A24E]">
                 {formatCurrency(data.cashPosition.totalAP)}
               </p>
             </div>
@@ -501,7 +501,7 @@ export default function ExecutiveDashboard() {
             {data.headcount.map(dept => (
               <div key={dept.department} className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">{dept.department}</span>
-                <span className="text-sm font-bold text-[#3E2A1E]">
+                <span className="text-sm font-bold text-[#0f2a3e]">
                   {dept.count}
                 </span>
               </div>

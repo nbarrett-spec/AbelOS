@@ -73,7 +73,7 @@
 }
 
 .action-button.confirm {
-  background: #C9822B;
+  background: #C6A24E;
   color: white;
 }
 
@@ -122,7 +122,7 @@
 /* Notice Messages */
 .summary-notice {
   background: #fff3e0;
-  color: #C9822B;
+  color: #C6A24E;
   padding: 1rem;
   text-align: center;
   font-size: 0.875rem;

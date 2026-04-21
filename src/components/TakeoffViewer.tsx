@@ -197,7 +197,7 @@ export default function TakeoffViewer({
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              filter === 'all' ? 'bg-[#3E2A1E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filter === 'all' ? 'bg-[#0f2a3e] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             All ({items.length})
@@ -209,7 +209,7 @@ export default function TakeoffViewer({
                 key={cat}
                 onClick={() => setFilter(cat)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  filter === cat ? 'bg-[#3E2A1E] text-white' : `${style.bg} ${style.text} hover:opacity-80`
+                  filter === cat ? 'bg-[#0f2a3e] text-white' : `${style.bg} ${style.text} hover:opacity-80`
                 }`}
               >
                 {style.icon} {cat} ({items.filter((i) => i.category === cat).length})
@@ -316,7 +316,7 @@ export default function TakeoffViewer({
         <button
           onClick={onGenerateQuote}
           disabled={loading}
-          className="px-8 py-3 bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold rounded-xl shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-3 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-xl shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Generating Quote...' : 'Generate Quote →'}
         </button>
@@ -329,7 +329,7 @@ function StatBox({ label, value, icon }: { label: string; value: number; icon: s
   return (
     <div className="bg-gray-50 rounded-lg p-3 text-center">
       <p className="text-xs text-gray-500 mb-1">{icon}</p>
-      <p className="text-xl font-bold text-[#3E2A1E]">{value.toLocaleString()}</p>
+      <p className="text-xl font-bold text-[#0f2a3e]">{value.toLocaleString()}</p>
       <p className="text-[10px] text-gray-500 uppercase">{label}</p>
     </div>
   )

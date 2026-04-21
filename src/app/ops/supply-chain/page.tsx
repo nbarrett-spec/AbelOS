@@ -109,7 +109,7 @@ export default function SupplyChainPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#3E2A1E] border-t-[#C9822B] rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-[#0f2a3e] border-t-[#C6A24E] rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading Supply Chain Command Center...</p>
         </div>
       </div>
@@ -147,7 +147,7 @@ export default function SupplyChainPage() {
     <div className="bg-white">
       {/* Header */}
       <div className="border-b border-gray-200 px-8 py-6">
-        <h1 className="text-3xl font-bold text-[#3E2A1E]">Supply Chain Command Center</h1>
+        <h1 className="text-3xl font-bold text-[#0f2a3e]">Supply Chain Command Center</h1>
         <p className="text-gray-600 mt-1">Vendor performance, procurement pipeline, and risk monitoring</p>
         <p className="text-xs text-gray-400 mt-3">Last updated: {new Date(data.timestamp).toLocaleTimeString()}</p>
       </div>
@@ -158,7 +158,7 @@ export default function SupplyChainPage() {
           {/* Total Open PO Value */}
           <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
             <p className="text-gray-600 text-sm font-medium">Total Open PO Value</p>
-            <p className="text-3xl font-bold text-[#3E2A1E] mt-2">{formatCurrency(data.totalOpenPOValue)}</p>
+            <p className="text-3xl font-bold text-[#0f2a3e] mt-2">{formatCurrency(data.totalOpenPOValue)}</p>
             <p className="text-xs text-gray-500 mt-2">
               {Object.values(data.poPipeline).reduce((sum, p) => sum + p.count, 0)} open orders
             </p>
@@ -167,28 +167,28 @@ export default function SupplyChainPage() {
           {/* Avg Lead Time */}
           <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
             <p className="text-gray-600 text-sm font-medium">Avg Lead Time</p>
-            <p className="text-3xl font-bold text-[#3E2A1E] mt-2">{data.avgLeadDays.toFixed(1)}</p>
+            <p className="text-3xl font-bold text-[#0f2a3e] mt-2">{data.avgLeadDays.toFixed(1)}</p>
             <p className="text-xs text-gray-500 mt-2">days from PO to delivery</p>
           </div>
 
           {/* Vendor Count */}
           <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
             <p className="text-gray-600 text-sm font-medium">Active Vendors</p>
-            <p className="text-3xl font-bold text-[#3E2A1E] mt-2">{data.vendorConcentration.length}</p>
+            <p className="text-3xl font-bold text-[#0f2a3e] mt-2">{data.vendorConcentration.length}</p>
             <p className="text-xs text-gray-500 mt-2">suppliers tracked (12m)</p>
           </div>
 
           {/* At-Risk Materials */}
           <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
             <p className="text-gray-600 text-sm font-medium">At-Risk Materials</p>
-            <p className="text-3xl font-bold text-[#3E2A1E] mt-2">{data.materialForecast.length}</p>
+            <p className="text-3xl font-bold text-[#0f2a3e] mt-2">{data.materialForecast.length}</p>
             <p className="text-xs text-gray-500 mt-2">products below reorder point</p>
           </div>
         </div>
 
         {/* Vendor Concentration Chart */}
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-[#3E2A1E] mb-4">Vendor Concentration</h2>
+          <h2 className="text-lg font-semibold text-[#0f2a3e] mb-4">Vendor Concentration</h2>
           <div className="space-y-3">
             {data.vendorConcentration.slice(0, 10).map(v => (
               <div key={v.vendorId} className="flex items-center gap-4">
@@ -197,12 +197,12 @@ export default function SupplyChainPage() {
                 </div>
                 <div className="flex-1 bg-white rounded-full h-6 border border-gray-200 overflow-hidden relative">
                   <div
-                    className={`h-full transition-all ${v.isHighRisk ? 'bg-red-400' : 'bg-[#C9822B]'}`}
+                    className={`h-full transition-all ${v.isHighRisk ? 'bg-red-400' : 'bg-[#C6A24E]'}`}
                     style={{ width: `${Math.min(v.percentOfTotal, 100)}%` }}
                   />
                 </div>
                 <div className="w-20 text-right">
-                  <p className="text-sm font-semibold text-[#3E2A1E]">{v.percentOfTotal.toFixed(1)}%</p>
+                  <p className="text-sm font-semibold text-[#0f2a3e]">{v.percentOfTotal.toFixed(1)}%</p>
                   <p className="text-xs text-gray-500">{v.poCount} POs</p>
                 </div>
               </div>
@@ -217,7 +217,7 @@ export default function SupplyChainPage() {
 
         {/* PO Pipeline */}
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-[#3E2A1E] mb-4">Procurement Pipeline</h2>
+          <h2 className="text-lg font-semibold text-[#0f2a3e] mb-4">Procurement Pipeline</h2>
           <div className="flex gap-2">
             {/* DRAFT */}
             {draftCount > 0 && (
@@ -239,7 +239,7 @@ export default function SupplyChainPage() {
 
             {/* SENT */}
             {sentCount > 0 && (
-              <div className="flex-1 bg-[#C9822B] rounded-lg p-4 text-center">
+              <div className="flex-1 bg-[#C6A24E] rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-white">{sentCount}</p>
                 <p className="text-xs text-amber-100 mt-1">SENT</p>
                 <p className="text-xs text-amber-100 mt-2">{formatCurrency(data.poPipeline['SENT']?.value || 0)}</p>
@@ -261,7 +261,7 @@ export default function SupplyChainPage() {
 
         {/* Vendor Scorecard Table */}
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 overflow-x-auto">
-          <h2 className="text-lg font-semibold text-[#3E2A1E] mb-4">Vendor Scorecard</h2>
+          <h2 className="text-lg font-semibold text-[#0f2a3e] mb-4">Vendor Scorecard</h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-300">
@@ -300,7 +300,7 @@ export default function SupplyChainPage() {
 
         {/* Material Forecast Table */}
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 overflow-x-auto">
-          <h2 className="text-lg font-semibold text-[#3E2A1E] mb-4">Material Forecast (Below Reorder Point)</h2>
+          <h2 className="text-lg font-semibold text-[#0f2a3e] mb-4">Material Forecast (Below Reorder Point)</h2>
           {data.materialForecast.length === 0 ? (
             <p className="text-gray-500 text-sm">All materials above reorder threshold.</p>
           ) : (
@@ -352,7 +352,7 @@ export default function SupplyChainPage() {
 
         {/* Risk Alerts */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-[#3E2A1E]">Risk Alerts</h2>
+          <h2 className="text-lg font-semibold text-[#0f2a3e]">Risk Alerts</h2>
           {data.riskAlerts.length === 0 ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
               <p className="text-green-700 font-medium">No active supply chain risks detected</p>

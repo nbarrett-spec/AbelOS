@@ -523,7 +523,7 @@ export default function AccountDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
       </div>
     )
   }
@@ -536,7 +536,7 @@ export default function AccountDetailPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/ops/accounts" className="hover:text-[#3E2A1E]">
+        <Link href="/ops/accounts" className="hover:text-[#0f2a3e]">
           Builder Accounts
         </Link>
         <span>/</span>
@@ -547,7 +547,7 @@ export default function AccountDetailPage() {
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-[#3E2A1E] text-white flex items-center justify-center text-xl font-bold">
+            <div className="w-14 h-14 rounded-xl bg-[#0f2a3e] text-white flex items-center justify-center text-xl font-bold">
               {builder.companyName.substring(0, 2).toUpperCase()}
             </div>
             <div>
@@ -585,7 +585,7 @@ export default function AccountDetailPage() {
             <button onClick={() => setEditModalOpen(true)} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
               Edit Account
             </button>
-            <button onClick={() => { setActivityModalOpen(true) }} className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]">
+            <button onClick={() => { setActivityModalOpen(true) }} className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]">
               Log Activity
             </button>
           </div>
@@ -634,7 +634,7 @@ export default function AccountDetailPage() {
             onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2.5 text-sm transition-colors border-b-2 whitespace-nowrap ${
               activeTab === tab.key
-                ? 'text-[#3E2A1E] border-[#3E2A1E] font-medium'
+                ? 'text-[#0f2a3e] border-[#0f2a3e] font-medium'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
@@ -704,7 +704,7 @@ export default function AccountDetailPage() {
 
           {/* AI Cash Flow Insights for this builder */}
           <div className="lg:col-span-2">
-            <div className="bg-gradient-to-r from-[#3E2A1E]/5 to-[#2E86C1]/5 border border-[#3E2A1E]/20 rounded-xl p-5">
+            <div className="bg-gradient-to-r from-[#0f2a3e]/5 to-[#2E86C1]/5 border border-[#0f2a3e]/20 rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">🧠</span>
@@ -712,7 +712,7 @@ export default function AccountDetailPage() {
                 </div>
                 <Link
                   href="/ops/cash-flow-optimizer"
-                  className="text-xs text-[#3E2A1E] hover:underline"
+                  className="text-xs text-[#0f2a3e] hover:underline"
                 >
                   Cash Flow Command Center →
                 </Link>
@@ -724,7 +724,7 @@ export default function AccountDetailPage() {
                 </div>
                 <div className="bg-white rounded-lg p-3 border">
                   <p className="text-xs text-gray-500">Pricing Tier</p>
-                  <p className="text-sm font-bold" style={{ color: (builder as any).pricingTier === 'PREFERRED' ? '#27ae60' : (builder as any).pricingTier === 'PREMIUM' ? '#C9822B' : '#3E2A1E' }}>
+                  <p className="text-sm font-bold" style={{ color: (builder as any).pricingTier === 'PREFERRED' ? '#27ae60' : (builder as any).pricingTier === 'PREMIUM' ? '#C6A24E' : '#0f2a3e' }}>
                     {TIER_LABELS[(builder as any).pricingTier] || 'Standard'}
                   </p>
                 </div>
@@ -783,7 +783,7 @@ export default function AccountDetailPage() {
                 {builder.projects.map((proj) => (
                   <tr key={proj.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <Link href={`/projects/${proj.id}`} className="text-sm font-medium text-[#3E2A1E] hover:text-[#C9822B]">
+                      <Link href={`/projects/${proj.id}`} className="text-sm font-medium text-[#0f2a3e] hover:text-[#C6A24E]">
                         {proj.name}
                       </Link>
                     </td>
@@ -811,7 +811,7 @@ export default function AccountDetailPage() {
             <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
             <button
               onClick={() => setActivityModalOpen(true)}
-              className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]"
+              className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
             >
               New Activity
             </button>
@@ -819,7 +819,7 @@ export default function AccountDetailPage() {
 
           {activitiesLoading ? (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#3E2A1E]" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
             </div>
           ) : activities.length === 0 ? (
             <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
@@ -867,7 +867,7 @@ export default function AccountDetailPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowNewCommModal(true)}
-                className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]"
+                className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
               >
                 Log Communication
               </button>
@@ -882,7 +882,7 @@ export default function AccountDetailPage() {
 
           {commsLoading ? (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#3E2A1E]" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
             </div>
           ) : commLogs.length === 0 ? (
             <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
@@ -973,7 +973,7 @@ export default function AccountDetailPage() {
             </div>
             <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
               <button type="button" onClick={() => setShowNewCommModal(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-              <button type="submit" disabled={commSubmitting} className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50">
+              <button type="submit" disabled={commSubmitting} className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50">
                 {commSubmitting ? 'Saving...' : 'Log Communication'}
               </button>
             </div>
@@ -994,7 +994,7 @@ export default function AccountDetailPage() {
                 setProductSearch('')
                 setSearchResults([])
               }}
-              className="px-3 py-1.5 text-sm bg-[#C9822B] text-white rounded-lg hover:bg-[#A86B1F]"
+              className="px-3 py-1.5 text-sm bg-[#C6A24E] text-white rounded-lg hover:bg-[#A8882A]"
             >
               Add Custom Price
             </button>
@@ -1002,7 +1002,7 @@ export default function AccountDetailPage() {
 
           {pricingLoading ? (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#3E2A1E]" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
             </div>
           ) : pricing.length === 0 ? (
             <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
@@ -1045,7 +1045,7 @@ export default function AccountDetailPage() {
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => handleEditPricing(bp)}
-                            className="text-sm text-[#3E2A1E] hover:text-[#C9822B] font-medium"
+                            className="text-sm text-[#0f2a3e] hover:text-[#C6A24E] font-medium"
                           >
                             Edit
                           </button>
@@ -1085,7 +1085,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.companyName || ''}
                     onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1094,7 +1094,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.contactName || ''}
                     onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1103,7 +1103,7 @@ export default function AccountDetailPage() {
                     type="email"
                     value={editForm.email || ''}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1112,7 +1112,7 @@ export default function AccountDetailPage() {
                     type="tel"
                     value={editForm.phone || ''}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div className="col-span-2">
@@ -1121,7 +1121,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.address || ''}
                     onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1130,7 +1130,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.city || ''}
                     onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1139,7 +1139,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.state || ''}
                     onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1148,7 +1148,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.zip || ''}
                     onChange={(e) => setEditForm({ ...editForm, zip: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div className="col-span-2">
@@ -1157,7 +1157,7 @@ export default function AccountDetailPage() {
                     type="text"
                     value={editForm.licenseNumber || ''}
                     onChange={(e) => setEditForm({ ...editForm, licenseNumber: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1165,7 +1165,7 @@ export default function AccountDetailPage() {
                   <select
                     value={editForm.paymentTerm || 'NET_15'}
                     onChange={(e) => setEditForm({ ...editForm, paymentTerm: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   >
                     <option value="PAY_AT_ORDER">Pay at Order</option>
                     <option value="PAY_ON_DELIVERY">Pay on Delivery</option>
@@ -1178,7 +1178,7 @@ export default function AccountDetailPage() {
                   <select
                     value={editForm.pricingTier || 'STANDARD'}
                     onChange={(e) => setEditForm({ ...editForm, pricingTier: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   >
                     <option value="PREFERRED">Preferred Builder (best pricing)</option>
                     <option value="STANDARD">Standard Builder</option>
@@ -1193,7 +1193,7 @@ export default function AccountDetailPage() {
                     type="number"
                     value={editForm.creditLimit || ''}
                     onChange={(e) => setEditForm({ ...editForm, creditLimit: e.target.value ? parseFloat(e.target.value) : null })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -1201,7 +1201,7 @@ export default function AccountDetailPage() {
                   <select
                     value={editForm.status || 'PENDING'}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                   >
                     <option value="PENDING">Pending</option>
                     <option value="ACTIVE">Active</option>
@@ -1235,7 +1235,7 @@ export default function AccountDetailPage() {
               <button
                 type="submit"
                 disabled={editLoading}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
               >
                 {editLoading ? 'Saving...' : 'Save Changes'}
               </button>
@@ -1267,7 +1267,7 @@ export default function AccountDetailPage() {
                 <select
                   value={activityForm.activityType}
                   onChange={(e) => setActivityForm({ ...activityForm, activityType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                 >
                   <option value="CALL">Call</option>
                   <option value="EMAIL">Email</option>
@@ -1288,7 +1288,7 @@ export default function AccountDetailPage() {
                   value={activityForm.subject}
                   onChange={(e) => setActivityForm({ ...activityForm, subject: e.target.value })}
                   placeholder="e.g., Follow-up on quote"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                 />
               </div>
 
@@ -1299,7 +1299,7 @@ export default function AccountDetailPage() {
                   onChange={(e) => setActivityForm({ ...activityForm, notes: e.target.value })}
                   placeholder="Additional details..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                 />
               </div>
 
@@ -1310,7 +1310,7 @@ export default function AccountDetailPage() {
                   value={activityForm.outcome}
                   onChange={(e) => setActivityForm({ ...activityForm, outcome: e.target.value })}
                   placeholder="e.g., Agreed to NET_15"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                 />
               </div>
             </div>
@@ -1326,7 +1326,7 @@ export default function AccountDetailPage() {
               <button
                 type="submit"
                 disabled={activitySubmitLoading || !activityForm.subject}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
               >
                 {activitySubmitLoading ? 'Saving...' : 'Log Activity'}
               </button>
@@ -1364,7 +1364,7 @@ export default function AccountDetailPage() {
                       value={productSearch}
                       onChange={(e) => handleSearchProducts(e.target.value)}
                       placeholder="Search by SKU or product name..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                     />
                     {searchResults.length > 0 && (
                       <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10 max-h-48 overflow-y-auto">
@@ -1405,7 +1405,7 @@ export default function AccountDetailPage() {
                       value={customPrice}
                       onChange={(e) => setCustomPrice(e.target.value)}
                       placeholder="0.00"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
                     />
                   </div>
                   {customPrice && selectedProduct && (
@@ -1448,7 +1448,7 @@ export default function AccountDetailPage() {
               <button
                 type="submit"
                 disabled={activitySubmitLoading || !selectedProduct || !customPrice}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
               >
                 {activitySubmitLoading ? 'Saving...' : editingPricingId ? 'Update Price' : 'Add Price'}
               </button>
@@ -1462,7 +1462,7 @@ export default function AccountDetailPage() {
         <div className="space-y-6">
           {marginLoading ? (
             <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
             </div>
           ) : marginData ? (
             <>
@@ -1472,7 +1472,7 @@ export default function AccountDetailPage() {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs text-gray-500 uppercase font-medium">Target Blended Margin</p>
                     {!marginEditing && (
-                      <button onClick={startMarginEdit} className="text-xs text-[#3E2A1E] hover:text-[#C9822B] font-medium">
+                      <button onClick={startMarginEdit} className="text-xs text-[#0f2a3e] hover:text-[#C6A24E] font-medium">
                         Edit Targets
                       </button>
                     )}
@@ -1484,12 +1484,12 @@ export default function AccountDetailPage() {
                         step="0.1"
                         value={editBlendedTarget}
                         onChange={(e) => setEditBlendedTarget(e.target.value)}
-                        className="w-24 px-2 py-1.5 border rounded text-lg font-bold text-[#3E2A1E] focus:ring-2 focus:ring-[#3E2A1E]/20"
+                        className="w-24 px-2 py-1.5 border rounded text-lg font-bold text-[#0f2a3e] focus:ring-2 focus:ring-[#0f2a3e]/20"
                       />
                       <span className="text-lg font-bold text-gray-500">%</span>
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-[#3E2A1E]">
+                    <p className="text-3xl font-bold text-[#0f2a3e]">
                       {marginData.marginTarget
                         ? `${(marginData.marginTarget.targetBlendedMargin * 100).toFixed(1)}%`
                         : '30.0%'}
@@ -1554,7 +1554,7 @@ export default function AccountDetailPage() {
                     onChange={(e) => setMarginNotes(e.target.value)}
                     placeholder="e.g. Negotiated rates based on volume commitment..."
                     rows={2}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                   />
                 </div>
               )}
@@ -1587,7 +1587,7 @@ export default function AccountDetailPage() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-900">{cat.category}</span>
                               {(actualCat?.isCustom || cat.isCustom) && (
-                                <span className="text-[10px] bg-[#C9822B]/10 text-[#C9822B] px-1.5 py-0.5 rounded font-medium">Custom</span>
+                                <span className="text-[10px] bg-[#C6A24E]/10 text-[#C6A24E] px-1.5 py-0.5 rounded font-medium">Custom</span>
                               )}
                             </div>
                           </td>
@@ -1611,7 +1611,7 @@ export default function AccountDetailPage() {
                                   updated[idx] = { ...updated[idx], targetMargin: e.target.value }
                                   setEditCategoryTargets(updated)
                                 }}
-                                className="w-16 px-1.5 py-1 border rounded text-sm text-center focus:ring-2 focus:ring-[#3E2A1E]/20"
+                                className="w-16 px-1.5 py-1 border rounded text-sm text-center focus:ring-2 focus:ring-[#0f2a3e]/20"
                               />
                             ) : (
                               <span className="text-sm text-gray-900">{(cat.targetMargin * 100).toFixed(1)}%</span>
@@ -1628,7 +1628,7 @@ export default function AccountDetailPage() {
                                   updated[idx] = { ...updated[idx], minMargin: e.target.value }
                                   setEditCategoryTargets(updated)
                                 }}
-                                className="w-16 px-1.5 py-1 border rounded text-sm text-center focus:ring-2 focus:ring-[#3E2A1E]/20"
+                                className="w-16 px-1.5 py-1 border rounded text-sm text-center focus:ring-2 focus:ring-[#0f2a3e]/20"
                               />
                             ) : (
                               <span className="text-sm text-gray-500">{(cat.minMargin * 100).toFixed(1)}%</span>
@@ -1679,7 +1679,7 @@ export default function AccountDetailPage() {
                   <button
                     onClick={saveMarginTargets}
                     disabled={marginSaving}
-                    className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
                   >
                     {marginSaving ? 'Saving...' : 'Save Margin Targets'}
                   </button>
@@ -1719,7 +1719,7 @@ export default function AccountDetailPage() {
         <div className="space-y-4">
           {communitiesLoading ? (
             <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
             </div>
           ) : communities.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border">
@@ -1732,11 +1732,11 @@ export default function AccountDetailPage() {
                 <Link
                   key={c.id}
                   href={`/ops/communities/${c.id}`}
-                  className="bg-white rounded-xl border p-5 hover:border-[#3E2A1E] hover:shadow-sm transition-all group"
+                  className="bg-white rounded-xl border p-5 hover:border-[#0f2a3e] hover:shadow-sm transition-all group"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-[#3E2A1E]">{c.name}</h3>
+                      <h3 className="font-semibold text-gray-900 group-hover:text-[#0f2a3e]">{c.name}</h3>
                       <p className="text-sm text-gray-500">
                         {[c.city, c.state].filter(Boolean).join(', ')}
                         {c.division && <span> &middot; {c.division}</span>}
@@ -1781,7 +1781,7 @@ export default function AccountDetailPage() {
         <div className="space-y-4">
           {contactsLoading ? (
             <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
             </div>
           ) : builderContacts.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border">

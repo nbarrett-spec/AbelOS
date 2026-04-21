@@ -68,9 +68,9 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
 // ─── EMAIL TEMPLATES ──────────────────────────────────────────────────────
 
 const HEADER = `
-  <div style="background-color: #3E2A1E; padding: 24px 32px; text-align: left;">
+  <div style="background-color: #0f2a3e; padding: 24px 32px; text-align: left;">
     <table><tr>
-      <td style="background-color: #C9822B; border-radius: 8px; width: 36px; height: 36px; text-align: center; vertical-align: middle; font-weight: bold; color: white; font-size: 14px;">AB</td>
+      <td style="background-color: #C6A24E; border-radius: 8px; width: 36px; height: 36px; text-align: center; vertical-align: middle; font-weight: bold; color: white; font-size: 14px;">AB</td>
       <td style="padding-left: 12px; color: white; font-size: 18px; font-weight: 600;">Abel Lumber</td>
     </tr></table>
   </div>
@@ -79,7 +79,7 @@ const HEADER = `
 const FOOTER = `
   <div style="padding: 24px 32px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee;">
     <p>Abel Lumber &middot; Door &amp; Trim Specialists</p>
-    <p>Gainesville, TX &middot; <a href="${APP_URL}" style="color: #C9822B;">abellumber.com</a></p>
+    <p>Gainesville, TX &middot; <a href="${APP_URL}" style="color: #C6A24E;">abellumber.com</a></p>
   </div>
 `
 
@@ -113,7 +113,7 @@ export async function sendPasswordResetEmail(params: {
     to: params.to,
     subject: 'Reset Your Abel Builder Password',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Reset Your Password</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Reset Your Password</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.name},
       </p>
@@ -121,7 +121,7 @@ export async function sendPasswordResetEmail(params: {
         We received a request to reset your password. Click the button below to create a new one:
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.resetUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.resetUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Reset Password
         </a>
       </div>
@@ -130,7 +130,7 @@ export async function sendPasswordResetEmail(params: {
       </p>
       <p style="color: #999; font-size: 12px; margin-top: 24px;">
         Can't click the button? Copy and paste this link: <br>
-        <a href="${params.resetUrl}" style="color: #C9822B; word-break: break-all;">${params.resetUrl}</a>
+        <a href="${params.resetUrl}" style="color: #C6A24E; word-break: break-all;">${params.resetUrl}</a>
       </p>
     `),
   })
@@ -148,7 +148,7 @@ export async function sendInviteEmail(params: {
     to: params.to,
     subject: 'Welcome to Abel Lumber — Set Up Your Account',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Welcome to Abel Lumber!</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Welcome to Abel Lumber!</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.firstName},
       </p>
@@ -156,7 +156,7 @@ export async function sendInviteEmail(params: {
         You've been invited to join the Abel Operations platform. Click below to create your password and review the employee handbook.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.inviteUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.inviteUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Set Up Your Account
         </a>
       </div>
@@ -165,7 +165,7 @@ export async function sendInviteEmail(params: {
       </p>
       <p style="color: #999; font-size: 12px; margin-top: 24px;">
         Can't click the button? Copy and paste this link: <br>
-        <a href="${params.inviteUrl}" style="color: #C9822B; word-break: break-all;">${params.inviteUrl}</a>
+        <a href="${params.inviteUrl}" style="color: #C6A24E; word-break: break-all;">${params.inviteUrl}</a>
       </p>
     `),
   })
@@ -183,12 +183,12 @@ export async function sendStaffPasswordResetEmail(params: {
     to: params.to,
     subject: 'Abel Lumber — Reset Your Password',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Password Reset</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Password Reset</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.firstName}, a password reset was requested for your Abel Operations account.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.resetUrl}" style="background-color: #3E2A1E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.resetUrl}" style="background-color: #0f2a3e; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Reset Password
         </a>
       </div>
@@ -197,7 +197,7 @@ export async function sendStaffPasswordResetEmail(params: {
       </p>
       <p style="color: #999; font-size: 12px; margin-top: 24px;">
         Can't click the button? Copy and paste this link: <br>
-        <a href="${params.resetUrl}" style="color: #C9822B; word-break: break-all;">${params.resetUrl}</a>
+        <a href="${params.resetUrl}" style="color: #C6A24E; word-break: break-all;">${params.resetUrl}</a>
       </p>
     `),
   })
@@ -223,7 +223,7 @@ export async function sendQuoteReadyEmail(params: {
     subject: `Quote ${params.quoteNumber} Ready — ${params.projectName}`,
     replyTo: 'quotes@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Your Quote is Ready</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Your Quote is Ready</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -242,7 +242,7 @@ export async function sendQuoteReadyEmail(params: {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Total</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #3E2A1E;">${formattedTotal}</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #0f2a3e;">${formattedTotal}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Valid Until</td>
@@ -251,7 +251,7 @@ export async function sendQuoteReadyEmail(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.quoteUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.quoteUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           View Quote Details
         </a>
       </div>
@@ -281,7 +281,7 @@ export async function sendOrderConfirmationEmail(params: {
     subject: `Order ${params.orderNumber} Confirmed — ${params.projectName}`,
     replyTo: 'orders@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Order Confirmed!</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Order Confirmed!</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -311,7 +311,7 @@ export async function sendOrderConfirmationEmail(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard" style="background-color: #3E2A1E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/dashboard" style="background-color: #0f2a3e; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Track Your Order
         </a>
       </div>
@@ -337,7 +337,7 @@ export async function sendQuoteRequestConfirmationEmail(params: {
     subject: `Quote Request ${params.referenceNumber} Received`,
     replyTo: 'quotes@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Quote Request Received</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Quote Request Received</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -361,7 +361,7 @@ export async function sendQuoteRequestConfirmationEmail(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard/quotes" style="background-color: #3E2A1E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/dashboard/quotes" style="background-color: #0f2a3e; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           View Your Requests
         </a>
       </div>
@@ -392,7 +392,7 @@ export async function sendInvoiceEmail(params: {
     subject: `Invoice ${params.invoiceNumber} — ${formattedTotal} Due ${formattedDate}`,
     replyTo: 'billing@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">New Invoice</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">New Invoice</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -411,7 +411,7 @@ export async function sendInvoiceEmail(params: {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Amount Due</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #C9822B;">${formattedTotal}</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #C6A24E;">${formattedTotal}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Due Date</td>
@@ -424,7 +424,7 @@ export async function sendInvoiceEmail(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard/invoices" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/dashboard/invoices" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           View Invoice
         </a>
       </div>
@@ -451,12 +451,12 @@ export async function sendWarrantyUpdateEmail(params: {
     APPROVED: '#27AE60',
     RESOLVED: '#27AE60',
     IN_PROGRESS: '#2980B9',
-    UNDER_REVIEW: '#D9993F',
+    UNDER_REVIEW: '#D4B96A',
     INSPECTION_SCHEDULED: '#8E44AD',
     DENIED: '#E74C3C',
     CLOSED: '#95A5A6',
   }
-  const color = statusColors[params.newStatus] || '#3E2A1E'
+  const color = statusColors[params.newStatus] || '#0f2a3e'
   const displayStatus = params.newStatus.replace(/_/g, ' ')
 
   return sendEmail({
@@ -464,7 +464,7 @@ export async function sendWarrantyUpdateEmail(params: {
     subject: `Warranty Claim ${params.claimNumber} — ${displayStatus}`,
     replyTo: 'warranty@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Warranty Claim Update</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Warranty Claim Update</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -498,7 +498,7 @@ export async function sendWarrantyUpdateEmail(params: {
       </div>
       ` : ''}
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard/warranty" style="background-color: #3E2A1E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/dashboard/warranty" style="background-color: #0f2a3e; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           View Claim Details
         </a>
       </div>
@@ -535,7 +535,7 @@ export async function sendOrderStatusEmail(params: {
     subject: `Order ${params.orderNumber} — ${label}`,
     replyTo: 'orders@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Order ${label}</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Order ${label}</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -543,11 +543,11 @@ export async function sendOrderStatusEmail(params: {
         Your order <strong>${params.orderNumber}</strong> for <strong>${params.projectName}</strong> has been updated.
       </p>
       <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
-        <p style="margin: 0; font-size: 24px; font-weight: 700; color: #3E2A1E;">${label}</p>
+        <p style="margin: 0; font-size: 24px; font-weight: 700; color: #0f2a3e;">${label}</p>
         ${params.deliveryDate ? `<p style="margin: 8px 0 0; color: #666; font-size: 14px;">Estimated Delivery: ${new Date(params.deliveryDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>` : ''}
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard" style="background-color: #3E2A1E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/dashboard" style="background-color: #0f2a3e; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Track Your Order
         </a>
       </div>
@@ -573,7 +573,7 @@ export async function sendWarrantyClaimConfirmationEmail(params: {
     subject: `Warranty Claim ${params.claimNumber} Submitted`,
     replyTo: 'warranty@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Warranty Claim Received</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Warranty Claim Received</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.builderName},
       </p>
@@ -597,7 +597,7 @@ export async function sendWarrantyClaimConfirmationEmail(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard/warranty" style="background-color: #3E2A1E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/dashboard/warranty" style="background-color: #0f2a3e; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           View Your Claims
         </a>
       </div>
@@ -626,7 +626,7 @@ export async function sendQuoteFollowUpDay3(params: {
     subject: `Following up on Quote #${params.quoteNumber} — Abel Lumber`,
     replyTo: 'quotes@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Just Checking In</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Just Checking In</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.firstName},
       </p>
@@ -645,12 +645,12 @@ export async function sendQuoteFollowUpDay3(params: {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Total</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #3E2A1E;">${formattedTotal}</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #0f2a3e;">${formattedTotal}</td>
           </tr>
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.quoteUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.quoteUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           View Quote
         </a>
       </div>
@@ -681,7 +681,7 @@ export async function sendQuoteFollowUpDay7(params: {
     subject: `Your quote expires in 7 days — Abel Lumber`,
     replyTo: 'quotes@abellumber.com',
     html: wrap(`
-      <h2 style="color: #C9822B; margin-top: 0;">Quote Expiring Soon</h2>
+      <h2 style="color: #C6A24E; margin-top: 0;">Quote Expiring Soon</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.firstName},
       </p>
@@ -700,7 +700,7 @@ export async function sendQuoteFollowUpDay7(params: {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Total</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #C9822B;">${formattedTotal}</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-size: 18px; color: #C6A24E;">${formattedTotal}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Valid Until</td>
@@ -709,7 +709,7 @@ export async function sendQuoteFollowUpDay7(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.quoteUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.quoteUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Review & Approve
         </a>
       </div>
@@ -768,7 +768,7 @@ export async function sendQuoteExpiringEmail(params: {
         </table>
       </div>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${params.quoteUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${params.quoteUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Approve Now
         </a>
       </div>
@@ -793,7 +793,7 @@ export async function sendApplicationReceivedEmail(params: {
     subject: `Application Received — ${params.refNumber}`,
     replyTo: 'sales@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Application Received</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Application Received</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.contactName},
       </p>
@@ -803,7 +803,7 @@ export async function sendApplicationReceivedEmail(params: {
       </p>
       <div style="background: #f0f7ff; border: 1px solid #d0e4f7; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
         <p style="color: #666; font-size: 13px; margin: 0 0 4px;">Your Reference Number</p>
-        <p style="color: #3E2A1E; font-size: 22px; font-weight: 700; font-family: monospace; margin: 0;">${params.refNumber}</p>
+        <p style="color: #0f2a3e; font-size: 22px; font-weight: 700; font-family: monospace; margin: 0;">${params.refNumber}</p>
       </div>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         <strong>What happens next:</strong>
@@ -834,7 +834,7 @@ export async function sendApplicationApprovedEmail(params: {
     subject: `Welcome to Abel Builder — Your Account is Ready`,
     replyTo: 'sales@abellumber.com',
     html: wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Your Account is Approved!</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Your Account is Approved!</h2>
       <p style="color: #333; font-size: 15px; line-height: 1.6;">
         Hi ${params.contactName},
       </p>
@@ -850,7 +850,7 @@ export async function sendApplicationApprovedEmail(params: {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Temporary Password</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-family: monospace; font-size: 16px; color: #3E2A1E;">${params.tempPassword}</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; font-family: monospace; font-size: 16px; color: #0f2a3e;">${params.tempPassword}</td>
           </tr>
         </table>
       </div>
@@ -858,7 +858,7 @@ export async function sendApplicationApprovedEmail(params: {
         Please change your password after your first login.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/login" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+        <a href="${APP_URL}/login" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
           Log In Now
         </a>
       </div>
@@ -924,39 +924,39 @@ export function previewTemplate(templateKey: string): string | null {
 
   const templates: Record<string, () => string> = {
     password_reset: () => wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Reset Your Password</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Reset Your Password</h2>
       <p>Hi ${sampleData.name},</p>
       <p>Click below to reset your password. This link expires in 1 hour.</p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${sampleData.resetUrl}" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${sampleData.resetUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           Reset Password
         </a>
       </div>
     `),
     quote_ready: () => wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Your Quote Is Ready</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Your Quote Is Ready</h2>
       <p>Hi ${sampleData.builderName},</p>
       <p>Quote <strong>${sampleData.quoteNumber}</strong> is ready for your review.</p>
-      <p style="font-size: 24px; font-weight: bold; color: #3E2A1E;">$${sampleData.total.toLocaleString()}</p>
+      <p style="font-size: 24px; font-weight: bold; color: #0f2a3e;">$${sampleData.total.toLocaleString()}</p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard/quotes" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${APP_URL}/dashboard/quotes" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           View Quote
         </a>
       </div>
     `),
     order_confirmation: () => wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Order Confirmed</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Order Confirmed</h2>
       <p>Hi ${sampleData.builderName},</p>
       <p>Your order <strong>${sampleData.orderNumber}</strong> has been received and confirmed.</p>
-      <p style="font-size: 24px; font-weight: bold; color: #3E2A1E;">$${sampleData.total.toLocaleString()}</p>
+      <p style="font-size: 24px; font-weight: bold; color: #0f2a3e;">$${sampleData.total.toLocaleString()}</p>
     `),
     invoice: () => wrap(`
-      <h2 style="color: #3E2A1E; margin-top: 0;">Invoice ${sampleData.invoiceNumber}</h2>
+      <h2 style="color: #0f2a3e; margin-top: 0;">Invoice ${sampleData.invoiceNumber}</h2>
       <p>Hi ${sampleData.builderName},</p>
       <p>A new invoice for <strong>$${sampleData.total.toLocaleString()}</strong> is ready.</p>
       <p>Due: ${new Date(sampleData.dueDate).toLocaleDateString()}</p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${APP_URL}/dashboard/payments" style="background-color: #C9822B; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <a href="${APP_URL}/dashboard/payments" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           Pay Now
         </a>
       </div>

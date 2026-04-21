@@ -98,7 +98,7 @@ export default function QuoteBuilder({
 
       // --- Header ---
       doc.setFontSize(24)
-      doc.setTextColor(27, 79, 114) // abel-walnut
+      doc.setTextColor(27, 79, 114) // brand
       doc.text('ABEL LUMBER', 14, 22)
       doc.setFontSize(9)
       doc.setTextColor(120, 120, 120)
@@ -312,12 +312,12 @@ export default function QuoteBuilder({
                 value={signature}
                 onChange={e => setSignature(e.target.value)}
                 placeholder="Type your full name to sign"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#3E2A1E] focus:ring-0 text-lg font-serif italic"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#0f2a3e] focus:ring-0 text-lg font-serif italic"
               />
               {signature && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
                   <p className="text-xs text-gray-400">Signature Preview</p>
-                  <p className="text-2xl font-serif italic text-[#3E2A1E] mt-1">{signature}</p>
+                  <p className="text-2xl font-serif italic text-[#0f2a3e] mt-1">{signature}</p>
                 </div>
               )}
             </div>
@@ -363,7 +363,7 @@ export default function QuoteBuilder({
                 onChange={e => setChangeNotes(e.target.value)}
                 placeholder="Describe what changes you need..."
                 rows={4}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#3E2A1E] focus:ring-0"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#0f2a3e] focus:ring-0"
               />
             </div>
 
@@ -377,7 +377,7 @@ export default function QuoteBuilder({
               <button
                 onClick={handleRequestChanges}
                 disabled={!changeNotes.trim() || submitting}
-                className="flex-1 px-4 py-2.5 bg-[#3E2A1E] hover:bg-[#2A1C14] text-white font-semibold rounded-xl disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-[#0f2a3e] hover:bg-[#0a1a28] text-white font-semibold rounded-xl disabled:opacity-50"
               >
                 {submitting ? 'Sending...' : 'Request Changes'}
               </button>
@@ -397,14 +397,14 @@ export default function QuoteBuilder({
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-abel-walnut">
+            <h2 className="text-2xl font-bold text-brand">
               Quote {quoteNumber}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
               Valid until {new Date(validUntil).toLocaleDateString()}
             </p>
           </div>
-          <span className="px-4 py-1.5 bg-abel-walnut/10 text-abel-walnut rounded-full text-sm font-medium">
+          <span className="px-4 py-1.5 bg-brand/10 text-brand rounded-full text-sm font-medium">
             {termLabel}
           </span>
         </div>
@@ -435,8 +435,8 @@ export default function QuoteBuilder({
             </div>
           )}
           <div className="border-t mt-2 pt-2 flex justify-between">
-            <span className="text-lg font-semibold text-abel-charcoal">Total</span>
-            <span className="text-2xl font-bold text-abel-walnut">
+            <span className="text-lg font-semibold text-navy">Total</span>
+            <span className="text-2xl font-bold text-brand">
               {formatCurrency(total)}
             </span>
           </div>
@@ -457,7 +457,7 @@ export default function QuoteBuilder({
               onClick={() => toggleSection(location)}
               className="w-full bg-gray-50 px-4 py-3 border-b flex items-center justify-between hover:bg-gray-100 transition"
             >
-              <h3 className="font-medium text-abel-charcoal">{location}</h3>
+              <h3 className="font-medium text-navy">{location}</h3>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-500">
                   {formatCurrency(sectionTotal)}
@@ -502,7 +502,7 @@ export default function QuoteBuilder({
                           <div className="flex items-center gap-2">
                             {item.description}
                             {item.isUpgrade && (
-                              <span className="text-xs px-2 py-0.5 bg-abel-amber/10 text-abel-amber rounded">
+                              <span className="text-xs px-2 py-0.5 bg-signal/10 text-signal rounded">
                                 Upgrade
                               </span>
                             )}
@@ -539,7 +539,7 @@ export default function QuoteBuilder({
         <div className="flex gap-3">
           <button
             onClick={() => setShowRejectModal(true)}
-            className="px-6 py-2.5 border border-abel-walnut text-abel-walnut rounded-xl hover:bg-abel-walnut/5 transition"
+            className="px-6 py-2.5 border border-brand text-brand rounded-xl hover:bg-brand/5 transition"
           >
             Request Changes
           </button>

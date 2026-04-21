@@ -120,7 +120,7 @@ export default function OpsQuoteRequestsPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#3E2A1E] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
@@ -176,7 +176,7 @@ export default function OpsQuoteRequestsPage() {
         <div className={`bg-white rounded-lg border overflow-hidden ${selected ? 'flex-1' : 'w-full'}`}>
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <div className="w-6 h-6 border-3 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : requests.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
@@ -270,7 +270,7 @@ export default function OpsQuoteRequestsPage() {
                 <label className="text-xs text-gray-500 uppercase tracking-wide">Product Categories</label>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {categories(selected).map((cat: string, i: number) => (
-                    <span key={i} className="bg-[#3E2A1E] text-white text-xs px-2 py-0.5 rounded-full">
+                    <span key={i} className="bg-[#0f2a3e] text-white text-xs px-2 py-0.5 rounded-full">
                       {cat}
                     </span>
                   ))}
@@ -314,8 +314,8 @@ export default function OpsQuoteRequestsPage() {
                       onClick={() => updateRequest(selected.id, { status: s })}
                       className={`px-3 py-1 rounded text-xs font-medium border transition
                         ${selected.status === s
-                          ? 'bg-[#3E2A1E] text-white border-[#3E2A1E]'
-                          : 'bg-white text-gray-600 border-gray-300 hover:border-[#3E2A1E] hover:text-[#3E2A1E]'
+                          ? 'bg-[#0f2a3e] text-white border-[#0f2a3e]'
+                          : 'bg-white text-gray-600 border-gray-300 hover:border-[#0f2a3e] hover:text-[#0f2a3e]'
                         }
                         ${updating ? 'opacity-50 cursor-not-allowed' : ''}
                       `}

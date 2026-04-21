@@ -20,14 +20,14 @@ interface DashboardSection {
 }
 
 const PRESET_COLORS = [
-  { hex: '#C9822B', name: 'Orange (Default)' },
-  { hex: '#3E2A1E', name: 'Navy' },
+  { hex: '#C6A24E', name: 'Orange (Default)' },
+  { hex: '#0f2a3e', name: 'Navy' },
   { hex: '#2ECC71', name: 'Green' },
   { hex: '#E74C3C', name: 'Red' },
   { hex: '#9B59B6', name: 'Purple' },
   { hex: '#3498DB', name: 'Blue' },
   { hex: '#1ABC9C', name: 'Teal' },
-  { hex: '#D9993F', name: 'Gold' },
+  { hex: '#D4B96A', name: 'Gold' },
 ];
 
 const DEFAULT_SECTIONS: DashboardSection[] = [
@@ -44,7 +44,7 @@ export default function AppearancePage() {
   const [preferences, setPreferences] = useState<Preferences | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [customColor, setCustomColor] = useState('#C9822B');
+  const [customColor, setCustomColor] = useState('#C6A24E');
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -61,12 +61,12 @@ export default function AppearancePage() {
             prefs.dashboardLayout = DEFAULT_SECTIONS;
           }
           setPreferences(prefs);
-          setCustomColor(prefs.accentColor || '#C9822B');
+          setCustomColor(prefs.accentColor || '#C6A24E');
         } else {
           // Set defaults if fetch fails
           setPreferences({
             theme: 'system',
-            accentColor: '#C9822B',
+            accentColor: '#C6A24E',
             fontSize: 'medium',
             compactMode: false,
             sidebarState: 'expanded',
@@ -77,7 +77,7 @@ export default function AppearancePage() {
         console.error('Failed to fetch preferences:', error);
         setPreferences({
           theme: 'system',
-          accentColor: '#C9822B',
+          accentColor: '#C6A24E',
           fontSize: 'medium',
           compactMode: false,
           sidebarState: 'expanded',
@@ -253,7 +253,7 @@ export default function AppearancePage() {
     );
   }
 
-  const accentColor = preferences.accentColor || '#C9822B';
+  const accentColor = preferences.accentColor || '#C6A24E';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
@@ -558,7 +558,7 @@ export default function AppearancePage() {
                 type="text"
                 value={customColor}
                 onChange={(e) => handleCustomColor(e.target.value)}
-                placeholder="#C9822B"
+                placeholder="#C6A24E"
                 style={{
                   padding: '8px 12px',
                   border: '1px solid #d1d5db',

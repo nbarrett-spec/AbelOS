@@ -268,7 +268,7 @@ export default function ReceivingPage() {
                         <button
                           onClick={() => handleMarkPartial(po.id)}
                           disabled={submitting}
-                          className="px-3 py-1 bg-amber-700 hover:bg-amber-600 disabled:bg-gray-700 text-sm rounded transition"
+                          className="px-3 py-1 bg-amber-700 hover:bg-signal disabled:bg-gray-700 text-sm rounded transition"
                         >
                           Mark Partial
                         </button>
@@ -324,7 +324,7 @@ export default function ReceivingPage() {
                         <button
                           onClick={() => handleMarkPartial(po.id)}
                           disabled={submitting}
-                          className="px-3 py-1 bg-amber-700 hover:bg-amber-600 disabled:bg-gray-700 text-sm rounded transition"
+                          className="px-3 py-1 bg-amber-700 hover:bg-signal disabled:bg-gray-700 text-sm rounded transition"
                         >
                           Mark Partial
                         </button>

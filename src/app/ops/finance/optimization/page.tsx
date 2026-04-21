@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle, TrendingUp, DollarSign, Users, Package, Clock } from 'lucide-react';
 
-const NAVY = '#3E2A1E';
-const ORANGE = '#C9822B';
+const NAVY = '#0f2a3e';
+const ORANGE = '#C6A24E';
 const GREEN = '#10B981';
 const RED = '#EF4444';
 

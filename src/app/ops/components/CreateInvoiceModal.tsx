@@ -237,7 +237,7 @@ export function CreateInvoiceModal({
               value={formData.jobId}
               onChange={handleChange}
               disabled={!formData.builderId}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E] disabled:bg-gray-50"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e] disabled:bg-gray-50"
             >
               <option value="">Select a job (optional)</option>
               {jobs.map((job) => (
@@ -291,7 +291,7 @@ export function CreateInvoiceModal({
             <button
               type="button"
               onClick={addItem}
-              className="px-3 py-1 text-sm bg-[#C9822B] text-white rounded-lg hover:bg-[#A86B1F] transition-colors"
+              className="px-3 py-1 text-sm bg-[#C6A24E] text-white rounded-lg hover:bg-[#A8882A] transition-colors"
             >
               + Add Item
             </button>
@@ -306,7 +306,7 @@ export function CreateInvoiceModal({
                     value={item.description}
                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                     placeholder="Description"
-                    className="w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
                   />
                 </div>
                 <div className="w-20">
@@ -316,7 +316,7 @@ export function CreateInvoiceModal({
                     onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                     placeholder="Qty"
                     min="1"
-                    className="w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
                   />
                 </div>
                 <div className="w-24">
@@ -327,7 +327,7 @@ export function CreateInvoiceModal({
                     placeholder="Price"
                     step="0.01"
                     min="0"
-                    className="w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+                    className="w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
                   />
                 </div>
                 <div className="w-24 text-right">
@@ -355,7 +355,7 @@ export function CreateInvoiceModal({
               </div>
               <div className="flex justify-between text-base font-bold">
                 <span>Total:</span>
-                <span className="text-[#3E2A1E]">${calculateTotal().toFixed(2)}</span>
+                <span className="text-[#0f2a3e]">${calculateTotal().toFixed(2)}</span>
               </div>
             </div>
           </div>

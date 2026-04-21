@@ -61,7 +61,7 @@ function RiskBadge({ level }: { level: string }) {
 
 function GradeDistributionBar({ distribution }: { distribution: Record<string, number> }) {
   const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1
-  const colors = { A: 'bg-green-500', B: 'bg-blue-500', C: 'bg-amber-500', D: 'bg-orange-500', F: 'bg-red-500' }
+  const colors = { A: 'bg-green-500', B: 'bg-blue-500', C: 'bg-signal', D: 'bg-orange-500', F: 'bg-red-500' }
   const grades: Array<keyof typeof colors> = ['A', 'B', 'C', 'D', 'F']
   return (
     <div className="flex gap-1 h-8 rounded-md overflow-hidden border border-gray-300">

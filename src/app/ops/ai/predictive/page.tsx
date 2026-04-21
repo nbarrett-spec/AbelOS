@@ -12,8 +12,8 @@ const TREND_COLORS: Record<string, string> = {
 
 const BUCKET_COLORS: Record<string, string> = {
   OVERDUE: '#e74c3c',
-  DUE_THIS_WEEK: '#C9822B',
-  DUE_2_WEEKS: '#D9993F',
+  DUE_THIS_WEEK: '#C6A24E',
+  DUE_2_WEEKS: '#D4B96A',
   DUE_30_DAYS: '#3498db',
   DUE_60_DAYS: '#8e44ad',
   DUE_60_PLUS: '#95a5a6',
@@ -22,9 +22,9 @@ const BUCKET_COLORS: Record<string, string> = {
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -71,13 +71,13 @@ export default function PredictiveAnalyticsPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>AI Predictive Analytics</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>AI Predictive Analytics</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Revenue forecasting, demand prediction, behavioral models, and cash flow projections</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -108,15 +108,15 @@ function DashboardView({ data }: { data: any }) {
         <KPICard label="This Month" value={`$${Number(cp.thisMonthRevenue || 0).toLocaleString()}`} sub={`${cp.thisMonthOrders || 0} orders`} />
         <KPICard label="Projected Month-End" value={`$${Number(data.projectedMonthEnd || 0).toLocaleString()}`} color="#8e44ad" sub="Linear projection" />
         <KPICard label="Growth Rate" value={`${gr > 0 ? '+' : ''}${gr}%`} color={gr >= 0 ? '#27ae60' : '#e74c3c'} sub="Month over month" />
-        <KPICard label="Weighted Pipeline" value={`$${Number(pl.weightedPipeline || 0).toLocaleString()}`} color="#C9822B" sub={`${pl.conversionRate || 0}% conv rate`} />
+        <KPICard label="Weighted Pipeline" value={`$${Number(pl.weightedPipeline || 0).toLocaleString()}`} color="#C6A24E" sub={`${pl.conversionRate || 0}% conv rate`} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-        <KPICard label="YTD Revenue" value={`$${Number(cp.ytdRevenue || 0).toLocaleString()}`} sub={`vs $${Number(cp.lastYearSamePeriod || 0).toLocaleString()} last year`} color="#3E2A1E" />
+        <KPICard label="YTD Revenue" value={`$${Number(cp.ytdRevenue || 0).toLocaleString()}`} sub={`vs $${Number(cp.lastYearSamePeriod || 0).toLocaleString()} last year`} color="#0f2a3e" />
         <KPICard label="This Quarter" value={`$${Number(cp.thisQuarterRevenue || 0).toLocaleString()}`} sub={`vs $${Number(cp.lastQuarterRevenue || 0).toLocaleString()} last quarter`} color="#3498db" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>6-Month Trajectory</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>6-Month Trajectory</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -135,7 +135,7 @@ function DashboardView({ data }: { data: any }) {
                   <td style={{ padding: '10px 14px', fontWeight: 600 }}>{new Date(t.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(t.revenue || 0).toLocaleString()}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(t.orders)}</td>
-                  <td style={{ padding: '10px 14px' }}><MiniBar value={Number(t.revenue || 0)} max={maxRev} color="#3E2A1E" /></td>
+                  <td style={{ padding: '10px 14px' }}><MiniBar value={Number(t.revenue || 0)} max={maxRev} color="#0f2a3e" /></td>
                 </tr>
               )
             })}
@@ -176,14 +176,14 @@ function RevenueForecastView({ data }: { data: any }) {
                 <tr key={i} style={{ borderTop: '1px solid #eee', background: isForecast ? '#f0f7ff' : (i % 2 ? '#fafafa' : '#fff') }}>
                   <td style={{ padding: '10px 14px', fontWeight: 600 }}>{new Date(r.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</td>
                   <td style={{ padding: '10px 14px' }}><Badge text={isForecast ? 'FORECAST' : 'ACTUAL'} color={isForecast ? '#8e44ad' : '#27ae60'} /></td>
-                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: isForecast ? '#8e44ad' : '#3E2A1E' }}>
+                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: isForecast ? '#8e44ad' : '#0f2a3e' }}>
                     ${Number(isForecast ? r.projected : r.revenue || 0).toLocaleString()}
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', color: '#27ae60' }}>{isForecast ? `$${Number(r.optimistic).toLocaleString()}` : '—'}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', color: '#e74c3c' }}>{isForecast ? `$${Number(r.pessimistic).toLocaleString()}` : '—'}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'right' }}>{r.orders || '—'}</td>
                   <td style={{ padding: '10px 14px' }}>
-                    <MiniBar value={Number(isForecast ? r.projected : r.revenue || 0)} max={maxRev} color={isForecast ? '#8e44ad' : '#3E2A1E'} />
+                    <MiniBar value={Number(isForecast ? r.projected : r.revenue || 0)} max={maxRev} color={isForecast ? '#8e44ad' : '#0f2a3e'} />
                   </td>
                 </tr>
               )
@@ -198,7 +198,7 @@ function RevenueForecastView({ data }: { data: any }) {
 function DemandView({ data }: { data: any }) {
   return (
     <div>
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Category Demand Trends</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Category Demand Trends</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24 }}>
         {(data.categoryForecasts || []).slice(0, 12).map((c: any) => (
           <div key={c.category} style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
@@ -215,7 +215,7 @@ function DemandView({ data }: { data: any }) {
         ))}
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Top Products by Demand</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Top Products by Demand</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -265,7 +265,7 @@ function SeasonalView({ data }: { data: any }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Day of Week</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Day of Week</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -280,7 +280,7 @@ function SeasonalView({ data }: { data: any }) {
                     <td style={{ padding: '8px 14px', fontWeight: 600 }}>{(d.dayName || '').trim()}</td>
                     <td style={{ padding: '8px 14px', textAlign: 'right' }}>{Number(d.orders)}</td>
                     <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(d.revenue || 0).toLocaleString()}</td>
-                    <td style={{ padding: '8px 14px' }}><MiniBar value={Number(d.revenue || 0)} max={maxDow} color="#C9822B" height={14} /></td>
+                    <td style={{ padding: '8px 14px' }}><MiniBar value={Number(d.revenue || 0)} max={maxDow} color="#C6A24E" height={14} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -289,7 +289,7 @@ function SeasonalView({ data }: { data: any }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Monthly Seasonality</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Monthly Seasonality</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -304,7 +304,7 @@ function SeasonalView({ data }: { data: any }) {
                     <td style={{ padding: '8px 14px', fontWeight: 600 }}>{(m.monthName || '').trim()}</td>
                     <td style={{ padding: '8px 14px', textAlign: 'right' }}>{Number(m.orders)}</td>
                     <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(m.revenue || 0).toLocaleString()}</td>
-                    <td style={{ padding: '8px 14px' }}><MiniBar value={Number(m.revenue || 0)} max={maxMonth} color="#3E2A1E" height={14} /></td>
+                    <td style={{ padding: '8px 14px' }}><MiniBar value={Number(m.revenue || 0)} max={maxMonth} color="#0f2a3e" height={14} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -315,14 +315,14 @@ function SeasonalView({ data }: { data: any }) {
 
       {(data.hourOfDay || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>Hour of Day Activity</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Hour of Day Activity</h3>
           <div style={{ background: '#fff', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', display: 'flex', gap: 4, alignItems: 'flex-end', height: 160 }}>
             {(data.hourOfDay || []).map((h: any) => {
               const maxH = Math.max(1, ...(data.hourOfDay || []).map((x: any) => Number(x.orders || 0)))
               const pct = (Number(h.orders) / maxH) * 100
               return (
                 <div key={h.hour} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: '100%', background: '#3E2A1E', borderRadius: '4px 4px 0 0', height: `${pct}%`, minHeight: Number(h.orders) > 0 ? 4 : 0 }} />
+                  <div style={{ width: '100%', background: '#0f2a3e', borderRadius: '4px 4px 0 0', height: `${pct}%`, minHeight: Number(h.orders) > 0 ? 4 : 0 }} />
                   <span style={{ fontSize: 10, color: '#999' }}>{h.hour}</span>
                 </div>
               )
@@ -399,7 +399,7 @@ function CashFlowView({ data }: { data: any }) {
         <KPICard label="Total AP Outstanding" value={`$${Number(data.totalAP || 0).toLocaleString()}`} color="#e74c3c" sub="Expected outgoing" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#3E2A1E' }}>8-Week Cash Flow Projection</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>8-Week Cash Flow Projection</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>

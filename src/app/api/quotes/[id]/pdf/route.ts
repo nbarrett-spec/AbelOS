@@ -90,9 +90,9 @@ export async function GET(
     let yPosition = margin
 
     // ─── TOP ACCENT BAR ────────────────────────────────
-    pdf.setFillColor(230, 126, 34) // #C9822B abel-amber
+    pdf.setFillColor(198, 162, 78) // #C6A24E abel-gold
     pdf.rect(0, 0, pageWidth, 4, 'F')
-    pdf.setFillColor(27, 79, 114) // #3E2A1E navy
+    pdf.setFillColor(15, 42, 62) // #0f2a3e navy
     pdf.rect(0, 4, pageWidth, 1.5, 'F')
 
     yPosition = 12
@@ -101,7 +101,7 @@ export async function GET(
     // Logo/Company Name
     pdf.setFont('Helvetica', 'bold')
     pdf.setFontSize(28)
-    pdf.setTextColor(27, 79, 114) // #3E2A1E navy
+    pdf.setTextColor(15, 42, 62) // #0f2a3e navy
     pdf.text('ABEL LUMBER', margin, yPosition)
 
     // Tagline
@@ -130,7 +130,7 @@ export async function GET(
     // Quote number and date on the right
     pdf.setFont('Helvetica', 'bold')
     pdf.setFontSize(11)
-    pdf.setTextColor(27, 79, 114)
+    pdf.setTextColor(15, 42, 62)
     const quoteText = `Quote #${quote.quoteNumber}`
     const quoteTextWidth = pdf.getTextWidth(quoteText)
     pdf.text(quoteText, pageWidth - margin - quoteTextWidth, yPosition)
@@ -201,7 +201,7 @@ export async function GET(
         quote.project.builder.paymentTerm as keyof typeof PAYMENT_TERM_LABELS
       ] || quote.project.builder.paymentTerm
 
-    pdf.setFillColor(27, 79, 114)
+    pdf.setFillColor(15, 42, 62)
     pdf.rect(
       pageWidth - margin - 45,
       yPosition - 10,
@@ -229,7 +229,7 @@ export async function GET(
 
     pdf.setFont('Helvetica', 'bold')
     pdf.setFontSize(11)
-    pdf.setTextColor(27, 79, 114)
+    pdf.setTextColor(15, 42, 62)
     pdf.text('Project Information:', margin, yPosition)
 
     yPosition += 6
@@ -325,7 +325,7 @@ export async function GET(
         cellPadding: 3,
       },
       headStyles: {
-        fillColor: [27, 79, 114],
+        fillColor: [15, 42, 62],
         textColor: 255,
         fontStyle: 'bold',
         halign: 'left',
@@ -383,7 +383,7 @@ export async function GET(
     // Total
     pdf.setFont('Helvetica', 'bold')
     pdf.setFontSize(12)
-    pdf.setTextColor(27, 79, 114)
+    pdf.setTextColor(15, 42, 62)
     pdf.text('Total:', labelColX, yPosition)
     pdf.text(formatCurrency(quote.total), rightColX, yPosition, {
       align: 'right',
@@ -420,7 +420,7 @@ export async function GET(
       // Signature rendering (italic for typed signature)
       pdf.setFont('Helvetica', 'italic')
       pdf.setFontSize(16)
-      pdf.setTextColor(27, 79, 114)
+      pdf.setTextColor(15, 42, 62)
       pdf.text((quote as any).signatureData || '', margin + 5, yPosition)
 
       yPosition += 7
@@ -454,7 +454,7 @@ export async function GET(
       pdf.setPage(i)
 
       // Bottom accent line
-      pdf.setFillColor(230, 126, 34)
+      pdf.setFillColor(198, 162, 78)
       pdf.rect(0, pageHeight - 2, pageWidth, 2, 'F')
 
       pdf.setFont('Helvetica', 'normal')

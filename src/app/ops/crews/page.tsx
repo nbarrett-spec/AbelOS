@@ -118,7 +118,7 @@ export default function CrewsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C9822B]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C6A24E]" />
       </div>
     )
   }
@@ -148,7 +148,7 @@ export default function CrewsPage() {
     <div className="space-y-6">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
         }`}>
           {toast}
         </div>
@@ -163,7 +163,7 @@ export default function CrewsPage() {
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-[#C9822B] text-white rounded-lg hover:bg-[#D46D1A] transition-colors font-medium"
+          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A] transition-colors font-medium"
         >
           + Create Crew
         </button>
@@ -198,7 +198,7 @@ export default function CrewsPage() {
               placeholder="Search crews by name or member..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
             />
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function CrewsPage() {
                 onClick={() => setStatusFilter(status)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   statusFilter === status
-                    ? 'bg-[#C9822B] text-white'
+                    ? 'bg-[#C6A24E] text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -231,7 +231,7 @@ export default function CrewsPage() {
                 onClick={() => setTypeFilter(type)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   typeFilter === type
-                    ? 'bg-[#C9822B] text-white'
+                    ? 'bg-[#C6A24E] text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -387,7 +387,7 @@ function CrewDetailModal({
               <div>
                 <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Crew Name</label>
                 <input value={editName} onChange={(e) => setEditName(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B]" />
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Type</label>
@@ -405,7 +405,7 @@ function CrewDetailModal({
               </div>
               <div className="flex gap-2">
                 <button onClick={handleSave}
-                  className="px-4 py-2 text-sm font-medium bg-[#C9822B] text-white rounded-lg hover:bg-[#D46D1A]">
+                  className="px-4 py-2 text-sm font-medium bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A]">
                   Save Changes
                 </button>
                 <button onClick={() => setEditing(false)}
@@ -463,7 +463,7 @@ function CrewDetailModal({
                         <p className="text-xs text-gray-500 mt-0.5">{member.staff.email}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-white bg-[#C9822B] px-2.5 py-1 rounded flex-shrink-0">
+                        <span className="text-xs font-medium text-white bg-[#C6A24E] px-2.5 py-1 rounded flex-shrink-0">
                           {member.role}
                         </span>
                         <button

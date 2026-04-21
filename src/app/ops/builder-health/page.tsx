@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-const NAVY = '#3E2A1E'
-const ORANGE = '#C9822B'
+const NAVY = '#0f2a3e'
+const ORANGE = '#C6A24E'
 
 interface BuilderHealth {
   builderId: string

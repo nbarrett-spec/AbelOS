@@ -15,7 +15,7 @@ export default function OGImage() {
         style={{
           width: '100%',
           height: '100%',
-          background: `linear-gradient(145deg, #3E2A1E 0%, #5A4233 40%, #2A1C14 100%)`,
+          background: `linear-gradient(145deg, #0f2a3e 0%, #153d56 40%, #0a1a28 100%)`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -44,7 +44,7 @@ export default function OGImage() {
             left: 0,
             right: 0,
             height: '4px',
-            background: 'linear-gradient(to right, #C9822B, #D9993F, #C9822B)',
+            background: 'linear-gradient(to right, #C6A24E, #D4B96A, #C6A24E)',
           }}
         />
 
@@ -53,7 +53,7 @@ export default function OGImage() {
           style={{
             width: '80px',
             height: '80px',
-            background: '#C9822B',
+            background: '#C6A24E',
             borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
@@ -62,7 +62,7 @@ export default function OGImage() {
             fontWeight: 'bold',
             color: 'white',
             marginBottom: '12px',
-            boxShadow: '0 12px 40px rgba(201, 130, 43, 0.3)',
+            boxShadow: '0 12px 40px rgba(198, 162, 78, 0.3)',
           }}
         >
           A
@@ -87,7 +87,7 @@ export default function OGImage() {
         <p
           style={{
             fontSize: '32px',
-            color: '#C9822B',
+            color: '#C6A24E',
             margin: '0',
             textAlign: 'center',
             fontWeight: '600',

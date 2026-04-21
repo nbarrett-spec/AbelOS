@@ -151,7 +151,7 @@ function CrewHomeInner() {
             setSelectedCrewId(e.target.value);
             localStorage.setItem('selectedCrewId', e.target.value);
           }}
-          className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9822B]"
+          className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
         >
           <option value="">Select a crew...</option>
           {crews.map((crew) => (
@@ -163,7 +163,7 @@ function CrewHomeInner() {
       </div>
 
       {/* Date Display */}
-      <div className="bg-gradient-to-r from-[#3E2A1E] to-[#0D2438] text-white rounded-lg p-4">
+      <div className="bg-gradient-to-r from-[#0f2a3e] to-[#0D2438] text-white rounded-lg p-4">
         <h2 className="text-sm text-blue-200 mb-1">Today's Schedule</h2>
         <p className="text-xl font-bold">
           {new Date(date).toLocaleDateString('en-US', {
@@ -295,7 +295,7 @@ function CrewHomeInner() {
       )}
 
       {/* Helper Text */}
-      <div className="bg-orange-50 border border-[#C9822B] rounded-lg p-4 text-sm">
+      <div className="bg-orange-50 border border-[#C6A24E] rounded-lg p-4 text-sm">
         <p className="text-orange-900">
           💡 <strong>Tip:</strong> Tap any card to view full details and complete the workflow.
         </p>

@@ -365,17 +365,17 @@ export default function GetQuotePage() {
     logo: {
       fontSize: '24px',
       fontWeight: 'bold' as const,
-      color: '#3E2A1E',
+      color: '#0f2a3e',
     },
     logoOrange: {
-      color: '#C9822B',
+      color: '#C6A24E',
     },
     headerText: {
       fontSize: '14px',
       color: '#666',
     },
     callbackButton: {
-      backgroundColor: '#C9822B',
+      backgroundColor: '#C6A24E',
       color: 'white',
       padding: '10px 20px',
       border: 'none',
@@ -383,7 +383,7 @@ export default function GetQuotePage() {
       cursor: 'pointer',
       fontSize: '14px',
       fontWeight: 'bold' as const,
-      boxShadow: '0 2px 8px rgba(230, 126, 34, 0.3)',
+      boxShadow: '0 2px 8px rgba(198, 162, 78, 0.3)',
     },
     main: {
       maxWidth: '1000px',
@@ -405,7 +405,7 @@ export default function GetQuotePage() {
       width: '40px',
       height: '40px',
       borderRadius: '50%',
-      backgroundColor: isActive ? '#C9822B' : isComplete ? '#3E2A1E' : '#E0E0E0',
+      backgroundColor: isActive ? '#C6A24E' : isComplete ? '#0f2a3e' : '#E0E0E0',
       color: isActive || isComplete ? 'white' : '#999',
       display: 'flex',
       alignItems: 'center',
@@ -416,7 +416,7 @@ export default function GetQuotePage() {
     }),
     progressLabel: (isActive: boolean) => ({
       fontSize: '12px',
-      color: isActive ? '#C9822B' : '#666',
+      color: isActive ? '#C6A24E' : '#666',
       fontWeight: isActive ? ('bold' as const) : ('normal' as const),
     }),
     progressLine: {
@@ -443,7 +443,7 @@ export default function GetQuotePage() {
       marginBottom: '8px',
       fontSize: '14px',
       fontWeight: '600' as const,
-      color: '#3E2A1E',
+      color: '#0f2a3e',
     },
     input: {
       width: '100%',
@@ -457,8 +457,8 @@ export default function GetQuotePage() {
     },
     inputFocus: {
       outline: 'none',
-      borderColor: '#C9822B',
-      boxShadow: '0 0 0 3px rgba(230, 126, 34, 0.1)',
+      borderColor: '#C6A24E',
+      boxShadow: '0 0 0 3px rgba(198, 162, 78, 0.1)',
     },
     select: {
       width: '100%',
@@ -529,7 +529,7 @@ export default function GetQuotePage() {
     doorLineTitle: {
       fontSize: '14px',
       fontWeight: 'bold' as const,
-      color: '#3E2A1E',
+      color: '#0f2a3e',
     },
     removeButton: {
       backgroundColor: '#D32F2F',
@@ -542,7 +542,7 @@ export default function GetQuotePage() {
       fontWeight: 'bold' as const,
     },
     addButton: {
-      backgroundColor: '#3E2A1E',
+      backgroundColor: '#0f2a3e',
       color: 'white',
       padding: '12px 20px',
       border: 'none',
@@ -551,7 +551,7 @@ export default function GetQuotePage() {
       fontSize: '14px',
       fontWeight: 'bold' as const,
       marginBottom: '20px',
-      boxShadow: '0 2px 8px rgba(62, 42, 30, 0.2)',
+      boxShadow: '0 2px 8px rgba(15, 42, 62, 0.2)',
     },
     priceEstimate: {
       display: 'flex',
@@ -566,12 +566,12 @@ export default function GetQuotePage() {
     priceLabel: {
       fontSize: '14px',
       fontWeight: '600' as const,
-      color: '#3E2A1E',
+      color: '#0f2a3e',
     },
     priceValue: {
       fontSize: '18px',
       fontWeight: 'bold' as const,
-      color: '#C9822B',
+      color: '#C6A24E',
     },
     summaryRow: {
       display: 'flex',
@@ -592,10 +592,10 @@ export default function GetQuotePage() {
       justifyContent: 'space-between',
       padding: '15px 0',
       marginTop: '15px',
-      borderTop: '2px solid #3E2A1E',
+      borderTop: '2px solid #0f2a3e',
       fontSize: '16px',
       fontWeight: 'bold' as const,
-      color: '#3E2A1E',
+      color: '#0f2a3e',
     },
     buttonGroup: {
       display: 'flex',
@@ -614,7 +614,7 @@ export default function GetQuotePage() {
       fontWeight: 'bold' as const,
     },
     nextButton: {
-      backgroundColor: '#C9822B',
+      backgroundColor: '#C6A24E',
       color: 'white',
       padding: '12px 24px',
       border: 'none',
@@ -622,10 +622,10 @@ export default function GetQuotePage() {
       cursor: 'pointer',
       fontSize: '14px',
       fontWeight: 'bold' as const,
-      boxShadow: '0 2px 8px rgba(230, 126, 34, 0.3)',
+      boxShadow: '0 2px 8px rgba(198, 162, 78, 0.3)',
     },
     submitButton: {
-      backgroundColor: '#3E2A1E',
+      backgroundColor: '#0f2a3e',
       color: 'white',
       padding: '12px 24px',
       border: 'none',
@@ -633,7 +633,7 @@ export default function GetQuotePage() {
       cursor: 'pointer',
       fontSize: '14px',
       fontWeight: 'bold' as const,
-      boxShadow: '0 2px 8px rgba(62, 42, 30, 0.3)',
+      boxShadow: '0 2px 8px rgba(15, 42, 62, 0.3)',
     },
     disabledButton: {
       opacity: 0.6,
@@ -663,7 +663,7 @@ export default function GetQuotePage() {
       color: '#666',
     },
     footer: {
-      backgroundColor: '#3E2A1E',
+      backgroundColor: '#0f2a3e',
       color: 'white',
       textAlign: 'center' as const,
       padding: '30px 20px',
@@ -678,7 +678,7 @@ export default function GetQuotePage() {
       marginBottom: '10px',
     },
     footerLink: {
-      color: '#C9822B',
+      color: '#C6A24E',
       textDecoration: 'none',
       fontWeight: 'bold' as const,
     },
@@ -801,7 +801,7 @@ export default function GetQuotePage() {
             {/* Step 1: Builder Info */}
             {state.step === 1 && (
               <div style={styles.card}>
-                <h2 style={{ color: '#3E2A1E', marginBottom: '20px' }}>Builder Information</h2>
+                <h2 style={{ color: '#0f2a3e', marginBottom: '20px' }}>Builder Information</h2>
                 <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
                   Tell us about your company. This information is required to save your quote.
                 </p>
@@ -893,7 +893,7 @@ export default function GetQuotePage() {
             {/* Step 2: Project Details */}
             {state.step === 2 && (
               <div style={styles.card}>
-                <h2 style={{ color: '#3E2A1E', marginBottom: '20px' }}>Project Details</h2>
+                <h2 style={{ color: '#0f2a3e', marginBottom: '20px' }}>Project Details</h2>
                 <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
                   Help us understand your project scope and timeline.
                 </p>
@@ -980,7 +980,7 @@ export default function GetQuotePage() {
             {/* Step 3: Door Configuration */}
             {state.step === 3 && (
               <div style={styles.card}>
-                <h2 style={{ color: '#3E2A1E', marginBottom: '20px' }}>Door Configuration</h2>
+                <h2 style={{ color: '#0f2a3e', marginBottom: '20px' }}>Door Configuration</h2>
                 <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
                   Add each door line with specifications. Prices are estimates based on your selections.
                 </p>
@@ -1154,14 +1154,14 @@ export default function GetQuotePage() {
             {/* Step 4: Review & Submit */}
             {state.step === 4 && (
               <div style={styles.card}>
-                <h2 style={{ color: '#3E2A1E', marginBottom: '20px' }}>Review & Submit</h2>
+                <h2 style={{ color: '#0f2a3e', marginBottom: '20px' }}>Review & Submit</h2>
                 <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
                   Review your quote before submitting. A specialist will contact you shortly.
                 </p>
 
                 {/* Builder Info Summary */}
                 <div style={{ marginBottom: '30px' }}>
-                  <h3 style={{ color: '#3E2A1E', fontSize: '16px', marginBottom: '15px' }}>
+                  <h3 style={{ color: '#0f2a3e', fontSize: '16px', marginBottom: '15px' }}>
                     Builder Information
                   </h3>
                   <div style={styles.summaryRow}>
@@ -1184,7 +1184,7 @@ export default function GetQuotePage() {
 
                 {/* Project Details Summary */}
                 <div style={{ marginBottom: '30px' }}>
-                  <h3 style={{ color: '#3E2A1E', fontSize: '16px', marginBottom: '15px' }}>
+                  <h3 style={{ color: '#0f2a3e', fontSize: '16px', marginBottom: '15px' }}>
                     Project Details
                   </h3>
                   <div style={styles.summaryRow}>
@@ -1213,7 +1213,7 @@ export default function GetQuotePage() {
 
                 {/* Door Lines Summary */}
                 <div style={{ marginBottom: '30px' }}>
-                  <h3 style={{ color: '#3E2A1E', fontSize: '16px', marginBottom: '15px' }}>
+                  <h3 style={{ color: '#0f2a3e', fontSize: '16px', marginBottom: '15px' }}>
                     Door Configuration
                   </h3>
                   {state.doorLines.map((door, index) => {
@@ -1234,7 +1234,7 @@ export default function GetQuotePage() {
                             {doorOptions.panelStyle.find((p) => p.value === door.panelStyle)?.label} |{' '}
                             {doorOptions.jambSize.find((j) => j.value === door.jambSize)?.label}
                           </span>
-                          <span style={{ fontWeight: '600', color: '#C9822B' }}>
+                          <span style={{ fontWeight: '600', color: '#C6A24E' }}>
                             ${price.min * door.quantity}-${price.max * door.quantity}
                           </span>
                         </div>

@@ -210,7 +210,7 @@ export default function IntegrationsPage() {
                     disabled={syncing === integration.provider}
                     style={{
                       padding: '8px 16px',
-                      backgroundColor: '#3E2A1E',
+                      backgroundColor: '#0f2a3e',
                       color: 'white',
                       border: 'none',
                       borderRadius: 6,
@@ -307,10 +307,10 @@ export default function IntegrationsPage() {
                     </div>
                   )}
                   <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                    <button onClick={() => testConnection(integration.provider)} style={{ padding: '8px 16px', backgroundColor: '#C9822B', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={() => testConnection(integration.provider)} style={{ padding: '8px 16px', backgroundColor: '#C6A24E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Test Connection
                     </button>
-                    <button onClick={() => saveConfig(integration.provider)} style={{ padding: '8px 16px', backgroundColor: '#3E2A1E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={() => saveConfig(integration.provider)} style={{ padding: '8px 16px', backgroundColor: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Save Configuration
                     </button>
                   </div>
@@ -375,7 +375,7 @@ export default function IntegrationsPage() {
           ].map(wh => (
             <div key={wh.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#374151', width: 120 }}>{wh.label}:</span>
-              <code style={{ fontSize: 12, color: '#3E2A1E', backgroundColor: '#EBF5FB', padding: '4px 8px', borderRadius: 4 }}>
+              <code style={{ fontSize: 12, color: '#0f2a3e', backgroundColor: '#EBF5FB', padding: '4px 8px', borderRadius: 4 }}>
                 {origin}{wh.url}
               </code>
             </div>

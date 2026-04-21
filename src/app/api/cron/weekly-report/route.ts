@@ -113,7 +113,7 @@ function generateHTML(metrics: MetricsResult): string {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f9fafb; margin: 0; padding: 20px;">
   <div style="max-width: 900px; margin: 0 auto;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #3E2A1E 0%, #2a1f15 100%); color: white; padding: 40px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <div style="background: linear-gradient(135deg, #0f2a3e 0%, #0a1a28 100%); color: white; padding: 40px 20px; border-radius: 8px 8px 0 0; text-align: center;">
       <h1 style="margin: 0; font-size: 28px; font-weight: 600;">📊 Abel Weekly Ops Report</h1>
       <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Week of ${getWeekStartDate(7)}</p>
       <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.8;">Generated ${metrics.generatedAt}</p>
@@ -126,7 +126,7 @@ function generateHTML(metrics: MetricsResult): string {
         <div style="font-size: 32px; color: ${revenueColor}; font-weight: 700;">${revenueTrend}</div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
-        <div style="padding: 16px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #C9822B;">
+        <div style="padding: 16px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #C6A24E;">
           <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 4px;">This Week</div>
           <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${formatCurrency(metrics.revenueSummary.thisWeek)}</div>
         </div>
@@ -148,7 +148,7 @@ function generateHTML(metrics: MetricsResult): string {
         <div style="font-size: 32px; color: ${ordersColor}; font-weight: 700;">${ordersTrend}</div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
-        <div style="padding: 16px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #C9822B;">
+        <div style="padding: 16px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #C6A24E;">
           <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 4px;">New Orders (This Week)</div>
           <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${metrics.orders.newThisWeek}</div>
         </div>
@@ -176,7 +176,7 @@ function generateHTML(metrics: MetricsResult): string {
           <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Lost (This Week)</div>
           <div style="font-size: 20px; font-weight: 700; color: #1f2937;">${metrics.pipeline.lostThisWeek} deals</div>
         </div>
-        <div style="padding: 16px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #C9822B;">
+        <div style="padding: 16px; background: #f3f4f6; border-radius: 6px; border-left: 4px solid #C6A24E;">
           <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Open Deals</div>
           <div style="font-size: 20px; font-weight: 700; color: #1f2937;">${metrics.pipeline.openDeals}</div>
         </div>
@@ -266,7 +266,7 @@ function generateHTML(metrics: MetricsResult): string {
     <!-- Footer -->
     <div style="background: #f3f4f6; margin-top: 0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
       <p style="margin: 0; font-size: 12px; color: #666;">
-        This report was automatically generated. Direct questions to <a href="mailto:n.barrett@abellumber.com" style="color: #C9822B; text-decoration: none;">n.barrett@abellumber.com</a>
+        This report was automatically generated. Direct questions to <a href="mailto:n.barrett@abellumber.com" style="color: #C6A24E; text-decoration: none;">n.barrett@abellumber.com</a>
       </p>
     </div>
   </div>

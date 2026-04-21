@@ -151,7 +151,7 @@ export default function ProjectSelectionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -183,7 +183,7 @@ export default function ProjectSelectionsPage() {
         </div>
         <button
           onClick={() => setShowNewHomeowner(!showNewHomeowner)}
-          className="px-4 py-2 bg-[#3E2A1E] text-white rounded-lg font-medium text-sm hover:bg-[#15395a] transition-colors"
+          className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg font-medium text-sm hover:bg-[#15395a] transition-colors"
         >
           {showNewHomeowner ? 'Cancel' : 'Generate Access Link'}
         </button>
@@ -205,7 +205,7 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, name: e.target.value })
                 }
                 placeholder="e.g., John Smith"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
               />
             </div>
             <div>
@@ -219,7 +219,7 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, email: e.target.value })
                 }
                 placeholder="john@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
               />
             </div>
             <div>
@@ -233,12 +233,12 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, phone: e.target.value })
                 }
                 placeholder="(555) 123-4567"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#3E2A1E]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
               />
             </div>
 
             {newAccessUrl && (
-              <div className="bg-[#3E2A1E]/5 border border-[#3E2A1E]/20 rounded-lg p-4">
+              <div className="bg-[#0f2a3e]/5 border border-[#0f2a3e]/20 rounded-lg p-4">
                 <p className="text-xs font-medium text-gray-600 mb-2">Access Link Created</p>
                 <div className="flex items-center gap-2">
                   <input
@@ -249,7 +249,7 @@ export default function ProjectSelectionsPage() {
                   />
                   <button
                     onClick={copyToClipboard}
-                    className="px-3 py-2 bg-[#C9822B] text-white rounded text-xs font-medium hover:bg-[#A86B1F] transition-colors"
+                    className="px-3 py-2 bg-[#C6A24E] text-white rounded text-xs font-medium hover:bg-[#A8882A] transition-colors"
                   >
                     {copiedToClipboard ? 'Copied!' : 'Copy'}
                   </button>
@@ -260,7 +260,7 @@ export default function ProjectSelectionsPage() {
             <button
               onClick={handleCreateToken}
               disabled={creatingToken}
-              className="w-full px-4 py-2 bg-[#C9822B] text-white rounded-lg font-medium text-sm hover:bg-[#A86B1F] transition-colors disabled:opacity-50"
+              className="w-full px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-medium text-sm hover:bg-[#A8882A] transition-colors disabled:opacity-50"
             >
               {creatingToken ? 'Creating...' : 'Create Access Link'}
             </button>
@@ -357,7 +357,7 @@ export default function ProjectSelectionsPage() {
                         </p>
                         <p className="text-xs text-gray-500">{selection.selectedProduct?.sku}</p>
                         {isUpgraded(selection) && (
-                          <span className="inline-block px-2 py-0.5 mt-1 rounded-full text-[10px] font-semibold bg-[#C9822B]/10 text-[#C9822B]">
+                          <span className="inline-block px-2 py-0.5 mt-1 rounded-full text-[10px] font-semibold bg-[#C6A24E]/10 text-[#C6A24E]">
                             Upgraded
                           </span>
                         )}
@@ -365,7 +365,7 @@ export default function ProjectSelectionsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {upgradePrice(selection) > 0 ? (
-                        <span className="font-bold text-[#C9822B]">
+                        <span className="font-bold text-[#C6A24E]">
                           +${upgradePrice(selection).toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                           })}
@@ -403,19 +403,19 @@ export default function ProjectSelectionsPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <p className="text-xs text-gray-500 font-medium mb-1">Total Homeowners</p>
-            <p className="text-2xl font-bold text-[#3E2A1E]">
+            <p className="text-2xl font-bold text-[#0f2a3e]">
               {selectionsData.totalHomeowners}
             </p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <p className="text-xs text-gray-500 font-medium mb-1">Total Selections</p>
-            <p className="text-2xl font-bold text-[#3E2A1E]">
+            <p className="text-2xl font-bold text-[#0f2a3e]">
               {selectionsData.totalSelections}
             </p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <p className="text-xs text-gray-500 font-medium mb-1">Total Upgrade Cost</p>
-            <p className="text-2xl font-bold text-[#C9822B]">
+            <p className="text-2xl font-bold text-[#C6A24E]">
               +$
               {selectionsData.selections
                 .reduce((sum, sel) => sum + sel.adderCost, 0)

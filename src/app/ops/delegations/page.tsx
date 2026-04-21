@@ -126,7 +126,7 @@ export default function DelegationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -141,7 +141,7 @@ export default function DelegationsPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-medium hover:bg-[#A86B1F] transition flex items-center gap-2"
+          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#A8882A] transition flex items-center gap-2"
         >
           <span>+</span> New Delegation
         </button>
@@ -204,7 +204,7 @@ export default function DelegationsPage() {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-              filter === f.key ? 'border-[#C9822B] text-[#C9822B]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              filter === f.key ? 'border-[#C6A24E] text-[#C6A24E]' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             {f.label}
@@ -298,7 +298,7 @@ export default function DelegationsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Who is out of office?</label>
                 <select value={delegatorId} onChange={e => setDelegatorId(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C9822B] focus:border-[#C9822B]">
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-[#C6A24E]">
                   <option value="">Select staff member...</option>
                   {staffList.map(s => (
                     <option key={s.id} value={s.id}>
@@ -312,7 +312,7 @@ export default function DelegationsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Who will cover their work?</label>
                 <select value={delegateId} onChange={e => setDelegateId(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C9822B] focus:border-[#C9822B]">
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-[#C6A24E]">
                   <option value="">Select covering staff...</option>
                   {staffList.filter(s => s.id !== delegatorId).map(s => (
                     <option key={s.id} value={s.id}>
@@ -367,7 +367,7 @@ export default function DelegationsPage() {
               <button
                 onClick={createDelegation}
                 disabled={saving || !delegatorId || !delegateId || !startDate || !endDate}
-                className="px-4 py-2 bg-[#C9822B] text-white rounded-lg text-sm font-medium hover:bg-[#A86B1F] disabled:opacity-50"
+                className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#A8882A] disabled:opacity-50"
               >
                 {saving ? 'Creating...' : 'Create Delegation'}
               </button>

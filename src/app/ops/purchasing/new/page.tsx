@@ -144,7 +144,7 @@ function NewPOForm() {
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', margin: 0 }}>Create Purchase Order</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>Create Purchase Order</h1>
           <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>
             {product ? `Reorder: ${product.name}` : 'Create a new purchase order'}
           </p>
@@ -160,7 +160,7 @@ function NewPOForm() {
         <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: 20, marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#3E2A1E' }}>{product.name}</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#0f2a3e' }}>{product.name}</div>
               <div style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>SKU: {product.sku} • {product.category}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -238,7 +238,7 @@ function NewPOForm() {
 
         <div style={{ display: 'flex', gap: 12 }}>
           <button type="submit" disabled={submitting}
-            style={{ flex: 1, padding: '12px 24px', borderRadius: 8, border: 'none', background: submitting ? '#9CA3AF' : '#C9822B', color: '#fff', fontWeight: 700, fontSize: 15, cursor: submitting ? 'default' : 'pointer' }}>
+            style={{ flex: 1, padding: '12px 24px', borderRadius: 8, border: 'none', background: submitting ? '#9CA3AF' : '#C6A24E', color: '#fff', fontWeight: 700, fontSize: 15, cursor: submitting ? 'default' : 'pointer' }}>
             {submitting ? 'Creating PO...' : 'Create Purchase Order'}
           </button>
           <button type="button" onClick={() => router.push('/ops/purchasing')}

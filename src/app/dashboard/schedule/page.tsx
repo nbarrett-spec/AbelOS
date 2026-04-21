@@ -109,8 +109,8 @@ const DELIVERY_STATUS: Record<string, { color: string; label: string }> = {
 }
 
 const PROJECT_COLORS = [
-  '#3E2A1E', '#C9822B', '#27AE60', '#8E44AD', '#2980B9',
-  '#A86B1F', '#16A085', '#C0392B', '#2C2C2C', '#D9993F',
+  '#0f2a3e', '#C6A24E', '#27AE60', '#8E44AD', '#2980B9',
+  '#A8882A', '#16A085', '#C0392B', '#2C2C2C', '#D4B96A',
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ export default function SchedulePage() {
 
   const S = {
     page: { minHeight: '100vh', backgroundColor: '#f5f6fa', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' } as React.CSSProperties,
-    header: { backgroundColor: '#3E2A1E', color: '#fff', padding: '24px 32px' } as React.CSSProperties,
+    header: { backgroundColor: '#0f2a3e', color: '#fff', padding: '24px 32px' } as React.CSSProperties,
     headerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: 16 } as React.CSSProperties,
     title: { fontSize: 28, fontWeight: 700, margin: 0 } as React.CSSProperties,
     subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: '4px 0 0' } as React.CSSProperties,
@@ -195,27 +195,27 @@ export default function SchedulePage() {
     viewBtn: (active: boolean) => ({
       padding: '6px 16px', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
       backgroundColor: active ? '#fff' : 'rgba(255,255,255,0.15)',
-      color: active ? '#3E2A1E' : 'rgba(255,255,255,0.9)',
+      color: active ? '#0f2a3e' : 'rgba(255,255,255,0.9)',
       transition: 'all 0.2s',
     }) as React.CSSProperties,
     container: { maxWidth: 1400, margin: '0 auto', padding: '24px 32px' } as React.CSSProperties,
     statsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 } as React.CSSProperties,
     statCard: { backgroundColor: '#fff', borderRadius: 8, padding: '16px 20px', border: '1px solid #e5e7eb' } as React.CSSProperties,
-    statValue: { fontSize: 28, fontWeight: 700, color: '#3E2A1E' } as React.CSSProperties,
+    statValue: { fontSize: 28, fontWeight: 700, color: '#0f2a3e' } as React.CSSProperties,
     statLabel: { fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5, marginTop: 4 } as React.CSSProperties,
     filterRow: { display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' as const } as React.CSSProperties,
     select: { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, backgroundColor: '#fff' } as React.CSSProperties,
     filterBtn: (active: boolean) => ({
-      padding: '6px 14px', border: '1px solid ' + (active ? '#3E2A1E' : '#d1d5db'), borderRadius: 6,
+      padding: '6px 14px', border: '1px solid ' + (active ? '#0f2a3e' : '#d1d5db'), borderRadius: 6,
       fontSize: 13, fontWeight: 600, cursor: 'pointer',
-      backgroundColor: active ? '#3E2A1E' : '#fff',
+      backgroundColor: active ? '#0f2a3e' : '#fff',
       color: active ? '#fff' : '#374151',
     }) as React.CSSProperties,
     jobCard: { backgroundColor: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', marginBottom: 16, overflow: 'hidden', transition: 'box-shadow 0.2s' } as React.CSSProperties,
     jobHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', cursor: 'pointer' } as React.CSSProperties,
     jobLeft: { display: 'flex', alignItems: 'center', gap: 16, flex: 1 } as React.CSSProperties,
     colorBar: (color: string) => ({ width: 4, height: 48, borderRadius: 2, backgroundColor: color }) as React.CSSProperties,
-    jobNumber: { fontSize: 15, fontWeight: 700, color: '#3E2A1E', fontFamily: 'monospace' } as React.CSSProperties,
+    jobNumber: { fontSize: 15, fontWeight: 700, color: '#0f2a3e', fontFamily: 'monospace' } as React.CSSProperties,
     jobAddress: { fontSize: 13, color: '#6b7280', marginTop: 2 } as React.CSSProperties,
     jobRight: { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 } as React.CSSProperties,
     badge: (bg: string, text: string) => ({
@@ -228,7 +228,7 @@ export default function SchedulePage() {
     progressTrack: { display: 'flex', alignItems: 'center', gap: 2, margin: '16px 0 20px', overflowX: 'auto' as const } as React.CSSProperties,
     progressStep: (done: boolean, current: boolean) => ({
       flex: 1, height: 6, borderRadius: 3, minWidth: 20,
-      backgroundColor: done ? '#10b981' : current ? '#C9822B' : '#e5e7eb',
+      backgroundColor: done ? '#10b981' : current ? '#C6A24E' : '#e5e7eb',
       transition: 'background-color 0.3s',
     }) as React.CSSProperties,
     progressLabels: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9ca3af', marginBottom: 16 } as React.CSSProperties,
@@ -237,7 +237,7 @@ export default function SchedulePage() {
     scheduleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f9fafb', borderRadius: 6, marginBottom: 6, fontSize: 13 } as React.CSSProperties,
     deliveryRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, marginBottom: 8, fontSize: 13 } as React.CSSProperties,
     empty: { textAlign: 'center' as const, padding: '80px 20px', color: '#9ca3af' } as React.CSSProperties,
-    link: { color: '#3E2A1E', textDecoration: 'none', fontWeight: 600, fontSize: 13 } as React.CSSProperties,
+    link: { color: '#0f2a3e', textDecoration: 'none', fontWeight: 600, fontSize: 13 } as React.CSSProperties,
   }
 
   return (
@@ -265,7 +265,7 @@ export default function SchedulePage() {
               <div style={S.statLabel}>Active Jobs</div>
             </div>
             <div style={S.statCard}>
-              <div style={{ ...S.statValue, color: '#C9822B' }}>{stats.upcomingDeliveries}</div>
+              <div style={{ ...S.statValue, color: '#C6A24E' }}>{stats.upcomingDeliveries}</div>
               <div style={S.statLabel}>Upcoming Deliveries</div>
             </div>
             <div style={S.statCard}>
@@ -388,7 +388,7 @@ export default function SchedulePage() {
                       {job.orderTotal && (
                         <div style={{ fontSize: 13 }}>
                           <span style={{ color: '#6b7280' }}>Order Total: </span>
-                          <span style={{ fontWeight: 600, color: '#3E2A1E' }}>
+                          <span style={{ fontWeight: 600, color: '#0f2a3e' }}>
                             ${job.orderTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                           </span>
                         </div>

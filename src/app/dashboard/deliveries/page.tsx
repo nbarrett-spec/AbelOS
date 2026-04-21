@@ -205,7 +205,7 @@ export default function DeliveriesPage() {
             <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: '500', marginBottom: '8px' }}>
               SCHEDULED THIS WEEK
             </div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#3E2A1E', marginBottom: '4px' }}>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f2a3e', marginBottom: '4px' }}>
               {stats.scheduled}
             </div>
             <div style={{ fontSize: '12px', color: '#9ca3af' }}>
@@ -227,7 +227,7 @@ export default function DeliveriesPage() {
             <div style={{
               fontSize: '32px',
               fontWeight: 'bold',
-              color: '#C9822B',
+              color: '#C6A24E',
               marginBottom: '4px',
               display: 'flex',
               alignItems: 'center',
@@ -239,7 +239,7 @@ export default function DeliveriesPage() {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  backgroundColor: '#C9822B',
+                  backgroundColor: '#C6A24E',
                   animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                 }} />
               )}
@@ -287,9 +287,9 @@ export default function DeliveriesPage() {
                 flex: 1,
                 padding: '12px 16px',
                 backgroundColor: activeTab === tab ? '#f3f4f6' : 'transparent',
-                color: activeTab === tab ? '#3E2A1E' : '#6b7280',
+                color: activeTab === tab ? '#0f2a3e' : '#6b7280',
                 border: 'none',
-                borderBottom: activeTab === tab ? '3px solid #3E2A1E' : '1px solid #e5e7eb',
+                borderBottom: activeTab === tab ? '3px solid #0f2a3e' : '1px solid #e5e7eb',
                 fontSize: '14px',
                 fontWeight: activeTab === tab ? '600' : '500',
                 cursor: 'pointer',
@@ -368,7 +368,7 @@ export default function DeliveriesPage() {
                           height: '12px',
                           borderRadius: '50%',
                           backgroundColor: config.dot.includes('animate-pulse')
-                            ? '#C9822B'
+                            ? '#C6A24E'
                             : config.dot.split(' ')[0].match(/bg-(\w+)-(\d+)/)?.[0],
                           animation: config.dot.includes('animate-pulse') ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
                           flexShrink: 0,
@@ -474,7 +474,7 @@ export default function DeliveriesPage() {
                                 </div>
                                 <div style={{
                                   fontSize: '13px',
-                                  color: '#C9822B',
+                                  color: '#C6A24E',
                                   fontWeight: '500',
                                 }}>
                                   {formatTime(delivery.latestEta)}
@@ -539,7 +539,7 @@ export default function DeliveriesPage() {
                                       width: '8px',
                                       height: '8px',
                                       borderRadius: '50%',
-                                      backgroundColor: '#3E2A1E',
+                                      backgroundColor: '#0f2a3e',
                                       border: '2px solid #fff',
                                     }}
                                   />

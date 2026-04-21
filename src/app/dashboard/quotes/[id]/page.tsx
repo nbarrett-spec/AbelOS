@@ -324,7 +324,7 @@ export default function QuoteDetailPage() {
         <div className="text-5xl mb-4">📋</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Quote Not Found</h2>
         <p className="text-gray-500 mb-6">{error || 'This quote could not be loaded.'}</p>
-        <Link href="/dashboard/quotes" className="text-[#3E2A1E] font-semibold hover:underline">
+        <Link href="/dashboard/quotes" className="text-[#0f2a3e] font-semibold hover:underline">
           &larr; Back to Quotes
         </Link>
       </div>
@@ -350,16 +350,16 @@ export default function QuoteDetailPage() {
           </p>
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-500">Order Number</p>
-            <p className="text-xl font-mono font-bold text-[#3E2A1E]">{orderSuccess.orderNumber}</p>
+            <p className="text-xl font-mono font-bold text-[#0f2a3e]">{orderSuccess.orderNumber}</p>
           </div>
           <div className="flex flex-col gap-3">
             <Link
               href={`/dashboard/orders/${orderSuccess.orderId}`}
-              className="bg-[#C9822B] hover:bg-[#A86B1F] text-white font-semibold py-3 px-6 rounded-lg transition"
+              className="bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold py-3 px-6 rounded-lg transition"
             >
               View Order Details
             </Link>
-            <Link href="/dashboard/quotes" className="text-[#3E2A1E] font-semibold hover:underline py-2">
+            <Link href="/dashboard/quotes" className="text-[#0f2a3e] font-semibold hover:underline py-2">
               Back to Quotes
             </Link>
           </div>
@@ -377,7 +377,7 @@ export default function QuoteDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
-      <Link href="/dashboard/quotes" className="text-sm text-[#3E2A1E] hover:underline mb-4 inline-block">
+      <Link href="/dashboard/quotes" className="text-sm text-[#0f2a3e] hover:underline mb-4 inline-block">
         &larr; Back to Quotes
       </Link>
 
@@ -416,7 +416,7 @@ export default function QuoteDetailPage() {
       {/* Expiry Warning */}
       {isExpired && quote.status === 'SENT' && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
-          <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-signal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
           <p className="text-amber-700 text-sm">This quote has expired. Please request an updated quote from Abel Lumber.</p>
@@ -506,7 +506,7 @@ export default function QuoteDetailPage() {
             )}
             <div className="flex justify-between items-center border-t pt-2">
               <span className="text-sm font-bold text-gray-900">Total</span>
-              <span className="text-lg font-bold text-[#3E2A1E]">{fmt(quote.total)}</span>
+              <span className="text-lg font-bold text-[#0f2a3e]">{fmt(quote.total)}</span>
             </div>
             {quote.validUntil && (
               <div className="pt-2 border-t">
@@ -535,7 +535,7 @@ export default function QuoteDetailPage() {
       )}
       {quote.changeNotes && quote.status === 'DRAFT' && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide mb-1">Changes Requested</p>
+          <p className="text-xs text-signal font-semibold uppercase tracking-wide mb-1">Changes Requested</p>
           <p className="text-sm text-amber-800">{quote.changeNotes}</p>
         </div>
       )}
@@ -590,7 +590,7 @@ export default function QuoteDetailPage() {
               <tr>
                 <td colSpan={quote.items.some(i => i.location) ? 3 : 2} />
                 <td className="px-5 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
-                <td className="px-5 py-3 text-lg font-bold text-[#3E2A1E] text-right">{fmt(quote.total)}</td>
+                <td className="px-5 py-3 text-lg font-bold text-[#0f2a3e] text-right">{fmt(quote.total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -748,7 +748,7 @@ export default function QuoteDetailPage() {
                   onChange={e => setChangeNotes(e.target.value)}
                   placeholder="e.g., Please swap the 2-panel doors for Shaker style, add hardware for 3 additional interior doors, adjust quantity on exterior door to 2..."
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C9822B] resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] resize-none"
                 />
               </div>
 
@@ -764,7 +764,7 @@ export default function QuoteDetailPage() {
                   Cancel
                 </button>
                 <button onClick={handleRequestChanges} disabled={actionInProgress || !changeNotes.trim()}
-                  className="flex-1 px-4 py-2.5 bg-[#C9822B] text-white font-semibold rounded-lg hover:bg-[#A86B1F] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  className="flex-1 px-4 py-2.5 bg-[#C6A24E] text-white font-semibold rounded-lg hover:bg-[#A8882A] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   {actionInProgress && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   {actionInProgress ? 'Sending...' : 'Submit Request'}
                 </button>

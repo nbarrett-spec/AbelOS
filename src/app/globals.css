@@ -3,16 +3,68 @@
 @tailwind utilities;
 
 /* ============================================================================
-   AEGIS DESIGN SYSTEM — Abel OS
+   AEGIS v2 — "THE DRAFTING ROOM"
    Three-layer tokens: primitive → semantic → component
-   Dark mode is the canonical experience. Light mode mirrors.
+   Dark (navy) is the primary experience. Light (onion-skin) mirrors.
+   Fonts self-hosted via next/font in layout.tsx — no CDN imports.
    ============================================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── Layer 1: Primitive tokens ───────────────────────────────────────────── */
 :root {
-  /* Neutrals — warm stone/graphite, not cold blue-gray */
+  /* ── Navy scale (dark-theme canvas) ──────────────────────────────────── */
+  --navy-deep:  #050d16;
+  --navy:       #0a1a28;
+  --navy-mid:   #132d42;
+  --navy-light: #1a3d56;
+
+  /* ── Paper / light-theme canvas ──────────────────────────────────────── */
+  --mylar:      #f5f2eb;
+  --onion:      #f9f5ec;
+  --cream:      #F3EAD8;
+
+  /* ── Gold signal scale ───────────────────────────────────────────────── */
+  --gold-dark:  #a88a3a;
+  --gold:       #c6a24e;
+  --gold-light: #e4c77a;
+
+  /* ── Walnut (primary brand) ──────────────────────────────────────────── */
+  --walnut-50:  #F5EFE9;
+  --walnut-100: #E8D9C9;
+  --walnut-200: #C9A98C;
+  --walnut-300: #9C7A5C;
+  --walnut-400: #6E543D;
+  --walnut-500: #5A4233;
+  --walnut-600: #3E2A1E;
+  --walnut-700: #2A1C14;
+  --walnut-800: #1C120C;
+  --walnut-900: #0F0906;
+  --walnut-ink: #2A1C14;
+
+  /* ── Amber scale (retained) ──────────────────────────────────────────── */
+  --amber-50:  #FDF6E8;
+  --amber-100: #F9E4BB;
+  --amber-200: #F3CC85;
+  --amber-300: #E9AE4F;
+  --amber-400: #D9993F;
+  --amber-500: #C9822B;
+  --amber-600: #A86B1F;
+  --amber-700: #865415;
+  --amber-800: #5E3A0E;
+  --amber-900: #3A2408;
+
+  /* ── Warm neutrals ──────────────────────────────────────────────────── */
+  --kiln-oak:   #8B6F47;
+  --brass:      #8B6F2A;
+  --dust:       #B8876B;
+  --sky:        #8CA8B8;
+
+  /* ── Status primitives ──────────────────────────────────────────────── */
+  --moss:       #2f7c3a;
+  --sage:       #5caa68;
+  --oxblood:    #6E2A24;
+  --ember:      #b64e3d;
+
+  /* ── Stone (backward compat — used by some legacy selectors) ─────── */
   --stone-50:  #F7F5F2;
   --stone-100: #EEEAE3;
   --stone-200: #DDD6CB;
@@ -25,31 +77,7 @@
   --stone-900: #171512;
   --stone-950: #0E0D0B;
 
-  /* Walnut (primary brand) */
-  --walnut-50:  #F5EFE9;
-  --walnut-100: #E8D9C9;
-  --walnut-200: #C9A98C;
-  --walnut-300: #9C7A5C;
-  --walnut-400: #6E543D;
-  --walnut-500: #5A4233;
-  --walnut-600: #3E2A1E;
-  --walnut-700: #2A1C14;
-  --walnut-800: #1C120C;
-  --walnut-900: #0F0906;
-
-  /* Safety amber (accent / action) */
-  --amber-50:  #FDF6E8;
-  --amber-100: #F9E4BB;
-  --amber-200: #F3CC85;
-  --amber-300: #E9AE4F;
-  --amber-400: #D9993F;
-  --amber-500: #C9822B;
-  --amber-600: #A86B1F;
-  --amber-700: #865415;
-  --amber-800: #5E3A0E;
-  --amber-900: #3A2408;
-
-  /* Data green — kiln-dry moisture, drier than emerald */
+  /* ── Data green ──────────────────────────────────────────────────────── */
   --data-green-50:  #EEF7EF;
   --data-green-100: #D4EBD6;
   --data-green-200: #A7D6AB;
@@ -61,7 +89,7 @@
   --data-green-800: #133618;
   --data-green-900: #0B1F0E;
 
-  /* Data red — oxblood, grounded not shrill */
+  /* ── Data red ────────────────────────────────────────────────────────── */
   --data-red-50:  #FAEEEB;
   --data-red-100: #F1CFC6;
   --data-red-200: #E3A495;
@@ -73,7 +101,7 @@
   --data-red-800: #42160E;
   --data-red-900: #260C07;
 
-  /* Forecast / provisional — desaturated steel-indigo, reads as "projected" */
+  /* ── Forecast ────────────────────────────────────────────────────────── */
   --forecast-50:  #EEF0F5;
   --forecast-100: #D4D9E3;
   --forecast-200: #A5AFC3;
@@ -85,12 +113,14 @@
   --forecast-800: #161A27;
   --forecast-900: #0C0E17;
 
-  /* Typography primitives */
-  --font-sans:    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --font-numeric: 'Inter', ui-sans-serif, system-ui, sans-serif; /* with tnum */
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  /* next/font sets --font-sans, --font-mono, --font-display on <html>.
+     We define fallback stacks here; the font vars cascade from the html class. */
+  --font-sans-stack:    'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono-stack:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display-stack: 'Playfair Display', Georgia, 'Times New Roman', serif;
 
-  /* Radii */
+  /* ── Radii ───────────────────────────────────────────────────────────── */
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -103,15 +133,23 @@
   --row-height-md: 40px;
   --row-height-lg: 48px;
 
-  /* Motion */
-  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  /* ── Motion — Drafting Room easing ────────────────────────────────────── */
+  --ease:        cubic-bezier(.2, .8, .2, 1);       /* House ease — default */
+  --ease-draft:  cubic-bezier(0.6, 0.1, 0.2, 1);    /* SVG stroke reveals */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* Drawer open, modal enter */
+  --ease-press:  cubic-bezier(0.22, 1.4, 0.36, 1);  /* Button press, toggle */
+  /* Legacy aliases */
+  --ease-out:    var(--ease);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-instant: 75ms;
+
+  --dur-instant: 80ms;
   --dur-fast:    150ms;
   --dur-base:    200ms;
   --dur-slow:    320ms;
+  --dur-drawer:  480ms;
+  --dur-scene:   720ms;
 
-  /* Elevation — dark-aware, dimmer in dark */
+  /* ── Elevation ───────────────────────────────────────────────────────── */
   --shadow-0: 0 0 0 0 transparent;
   --shadow-1: 0 1px 2px rgba(14, 13, 11, 0.06), 0 1px 1px rgba(14, 13, 11, 0.04);
   --shadow-2: 0 2px 6px rgba(14, 13, 11, 0.08), 0 1px 2px rgba(14, 13, 11, 0.06);
@@ -119,46 +157,53 @@
   --shadow-4: 0 16px 32px rgba(14, 13, 11, 0.12), 0 4px 8px rgba(14, 13, 11, 0.08);
 }
 
-/* ── Layer 2: Semantic tokens (LIGHT — default) ──────────────────────────── */
+/* ── Layer 2: Semantic tokens (LIGHT — "onion skin under task lighting") ── */
 :root {
-  --canvas:             var(--stone-50);
-  --surface:            #FFFFFF;
-  --surface-muted:      var(--stone-100);
+  --canvas:             var(--mylar);
+  --surface:            var(--onion);
+  --surface-muted:      #ede8dd;
   --surface-elevated:   #FFFFFF;
-  --surface-inverse:    var(--stone-900);
+  --surface-inverse:    var(--navy);
 
-  --border:             #E3DCD0;
-  --border-strong:      var(--stone-300);
-  --border-focus:       var(--amber-500);
+  --border:             rgba(62, 42, 30, 0.10);    /* walnut @ 10% */
+  --border-strong:      rgba(62, 42, 30, 0.20);    /* walnut @ 20% */
+  --border-focus:       var(--gold-dark);
 
-  --fg:                 var(--stone-900);
-  --fg-muted:           var(--stone-500);
-  --fg-subtle:          var(--stone-400);
+  --fg:                 var(--walnut-600);
+  --fg-muted:           #6b5d4e;
+  --fg-subtle:          #9a8e7e;
   --fg-inverse:         #FFFFFF;
   --fg-on-accent:       #FFFFFF;
 
-  --accent:             var(--amber-500);
-  --accent-hover:       var(--amber-600);
-  --accent-subtle:      var(--amber-50);
-  --accent-fg:          var(--amber-700);
+  /* Signal = gold (the primary interactive/attention color) */
+  --signal:             var(--gold-dark);
+  --signal-hover:       var(--gold);
+  --signal-subtle:      rgba(168, 138, 58, 0.08);   /* gold-dark @ 8% */
+  --signal-glow:        rgba(168, 138, 58, 0.15);   /* gold-dark @ 15% */
+
+  /* Accent aliases (map to signal for backward compat) */
+  --accent:             var(--signal);
+  --accent-hover:       var(--signal-hover);
+  --accent-subtle:      var(--signal-subtle);
+  --accent-fg:          var(--gold-dark);
 
   --brand:              var(--walnut-600);
   --brand-hover:        var(--walnut-700);
   --brand-subtle:       var(--walnut-50);
 
-  --data-positive:      var(--data-green-500);
+  --data-positive:      var(--moss);
   --data-positive-bg:   var(--data-green-50);
   --data-positive-fg:   var(--data-green-700);
 
-  --data-negative:      var(--data-red-500);
+  --data-negative:      var(--oxblood);
   --data-negative-bg:   var(--data-red-50);
   --data-negative-fg:   var(--data-red-700);
 
-  --data-warning:       var(--amber-500);
+  --data-warning:       var(--gold-dark);
   --data-warning-bg:    var(--amber-50);
   --data-warning-fg:    var(--amber-700);
 
-  --data-info:          var(--forecast-500);
+  --data-info:          #5a7a8a;
   --data-info-bg:       var(--forecast-50);
   --data-info-fg:       var(--forecast-700);
 
@@ -166,9 +211,13 @@
   --forecast-bg:        var(--forecast-50);
   --forecast-fg:        var(--forecast-700);
 
+  /* Drafting Room specifics */
+  --ink-pencil:         var(--walnut-ink);
+  --grid-ink:           rgba(198, 162, 78, 0.06);  /* gold @ 6% */
+
   /* Grid / tabular */
-  --row-hover:          rgba(201, 130, 43, 0.04);
-  --row-selected:       rgba(201, 130, 43, 0.08);
+  --row-hover:          rgba(168, 138, 58, 0.04);
+  --row-selected:       rgba(168, 138, 58, 0.08);
   --grid-line:          #EDE6DA;
 
   /* Elevation mapped */
@@ -176,65 +225,78 @@
   --elev-2: var(--shadow-2);
   --elev-3: var(--shadow-3);
   --elev-4: var(--shadow-4);
+  --elev-glow: 0 0 24px rgba(168, 138, 58, 0.10);
 
   color-scheme: light;
 }
 
-/* ── Layer 2: Semantic tokens (DARK — canonical) ─────────────────────────── */
+/* ── Layer 2: Semantic tokens (DARK — "Gainesville at dusk" — PRIMARY) ──── */
 html.dark {
-  --canvas:             #0E0D0B;
-  --surface:            #17150F;
-  --surface-muted:      #1C1914;
-  --surface-elevated:   #201D17;
-  --surface-inverse:    #FFFFFF;
+  --canvas:             var(--navy-deep);
+  --surface:            var(--navy);
+  --surface-muted:      #0d2233;
+  --surface-elevated:   var(--navy-mid);
+  --surface-inverse:    var(--cream);
 
-  --border:             #2A2620;
-  --border-strong:      #3A342C;
-  --border-focus:       var(--amber-400);
+  --border:             rgba(198, 162, 78, 0.08);  /* gold @ 8% */
+  --border-strong:      rgba(198, 162, 78, 0.18);  /* gold @ 18% */
+  --border-focus:       var(--gold);
 
-  --fg:                 #F5F1E8;
-  --fg-muted:           #9A9285;
-  --fg-subtle:          #706B5F;
-  --fg-inverse:         var(--stone-900);
-  --fg-on-accent:       var(--stone-950);
+  --fg:                 #f5f1e8;
+  --fg-muted:           #8a9aaa;
+  --fg-subtle:          #5a6a7a;
+  --fg-inverse:         var(--navy-deep);
+  --fg-on-accent:       var(--navy-deep);
 
-  --accent:             var(--amber-400);
-  --accent-hover:       var(--amber-300);
-  --accent-subtle:      rgba(201, 130, 43, 0.12);
-  --accent-fg:          var(--amber-300);
+  /* Signal = gold */
+  --signal:             var(--gold);
+  --signal-hover:       var(--gold-light);
+  --signal-subtle:      rgba(198, 162, 78, 0.12);
+  --signal-glow:        rgba(198, 162, 78, 0.25);
 
-  --brand:              var(--walnut-400);
-  --brand-hover:        var(--walnut-300);
+  --accent:             var(--signal);
+  --accent-hover:       var(--signal-hover);
+  --accent-subtle:      var(--signal-subtle);
+  --accent-fg:          var(--gold-light);
+
+  --brand:              var(--walnut-300);
+  --brand-hover:        var(--walnut-200);
   --brand-subtle:       rgba(62, 42, 30, 0.35);
 
-  --data-positive:      var(--data-green-400);
-  --data-positive-bg:   rgba(67, 153, 79, 0.12);
-  --data-positive-fg:   var(--data-green-300);
+  --data-positive:      var(--sage);
+  --data-positive-bg:   rgba(92, 170, 104, 0.12);
+  --data-positive-fg:   #6FBA78;
 
-  --data-negative:      var(--data-red-400);
+  --data-negative:      var(--ember);
   --data-negative-bg:   rgba(182, 78, 61, 0.15);
-  --data-negative-fg:   var(--data-red-300);
+  --data-negative-fg:   #D07564;
 
-  --data-warning:       var(--amber-400);
-  --data-warning-bg:    rgba(217, 153, 63, 0.10);
-  --data-warning-fg:    var(--amber-300);
+  --data-warning:       var(--gold);
+  --data-warning-bg:    rgba(198, 162, 78, 0.10);
+  --data-warning-fg:    var(--gold-light);
 
-  --data-info:          var(--forecast-300);
-  --data-info-bg:       rgba(118, 130, 159, 0.10);
-  --data-info-fg:       var(--forecast-200);
+  --data-info:          var(--sky);
+  --data-info-bg:       rgba(140, 168, 184, 0.10);
+  --data-info-fg:       #a8c4d4;
 
   --forecast:           var(--forecast-300);
   --forecast-bg:        rgba(118, 130, 159, 0.08);
   --forecast-fg:        var(--forecast-200);
 
-  --row-hover:          rgba(217, 153, 63, 0.04);
-  --row-selected:       rgba(217, 153, 63, 0.10);
-  --grid-line:          #221E18;
+  /* Drafting Room specifics */
+  --ink-pencil:         var(--kiln-oak);
+  --grid-ink:           rgba(198, 162, 78, 0.06);
 
-  --elev-1: 0 1px 2px rgba(0,0,0,0.35), 0 1px 1px rgba(0,0,0,0.25);
-  --elev-2: 0 2px 6px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.30);
-  --elev-3: 0 8px 18px rgba(0,0,0,0.50), 0 2px 4px rgba(0,0,0,0.35);
-  --elev-4: 0 20px 40px rgba(0,0,0,0.55), 0 6px 12px rgba(0,0,0,0.35);
+  --row-hover:          rgba(198, 162, 78, 0.04);
+  --row-selected:       rgba(198, 162, 78, 0.10);
+  --grid-line:          rgba(198, 162, 78, 0.06);
+
+  /* Deep navy shadows with more depth */
+  --elev-1: 0 1px 3px rgba(5, 13, 22, 0.50), 0 1px 1px rgba(5, 13, 22, 0.35);
+  --elev-2: 0 3px 8px rgba(5, 13, 22, 0.55), 0 1px 3px rgba(5, 13, 22, 0.40);
+  --elev-3: 0 8px 20px rgba(5, 13, 22, 0.60), 0 3px 6px rgba(5, 13, 22, 0.45);
+  --elev-4: 0 20px 44px rgba(5, 13, 22, 0.65), 0 6px 14px rgba(5, 13, 22, 0.45);
+  --elev-glow: 0 0 24px rgba(198, 162, 78, 0.15);
 
   color-scheme: dark;
 }
@@ -246,8 +308,8 @@ html.dark {
   * { border-color: var(--border); }
 
   html {
-    font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01', 'ss03'; /* Inter ops */
+    font-family: var(--font-sans, var(--font-sans-stack));
+    font-feature-settings: 'cv11', 'ss01', 'ss03', 'zero';
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
   }
@@ -255,10 +317,38 @@ html.dark {
   body {
     background-color: var(--canvas);
     color: var(--fg);
-    font-family: var(--font-sans);
+    font-family: var(--font-sans, var(--font-sans-stack));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    position: relative;
+  }
+
+  /* ── Paper grain texture (Abel fingerprint — gold-tinted noise) ────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.9 0.1 0 0 0.05 0.1 0.85 0.05 0 0.02 0 0.05 0.6 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  /* ── Drafting grid (40px blueprint, radial vignette) ────────────────── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--grid-ink) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-ink) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
   }
 
   /* Tabular figures for anything in a <td.num> or a data-numeric element */
@@ -272,7 +362,10 @@ html.dark {
   }
 
   .font-mono {
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, var(--font-mono-stack));
+  }
+  .font-display {
+    font-family: var(--font-display, var(--font-display-stack));
   }
 
   /* Selection */
@@ -313,16 +406,16 @@ html.dark {
     background-color: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    transition: border-color var(--dur-fast) var(--ease-out),
-                box-shadow var(--dur-fast) var(--ease-out);
+    transition: border-color var(--dur-fast) var(--ease),
+                box-shadow var(--dur-base) var(--ease);
   }
   .panel-elevated { background-color: var(--surface-elevated); box-shadow: var(--elev-2); }
   .panel-interactive { cursor: pointer; }
   .panel-interactive:hover {
     border-color: var(--border-strong);
-    box-shadow: var(--elev-2);
+    box-shadow: var(--elev-2), var(--elev-glow);
   }
-  /* Live/active rail — left 2px amber accent for "watch this" state */
+  /* Live/active rail — left 2px gold signal for "watch this" state */
   .panel-live {
     position: relative;
     overflow: hidden;
@@ -332,22 +425,34 @@ html.dark {
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 2px;
-    background: var(--accent);
+    background: var(--signal);
   }
 
-  /* ── Eyebrow / small label ──────────────────────────────────────────── */
+  /* ── Eyebrow / small label (28px gold rule + mono uppercase) ─────── */
   .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--fg-subtle);
     line-height: 1;
   }
+  .eyebrow::before {
+    content: '';
+    display: block;
+    width: 28px;
+    height: 1px;
+    background: var(--signal);
+    flex-shrink: 0;
+  }
 
-  /* ── KPI display number ─────────────────────────────────────────────── */
+  /* ── KPI display number (always JetBrains Mono) ───────────────────── */
   .metric {
-    font-family: var(--font-numeric);
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum' on, 'lnum' on;
     font-weight: 600;
@@ -365,8 +470,9 @@ html.dark {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-family: var(--font-numeric);
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' on, 'lnum' on;
     font-size: 12px;
     font-weight: 600;
     line-height: 1;
@@ -387,13 +493,14 @@ html.dark {
     font-weight: 500;
     border-radius: var(--radius-md);
     border: 1px solid transparent;
-    transition: background-color var(--dur-fast) var(--ease-out),
-                border-color var(--dur-fast) var(--ease-out),
-                color var(--dur-fast) var(--ease-out),
-                box-shadow var(--dur-fast) var(--ease-out);
+    transition: all var(--dur-fast) var(--ease);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-timing-function: var(--ease-press);
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -446,15 +553,15 @@ html.dark {
     border-radius: var(--radius-md);
     color: var(--fg);
     font-size: 13px;
-    font-family: var(--font-sans);
-    transition: border-color var(--dur-fast) var(--ease-out),
-                box-shadow var(--dur-fast) var(--ease-out);
+    font-family: var(--font-sans, var(--font-sans-stack));
+    transition: border-color var(--dur-fast) var(--ease),
+                box-shadow var(--dur-fast) var(--ease);
   }
   .input::placeholder { color: var(--fg-subtle); }
   .input:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-subtle);
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px var(--signal-subtle);
   }
   .label {
     display: block;
@@ -469,9 +576,9 @@ html.dark {
   .card-elevated    { @apply panel panel-elevated; padding: 16px; }
   .card-interactive { @apply panel panel-interactive; padding: 16px; }
   .card-glass {
-    background: rgba(23, 21, 15, 0.6);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(10, 26, 40, 0.85);
+    backdrop-filter: saturate(1.4) blur(16px);
+    border: 1px solid rgba(198, 162, 78, 0.08);
     border-radius: var(--radius-lg);
   }
 
@@ -545,12 +652,12 @@ html.dark {
     color: var(--fg);
     vertical-align: middle;
   }
-  .datatable tbody tr { transition: background-color var(--dur-fast) var(--ease-out); }
+  .datatable tbody tr { transition: background-color var(--dur-fast) var(--ease); }
   .datatable tbody tr:hover { background: var(--row-hover); }
   .datatable tbody tr[data-selected="true"] { background: var(--row-selected); }
   .datatable tbody tr[data-focused="true"] {
     background: var(--row-hover);
-    box-shadow: inset 2px 0 0 var(--accent);
+    box-shadow: inset 2px 0 0 var(--signal);
   }
   .datatable.has-row-actions tbody tr td:last-child { padding: 0 8px 0 0; }
   .datatable th.num,
@@ -599,7 +706,7 @@ html.dark {
     font-size: 12px;
     font-weight: 500;
     border: 1px solid var(--border);
-    transition: background var(--dur-fast) var(--ease-out);
+    transition: background var(--dur-fast) var(--ease);
   }
   .pill:hover { background: var(--border); }
 
@@ -672,7 +779,7 @@ html.dark {
   50% { opacity: 0.6; }
 }
 
-.animate-enter { animation: slideUp 200ms var(--ease-out) both; }
+.animate-enter { animation: slideUp 200ms var(--ease) both; }
 .animate-enter-delay-1 { animation-delay: 40ms; }
 .animate-enter-delay-2 { animation-delay: 80ms; }
 .animate-enter-delay-3 { animation-delay: 120ms; }
@@ -683,7 +790,31 @@ html.dark {
 .animate-enter-delay-8 { animation-delay: 320ms; }
 .animate-pulse-soft { animation: pulse-soft 2s var(--ease-in-out) infinite; }
 
-.page-transition { animation: slideUp 200ms var(--ease-out) both; }
+.page-transition { animation: slideUp 200ms var(--ease) both; }
+
+/* ── Drafting Room — gold flash for number changes ───────────────────── */
+@keyframes goldFlash {
+  0%   { background-color: var(--signal-subtle); }
+  100% { background-color: transparent; }
+}
+.number-changed {
+  animation: goldFlash 180ms var(--ease) both;
+  border-radius: var(--radius-xs);
+}
+
+/* ── Drafting Room — drawer / sheet spring open ──────────────────────── */
+@keyframes drawerIn {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.drawer-enter { animation: drawerIn var(--dur-drawer) var(--ease-spring) both; }
+
+/* ── Drafting Room — content fade (the 80ms daily-page loader) ───────── */
+@keyframes contentFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.content-ready { animation: contentFade 80ms ease-out both; }
 
 /* ============================================================================
    REDUCED MOTION
@@ -692,8 +823,11 @@ html.dark {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 120ms !important;
+    transition-timing-function: ease-out !important;
   }
+  /* Keep paper grain + grid visible but kill parallax/drift */
+  body::before, body::after { animation: none !important; }
 }
 
 /* ============================================================================

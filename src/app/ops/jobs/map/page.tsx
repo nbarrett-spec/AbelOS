@@ -18,13 +18,13 @@ import Link from 'next/link'
 // ──────────────────────────────────────────────────────────────────────────
 
 const JOB_STATUSES = [
-  { key: 'ALL', label: 'All Jobs', color: '#3E2A1E' },
+  { key: 'ALL', label: 'All Jobs', color: '#0f2a3e' },
   { key: 'CREATED', label: 'New', color: '#95A5A6' },
   { key: 'READINESS_CHECK', label: 'T-72 Check', color: '#3498DB' },
   { key: 'MATERIALS_LOCKED', label: 'T-48 Lock', color: '#4B0082' },
   { key: 'IN_PRODUCTION', label: 'Production', color: '#9B59B6' },
   { key: 'STAGED', label: 'Staged', color: '#F1C40F' },
-  { key: 'LOADED', label: 'T-24 Loaded', color: '#C9822B' },
+  { key: 'LOADED', label: 'T-24 Loaded', color: '#C6A24E' },
   { key: 'IN_TRANSIT', label: 'In Transit', color: '#FFA500' },
   { key: 'DELIVERED', label: 'Delivered', color: '#1ABC9C' },
   { key: 'INSTALLING', label: 'Installing', color: '#00BCD4' },
@@ -290,10 +290,10 @@ export default function JobsiteMapPage() {
             <span>🔨 ${counts.installations} installs</span>
           </div>
           <div style="margin-top:10px;display:flex;gap:8px;">
-            <a href="/ops/jobs/${job.id}" style="display:inline-block;background:#3E2A1E;color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">
+            <a href="/ops/jobs/${job.id}" style="display:inline-block;background:#0f2a3e;color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">
               Full Job Detail →
             </a>
-            <a href="/ops/jobs/${job.id}#orders" style="display:inline-block;background:#C9822B;color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">
+            <a href="/ops/jobs/${job.id}#orders" style="display:inline-block;background:#C6A24E;color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">
               Orders & WOs
             </a>
           </div>
@@ -357,7 +357,7 @@ export default function JobsiteMapPage() {
             </Link>
             <Link
               href="/ops/delivery"
-              className="bg-[#C9822B] hover:bg-[#A86B1F] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="bg-[#C6A24E] hover:bg-[#A8882A] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               Delivery Center →
             </Link>
@@ -408,7 +408,7 @@ export default function JobsiteMapPage() {
             placeholder="Search by builder, address, community, job #..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3E2A1E] focus:border-transparent"
+            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
           />
           <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -426,14 +426,14 @@ export default function JobsiteMapPage() {
           {loading ? (
             <div className="flex items-center justify-center h-full bg-gray-100">
               <div className="text-center">
-                <div className="w-10 h-10 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <div className="w-10 h-10 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-gray-600 text-sm">Loading jobs...</p>
               </div>
             </div>
           ) : geocoding && geocodeProgress.done === 0 ? (
             <div className="flex items-center justify-center h-full bg-gray-100">
               <div className="text-center">
-                <div className="w-10 h-10 border-4 border-[#C9822B] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <div className="w-10 h-10 border-4 border-[#C6A24E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-gray-600 text-sm">Geocoding addresses...</p>
                 <p className="text-gray-400 text-xs mt-1">This may take a moment for first load</p>
               </div>
@@ -447,13 +447,13 @@ export default function JobsiteMapPage() {
               />
               {geocoding && (
                 <div className="absolute top-3 left-3 z-[1000] bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-[#C9822B] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-[#C6A24E] border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs text-gray-600">
                     Geocoding {geocodeProgress.done}/{geocodeProgress.total}...
                   </span>
                   <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#C9822B] rounded-full transition-all"
+                      className="h-full bg-[#C6A24E] rounded-full transition-all"
                       style={{
                         width: `${geocodeProgress.total > 0 ? (geocodeProgress.done / geocodeProgress.total) * 100 : 0}%`,
                       }}
@@ -519,14 +519,14 @@ export default function JobsiteMapPage() {
               <div className="space-y-2 pt-2">
                 <Link
                   href={`/ops/jobs/${selectedJob.id}`}
-                  className="block w-full text-center bg-[#3E2A1E] hover:bg-[#163d5c] text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                  className="block w-full text-center bg-[#0f2a3e] hover:bg-[#163d5c] text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
                 >
                   Open Full Job Detail →
                 </Link>
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     href={`/ops/jobs/${selectedJob.id}#orders`}
-                    className="text-center bg-[#C9822B] hover:bg-[#A86B1F] text-white py-2 rounded-lg text-xs font-medium transition-colors"
+                    className="text-center bg-[#C6A24E] hover:bg-[#A8882A] text-white py-2 rounded-lg text-xs font-medium transition-colors"
                   >
                     Sales Orders
                   </Link>

@@ -117,7 +117,7 @@ export default function CurriIntegrationPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
-                  ? 'border-[#C9822B] text-[#C9822B]'
+                  ? 'border-[#C6A24E] text-[#C6A24E]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -188,7 +188,7 @@ function BookingTab() {
               href="https://app.curri.com/book"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-[#3E2A1E] hover:underline"
+              className="text-xs text-[#0f2a3e] hover:underline"
             >
               Open in new tab ↗
             </a>
@@ -278,7 +278,7 @@ function BookingTab() {
           <div className="col-span-2">
             <button
               type="submit"
-              className="bg-[#3E2A1E] hover:bg-[#163d5c] text-white px-6 py-2 rounded-lg text-sm font-medium"
+              className="bg-[#0f2a3e] hover:bg-[#163d5c] text-white px-6 py-2 rounded-lg text-sm font-medium"
             >
               Log Curri Booking
             </button>
@@ -323,7 +323,7 @@ function TrackingTab({
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${
               filter === f.key
-                ? 'bg-[#3E2A1E] text-white'
+                ? 'bg-[#0f2a3e] text-white'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
@@ -334,7 +334,7 @@ function TrackingTab({
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">

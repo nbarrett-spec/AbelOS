@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 
 const DEFAULT_BRANDING = {
   logoUrl: null,
-  primaryColor: '#3E2A1E',
-  secondaryColor: '#C9822B',
+  primaryColor: '#0f2a3e',
+  secondaryColor: '#C6A24E',
   accentColor: '#2ECC71',
   fontFamily: 'Inter',
   portalTitle: null,

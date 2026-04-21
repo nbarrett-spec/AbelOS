@@ -69,7 +69,7 @@ const KIND_META: Record<
   slow_query: {
     label: 'Slow Query',
     chipClass: 'bg-amber-100 text-amber-800 border-amber-300',
-    dotClass: 'bg-amber-500',
+    dotClass: 'bg-signal',
     icon: '⏱',
   },
   cron_failure: {

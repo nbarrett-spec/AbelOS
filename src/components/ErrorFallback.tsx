@@ -55,7 +55,7 @@ export default function ErrorFallback({
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-6 py-12">
       <div className="max-w-md w-full text-center card p-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-abel-amber/10 text-abel-amber mb-5">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-signal/10 text-signal mb-5">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="w-8 h-8"
@@ -72,10 +72,10 @@ export default function ErrorFallback({
             />
           </svg>
         </div>
-        <p className="text-xs font-semibold tracking-wider text-abel-amber uppercase mb-2">
+        <p className="text-xs font-semibold tracking-wider text-signal uppercase mb-2">
           {scope}
         </p>
-        <h1 className="text-xl font-bold text-abel-walnut mb-2">{title}</h1>
+        <h1 className="text-xl font-bold text-brand mb-2">{title}</h1>
         <p className="text-sm text-gray-600 mb-5 leading-relaxed">
           {error.message && process.env.NODE_ENV !== 'production'
             ? error.message

@@ -144,7 +144,7 @@ export default function HomeownerPortal() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
         <p className="text-gray-500 mt-4 text-sm">Loading your portal...</p>
       </div>
     )
@@ -156,7 +156,7 @@ export default function HomeownerPortal() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <h2 className="text-lg font-bold text-red-700 mb-2">Unable to Access Portal</h2>
           <p className="text-sm text-red-600 mb-4">{error}</p>
-          <a href="/homeowner" className="text-sm text-[#3E2A1E] font-medium hover:underline">
+          <a href="/homeowner" className="text-sm text-[#0f2a3e] font-medium hover:underline">
             Return to Login
           </a>
         </div>
@@ -172,7 +172,7 @@ export default function HomeownerPortal() {
           <p className="text-sm text-red-600 mb-4">Please try refreshing the page or contact Abel Lumber.</p>
           <button
             onClick={() => window.location.reload()}
-            className="text-sm text-[#3E2A1E] font-medium hover:underline"
+            className="text-sm text-[#0f2a3e] font-medium hover:underline"
           >
             Retry
           </button>
@@ -208,7 +208,7 @@ export default function HomeownerPortal() {
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
               isLocked || confirmed
                 ? 'bg-green-100 text-green-700'
-                : 'bg-[#C9822B]/10 text-[#C9822B]'
+                : 'bg-[#C6A24E]/10 text-[#C6A24E]'
             }`}>
               {isLocked || confirmed ? 'CONFIRMED' : 'SELECTIONS OPEN'}
             </span>
@@ -222,11 +222,11 @@ export default function HomeownerPortal() {
             <span className="text-xs font-medium text-gray-500">
               {data.progress.completedSelections} of {data.progress.totalSelections} selections made
             </span>
-            <span className="text-xs font-bold text-[#3E2A1E]">{progressPct}%</span>
+            <span className="text-xs font-bold text-[#0f2a3e]">{progressPct}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-[#3E2A1E] h-2 rounded-full transition-all duration-500"
+              className="bg-[#0f2a3e] h-2 rounded-full transition-all duration-500"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -273,7 +273,7 @@ export default function HomeownerPortal() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{selection.location}</span>
                         {isUpgraded && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C9822B]/10 text-[#C9822B]">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C6A24E]/10 text-[#C6A24E]">
                             UPGRADED
                           </span>
                         )}
@@ -287,14 +287,14 @@ export default function HomeownerPortal() {
                         {selection.selectedProduct?.name || 'Standard'}
                       </p>
                       {selection.adderCost > 0 && (
-                        <p className="text-xs text-[#C9822B] font-bold mt-1">
+                        <p className="text-xs text-[#C6A24E] font-bold mt-1">
                           +${selection.adderCost.toLocaleString('en-US', { minimumFractionDigits: 2 })} upgrade cost
                         </p>
                       )}
                       {!isLocked && !isExpanded && (
                         <button
                           onClick={() => loadUpgrades(selection.id, selection.baseProductId)}
-                          className="text-xs font-semibold text-[#C9822B] hover:text-[#A86B1F] mt-2 inline-flex items-center gap-1"
+                          className="text-xs font-semibold text-[#C6A24E] hover:text-[#A8882A] mt-2 inline-flex items-center gap-1"
                         >
                           View Upgrades
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -310,7 +310,7 @@ export default function HomeownerPortal() {
                         onClick={() => loadUpgrades(selection.id, selection.baseProductId)}
                         className={`flex-shrink-0 p-2 rounded-lg transition-all ${
                           isExpanded
-                            ? 'bg-[#C9822B]/10 text-[#C9822B]'
+                            ? 'bg-[#C6A24E]/10 text-[#C6A24E]'
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                       >
@@ -327,7 +327,7 @@ export default function HomeownerPortal() {
                   <div className="border-t border-gray-100 px-5 py-4 bg-gradient-to-br from-gray-50 to-white">
                     {loadingUpgrades === selection.id ? (
                       <div className="flex items-center justify-center py-6">
-                        <div className="w-5 h-5 border-2 border-[#3E2A1E] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
                         <span className="text-sm text-gray-400 ml-2">Loading options...</span>
                       </div>
                     ) : selectionUpgrades.length === 0 ? (
@@ -342,7 +342,7 @@ export default function HomeownerPortal() {
                             onClick={() => selectUpgrade(selection.id, selection.baseProductId, 0)}
                             className={`w-full text-left px-4 py-4 rounded-lg border transition-all duration-200 ${
                               selection.selectedProductId === selection.baseProductId
-                                ? 'border-[#3E2A1E] bg-white ring-2 ring-[#3E2A1E]/20 shadow-sm'
+                                ? 'border-[#0f2a3e] bg-white ring-2 ring-[#0f2a3e]/20 shadow-sm'
                                 : 'border-gray-200 hover:border-gray-300 bg-white/50'
                             }`}
                           >
@@ -369,7 +369,7 @@ export default function HomeownerPortal() {
                               </div>
                               {selection.selectedProductId === selection.baseProductId && (
                                 <div className="flex-shrink-0 pt-1">
-                                  <svg className="w-5 h-5 text-[#3E2A1E]" fill="currentColor" viewBox="0 0 20 20">
+                                  <svg className="w-5 h-5 text-[#0f2a3e]" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
                                 </div>
@@ -423,11 +423,11 @@ export default function HomeownerPortal() {
                                                 <p className="text-xs text-gray-500 line-clamp-1">{upgrade.description}</p>
                                               </div>
                                               <div className="flex-shrink-0 text-right">
-                                                <p className="text-sm font-bold text-[#C9822B] whitespace-nowrap">
+                                                <p className="text-sm font-bold text-[#C6A24E] whitespace-nowrap">
                                                   +${upgrade.priceDelta.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </p>
                                                 {isSelected && (
-                                                  <svg className="w-5 h-5 text-[#C9822B] ml-auto mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                                  <svg className="w-5 h-5 text-[#C6A24E] ml-auto mt-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                   </svg>
                                                 )}
@@ -454,15 +454,15 @@ export default function HomeownerPortal() {
                                         <div key={upgrade.id} className="relative group">
                                           {isPopular && (
                                             <div className="absolute -top-2.5 left-4 z-10">
-                                              <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#C9822B] text-white uppercase">Popular</span>
+                                              <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#C6A24E] text-white uppercase">Popular</span>
                                             </div>
                                           )}
                                           <button
                                             onClick={() => selectUpgrade(selection.id, upgrade.toProductId, upgrade.priceDelta)}
                                             className={`w-full text-left px-4 py-3 rounded-lg border transition-all duration-200 ${
                                               isSelected
-                                                ? 'border-[#C9822B] bg-white ring-2 ring-[#C9822B]/20 shadow-md'
-                                                : 'border-gray-200 hover:border-[#C9822B]/50 bg-white hover:shadow-sm'
+                                                ? 'border-[#C6A24E] bg-white ring-2 ring-[#C6A24E]/20 shadow-md'
+                                                : 'border-gray-200 hover:border-[#C6A24E]/50 bg-white hover:shadow-sm'
                                             }`}
                                           >
                                             <div className="flex items-start gap-3">
@@ -472,10 +472,10 @@ export default function HomeownerPortal() {
                                                   alt={upgrade.product.name}
                                                   width={70}
                                                   height={70}
-                                                  className="w-[70px] h-[70px] object-cover rounded-lg border border-gray-200 flex-shrink-0 group-hover:border-[#C9822B]/30 transition-colors"
+                                                  className="w-[70px] h-[70px] object-cover rounded-lg border border-gray-200 flex-shrink-0 group-hover:border-[#C6A24E]/30 transition-colors"
                                                 />
                                               ) : (
-                                                <div className="w-[70px] h-[70px] bg-[#C9822B]/10 rounded-lg flex items-center justify-center text-[#C9822B] text-2xl flex-shrink-0">✨</div>
+                                                <div className="w-[70px] h-[70px] bg-[#C6A24E]/10 rounded-lg flex items-center justify-center text-[#C6A24E] text-2xl flex-shrink-0">✨</div>
                                               )}
                                               <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-0.5">
@@ -485,11 +485,11 @@ export default function HomeownerPortal() {
                                                 <p className="text-xs text-gray-500 line-clamp-1">{upgrade.description}</p>
                                               </div>
                                               <div className="flex-shrink-0 text-right">
-                                                <p className="text-sm font-bold text-[#C9822B] whitespace-nowrap">
+                                                <p className="text-sm font-bold text-[#C6A24E] whitespace-nowrap">
                                                   +${upgrade.priceDelta.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </p>
                                                 {isSelected && (
-                                                  <svg className="w-5 h-5 text-[#C9822B] ml-auto mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                                  <svg className="w-5 h-5 text-[#C6A24E] ml-auto mt-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                   </svg>
                                                 )}
@@ -521,11 +521,11 @@ export default function HomeownerPortal() {
           <div className="max-w-4xl mx-auto">
             {/* Upgrade Summary */}
             {totalUpgradeCost > 0 && (
-              <div className="mb-4 p-4 bg-gradient-to-r from-[#C9822B]/10 to-[#C9822B]/5 rounded-lg border border-[#C9822B]/20">
+              <div className="mb-4 p-4 bg-gradient-to-r from-[#C6A24E]/10 to-[#C6A24E]/5 rounded-lg border border-[#C6A24E]/20">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Upgrade Summary</p>
-                    <p className="text-lg font-bold text-[#C9822B]">
+                    <p className="text-lg font-bold text-[#C6A24E]">
                       +${totalUpgradeCost.toLocaleString('en-US', { minimumFractionDigits: 2 })} total
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
@@ -560,7 +560,7 @@ export default function HomeownerPortal() {
               ) : (
                 <button
                   onClick={() => setShowConfirmDialog(true)}
-                  className="px-6 py-3 bg-[#C9822B] text-white rounded-lg font-semibold text-sm hover:bg-[#A86B1F] transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex-1 sm:flex-initial"
+                  className="px-6 py-3 bg-[#C6A24E] text-white rounded-lg font-semibold text-sm hover:bg-[#A8882A] transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex-1 sm:flex-initial"
                 >
                   Confirm My Selections
                 </button>
@@ -575,8 +575,8 @@ export default function HomeownerPortal() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-[#C9822B]/10 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-[#C9822B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-[#C6A24E]/10 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-[#C6A24E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -591,12 +591,12 @@ export default function HomeownerPortal() {
             <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 p-4 mb-5 space-y-3">
               <div className="flex justify-between items-baseline">
                 <span className="text-sm text-gray-600">Total selections:</span>
-                <span className="text-lg font-bold text-[#3E2A1E]">{selections.length}</span>
+                <span className="text-lg font-bold text-[#0f2a3e]">{selections.length}</span>
               </div>
               <div className="w-full h-px bg-gray-200"></div>
               <div className="flex justify-between items-baseline">
                 <span className="text-sm text-gray-600">Locations upgraded:</span>
-                <span className="text-lg font-bold text-[#C9822B]">
+                <span className="text-lg font-bold text-[#C6A24E]">
                   {selections.filter(s => s.selectedProductId !== s.baseProductId).length}
                 </span>
               </div>
@@ -605,7 +605,7 @@ export default function HomeownerPortal() {
                   <div className="w-full h-px bg-gray-200"></div>
                   <div className="flex justify-between items-baseline">
                     <span className="text-sm font-medium text-gray-700">Additional upgrade cost:</span>
-                    <span className="text-lg font-bold text-[#C9822B]">
+                    <span className="text-lg font-bold text-[#C6A24E]">
                       +${totalUpgradeCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -615,7 +615,7 @@ export default function HomeownerPortal() {
 
             {/* Upgraded Items List */}
             {selections.some(s => s.selectedProductId !== s.baseProductId) && (
-              <div className="mb-5 p-3 bg-[#C9822B]/5 rounded-lg border border-[#C9822B]/20">
+              <div className="mb-5 p-3 bg-[#C6A24E]/5 rounded-lg border border-[#C6A24E]/20">
                 <p className="text-xs font-semibold text-gray-700 mb-2 uppercase">Upgraded selections:</p>
                 <div className="space-y-1.5">
                   {selections
@@ -623,7 +623,7 @@ export default function HomeownerPortal() {
                     .map(s => (
                       <div key={s.id} className="text-xs text-gray-600">
                         <span className="font-medium">{s.location}:</span>
-                        <span className="text-[#C9822B] font-semibold ml-1">
+                        <span className="text-[#C6A24E] font-semibold ml-1">
                           +${s.adderCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -642,7 +642,7 @@ export default function HomeownerPortal() {
               <button
                 onClick={handleConfirm}
                 disabled={confirming}
-                className="flex-1 px-4 py-2.5 bg-[#C9822B] text-white rounded-lg text-sm font-semibold hover:bg-[#A86B1F] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 bg-[#C6A24E] text-white rounded-lg text-sm font-semibold hover:bg-[#A8882A] transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {confirming ? (
                   <>

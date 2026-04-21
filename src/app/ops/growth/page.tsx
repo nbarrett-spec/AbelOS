@@ -20,15 +20,15 @@ const TYPE_COLORS: Record<string, string> = {
 
 const EFFORT_COLORS: Record<string, string> = {
   LOW: '#27ae60',
-  MEDIUM: '#C9822B',
+  MEDIUM: '#C6A24E',
   HIGH: '#e74c3c',
 }
 
 function KPICard({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
     </div>
   )
 }
@@ -158,7 +158,7 @@ export default function GrowthOpportunitiesPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Growth Opportunities</h1>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Growth Opportunities</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 24 }}>Revenue expansion signals from live data — cross-sell, volume growth, win-back, pricing, and new account activation</p>
 
       {error && (
@@ -170,7 +170,7 @@ export default function GrowthOpportunitiesPage() {
 
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <KPICard label="Total Opportunities" value={totalOpportunities} color="#3E2A1E" />
+        <KPICard label="Total Opportunities" value={totalOpportunities} color="#0f2a3e" />
         <KPICard label="Combined Impact" value={`$${(totalImpact / 1000).toFixed(0)}K`} color="#27ae60" />
         <KPICard label="Cross-Sell Opps" value={summaryByType['CROSS_SELL'] || 0} color={TYPE_COLORS.CROSS_SELL} />
         <KPICard label="Volume Upgrades" value={summaryByType['VOLUME_UPGRADE'] || 0} color={TYPE_COLORS.VOLUME_UPGRADE} />
@@ -239,7 +239,7 @@ function OpportunityCard({ opportunity, isApproved, onApprove, onDismiss }: { op
           <Badge text={opportunity.effort} color={effortColor} />
         </div>
 
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#3E2A1E', marginBottom: 8 }}>{opportunity.title}</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>{opportunity.title}</h3>
 
         <p style={{ fontSize: 13, color: '#666', marginBottom: 12, lineHeight: 1.5 }}>{opportunity.description}</p>
 
@@ -278,7 +278,7 @@ function OpportunityCard({ opportunity, isApproved, onApprove, onDismiss }: { op
           </div>
         ) : (
           <>
-            <button onClick={onApprove} style={{ padding: '10px 16px', background: '#3E2A1E', color: '#fff', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={onApprove} style={{ padding: '10px 16px', background: '#0f2a3e', color: '#fff', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               Approve
             </button>
             <button onClick={onDismiss} style={{ padding: '10px 16px', background: '#f5f5f5', color: '#666', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>

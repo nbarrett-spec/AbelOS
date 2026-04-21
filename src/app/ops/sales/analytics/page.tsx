@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 
-const BLUE = '#3E2A1E'
-const ORANGE = '#C9822B'
+const BLUE = '#0f2a3e'
+const ORANGE = '#C6A24E'
 const WHITE = '#FFFFFF'
 const LIGHT_GRAY = '#f8f9fa'
 const BORDER_GRAY = '#ddd'
@@ -327,7 +327,7 @@ export default function AnalyticsDashboard() {
   const rankBadges = (won: number, allWon: number[]) => {
     const sorted = [...allWon].sort((a, b) => b - a)
     const rank = sorted.findIndex(w => w === won)
-    if (rank === 0) return { badge: '🥇', color: '#D9993F' }
+    if (rank === 0) return { badge: '🥇', color: '#D4B96A' }
     if (rank === 1) return { badge: '🥈', color: '#95a5a6' }
     if (rank === 2) return { badge: '🥉', color: '#cd7f32' }
     return { badge: '', color: '' }

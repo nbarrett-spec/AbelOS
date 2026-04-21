@@ -48,7 +48,7 @@ export default function LocationsPage() {
           <p className="text-sm text-gray-500 mt-1">Manage warehouse and branch locations for multi-site operations</p>
         </div>
         <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#3E2A1E] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2A1C14]">
+          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
           <Plus className="w-4 h-4" /> Add Location
         </button>
       </div>
@@ -63,13 +63,13 @@ export default function LocationsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {locations.map(loc => (
-            <div key={loc.id} className={`bg-white border-2 rounded-xl p-5 ${loc.isPrimary ? 'border-[#C9822B]' : 'border-gray-200'}`}>
+            <div key={loc.id} className={`bg-white border-2 rounded-xl p-5 ${loc.isPrimary ? 'border-[#C6A24E]' : 'border-gray-200'}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-gray-900">{loc.name}</h3>
                     {loc.isPrimary && (
-                      <span className="text-xs bg-[#C9822B]/10 text-[#C9822B] px-2 py-0.5 rounded-full font-medium">PRIMARY</span>
+                      <span className="text-xs bg-[#C6A24E]/10 text-[#C6A24E] px-2 py-0.5 rounded-full font-medium">PRIMARY</span>
                     )}
                   </div>
                   <span className="text-xs text-gray-500">Code: {loc.code} &bull; {loc.type}</span>
@@ -166,7 +166,7 @@ export default function LocationsPage() {
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
               <button onClick={createLocation} disabled={!newLoc.name || !newLoc.code}
-                className="px-4 py-2 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50">
                 Create Location
               </button>
             </div>

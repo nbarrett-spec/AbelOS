@@ -155,9 +155,9 @@ export default function OrganizationsPage() {
   const getTypeColor = (type: string): string => {
     switch (type?.toLowerCase()) {
       case 'builder':
-        return '#3E2A1E'
+        return '#0f2a3e'
       case 'vendor':
-        return '#C9822B'
+        return '#C6A24E'
       case 'subcontractor':
         return '#27ae60'
       default:
@@ -301,7 +301,7 @@ export default function OrganizationsPage() {
   if (loading) {
     return (
       <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#3E2A1E', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0f2a3e', marginBottom: '8px' }}>
           Organizations
         </h1>
         <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '24px' }}>
@@ -313,7 +313,7 @@ export default function OrganizationsPage() {
             width: '40px',
             height: '40px',
             border: '4px solid #e5e7eb',
-            borderTop: '4px solid #3E2A1E',
+            borderTop: '4px solid #0f2a3e',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
           }} />
@@ -332,7 +332,7 @@ export default function OrganizationsPage() {
   if (error) {
     return (
       <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#3E2A1E', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0f2a3e', marginBottom: '8px' }}>
           Organizations
         </h1>
         <div style={{
@@ -354,7 +354,7 @@ export default function OrganizationsPage() {
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#3E2A1E', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0f2a3e', marginBottom: '8px' }}>
           Organizations
         </h1>
         <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '24px' }}>
@@ -399,7 +399,7 @@ export default function OrganizationsPage() {
             onClick={() => setShowAddModal(true)}
             style={{
               padding: '12px 24px',
-              backgroundColor: '#3E2A1E',
+              backgroundColor: '#0f2a3e',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -412,7 +412,7 @@ export default function OrganizationsPage() {
               (e.currentTarget as HTMLElement).style.backgroundColor = '#0f3453'
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = '#3E2A1E'
+              (e.currentTarget as HTMLElement).style.backgroundColor = '#0f2a3e'
             }}
           >
             + Add Organization
@@ -531,8 +531,8 @@ export default function OrganizationsPage() {
                       <span style={{
                         display: 'inline-block',
                         padding: '3px 8px',
-                        backgroundColor: '#C9822B20',
-                        color: '#C9822B',
+                        backgroundColor: '#C6A24E20',
+                        color: '#C6A24E',
                         borderRadius: '4px',
                         fontSize: '11px',
                         fontWeight: 600,
@@ -557,8 +557,8 @@ export default function OrganizationsPage() {
                       <span style={{
                         display: 'inline-block',
                         padding: '3px 8px',
-                        backgroundColor: '#3E2A1E20',
-                        color: '#3E2A1E',
+                        backgroundColor: '#0f2a3e20',
+                        color: '#0f2a3e',
                         borderRadius: '4px',
                         fontSize: '11px',
                         fontWeight: 600,
@@ -735,8 +735,8 @@ export default function OrganizationsPage() {
                               <div style={{
                                 display: 'inline-block',
                                 padding: '3px 8px',
-                                backgroundColor: '#3E2A1E20',
-                                color: '#3E2A1E',
+                                backgroundColor: '#0f2a3e20',
+                                color: '#0f2a3e',
                                 borderRadius: '4px',
                                 fontSize: '11px',
                                 fontWeight: 600,
@@ -747,8 +747,8 @@ export default function OrganizationsPage() {
                               <div style={{
                                 display: 'inline-block',
                                 padding: '3px 8px',
-                                backgroundColor: '#C9822B20',
-                                color: '#C9822B',
+                                backgroundColor: '#C6A24E20',
+                                color: '#C6A24E',
                                 borderRadius: '4px',
                                 fontSize: '11px',
                                 fontWeight: 600,
@@ -816,7 +816,7 @@ export default function OrganizationsPage() {
                         onClick={(e) => e.stopPropagation()}
                         style={{
                           padding: '8px 16px',
-                          backgroundColor: '#C9822B',
+                          backgroundColor: '#C6A24E',
                           color: 'white',
                           borderRadius: '6px',
                           fontSize: '13px',
@@ -834,7 +834,7 @@ export default function OrganizationsPage() {
                         onClick={(e) => e.stopPropagation()}
                         style={{
                           padding: '8px 16px',
-                          backgroundColor: '#3E2A1E',
+                          backgroundColor: '#0f2a3e',
                           color: 'white',
                           borderRadius: '6px',
                           fontSize: '13px',
@@ -906,7 +906,7 @@ export default function OrganizationsPage() {
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
                 Add Division
               </h2>
               <button
@@ -1266,7 +1266,7 @@ export default function OrganizationsPage() {
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#3E2A1E', margin: 0 }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
                 Add Organization
               </h2>
               <button
@@ -1673,7 +1673,7 @@ export default function OrganizationsPage() {
                   disabled={submitting}
                   style={{
                     padding: '10px 24px',
-                    backgroundColor: submitting ? '#9ca3af' : '#3E2A1E',
+                    backgroundColor: submitting ? '#9ca3af' : '#0f2a3e',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -1689,7 +1689,7 @@ export default function OrganizationsPage() {
                   }}
                   onMouseLeave={(e) => {
                     if (!submitting) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = '#3E2A1E'
+                      (e.currentTarget as HTMLElement).style.backgroundColor = '#0f2a3e'
                     }
                   }}
                 >

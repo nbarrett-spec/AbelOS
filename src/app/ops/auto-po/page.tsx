@@ -242,12 +242,12 @@ export default function AutoPOPage() {
                   <p className="text-sm font-medium text-gray-600">
                     Needs Reorder
                   </p>
-                  <p className="mt-2 text-3xl font-bold text-amber-600">
+                  <p className="mt-2 text-3xl font-bold text-signal">
                     {data.stats.needsReorder}
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-lg bg-amber-100 flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-amber-600" />
+                  <AlertCircle className="h-6 w-6 text-signal" />
                 </div>
               </div>
             </div>
@@ -318,7 +318,7 @@ export default function AutoPOPage() {
                             selectedProducts.size === data.candidates.length
                           }
                           onChange={handleSelectAll}
-                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          className="h-4 w-4 rounded border-gray-300 text-signal focus:ring-amber-500"
                           aria-label="Select all candidates"
                         />
                       </th>
@@ -355,7 +355,7 @@ export default function AutoPOPage() {
                             onChange={() =>
                               handleSelectProduct(candidate.id)
                             }
-                            className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                            className="h-4 w-4 rounded border-gray-300 text-signal focus:ring-amber-500"
                             aria-label={`Select ${candidate.name}`}
                           />
                         </td>
@@ -417,7 +417,7 @@ export default function AutoPOPage() {
                     disabled={
                       data.candidates.length === 0 || generating
                     }
-                    className="inline-flex items-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center rounded-lg bg-signal px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {generating ? (
                       <>

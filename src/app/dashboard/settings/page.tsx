@@ -243,7 +243,7 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C9822B] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C6A24E] mx-auto mb-4"></div>
           <p className="text-gray-600">Loading settings...</p>
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('companyName', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactName', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -340,7 +340,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactEmail', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -355,7 +355,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactPhone', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -370,7 +370,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('address', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -385,7 +385,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('city', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('state', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -415,7 +415,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('zip', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
               </div>
@@ -425,7 +425,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSaveProfile}
                   disabled={profileSaving}
-                  className="px-6 py-2 bg-[#C9822B] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-[#C6A24E] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {profileSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -452,7 +452,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('currentPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('newPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Minimum 8 characters
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('confirmPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C9822B] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -502,7 +502,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSavePassword}
                   disabled={passwordSaving}
-                  className="px-6 py-2 bg-[#C9822B] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-[#C6A24E] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {passwordSaving ? 'Saving...' : 'Update Password'}
                 </button>
@@ -533,7 +533,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('orderUpdates')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.orderUpdates ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.orderUpdates ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -557,7 +557,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('quoteReady')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.quoteReady ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.quoteReady ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -581,7 +581,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('deliveryAlerts')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.deliveryAlerts ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.deliveryAlerts ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -605,7 +605,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('warrantyUpdates')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.warrantyUpdates ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.warrantyUpdates ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -629,7 +629,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('invoiceAlerts')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.invoiceAlerts ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.invoiceAlerts ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -653,7 +653,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('promotions')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.promotions ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.promotions ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -677,7 +677,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('weeklyDigest')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.weeklyDigest ? 'bg-[#C9822B]' : 'bg-gray-300'
+                      preferences.weeklyDigest ? 'bg-[#C6A24E]' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -694,7 +694,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSavePreferences}
                   disabled={preferencesSaving}
-                  className="px-6 py-2 bg-[#C9822B] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-[#C6A24E] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {preferencesSaving ? 'Saving...' : 'Save Preferences'}
                 </button>

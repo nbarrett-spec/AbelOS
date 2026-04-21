@@ -60,8 +60,8 @@ interface PMEmailData {
 }
 
 const BRAND_COLORS = {
-  walnut: '#3E2A1E',
-  amber: '#C9822B',
+  walnut: '#0f2a3e',
+  amber: '#C6A24E',
   lightGray: '#F5F5F5',
   darkGray: '#333',
   red: '#DC2626',

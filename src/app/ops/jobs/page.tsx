@@ -10,7 +10,7 @@ const JOB_STATUSES = [
   { key: 'MATERIALS_LOCKED', label: 'T-48 Lock', color: '#4B0082' },
   { key: 'IN_PRODUCTION', label: 'Production', color: '#9B59B6' },
   { key: 'STAGED', label: 'Staged', color: '#F1C40F' },
-  { key: 'LOADED', label: 'T-24 Loaded', color: '#C9822B' },
+  { key: 'LOADED', label: 'T-24 Loaded', color: '#C6A24E' },
   { key: 'IN_TRANSIT', label: 'In Transit', color: '#FFA500' },
   { key: 'DELIVERED', label: 'Delivered', color: '#1ABC9C' },
   { key: 'INSTALLING', label: 'Installing', color: '#00BCD4' },
@@ -122,7 +122,7 @@ export default function JobPipelinePage() {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#3E2A1E]" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
           <p className="mt-4 text-gray-600">Loading jobs...</p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function JobPipelinePage() {
         <div className="flex gap-2">
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] transition-colors"
+            className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
           >
             + Create Job
           </button>
@@ -163,14 +163,14 @@ export default function JobPipelinePage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search jobs by builder, community..."
-          className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#3E2A1E]/20 focus:border-[#3E2A1E]"
+          className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
         />
         <div className="flex gap-1">
           <button
             onClick={() => setViewMode('board')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               viewMode === 'board'
-                ? 'bg-[#3E2A1E] text-white'
+                ? 'bg-[#0f2a3e] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -180,7 +180,7 @@ export default function JobPipelinePage() {
             onClick={() => setViewMode('list')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               viewMode === 'list'
-                ? 'bg-[#3E2A1E] text-white'
+                ? 'bg-[#0f2a3e] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -195,7 +195,7 @@ export default function JobPipelinePage() {
           onClick={() => setActiveFilter('ALL')}
           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
             activeFilter === 'ALL'
-              ? 'bg-[#3E2A1E] text-white border-transparent'
+              ? 'bg-[#0f2a3e] text-white border-transparent'
               : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
           }`}
         >
@@ -256,7 +256,7 @@ export default function JobPipelinePage() {
                           href={`/ops/jobs/${job.id}`}
                           className="block"
                         >
-                          <div className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md hover:border-[#3E2A1E] transition-all cursor-pointer">
+                          <div className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md hover:border-[#0f2a3e] transition-all cursor-pointer">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
                                 <p className="text-xs font-semibold text-gray-900 truncate">
@@ -352,7 +352,7 @@ export default function JobPipelinePage() {
                         <td className="px-4 py-3">
                           <Link
                             href={`/ops/jobs/${job.id}`}
-                            className="text-sm font-medium text-[#3E2A1E] hover:underline"
+                            className="text-sm font-medium text-[#0f2a3e] hover:underline"
                           >
                             {job.builderName}
                           </Link>
@@ -413,7 +413,7 @@ export default function JobPipelinePage() {
           <WorkflowStep
             label="T-24 Load Confirm"
             description="Stage materials in warehouse. Picks & pack slips generated. Pre-departure photos taken. Route planned."
-            color="#C9822B"
+            color="#C6A24E"
           />
           <WorkflowStep
             label="Day-of Delivery"

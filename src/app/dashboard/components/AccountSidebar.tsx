@@ -58,7 +58,7 @@ export default function AccountSidebar({
       {accountRep && (
         <Card variant="default" padding="md" rounded="2xl" className="animate-enter animate-enter-delay-1">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-5 h-5 rounded flex items-center justify-center text-abel-walnut dark:text-abel-walnut-light">
+            <div className="w-5 h-5 rounded flex items-center justify-center text-signal">
               <MessageSquare className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Your Account Manager</h3>
@@ -84,7 +84,7 @@ export default function AccountSidebar({
             {accountRep.email && (
               <a
                 href={`mailto:${accountRep.email}`}
-                className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300 hover:text-abel-walnut dark:hover:text-abel-walnut-light transition-colors"
+                className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-brand-hover transition-colors"
               >
                 <Mail className="w-3.5 h-3.5 text-gray-400" />
                 {accountRep.email}
@@ -93,7 +93,7 @@ export default function AccountSidebar({
             {accountRep.phone && (
               <a
                 href={`tel:${accountRep.phone}`}
-                className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300 hover:text-abel-walnut dark:hover:text-abel-walnut-light transition-colors"
+                className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-brand-hover transition-colors"
               >
                 <Phone className="w-3.5 h-3.5 text-gray-400" />
                 {accountRep.phone}
@@ -118,7 +118,7 @@ export default function AccountSidebar({
       {paymentSummary && (
         <Card variant="default" padding="md" rounded="2xl" className="animate-enter animate-enter-delay-2">
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-4 h-4 text-abel-amber" />
+            <FileText className="w-4 h-4 text-signal" />
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Payment Summary</h3>
           </div>
 
@@ -131,7 +131,7 @@ export default function AccountSidebar({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-500 dark:text-gray-400">Total Outstanding</span>
-              <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+              <span className="text-sm font-bold text-signal">
                 {formatCurrencyFull(paymentSummary.totalOutstanding)}
               </span>
             </div>
@@ -186,7 +186,7 @@ export default function AccountSidebar({
       {lifetimeStats && (
         <Card variant="default" padding="md" rounded="2xl" className="animate-enter animate-enter-delay-4">
           <div className="flex items-center gap-2 mb-4">
-            <Award className="w-4 h-4 text-abel-amber" />
+            <Award className="w-4 h-4 text-signal" />
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Lifetime Stats</h3>
           </div>
 
@@ -197,7 +197,7 @@ export default function AccountSidebar({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-500 dark:text-gray-400">Lifetime Value</span>
-              <span className="text-sm font-bold text-abel-amber">{formatCurrency(lifetimeStats.lifetimeValue)}</span>
+              <span className="text-sm font-bold text-signal">{formatCurrency(lifetimeStats.lifetimeValue)}</span>
             </div>
             <div className="flex justify-between items-center pt-2.5 border-t border-gray-100 dark:border-gray-800">
               <span className="text-xs text-gray-500 dark:text-gray-400">Last 30 Days</span>

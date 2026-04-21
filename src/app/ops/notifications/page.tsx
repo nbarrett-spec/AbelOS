@@ -261,7 +261,7 @@ export default function NotificationsPage() {
             onClick={() => setSelectedFilter(filterType as any)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
               selectedFilter === filterType
-                ? 'bg-[#C9822B] text-white'
+                ? 'bg-[#C6A24E] text-white'
                 : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
             }`}
           >
@@ -308,7 +308,7 @@ export default function NotificationsPage() {
                         className={`w-full text-left px-6 py-4 border-l-4 transition-all hover:bg-gray-50 ${
                           notification.read
                             ? 'border-transparent bg-white'
-                            : 'border-[#C9822B] bg-orange-50/30'
+                            : 'border-[#C6A24E] bg-orange-50/30'
                         } ${notification.link ? 'cursor-pointer' : ''}`}
                       >
                         <div className="flex gap-4">
@@ -339,7 +339,7 @@ export default function NotificationsPage() {
                                 </p>
                               </div>
                               {!notification.read && (
-                                <div className="w-2 h-2 rounded-full bg-[#C9822B] flex-shrink-0 mt-2" />
+                                <div className="w-2 h-2 rounded-full bg-[#C6A24E] flex-shrink-0 mt-2" />
                               )}
                             </div>
 

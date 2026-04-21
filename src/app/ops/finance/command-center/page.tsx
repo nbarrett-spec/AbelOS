@@ -146,8 +146,8 @@ export default function CommandCenterPage() {
   const arTrend_pct = null // Calculated from aging
 
   const colors = {
-    walnut: '#3E2A1E',
-    amber: '#C9822B',
+    walnut: '#0f2a3e',
+    amber: '#C6A24E',
     green: '#27AE60',
     red: '#dc2626',
     blue: '#3b82f6',
@@ -422,7 +422,7 @@ export default function CommandCenterPage() {
                   />
                 ))}
                 {/* Target line at 45 days */}
-                <line x1="40" y1={200 - (45 / 100) * 160} x2="480" y2={200 - (45 / 100) * 160} stroke="#c9822b" strokeWidth="2" strokeDasharray="5,5" />
+                <line x1="40" y1={200 - (45 / 100) * 160} x2="480" y2={200 - (45 / 100) * 160} stroke="#C6A24E" strokeWidth="2" strokeDasharray="5,5" />
 
                 {/* Line chart */}
                 {dsoTrend.length > 1 && (

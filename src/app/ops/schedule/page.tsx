@@ -211,7 +211,7 @@ export default function SchedulePage() {
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14]"
+            className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
           >
             + Schedule Install
           </button>
@@ -230,7 +230,7 @@ export default function SchedulePage() {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="px-2 py-1 text-xs font-semibold text-[#C9822B] border border-[#C9822B]/30 rounded hover:bg-[#C9822B]/5 transition"
+              className="px-2 py-1 text-xs font-semibold text-[#C6A24E] border border-[#C6A24E]/30 rounded hover:bg-[#C6A24E]/5 transition"
             >
               Today
             </button>
@@ -267,7 +267,7 @@ export default function SchedulePage() {
               onClick={() => setView(v)}
               className={`px-3 py-1.5 text-sm rounded-lg capitalize ${
                 view === v
-                  ? 'bg-[#3E2A1E] text-white'
+                  ? 'bg-[#0f2a3e] text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -281,7 +281,7 @@ export default function SchedulePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold">Today&apos;s Deliveries</p>
-          <p className="text-2xl font-bold text-[#3E2A1E] mt-1">{todayDeliveries}</p>
+          <p className="text-2xl font-bold text-[#0f2a3e] mt-1">{todayDeliveries}</p>
           <p className="text-xs text-gray-400 mt-1">
             {todayEntries.length > 0 ? `${todayEntries.length} total entries` : 'No entries'}
           </p>
@@ -295,7 +295,7 @@ export default function SchedulePage() {
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold">This Week</p>
-          <p className="text-2xl font-bold text-[#C9822B] mt-1">{weekDeliveries + weekInstalls}</p>
+          <p className="text-2xl font-bold text-[#C6A24E] mt-1">{weekDeliveries + weekInstalls}</p>
           <p className="text-xs text-gray-400 mt-1">
             {weekDeliveries} deliveries, {weekInstalls} installs
           </p>
@@ -317,9 +317,9 @@ export default function SchedulePage() {
               key={crew.name}
               className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-3"
             >
-              <p className="text-sm font-semibold text-[#3E2A1E]">{crew.name}</p>
+              <p className="text-sm font-semibold text-[#0f2a3e]">{crew.name}</p>
               <p className="text-xs text-gray-600 mb-2">{crew.crewType}</p>
-              <p className="text-2xl font-bold text-[#C9822B]">{crew.count}</p>
+              <p className="text-2xl font-bold text-[#C6A24E]">{crew.count}</p>
               <p className="text-xs text-gray-500">entries this week</p>
             </div>
           ))}
@@ -342,13 +342,13 @@ export default function SchedulePage() {
               <div
                 key={d.day}
                 className={`text-center py-4 border-r last:border-r-0 ${
-                  d.isToday ? 'bg-[#3E2A1E]/10' : 'bg-gray-50'
+                  d.isToday ? 'bg-[#0f2a3e]/10' : 'bg-gray-50'
                 }`}
               >
                 <p className="text-xs text-gray-500 uppercase font-semibold">{d.day}</p>
                 <p
                   className={`text-lg font-bold ${
-                    d.isToday ? 'text-[#C9822B]' : 'text-gray-900'
+                    d.isToday ? 'text-[#C6A24E]' : 'text-gray-900'
                   }`}
                 >
                   {d.date}
@@ -371,7 +371,7 @@ export default function SchedulePage() {
                       <div
                         key={`${hour}-${dayIndex}`}
                         className={`border-r last:border-r-0 px-1 py-1 hover:bg-gray-50 cursor-pointer ${
-                          d.isToday ? 'bg-[#3E2A1E]/[0.02]' : ''
+                          d.isToday ? 'bg-[#0f2a3e]/[0.02]' : ''
                         }`}
                       >
                         {dayIndex === 0 && (

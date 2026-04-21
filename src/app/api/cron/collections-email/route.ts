@@ -184,7 +184,7 @@ function generateEmail(builder: BuilderInvoices, tier: CollectionTier): EmailCon
         <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right;">$${inv.total.toFixed(2)}</td>
         <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: center;">${inv.daysOverdue}</td>
         <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">
-          <a href="https://app.abellumber.com/dashboard/invoices/${inv.id}" style="color: #C9822B; text-decoration: none;">Pay Invoice</a>
+          <a href="https://app.abellumber.com/dashboard/invoices/${inv.id}" style="color: #C6A24E; text-decoration: none;">Pay Invoice</a>
         </td>
       </tr>
     `
@@ -237,14 +237,14 @@ function generateEmail(builder: BuilderInvoices, tier: CollectionTier): EmailCon
       </p>
 
       ${builder.invoices.length > 1 ? `
-        <h3 style="color: #3E2A1E; font-size: 16px; margin-top: 24px; margin-bottom: 12px;">Outstanding Invoices</h3>
+        <h3 style="color: #0f2a3e; font-size: 16px; margin-top: 24px; margin-bottom: 12px;">Outstanding Invoices</h3>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
           <thead>
-            <tr style="background-color: #f5f5f5; border-bottom: 2px solid #3E2A1E;">
-              <th style="padding: 10px; text-align: left; color: #3E2A1E; font-weight: 600;">Invoice</th>
-              <th style="padding: 10px; text-align: right; color: #3E2A1E; font-weight: 600;">Amount</th>
-              <th style="padding: 10px; text-align: center; color: #3E2A1E; font-weight: 600;">Days Due</th>
-              <th style="padding: 10px; text-align: left; color: #3E2A1E; font-weight: 600;">Action</th>
+            <tr style="background-color: #f5f5f5; border-bottom: 2px solid #0f2a3e;">
+              <th style="padding: 10px; text-align: left; color: #0f2a3e; font-weight: 600;">Invoice</th>
+              <th style="padding: 10px; text-align: right; color: #0f2a3e; font-weight: 600;">Amount</th>
+              <th style="padding: 10px; text-align: center; color: #0f2a3e; font-weight: 600;">Days Due</th>
+              <th style="padding: 10px; text-align: left; color: #0f2a3e; font-weight: 600;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -254,7 +254,7 @@ function generateEmail(builder: BuilderInvoices, tier: CollectionTier): EmailCon
       ` : ''}
 
       <p style="margin: 20px 0;">
-        <a href="${paymentLink}" style="background-color: #C9822B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 600;">${cta}</a>
+        <a href="${paymentLink}" style="background-color: #C6A24E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 600;">${cta}</a>
       </p>
 
       ${tier !== 'hold' ? `

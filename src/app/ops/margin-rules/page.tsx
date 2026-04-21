@@ -49,7 +49,7 @@ export default function MarginRulesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Colors: walnut (#3E2A1E), amber (#C9822B), green (#27AE60)
+  // Colors: walnut (#0f2a3e), amber (#C6A24E), green (#27AE60)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +92,7 @@ export default function MarginRulesPage() {
     <div className="min-h-screen bg-gray-50 px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold" style={{ color: '#3E2A1E' }}>
+        <h1 className="text-3xl font-bold" style={{ color: '#0f2a3e' }}>
           Margin Protection Rules
         </h1>
         <p className="text-gray-600 mt-2">
@@ -105,7 +105,7 @@ export default function MarginRulesPage() {
         {/* Total Quotes */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-gray-300">
           <div className="text-gray-600 text-sm font-semibold uppercase">Total Quotes (30d)</div>
-          <div className="text-3xl font-bold mt-2" style={{ color: '#3E2A1E' }}>
+          <div className="text-3xl font-bold mt-2" style={{ color: '#0f2a3e' }}>
             {data.marginStats.totalQuotes30d}
           </div>
         </div>
@@ -161,7 +161,7 @@ export default function MarginRulesPage() {
       {/* Rules Table */}
       <div className="bg-white rounded-lg shadow mb-8">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold" style={{ color: '#3E2A1E' }}>
+          <h2 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
             Active Rules
           </h2>
         </div>
@@ -180,7 +180,7 @@ export default function MarginRulesPage() {
             <tbody>
               {data.rules.map((rule) => (
                 <tr key={rule.id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="px-6 py-4 font-semibold" style={{ color: '#3E2A1E' }}>
+                  <td className="px-6 py-4 font-semibold" style={{ color: '#0f2a3e' }}>
                     {rule.name}
                   </td>
                   <td className="px-6 py-4 text-gray-600">{rule.description}</td>
@@ -216,7 +216,7 @@ export default function MarginRulesPage() {
         {/* Product Margin Health */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold" style={{ color: '#3E2A1E' }}>
+            <h3 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
               Product Margin Health
             </h3>
           </div>
@@ -227,7 +227,7 @@ export default function MarginRulesPage() {
                   <div className="text-sm font-semibold text-gray-700">Low Margin Products</div>
                   <div className="text-xs text-gray-500 mt-1">&lt; 15% margin</div>
                 </div>
-                <div className="text-2xl font-bold" style={{ color: '#C9822B' }}>
+                <div className="text-2xl font-bold" style={{ color: '#C6A24E' }}>
                   {data.productHealth.lowMarginProducts}
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function MarginRulesPage() {
                   <div className="text-sm font-semibold text-gray-700">Total Active Products</div>
                   <div className="text-xs text-gray-500 mt-1">in catalog</div>
                 </div>
-                <div className="text-2xl font-bold" style={{ color: '#3E2A1E' }}>
+                <div className="text-2xl font-bold" style={{ color: '#0f2a3e' }}>
                   {data.productHealth.totalActiveProducts}
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function MarginRulesPage() {
         {/* Rule Impact */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold" style={{ color: '#3E2A1E' }}>
+            <h3 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
               Recent Activity
             </h3>
           </div>
@@ -297,7 +297,7 @@ export default function MarginRulesPage() {
       {data.violations.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold" style={{ color: '#3E2A1E' }}>
+            <h3 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
               Recent Margin Violations
             </h3>
             <p className="text-sm text-gray-600 mt-1">Quotes below 15% margin floor (last 30 days)</p>
@@ -317,13 +317,13 @@ export default function MarginRulesPage() {
               <tbody>
                 {data.violations.map((v) => (
                   <tr key={v.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-4 font-mono font-semibold" style={{ color: '#3E2A1E' }}>
+                    <td className="px-6 py-4 font-mono font-semibold" style={{ color: '#0f2a3e' }}>
                       {v.quoteNumber}
                     </td>
                     <td className="px-6 py-4 text-gray-700">{v.builderName}</td>
                     <td className="px-6 py-4 text-gray-600">{v.repName || '—'}</td>
                     <td className="px-6 py-4 text-right font-semibold">
-                      <span style={{ color: v.calculatedMargin < 0 ? '#dc2626' : '#C9822B' }}>
+                      <span style={{ color: v.calculatedMargin < 0 ? '#dc2626' : '#C6A24E' }}>
                         {v.calculatedMargin.toFixed(1)}%
                       </span>
                     </td>

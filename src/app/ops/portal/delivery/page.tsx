@@ -97,7 +97,7 @@ export default function DeliveryPortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#3E2A1E] text-white rounded-lg hover:bg-[#2A1C14] text-sm">
+        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
           Retry
         </button>
       </div>
@@ -136,7 +136,7 @@ export default function DeliveryPortal() {
           <p className="text-2xl font-bold text-gray-900 mt-1">{activeRoutes.length}</p>
           <p className="text-xs text-gray-400 mt-1">In delivery</p>
         </div>
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#C9822B] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-[#C6A24E] p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Crews Available</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
             {crewAssignments.filter(c => c.activeDeliveries === 0).length}
@@ -215,7 +215,7 @@ export default function DeliveryPortal() {
             <Link href="/ops/schedule" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all text-sm font-medium text-gray-900 block text-center">
               ✅ Log Delivery
             </Link>
-            <Link href="/ops/jobs" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C9822B] transition-all text-sm font-medium text-gray-900 block text-center">
+            <Link href="/ops/jobs" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C6A24E] transition-all text-sm font-medium text-gray-900 block text-center">
               ⚠️ Report Issue
             </Link>
             <Link href="/ops/reports" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all text-sm font-medium text-gray-900 block text-center">

@@ -137,7 +137,7 @@ function SetupAccountInner() {
         width: '500px',
         height: '500px',
         borderRadius: '50%',
-        background: 'linear-gradient(135deg, #C9822B 0%, #3E2A1E 100%)',
+        background: 'linear-gradient(135deg, #C6A24E 0%, #0f2a3e 100%)',
         opacity: 0.08,
         filter: 'blur(80px)',
         top: '50%',

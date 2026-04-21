@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react'
 
-const SEVERITY_COLORS: Record<string, string> = { CRITICAL: '#e74c3c', HIGH: '#e74c3c', WARNING: '#C9822B', MEDIUM: '#C9822B', LOW: '#3498db', INFO: '#27ae60' }
-const CATEGORY_COLORS: Record<string, string> = { COLLECTIONS: '#e74c3c', PURCHASING: '#8e44ad', SALES: '#C9822B', OPERATIONS: '#3498db' }
-const GRADE_COLORS: Record<string, string> = { A: '#27ae60', B: '#2ecc71', C: '#D9993F', D: '#C9822B', F: '#e74c3c' }
+const SEVERITY_COLORS: Record<string, string> = { CRITICAL: '#e74c3c', HIGH: '#e74c3c', WARNING: '#C6A24E', MEDIUM: '#C6A24E', LOW: '#3498db', INFO: '#27ae60' }
+const CATEGORY_COLORS: Record<string, string> = { COLLECTIONS: '#e74c3c', PURCHASING: '#8e44ad', SALES: '#C6A24E', OPERATIONS: '#3498db' }
+const GRADE_COLORS: Record<string, string> = { A: '#27ae60', B: '#2ecc71', C: '#D4B96A', D: '#C6A24E', F: '#e74c3c' }
 
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#3E2A1E'}` }}>
+    <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#3E2A1E' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -46,7 +46,7 @@ function HealthGauge({ score, grade }: { score: number; grade: string }) {
 
 function ComponentBar({ label, score, max }: { label: string; score: number; max: number }) {
   const pct = (score / max) * 100
-  const color = pct >= 75 ? '#27ae60' : pct >= 50 ? '#D9993F' : pct >= 25 ? '#C9822B' : '#e74c3c'
+  const color = pct >= 75 ? '#27ae60' : pct >= 50 ? '#D4B96A' : pct >= 25 ? '#C6A24E' : '#e74c3c'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
       <div style={{ width: 160, fontSize: 13, fontWeight: 600, textAlign: 'right' }}>{label}</div>
@@ -82,13 +82,13 @@ export default function HealthMonitorPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#3E2A1E', marginBottom: 4 }}>Business Health Monitor</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Business Health Monitor</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>AI-powered business health scoring, anomaly detection, and actionable intelligence</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#3E2A1E' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
@@ -117,7 +117,7 @@ function HealthDashboard({ data }: { data: any }) {
         </div>
 
         <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#3E2A1E' }}>Health Components</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#0f2a3e' }}>Health Components</h3>
           <ComponentBar label="Revenue" score={c.revenue?.score || 0} max={20} />
           <ComponentBar label="Accounts Receivable" score={c.accountsReceivable?.score || 0} max={20} />
           <ComponentBar label="Inventory" score={c.inventory?.score || 0} max={20} />
@@ -128,7 +128,7 @@ function HealthDashboard({ data }: { data: any }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
         <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#3E2A1E' }}>Revenue</h4>
+          <h4 style={{ margin: '0 0 12px', color: '#0f2a3e' }}>Revenue</h4>
           <div style={{ fontSize: 13 }}>This month: <strong>${Number(c.revenue?.thisMonth || 0).toLocaleString()}</strong></div>
           <div style={{ fontSize: 13 }}>Last month: <strong>${Number(c.revenue?.lastMonth || 0).toLocaleString()}</strong></div>
           <div style={{ fontSize: 13, color: Number(c.revenue?.growth || 0) >= 0 ? '#27ae60' : '#e74c3c', fontWeight: 700, marginTop: 4 }}>
@@ -137,26 +137,26 @@ function HealthDashboard({ data }: { data: any }) {
         </div>
 
         <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#3E2A1E' }}>Accounts Receivable</h4>
+          <h4 style={{ margin: '0 0 12px', color: '#0f2a3e' }}>Accounts Receivable</h4>
           <div style={{ fontSize: 13 }}>Unpaid: <strong>${Number(c.accountsReceivable?.totalUnpaidAmount || 0).toLocaleString()}</strong></div>
           <div style={{ fontSize: 13, color: '#e74c3c' }}>Overdue: <strong>${Number(c.accountsReceivable?.overdueAmount || 0).toLocaleString()}</strong> ({c.accountsReceivable?.overdueInvoices} invoices)</div>
         </div>
 
         <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#3E2A1E' }}>Inventory</h4>
+          <h4 style={{ margin: '0 0 12px', color: '#0f2a3e' }}>Inventory</h4>
           <div style={{ fontSize: 13 }}>Tracked: <strong>{Number(c.inventory?.totalTracked || 0)}</strong> SKUs</div>
           <div style={{ fontSize: 13, color: '#e74c3c' }}>Out of stock: <strong>{Number(c.inventory?.outOfStock || 0)}</strong></div>
-          <div style={{ fontSize: 13, color: '#C9822B' }}>Low stock: <strong>{Number(c.inventory?.lowStock || 0)}</strong></div>
+          <div style={{ fontSize: 13, color: '#C6A24E' }}>Low stock: <strong>{Number(c.inventory?.lowStock || 0)}</strong></div>
         </div>
 
         <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#3E2A1E' }}>Operations</h4>
+          <h4 style={{ margin: '0 0 12px', color: '#0f2a3e' }}>Operations</h4>
           <div style={{ fontSize: 13 }}>Completion rate: <strong>{c.operations?.completionRate}%</strong></div>
           <div style={{ fontSize: 13, color: Number(c.operations?.overdue) > 0 ? '#e74c3c' : '#27ae60' }}>Overdue: <strong>{c.operations?.overdue}</strong></div>
         </div>
 
         <div style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h4 style={{ margin: '0 0 12px', color: '#3E2A1E' }}>Customer</h4>
+          <h4 style={{ margin: '0 0 12px', color: '#0f2a3e' }}>Customer</h4>
           <div style={{ fontSize: 13 }}>Active: <strong>{Number(c.customer?.activeBuilders || 0)}</strong> / {Number(c.customer?.totalBuilders || 0)}</div>
           <div style={{ fontSize: 13 }}>New (30d): <strong>{Number(c.customer?.newBuilders || 0)}</strong></div>
           <div style={{ fontSize: 13 }}>Quote conv: <strong>{c.customer?.conversionRate}%</strong></div>
@@ -182,7 +182,7 @@ function ScorecardsView({ data }: { data: any }) {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-      <CardSection title="Sales" color="#C9822B" items={[
+      <CardSection title="Sales" color="#C6A24E" items={[
         { label: 'Active Deals', value: Number(d.sales?.activeDeals || 0) },
         { label: 'Pipeline Value', value: `$${Number(d.sales?.pipelineValue || 0).toLocaleString()}` },
         { label: 'Won This Month', value: Number(d.sales?.wonThisMonth || 0) },
@@ -220,7 +220,7 @@ function AnomaliesView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <KPICard label="Critical" value={s.critical || 0} color="#e74c3c" />
-        <KPICard label="Warnings" value={s.warning || 0} color="#C9822B" />
+        <KPICard label="Warnings" value={s.warning || 0} color="#C6A24E" />
         <KPICard label="Info" value={s.info || 0} color="#27ae60" />
       </div>
 
@@ -282,7 +282,7 @@ function KPITrendsView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(k.conversionRate || 0)}%</td>
                 <td style={{ padding: '10px 14px' }}>
                   <div style={{ height: 16, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: `${(Number(k.revenue || 0) / maxRev) * 100}%`, height: '100%', background: '#3E2A1E', borderRadius: 4 }} />
+                    <div style={{ width: `${(Number(k.revenue || 0) / maxRev) * 100}%`, height: '100%', background: '#0f2a3e', borderRadius: 4 }} />
                   </div>
                 </td>
               </tr>
@@ -299,10 +299,10 @@ function ActionItemsView({ data }: { data: any }) {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <KPICard label="Total Actions" value={s.total || 0} color="#3E2A1E" />
+        <KPICard label="Total Actions" value={s.total || 0} color="#0f2a3e" />
         <KPICard label="Critical" value={s.critical || 0} color="#e74c3c" />
-        <KPICard label="High" value={s.high || 0} color="#C9822B" />
-        <KPICard label="Medium" value={s.medium || 0} color="#D9993F" />
+        <KPICard label="High" value={s.high || 0} color="#C6A24E" />
+        <KPICard label="Medium" value={s.medium || 0} color="#D4B96A" />
       </div>
 
       <div style={{ display: 'grid', gap: 12 }}>
@@ -315,7 +315,7 @@ function ActionItemsView({ data }: { data: any }) {
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
                 <Badge text={a.priority} color={SEVERITY_COLORS[a.priority] || '#999'} />
-                <Badge text={a.category} color={CATEGORY_COLORS[a.category] || '#3E2A1E'} />
+                <Badge text={a.category} color={CATEGORY_COLORS[a.category] || '#0f2a3e'} />
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{a.action}</div>
               <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{a.detail}</div>

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
-const NAVY = '#3E2A1E'
-const ORANGE = '#C9822B'
+const NAVY = '#0f2a3e'
+const ORANGE = '#C6A24E'
 
 interface ForecastProduct {
   productId: string
@@ -98,7 +98,7 @@ export default function InventoryForecastPage() {
     switch (signal) {
       case 'CRITICAL': return '#c0392b'
       case 'WARNING': return ORANGE
-      case 'WATCH': return '#D9993F'
+      case 'WATCH': return '#D4B96A'
       default: return '#27ae60'
     }
   }

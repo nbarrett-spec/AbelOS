@@ -51,7 +51,7 @@ export default function StaffForgotPasswordPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
             width: 80, height: 80, borderRadius: 16,
-            background: 'linear-gradient(135deg, #C9822B, #A86B1F)',
+            background: 'linear-gradient(135deg, #C6A24E, #A8882A)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
             boxShadow: '0 8px 32px rgba(230, 126, 34, 0.3)',
@@ -81,7 +81,7 @@ export default function StaffForgotPasswordPage() {
               }}>
                 ✓
               </div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#3E2A1E', margin: '0 0 8px' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#0f2a3e', margin: '0 0 8px' }}>
                 Check Your Email
               </h2>
               <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
@@ -89,7 +89,7 @@ export default function StaffForgotPasswordPage() {
               </p>
               <Link href="/ops/login" style={{
                 display: 'inline-block', marginTop: 20,
-                color: '#C9822B', fontSize: 14, fontWeight: 600,
+                color: '#C6A24E', fontSize: 14, fontWeight: 600,
                 textDecoration: 'none',
               }}>
                 ← Back to Sign In
@@ -137,7 +137,7 @@ export default function StaffForgotPasswordPage() {
                 disabled={loading}
                 style={{
                   width: '100%', padding: '12px 20px',
-                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #C9822B, #A86B1F)',
+                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #C6A24E, #A8882A)',
                   color: 'white', border: 'none', borderRadius: 8,
                   fontSize: 15, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
@@ -148,7 +148,7 @@ export default function StaffForgotPasswordPage() {
 
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <Link href="/ops/login" style={{
-                  color: '#3E2A1E', fontSize: 13, textDecoration: 'none',
+                  color: '#0f2a3e', fontSize: 13, textDecoration: 'none',
                 }}>
                   ← Back to Sign In
                 </Link>

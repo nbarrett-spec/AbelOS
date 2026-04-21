@@ -96,7 +96,7 @@ export default function BuildersPage() {
                     key={builder.id}
                     className="border-b border-gray-100 hover:bg-gray-50 transition"
                   >
-                    <td className="py-3 px-4 font-medium text-abel-walnut">
+                    <td className="py-3 px-4 font-medium text-brand">
                       {builder.companyName}
                     </td>
                     <td className="py-3 px-4 hidden sm:table-cell">{builder.contactName}</td>
@@ -130,7 +130,7 @@ export default function BuildersPage() {
                     <td className="py-3 px-4">
                       <Link
                         href={`/admin/builders/${builder.id}`}
-                        className="text-abel-walnut hover:underline font-medium"
+                        className="text-brand hover:underline font-medium"
                       >
                         View
                       </Link>

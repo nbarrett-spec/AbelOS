@@ -70,7 +70,7 @@ export default function EmptyState({
           style={{
             display: 'inline-block',
             padding: '10px 20px',
-            backgroundColor: '#F59E0B',
+            backgroundColor: '#C6A24E',
             color: 'white',
             fontSize: '14px',
             fontWeight: 600,
@@ -81,10 +81,10 @@ export default function EmptyState({
             transition: 'background-color 0.2s ease',
           }}
           onMouseEnter={(e) => {
-            (e.target as HTMLAnchorElement).style.backgroundColor = '#D97706';
+            (e.target as HTMLAnchorElement).style.backgroundColor = '#A8882A';
           }}
           onMouseLeave={(e) => {
-            (e.target as HTMLAnchorElement).style.backgroundColor = '#F59E0B';
+            (e.target as HTMLAnchorElement).style.backgroundColor = '#C6A24E';
           }}
         >
           {actionLabel}

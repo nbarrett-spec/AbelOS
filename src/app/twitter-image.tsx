@@ -15,7 +15,7 @@ export default function TwitterImage() {
         style={{
           width: '100%',
           height: '100%',
-          background: `linear-gradient(145deg, #3E2A1E 0%, #5A4233 40%, #2A1C14 100%)`,
+          background: `linear-gradient(145deg, #0f2a3e 0%, #153d56 40%, #0a1a28 100%)`,
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
@@ -34,7 +34,7 @@ export default function TwitterImage() {
             left: 0,
             right: 0,
             height: '4px',
-            background: 'linear-gradient(to right, #C9822B, #D9993F, #C9822B)',
+            background: 'linear-gradient(to right, #C6A24E, #D4B96A, #C6A24E)',
           }}
         />
 
@@ -51,7 +51,7 @@ export default function TwitterImage() {
             style={{
               width: '100px',
               height: '100px',
-              background: '#C9822B',
+              background: '#C6A24E',
               borderRadius: '20px',
               display: 'flex',
               alignItems: 'center',
@@ -59,7 +59,7 @@ export default function TwitterImage() {
               fontSize: '60px',
               fontWeight: 'bold',
               color: 'white',
-              boxShadow: '0 16px 48px rgba(201, 130, 43, 0.35)',
+              boxShadow: '0 16px 48px rgba(198, 162, 78, 0.35)',
             }}
           >
             A
@@ -89,7 +89,7 @@ export default function TwitterImage() {
           <p
             style={{
               fontSize: '28px',
-              color: '#C9822B',
+              color: '#C6A24E',
               margin: '0',
               fontWeight: '600',
             }}

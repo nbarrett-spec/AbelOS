@@ -164,7 +164,7 @@ export default function ProjectDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="w-8 h-8 border-4 border-abel-walnut border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     )
@@ -202,7 +202,7 @@ export default function ProjectDetailPage() {
     <div className="min-h-screen bg-gray-50">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#3E2A1E]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
         }`}>
           {toast}
         </div>
@@ -211,16 +211,16 @@ export default function ProjectDetailPage() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Project Header */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-          <Link href="/dashboard" className="hover:text-abel-walnut">
+          <Link href="/dashboard" className="hover:text-brand">
             Dashboard
           </Link>
           <span>/</span>
-          <span className="text-abel-charcoal">{project.name}</span>
+          <span className="text-navy">{project.name}</span>
         </div>
 
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-abel-charcoal">
+            <h1 className="text-2xl font-bold text-navy">
               {project.name}
             </h1>
             <p className="text-gray-500 text-sm mt-0.5">
@@ -241,7 +241,7 @@ export default function ProjectDetailPage() {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                   step.num <= currentNum
-                    ? 'bg-abel-walnut text-white'
+                    ? 'bg-brand text-white'
                     : 'bg-gray-200 text-gray-500'
                 }`}
               >
@@ -255,7 +255,7 @@ export default function ProjectDetailPage() {
               </div>
               <span
                 className={`text-sm font-medium ${
-                  step.num <= currentNum ? 'text-abel-charcoal' : 'text-gray-400'
+                  step.num <= currentNum ? 'text-navy' : 'text-gray-400'
                 }`}
               >
                 {step.label}
@@ -263,7 +263,7 @@ export default function ProjectDetailPage() {
               {idx < 2 && (
                 <div
                   className={`flex-1 h-0.5 ${
-                    step.num < currentNum ? 'bg-abel-walnut' : 'bg-gray-200'
+                    step.num < currentNum ? 'bg-brand' : 'bg-gray-200'
                   }`}
                 />
               )}
@@ -286,7 +286,7 @@ export default function ProjectDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-abel-charcoal mb-1">
+            <h3 className="text-lg font-semibold text-navy mb-1">
               Blueprint uploaded: {blueprint.fileName}
             </h3>
             <p className="text-gray-500 mb-4">
@@ -304,12 +304,12 @@ export default function ProjectDetailPage() {
         {currentStep === 'processing' && (
           <div className="card p-12 text-center">
             <div className="w-20 h-20 mx-auto mb-6 relative">
-              <div className="w-20 h-20 border-4 border-abel-walnut/20 border-t-abel-amber rounded-full animate-spin" />
+              <div className="w-20 h-20 border-4 border-brand/20 border-t-signal rounded-full animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-2xl">🤖</span>
               </div>
             </div>
-            <h3 className="text-xl font-semibold text-abel-charcoal mb-2">
+            <h3 className="text-xl font-semibold text-navy mb-2">
               AI is analyzing your blueprint
             </h3>
             <p className="text-gray-500 max-w-md mx-auto">
