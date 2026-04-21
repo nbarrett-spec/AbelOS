@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
-import { Inter, JetBrains_Mono, Playfair_Display } from 'next/font/google'
+import { Outfit, Inter, JetBrains_Mono, Playfair_Display } from 'next/font/google'
+// Azeret Mono + Instrument Serif loaded via next/font below
+import { Azeret_Mono, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
@@ -8,21 +10,45 @@ import { ToastContainer } from '@/components/ToastContainer'
 import ShortcutsOverlay from '@/components/ui/ShortcutsOverlay'
 
 /* ── Self-hosted fonts (downloaded at build time, served from same domain) ── */
-const inter = Inter({
+/* Primary stack: Outfit / Azeret Mono / Instrument Serif (Glass v3) */
+const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-sans',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+})
+
+const azeretMono = Azeret_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: '400',
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+
+/* Legacy fonts kept loaded for data-design="drafting-room" escape hatch */
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans-legacy',
   display: 'swap',
 })
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-mono',
+  variable: '--font-mono-legacy',
   display: 'swap',
 })
 
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-display',
+  variable: '--font-display-legacy',
   style: ['normal', 'italic'],
   display: 'swap',
 })
@@ -32,8 +58,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#0a1a28' },
-    { media: '(prefers-color-scheme: light)', color: '#f5f2eb' },
+    { media: '(prefers-color-scheme: dark)', color: '#080D1A' },
+    { media: '(prefers-color-scheme: light)', color: '#F0F4FA' },
   ],
   colorScheme: 'light dark',
 }
@@ -122,7 +148,7 @@ export default function RootLayout({
   const requestId = headers().get('x-request-id') || ''
 
   return (
-    <html lang="en" className={`dark ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable}`}>
+    <html lang="en" className={`dark ${outfit.variable} ${azeretMono.variable} ${instrumentSerif.variable} ${inter.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/images/logos/abel-logo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -146,6 +172,14 @@ export default function RootLayout({
                   document.documentElement.setAttribute('data-density', d);
                 } catch(e) {
                   document.documentElement.setAttribute('data-density', 'default');
+                }
+                try {
+                  var params = new URLSearchParams(window.location.search);
+                  var urlDesign = params.get('theme');
+                  var dt = urlDesign === 'drafting-room' ? 'drafting-room' : (localStorage.getItem('aegis-design-theme') || 'glass');
+                  document.documentElement.setAttribute('data-design', dt);
+                } catch(e) {
+                  document.documentElement.setAttribute('data-design', 'glass');
                 }
               })();
             `,

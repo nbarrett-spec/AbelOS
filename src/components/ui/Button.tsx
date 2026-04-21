@@ -157,19 +157,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
           transition-timing-function: var(--ease-press);
         }
 
-        /* ── Primary: gold gradient + navy text + bloom ───────────────── */
+        /* ── Primary: 4-stop glass gradient + white text + bloom ──────── */
         .aegis-btn--primary {
-          background: linear-gradient(3deg, var(--gold), var(--gold-dark));
-          color: var(--navy-deep);
+          background: var(--grad, linear-gradient(135deg, var(--c1), var(--c2), var(--c3)));
+          color: #fff;
           box-shadow:
-            0 1px 3px rgba(0, 0, 0, 0.3),
-            0 0 16px var(--signal-subtle);
+            0 1px 3px rgba(0, 0, 0, 0.25),
+            0 0 16px color-mix(in srgb, var(--c1) 25%, transparent);
         }
         .aegis-btn--primary:hover:not(:disabled) {
           transform: translateY(-1px);
           box-shadow:
-            0 2px 4px rgba(0, 0, 0, 0.3),
-            0 0 20px var(--signal-glow);
+            0 2px 6px rgba(0, 0, 0, 0.3),
+            0 0 24px color-mix(in srgb, var(--c1) 35%, transparent);
         }
         /* Light-band sweep on hover */
         .aegis-btn--primary::before {

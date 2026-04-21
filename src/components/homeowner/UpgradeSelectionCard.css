@@ -12,8 +12,8 @@
 }
 
 .upgrade-card:hover:not([data-locked="true"]) {
-  border-color: #0f2a3e;
-  box-shadow: 0 4px 12px rgba(62, 42, 30, 0.1);
+  border-color: var(--canvas, #080D1A);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
 }
 
 .upgrade-card[data-locked="true"] {
@@ -34,7 +34,7 @@
 .location-name {
   margin: 0;
   font-size: 1.125rem;
-  color: #0f2a3e;
+  color: var(--canvas, #080D1A);
   font-weight: 600;
 }
 
@@ -99,7 +99,7 @@
 .product-price {
   margin: 0;
   font-size: 0.9rem;
-  color: #0f2a3e;
+  color: var(--canvas, #080D1A);
   font-weight: 500;
 }
 
@@ -143,8 +143,8 @@
 }
 
 .upgrade-option:hover:not(:disabled) {
-  border-color: #C6A24E;
-  background: #fffbf5;
+  border-color: var(--c1, #4F46E5);
+  background: #f0f0ff;
 }
 
 .upgrade-option[data-selected="true"] {
@@ -196,7 +196,7 @@
 
 .upgrade-price {
   font-size: 0.95rem;
-  color: #C6A24E;
+  color: var(--c1, #4F46E5);
   font-weight: 700;
 }
 

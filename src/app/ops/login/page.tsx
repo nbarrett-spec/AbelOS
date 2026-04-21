@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Loader2 } from 'lucide-react'
+import AegisBackground from '@/components/AegisBackground'
 
 function StaffLoginInner() {
   const [email, setEmail] = useState<string>('')
@@ -48,33 +49,26 @@ function StaffLoginInner() {
       {/* Left panel — brand */}
       <div
         className="hidden lg:flex lg:w-[44%] relative items-center justify-center overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #0a1a28 0%, #17150F 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #080D1A 0%, #0F1629 50%, #151D35 100%)' }}
       >
-        {/* Wood-grain texture */}
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.12) 2px, rgba(255,255,255,0.12) 3px)`,
-          }}
-        />
-        {/* Amber accent line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
-        <div className="absolute top-16 left-16 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-signal-hover animate-pulse-soft" />
-          <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-signal-hover/80">
-            Aegis · v1
+        <AegisBackground variant="full" orbCount={3} doorBlueprint doorSeed={7} />
+        {/* 4-stop gradient accent line */}
+        <div className="absolute top-0 left-0 right-0 h-px z-10" style={{ background: 'linear-gradient(90deg, transparent, var(--c1), var(--c2), var(--c3), var(--c4), transparent)' }} />
+        <div className="absolute top-16 left-16 flex items-center gap-2 z-10">
+          <div className="w-1.5 h-1.5 rounded-full bg-c1 animate-pulse-soft" />
+          <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-c1/80">
+            Aegis · v3
           </span>
         </div>
 
         <div className="relative z-10 px-16 max-w-lg">
-          <div className="w-14 h-14 mb-10 rounded-md bg-white/10 flex items-center justify-center backdrop-blur-sm">
+          <div className="w-14 h-14 mb-10 rounded-xl glass-card flex items-center justify-center">
             <Image src="/icon-192.png" alt="Abel Lumber" width={40} height={40} className="rounded" />
           </div>
           <h2 className="text-[28px] font-semibold text-white mb-4 tracking-tight leading-tight">
             The operations platform
             <br />
-            for Abel Lumber.
+            for <span className="text-gradient">Abel Lumber.</span>
           </h2>
           <p className="text-white/60 text-[13px] leading-relaxed max-w-md">
             Orders, MRP, collections, sales, and supply chain — one surface, built for the people who run the business.
@@ -152,7 +146,7 @@ function StaffLoginInner() {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full btn-lg"
+              className="btn w-full btn-lg bg-grad text-white hover:opacity-90"
             >
               {loading ? (
                 <>
@@ -166,7 +160,7 @@ function StaffLoginInner() {
           </form>
 
           <p className="text-center text-[11px] text-fg-subtle mt-8 font-mono tracking-wider">
-            Abel Doors & Trim · Aegis v1.0
+            Abel Doors & Trim · Aegis v3.0
           </p>
         </div>
       </div>

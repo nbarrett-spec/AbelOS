@@ -176,19 +176,21 @@ export function Dialog({
 
       <style jsx>{`
         .aegis-dialog-backdrop {
-          background: rgba(10, 26, 40, 0.7);
-          backdrop-filter: blur(16px) saturate(1.4);
-          -webkit-backdrop-filter: blur(16px) saturate(1.4);
+          background: rgba(8, 13, 26, 0.65);
+          backdrop-filter: blur(20px) saturate(1.3);
+          -webkit-backdrop-filter: blur(20px) saturate(1.3);
           opacity: 0;
           transition: opacity 180ms var(--ease);
         }
         .aegis-dialog-backdrop[data-entering='true'] { opacity: 1; }
 
         .aegis-dialog-panel {
-          background: var(--bg-raised, var(--surface-elevated));
-          border: 1px solid var(--border);
+          background: var(--glass, var(--surface-elevated));
+          backdrop-filter: var(--glass-blur, blur(24px) saturate(1.4));
+          -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.4));
+          border: 1px solid var(--glass-border, var(--border));
           border-radius: var(--radius-lg);
-          box-shadow: var(--elev-4);
+          box-shadow: var(--glass-shadow, var(--elev-4));
           opacity: 0;
           transform: scale(0.95);
           transition:

@@ -73,14 +73,14 @@
 }
 
 .action-button.confirm {
-  background: #C6A24E;
+  background: var(--c1, #4F46E5);
   color: white;
 }
 
 .action-button.confirm:hover:not(:disabled) {
-  background: #d86d0f;
+  background: var(--c2, #2563EB);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .action-button.confirm:disabled:not([data-ready="true"]) {
@@ -121,12 +121,12 @@
 
 /* Notice Messages */
 .summary-notice {
-  background: #fff3e0;
-  color: #C6A24E;
+  background: #f0f0ff;
+  color: var(--c1, #4F46E5);
   padding: 1rem;
   text-align: center;
   font-size: 0.875rem;
-  border-top: 1px solid #ffe0b2;
+  border-top: 1px solid #c7d2fe;
   margin-top: -1.5rem;
   padding-top: 1rem;
 }

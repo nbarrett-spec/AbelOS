@@ -108,7 +108,7 @@ export default function MobileQuickActions() {
               bottom: 0,
               left: 0,
               right: 0,
-              backgroundColor: '#0a1a28',
+              backgroundColor: 'var(--canvas, #080D1A)',
               borderTopLeftRadius: '1rem',
               borderTopRightRadius: '1rem',
               maxHeight: '60vh',
@@ -220,14 +220,14 @@ export default function MobileQuickActions() {
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            backgroundColor: '#C6A24E',
+            background: 'linear-gradient(135deg, var(--c1, #4F46E5), var(--c2, #2563EB))',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             zIndex: 30,
-            boxShadow: '0 4px 12px rgba(230, 126, 34, 0.4)',
+            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
             transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out',
             color: 'white',
             fontSize: '1.5rem',
@@ -235,10 +235,10 @@ export default function MobileQuickActions() {
             transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 16px rgba(230, 126, 34, 0.6)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 16px rgba(79, 70, 229, 0.6)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(230, 126, 34, 0.4)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.4)';
           }}
         >
           +

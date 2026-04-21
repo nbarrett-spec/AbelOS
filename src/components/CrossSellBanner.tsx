@@ -97,7 +97,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
   return (
     <div
       style={{
-        backgroundColor: '#f5f6fa',
+        backgroundColor: 'var(--surface-muted, #f5f6fa)',
         borderTop: '1px solid #e5e7eb',
         padding: '24px 32px',
         marginTop: '32px',
@@ -108,7 +108,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
           style={{
             fontSize: '16px',
             fontWeight: 700,
-            color: '#0f2a3e',
+            color: 'var(--canvas, #080D1A)',
             margin: 0,
           }}
         >
@@ -152,18 +152,18 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#0f2a3e',
+              color: 'var(--canvas, #080D1A)',
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLButtonElement
-              el.style.backgroundColor = '#0f2a3e'
+              el.style.backgroundColor = 'var(--canvas, #080D1A)'
               el.style.color = '#fff'
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLButtonElement
               el.style.backgroundColor = '#fff'
-              el.style.color = '#0f2a3e'
+              el.style.color = 'var(--canvas, #080D1A)'
             }}
           >
             ‹
@@ -212,8 +212,8 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                     fontWeight: 600,
                     padding: '3px 8px',
                     borderRadius: '12px',
-                    backgroundColor: '#C6A24E15',
-                    color: '#C6A24E',
+                    backgroundColor: 'rgba(79,70,229,0.08)',
+                    color: 'var(--c1, #4F46E5)',
                     marginBottom: '8px',
                   }}
                 >
@@ -244,7 +244,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                   style={{
                     fontSize: '15px',
                     fontWeight: 700,
-                    color: '#0f2a3e',
+                    color: 'var(--canvas, #080D1A)',
                     marginBottom: '12px',
                   }}
                 >
@@ -259,7 +259,7 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: 'none',
-                    backgroundColor: '#0f2a3e',
+                    backgroundColor: 'var(--canvas, #080D1A)',
                     color: '#fff',
                     fontSize: '12px',
                     fontWeight: 600,
@@ -268,11 +268,11 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
                   }}
                   onMouseEnter={(e) => {
                     const el = e.currentTarget as HTMLButtonElement
-                    el.style.backgroundColor = '#153d56'
+                    el.style.backgroundColor = 'var(--c2, #2563EB)'
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget as HTMLButtonElement
-                    el.style.backgroundColor = '#0f2a3e'
+                    el.style.backgroundColor = 'var(--canvas, #080D1A)'
                   }}
                 >
                   Add to Cart
@@ -297,18 +297,18 @@ export default function CrossSellBanner({ cartProductIds }: CrossSellBannerProps
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#0f2a3e',
+              color: 'var(--canvas, #080D1A)',
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLButtonElement
-              el.style.backgroundColor = '#0f2a3e'
+              el.style.backgroundColor = 'var(--canvas, #080D1A)'
               el.style.color = '#fff'
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLButtonElement
               el.style.backgroundColor = '#fff'
-              el.style.color = '#0f2a3e'
+              el.style.color = 'var(--canvas, #080D1A)'
             }}
           >
             ›

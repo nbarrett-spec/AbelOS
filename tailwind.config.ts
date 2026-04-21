@@ -1,11 +1,14 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * Aegis v2 — "The Drafting Room" Tailwind config
+ * Aegis v3 — "Glass + Blueprint" Tailwind config
  * Colors reference CSS variables from globals.css. Three-layer tokens:
- *   Primitive  — navy, gold, walnut, amber, cream, status colors
- *   Semantic   — canvas, surface, fg, border, signal, data-positive, forecast, etc.
- *   Component  — kpi-card, panel-live, badge, datatable (defined in globals.css)
+ *   Primitive  — gradient stops (c1-c4), blueprint (bp-*), legacy scales
+ *   Semantic   — canvas, surface, fg, border, signal, data-*, forecast
+ *   Component  — glass-card, bp-label, bp-dimension (defined in globals.css)
+ *
+ * Fonts: Outfit / Azeret Mono / Instrument Serif (Glass v3)
+ *        Inter / JetBrains Mono / Playfair Display (data-design="drafting-room" escape hatch)
  */
 const config: Config = {
   darkMode: 'class',
@@ -31,7 +34,7 @@ const config: Config = {
           inverse:   'var(--fg-inverse)',
           'on-accent':'var(--fg-on-accent)',
         },
-        // Signal = the Drafting Room's primary interactive color (gold)
+        // Signal = primary interactive color (indigo in Glass / gold in Drafting Room)
         signal: {
           DEFAULT:   'var(--signal)',
           hover:     'var(--signal-hover)',
@@ -76,7 +79,27 @@ const config: Config = {
           fg:      'var(--forecast-fg)',
         },
 
-        // ── Drafting Room primitives ──────────────────────────────────────
+        // ── Glass v3 — gradient stops ────────────────────────────────────
+        c1: 'var(--c1)',
+        c2: 'var(--c2)',
+        c3: 'var(--c3)',
+        c4: 'var(--c4)',
+
+        // ── Glass v3 — glass system ──────────────────────────────────────
+        glass: {
+          DEFAULT:  'var(--glass)',
+          border:   'var(--glass-border)',
+        },
+
+        // ── Glass v3 — blueprint primitives ──────────────────────────────
+        bp: {
+          fine:       'var(--bp-fine)',
+          major:      'var(--bp-major)',
+          annotation: 'var(--bp-annotation)',
+          redline:    'var(--bp-redline)',
+        },
+
+        // ── Legacy Drafting Room primitives ──────────────────────────────
         navy: {
           deep:  '#050d16',
           DEFAULT: '#0a1a28',
@@ -148,10 +171,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans:    ['var(--font-sans, Inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono:    ['var(--font-mono, JetBrains Mono)', 'ui-monospace', 'monospace'],
-        display: ['var(--font-display, Playfair Display)', 'Georgia', 'serif'],
-        numeric: ['var(--font-mono, JetBrains Mono)', 'ui-monospace', 'monospace'],
+        sans:    ['var(--font-sans, Outfit)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono:    ['var(--font-mono, Azeret Mono)', 'ui-monospace', 'monospace'],
+        display: ['var(--font-display, Instrument Serif)', 'Georgia', 'serif'],
+        numeric: ['var(--font-mono, Azeret Mono)', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         'display-2xl': ['3rem',    { lineHeight: '1.05', letterSpacing: '-0.03em', fontWeight: '600' }],
@@ -168,6 +191,7 @@ const config: Config = {
         'overline':    ['0.625rem',{ lineHeight: '1.4',  letterSpacing: '0.22em',  fontWeight: '600' }],
         'metric-xl':   ['2.25rem', { lineHeight: '1',    letterSpacing: '-0.02em',  fontWeight: '600' }],
         'metric-lg':   ['1.75rem', { lineHeight: '1',    letterSpacing: '-0.02em',  fontWeight: '600' }],
+        'metric-hero': ['3rem',    { lineHeight: '1',    letterSpacing: '-0.03em',  fontWeight: '900' }],
       },
       spacing: {
         '4.5': '1.125rem',
@@ -194,9 +218,16 @@ const config: Config = {
         'elevation-5': 'var(--elev-4)',
         'elevation-glow': 'var(--elev-glow)',
         'inset-1':     'inset 0 1px 2px rgba(0, 0, 0, 0.08)',
-        'glass':       '0 8px 32px rgba(5, 13, 22, 0.35)',
+        'glass':       'var(--glass-shadow)',
+        'glass-hover': 'var(--glass-hover)',
         'glow-signal': '0 0 0 1px var(--signal), 0 0 20px var(--signal-subtle)',
         'glow-accent': '0 0 0 1px var(--accent), 0 0 20px var(--accent-subtle)',
+        'glow-c1':     '0 0 0 2px var(--c1), 0 0 12px var(--signal-glow)',
+      },
+      backgroundImage: {
+        'grad':      'var(--grad)',
+        'grad-wide': 'var(--grad-wide)',
+        'grad-subtle': 'var(--grad-subtle)',
       },
       transitionDuration: {
         'instant': '80ms',
@@ -220,8 +251,11 @@ const config: Config = {
         'slide-up':   { '0%': { transform: 'translateY(6px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
         'slide-down': { '0%': { transform: 'translateY(-6px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
         'pulse-soft': { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.55' } },
-        'gold-flash': { '0%': { backgroundColor: 'var(--signal-subtle)' }, '100%': { backgroundColor: 'transparent' } },
+        'signal-flash': { '0%': { backgroundColor: 'var(--signal-subtle)' }, '100%': { backgroundColor: 'transparent' } },
         'drawer-in':  { '0%': { opacity: '0', transform: 'translateX(100%)' }, '100%': { opacity: '1', transform: 'translateX(0)' } },
+        'stagger-up': { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        'bp-drift':   { '0%': { transform: 'translate(0, 0)' }, '100%': { transform: 'translate(60px, 60px)' } },
+        'orb-float':  { '0%, 100%': { transform: 'translate(0, 0) scale(1)' }, '25%': { transform: 'translate(30px, -20px) scale(1.05)' }, '50%': { transform: 'translate(-10px, 15px) scale(0.95)' }, '75%': { transform: 'translate(-25px, -10px) scale(1.02)' } },
       },
       animation: {
         shimmer:      'shimmer 1.4s ease-in-out infinite',
@@ -229,8 +263,11 @@ const config: Config = {
         'slide-up':   'slide-up 200ms cubic-bezier(.2, .8, .2, 1) both',
         'slide-down': 'slide-down 200ms cubic-bezier(.2, .8, .2, 1) both',
         'pulse-soft': 'pulse-soft 2s cubic-bezier(0.65, 0, 0.35, 1) infinite',
-        'gold-flash': 'gold-flash 180ms cubic-bezier(.2, .8, .2, 1) both',
+        'signal-flash': 'signal-flash 180ms cubic-bezier(.2, .8, .2, 1) both',
         'drawer-in':  'drawer-in 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'stagger-up': 'stagger-up 400ms cubic-bezier(.2, .8, .2, 1) both',
+        'bp-drift':   'bp-drift 60s linear infinite',
+        'orb-float':  'orb-float 20s ease-in-out infinite',
       },
     },
   },

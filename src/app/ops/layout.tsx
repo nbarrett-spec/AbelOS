@@ -9,6 +9,7 @@ import { NotificationBell } from './components/NotificationBell'
 import { GlobalSearch } from './components/GlobalSearch'
 import AICopilot from './components/AICopilot'
 import ThemeProvider from './components/ThemeProvider'
+import AegisBackground from '@/components/AegisBackground'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import Tooltip from '@/components/ui/Tooltip'
@@ -351,7 +352,7 @@ function SidebarSection({
       {!collapsed && (
         <button
           onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between px-4 py-2 text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-[0.12em] hover:text-gray-300 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-2 text-[10px] font-bold text-fg-subtle uppercase tracking-[0.18em] hover:text-fg-muted transition-colors bp-label"
         >
           <span>{section.label}</span>
           <ChevronDown
@@ -375,13 +376,13 @@ function SidebarSection({
                 onClick={onNavigate}
                 className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 group ${
                   isActive
-                    ? 'bg-signal/15 text-signal dark:text-signal-light border-l-[3px] border-signal ml-0 pl-[9px]'
-                    : 'text-gray-400 hover:text-white hover:bg-white/[0.04] border-l-[3px] border-transparent'
+                    ? 'bg-signal/10 text-fg border-l-[3px] border-c1 ml-0 pl-[9px]'
+                    : 'text-fg-subtle hover:text-fg hover:bg-white/[0.04] border-l-[3px] border-transparent'
                 }`}
               >
                 <IconComponent
                   className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-signal' : 'text-gray-500 group-hover:text-gray-300'
+                    isActive ? 'text-c1' : 'text-fg-subtle group-hover:text-fg-muted'
                   }`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
@@ -492,8 +493,8 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <div className="flex min-h-screen bg-canvas text-fg">
-        {/* ── Top accent hairline ────────────────────────────── */}
-        <div className="fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent z-[60]" />
+        {/* ── Top accent hairline (4-stop gradient) ───────────── */}
+        <div className="fixed top-0 left-0 right-0 h-px z-[60]" style={{ background: 'linear-gradient(90deg, transparent, var(--c1), var(--c2), var(--c3), var(--c4), transparent)' }} />
 
         {/* ── Mobile overlay ─────────────────────────────────── */}
         {mobileOpen && (
@@ -507,9 +508,10 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         <aside
           className={`${
             collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[16rem]'
-          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-border bg-[#17150F] dark:bg-[#17150F] ${
+          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-glass-border backdrop-blur-xl bg-surface/80 dark:bg-[#0B1120]/85 ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
+          style={{ backdropFilter: 'blur(24px) saturate(1.4)', WebkitBackdropFilter: 'blur(24px) saturate(1.4)' }}
         >
           {/* Sidebar header */}
           <div className="h-[3.25rem] px-3.5 flex items-center justify-between border-b border-border shrink-0">
@@ -517,8 +519,8 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <Image src="/icon-192.png" alt="Abel Lumber" width={26} height={26} className="rounded-md" />
                 <div>
-                  <p className="text-[13px] font-semibold text-white leading-none tracking-tight">Aegis</p>
-                  <p className="text-[10px] text-[#9A9285] mt-0.5 font-mono">Abel Lumber · Ops</p>
+                  <p className="text-[13px] font-semibold text-fg leading-none tracking-tight">Aegis</p>
+                  <p className="text-[10px] text-fg-subtle mt-0.5 font-mono">Abel Lumber · Ops</p>
                 </div>
               </div>
             ) : (
@@ -528,7 +530,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
             )}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex p-1.5 rounded-md text-[#706B5F] hover:text-[#F5F1E8] hover:bg-white/5 transition-colors"
+              className="hidden lg:flex p-1.5 rounded-md text-fg-subtle hover:text-fg hover:bg-white/5 transition-colors"
               aria-label="Toggle sidebar"
             >
               {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -537,7 +539,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
           {/* User card */}
           {staff && (
-            <div className={`border-b border-gray-800/60 shrink-0 ${collapsed ? 'px-2 py-3' : 'px-4 py-3'}`}>
+            <div className={`border-b border-border shrink-0 ${collapsed ? 'px-2 py-3' : 'px-4 py-3'}`}>
               {collapsed ? (
                 <Tooltip content={`${staff.firstName} ${staff.lastName}`} side="right">
                   <div className="flex justify-center">
@@ -548,12 +550,12 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-3">
                   <Avatar name={`${staff.firstName} ${staff.lastName}`} size="md" status="online" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white truncate">
+                    <p className="text-sm font-semibold text-fg truncate">
                       {staff.firstName} {staff.lastName}
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {staffRoles.slice(0, 2).map((r) => (
-                        <Badge key={r} variant="neutral" size="xs" className="!bg-gray-800 !text-gray-400">
+                        <Badge key={r} variant="neutral" size="xs" className="!bg-surface-muted !text-fg-subtle">
                           {ROLE_DISPLAY[r] || r}
                         </Badge>
                       ))}
@@ -565,11 +567,11 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+          <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin">
             {loading ? (
               <div className="px-4 py-8 space-y-3 animate-pulse">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-3 rounded bg-gray-800 mx-2" style={{ width: `${60 + i * 5}%` }} />
+                  <div key={i} className="h-3 rounded bg-surface-muted mx-2" style={{ width: `${60 + i * 5}%` }} />
                 ))}
               </div>
             ) : (
@@ -586,12 +588,12 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Sidebar footer */}
-          <div className="p-3 border-t border-gray-800/60 shrink-0 space-y-1">
+          <div className="p-3 border-t border-border shrink-0 space-y-1">
             {!collapsed ? (
               <>
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-300 hover:bg-white/[0.04] transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-fg-subtle hover:text-fg hover:bg-white/[0.04] transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Builder View
@@ -599,7 +601,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
                 {staff && (
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-colors w-full text-left"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-fg-subtle hover:text-data-negative hover:bg-data-negative-bg transition-colors w-full text-left"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Sign Out
@@ -609,7 +611,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
             ) : (
               <>
                 <Tooltip content="Builder View" side="right">
-                  <Link href="/dashboard" className="flex justify-center p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors">
+                  <Link href="/dashboard" className="flex justify-center p-2 rounded-lg text-fg-subtle hover:text-fg hover:bg-white/5 transition-colors">
                     <ExternalLink className="w-4 h-4" />
                   </Link>
                 </Tooltip>
@@ -617,7 +619,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
                   <Tooltip content="Sign Out" side="right">
                     <button
                       onClick={handleLogout}
-                      className="flex justify-center p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-colors w-full"
+                      className="flex justify-center p-2 rounded-lg text-fg-subtle hover:text-data-negative hover:bg-data-negative-bg transition-colors w-full"
                     >
                       <LogOut className="w-4 h-4" />
                     </button>
@@ -631,7 +633,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         {/* ── Main content area ──────────────────────────────── */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="h-[3.25rem] border-b border-border px-4 sm:px-6 flex items-center justify-between bg-surface shrink-0">
+          <header className="h-[3.25rem] border-b border-glass-border px-4 sm:px-6 flex items-center justify-between shrink-0 relative z-10" style={{ background: 'var(--glass)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)' }}>
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}
               <button
@@ -697,12 +699,12 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
                 {/* Dropdown */}
                 {showUserMenu && staff && (
-                  <div className="absolute right-0 top-11 w-64 rounded-xl shadow-elevation-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 z-50 animate-[slideDown_150ms_ease-out] overflow-hidden">
-                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  <div className="absolute right-0 top-11 w-64 rounded-xl shadow-glass glass-card z-50 animate-[slideDown_150ms_ease-out] overflow-hidden bp-registration">
+                    <div className="px-4 py-3 border-b border-border">
+                      <p className="text-sm font-bold text-fg">
                         {staff.firstName} {staff.lastName}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{staff.email}</p>
+                      <p className="text-xs text-fg-muted mt-0.5">{staff.email}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {staffRoles.map((r) => (
                           <Badge key={r} variant="brand" size="xs">{ROLE_DISPLAY[r] || r}</Badge>
@@ -713,24 +715,24 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
                       <Link
                         href="/ops/profile"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-muted transition-colors"
                       >
-                        <User className="w-4 h-4 text-gray-400" />
+                        <User className="w-4 h-4 text-fg-subtle" />
                         My Profile
                       </Link>
                       <Link
                         href="/ops/settings"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-muted transition-colors"
                       >
-                        <Settings className="w-4 h-4 text-gray-400" />
+                        <Settings className="w-4 h-4 text-fg-subtle" />
                         Settings
                       </Link>
                     </div>
-                    <div className="border-t border-gray-100 dark:border-gray-800 py-1">
+                    <div className="border-t border-border py-1">
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors w-full text-left"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-data-negative hover:bg-data-negative-bg transition-colors w-full text-left"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign Out
@@ -746,8 +748,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           <LivePulse />
 
           {/* Content area */}
-          <div className="flex-1 overflow-auto bg-canvas">
-            <div className="p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
+          <div className="flex-1 overflow-auto bg-canvas relative">
+            <AegisBackground variant="full" orbCount={3} doorBlueprint />
+            <div className="relative z-[1] p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
               {children}
             </div>
           </div>

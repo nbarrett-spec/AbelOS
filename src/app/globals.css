@@ -3,122 +3,83 @@
 @tailwind utilities;
 
 /* ============================================================================
-   AEGIS v2 — "THE DRAFTING ROOM"
+   AEGIS v3 — "GLASS + BLUEPRINT"
    Three-layer tokens: primitive → semantic → component
-   Dark (navy) is the primary experience. Light (onion-skin) mirrors.
-   Fonts self-hosted via next/font in layout.tsx — no CDN imports.
+   Dark is the primary experience. Light mirrors.
+   Glass cards over animated blueprint grid, 4-stop gradient accents.
+   Fonts: Outfit / Azeret Mono / Instrument Serif (self-hosted via next/font).
+   Escape hatch: data-design="drafting-room" reverts to v2 walnut/gold.
    ============================================================================ */
 
 /* ── Layer 1: Primitive tokens ───────────────────────────────────────────── */
 :root {
-  /* ── Navy scale (dark-theme canvas) ──────────────────────────────────── */
+  /* ── Glass gradient stops (4-stop system) ────────────────────────────── */
+  --c1: #4F46E5;   /* indigo */
+  --c2: #2563EB;   /* blue */
+  --c3: #0EA5E9;   /* sky */
+  --c4: #06B6D4;   /* cyan */
+
+  --grad:      linear-gradient(135deg, var(--c1), var(--c2), var(--c3));
+  --grad-wide: linear-gradient(135deg, var(--c1), var(--c2), var(--c3), var(--c4));
+  --grad-subtle: linear-gradient(135deg, var(--c1), var(--c2));
+
+  /* ── Blueprint primitives ────────────────────────────────────────────── */
+  --bp-fine:       rgba(79,70,229,0.035);    /* thin grid lines */
+  --bp-major:      rgba(79,70,229,0.06);     /* thick grid lines */
+  --bp-annotation: rgba(79,70,229,0.12);     /* callout/dimension lines */
+  --bp-redline:    rgba(239,68,68,0.6);      /* change/alert markup */
+
+  /* ── Legacy Drafting Room primitives (backward compat aliases) ────── */
   --navy-deep:  #050d16;
   --navy:       #0a1a28;
   --navy-mid:   #132d42;
   --navy-light: #1a3d56;
-
-  /* ── Paper / light-theme canvas ──────────────────────────────────────── */
   --mylar:      #f5f2eb;
   --onion:      #f9f5ec;
   --cream:      #F3EAD8;
-
-  /* ── Gold signal scale ───────────────────────────────────────────────── */
   --gold-dark:  #a88a3a;
   --gold:       #c6a24e;
   --gold-light: #e4c77a;
-
-  /* ── Walnut (primary brand) ──────────────────────────────────────────── */
-  --walnut-50:  #F5EFE9;
-  --walnut-100: #E8D9C9;
-  --walnut-200: #C9A98C;
-  --walnut-300: #9C7A5C;
-  --walnut-400: #6E543D;
-  --walnut-500: #5A4233;
-  --walnut-600: #3E2A1E;
-  --walnut-700: #2A1C14;
-  --walnut-800: #1C120C;
-  --walnut-900: #0F0906;
-  --walnut-ink: #2A1C14;
-
-  /* ── Amber scale (retained) ──────────────────────────────────────────── */
-  --amber-50:  #FDF6E8;
-  --amber-100: #F9E4BB;
-  --amber-200: #F3CC85;
-  --amber-300: #E9AE4F;
-  --amber-400: #D9993F;
-  --amber-500: #C9822B;
-  --amber-600: #A86B1F;
-  --amber-700: #865415;
-  --amber-800: #5E3A0E;
+  --walnut-50:  #F5EFE9;  --walnut-100: #E8D9C9;  --walnut-200: #C9A98C;
+  --walnut-300: #9C7A5C;  --walnut-400: #6E543D;  --walnut-500: #5A4233;
+  --walnut-600: #3E2A1E;  --walnut-700: #2A1C14;  --walnut-800: #1C120C;
+  --walnut-900: #0F0906;  --walnut-ink: #2A1C14;
+  --amber-50:  #FDF6E8;  --amber-100: #F9E4BB;  --amber-200: #F3CC85;
+  --amber-300: #E9AE4F;  --amber-400: #D9993F;  --amber-500: #C9822B;
+  --amber-600: #A86B1F;  --amber-700: #865415;  --amber-800: #5E3A0E;
   --amber-900: #3A2408;
+  --kiln-oak: #8B6F47;  --brass: #8B6F2A;  --dust: #B8876B;  --sky: #8CA8B8;
+  --moss: #2f7c3a;  --sage: #5caa68;  --oxblood: #6E2A24;  --ember: #b64e3d;
+  --stone-50: #F7F5F2;  --stone-100: #EEEAE3;  --stone-200: #DDD6CB;
+  --stone-300: #B8AE9E;  --stone-400: #8A8174;  --stone-500: #6B6459;
+  --stone-600: #4D4841;  --stone-700: #36322D;  --stone-800: #24211E;
+  --stone-900: #171512;  --stone-950: #0E0D0B;
 
-  /* ── Warm neutrals ──────────────────────────────────────────────────── */
-  --kiln-oak:   #8B6F47;
-  --brass:      #8B6F2A;
-  --dust:       #B8876B;
-  --sky:        #8CA8B8;
-
-  /* ── Status primitives ──────────────────────────────────────────────── */
-  --moss:       #2f7c3a;
-  --sage:       #5caa68;
-  --oxblood:    #6E2A24;
-  --ember:      #b64e3d;
-
-  /* ── Stone (backward compat — used by some legacy selectors) ─────── */
-  --stone-50:  #F7F5F2;
-  --stone-100: #EEEAE3;
-  --stone-200: #DDD6CB;
-  --stone-300: #B8AE9E;
-  --stone-400: #8A8174;
-  --stone-500: #6B6459;
-  --stone-600: #4D4841;
-  --stone-700: #36322D;
-  --stone-800: #24211E;
-  --stone-900: #171512;
-  --stone-950: #0E0D0B;
-
-  /* ── Data green ──────────────────────────────────────────────────────── */
-  --data-green-50:  #EEF7EF;
-  --data-green-100: #D4EBD6;
-  --data-green-200: #A7D6AB;
-  --data-green-300: #6FBA78;
-  --data-green-400: #43994F;
-  --data-green-500: #2F7C3A;
-  --data-green-600: #23632C;
-  --data-green-700: #1A4B21;
-  --data-green-800: #133618;
+  /* ── Data color scales (retained from v2) ───────────────────────────── */
+  --data-green-50: #EEF7EF;  --data-green-100: #D4EBD6;  --data-green-200: #A7D6AB;
+  --data-green-300: #6FBA78;  --data-green-400: #43994F;  --data-green-500: #2F7C3A;
+  --data-green-600: #23632C;  --data-green-700: #1A4B21;  --data-green-800: #133618;
   --data-green-900: #0B1F0E;
-
-  /* ── Data red ────────────────────────────────────────────────────────── */
-  --data-red-50:  #FAEEEB;
-  --data-red-100: #F1CFC6;
-  --data-red-200: #E3A495;
-  --data-red-300: #D07564;
-  --data-red-400: #B64E3D;
-  --data-red-500: #9B3826;
-  --data-red-600: #7D2B1C;
-  --data-red-700: #5F2015;
-  --data-red-800: #42160E;
+  --data-red-50: #FAEEEB;  --data-red-100: #F1CFC6;  --data-red-200: #E3A495;
+  --data-red-300: #D07564;  --data-red-400: #B64E3D;  --data-red-500: #9B3826;
+  --data-red-600: #7D2B1C;  --data-red-700: #5F2015;  --data-red-800: #42160E;
   --data-red-900: #260C07;
-
-  /* ── Forecast ────────────────────────────────────────────────────────── */
-  --forecast-50:  #EEF0F5;
-  --forecast-100: #D4D9E3;
-  --forecast-200: #A5AFC3;
-  --forecast-300: #76829F;
-  --forecast-400: #54607D;
-  --forecast-500: #3E4861;
-  --forecast-600: #2E3649;
-  --forecast-700: #212638;
-  --forecast-800: #161A27;
+  --forecast-50: #EEF0F5;  --forecast-100: #D4D9E3;  --forecast-200: #A5AFC3;
+  --forecast-300: #76829F;  --forecast-400: #54607D;  --forecast-500: #3E4861;
+  --forecast-600: #2E3649;  --forecast-700: #212638;  --forecast-800: #161A27;
   --forecast-900: #0C0E17;
 
-  /* ── Typography ─────────────────────────────────────────────────────── */
-  /* next/font sets --font-sans, --font-mono, --font-display on <html>.
-     We define fallback stacks here; the font vars cascade from the html class. */
-  --font-sans-stack:    'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono-stack:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-display-stack: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  /* ── Glass system ────────────────────────────────────────────────────── */
+  --glass:         rgba(255,255,255,0.65);
+  --glass-border:  rgba(255,255,255,0.8);
+  --glass-blur:    blur(24px) saturate(1.4);
+  --glass-shadow:  0 8px 40px rgba(30,58,138,0.07);
+  --glass-hover:   0 24px 72px rgba(30,58,138,0.12);
+
+  /* ── Typography stacks ──────────────────────────────────────────────── */
+  --font-sans-stack:    'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono-stack:    'Azeret Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display-stack: 'Instrument Serif', Georgia, 'Times New Roman', serif;
 
   /* ── Radii ───────────────────────────────────────────────────────────── */
   --radius-xs: 2px;
@@ -128,15 +89,12 @@
   --radius-xl: 12px;
   --radius-2xl: 16px;
 
-  /* Spacing (ancillary, supplements Tailwind) */
+  /* Spacing */
   --row-height-sm: 32px;
   --row-height-md: 40px;
   --row-height-lg: 48px;
 
-  /* ── Density cascade (default) ───────────────────────────────────────────
-     Every Aegis component that sets height/padding/font-size reads from
-     these variables. Override by setting `data-density` on :root.
-     See DensityToggle.tsx for the segmented control. */
+  /* ── Density cascade (default) ──────────────────────────────────────── */
   --density-row-height:    40px;
   --density-card-padding:  16px;
   --density-body-font:     13px;
@@ -197,148 +155,194 @@
   --shadow-4: 0 16px 32px rgba(14, 13, 11, 0.12), 0 4px 8px rgba(14, 13, 11, 0.08);
 }
 
-/* ── Layer 2: Semantic tokens (LIGHT — "onion skin under task lighting") ── */
+/* ── Layer 2: Semantic tokens (LIGHT — cool blueprint paper) ─────────────── */
 :root {
-  --canvas:             var(--mylar);
-  --surface:            var(--onion);
-  --surface-muted:      #ede8dd;
+  --canvas:             #F0F4FA;
+  --surface:            #FFFFFF;
+  --surface-muted:      #E8ECF4;
   --surface-elevated:   #FFFFFF;
-  --surface-inverse:    var(--navy);
+  --surface-inverse:    #080D1A;
 
-  --border:             rgba(62, 42, 30, 0.10);    /* walnut @ 10% */
-  --border-strong:      rgba(62, 42, 30, 0.20);    /* walnut @ 20% */
-  --border-focus:       var(--gold-dark);
+  --border:             rgba(30,58,138,0.06);
+  --border-strong:      rgba(30,58,138,0.12);
+  --border-focus:       var(--c1);
 
-  --fg:                 var(--walnut-600);
-  --fg-muted:           #6b5d4e;
-  --fg-subtle:          #9a8e7e;
+  --fg:                 #0F172A;
+  --fg-muted:           #475569;
+  --fg-subtle:          #94A3B8;
   --fg-inverse:         #FFFFFF;
   --fg-on-accent:       #FFFFFF;
 
-  /* Signal = gold (the primary interactive/attention color) */
-  --signal:             var(--gold-dark);
-  --signal-hover:       var(--gold);
-  --signal-subtle:      rgba(168, 138, 58, 0.08);   /* gold-dark @ 8% */
-  --signal-glow:        rgba(168, 138, 58, 0.15);   /* gold-dark @ 15% */
+  /* Signal = indigo (primary interactive/attention color in Glass v3) */
+  --signal:             var(--c1);
+  --signal-hover:       #6366F1;
+  --signal-subtle:      rgba(79,70,229,0.08);
+  --signal-glow:        rgba(79,70,229,0.15);
 
-  /* Accent aliases (map to signal for backward compat) */
+  /* Accent aliases (backward compat — maps to signal) */
   --accent:             var(--signal);
   --accent-hover:       var(--signal-hover);
   --accent-subtle:      var(--signal-subtle);
-  --accent-fg:          var(--gold-dark);
+  --accent-fg:          var(--c1);
 
-  --brand:              var(--walnut-600);
-  --brand-hover:        var(--walnut-700);
-  --brand-subtle:       var(--walnut-50);
+  --brand:              var(--c1);
+  --brand-hover:        var(--c2);
+  --brand-subtle:       rgba(79,70,229,0.06);
 
-  --data-positive:      var(--moss);
-  --data-positive-bg:   var(--data-green-50);
-  --data-positive-fg:   var(--data-green-700);
+  --data-positive:      #10B981;
+  --data-positive-bg:   rgba(16,185,129,0.08);
+  --data-positive-fg:   #047857;
 
-  --data-negative:      var(--oxblood);
-  --data-negative-bg:   var(--data-red-50);
-  --data-negative-fg:   var(--data-red-700);
+  --data-negative:      #EF4444;
+  --data-negative-bg:   rgba(239,68,68,0.08);
+  --data-negative-fg:   #B91C1C;
 
-  --data-warning:       var(--gold-dark);
-  --data-warning-bg:    var(--amber-50);
-  --data-warning-fg:    var(--amber-700);
+  --data-warning:       #F59E0B;
+  --data-warning-bg:    rgba(245,158,11,0.08);
+  --data-warning-fg:    #B45309;
 
-  --data-info:          #5a7a8a;
-  --data-info-bg:       var(--forecast-50);
-  --data-info-fg:       var(--forecast-700);
+  --data-info:          #6366F1;
+  --data-info-bg:       rgba(99,102,241,0.06);
+  --data-info-fg:       #4338CA;
 
-  --forecast:           var(--forecast-400);
-  --forecast-bg:        var(--forecast-50);
-  --forecast-fg:        var(--forecast-700);
+  --forecast:           #94A3B8;
+  --forecast-bg:        rgba(148,163,184,0.06);
+  --forecast-fg:        #64748B;
 
-  /* Drafting Room specifics */
-  --ink-pencil:         var(--walnut-ink);
-  --grid-ink:           rgba(198, 162, 78, 0.06);  /* gold @ 6% */
+  /* Blueprint / drafting specifics */
+  --ink-pencil:         #0F172A;
+  --grid-ink:           var(--bp-fine);
 
   /* Grid / tabular */
-  --row-hover:          rgba(168, 138, 58, 0.04);
-  --row-selected:       rgba(168, 138, 58, 0.08);
-  --grid-line:          #EDE6DA;
+  --row-hover:          rgba(79,70,229,0.03);
+  --row-selected:       rgba(79,70,229,0.06);
+  --grid-line:          rgba(30,58,138,0.06);
 
-  /* Elevation mapped */
+  /* Elevation */
   --elev-1: var(--shadow-1);
   --elev-2: var(--shadow-2);
   --elev-3: var(--shadow-3);
   --elev-4: var(--shadow-4);
-  --elev-glow: 0 0 24px rgba(168, 138, 58, 0.10);
+  --elev-glow: 0 0 24px rgba(79,70,229,0.10);
 
   color-scheme: light;
 }
 
-/* ── Layer 2: Semantic tokens (DARK — "Gainesville at dusk" — PRIMARY) ──── */
+/* ── Layer 2: Semantic tokens (DARK — deep space glass — PRIMARY) ────────── */
 html.dark {
-  --canvas:             var(--navy-deep);
-  --surface:            var(--navy);
-  --surface-muted:      #0d2233;
-  --surface-elevated:   var(--navy-mid);
-  --surface-inverse:    var(--cream);
+  --canvas:             #080D1A;
+  --surface:            #0F1629;
+  --surface-muted:      #151D35;
+  --surface-elevated:   #1A2340;
+  --surface-inverse:    #F0F4FA;
 
-  --border:             rgba(198, 162, 78, 0.08);  /* gold @ 8% */
-  --border-strong:      rgba(198, 162, 78, 0.18);  /* gold @ 18% */
-  --border-focus:       var(--gold);
+  /* Brighter gradient stops for dark mode */
+  --c1: #6366F1;   /* indigo-400 */
+  --c2: #3B82F6;   /* blue-400 */
+  --c3: #22D3EE;   /* cyan-300 */
+  --c4: #2DD4BF;   /* teal-300 */
 
-  --fg:                 #f5f1e8;
-  --fg-muted:           #8a9aaa;
-  --fg-subtle:          #5a6a7a;
-  --fg-inverse:         var(--navy-deep);
-  --fg-on-accent:       var(--navy-deep);
+  /* Blueprint grid brighter in dark */
+  --bp-fine:       rgba(99,102,241,0.05);
+  --bp-major:      rgba(99,102,241,0.08);
+  --bp-annotation: rgba(99,102,241,0.18);
+  --bp-redline:    rgba(248,113,113,0.65);
 
-  /* Signal = gold */
-  --signal:             var(--gold);
-  --signal-hover:       var(--gold-light);
-  --signal-subtle:      rgba(198, 162, 78, 0.12);
-  --signal-glow:        rgba(198, 162, 78, 0.25);
+  /* Glass system — deeper frosting in dark */
+  --glass:         rgba(15,22,41,0.7);
+  --glass-border:  rgba(99,102,241,0.12);
+  --glass-blur:    blur(24px) saturate(1.4);
+  --glass-shadow:  0 8px 40px rgba(0,0,0,0.3);
+  --glass-hover:   0 24px 72px rgba(0,0,0,0.4);
+
+  --border:             rgba(99,102,241,0.08);
+  --border-strong:      rgba(99,102,241,0.16);
+  --border-focus:       var(--c1);
+
+  --fg:                 #E2E8F0;
+  --fg-muted:           #94A3B8;
+  --fg-subtle:          #64748B;
+  --fg-inverse:         #080D1A;
+  --fg-on-accent:       #FFFFFF;
+
+  /* Signal = indigo in Glass v3 dark */
+  --signal:             var(--c1);
+  --signal-hover:       #818CF8;
+  --signal-subtle:      rgba(99,102,241,0.12);
+  --signal-glow:        rgba(99,102,241,0.25);
 
   --accent:             var(--signal);
   --accent-hover:       var(--signal-hover);
   --accent-subtle:      var(--signal-subtle);
-  --accent-fg:          var(--gold-light);
+  --accent-fg:          #A5B4FC;
 
-  --brand:              var(--walnut-300);
-  --brand-hover:        var(--walnut-200);
-  --brand-subtle:       rgba(62, 42, 30, 0.35);
+  --brand:              #A5B4FC;
+  --brand-hover:        #C7D2FE;
+  --brand-subtle:       rgba(99,102,241,0.10);
 
-  --data-positive:      var(--sage);
-  --data-positive-bg:   rgba(92, 170, 104, 0.12);
-  --data-positive-fg:   #6FBA78;
+  --data-positive:      #34D399;
+  --data-positive-bg:   rgba(52,211,153,0.10);
+  --data-positive-fg:   #6EE7B7;
 
-  --data-negative:      var(--ember);
-  --data-negative-bg:   rgba(182, 78, 61, 0.15);
-  --data-negative-fg:   #D07564;
+  --data-negative:      #F87171;
+  --data-negative-bg:   rgba(248,113,113,0.12);
+  --data-negative-fg:   #FCA5A5;
 
-  --data-warning:       var(--gold);
-  --data-warning-bg:    rgba(198, 162, 78, 0.10);
-  --data-warning-fg:    var(--gold-light);
+  --data-warning:       #FBBF24;
+  --data-warning-bg:    rgba(251,191,36,0.10);
+  --data-warning-fg:    #FDE68A;
 
-  --data-info:          var(--sky);
-  --data-info-bg:       rgba(140, 168, 184, 0.10);
-  --data-info-fg:       #a8c4d4;
+  --data-info:          #818CF8;
+  --data-info-bg:       rgba(129,140,248,0.10);
+  --data-info-fg:       #A5B4FC;
 
-  --forecast:           var(--forecast-300);
-  --forecast-bg:        rgba(118, 130, 159, 0.08);
-  --forecast-fg:        var(--forecast-200);
+  --forecast:           #64748B;
+  --forecast-bg:        rgba(100,116,139,0.08);
+  --forecast-fg:        #94A3B8;
 
-  /* Drafting Room specifics */
-  --ink-pencil:         var(--kiln-oak);
-  --grid-ink:           rgba(198, 162, 78, 0.06);
+  --ink-pencil:         #CBD5E1;
+  --grid-ink:           var(--bp-fine);
 
-  --row-hover:          rgba(198, 162, 78, 0.04);
-  --row-selected:       rgba(198, 162, 78, 0.10);
-  --grid-line:          rgba(198, 162, 78, 0.06);
+  --row-hover:          rgba(99,102,241,0.04);
+  --row-selected:       rgba(99,102,241,0.08);
+  --grid-line:          rgba(99,102,241,0.06);
 
-  /* Deep navy shadows with more depth */
-  --elev-1: 0 1px 3px rgba(5, 13, 22, 0.50), 0 1px 1px rgba(5, 13, 22, 0.35);
-  --elev-2: 0 3px 8px rgba(5, 13, 22, 0.55), 0 1px 3px rgba(5, 13, 22, 0.40);
-  --elev-3: 0 8px 20px rgba(5, 13, 22, 0.60), 0 3px 6px rgba(5, 13, 22, 0.45);
-  --elev-4: 0 20px 44px rgba(5, 13, 22, 0.65), 0 6px 14px rgba(5, 13, 22, 0.45);
-  --elev-glow: 0 0 24px rgba(198, 162, 78, 0.15);
+  /* Deep dark shadows */
+  --elev-1: 0 1px 3px rgba(0,0,0,0.5),  0 1px 1px rgba(0,0,0,0.35);
+  --elev-2: 0 3px 8px rgba(0,0,0,0.55),  0 1px 3px rgba(0,0,0,0.4);
+  --elev-3: 0 8px 20px rgba(0,0,0,0.6),   0 3px 6px rgba(0,0,0,0.45);
+  --elev-4: 0 20px 44px rgba(0,0,0,0.65), 0 6px 14px rgba(0,0,0,0.45);
+  --elev-glow: 0 0 24px rgba(99,102,241,0.15);
 
   color-scheme: dark;
+}
+
+/* ── ESCAPE HATCH: Drafting Room v2 (data-design="drafting-room") ─────────
+   When active, reverts semantic tokens to the walnut/gold palette.
+   Glass utilities are still available but signal/accent go back to gold. ── */
+:root[data-design="drafting-room"] {
+  --canvas: var(--mylar);  --surface: var(--onion);  --surface-muted: #ede8dd;
+  --surface-elevated: #FFFFFF;  --surface-inverse: var(--navy);
+  --border: rgba(62,42,30,0.10);  --border-strong: rgba(62,42,30,0.20);
+  --fg: var(--walnut-600);  --fg-muted: #6b5d4e;  --fg-subtle: #9a8e7e;
+  --signal: var(--gold-dark);  --signal-hover: var(--gold);
+  --signal-subtle: rgba(168,138,58,0.08);  --signal-glow: rgba(168,138,58,0.15);
+  --accent: var(--signal);  --accent-hover: var(--signal-hover);
+  --accent-subtle: var(--signal-subtle);  --accent-fg: var(--gold-dark);
+  --font-sans-stack: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono-stack: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display-stack: 'Playfair Display', Georgia, serif;
+}
+:root[data-design="drafting-room"].dark,
+html.dark[data-design="drafting-room"] {
+  --canvas: var(--navy-deep);  --surface: var(--navy);  --surface-muted: #0d2233;
+  --surface-elevated: var(--navy-mid);  --surface-inverse: var(--cream);
+  --border: rgba(198,162,78,0.08);  --border-strong: rgba(198,162,78,0.18);
+  --fg: #f5f1e8;  --fg-muted: #8a9aaa;  --fg-subtle: #5a6a7a;
+  --signal: var(--gold);  --signal-hover: var(--gold-light);
+  --signal-subtle: rgba(198,162,78,0.12);  --signal-glow: rgba(198,162,78,0.25);
+  --accent: var(--signal);  --accent-hover: var(--signal-hover);
+  --accent-subtle: var(--signal-subtle);  --accent-fg: var(--gold-light);
 }
 
 /* ============================================================================
@@ -364,32 +368,8 @@ html.dark {
     position: relative;
   }
 
-  /* ── Paper grain texture (Abel fingerprint — gold-tinted noise) ────── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    mix-blend-mode: overlay;
-    opacity: 0.04;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.9 0.1 0 0 0.05 0.1 0.85 0.05 0 0.02 0 0.05 0.6 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  }
-
-  /* ── Drafting grid (40px blueprint, radial vignette) ────────────────── */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    pointer-events: none;
-    background-image:
-      linear-gradient(var(--grid-ink) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-ink) 1px, transparent 1px);
-    background-size: 40px 40px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
-    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
-  }
+  /* ── Body pseudo-elements removed — AegisBackground component handles
+       blueprint grid, gradient orbs, and door watermark now. ───────────── */
 
   /* Tabular figures for anything in a <td.num> or a data-numeric element */
   .tabular,
@@ -408,10 +388,10 @@ html.dark {
     font-family: var(--font-display, var(--font-display-stack));
   }
 
-  /* Selection */
+  /* Selection — gradient primary color */
   ::selection {
-    background: var(--accent);
-    color: var(--fg-on-accent);
+    background: var(--c1);
+    color: white;
   }
 
   /* Scrollbars */
@@ -617,10 +597,12 @@ html.dark {
   .card-elevated    { @apply panel panel-elevated; padding: var(--density-card-padding); }
   .card-interactive { @apply panel panel-interactive; padding: var(--density-card-padding); }
   .card-glass {
-    background: rgba(10, 26, 40, 0.85);
-    backdrop-filter: saturate(1.4) blur(16px);
-    border: 1px solid rgba(198, 162, 78, 0.08);
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
   }
 
   /* ── KPI card (density-aware padding + value size) ─────────────────── */
@@ -801,6 +783,139 @@ html.dark {
   }
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; }
+
+  /* ── Glass v3 — Card system ────────────────────────────────────────────── */
+  .glass-card {
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    transition: box-shadow var(--dur-base) var(--ease),
+                transform var(--dur-fast) var(--ease);
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 12px; right: 12px;
+    height: 1.5px;
+    background: linear-gradient(135deg, rgba(79,70,229,0.15), rgba(14,165,233,0.08), rgba(6,182,212,0.1));
+    border-radius: 1px;
+    pointer-events: none;
+  }
+  .glass-card:hover {
+    box-shadow: var(--glass-hover);
+    transform: translateY(-1px);
+  }
+  /* Static variant — no hover lift */
+  .glass-card-static { composes: glass-card; }
+  .glass-card-static:hover { transform: none; box-shadow: var(--glass-shadow); }
+
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass-card {
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+    }
+  }
+
+  /* ── Glass v3 — Gradient text ──────────────────────────────────────────── */
+  .text-gradient {
+    background: var(--grad-wide);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ── Glass v3 — Gradient button backgrounds ────────────────────────────── */
+  .bg-grad {
+    background: var(--grad);
+    color: white;
+  }
+  .bg-grad-wide {
+    background: var(--grad-wide);
+    color: white;
+  }
+
+  /* ── Blueprint annotation labels ───────────────────────────────────────── */
+  .bp-label {
+    font-family: var(--font-mono, var(--font-mono-stack));
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--bp-annotation);
+  }
+
+  /* ── Blueprint dimension line between two values ───────────────────────── */
+  .bp-dimension {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bp-dimension::before,
+  .bp-dimension::after {
+    content: '';
+    height: 8px;
+    width: 1px;
+    background: var(--bp-annotation);
+    flex-shrink: 0;
+  }
+  .bp-dimension-line {
+    flex: 1;
+    height: 1px;
+    background: var(--bp-annotation);
+  }
+
+  /* ── Redline annotation (for changes/deltas) ───────────────────────────── */
+  .bp-redline {
+    text-decoration: line-through;
+    text-decoration-color: var(--bp-redline);
+    color: var(--fg-subtle);
+  }
+  .bp-redline-new {
+    color: var(--data-positive);
+    font-weight: 600;
+  }
+
+  /* ── Section callout marker (numbered circle) ──────────────────────────── */
+  .bp-callout {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--bp-annotation);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono, var(--font-mono-stack));
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--bp-annotation);
+    flex-shrink: 0;
+  }
+
+  /* ── Corner registration marks on hero cards ───────────────────────────── */
+  .bp-registration {
+    position: relative;
+  }
+  .bp-registration::before,
+  .bp-registration::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    border-color: var(--bp-annotation);
+    border-style: solid;
+    pointer-events: none;
+  }
+  .bp-registration::before {
+    top: -1px; left: -1px;
+    border-width: 1.5px 0 0 1.5px;
+  }
+  .bp-registration::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 1.5px 1.5px 0;
+  }
 }
 
 /* ============================================================================
@@ -844,29 +959,68 @@ html.dark {
 
 .page-transition { animation: slideUp 200ms var(--ease) both; }
 
-/* ── Drafting Room — gold flash for number changes ───────────────────── */
-@keyframes goldFlash {
+/* ── Value flash — highlights changed numbers ────────────────────────── */
+@keyframes signalFlash {
   0%   { background-color: var(--signal-subtle); }
   100% { background-color: transparent; }
 }
 .number-changed {
-  animation: goldFlash 180ms var(--ease) both;
+  animation: signalFlash 180ms var(--ease) both;
   border-radius: var(--radius-xs);
 }
+/* Legacy alias */
+@keyframes goldFlash {
+  0%   { background-color: var(--signal-subtle); }
+  100% { background-color: transparent; }
+}
 
-/* ── Drafting Room — drawer / sheet spring open ──────────────────────── */
+/* ── Drawer / sheet spring open ──────────────────────────────────────── */
 @keyframes drawerIn {
   from { opacity: 0; transform: translateX(100%); }
   to   { opacity: 1; transform: translateX(0); }
 }
 .drawer-enter { animation: drawerIn var(--dur-drawer) var(--ease-spring) both; }
 
-/* ── Drafting Room — content fade (the 80ms daily-page loader) ───────── */
+/* ── Content fade ────────────────────────────────────────────────────── */
 @keyframes contentFade {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 .content-ready { animation: contentFade 80ms ease-out both; }
+
+/* ── Stagger entry system (Glass v3 — every page uses this) ──────────── */
+@keyframes stagger-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-enter { animation: stagger-up 400ms var(--ease) both; }
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 350ms; }
+.stagger-8 { animation-delay: 400ms; }
+
+/* ── Blueprint grid drift (used by AegisBackground) ──────────────────── */
+@keyframes bp-drift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(60px, 60px); }
+}
+
+/* ── Gradient orb slow float ─────────────────────────────────────────── */
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(30px, -20px) scale(1.05); }
+  50%  { transform: translate(-10px, 15px) scale(0.95); }
+  75%  { transform: translate(-25px, -10px) scale(1.02); }
+}
+
+/* ── Door blueprint stroke draw ──────────────────────────────────────── */
+@keyframes bp-draw {
+  to { stroke-dashoffset: 0; }
+}
 
 /* ============================================================================
    REDUCED MOTION
@@ -878,8 +1032,8 @@ html.dark {
     transition-duration: 120ms !important;
     transition-timing-function: ease-out !important;
   }
-  /* Keep paper grain + grid visible but kill parallax/drift */
-  body::before, body::after { animation: none !important; }
+  .aegis-bg-grid, .aegis-bg-orb, .aegis-bg-particles,
+  .aegis-bg-door { animation: none !important; }
 }
 
 /* ============================================================================
@@ -993,7 +1147,7 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
   html, body {
     background: #FFFFFF !important;
     color: #0E0D0B !important;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace !important;
+    font-family: 'Azeret Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace !important;
     font-size: 10pt;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -1015,14 +1169,21 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
     display: block !important;
   }
 
-  /* Neutralize panels — no shadows, no rounded-too-far, no colored fills */
-  .panel, .card, .panel-elevated, .card-elevated {
+  /* Neutralize panels + glass cards — no shadows, no blur, no colored fills */
+  .panel, .card, .panel-elevated, .card-elevated, .glass-card {
     border: 1px solid #B8AE9E !important;
     box-shadow: none !important;
     border-radius: 4px !important;
     background: #FFFFFF !important;
+    backdrop-filter: none !important;
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+  .glass-card::before, .bp-registration::before, .bp-registration::after { display: none !important; }
+  .aegis-bg, [class*="aegis-bg-"] { display: none !important; }
+  .text-gradient {
+    background: none !important;
+    -webkit-text-fill-color: var(--fg) !important;
   }
 
   /* Tables — respect natural widths and let them break across pages */

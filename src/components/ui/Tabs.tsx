@@ -155,7 +155,7 @@ export function Tabs({
             style={{
               left: underline.left,
               width: underline.width,
-              background: 'var(--signal, var(--gold))',
+              background: 'var(--grad, var(--signal))',
               transition:
                 'left 180ms var(--ease), width 180ms var(--ease)',
             }}

@@ -88,9 +88,9 @@ export default function MobileBottomNav() {
                     width: '56px',
                     height: '56px',
                     borderRadius: '50%',
-                    backgroundColor: '#C6A24E',
+                    backgroundColor: 'var(--c1, #4F46E5)',
                     textDecoration: 'none',
-                    boxShadow: '0 4px 12px rgba(230, 126, 34, 0.4)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
                     transition: 'all 0.2s ease-in-out',
                     cursor: 'pointer',
                   }}
@@ -98,13 +98,13 @@ export default function MobileBottomNav() {
                     (e.currentTarget as HTMLAnchorElement).style.transform =
                       'scale(1.05)';
                     (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                      '0 6px 16px rgba(230, 126, 34, 0.5)';
+                      '0 6px 16px rgba(79, 70, 229, 0.5)';
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLAnchorElement).style.transform =
                       'scale(1)';
                     (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                      '0 4px 12px rgba(230, 126, 34, 0.4)';
+                      '0 4px 12px rgba(79, 70, 229, 0.4)';
                   }}
                 >
                   <span style={{ fontSize: '20px' }}>{item.icon}</span>
@@ -164,7 +164,7 @@ export default function MobileBottomNav() {
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                     marginTop: '4px',
-                    color: isActive ? '#C6A24E' : '#94A3B8',
+                    color: isActive ? 'var(--c1, #4F46E5)' : '#94A3B8',
                     transition: 'color 0.2s ease-in-out',
                   }}
                 >

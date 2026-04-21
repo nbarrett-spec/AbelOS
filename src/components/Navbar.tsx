@@ -191,7 +191,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-navy dark:bg-navy text-white shadow-lg">
+    <nav className="bg-surface/80 dark:bg-[#0B1120]/90 text-fg shadow-lg" style={{ backdropFilter: 'blur(24px) saturate(1.4)', WebkitBackdropFilter: 'blur(24px) saturate(1.4)', borderBottom: '1px solid var(--glass-border)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -214,8 +214,8 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={link.highlight
-                  ? 'text-signal hover:text-white transition font-medium'
-                  : 'text-white/80 hover:text-white transition'}
+                  ? 'text-c1 hover:text-fg transition font-medium'
+                  : 'text-fg-muted hover:text-fg transition'}
               >
                 {link.label}
               </Link>
@@ -226,7 +226,7 @@ export default function Navbar() {
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 hover:bg-white/10 rounded-lg transition"
+              className="p-2 hover:bg-surface/10 rounded-lg transition"
               aria-label="Toggle dark mode"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
@@ -235,7 +235,7 @@ export default function Navbar() {
                   <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 text-white/70" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-fg-muted" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                 </svg>
               )}
@@ -246,19 +246,19 @@ export default function Navbar() {
               <div ref={searchRef} className="relative">
                 <button
                   onClick={() => { setSearchOpen(!searchOpen); setTimeout(() => searchInputRef.current?.focus(), 50) }}
-                  className="p-2 hover:bg-white/10 rounded-lg transition flex items-center gap-2"
+                  className="p-2 hover:bg-surface/10 rounded-lg transition flex items-center gap-2"
                   title="Search (Ctrl+K)"
                 >
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-fg-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <span className="hidden lg:block text-xs text-white/40 border border-white/20 rounded px-1.5 py-0.5">Ctrl+K</span>
+                  <span className="hidden lg:block text-xs text-fg-subtle border border-border rounded px-1.5 py-0.5">Ctrl+K</span>
                 </button>
 
                 {searchOpen && (
-                  <div className="absolute right-0 mt-2 w-96 max-w-[90vw] bg-white rounded-xl shadow-2xl border border-gray-200 z-[60] overflow-hidden">
-                    <div className="flex items-center px-4 py-3 border-b border-gray-100">
-                      <svg className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="absolute right-0 mt-2 w-96 max-w-[90vw] glass-card z-[60] overflow-hidden">
+                    <div className="flex items-center px-4 py-3 border-b border-border">
+                      <svg className="w-5 h-5 text-fg-subtle mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                       <input
@@ -267,37 +267,37 @@ export default function Navbar() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search orders, invoices, quotes, products..."
-                        className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+                        className="flex-1 text-sm text-fg placeholder:text-fg-subtle outline-none bg-transparent"
                         autoFocus
                       />
                       {searchQuery && (
-                        <button onClick={() => { setSearchQuery(''); setSearchResults([]) }} className="text-gray-400 hover:text-gray-600 ml-2">
+                        <button onClick={() => { setSearchQuery(''); setSearchResults([]) }} className="text-fg-subtle hover:text-fg ml-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       )}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {searchLoading ? (
-                        <div className="px-4 py-6 text-center text-sm text-gray-400">Searching...</div>
+                        <div className="px-4 py-6 text-center text-sm text-fg-subtle">Searching...</div>
                       ) : searchResults.length > 0 ? (
                         searchResults.map((r, i) => (
                           <button
                             key={`${r.type}-${r.id}-${i}`}
                             onClick={() => handleResultClick(r.href)}
-                            className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 transition"
+                            className="w-full text-left px-4 py-3 hover:bg-surface-muted flex items-center gap-3 border-b border-border/50 transition"
                           >
                             <span className="text-lg flex-shrink-0">{r.icon}</span>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-gray-900 truncate">{r.label}</div>
-                              <div className="text-xs text-gray-500">{r.subtitle}{r.total ? ` · ${fmtCurrency(Number(r.total))}` : ''}</div>
+                              <div className="text-sm font-medium text-fg truncate">{r.label}</div>
+                              <div className="text-xs text-fg-muted">{r.subtitle}{r.total ? ` · ${fmtCurrency(Number(r.total))}` : ''}</div>
                             </div>
-                            <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            <svg className="w-4 h-4 text-fg-subtle flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                           </button>
                         ))
                       ) : searchQuery.length >= 2 ? (
-                        <div className="px-4 py-6 text-center text-sm text-gray-400">No results for "{searchQuery}"</div>
+                        <div className="px-4 py-6 text-center text-sm text-fg-subtle">No results for "{searchQuery}"</div>
                       ) : (
-                        <div className="px-4 py-6 text-center text-sm text-gray-400">Type to search orders, invoices, quotes...</div>
+                        <div className="px-4 py-6 text-center text-sm text-fg-subtle">Type to search orders, invoices, quotes...</div>
                       )}
                     </div>
                   </div>
@@ -310,10 +310,10 @@ export default function Navbar() {
               <div ref={notifRef} className="relative">
                 <button
                   onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) fetchNotifications() }}
-                  className="p-2 hover:bg-white/10 rounded-lg transition relative"
+                  className="p-2 hover:bg-surface/10 rounded-lg transition relative"
                   title="Notifications"
                 >
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-fg-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {unreadCount > 0 && (
@@ -324,9 +324,9 @@ export default function Navbar() {
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute right-0 mt-2 w-96 max-w-[90vw] bg-white rounded-xl shadow-2xl border border-gray-200 z-[60] overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                  <div className="absolute right-0 mt-2 w-96 max-w-[90vw] glass-card z-[60] overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                      <h3 className="text-sm font-semibold text-fg">Notifications</h3>
                       {unreadCount > 0 && (
                         <button onClick={markAllRead} className="text-xs text-signal hover:underline font-medium">
                           Mark all read
@@ -335,8 +335,8 @@ export default function Navbar() {
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="px-4 py-8 text-center text-sm text-gray-400">
-                          <svg className="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="px-4 py-8 text-center text-sm text-fg-subtle">
+                          <svg className="w-8 h-8 mx-auto mb-2 text-fg-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                           </svg>
                           No notifications yet
@@ -346,29 +346,29 @@ export default function Navbar() {
                           <button
                             key={n.id}
                             onClick={() => handleNotifClick(n)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-50 transition hover:bg-gray-50 flex items-start gap-3 ${
-                              n.read ? 'bg-white' : 'bg-signal-subtle'
+                            className={`w-full text-left px-4 py-3 border-b border-border/50 transition hover:bg-surface-muted flex items-start gap-3 ${
+                              n.read ? 'bg-surface' : 'bg-signal-subtle'
                             }`}
                           >
                             <span className="text-lg flex-shrink-0 mt-0.5">{NOTIF_ICONS[n.type] || '🔔'}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
-                                <p className={`text-sm truncate ${n.read ? 'text-gray-700' : 'text-gray-900 font-semibold'}`}>
+                                <p className={`text-sm truncate ${n.read ? 'text-fg-muted' : 'text-fg font-semibold'}`}>
                                   {n.title}
                                 </p>
                                 {!n.read && (
                                   <span className="w-2 h-2 rounded-full bg-signal flex-shrink-0 mt-1.5" />
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500 truncate mt-0.5">{n.message}</p>
-                              <p className="text-[11px] text-gray-400 mt-1">{getTimeAgo(n.createdAt)}</p>
+                              <p className="text-xs text-fg-muted truncate mt-0.5">{n.message}</p>
+                              <p className="text-[11px] text-fg-subtle mt-1">{getTimeAgo(n.createdAt)}</p>
                             </div>
                           </button>
                         ))
                       )}
                     </div>
                     {notifications.length > 0 && (
-                      <div className="border-t border-gray-100 px-4 py-2 text-center">
+                      <div className="border-t border-border px-4 py-2 text-center">
                         <button
                           onClick={() => { setNotifOpen(false); router.push('/dashboard/notifications') }}
                           className="text-xs text-signal hover:underline font-medium"
@@ -387,7 +387,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-3 py-2 transition"
+                  className="flex items-center gap-2 hover:bg-surface/10 rounded-lg px-3 py-2 transition"
                 >
                   <div className="w-8 h-8 bg-signal rounded-full flex items-center justify-center text-sm font-bold">
                     {getInitials(builder.contactName)}
@@ -398,19 +398,19 @@ export default function Navbar() {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-1 z-50">
+                  <div className="glass-card absolute right-0 mt-2 w-48 py-1 z-50">
                     <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-fg">
                         {builder.contactName}
                       </p>
-                      <p className="text-xs text-gray-500">{builder.email}</p>
+                      <p className="text-xs text-fg-muted">{builder.email}</p>
                     </div>
                     <button
                       onClick={() => {
                         setMenuOpen(false)
                         logout()
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="w-full text-left px-4 py-2 text-sm text-data-negative hover:bg-data-negative-bg"
                     >
                       Sign Out
                     </button>
@@ -422,7 +422,7 @@ export default function Navbar() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 hover:bg-white/10 rounded-lg transition"
+              className="md:hidden p-2 hover:bg-surface/10 rounded-lg transition"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -441,7 +441,7 @@ export default function Navbar() {
 
       {/* Mobile Nav Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-navy-deep">
+        <div className="md:hidden border-t border-border bg-surface">
           <div className="px-4 py-3 space-y-1">
             {NAV_LINKS.map(link => (
               <Link
@@ -450,8 +450,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-3 py-2.5 rounded-lg text-sm transition ${
                   link.highlight
-                    ? 'text-signal font-medium hover:bg-white/10'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                    ? 'text-c1 font-medium hover:bg-surface-muted'
+                    : 'text-fg-muted hover:text-fg hover:bg-surface-muted'
                 }`}
               >
                 {link.label}

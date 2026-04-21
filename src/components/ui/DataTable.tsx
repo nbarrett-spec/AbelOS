@@ -316,7 +316,7 @@ export function DataTable<T>({
       {...props}
     >
       {toolbar && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border bg-surface">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border" style={{ background: 'var(--glass)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)' }}>
           {toolbar}
         </div>
       )}
@@ -382,7 +382,7 @@ export function DataTable<T>({
                       <span
                         aria-hidden
                         className="absolute left-0 right-0 bottom-0 h-[2px]"
-                        style={{ background: 'var(--signal, var(--gold))' }}
+                        style={{ background: 'var(--grad, var(--signal))' }}
                       />
                     )}
                   </th>

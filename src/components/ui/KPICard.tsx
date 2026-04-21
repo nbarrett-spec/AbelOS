@@ -163,7 +163,7 @@ function renderValue(value: string | number | ReactNode): ReactNode {
 
 function KPICardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('panel p-4 flex flex-col gap-3 animate-pulse', className)}>
+    <div className={cn('glass-card p-4 flex flex-col gap-3 animate-pulse', className)}>
       <div className="h-2.5 w-24 skeleton" />
       <div className="h-8 w-32 skeleton" />
       <div className="h-2.5 w-16 skeleton" />
@@ -205,7 +205,7 @@ export default function KPICard({
     <Tag
       onClick={onClick}
       className={cn(
-        'relative panel overflow-hidden text-left w-full',
+        'relative glass-card overflow-hidden text-left w-full',
         'px-4 pt-4 pb-4',
         'flex flex-col gap-1',
         'transition-[border-color,box-shadow] duration-fast ease-out',

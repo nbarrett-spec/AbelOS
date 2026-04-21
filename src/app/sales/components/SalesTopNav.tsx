@@ -45,13 +45,21 @@ export default function SalesTopNav({
   }
 
   return (
-    <nav className="bg-[#1e3a5f] text-white shadow-lg">
+    <nav
+      className="text-fg shadow-lg"
+      style={{
+        background: 'var(--glass)',
+        backdropFilter: 'blur(24px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+        borderBottom: '1px solid var(--glass-border)',
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo/Branding */}
           <div className="flex items-center gap-8">
             <Link href="/sales" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-8 h-8 rounded bg-[#C6A24E] flex items-center justify-center font-bold text-white">
+              <div className="w-8 h-8 rounded bg-grad flex items-center justify-center font-bold text-white">
                 A
               </div>
               <span className="text-lg font-bold hidden sm:inline">Abel Sales</span>
@@ -65,8 +73,8 @@ export default function SalesTopNav({
                   href={link.href}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
                     isActive(link.href)
-                      ? 'bg-white/20 text-white'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      ? 'bg-signal/15 text-fg'
+                      : 'text-fg-muted hover:text-fg hover:bg-surface-muted'
                   }`}
                 >
                   <span className="text-base">{link.icon}</span>
@@ -78,8 +86,8 @@ export default function SalesTopNav({
 
           {/* Right: User Info and Logout */}
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-md bg-white/10">
-              <span className="text-xs text-white/70">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-md bg-surface-muted">
+              <span className="text-xs text-fg-muted">
                 {new Date().toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -90,26 +98,26 @@ export default function SalesTopNav({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-8 h-8 rounded-full bg-[#C6A24E] text-white text-xs flex items-center justify-center font-bold hover:bg-[#A8882A] transition-colors"
+                className="w-8 h-8 rounded-full bg-grad text-white text-xs flex items-center justify-center font-bold hover:opacity-90 transition-opacity"
                 title={`${firstName} ${lastName}`}
               >
                 {initials}
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 top-10 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 text-gray-900">
-                  <div className="px-4 py-3 border-b border-gray-200">
-                    <p className="text-sm font-semibold text-gray-900">
+                <div className="glass-card absolute right-0 top-10 w-56 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-sm font-semibold text-fg">
                       {firstName} {lastName}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{email}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-fg-muted mt-0.5">{email}</p>
+                    <p className="text-xs text-fg-subtle mt-1">
                       {role === 'SALES_REP' ? 'Sales Representative' : role}
                     </p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm text-data-negative hover:bg-data-negative-bg transition-colors"
                   >
                     Sign Out
                   </button>
@@ -127,8 +135,8 @@ export default function SalesTopNav({
               href={link.href}
               className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive(link.href)
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
+                  ? 'bg-signal/15 text-fg'
+                  : 'text-fg-muted hover:text-fg hover:bg-surface-muted'
               }`}
             >
               {link.label}

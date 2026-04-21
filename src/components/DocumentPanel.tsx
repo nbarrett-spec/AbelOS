@@ -133,20 +133,20 @@ export default function DocumentPanel(props: DocumentPanelProps) {
   }
 
   return (
-    <div className="bg-white border rounded-xl overflow-hidden">
+    <div className="bg-surface border rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-surface-muted">
         <div className="flex items-center gap-2">
           <span className="text-lg">📂</span>
-          <span className="font-semibold text-gray-800 text-sm">Documents</span>
+          <span className="font-semibold text-fg text-sm">Documents</span>
           {docs.length > 0 && (
-            <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">{docs.length}</span>
+            <span className="text-xs bg-surface-muted text-fg-muted px-1.5 py-0.5 rounded-full">{docs.length}</span>
           )}
         </div>
         <button
           onClick={() => setShowUpload(!showUpload)}
           className="text-xs px-2.5 py-1 rounded-lg font-medium text-white"
-          style={{ backgroundColor: '#C6A24E' }}
+          style={{ backgroundColor: 'var(--c1, #4F46E5)' }}
         >
           + Upload
         </button>
@@ -154,7 +154,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
 
       {/* Quick upload bar */}
       {showUpload && (
-        <div className="p-3 border-b bg-orange-50 space-y-2">
+        <div className="p-3 border-b bg-signal-subtle space-y-2">
           <div className="flex gap-2">
             <select
               value={uploadCat}
@@ -166,7 +166,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="flex-1 border-2 border-dashed rounded px-3 py-1 text-xs text-gray-500 hover:border-blue-400 hover:text-blue-600 transition"
+              className="flex-1 border-2 border-dashed rounded px-3 py-1 text-xs text-fg-muted hover:border-blue-400 hover:text-c1 transition"
             >
               {uploading ? 'Uploading...' : 'Click to select files'}
             </button>
@@ -185,27 +185,27 @@ export default function DocumentPanel(props: DocumentPanelProps) {
       {/* Document list */}
       <div style={{ maxHeight, overflowY: 'auto' }}>
         {loading ? (
-          <div className="p-6 text-center text-gray-400 text-sm">Loading...</div>
+          <div className="p-6 text-center text-fg-subtle text-sm">Loading...</div>
         ) : docs.length === 0 ? (
           <div className="p-6 text-center">
-            <div className="text-gray-400 text-sm">No documents attached</div>
-            <div className="text-gray-300 text-xs mt-1">Upload files to link them here</div>
+            <div className="text-fg-subtle text-sm">No documents attached</div>
+            <div className="text-fg-subtle text-xs mt-1">Upload files to link them here</div>
           </div>
         ) : (
           <div className="divide-y">
             {docs.map(doc => (
-              <div key={doc.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition group">
+              <div key={doc.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-muted transition group">
                 <span className="text-lg flex-shrink-0">{getIcon(doc.fileType, doc.mimeType)}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-800 truncate">{doc.fileName}</div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-sm font-medium text-fg truncate">{doc.fileName}</div>
+                  <div className="text-xs text-fg-subtle">
                     {formatSize(doc.fileSize)} &middot; {new Date(doc.createdAt).toLocaleDateString()}
                     {!compact && doc.uploadedByName && ` &middot; ${doc.uploadedByName}`}
                   </div>
                 </div>
                 <a
                   href={`/api/ops/documents/vault/${doc.id}?mode=download`}
-                  className="text-xs text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition font-medium"
+                  className="text-xs text-c1 hover:text-c2 opacity-0 group-hover:opacity-100 transition font-medium"
                 >
                   Download
                 </a>
