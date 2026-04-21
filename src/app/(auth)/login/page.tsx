@@ -1,31 +1,12 @@
 'use client'
 
-/**
- * Login — Aegis v2 "Drafting Room" composition.
- *
- * Left 2/3: navy canvas with a seed-picked architectural blueprint animation
- * (drawn over 9 seconds, then breathes). Right 1/3: cream "mylar" form on a
- * Wes Anderson vertical-center grid. On successful auth the left panel
- * slides off-screen over 320ms (--ease-spring) before router.push().
- *
- * All legacy form behavior is preserved: searchParams prefill, caps-lock
- * detection, remember-me, forgot-password, apply-for-account. Blueprint
- * picks from 12 designs via day-of-year seed — different door every day.
- */
-
-import { useEffect, useRef, useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { AlertCircle, LogIn } from 'lucide-react'
+import { LogIn, ArrowRight, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import BlueprintAnimation from '@/components/BlueprintAnimation'
-
-function dayOfYearSeed(): number {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), 0, 0)
-  return Math.floor((now.getTime() - start.getTime()) / 86400000)
-}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,10 +17,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [capsLockOn, setCapsLockOn] = useState(false)
-  /** Triggers the left-panel slide-away once auth succeeds. */
-  const [authed, setAuthed] = useState(false)
-  /** Stable seed for SSR → client — pick once. */
-  const [seed] = useState<number>(() => dayOfYearSeed())
   const emailRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -68,171 +45,132 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error || `Login failed (${res.status})`)
 
-      // Kick the slide-away, then navigate after the transition.
-      setAuthed(true)
       const next = searchParams?.get('next')
-      const dest = next && next.startsWith('/') ? next : '/dashboard'
-      window.setTimeout(() => router.push(dest), 320)
+      router.push(next && next.startsWith('/') ? next : '/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.')
+    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-canvas">
-      {/* ── Left 2/3: navy blueprint canvas ───────────────────────────────── */}
-      <aside
-        aria-hidden="true"
-        className="hidden lg:flex lg:w-2/3 relative overflow-hidden"
-        style={{
-          backgroundColor: 'var(--navy-deep)',
-          transform: authed ? 'translateX(-110%)' : 'translateX(0)',
-          transition: 'transform 320ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1))',
-        }}
-      >
-        {/* Drafting grid */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(198,162,78,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(198,162,78,0.07) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-            maskImage: 'radial-gradient(ellipse 75% 70% at 50% 50%, black 0%, transparent 100%)',
-            WebkitMaskImage:
-              'radial-gradient(ellipse 75% 70% at 50% 50%, black 0%, transparent 100%)',
-          }}
-        />
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* ── Left panel: immersive Drafting Room experience ────────── */}
+      <div className="hidden lg:flex lg:w-[55%] relative bg-navy overflow-hidden">
+        {/* Layered background */}
+        <div className="absolute inset-0">
+          {/* Gradient base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-deep via-navy to-navy-mid" />
 
-        {/* Soft gold bloom behind the drawing */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 45% 55% at 50% 50%, rgba(198,162,78,0.08), transparent 70%)',
-          }}
-        />
-
-        {/* Top-left logo */}
-        <div className="absolute top-10 left-10 z-10 flex items-center gap-3">
-          {/* Inline mark — SVG so no image-decode flicker */}
-          <svg
-            width="34"
-            height="34"
-            viewBox="0 0 40 40"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <rect x="2" y="2" width="36" height="36" rx="8" fill="#0a1a28" stroke="#c6a24e" strokeWidth="1" />
-            <path
-              d="M13 28 L20 10 L27 28 M16 22 H24"
-              stroke="#c6a24e"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
-          <div>
-            <p className="text-[15px] font-semibold tracking-tight text-[#f5f1e8]">Abel Lumber</p>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#c6a24e]">Aegis</p>
-          </div>
-        </div>
-
-        {/* Blueprint — centered, gold currentColor */}
-        <div
-          className="relative z-[1] flex-1 flex items-center justify-center px-16"
-          style={{ color: 'var(--gold)' }}
-        >
-          <BlueprintAnimation
-            seed={seed}
-            loop
-            duration={9000}
-            strokeWidth={1.1}
-            className="w-full max-w-[480px] h-auto drop-shadow-[0_0_18px_rgba(198,162,78,0.15)]"
-            ariaLabel="Door plan blueprint — daily drawing"
+          {/* Drafting grid */}
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: `linear-gradient(rgba(198,162,78,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(198,162,78,0.3) 1px, transparent 1px)`,
+              backgroundSize: '40px 40px',
+            }}
           />
+
+          {/* Warm gold glow from bottom-right */}
+          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-gold/15 rounded-full blur-[120px]" />
+          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-navy-light/30 rounded-full blur-[100px]" />
+
+          {/* Floating wood grain lines */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grain" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+                <path d="M0 20 Q50 15 100 22 Q150 30 200 18" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 60 Q40 55 90 65 Q140 70 200 58" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 100 Q60 95 110 105 Q160 110 200 98" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 140 Q30 135 80 145 Q130 150 200 138" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 180 Q50 175 100 185 Q150 190 200 178" stroke="white" strokeWidth="0.5" fill="none" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grain)" />
+          </svg>
         </div>
 
-        {/* Footer caption */}
-        <p className="absolute bottom-10 left-10 right-10 font-mono text-[10px] uppercase tracking-[0.22em] text-[#c6a24e]/70">
-          Gainesville, TX · Doors, trim & hardware for the builders who build Texas
-        </p>
-      </aside>
-
-      {/* ── Right 1/3: cream login form ───────────────────────────────────── */}
-      <section
-        className="flex-1 flex items-center justify-center px-6 sm:px-10 py-10"
-        style={{ backgroundColor: 'var(--mylar)' }}
-      >
-        <div className="w-full max-w-sm">
-          {/* Mobile mark — only shows when the left panel is hidden */}
-          <div className="lg:hidden mb-10 flex items-center gap-3">
-            <svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect x="2" y="2" width="36" height="36" rx="8" fill="#0a1a28" />
-              <path
-                d="M13 28 L20 10 L27 28 M16 22 H24"
-                stroke="#c6a24e"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
-            <span
-              className="text-lg font-semibold tracking-tight"
-              style={{ color: 'var(--walnut-600)' }}
-            >
-              Abel Lumber
-            </span>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+          {/* Logo */}
+          <div className="animate-enter">
+            <div className="flex items-center gap-3">
+              <Image src="/icon-192.png" alt="Abel Lumber" width={40} height={40} className="rounded-xl" />
+              <span className="text-xl font-bold text-white tracking-tight">Abel Lumber</span>
+            </div>
           </div>
 
-          <header className="mb-8">
-            <p
-              className="font-mono text-[10px] uppercase tracking-[0.22em] mb-3"
-              style={{ color: 'var(--gold-dark)' }}
-            >
-              <span
-                aria-hidden
-                className="inline-block w-7 h-px align-middle mr-2"
-                style={{ background: 'var(--gold-dark)' }}
-              />
-              Aegis · Sign in
-            </p>
-            <h1
-              className="font-display italic text-4xl leading-[1.05] tracking-tight"
-              style={{
-                fontFamily: 'var(--font-display, Georgia, serif)',
-                color: 'var(--walnut-700)',
-                fontStyle: 'italic',
-              }}
-            >
-              Welcome back
+          {/* Hero copy */}
+          <div className="max-w-md">
+            <h1 className="animate-enter animate-enter-delay-1 text-4xl xl:text-5xl font-bold text-white leading-[1.1] tracking-tight">
+              Built for the
+              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-light">
+                builders who
+              </span>
+              <span className="block mt-1">build Texas.</span>
             </h1>
-            <p className="mt-3 text-[13px]" style={{ color: 'var(--walnut-500)' }}>
-              Sign in to access your projects, quotes, and orders.
+            <p className="animate-enter animate-enter-delay-2 mt-6 text-lg text-white/60 leading-relaxed max-w-sm">
+              Manage orders, track deliveries, and grow your business — all in one place.
             </p>
-          </header>
 
+            {/* Stats strip */}
+            <div className="animate-enter animate-enter-delay-3 mt-10 flex gap-8">
+              {[
+                { value: '2,400+', label: 'Orders managed' },
+                { value: '150+', label: 'Active builders' },
+                { value: '99.9%', label: 'Uptime' },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <div className="text-sm text-white/40 mt-0.5">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="animate-enter animate-enter-delay-4 text-sm text-white/30">
+            Door & Trim Specialists &middot; Gainesville, TX
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right panel: login form ────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center bg-canvas p-6 sm:p-10">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden mb-10 animate-enter">
+            <div className="flex items-center gap-3">
+              <Image src="/icon-192.png" alt="Abel Lumber" width={36} height={36} className="rounded-xl" />
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Abel Lumber</span>
+            </div>
+          </div>
+
+          {/* Form header */}
+          <div className="animate-enter animate-enter-delay-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+              Welcome back
+            </h2>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              Sign in to access your projects and orders
+            </p>
+          </div>
+
+          {/* Error */}
           {error && (
             <div
               role="alert"
               aria-live="polite"
-              className="mb-5 flex items-start gap-3 px-4 py-3 rounded-md"
-              style={{
-                backgroundColor: 'rgba(182,78,61,0.08)',
-                border: '1px solid rgba(182,78,61,0.25)',
-                color: '#7a2a1c',
-              }}
+              className="mt-6 flex items-start gap-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-xl px-4 py-3.5 animate-[slideDown_200ms_ease-out]"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <p className="text-[13px] leading-snug">{error}</p>
+              <AlertCircle className="w-5 h-5 text-danger-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-danger-700 dark:text-danger-400">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4" noValidate>
+          {/* Form */}
+          <form onSubmit={handleLogin} className="mt-8 space-y-5 animate-enter animate-enter-delay-2" noValidate>
             <Input
               ref={emailRef}
               label="Email address"
@@ -265,73 +203,73 @@ export default function LoginPage() {
                 size="lg"
               />
               {capsLockOn && (
-                <p
-                  className="mt-1.5 text-[11px] flex items-center gap-1.5 font-mono uppercase tracking-wider"
-                  aria-live="polite"
-                  style={{ color: 'var(--gold-dark)' }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--gold-dark)' }} />
-                  Caps lock is on
+                <p className="mt-1.5 text-xs text-warning-600 dark:text-warning-400 flex items-center gap-1.5" aria-live="polite">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning-500 animate-pulse" />
+                  Caps Lock is on
                 </p>
               )}
             </div>
 
+            {/* Remember + Forgot */}
             <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer group select-none">
+              <label className="flex items-center gap-2.5 cursor-pointer group select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-gray-400 cursor-pointer"
-                  style={{ accentColor: 'var(--gold-dark)' }}
+                  className="w-4 h-4 rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-signal focus:ring-signal-subtle cursor-pointer transition"
                 />
-                <span className="text-[12px]" style={{ color: 'var(--walnut-500)' }}>
+                <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                   Remember me
                 </span>
               </label>
               <Link
                 href="/forgot-password"
-                className="text-[12px] font-medium transition-colors hover:underline"
-                style={{ color: 'var(--gold-dark)' }}
+                className="text-sm font-medium text-signal hover:text-signal-hover transition-colors"
               >
                 Forgot password?
               </Link>
             </div>
 
+            {/* Submit */}
             <Button
               type="submit"
-              variant="primary"
+              variant="accent"
               size="lg"
               fullWidth
               loading={loading}
               disabled={!email || !password}
-              icon={!loading ? <LogIn className="w-4 h-4" /> : undefined}
-              className="mt-2"
+              icon={!loading ? <LogIn className="w-4.5 h-4.5" /> : undefined}
+              className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-gold/20 hover:shadow-xl hover:shadow-gold/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
-          <footer className="mt-10 text-center">
-            <p
-              className="font-mono text-[10px] uppercase tracking-[0.18em] mb-3"
-              style={{ color: 'var(--walnut-400)' }}
-            >
-              New to Abel Lumber
-            </p>
+          {/* Divider */}
+          <div className="animate-enter animate-enter-delay-3 mt-8 flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">New to Abel Lumber?</span>
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+          </div>
+
+          {/* Sign up */}
+          <div className="animate-enter animate-enter-delay-4 mt-6">
             <Link
               href="/apply"
-              className="inline-block text-[12px] font-medium hover:underline"
-              style={{ color: 'var(--walnut-600)' }}
+              className="group flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
             >
-              Apply for a builder account →
+              Apply for a builder account
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <p className="mt-8 text-[10px]" style={{ color: 'var(--walnut-400)' }}>
-              By signing in, you agree to our Terms of Service and Privacy Policy.
-            </p>
-          </footer>
+          </div>
+
+          {/* Footer */}
+          <p className="animate-enter animate-enter-delay-5 mt-10 text-center text-xs text-gray-400 dark:text-gray-500">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
         </div>
-      </section>
+      </div>
     </div>
   )
 }
