@@ -52,20 +52,36 @@ export async function verifyEngineToken(req: NextRequest): Promise<EngineAuth> {
 
 /**
  * Convenience: forward a request to the NUC coordinator, adding the agent
- * bearer token that the coordinator's auth_middleware expects.
+ * bearer token that the coordinator's auth_middleware expects. Optionally
+ * attaches Cloudflare Access service-token headers so requests survive a
+ * Zero-Trust Access policy in front of the tunnel hostname.
  *
- * NUC_TAILSCALE_URL  e.g. http://100.84.113.47:8400
- * NUC_AGENT_TOKEN    must match COORDINATOR_API_KEY on the NUC
+ * Env:
+ *   NUC_URL                  public base URL (e.g. https://nuc.abellumber.com).
+ *                            Legacy NUC_TAILSCALE_URL is still read as a fallback.
+ *   NUC_AGENT_TOKEN          must match COORDINATOR_API_KEY on the NUC
+ *   CF_ACCESS_CLIENT_ID      (optional) CF Access service-token client ID
+ *   CF_ACCESS_CLIENT_SECRET  (optional) CF Access service-token client secret
  */
 export async function forwardToNuc(
   path: string,
   init?: RequestInit & { timeoutMs?: number }
 ): Promise<Response> {
-  const base = process.env.NUC_TAILSCALE_URL
+  const base = process.env.NUC_URL || process.env.NUC_TAILSCALE_URL
   const token = process.env.NUC_AGENT_TOKEN
   if (!base || !token) {
-    throw new Error('NUC_TAILSCALE_URL or NUC_AGENT_TOKEN not configured')
+    throw new Error('NUC_URL or NUC_AGENT_TOKEN not configured')
   }
+  const cfId = process.env.CF_ACCESS_CLIENT_ID
+  const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET
+  const cfAccessHeaders: Record<string, string> =
+    cfId && cfSecret
+      ? {
+          'CF-Access-Client-Id': cfId,
+          'CF-Access-Client-Secret': cfSecret,
+        }
+      : {}
+
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort(), init?.timeoutMs ?? 65_000)
   try {
@@ -74,9 +90,13 @@ export async function forwardToNuc(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        ...cfAccessHeaders,
         ...(init?.headers || {}),
       },
       signal: controller.signal,
+      // Don't follow CF Access login redirects — we want the 302 to bubble up
+      // as a visible failure so we can diagnose service-token misconfiguration.
+      redirect: 'manual',
     })
   } finally {
     clearTimeout(t)
