@@ -129,7 +129,7 @@ export default function AppearancePage() {
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : prefs.theme;
 
-    // Toggle dark class for globals.css overrides
+    // Toggle dark class — activates the full Aegis Glass dark token set in globals.css
     if (resolvedTheme === 'dark') {
       root.classList.add('dark');
     } else {
@@ -137,21 +137,20 @@ export default function AppearancePage() {
     }
     root.setAttribute('data-theme', resolvedTheme);
 
-    // CSS variables
-    const colors: Record<string, Record<string, string>> = {
-      light: {
-        '--bg-primary': '#ffffff', '--bg-secondary': '#f8f9fa', '--bg-sidebar': '#1B2A4A',
-        '--text-primary': '#1a1a2e', '--text-secondary': '#6b7280', '--border-color': '#e5e7eb', '--card-bg': '#ffffff',
-      },
-      dark: {
-        '--bg-primary': '#1a1a2e', '--bg-secondary': '#16213e', '--bg-sidebar': '#0f1526',
-        '--text-primary': '#e8e8e8', '--text-secondary': '#9ca3af', '--border-color': '#2d3748', '--card-bg': '#1e2a3a',
-      },
-    };
-    Object.entries(colors[resolvedTheme]).forEach(([k, v]) => root.style.setProperty(k, v));
-    root.style.setProperty('--accent-color', prefs.accentColor);
+    // Font size
     const fontSizes: Record<string, string> = { small: '14px', medium: '16px', large: '18px' };
     root.style.setProperty('--font-size-base', fontSizes[prefs.fontSize]);
+
+    // Accent color → signal/accent CSS vars (only if non-default)
+    if (prefs.accentColor && prefs.accentColor !== '#C6A24E') {
+      root.style.setProperty('--signal', prefs.accentColor);
+      root.style.setProperty('--accent', prefs.accentColor);
+      root.style.setProperty('--accent-fg', prefs.accentColor);
+    } else {
+      root.style.removeProperty('--signal');
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--accent-fg');
+    }
   }, []);
 
   const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {

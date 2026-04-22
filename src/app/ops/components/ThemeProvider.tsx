@@ -27,27 +27,6 @@ const DEFAULT_PREFERENCES: Preferences = {
   compactMode: false,
 };
 
-const THEME_COLORS = {
-  light: {
-    '--bg-primary': '#ffffff',
-    '--bg-secondary': '#f8f9fa',
-    '--bg-sidebar': '#1B2A4A',
-    '--text-primary': '#1a1a2e',
-    '--text-secondary': '#6b7280',
-    '--border-color': '#e5e7eb',
-    '--card-bg': '#ffffff',
-  },
-  dark: {
-    '--bg-primary': '#1a1a2e',
-    '--bg-secondary': '#16213e',
-    '--bg-sidebar': '#0f1526',
-    '--text-primary': '#e8e8e8',
-    '--text-secondary': '#9ca3af',
-    '--border-color': '#2d3748',
-    '--card-bg': '#1e2a3a',
-  },
-};
-
 const FONT_SIZES = {
   small: '14px',
   medium: '16px',
@@ -76,29 +55,40 @@ function createHoverColor(hex: string): string {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)`;
 }
 
-function applyThemeColors(theme: 'light' | 'dark', accentColor: string, fontSize: 'small' | 'medium' | 'large') {
+function applyTheme(theme: 'light' | 'dark', accentColor: string, fontSize: 'small' | 'medium' | 'large') {
   const root = document.documentElement;
 
-  // Apply theme-specific colors
-  const themeColors = THEME_COLORS[theme];
-  Object.entries(themeColors).forEach(([key, value]) => {
-    root.style.setProperty(key, value);
-  });
-
-  // Apply accent color
-  root.style.setProperty('--accent-color', accentColor);
-  root.style.setProperty('--accent-color-hover', createHoverColor(accentColor));
-
-  // Apply font size
-  root.style.setProperty('--font-size-base', FONT_SIZES[fontSize]);
-
-  // Set data-theme attribute AND dark class (for globals.css dark mode overrides)
-  root.setAttribute('data-theme', theme);
+  // Toggle dark class — this activates the full Aegis Glass dark token set in globals.css
   if (theme === 'dark') {
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
   }
+  root.setAttribute('data-theme', theme);
+
+  // User accent color → override the signal/accent vars
+  if (accentColor && accentColor !== '#C6A24E') {
+    const rgb = hexToRgb(accentColor);
+    if (rgb) {
+      root.style.setProperty('--signal', accentColor);
+      root.style.setProperty('--signal-hover', createHoverColor(accentColor));
+      root.style.setProperty('--signal-subtle', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.10)`);
+      root.style.setProperty('--signal-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.20)`);
+      root.style.setProperty('--accent', accentColor);
+      root.style.setProperty('--accent-hover', createHoverColor(accentColor));
+      root.style.setProperty('--accent-subtle', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08)`);
+      root.style.setProperty('--accent-fg', accentColor);
+    }
+  } else {
+    // Reset to default — remove inline overrides so globals.css wins
+    ['--signal', '--signal-hover', '--signal-subtle', '--signal-glow',
+     '--accent', '--accent-hover', '--accent-subtle', '--accent-fg'].forEach(v => {
+      root.style.removeProperty(v);
+    });
+  }
+
+  // Font size
+  root.style.setProperty('--font-size-base', FONT_SIZES[fontSize]);
 }
 
 interface ThemeProviderProps {
@@ -117,11 +107,12 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
         const response = await fetch('/api/ops/preferences');
         if (response.ok) {
           const data = await response.json();
+          const prefs = data.preferences || data;
           setPreferences({
-            theme: data.theme || DEFAULT_PREFERENCES.theme,
-            accentColor: data.accentColor || DEFAULT_PREFERENCES.accentColor,
-            fontSize: data.fontSize || DEFAULT_PREFERENCES.fontSize,
-            compactMode: data.compactMode || DEFAULT_PREFERENCES.compactMode,
+            theme: prefs.theme || DEFAULT_PREFERENCES.theme,
+            accentColor: prefs.accentColor || DEFAULT_PREFERENCES.accentColor,
+            fontSize: prefs.fontSize || DEFAULT_PREFERENCES.fontSize,
+            compactMode: prefs.compactMode || DEFAULT_PREFERENCES.compactMode,
           });
         } else {
           setPreferences(DEFAULT_PREFERENCES);
@@ -141,7 +132,7 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     const resolvedTheme = preferences.theme === 'system' ? getSystemTheme() : preferences.theme;
     setTheme(resolvedTheme);
-    applyThemeColors(resolvedTheme, preferences.accentColor, preferences.fontSize);
+    applyTheme(resolvedTheme, preferences.accentColor, preferences.fontSize);
   }, [preferences]);
 
   // Listen for system theme changes
@@ -152,7 +143,7 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
     const handleChange = (e: MediaQueryListEvent) => {
       const newTheme = e.matches ? 'dark' : 'light';
       setTheme(newTheme);
-      applyThemeColors(newTheme, preferences.accentColor, preferences.fontSize);
+      applyTheme(newTheme, preferences.accentColor, preferences.fontSize);
     };
 
     mediaQuery.addEventListener('change', handleChange);
@@ -166,11 +157,12 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
         const response = await fetch('/api/ops/preferences');
         if (response.ok) {
           const data = await response.json();
+          const prefs = data.preferences || data;
           setPreferences({
-            theme: data.theme || DEFAULT_PREFERENCES.theme,
-            accentColor: data.accentColor || DEFAULT_PREFERENCES.accentColor,
-            fontSize: data.fontSize || DEFAULT_PREFERENCES.fontSize,
-            compactMode: data.compactMode || DEFAULT_PREFERENCES.compactMode,
+            theme: prefs.theme || DEFAULT_PREFERENCES.theme,
+            accentColor: prefs.accentColor || DEFAULT_PREFERENCES.accentColor,
+            fontSize: prefs.fontSize || DEFAULT_PREFERENCES.fontSize,
+            compactMode: prefs.compactMode || DEFAULT_PREFERENCES.compactMode,
           });
         }
       } catch (error) {

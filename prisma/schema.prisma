@@ -895,6 +895,23 @@ model Staff {
   @@index([active])
 }
 
+model StaffPreferences {
+  id               String   @id @default(cuid())
+  staffId          String   @unique
+  theme            String   @default("system")    // "light" | "dark" | "system"
+  accentColor      String   @default("#C6A24E")
+  fontSize         String   @default("medium")    // "small" | "medium" | "large"
+  sidebarCollapsed Boolean  @default(false)
+  compactMode      Boolean  @default(false)
+  dashboardLayout  Json?    @default("{}")
+  hiddenSections   Json?    @default("[]")
+  pinnedSections   Json?    @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([staffId])
+}
+
 enum StaffRole {
   ADMIN // Full system access
   MANAGER // Department manager
