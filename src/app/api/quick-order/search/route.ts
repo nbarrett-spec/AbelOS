@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Quick order search error:', error)
     return NextResponse.json(
-      { error: 'Search failed', details: error.message },
+      { error: 'Search failed' },
       { status: 500 }
     )
   }

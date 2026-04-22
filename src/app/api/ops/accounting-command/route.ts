@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch accounting data',
+        error: 'Failed to fetch accounting data',
       },
       { status: 500 }
     )

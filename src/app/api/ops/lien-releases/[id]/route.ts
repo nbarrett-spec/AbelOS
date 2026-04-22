@@ -55,6 +55,6 @@ export async function PATCH(
     return NextResponse.json({ release: result[0] })
   } catch (error: any) {
     console.error('[LienRelease PATCH]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

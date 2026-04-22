@@ -14,7 +14,7 @@ export async function GET() {
     `)
     return NextResponse.json({ columns: cols })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -567,6 +567,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Sales tables created successfully', results })
   } catch (error: any) {
     console.error('Migration error:', error)
-    return NextResponse.json({ error: error.message || 'Migration failed', results }, { status: 500 })
+    return NextResponse.json({ error: 'Migration failed', results }, { status: 500 })
   }
 }

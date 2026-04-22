@@ -158,6 +158,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('[Sales Scorecard] Error:', error)
-    return NextResponse.json({ error: error.message || 'Scorecard failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Scorecard failed' }, { status: 500 })
   }
 }

@@ -405,7 +405,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Bolt import error:', error)
     return NextResponse.json(
-      { error: 'Import failed', details: error.message },
+      { error: 'Import failed'},
       { status: 500 }
     )
   }

@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Pricing tiers GET error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -131,6 +131,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error: any) {
     console.error('Pricing tiers POST error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

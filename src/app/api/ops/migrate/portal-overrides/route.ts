@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Portal overrides migration error:', error)
     return NextResponse.json(
-      { error: 'Migration failed', details: error.message },
+      { error: 'Migration failed'},
       { status: 500 }
     )
   }

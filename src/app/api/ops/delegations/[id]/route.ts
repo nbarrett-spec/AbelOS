@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return safeJson({ delegation: result[0], message: 'Delegation updated' })
   } catch (error: any) {
     console.error('Delegation PATCH error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -68,6 +68,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     return safeJson({ message: 'Delegation cancelled' })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

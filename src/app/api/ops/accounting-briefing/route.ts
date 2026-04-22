@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Failed to fetch accounting briefing:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch accounting briefing' },
+      { error: 'Failed to fetch accounting briefing' },
       { status: 500 }
     )
   }

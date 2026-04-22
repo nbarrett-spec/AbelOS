@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Error fetching BuilderTrend status:', error)
     return safeJson(
-      { error: 'Failed to fetch BuilderTrend status', details: error.message },
+      { error: 'Failed to fetch BuilderTrend status'},
       { status: 500 }
     )
   }
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
         }
       } catch (error: any) {
         return safeJson(
-          { success: false, error: error.message },
+          { success: false, error: 'Internal server error'},
           { status: 500 }
         )
       }
@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
         })
       } catch (error: any) {
         return safeJson(
-          { success: false, error: error.message },
+          { success: false, error: 'Internal server error'},
           { status: 500 }
         )
       }
@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
         })
       } catch (error: any) {
         return safeJson(
-          { success: false, error: error.message },
+          { success: false, error: 'Internal server error'},
           { status: 500 }
         )
       }
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
         })
       } catch (error: any) {
         return safeJson(
-          { success: false, error: error.message },
+          { success: false, error: 'Internal server error'},
           { status: 500 }
         )
       }
@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
         })
       } catch (error: any) {
         return safeJson(
-          { success: false, error: error.message },
+          { success: false, error: 'Internal server error'},
           { status: 500 }
         )
       }
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error in BuilderTrend integration POST:', error)
     return safeJson(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error'},
       { status: 500 }
     )
   }

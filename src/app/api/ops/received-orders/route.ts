@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Failed to fetch received orders:', error)
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

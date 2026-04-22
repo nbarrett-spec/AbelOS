@@ -111,6 +111,6 @@ export async function POST(
     })
   } catch (error: any) {
     console.error('Quote convert error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to convert quote' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to convert quote' }, { status: 500 })
   }
 }

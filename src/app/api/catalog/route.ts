@@ -207,7 +207,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Catalog API error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch catalog', details: error.message },
+      { error: 'Failed to fetch catalog' },
       { status: 500 }
     )
   }

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Index migration failed:', error);
     return NextResponse.json(
-      { error: 'Index migration failed', details: error.message },
+      { error: 'Index migration failed'},
       { status: 500 }
     );
   }

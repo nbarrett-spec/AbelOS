@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Invoice Reminder] Error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to send reminder' },
+      { error: 'Failed to send reminder' },
       { status: 500 }
     )
   }

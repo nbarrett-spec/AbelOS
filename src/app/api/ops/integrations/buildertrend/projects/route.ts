@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Error listing BT projects:', error)
     return safeJson(
-      { error: 'Failed to list projects', details: error.message },
+      { error: 'Failed to list projects'},
       { status: 500 }
     )
   }
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error mapping BT project:', error)
     return safeJson(
-      { error: 'Failed to map project', details: error.message },
+      { error: 'Failed to map project'},
       { status: 500 }
     )
   }
@@ -328,7 +328,7 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('Error updating BT project mapping:', error)
     return safeJson(
-      { error: 'Failed to update mapping', details: error.message },
+      { error: 'Failed to update mapping'},
       { status: 500 }
     )
   }
@@ -373,7 +373,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error: any) {
     console.error('Error clearing BT project mapping:', error)
     return safeJson(
-      { error: 'Failed to clear mapping', details: error.message },
+      { error: 'Failed to clear mapping'},
       { status: 500 }
     )
   }

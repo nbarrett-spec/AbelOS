@@ -138,7 +138,7 @@ export async function GET(
     })
   } catch (error: any) {
     console.error('Community detail error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -197,6 +197,6 @@ export async function PATCH(
     return NextResponse.json({ community: result[0] })
   } catch (error: any) {
     console.error('Community update error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

@@ -157,7 +157,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return safeJson(response)
   } catch (error: any) {
     console.error('Door GET error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Failed to load door details' }, { status: 500 })
   }
 }
 
@@ -384,6 +384,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
   } catch (error: any) {
     console.error('Door POST error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Failed to process door action' }, { status: 500 })
   }
 }

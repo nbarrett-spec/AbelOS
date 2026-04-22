@@ -114,6 +114,6 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('SMS webhook error:', error)
     await markWebhookFailed(idem?.id, error?.message || String(error))
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to process SMS' }, { status: 500 })
   }
 }

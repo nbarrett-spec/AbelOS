@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     return safeJson({ changeOrders: orders, count: orders.length })
   } catch (error: any) {
     console.error('[Change Orders GET]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     return safeJson({ success: true, id, changeNumber })
   } catch (error: any) {
     console.error('[Change Orders POST]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -173,6 +173,6 @@ export async function PATCH(request: NextRequest) {
     return safeJson({ success: true, action })
   } catch (error: any) {
     console.error('[Change Orders PATCH]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

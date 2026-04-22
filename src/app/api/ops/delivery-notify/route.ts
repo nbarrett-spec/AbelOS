@@ -41,6 +41,6 @@ export async function POST(request: NextRequest) {
     return safeJson({ success: true, notified: result.sent, status })
   } catch (error: any) {
     console.error('[Delivery Notify] Error:', error)
-    return NextResponse.json({ error: error.message || 'Notification failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Notification failed' }, { status: 500 })
   }
 }

@@ -243,7 +243,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Bundles API error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch bundles', details: error.message },
+      { error: 'Failed to fetch bundles' },
       { status: 500 }
     )
   }

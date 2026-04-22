@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching workflows:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch workflows' },
+      { error: 'Failed to fetch workflows' },
       { status: 500 }
     )
   }
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error executing workflow:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to execute workflow' },
+      { error: 'Failed to execute workflow' },
       { status: 500 }
     )
   }

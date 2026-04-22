@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     return safeJson({ doors, summary: counts[0] || {} })
   } catch (error: any) {
     console.error('Tag program GET error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -328,6 +328,6 @@ export async function POST(request: NextRequest) {
     return safeJson({ error: 'Unknown action. Use: create_from_order, create_single, link_nfc, bulk_link_nfc, complete_job' }, { status: 400 })
   } catch (error: any) {
     console.error('Tag program POST error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }

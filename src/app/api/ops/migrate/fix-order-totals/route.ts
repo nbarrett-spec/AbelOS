@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Fix order totals error:', error)
     return NextResponse.json(
-      { error: 'Failed to fix order totals', details: error.message },
+      { error: 'Failed to fix order totals'},
       { status: 500 }
     )
   }

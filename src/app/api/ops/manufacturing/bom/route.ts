@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[BOM API GET] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch BOM data', details: error.message },
+      { error: 'Failed to fetch BOM data'},
       { status: 500 }
     )
   }
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[BOM API POST] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to save BOM entry', details: error.message },
+      { error: 'Failed to save BOM entry'},
       { status: 500 }
     )
   }
@@ -255,7 +255,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error: any) {
     console.error('[BOM API DELETE] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to delete BOM entry', details: error.message },
+      { error: 'Failed to delete BOM entry'},
       { status: 500 }
     )
   }

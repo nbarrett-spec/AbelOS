@@ -37,7 +37,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching workflow:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch workflow' },
+      { error: 'Failed to fetch workflow' },
       { status: 500 }
     )
   }
@@ -88,7 +88,7 @@ export async function PATCH(
   } catch (error) {
     console.error('Error updating workflow:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update workflow' },
+      { error: 'Failed to update workflow' },
       { status: 500 }
     )
   }

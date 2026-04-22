@@ -123,6 +123,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('[Job Profitability] Error:', error)
-    return NextResponse.json({ error: error.message || 'Profitability analysis failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Profitability analysis failed' }, { status: 500 })
   }
 }

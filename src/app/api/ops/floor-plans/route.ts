@@ -73,6 +73,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Floor plans list error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }

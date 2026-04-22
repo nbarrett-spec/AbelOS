@@ -139,7 +139,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error: any) {
     console.error('PATCH /api/ops/preferences error:', error)
     return NextResponse.json(
-      { error: 'Failed to update preferences', debug: error.message },
+      { error: 'Failed to update preferences'},
       { status: 500 }
     )
   }

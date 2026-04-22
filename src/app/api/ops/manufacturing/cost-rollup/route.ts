@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[Cost Rollup GET] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to get cost rollup', details: error.message },
+      { error: 'Failed to get cost rollup'},
       { status: 500 }
     )
   }
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Cost Rollup POST] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to sync costs', details: error.message },
+      { error: 'Failed to sync costs'},
       { status: 500 }
     )
   }

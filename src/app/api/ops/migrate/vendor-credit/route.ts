@@ -150,6 +150,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, results });
   } catch (error: any) {
     console.error('Migration error:', error);
-    return NextResponse.json({ error: error.message, results }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', results }, { status: 500 });
   }
 }

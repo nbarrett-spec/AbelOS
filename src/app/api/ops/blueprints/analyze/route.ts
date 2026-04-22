@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
           data: { processingStatus: 'FAILED' },
         })
         return NextResponse.json(
-          { error: `Failed to fetch blueprint: ${error.message}` },
+          { error: 'Internal server error' },
           { status: 500 }
         )
       }

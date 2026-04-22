@@ -396,7 +396,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('POST /api/ops/import-bpw error:', error)
     return NextResponse.json(
-      { error: 'BPW import failed', details: error.message },
+      { error: 'BPW import failed'},
       { status: 500 }
     )
   }
@@ -527,6 +527,6 @@ export async function GET(request: NextRequest) {
       lastSync: lastSync[0] || null,
     }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

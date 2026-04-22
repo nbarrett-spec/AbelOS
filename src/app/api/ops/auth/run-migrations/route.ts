@@ -369,7 +369,7 @@ async function _archivedMigrations() {
     })
   } catch (error: any) {
     console.error('Migration error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
   } // end if (_neverRuns)
 } // end _archivedMigrations

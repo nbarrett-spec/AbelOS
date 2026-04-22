@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         message: 'Supplier table not found — run the product-expansion migration first',
       })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -127,6 +127,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A supplier with this code already exists' }, { status: 409 })
     }
     console.error('[Suppliers POST]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

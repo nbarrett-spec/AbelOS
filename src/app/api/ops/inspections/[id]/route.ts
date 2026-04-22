@@ -34,7 +34,7 @@ export async function GET(
     return NextResponse.json({ inspection: rows[0] })
   } catch (error: any) {
     console.error('[Inspection GET]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -83,6 +83,6 @@ export async function PATCH(
     return NextResponse.json({ inspection: result[0] })
   } catch (error: any) {
     console.error('[Inspection PATCH]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

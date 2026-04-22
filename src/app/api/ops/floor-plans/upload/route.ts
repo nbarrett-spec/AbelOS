@@ -121,6 +121,6 @@ export async function POST(request: NextRequest) {
     return safeJson({ floorPlan: created[0] || null }, { status: 201 })
   } catch (error: any) {
     console.error('Floor plan upload error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }

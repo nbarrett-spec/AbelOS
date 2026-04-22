@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Status check failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Unknown error'
       },
       { status: 500 }
     );
@@ -577,7 +577,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Migration failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Unknown error',
         timestamp: new Date().toISOString()
       },
       { status: 500 }

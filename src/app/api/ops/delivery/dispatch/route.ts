@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       recommendation,
     })
   } catch (error: any) {
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action. Use ASSIGN_CREW, BOOK_CURRI, or AUTO.' }, { status: 400 })
   } catch (error: any) {
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 

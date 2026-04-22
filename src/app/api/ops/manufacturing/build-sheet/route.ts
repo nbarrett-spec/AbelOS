@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[Build Sheet API] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch build sheet', details: error.message },
+      { error: 'Failed to fetch build sheet'},
       { status: 500 }
     )
   }

@@ -224,7 +224,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('KPIs error:', error)
     return NextResponse.json(
-      { error: 'Failed to load KPIs', details: error.message },
+      { error: 'Failed to load KPIs'},
       { status: 500 }
     )
   }

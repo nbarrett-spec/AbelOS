@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (error: any) {
-    return safeJson({ error: error.message || 'Failed to check dunnage status' }, { status: 500 })
+    return safeJson({ error: 'Failed to check dunnage status' }, { status: 500 })
   }
 }
 

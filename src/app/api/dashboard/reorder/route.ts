@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating reorder:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to create reorder' },
+      { error: 'Failed to create reorder' },
       { status: 500 }
     )
   }

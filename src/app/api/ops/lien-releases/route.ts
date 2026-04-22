@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('[LienReleases GET]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -101,6 +101,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ release }, { status: 201 })
   } catch (error: any) {
     console.error('[LienReleases POST]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       timestamp: now,
     }, { status: 201 })
   } catch (error: any) {
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 

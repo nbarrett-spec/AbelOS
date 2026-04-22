@@ -88,7 +88,6 @@ export async function POST(request: NextRequest) {
     console.error('Dev login error:', error)
     return NextResponse.json({
       error: 'Dev login failed',
-      details: error.message,
     }, { status: 500 })
   }
 }
@@ -131,7 +130,6 @@ export async function GET() {
     console.error('Dev login list error:', error)
     return NextResponse.json({
       error: 'Failed to list builders',
-      details: error.message,
     }, { status: 500 })
   }
 }

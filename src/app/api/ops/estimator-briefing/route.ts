@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Failed to fetch estimator briefing:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch estimator briefing' },
+      { error: 'Failed to fetch estimator briefing' },
       { status: 500 }
     )
   }

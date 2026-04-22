@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[PM Dashboard API] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch PM dashboard data', details: error.message },
+      { error: 'Failed to fetch PM dashboard data'},
       { status: 500 }
     )
   }

@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error applying supplier pricing updates:', error)
-    return safeJson({ error: error.message || 'Internal server error' }, { status: 500 })
+    return safeJson({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching supplier pricing updates:', error)
-    return safeJson({ error: error.message || 'Internal server error' }, { status: 500 })
+    return safeJson({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

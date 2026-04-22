@@ -54,6 +54,6 @@ export async function GET(
     }
   } catch (error: any) {
     console.error('Floor plan serve error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }

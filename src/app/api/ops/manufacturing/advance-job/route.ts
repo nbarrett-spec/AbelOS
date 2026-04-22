@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Advance Job] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to advance job', details: error.message },
+      { error: 'Failed to advance job'},
       { status: 500 }
     )
   }

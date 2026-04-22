@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('[Readiness Check]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -125,6 +125,6 @@ export async function POST(request: NextRequest) {
     return safeJson({ success: true, jobId, field, value: value !== false })
   } catch (error: any) {
     console.error('[Readiness Check POST]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

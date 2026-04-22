@@ -52,7 +52,7 @@ export async function GET(
     })
   } catch (error: any) {
     console.error('Floor plan get error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -112,7 +112,7 @@ export async function PATCH(
     return safeJson({ floorPlan: updated[0] || null })
   } catch (error: any) {
     console.error('Floor plan update error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -136,6 +136,6 @@ export async function DELETE(
     return safeJson({ success: true })
   } catch (error: any) {
     console.error('Floor plan delete error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }

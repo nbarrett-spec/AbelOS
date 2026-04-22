@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         message: 'ProductCategory table not found — run the product-expansion migration first',
       })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -86,6 +86,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A category with this slug already exists' }, { status: 409 })
     }
     console.error('[ProductCategories POST]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
   }
 }

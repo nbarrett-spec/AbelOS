@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error fetching supplier pricing history:', error)
-    return safeJson({ error: error.message || 'Internal server error' }, { status: 500 })
+    return safeJson({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Picks batch update] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to update picks', details: error.message },
+      { error: 'Failed to update picks'},
       { status: 500 }
     )
   }

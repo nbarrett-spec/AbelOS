@@ -997,7 +997,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'InFlow data import completed', ...results })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message || 'Import failed' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Import failed' }, { status: 500 })
   }
 }
 
@@ -1086,7 +1086,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Cleanup completed', ...results })
   } catch (error: any) {
     console.error('PATCH cleanup error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal server error'}, { status: 500 })
   }
 }
 

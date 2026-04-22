@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
     return await getDayEtas(date)
   } catch (error: any) {
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 

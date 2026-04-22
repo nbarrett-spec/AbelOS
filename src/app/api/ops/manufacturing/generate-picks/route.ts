@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Generate Picks] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate pick list', details: error.message },
+      { error: 'Failed to generate pick list'},
       { status: 500 }
     )
   }

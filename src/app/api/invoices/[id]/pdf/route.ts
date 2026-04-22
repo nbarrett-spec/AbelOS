@@ -258,6 +258,6 @@ export async function GET(
     })
   } catch (error: any) {
     console.error('Invoice PDF error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to generate PDF' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to generate invoice PDF' }, { status: 500 })
   }
 }

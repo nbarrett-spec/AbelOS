@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     return safeJson({ bays, zones })
   } catch (error: any) {
     console.error('Bays GET error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }
 
@@ -116,6 +116,6 @@ export async function POST(request: NextRequest) {
     return safeJson({ success: true, bayId: id, bayNumber })
   } catch (error: any) {
     console.error('Bays POST error:', error)
-    return safeJson({ error: error.message }, { status: 500 })
+    return safeJson({ error: 'Internal server error'}, { status: 500 })
   }
 }

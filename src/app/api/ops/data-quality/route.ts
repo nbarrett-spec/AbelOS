@@ -477,7 +477,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[Data Quality Audit] Error:', error)
     return NextResponse.json(
-      { error: 'Data quality audit failed', detail: error.message },
+      { error: 'Data quality audit failed'},
       { status: 500 }
     )
   }
