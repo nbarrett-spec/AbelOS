@@ -63,6 +63,32 @@ async function inflowFetch(path: string, config: InflowConfig, options?: Request
   return response.json()
 }
 
+// ─── Shared: write SyncLog via raw SQL (never use Prisma client for this) ──
+
+async function writeSyncLog(data: {
+  provider: string; syncType: string; direction: string; status: string;
+  recordsProcessed: number; recordsCreated: number; recordsUpdated: number;
+  recordsSkipped: number; recordsFailed: number; errorMessage?: string | null;
+  startedAt: Date; completedAt: Date; durationMs: number;
+}) {
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "SyncLog" (
+      "id", "provider", "syncType", "direction", "status",
+      "recordsProcessed", "recordsCreated", "recordsUpdated",
+      "recordsSkipped", "recordsFailed", "errorMessage",
+      "startedAt", "completedAt", "durationMs", "createdAt"
+    ) VALUES (
+      gen_random_uuid()::text, $1, $2, $3, $4,
+      $5, $6, $7, $8, $9, $10,
+      $11, $12, $13, CURRENT_TIMESTAMP
+    )`,
+    data.provider, data.syncType, data.direction, data.status,
+    data.recordsProcessed, data.recordsCreated, data.recordsUpdated,
+    data.recordsSkipped, data.recordsFailed, data.errorMessage || null,
+    data.startedAt, data.completedAt, data.durationMs
+  )
+}
+
 // ─── Product Sync ────────────────────────────────────────────────────
 
 export async function syncProducts(): Promise<SyncResult> {
@@ -96,43 +122,52 @@ export async function syncProducts(): Promise<SyncResult> {
 
       for (const ifProduct of products) {
         try {
-          const existing = await (prisma as any).product.findFirst({
-            where: { OR: [{ inflowId: String(ifProduct.id) }, { sku: ifProduct.sku }] },
-          })
+          // Find existing product by inflowId or SKU using raw SQL
+          const existing: any[] = await prisma.$queryRawUnsafe(
+            `SELECT "id", "description", "inflowCategory" FROM "Product"
+             WHERE "inflowId" = $1 OR "sku" = $2
+             LIMIT 1`,
+            String(ifProduct.id), ifProduct.sku || ''
+          )
 
-          if (existing) {
-            await (prisma as any).product.update({
-              where: { id: existing.id },
-              data: {
-                name: ifProduct.name,
-                description: ifProduct.description || existing.description,
-                cost: ifProduct.cost,
-                basePrice: ifProduct.price,
-                active: ifProduct.isActive,
-                inStock: ifProduct.quantityOnHand > 0,
-                inflowId: String(ifProduct.id),
-                inflowCategory: ifProduct.category || existing.inflowCategory,
-                lastSyncedAt: new Date(),
-              },
-            })
+          if (existing.length > 0) {
+            await prisma.$executeRawUnsafe(
+              `UPDATE "Product" SET
+                "name" = $1, "description" = COALESCE($2, "description"),
+                "cost" = $3, "basePrice" = $4, "active" = $5,
+                "inStock" = $6, "inflowId" = $7,
+                "inflowCategory" = COALESCE($8, "inflowCategory"),
+                "lastSyncedAt" = CURRENT_TIMESTAMP, "updatedAt" = CURRENT_TIMESTAMP
+              WHERE "id" = $9`,
+              ifProduct.name, ifProduct.description || null,
+              ifProduct.cost || 0, ifProduct.price || 0, ifProduct.isActive !== false,
+              (ifProduct.quantityOnHand || 0) > 0, String(ifProduct.id),
+              ifProduct.category || null, existing[0].id
+            )
             updated++
           } else {
-            await (prisma as any).product.create({
-              data: {
-                sku: ifProduct.sku,
-                name: ifProduct.name,
-                description: ifProduct.description,
-                category: ifProduct.category || 'Miscellaneous',
-                subcategory: ifProduct.subcategory,
-                cost: ifProduct.cost,
-                basePrice: ifProduct.price,
-                active: ifProduct.isActive,
-                inStock: ifProduct.quantityOnHand > 0,
-                inflowId: String(ifProduct.id),
-                inflowCategory: ifProduct.category,
-                lastSyncedAt: new Date(),
-              },
-            })
+            await prisma.$executeRawUnsafe(
+              `INSERT INTO "Product" (
+                "id", "sku", "name", "description", "category", "subcategory",
+                "cost", "basePrice", "active", "inStock",
+                "inflowId", "inflowCategory", "lastSyncedAt",
+                "createdAt", "updatedAt"
+              ) VALUES (
+                gen_random_uuid()::text, $1, $2, $3, $4, $5,
+                $6, $7, $8, $9,
+                $10, $11, CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              )`,
+              ifProduct.sku || `IF-${String(ifProduct.id).substring(0, 8)}`,
+              ifProduct.name || 'Unknown Product',
+              ifProduct.description || null,
+              ifProduct.category || 'Miscellaneous',
+              ifProduct.subcategory || null,
+              ifProduct.cost || 0, ifProduct.price || 0,
+              ifProduct.isActive !== false,
+              (ifProduct.quantityOnHand || 0) > 0,
+              String(ifProduct.id), ifProduct.category || null
+            )
             created++
           }
         } catch (err) {
@@ -141,40 +176,12 @@ export async function syncProducts(): Promise<SyncResult> {
         }
       }
 
-      // InFlow API may ignore pageSize and return fewer items per page (default ~20).
-      // Only stop when we get an empty page — not when count < requested pageSize.
       page++
-
-      // Rate limiting
       await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
     }
 
     const completedAt = new Date()
-    // Log the sync
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW',
-        syncType: 'products',
-        direction: 'PULL',
-        status: failed > 0 ? 'PARTIAL' : 'SUCCESS',
-        recordsProcessed: created + updated + skipped + failed,
-        recordsCreated: created,
-        recordsUpdated: updated,
-        recordsSkipped: skipped,
-        recordsFailed: failed,
-        startedAt,
-        completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-
-    // Update last sync timestamp
-    await (prisma as any).integrationConfig.update({
-      where: { provider: 'INFLOW' },
-      data: { lastSyncAt: completedAt, lastSyncStatus: 'success' },
-    })
-
-    return {
+    const result: SyncResult = {
       provider: 'INFLOW',
       syncType: 'products',
       direction: 'PULL',
@@ -188,25 +195,27 @@ export async function syncProducts(): Promise<SyncResult> {
       completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+
+    await writeSyncLog(result)
+    return result
   } catch (error: any) {
     const completedAt = new Date()
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW',
-        syncType: 'products',
-        direction: 'PULL',
-        status: 'FAILED',
-        recordsProcessed: created + updated + skipped + failed,
-        recordsCreated: created,
-        recordsUpdated: updated,
-        recordsSkipped: skipped,
-        recordsFailed: failed,
-        errorMessage: error.message,
-        startedAt,
-        completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
+    const result: SyncResult = {
+      provider: 'INFLOW',
+      syncType: 'products',
+      direction: 'PULL',
+      status: 'FAILED',
+      recordsProcessed: created + updated + skipped + failed,
+      recordsCreated: created,
+      recordsUpdated: updated,
+      recordsSkipped: skipped,
+      recordsFailed: failed,
+      errorMessage: error.message,
+      startedAt,
+      completedAt,
+      durationMs: completedAt.getTime() - startedAt.getTime(),
+    }
+    await writeSyncLog(result).catch(() => {})
     throw error
   }
 }
@@ -243,15 +252,17 @@ export async function syncInventory(): Promise<SyncResult> {
       for (const ifProduct of products) {
         try {
           // Find the Product record by inflowId or SKU
-          const product = await (prisma as any).product.findFirst({
-            where: { OR: [{ inflowId: String(ifProduct.id) }, { sku: ifProduct.sku }] },
-            select: { id: true },
-          })
+          const productRows: any[] = await prisma.$queryRawUnsafe(
+            `SELECT "id" FROM "Product" WHERE "inflowId" = $1 OR "sku" = $2 LIMIT 1`,
+            String(ifProduct.id), ifProduct.sku || ''
+          )
 
-          if (!product) {
+          if (!productRows.length) {
             skipped++
             continue
           }
+
+          const productId = productRows[0].id
 
           // Compute inventory values (default to 0 if field missing from API)
           const onHand = ifProduct.quantityOnHand ?? 0
@@ -260,31 +271,25 @@ export async function syncInventory(): Promise<SyncResult> {
           const available = onHand - committed
 
           // Upsert: create InventoryItem if it doesn't exist, update if it does
-          const existing = await (prisma as any).inventoryItem.findUnique({
-            where: { productId: product.id },
-          })
+          const existingInv: any[] = await prisma.$queryRawUnsafe(
+            `SELECT "id" FROM "InventoryItem" WHERE "productId" = $1 LIMIT 1`, productId
+          )
 
-          if (existing) {
-            await (prisma as any).inventoryItem.update({
-              where: { id: existing.id },
-              data: {
-                onHand,
-                onOrder,
-                committed,
-                available,
-              },
-            })
+          if (existingInv.length > 0) {
+            await prisma.$executeRawUnsafe(
+              `UPDATE "InventoryItem" SET
+                "onHand" = $1, "onOrder" = $2, "committed" = $3, "available" = $4,
+                "updatedAt" = CURRENT_TIMESTAMP
+              WHERE "id" = $5`,
+              onHand, onOrder, committed, available, existingInv[0].id
+            )
             updated++
           } else {
-            await (prisma as any).inventoryItem.create({
-              data: {
-                productId: product.id,
-                onHand,
-                onOrder,
-                committed,
-                available,
-              },
-            })
+            await prisma.$executeRawUnsafe(
+              `INSERT INTO "InventoryItem" ("id", "productId", "onHand", "onOrder", "committed", "available", "createdAt", "updatedAt")
+               VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+              productId, onHand, onOrder, committed, available
+            )
             created++
           }
         } catch (err: any) {
@@ -305,26 +310,7 @@ export async function syncInventory(): Promise<SyncResult> {
     const completedAt = new Date()
     const totalProcessed = created + updated + skipped + failed
 
-    // Log the sync
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW',
-        syncType: 'inventory',
-        direction: 'PULL',
-        status: failed > 0 ? (updated > 0 || created > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
-        recordsProcessed: totalProcessed,
-        recordsCreated: created,
-        recordsUpdated: updated,
-        recordsSkipped: skipped,
-        recordsFailed: failed,
-        errorMessage: errors.length > 0 ? errors.slice(0, 5).join('; ') : null,
-        startedAt,
-        completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-
-    return {
+    const result: SyncResult = {
       provider: 'INFLOW', syncType: 'inventory', direction: 'PULL',
       status: failed > 0 ? (updated > 0 || created > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
       recordsProcessed: totalProcessed,
@@ -334,33 +320,21 @@ export async function syncInventory(): Promise<SyncResult> {
       startedAt, completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+    await writeSyncLog(result)
+    return result
   } catch (error: any) {
     const completedAt = new Date()
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW',
-        syncType: 'inventory',
-        direction: 'PULL',
-        status: 'FAILED',
-        recordsProcessed: created + updated + skipped + failed,
-        recordsCreated: created,
-        recordsUpdated: updated,
-        recordsSkipped: skipped,
-        recordsFailed: failed,
-        errorMessage: error.message,
-        startedAt,
-        completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-    return {
+    const result: SyncResult = {
       provider: 'INFLOW', syncType: 'inventory', direction: 'PULL',
-      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
-      recordsUpdated: updated, recordsSkipped: 0, recordsFailed: failed,
+      status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
+      recordsCreated: created, recordsUpdated: updated,
+      recordsSkipped: skipped, recordsFailed: failed,
       errorMessage: error.message,
       startedAt, completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+    await writeSyncLog(result).catch(() => {})
+    return result
   }
 }
 
@@ -395,62 +369,49 @@ export async function handleInflowWebhook(eventType: string, payload: any) {
     case 'product.updated':
     case 'product.created': {
       const ifProduct = payload as InflowProduct
-      const existing = await (prisma as any).product.findFirst({
-        where: { inflowId: String(ifProduct.id) },
-      })
-      if (existing) {
-        await (prisma as any).product.update({
-          where: { id: existing.id },
-          data: {
-            name: ifProduct.name,
-            cost: ifProduct.cost,
-            basePrice: ifProduct.price,
-            active: ifProduct.isActive,
-            inStock: ifProduct.quantityOnHand > 0,
-            lastSyncedAt: new Date(),
-          },
-        })
-      }
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Product" SET
+          "name" = $1, "cost" = $2, "basePrice" = $3,
+          "active" = $4, "inStock" = $5,
+          "lastSyncedAt" = CURRENT_TIMESTAMP, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "inflowId" = $6`,
+        ifProduct.name, ifProduct.cost || 0, ifProduct.price || 0,
+        ifProduct.isActive !== false, (ifProduct.quantityOnHand || 0) > 0,
+        String(ifProduct.id)
+      )
       break
     }
 
     case 'inventory.adjusted': {
-      // Handle stock level changes
-      const { productId, newQuantity, adjustmentType } = payload
-      const product = await (prisma as any).product.findFirst({
-        where: { inflowId: String(productId) },
-      })
-      if (product) {
-        await (prisma as any).inventoryItem.updateMany({
-          where: { productId: product.id },
-          data: {
-            onHand: newQuantity,
-            available: newQuantity,
-          },
-        })
+      const { productId, newQuantity } = payload
+      const products: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "Product" WHERE "inflowId" = $1 LIMIT 1`, String(productId)
+      )
+      if (products.length > 0) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "InventoryItem" SET "onHand" = $1, "available" = $1, "updatedAt" = CURRENT_TIMESTAMP
+           WHERE "productId" = $2`,
+          newQuantity, products[0].id
+        )
       }
       break
     }
 
     case 'purchaseorder.received': {
-      // Handle PO receipt — update related orders and inventory
-      const { purchaseOrderNumber, items: poItems } = payload
-
-      // Update inventory for received items
+      const { items: poItems } = payload
       if (poItems && Array.isArray(poItems)) {
         for (const poItem of poItems) {
           try {
-            const product = await (prisma as any).product.findFirst({
-              where: { OR: [{ inflowId: String(poItem.productId) }, { sku: poItem.sku }] },
-            })
-            if (product) {
-              await (prisma as any).inventoryItem.updateMany({
-                where: { productId: product.id },
-                data: {
-                  onHand: poItem.quantityReceived || poItem.quantity,
-                  updatedAt: new Date(),
-                },
-              })
+            const products: any[] = await prisma.$queryRawUnsafe(
+              `SELECT "id" FROM "Product" WHERE "inflowId" = $1 OR "sku" = $2 LIMIT 1`,
+              String(poItem.productId || ''), poItem.sku || ''
+            )
+            if (products.length > 0) {
+              await prisma.$executeRawUnsafe(
+                `UPDATE "InventoryItem" SET "onHand" = $1, "updatedAt" = CURRENT_TIMESTAMP
+                 WHERE "productId" = $2`,
+                poItem.quantityReceived || poItem.quantity, products[0].id
+              )
             }
           } catch (err) {
             console.error(`PO item sync error:`, err)
@@ -543,37 +504,81 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
     }
 
     let page = 1
-    const MAX_PAGES = 500 // safety cap: 500 pages covers 10,000+ POs
+    // Safety cap: 25 pages × 100 = 2,500 POs max per run (keeps within Vercel 60s timeout)
+    const MAX_PAGES = 25
 
     while (page <= MAX_PAGES) {
-      const poList = await inflowFetch(`/purchase-orders?page=${page}&pageSize=100`, config)
-      const orders: any[] = Array.isArray(poList) ? poList : (poList.data || [])
+      let poList: any
+      try {
+        poList = await inflowFetch(`/purchase-orders?page=${page}&pageSize=100`, config)
+      } catch (apiErr: any) {
+        // If the endpoint doesn't exist, try alternate paths
+        if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
+          try {
+            poList = await inflowFetch(`/purchaseorders?page=${page}&pageSize=100`, config)
+          } catch {
+            try {
+              poList = await inflowFetch(`/purchaseOrders?page=${page}&pageSize=100`, config)
+            } catch {
+              throw new Error(`InFlow PO endpoint not found — tried /purchase-orders, /purchaseorders, /purchaseOrders. Last error: ${apiErr.message}`)
+            }
+          }
+        } else {
+          throw apiErr
+        }
+      }
 
+      const orders: any[] = Array.isArray(poList) ? poList : (poList.data || [])
       if (orders.length === 0) break
+
+      // Log first-page shape for debugging
+      if (page === 1 && orders.length > 0) {
+        console.log('[InFlow PO Sync] First record keys:', Object.keys(orders[0]).join(', '))
+        console.log('[InFlow PO Sync] First record sample:', JSON.stringify(orders[0]).substring(0, 500))
+      }
 
       for (const ifPO of orders) {
         try {
-          const inflowId = String(ifPO.purchaseOrderId)
-          const poNumber = ifPO.orderNumber || `IF-PO-${inflowId.substring(0, 8)}`
+          // Defensive field access — InFlow may use different key names
+          const inflowId = String(ifPO.purchaseOrderId || ifPO.id || ifPO.purchaseOrderNumber || '')
+          if (!inflowId) { skipped++; continue }
+
+          const poNumber = ifPO.orderNumber || ifPO.purchaseOrderNumber || ifPO.number || `IF-PO-${inflowId.substring(0, 8)}`
 
           // Map inFlow status to POStatus
           const poStatus = mapInflowPOStatus(ifPO)
 
+          // Defensive vendor ID access
+          const rawVendorId = ifPO.vendorId || ifPO.vendor?.id || ifPO.supplierId || null
+          const rawVendorName = ifPO.shipToCompanyName || ifPO.vendorName || ifPO.vendor?.name || ifPO.vendor?.contactName || null
+
           // Find or create vendor
-          const vendorId = await findOrCreateVendor(ifPO.vendorId, ifPO.shipToCompanyName, config)
+          const vendorId = await findOrCreateVendor(rawVendorId, rawVendorName, config)
 
           if (!vendorId) {
             skipped++
+            errors.push(`PO ${poNumber}: no vendor (vendorId=${rawVendorId}, name=${rawVendorName})`)
             continue
           }
+
+          // Ensure poNumber is unique — append inflowId if needed
+          const existingPONum: any[] = await prisma.$queryRawUnsafe(
+            `SELECT id FROM "PurchaseOrder" WHERE "poNumber" = $1 AND "inflowId" != $2 LIMIT 1`,
+            poNumber, inflowId
+          )
+          const finalPoNumber = existingPONum.length > 0 ? `${poNumber}-${inflowId.substring(0, 6)}` : poNumber
 
           // Check if PO already exists by inflowId
           const existing: any[] = await prisma.$queryRawUnsafe(
             `SELECT id FROM "PurchaseOrder" WHERE "inflowId" = $1 LIMIT 1`, inflowId
           )
 
+          // Defensive money parsing
+          const subtotal = parseFloat(ifPO.subTotal || ifPO.subtotal || ifPO.amount || 0) || 0
+          const total = parseFloat(ifPO.total || ifPO.grandTotal || ifPO.totalAmount || 0) || 0
+          const shipping = parseFloat(ifPO.freight || ifPO.shippingCost || 0) || 0
+
           if (existing.length > 0) {
-            // Update existing PO
             await prisma.$executeRawUnsafe(
               `UPDATE "PurchaseOrder" SET
                 "status" = $1::"POStatus",
@@ -582,49 +587,44 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
                 "notes" = $5,
                 "updatedAt" = CURRENT_TIMESTAMP
               WHERE "inflowId" = $6`,
-              poStatus,
-              parseFloat(ifPO.subTotal) || 0,
-              parseFloat(ifPO.total) || 0,
-              ifPO.dueDate ? new Date(ifPO.dueDate) : null,
-              ifPO.orderRemarks || null,
+              poStatus, subtotal, total,
+              ifPO.dueDate || ifPO.expectedDate ? new Date(ifPO.dueDate || ifPO.expectedDate) : null,
+              ifPO.orderRemarks || ifPO.remarks || ifPO.notes || null,
               inflowId
             )
             updated++
           } else {
-            // Create new PO
             await prisma.$executeRawUnsafe(
               `INSERT INTO "PurchaseOrder" (
                 "id", "poNumber", "vendorId", "createdById", "status",
                 "subtotal", "shippingCost", "total",
                 "orderedAt", "expectedDate", "notes",
-                "inflowId", "inflowVendorId",
+                "inflowId", "inflowVendorId", "source",
                 "createdAt", "updatedAt"
               ) VALUES (
                 gen_random_uuid()::text, $1, $2, $3, $4::"POStatus",
                 $5, $6, $7,
                 $8, $9, $10,
-                $11, $12,
+                $11, $12, 'INFLOW',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
               )`,
-              poNumber, vendorId, defaultStaffId, poStatus,
-              parseFloat(ifPO.subTotal) || 0,
-              parseFloat(ifPO.freight) || 0,
-              parseFloat(ifPO.total) || 0,
-              ifPO.orderDate ? new Date(ifPO.orderDate) : new Date(),
-              ifPO.dueDate ? new Date(ifPO.dueDate) : null,
-              ifPO.orderRemarks || null,
-              inflowId, ifPO.vendorId || null
+              finalPoNumber, vendorId, defaultStaffId, poStatus,
+              subtotal, shipping, total,
+              ifPO.orderDate || ifPO.date ? new Date(ifPO.orderDate || ifPO.date) : new Date(),
+              ifPO.dueDate || ifPO.expectedDate ? new Date(ifPO.dueDate || ifPO.expectedDate) : null,
+              ifPO.orderRemarks || ifPO.remarks || ifPO.notes || null,
+              inflowId, rawVendorId || null
             )
             created++
           }
         } catch (err: any) {
           failed++
-          errors.push(`PO ${ifPO.orderNumber}: ${err.message}`)
+          const poRef = ifPO.orderNumber || ifPO.purchaseOrderNumber || ifPO.id || 'unknown'
+          errors.push(`PO ${poRef}: ${err.message}`)
           console.error('InFlow PO sync error:', err.message)
         }
       }
 
-      // InFlow API may return fewer items than requested — keep going until empty page
       page++
       await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
     }
@@ -632,46 +632,30 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
     const completedAt = new Date()
     const totalProcessed = created + updated + skipped + failed
 
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW', syncType: 'purchaseOrders', direction: 'PULL',
-        status: failed > 0 ? (created > 0 || updated > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
-        recordsProcessed: totalProcessed, recordsCreated: created,
-        recordsUpdated: updated, recordsSkipped: skipped, recordsFailed: failed,
-        errorMessage: errors.length > 0 ? errors.slice(0, 5).join('; ') : null,
-        startedAt, completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-
-    return {
+    const result: SyncResult = {
       provider: 'INFLOW', syncType: 'purchaseOrders', direction: 'PULL',
-      status: failed > 0 ? (created > 0 || updated > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
+      status: failed > 0 ? (created > 0 || updated > 0 ? 'PARTIAL' : 'FAILED') : (totalProcessed === 0 ? 'SUCCESS' : 'SUCCESS'),
       recordsProcessed: totalProcessed, recordsCreated: created,
       recordsUpdated: updated, recordsSkipped: skipped, recordsFailed: failed,
-      errorMessage: errors.length > 0 ? errors.slice(0, 5).join('; ') : undefined,
+      errorMessage: errors.length > 0 ? errors.slice(0, 10).join('; ') : undefined,
       startedAt, completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+    await writeSyncLog(result)
+    return result
   } catch (error: any) {
     const completedAt = new Date()
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW', syncType: 'purchaseOrders', direction: 'PULL',
-        status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
-        recordsCreated: created, recordsUpdated: updated,
-        recordsSkipped: skipped, recordsFailed: failed,
-        errorMessage: error.message, startedAt, completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-    return {
+    console.error('[InFlow PO Sync] Fatal error:', error.message)
+    const result: SyncResult = {
       provider: 'INFLOW', syncType: 'purchaseOrders', direction: 'PULL',
-      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
-      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+      status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
+      recordsCreated: created, recordsUpdated: updated,
+      recordsSkipped: skipped, recordsFailed: failed,
       errorMessage: error.message, startedAt, completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+    await writeSyncLog(result).catch(() => {})
+    return result
   }
 }
 
@@ -772,7 +756,6 @@ export async function syncSalesOrders(): Promise<SyncResult> {
     }
 
     // Check if we need a full backload or just incremental sync
-    // If fewer than 50 orders have inflowOrderId, we need to pull everything
     const inflowOrderCount: any[] = await prisma.$queryRawUnsafe(
       `SELECT COUNT(*)::int as count FROM "Order" WHERE "inflowOrderId" IS NOT NULL`
     )
@@ -780,7 +763,6 @@ export async function syncSalesOrders(): Promise<SyncResult> {
 
     let modifiedSince = ''
     if (!needsFullSync) {
-      // Incremental: only pull recently modified orders
       try {
         const lastSync: any[] = await prisma.$queryRawUnsafe(
           `SELECT "completedAt" FROM "SyncLog"
@@ -800,33 +782,78 @@ export async function syncSalesOrders(): Promise<SyncResult> {
     }
 
     let page = 1
-    const MAX_PAGES = 500
+    // Safety cap: 25 pages to stay within Vercel timeout
+    const MAX_PAGES = 25
 
     while (page <= MAX_PAGES) {
-      const soList = await inflowFetch(`/sales-orders?page=${page}&pageSize=100${modifiedSince}`, config)
-      const orders: any[] = Array.isArray(soList) ? soList : (soList.data || [])
+      let soList: any
+      try {
+        soList = await inflowFetch(`/sales-orders?page=${page}&pageSize=100${modifiedSince}`, config)
+      } catch (apiErr: any) {
+        // Try alternate endpoint paths
+        if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
+          try {
+            soList = await inflowFetch(`/salesorders?page=${page}&pageSize=100${modifiedSince}`, config)
+          } catch {
+            try {
+              soList = await inflowFetch(`/salesOrders?page=${page}&pageSize=100${modifiedSince}`, config)
+            } catch {
+              throw new Error(`InFlow SO endpoint not found — tried /sales-orders, /salesorders, /salesOrders. Last error: ${apiErr.message}`)
+            }
+          }
+        } else {
+          throw apiErr
+        }
+      }
 
+      const orders: any[] = Array.isArray(soList) ? soList : (soList.data || [])
       if (orders.length === 0) break
+
+      // Log first-page shape for debugging
+      if (page === 1 && orders.length > 0) {
+        console.log('[InFlow SO Sync] First record keys:', Object.keys(orders[0]).join(', '))
+        console.log('[InFlow SO Sync] First record sample:', JSON.stringify(orders[0]).substring(0, 500))
+      }
 
       for (const ifSO of orders) {
         try {
-          const inflowOrderId = String(ifSO.salesOrderId)
-          const orderNumber = ifSO.orderNumber ? `IF-${ifSO.orderNumber}` : `IF-SO-${inflowOrderId.substring(0, 8)}`
+          // Defensive field access — InFlow may use different key names
+          const inflowOrderId = String(ifSO.salesOrderId || ifSO.id || ifSO.salesOrderNumber || '')
+          if (!inflowOrderId) { skipped++; continue }
+
+          const rawOrderNum = ifSO.orderNumber || ifSO.salesOrderNumber || ifSO.number || inflowOrderId.substring(0, 8)
+          const orderNumber = rawOrderNum.startsWith('IF-') ? rawOrderNum : `IF-${rawOrderNum}`
 
           // Map inFlow status to OrderStatus
           const orderStatus = mapInflowSOStatus(ifSO)
           const paymentStatus = mapInflowPaymentStatus(ifSO.paymentStatus)
 
+          // Defensive customer ID access
+          const rawCustomerId = ifSO.customerId || ifSO.customer?.id || null
+          const rawContactName = ifSO.contactName || ifSO.customerName || ifSO.customer?.name || ifSO.customer?.contactName || null
+
           // Try to find a matching builder by customerId
-          const builderId = await findBuilderByInflowCustomer(ifSO.customerId, ifSO.contactName) || defaultBuilderId
+          const builderId = await findBuilderByInflowCustomer(rawCustomerId, rawContactName) || defaultBuilderId
+
+          // Ensure orderNumber is unique
+          const existingOrdNum: any[] = await prisma.$queryRawUnsafe(
+            `SELECT id FROM "Order" WHERE "orderNumber" = $1 AND "inflowOrderId" != $2 LIMIT 1`,
+            orderNumber, inflowOrderId
+          )
+          const finalOrderNumber = existingOrdNum.length > 0 ? `${orderNumber}-${inflowOrderId.substring(0, 6)}` : orderNumber
 
           // Check if SO already exists
           const existing: any[] = await prisma.$queryRawUnsafe(
             `SELECT id FROM "Order" WHERE "inflowOrderId" = $1 LIMIT 1`, inflowOrderId
           )
 
+          // Defensive money parsing
+          const subtotal = parseFloat(ifSO.subTotal || ifSO.subtotal || ifSO.amount || 0) || 0
+          const total = parseFloat(ifSO.total || ifSO.grandTotal || ifSO.totalAmount || 0) || 0
+          const tax = parseFloat(ifSO.tax1 || ifSO.tax || ifSO.taxAmount || 0) || 0
+          const shipping = parseFloat(ifSO.orderFreight || ifSO.freight || ifSO.shippingCost || 0) || 0
+
           if (existing.length > 0) {
-            // Update
             await prisma.$executeRawUnsafe(
               `UPDATE "Order" SET
                 "status" = $1::"OrderStatus",
@@ -836,14 +863,12 @@ export async function syncSalesOrders(): Promise<SyncResult> {
                 "updatedAt" = CURRENT_TIMESTAMP
               WHERE "inflowOrderId" = $6`,
               orderStatus, paymentStatus,
-              parseFloat(ifSO.subTotal) || 0,
-              parseFloat(ifSO.total) || 0,
-              ifSO.orderRemarks || null,
+              subtotal, total,
+              ifSO.orderRemarks || ifSO.remarks || ifSO.notes || null,
               inflowOrderId
             )
             updated++
           } else {
-            // Create
             await prisma.$executeRawUnsafe(
               `INSERT INTO "Order" (
                 "id", "builderId", "orderNumber", "poNumber",
@@ -860,26 +885,25 @@ export async function syncSalesOrders(): Promise<SyncResult> {
                 $13, $14,
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
               )`,
-              builderId, orderNumber, ifSO.poNumber || null,
-              parseFloat(ifSO.subTotal) || 0,
-              parseFloat(ifSO.tax1) || 0,
-              parseFloat(ifSO.orderFreight) || 0,
-              parseFloat(ifSO.total) || 0,
+              builderId, finalOrderNumber, ifSO.poNumber || ifSO.customerPO || null,
+              subtotal, tax, shipping, total,
               'PAY_ON_DELIVERY', paymentStatus, orderStatus,
-              ifSO.requestedShipDate ? new Date(ifSO.requestedShipDate) : null,
-              ifSO.orderRemarks || null,
-              inflowOrderId, ifSO.customerId || null
+              ifSO.requestedShipDate || ifSO.requiredDate || ifSO.deliveryDate
+                ? new Date(ifSO.requestedShipDate || ifSO.requiredDate || ifSO.deliveryDate)
+                : null,
+              ifSO.orderRemarks || ifSO.remarks || ifSO.notes || null,
+              inflowOrderId, rawCustomerId || null
             )
             created++
           }
         } catch (err: any) {
           failed++
-          errors.push(`SO ${ifSO.orderNumber}: ${err.message}`)
+          const soRef = ifSO.orderNumber || ifSO.salesOrderNumber || ifSO.id || 'unknown'
+          errors.push(`SO ${soRef}: ${err.message}`)
           console.error('InFlow SO sync error:', err.message)
         }
       }
 
-      // InFlow API may return fewer items than requested — keep going until empty page
       page++
       await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
     }
@@ -887,46 +911,30 @@ export async function syncSalesOrders(): Promise<SyncResult> {
     const completedAt = new Date()
     const totalProcessed = created + updated + skipped + failed
 
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW', syncType: 'salesOrders', direction: 'PULL',
-        status: failed > 0 ? (created > 0 || updated > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
-        recordsProcessed: totalProcessed, recordsCreated: created,
-        recordsUpdated: updated, recordsSkipped: skipped, recordsFailed: failed,
-        errorMessage: errors.length > 0 ? errors.slice(0, 5).join('; ') : null,
-        startedAt, completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-
-    return {
+    const result: SyncResult = {
       provider: 'INFLOW', syncType: 'salesOrders', direction: 'PULL',
       status: failed > 0 ? (created > 0 || updated > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
       recordsProcessed: totalProcessed, recordsCreated: created,
       recordsUpdated: updated, recordsSkipped: skipped, recordsFailed: failed,
-      errorMessage: errors.length > 0 ? errors.slice(0, 5).join('; ') : undefined,
+      errorMessage: errors.length > 0 ? errors.slice(0, 10).join('; ') : undefined,
       startedAt, completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+    await writeSyncLog(result)
+    return result
   } catch (error: any) {
     const completedAt = new Date()
-    await (prisma as any).syncLog.create({
-      data: {
-        provider: 'INFLOW', syncType: 'salesOrders', direction: 'PULL',
-        status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
-        recordsCreated: created, recordsUpdated: updated,
-        recordsSkipped: skipped, recordsFailed: failed,
-        errorMessage: error.message, startedAt, completedAt,
-        durationMs: completedAt.getTime() - startedAt.getTime(),
-      },
-    })
-    return {
+    console.error('[InFlow SO Sync] Fatal error:', error.message)
+    const result: SyncResult = {
       provider: 'INFLOW', syncType: 'salesOrders', direction: 'PULL',
-      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
-      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+      status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
+      recordsCreated: created, recordsUpdated: updated,
+      recordsSkipped: skipped, recordsFailed: failed,
       errorMessage: error.message, startedAt, completedAt,
       durationMs: completedAt.getTime() - startedAt.getTime(),
     }
+    await writeSyncLog(result).catch(() => {})
+    return result
   }
 }
 
@@ -983,27 +991,36 @@ export async function pushOrderToInflow(orderId: string): Promise<{ success: boo
   if (!config) return { success: false, message: 'InFlow not configured' }
 
   try {
-    // Fetch order with items and products
-    const order: any = await (prisma as any).order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: { include: { product: true } },
-        project: { include: { builder: true } },
-      },
-    })
-
+    // Fetch order with builder info
+    const orders: any[] = await prisma.$queryRawUnsafe(
+      `SELECT o."id", o."orderNumber", o."deliveryDate", o."createdAt",
+              b."companyName" as "builderName"
+       FROM "Order" o
+       LEFT JOIN "Builder" b ON o."builderId" = b."id"
+       WHERE o."id" = $1 LIMIT 1`, orderId
+    )
+    const order = orders[0]
     if (!order) return { success: false, message: 'Order not found' }
+
+    // Fetch order items with product info
+    const items: any[] = await prisma.$queryRawUnsafe(
+      `SELECT oi."quantity", oi."unitPrice", oi."description",
+              p."sku", p."name" as "productName"
+       FROM "OrderItem" oi
+       LEFT JOIN "Product" p ON oi."productId" = p."id"
+       WHERE oi."orderId" = $1`, orderId
+    )
 
     // Map to InFlow sales order format
     const inflowOrder = {
       orderNumber: order.orderNumber,
-      customerName: order.project?.builder?.companyName || 'Unknown',
+      customerName: order.builderName || 'Unknown',
       orderDate: order.createdAt,
       requiredDate: order.deliveryDate,
-      remarks: `Project: ${order.project?.name || 'N/A'}`,
-      items: order.items.map((item: any) => ({
-        productSku: item.product?.sku,
-        description: item.description || item.product?.name,
+      remarks: `Synced from Aegis`,
+      items: items.map((item: any) => ({
+        productSku: item.sku,
+        description: item.description || item.productName,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
       })),
