@@ -387,9 +387,10 @@ const ROLE_TOOLS: Record<string, string[]> = {
     'check_inventory_levels', 'get_daily_briefing',
   ],
   SALES_REP: [
+    // Core sales: builders, orders, invoices, quotes, products, pipeline, schedule
     'search_orders', 'search_builders', 'search_invoices', 'get_quotes',
     'draft_email', 'get_financial_summary', 'get_staff_directory',
-    'search_products',
+    'search_products', 'get_job_pipeline', 'get_schedule',
     'check_inventory_levels', 'get_daily_briefing',
   ],
   PURCHASING: [
@@ -402,25 +403,31 @@ const ROLE_TOOLS: Record<string, string[]> = {
     'create_procurement_po', 'get_daily_briefing', 'get_supplier_scorecard',
   ],
   WAREHOUSE_LEAD: [
+    // Core: orders, products, inventory, schedule, jobs, vendors (they coordinate receiving)
     'search_orders', 'search_products', 'get_inventory_status', 'get_schedule',
-    'get_job_pipeline', 'get_staff_directory', 'get_financial_summary',
+    'get_job_pipeline', 'get_staff_directory', 'search_vendors',
     'check_inventory_levels', 'get_daily_briefing',
+    // NOTE: NO get_financial_summary — warehouse doesn't have operational_financial:view
   ],
   WAREHOUSE_TECH: [
+    // Minimal: pick lists, inventory checks, schedule for today's pulls
     'search_orders', 'search_products', 'get_inventory_status', 'get_schedule',
-    'check_inventory_levels',
+    'check_inventory_levels', 'get_daily_briefing',
   ],
   DRIVER: [
+    // Delivery-focused: their schedule, order lookup for delivery details, staff directory
     'search_orders', 'get_schedule', 'get_staff_directory',
     'get_daily_briefing',
   ],
   INSTALLER: [
+    // On-site work: schedule, order details for what they're installing, staff contacts
     'search_orders', 'get_schedule', 'get_staff_directory',
     'get_daily_briefing',
   ],
   QC_INSPECTOR: [
+    // Quality: products to inspect, orders for context, schedule, manufacturing visibility
     'search_orders', 'search_products', 'get_schedule', 'get_staff_directory',
-    'get_daily_briefing',
+    'check_inventory_levels', 'get_daily_briefing',
   ],
   ACCOUNTING: [
     'search_orders', 'search_builders', 'search_invoices', 'search_purchase_orders',

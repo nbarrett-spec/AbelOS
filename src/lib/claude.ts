@@ -220,14 +220,65 @@ You can help ${staff.firstName} with tasks relevant to their role:
 5. Help with scheduling and workflow optimization
 6. Answer questions about company operations and data
 
+DATA ACCESS BOUNDARIES (ENFORCED — do NOT bypass):
+${buildDataBoundaryRules(staff.roles)}
+
 GUIDELINES:
 - Be concise and action-oriented. This is a work tool, not a chatbot.
 - When you look up data, present it clearly with key numbers highlighted.
 - If asked to do something outside the user's role permissions, explain what they need and suggest who to contact.
 - Use the available tools to look up real data — never make up numbers or records.
 - When drafting emails, match Abel Lumber's professional but friendly tone.
-- For financial data, only show what the user's role is authorized to see.
+- NEVER reveal financial data (AR/AP totals, revenue, margins, invoice amounts, PO values) to roles that lack operational financial access. If a tool returns financial data and the user shouldn't see it, summarize only the non-financial portions.
 - Always confirm before creating or modifying records (POs, emails, etc.).
 - Current date: ${new Date().toISOString().split('T')[0]}
 `
+}
+
+/**
+ * Generate explicit data boundary rules based on user's roles.
+ * These rules tell Claude exactly what data categories are off-limits.
+ */
+function buildDataBoundaryRules(roles: string[]): string {
+  const rules: string[] = []
+
+  // Roles that can see operational financials
+  const financialRoles = ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'ACCOUNTING']
+  const hasFinancials = roles.some(r => financialRoles.includes(r))
+
+  // Roles that can see sensitive financials (bank balances, employee comp)
+  const sensitiveFinRoles = ['ADMIN', 'ACCOUNTING']
+  const hasSensitiveFinancials = roles.some(r => sensitiveFinRoles.includes(r))
+
+  // Field-level workers (no financial data at all)
+  const fieldRoles = ['WAREHOUSE_TECH', 'DRIVER', 'INSTALLER', 'QC_INSPECTOR']
+  const isFieldWorker = roles.every(r => fieldRoles.includes(r) || r === 'VIEWER')
+
+  if (isFieldWorker) {
+    rules.push('- You MUST NOT show: invoice amounts, order totals, revenue figures, AR/AP balances, profit margins, deal values, quote pricing, credit limits, or any dollar figures beyond basic product catalog prices.')
+    rules.push('- You CAN show: order status, schedule/delivery info, product names/SKUs, inventory counts (quantities only, not dollar values), staff contacts, and job pipeline status.')
+    rules.push('- If a tool result includes financial data, strip all dollar amounts before responding.')
+  } else if (!hasFinancials) {
+    rules.push('- You MUST NOT show: AR/AP totals, revenue figures, profit margins, or company-wide financial summaries.')
+    rules.push('- You CAN show: individual order details, schedule info, inventory, product info, and job status.')
+  } else {
+    rules.push('- You CAN show operational financial data: AR/AP, revenue, margins, invoice amounts, PO values.')
+  }
+
+  if (!hasSensitiveFinancials) {
+    rules.push('- You MUST NOT show: company bank balance, cash position, employee salaries/compensation, or credit facility details.')
+  }
+
+  // Role-specific capabilities
+  const createPORoles = ['ADMIN', 'MANAGER', 'PURCHASING']
+  if (!roles.some(r => createPORoles.includes(r))) {
+    rules.push('- You CANNOT create purchase orders. Suggest the user contacts Purchasing or a Manager.')
+  }
+
+  const emailRoles = ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'PURCHASING', 'ACCOUNTING']
+  if (!roles.some(r => emailRoles.includes(r))) {
+    rules.push('- You CANNOT draft external emails. Suggest the user contacts their supervisor.')
+  }
+
+  return rules.join('\n')
 }
