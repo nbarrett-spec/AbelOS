@@ -250,18 +250,18 @@ html.dark {
   --c3: #22D3EE;   /* cyan-300 */
   --c4: #2DD4BF;   /* teal-300 */
 
-  /* Blueprint grid brighter in dark */
-  --bp-fine:       rgba(99,102,241,0.05);
-  --bp-major:      rgba(99,102,241,0.08);
-  --bp-annotation: rgba(99,102,241,0.18);
+  /* Blueprint grid brighter in dark — visible but not overwhelming */
+  --bp-fine:       rgba(99,102,241,0.06);
+  --bp-major:      rgba(99,102,241,0.10);
+  --bp-annotation: rgba(99,102,241,0.22);
   --bp-redline:    rgba(248,113,113,0.65);
 
-  /* Glass system — deeper frosting in dark */
-  --glass:         rgba(15,22,41,0.7);
-  --glass-border:  rgba(99,102,241,0.12);
-  --glass-blur:    blur(24px) saturate(1.4);
-  --glass-shadow:  0 8px 40px rgba(0,0,0,0.3);
-  --glass-hover:   0 24px 72px rgba(0,0,0,0.4);
+  /* Glass system — deeper frosting in dark, strong panel separation */
+  --glass:         rgba(12,18,36,0.82);
+  --glass-border:  rgba(99,102,241,0.18);
+  --glass-blur:    blur(28px) saturate(1.5);
+  --glass-shadow:  0 8px 40px rgba(0,0,0,0.35), 0 0 1px rgba(99,102,241,0.15);
+  --glass-hover:   0 24px 72px rgba(0,0,0,0.45), 0 0 1px rgba(99,102,241,0.25);
 
   --border:             rgba(99,102,241,0.08);
   --border-strong:      rgba(99,102,241,0.16);
@@ -474,9 +474,10 @@ html.dark[data-design="drafting-room"] {
 
   /* ── Side panel — dark glass (#5) + active-link highlight (#6) ───── */
   .side-panel {
-    background: rgba(15,23,42,0.88);
+    background: rgba(10,16,32,0.92);
     backdrop-filter: blur(32px) saturate(1.5);
     -webkit-backdrop-filter: blur(32px) saturate(1.5);
+    border-right-color: rgba(99,102,241,0.12);
   }
   html:not(.dark) .side-panel {
     background: rgba(255,255,255,0.85);
@@ -925,7 +926,7 @@ html.dark[data-design="drafting-room"] {
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, rgba(99,102,241,0.25), rgba(14,165,233,0.15), rgba(6,182,212,0.2), transparent 80%);
+    background: linear-gradient(90deg, rgba(99,102,241,0.4), rgba(14,165,233,0.25), rgba(6,182,212,0.3), transparent 80%);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     pointer-events: none;
     z-index: 1;
@@ -935,7 +936,7 @@ html.dark[data-design="drafting-room"] {
     position: absolute;
     top: 0; left: 0; bottom: 0;
     width: 1px;
-    background: linear-gradient(180deg, rgba(99,102,241,0.2), transparent 60%);
+    background: linear-gradient(180deg, rgba(99,102,241,0.35), transparent 60%);
     border-radius: var(--radius-xl) 0 0 var(--radius-xl);
     pointer-events: none;
     z-index: 1;
@@ -1327,6 +1328,18 @@ html.dark[data-design="drafting-room"] {
 /* ── Door blueprint stroke draw ──────────────────────────────────────── */
 @keyframes bp-draw {
   to { stroke-dashoffset: 0; }
+}
+
+/* ── Blueprint text fade-in (for dimension labels, annotations) ────── */
+@keyframes bp-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Blueprint pulse (for active node dots) ─────────────────────────── */
+@keyframes bp-pulse {
+  0%, 100% { opacity: 0.3; r: 3; }
+  50%      { opacity: 0.7; r: 5; }
 }
 
 /* ── #10 — Card shimmer slide ──────────────────────────────────────── */

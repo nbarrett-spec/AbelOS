@@ -107,7 +107,7 @@ function AegisBackgroundImpl({
       {variant === 'full' && (
         <svg
           className="aegis-bg-marks absolute inset-0 w-full h-full hidden lg:block"
-          style={{ opacity: 0.06 * opacityScale }}
+          style={{ opacity: 0.12 * opacityScale }}
           preserveAspectRatio="none"
         >
           {/* Top-left registration */}
