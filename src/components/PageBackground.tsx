@@ -1508,5 +1508,3 @@ function PageBackgroundImpl({ section, className = '' }: PageBackgroundProps) {
 export default memo(PageBackgroundImpl)
 export { PageBackgroundImpl as PageBackground }
 export type { PageBackgroundProps }
-
-{ PageBackgroundProps }
