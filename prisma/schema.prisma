@@ -833,6 +833,23 @@ model Staff {
   active       Boolean    @default(true)
   hireDate     DateTime?
 
+  // Auth — password reset flow
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+
+  // Auth — invite / onboarding flow
+  inviteToken        String?   @unique
+  inviteTokenExpiry  DateTime?
+  passwordSetAt      DateTime?
+  mustChangePassword Boolean   @default(false)
+
+  // Onboarding — handbook acknowledgment
+  handbookSignedAt  DateTime?
+  handbookVersion   String?
+
+  // Location assignment (FK to Location)
+  locationId  String?
+
   // Portal access overrides (JSON format): { "/ops/jobs": true, "/ops/finance": false }
   // true = explicitly GRANT access (even if role doesn't have it)
   // false = explicitly DENY access (even if role has it)
