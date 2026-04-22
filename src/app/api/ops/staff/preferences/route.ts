@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStaffSession } from '@/lib/staff-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 type Density = 'comfortable' | 'default' | 'compact'
 
@@ -97,6 +98,8 @@ export async function POST(req: NextRequest) {
       where: { id: session.staffId },
       data: { preferences: merged },
     })
+
+    await audit(req, 'UPDATE', 'Staff', session.staffId, { density: clean.density, featureFlags: clean.featureFlags, hasSeen: clean.hasSeen })
 
     return NextResponse.json({ persisted: true, preferences: merged })
   } catch (err) {

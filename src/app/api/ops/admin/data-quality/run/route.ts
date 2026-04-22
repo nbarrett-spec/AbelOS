@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { audit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   // TODO: add session/role check to verify the caller is an admin
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
     })
 
     const data = await res.json().catch(() => ({}))
+    await audit(request, 'TRIGGER', 'DataQualityCheck', 'system', { status: res.status })
     return NextResponse.json(data, { status: res.status })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to trigger data-quality cron' }, { status: 500 })

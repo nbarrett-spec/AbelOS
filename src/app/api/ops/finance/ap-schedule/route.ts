@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/finance/ap-schedule
@@ -122,6 +123,9 @@ export async function POST(request: NextRequest) {
       where: { id: poId },
       data: { notes: newNotes },
     })
+
+    await audit(request, 'UPDATE', 'APSchedule', poId, { paymentHint })
+
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'failed' }, { status: 500 })

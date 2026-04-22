@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/mrp/suggest-po
@@ -111,6 +112,8 @@ export async function POST(request: NextRequest) {
       },
       select: { id: true, poNumber: true },
     })
+
+    await audit(request, 'CREATE', 'PurchaseOrder', po.id, { poNumber: po.poNumber, productId, quantity, source: 'MRP_SUGGESTED' })
 
     return NextResponse.json({ ok: true, po })
   } catch (err: any) {

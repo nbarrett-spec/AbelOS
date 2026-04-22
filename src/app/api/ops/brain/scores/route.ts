@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { audit } from '@/lib/audit'
 
 // ---------------------------------------------------------------------------
 // Auth: service-to-service bearer token (NUC → Aegis)
@@ -154,6 +155,8 @@ export async function POST(request: NextRequest) {
       scoreCount: entity_scores.length,
       alertsCreated,
     })
+
+    await audit(request, 'UPDATE', 'AgentConfig', 'entity_scores', { scoreCount: entity_scores.length, alertsCreated })
 
     return NextResponse.json({
       received: entity_scores.length,

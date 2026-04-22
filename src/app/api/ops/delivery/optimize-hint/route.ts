@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/delivery/optimize-hint
@@ -59,6 +60,8 @@ export async function POST(request: NextRequest) {
     // we removed. Each jump ≈ 8 mi heuristic.
     const zipJumpsAfter = countZipJumps(enriched.map((e) => e.zip))
     const savingsMiles = Math.max(0, deliveries.length * 2 - zipJumpsAfter * 8)
+
+    await audit(request, 'COMPUTE', 'DeliveryRoute', 'optimization', { deliveryCount: ids.length, estimatedSavingsMiles: savingsMiles })
 
     return NextResponse.json({
       sequence: enriched.map((e, i) => ({

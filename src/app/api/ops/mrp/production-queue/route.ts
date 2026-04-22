@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/mrp/production-queue
@@ -170,6 +171,9 @@ export async function PATCH(request: NextRequest) {
       data: { status: status as any },
       select: { id: true, status: true, orderNumber: true },
     })
+
+    await audit(request, 'UPDATE', 'Order', orderId, { status })
+
     return NextResponse.json({ ok: true, order: updated })
   } catch (err: any) {
     console.error('[mrp production-queue PATCH] error', err)

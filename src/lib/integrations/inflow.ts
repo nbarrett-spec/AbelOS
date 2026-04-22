@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
 import type { InflowProduct, InflowPurchaseOrder, SyncResult } from './types'
 
 const INFLOW_BASE = 'https://cloudapi.inflowinventory.com'
-const RATE_LIMIT_DELAY = 1050 // ~57 req/min to stay under 60
+const RATE_LIMIT_DELAY = 200 // Light delay between pages; 429-retry in inflowFetch handles actual rate limits
 
 interface InflowConfig {
   apiKey: string
@@ -47,20 +47,34 @@ async function inflowFetch(path: string, config: InflowConfig, options?: Request
     'Content-Type': 'application/json',
     'Accept': 'application/json;version=2026-02-24',
   }
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...headers,
-      ...(options?.headers || {}),
-    },
-  })
 
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`InFlow API ${response.status}: ${text}`)
+  // Retry up to 3 times on 429 (rate limited)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...headers,
+        ...(options?.headers || {}),
+      },
+    })
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '2', 10)
+      const backoff = Math.max(retryAfter * 1000, 2000) * (attempt + 1)
+      console.warn(`[InFlow] 429 rate limited on ${path}, backing off ${backoff}ms (attempt ${attempt + 1})`)
+      await new Promise(r => setTimeout(r, backoff))
+      continue
+    }
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`InFlow API ${response.status}: ${text}`)
+    }
+
+    return response.json()
   }
 
-  return response.json()
+  throw new Error(`InFlow API 429: rate limited after 3 retries on ${path}`)
 }
 
 // ─── Shared: write SyncLog via raw SQL (never use Prisma client for this) ──

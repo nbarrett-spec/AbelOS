@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { audit } from '@/lib/audit'
 
 const BRAIN_BASE_URL = process.env.NUC_BRAIN_URL || 'https://brain.abellumber.com'
 
@@ -113,6 +114,9 @@ async function proxyToBrain(request: NextRequest, method: string) {
     const response = await fetch(targetUrl, fetchOptions)
     const data = await response.json()
 
+    if (method === 'POST') {
+      await audit(request, 'PROXY', 'NUCBrain', brainPath, { method, status: response.status })
+    }
     return NextResponse.json(data, { status: response.status })
   } catch (error: any) {
     logger.error('brain_proxy_failed', { error: error?.message })

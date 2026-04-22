@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { audit } from '@/lib/audit'
 
 function validateBrainAuth(request: NextRequest): boolean {
   const key = process.env.NUC_BRAIN_API_KEY
@@ -138,6 +139,8 @@ export async function POST(request: NextRequest) {
       created,
       duplicatesSkipped,
     })
+
+    await audit(request, 'CREATE', 'InboxItem', 'batch', { eventCount: events.length, itemsCreated: created, duplicatesSkipped })
 
     return NextResponse.json({
       received: events.length,

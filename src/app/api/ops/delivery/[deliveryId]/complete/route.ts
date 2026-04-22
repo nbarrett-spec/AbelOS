@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 /**
  * POST /api/ops/delivery/[deliveryId]/complete
@@ -82,6 +83,8 @@ export async function POST(
         notes: `Signed by ${signedBy || 'unspecified'}`,
       },
     })
+
+    await audit(request, 'UPDATE', 'Delivery', delivery.id, { status: 'COMPLETE', signedBy })
 
     return NextResponse.json({ ok: true, completedAt: now.toISOString() })
   } catch (err: any) {
