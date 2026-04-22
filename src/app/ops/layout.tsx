@@ -20,6 +20,7 @@ import CommandMenu, { useCommandMenu } from '@/components/ui/CommandMenu'
 import StatusBar from '@/components/ui/StatusBar'
 import LiveClock from '@/components/ui/LiveClock'
 import HealthChip from '@/components/ui/HealthChip'
+import HelpPanel from '@/components/HelpPanel'
 import LiveDataIndicator from '@/components/ui/LiveDataIndicator'
 import RecentActivityDrawer from '@/components/ui/RecentActivityDrawer'
 import DensityToggle from '@/components/ui/DensityToggle'
@@ -771,6 +772,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
         {/* Global recent-activity drawer (toggle with 'A') */}
         <RecentActivityDrawer />
+
+        {/* Help panel — floating ? button on every page */}
+        <HelpPanel />
       </div>
     </ThemeProvider>
   )

@@ -5,6 +5,8 @@
 // Supports tool use so Claude can query the database, create records, etc.
 // ──────────────────────────────────────────────────────────────────────────
 
+import { buildSOPContextForAgent } from './sops'
+
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-sonnet-4-20250514'
 
@@ -231,7 +233,10 @@ GUIDELINES:
 - When drafting emails, match Abel Lumber's professional but friendly tone.
 - NEVER reveal financial data (AR/AP totals, revenue, margins, invoice amounts, PO values) to roles that lack operational financial access. If a tool returns financial data and the user shouldn't see it, summarize only the non-financial portions.
 - Always confirm before creating or modifying records (POs, emails, etc.).
+- When a user asks "how do I..." or seems unsure about a process, walk them through the relevant SOP step-by-step.
 - Current date: ${new Date().toISOString().split('T')[0]}
+
+${buildSOPContextForAgent(staff.roles)}
 `
 }
 
