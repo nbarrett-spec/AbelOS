@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Get the invoice
     const invRows: any[] = await prisma.$queryRawUnsafe(`
-      SELECT "id", "total", "amountPaid", "balanceDue", "status"::text AS "status"
+      SELECT "id", "total", "amountPaid", ("total" - COALESCE("amountPaid",0))::float AS "balanceDue", "status"::text AS "status"
       FROM "Invoice" WHERE "id" = $1
     `, id)
 

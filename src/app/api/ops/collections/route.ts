@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch all overdue invoices with builder info
     const invoices: any[] = await prisma.$queryRawUnsafe(`
-      SELECT i."id", i."invoiceNumber", i."builderId", i."total", i."balanceDue",
+      SELECT i."id", i."invoiceNumber", i."builderId", i."total",
+             (i."total" - COALESCE(i."amountPaid", 0))::float AS "balanceDue",
              i."status"::text AS "status", i."dueDate", i."createdAt",
              b."companyName" AS "builderName", b."contactName" AS "builderContact"
       FROM "Invoice" i
@@ -165,7 +166,9 @@ export async function POST(request: NextRequest) {
 
     // Fetch invoice and builder
     const invoice: any[] = await prisma.$queryRawUnsafe(`
-      SELECT i."id", i."invoiceNumber", i."builderId", i."total", i."balanceDue", i."status"::text AS "status"
+      SELECT i."id", i."invoiceNumber", i."builderId", i."total",
+             (i."total" - COALESCE(i."amountPaid", 0))::float AS "balanceDue",
+             i."status"::text AS "status"
       FROM "Invoice" i
       WHERE i."id" = $1
     `, invoiceId)

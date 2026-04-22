@@ -38,14 +38,24 @@ export async function GET(request: NextRequest) {
 
 // ─── DASHBOARD: Overview metrics ──────────────────────────────────
 async function handleDashboard() {
-  // Total revenue (30d, 90d, YTD)
+  // Total revenue (30d, 90d, YTD) — combines Invoice revenue + uninvoiced Order revenue
   const revenueMetrics: any[] = await prisma.$queryRawUnsafe(`
+    WITH combined_revenue AS (
+      SELECT i."total" AS amount, i."issuedAt" AS rev_date
+      FROM "Invoice" i
+      WHERE i."status"::text IN ('PAID', 'ISSUED', 'SENT', 'PARTIALLY_PAID')
+      UNION ALL
+      SELECT o."total" AS amount, o."orderDate" AS rev_date
+      FROM "Order" o
+      WHERE o."status"::text IN ('DELIVERED', 'COMPLETE', 'SHIPPED')
+        AND o."id" NOT IN (SELECT "orderId" FROM "Invoice" WHERE "orderId" IS NOT NULL)
+        AND o."isForecast" = false
+    )
     SELECT
-      COALESCE(SUM(CASE WHEN i."issuedAt" >= NOW() - INTERVAL '30 days' THEN i."total" ELSE 0 END), 0)::float AS "revenue30d",
-      COALESCE(SUM(CASE WHEN i."issuedAt" >= NOW() - INTERVAL '90 days' THEN i."total" ELSE 0 END), 0)::float AS "revenue90d",
-      COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM i."issuedAt") = EXTRACT(YEAR FROM NOW()) THEN i."total" ELSE 0 END), 0)::float AS "revenueYTD"
-    FROM "Invoice" i
-    WHERE i."status"::text = 'PAID'
+      COALESCE(SUM(CASE WHEN rev_date >= NOW() - INTERVAL '30 days' THEN amount ELSE 0 END), 0)::float AS "revenue30d",
+      COALESCE(SUM(CASE WHEN rev_date >= NOW() - INTERVAL '90 days' THEN amount ELSE 0 END), 0)::float AS "revenue90d",
+      COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM rev_date) = EXTRACT(YEAR FROM NOW()) THEN amount ELSE 0 END), 0)::float AS "revenueYTD"
+    FROM combined_revenue
   `)
 
   // Deal count by status
@@ -126,15 +136,26 @@ async function handleDashboard() {
 
 // ─── FORECAST: Revenue forecast ──────────────────────────────────
 async function handleForecast() {
-  // Monthly revenue actual (last 12 months)
+  // Monthly revenue actual (last 12 months) — invoices + uninvoiced orders
   const monthlyRevenue: any[] = await prisma.$queryRawUnsafe(`
+    WITH combined AS (
+      SELECT i."total" AS amount, i."issuedAt" AS rev_date
+      FROM "Invoice" i
+      WHERE i."status"::text IN ('PAID', 'ISSUED', 'SENT', 'PARTIALLY_PAID')
+        AND i."issuedAt" >= NOW() - INTERVAL '12 months'
+      UNION ALL
+      SELECT o."total" AS amount, o."orderDate" AS rev_date
+      FROM "Order" o
+      WHERE o."status"::text IN ('DELIVERED', 'COMPLETE', 'SHIPPED')
+        AND o."id" NOT IN (SELECT "orderId" FROM "Invoice" WHERE "orderId" IS NOT NULL)
+        AND o."isForecast" = false
+        AND o."orderDate" >= NOW() - INTERVAL '12 months'
+    )
     SELECT
-      TO_CHAR(i."issuedAt"::date, 'YYYY-MM') AS "month",
-      COALESCE(SUM(i."total"), 0)::float AS "revenue"
-    FROM "Invoice" i
-    WHERE i."status"::text = 'PAID'
-      AND i."issuedAt" >= NOW() - INTERVAL '12 months'
-    GROUP BY TO_CHAR(i."issuedAt"::date, 'YYYY-MM')
+      TO_CHAR(rev_date::date, 'YYYY-MM') AS "month",
+      COALESCE(SUM(amount), 0)::float AS "revenue"
+    FROM combined
+    GROUP BY TO_CHAR(rev_date::date, 'YYYY-MM')
     ORDER BY "month" ASC
   `)
 

@@ -88,12 +88,13 @@ export async function GET(request: NextRequest) {
     if (roles.some(r => ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ACCOUNTING', 'SALES_REP'].includes(r))) {
       const finStats = await prisma.$queryRawUnsafe(`
         SELECT
-          COALESCE(SUM("balanceDue"), 0) as "totalAR",
+          COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) as "totalAR",
           COUNT(*) FILTER (WHERE status = 'OVERDUE'::"InvoiceStatus")::int as "overdueCount",
-          COALESCE(SUM("balanceDue") FILTER (WHERE status = 'OVERDUE'::"InvoiceStatus"), 0) as "overdueAmount",
+          COALESCE(SUM("total" - COALESCE("amountPaid",0)) FILTER (WHERE status = 'OVERDUE'::"InvoiceStatus"), 0) as "overdueAmount",
           COUNT(*) FILTER (WHERE "createdAt" > NOW() - INTERVAL '7 days')::int as "newInvoices"
         FROM "Invoice"
         WHERE status NOT IN ('VOID'::"InvoiceStatus", 'WRITE_OFF'::"InvoiceStatus", 'PAID'::"InvoiceStatus")
+          AND ("total" - COALESCE("amountPaid",0)) > 0
       `) as any[]
 
       briefing.sections.push({

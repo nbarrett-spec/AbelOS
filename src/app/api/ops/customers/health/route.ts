@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
         SELECT
           COALESCE(AVG(EXTRACT(DAY FROM ("paidAt" - "dueDate")))::float, 0) AS "avgDaysToPay",
           COUNT(CASE WHEN "status"::text = 'OVERDUE' THEN 1 END)::int AS "overdueCount",
-          COALESCE(SUM(CASE WHEN "status"::text = 'OVERDUE' THEN "balanceDue" ELSE 0 END), 0)::float AS "overdueAmount",
-          COALESCE(SUM(CASE WHEN "status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF') THEN "balanceDue" ELSE 0 END), 0)::float AS "arOutstanding",
+          COALESCE(SUM(CASE WHEN "status"::text = 'OVERDUE' THEN ("total" - COALESCE("amountPaid",0)) ELSE 0 END), 0)::float AS "overdueAmount",
+          COALESCE(SUM(CASE WHEN "status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF') THEN ("total" - COALESCE("amountPaid",0)) ELSE 0 END), 0)::float AS "arOutstanding",
           COUNT(CASE WHEN "status"::text = 'PAID' THEN 1 END)::int AS "paidCount"
         FROM "Invoice"
         WHERE "builderId" = $1

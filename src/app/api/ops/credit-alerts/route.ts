@@ -79,12 +79,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     >(
       `
       SELECT b."id" AS "builderId", b."companyName",
-             COALESCE(SUM(i."balanceDue"), 0) AS "overdueAmount",
+             COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) AS "overdueAmount",
              COUNT(i."id")::int AS "overdueCount"
       FROM "Builder" b
       JOIN "Invoice" i ON i."builderId" = b."id"
       WHERE i."status" = 'OVERDUE'
         AND b."status" = 'ACTIVE'
+        AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       GROUP BY b."id", b."companyName"
       ORDER BY "overdueAmount" DESC
       `
@@ -116,21 +117,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       `
       SELECT b."id" AS "builderId", b."companyName",
              COALESCE(b."creditLimit", 0) AS "creditLimit",
-             COALESCE(SUM(i."balanceDue"), 0) AS "outstandingBalance",
+             COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) AS "outstandingBalance",
              CASE
                WHEN COALESCE(b."creditLimit", 0) = 0 THEN 0
                ELSE ROUND(
-                 (COALESCE(SUM(i."balanceDue"), 0)::numeric / COALESCE(b."creditLimit", 1)::numeric) * 100
+                 (COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::numeric / COALESCE(b."creditLimit", 1)::numeric) * 100
                )
              END AS "utilizationPercent"
       FROM "Builder" b
       LEFT JOIN "Invoice" i ON i."builderId" = b."id"
-        AND i."status" NOT IN ('PAID', 'VOID', 'WRITE_OFF')
+        AND i."status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF')
       WHERE b."status" = 'ACTIVE'
       GROUP BY b."id", b."companyName", b."creditLimit"
-      HAVING COALESCE(SUM(i."balanceDue"), 0) > 0
+      HAVING COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) > 0
         AND COALESCE(b."creditLimit", 0) > 0
-        AND (COALESCE(SUM(i."balanceDue"), 0)::numeric / COALESCE(b."creditLimit", 1)::numeric) >= 0.75
+        AND (COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::numeric / COALESCE(b."creditLimit", 1)::numeric) >= 0.75
       ORDER BY "utilizationPercent" DESC
       `
     )

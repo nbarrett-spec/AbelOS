@@ -95,18 +95,19 @@ async function gatherExecMetrics() {
        AND "createdAt" < date_trunc('week', CURRENT_DATE)`
   )) as any[]
   const arRows = (await prisma.$queryRawUnsafe(
-    `SELECT COALESCE(SUM("balanceDue"),0)::float as outstanding,
-            COALESCE(SUM(CASE WHEN "dueDate" < CURRENT_DATE THEN "balanceDue" ELSE 0 END),0)::float as overdue,
-            COUNT(*) FILTER (WHERE "dueDate" < CURRENT_DATE AND "status" NOT IN ('PAID','VOID','WRITE_OFF'))::int as overdue_count
-     FROM "Invoice" WHERE "status" NOT IN ('PAID','VOID','WRITE_OFF')`
+    `SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)),0)::float as outstanding,
+            COALESCE(SUM(CASE WHEN "dueDate" < CURRENT_DATE THEN "total" - COALESCE("amountPaid",0) ELSE 0 END),0)::float as overdue,
+            COUNT(*) FILTER (WHERE "dueDate" < CURRENT_DATE AND "status"::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE'))::int as overdue_count
+     FROM "Invoice" WHERE "status"::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE') AND ("total" - COALESCE("amountPaid",0)) > 0`
   )) as any[]
 
   // Top 5 risks: overdue invoices (amount)
   const topOverdue = (await prisma.$queryRawUnsafe(
-    `SELECT i."invoiceNumber", b."companyName" as "builderName", i."balanceDue"::float, i."dueDate"
+    `SELECT i."invoiceNumber", b."companyName" as "builderName", (i."total" - COALESCE(i."amountPaid",0))::float as "balanceDue", i."dueDate"
      FROM "Invoice" i LEFT JOIN "Builder" b ON i."builderId" = b."id"
-     WHERE i."status" NOT IN ('PAID','VOID','WRITE_OFF') AND i."dueDate" < CURRENT_DATE
-     ORDER BY i."balanceDue" DESC LIMIT 5`
+     WHERE i."status"::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE') AND i."dueDate" < CURRENT_DATE
+       AND (i."total" - COALESCE(i."amountPaid",0)) > 0
+     ORDER BY (i."total" - COALESCE(i."amountPaid",0)) DESC LIMIT 5`
   )) as any[]
 
   // Top 5 opportunities: largest open orders not yet invoiced

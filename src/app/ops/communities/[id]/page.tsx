@@ -434,14 +434,15 @@ function OverviewTab({ community, stats, contacts, jobs, tasks, notes }: {
           ) : (
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {activeJobs.slice(0, 10).map(j => (
-                <Link key={j.id} href={`/ops/jobs/${j.id}`} className="block p-2 hover:bg-gray-50 rounded text-sm">
+                <Link key={j.id} href={`/ops/jobs/${j.id}/profile`} className="block p-2 hover:bg-gray-50 rounded text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-gray-500">{j.jobNumber}</span>
                     <span className={`text-xs px-1.5 py-0.5 rounded ${JOB_STATUS_COLORS[j.status] || 'bg-gray-100'}`}>
                       {j.status.replace(/_/g, ' ')}
                     </span>
                   </div>
-                  {j.lotBlock && <div className="text-gray-600">{j.lotBlock}</div>}
+                  {j.jobAddress && <div className="text-gray-900 text-xs">{j.jobAddress}</div>}
+                  {j.lotBlock && <div className="text-gray-500 text-xs">{j.lotBlock}</div>}
                 </Link>
               ))}
             </div>
@@ -533,6 +534,7 @@ function JobsTab({ jobs, stats }: { jobs: Job[]; stats: Stats | null }) {
           <thead className="bg-gray-50 text-left">
             <tr>
               <th className="px-4 py-3 font-medium text-gray-600">Job #</th>
+              <th className="px-4 py-3 font-medium text-gray-600">Address</th>
               <th className="px-4 py-3 font-medium text-gray-600">Lot/Block</th>
               <th className="px-4 py-3 font-medium text-gray-600">Status</th>
               <th className="px-4 py-3 font-medium text-gray-600">Scope</th>
@@ -542,10 +544,15 @@ function JobsTab({ jobs, stats }: { jobs: Job[]; stats: Stats | null }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {jobs.map(j => (
-              <tr key={j.id} className="hover:bg-gray-50">
+              <tr key={j.id} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-4 py-3">
-                  <Link href={`/ops/jobs/${j.id}`} className="font-mono text-blue-600 hover:underline text-xs">
+                  <Link href={`/ops/jobs/${j.id}/profile`} className="font-mono text-blue-600 hover:underline text-xs">
                     {j.jobNumber}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <Link href={`/ops/jobs/${j.id}/profile`} className="text-gray-900 hover:text-blue-600 hover:underline">
+                    {j.jobAddress || '—'}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-700">{j.lotBlock || '—'}</td>

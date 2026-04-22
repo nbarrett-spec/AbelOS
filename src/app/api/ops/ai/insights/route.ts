@@ -115,13 +115,14 @@ async function generateInsights(): Promise<Insight[]> {
       SELECT
         b."id",
         b."companyName",
-        SUM(i."balanceDue")::float AS total_overdue
+        SUM(i."total" - COALESCE(i."amountPaid",0))::float AS total_overdue
       FROM "Builder" b
       LEFT JOIN "Invoice" i ON b."id" = i."builderId"
       WHERE i."status"::text IN ('OVERDUE', 'SENT')
         AND i."dueDate" < NOW()
+        AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       GROUP BY b."id", b."companyName"
-      HAVING SUM(i."balanceDue")::float > 50000
+      HAVING SUM(i."total" - COALESCE(i."amountPaid",0))::float > 50000
       ORDER BY total_overdue DESC
       LIMIT 10
     `)
@@ -291,7 +292,7 @@ async function generateInsights(): Promise<Insight[]> {
         i."id",
         i."invoiceNumber",
         b."companyName",
-        i."balanceDue",
+        (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
         i."dueDate",
         MAX(ca."sentAt")::timestamp AS last_action,
         EXTRACT(DAY FROM NOW() - i."dueDate")::int AS days_overdue
@@ -300,8 +301,9 @@ async function generateInsights(): Promise<Insight[]> {
       LEFT JOIN "CollectionAction" ca ON i."id" = ca."invoiceId"
       WHERE i."status"::text IN ('OVERDUE', 'SENT')
         AND i."dueDate" < NOW() - INTERVAL '30 days'
+        AND (i."total" - COALESCE(i."amountPaid",0)) > 0
         AND (ca."sentAt" IS NULL OR ca."sentAt" < NOW() - INTERVAL '7 days')
-      GROUP BY i."id", i."invoiceNumber", b."companyName", i."balanceDue", i."dueDate"
+      GROUP BY i."id", i."invoiceNumber", b."companyName", i."total", i."amountPaid", i."dueDate"
       ORDER BY days_overdue DESC
       LIMIT 15
     `)

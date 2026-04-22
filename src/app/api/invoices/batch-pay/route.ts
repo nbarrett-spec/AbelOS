@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Verify all invoices belong to this builder
     const invoices: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id", "balanceDue", "total", "amountPaid", "status"::text FROM "Invoice" WHERE "id" = ANY($1::text[]) AND "builderId" = $2`,
+      `SELECT "id", ("total" - COALESCE("amountPaid",0))::float AS "balanceDue", "total", "amountPaid", "status"::text FROM "Invoice" WHERE "id" = ANY($1::text[]) AND "builderId" = $2`,
       invoiceIds,
       builderId
     )

@@ -107,9 +107,10 @@ async function calculateCurrentPosition(): Promise<{
   const arResult = await prisma.$queryRawUnsafe<
     Array<{ total: number }>
   >(`
-    SELECT COALESCE(SUM("balanceDue"), 0)::float as total
+    SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0)::float as total
     FROM "Invoice"
-    WHERE status::text NOT IN ('DRAFT', 'VOID', 'WRITE_OFF')
+    WHERE status::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND ("total" - COALESCE("amountPaid",0)) > 0
   `)
 
   const totalAR = arResult[0]?.total || 0
@@ -243,7 +244,7 @@ async function buildCashFlowForecast(): Promise<{
   >(`
     SELECT
       DATE("dueDate")::text as "forecastDate",
-      COALESCE(SUM("balanceDue"), 0)::float as "expectedInflow",
+      COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0)::float as "expectedInflow",
       COUNT(*)::int as "invoiceCount"
     FROM "Invoice"
     WHERE status::text NOT IN ('DRAFT', 'VOID', 'WRITE_OFF', 'PAID')

@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
       SELECT
         b."id" AS "builderId",
         b."companyName" AS "builderName",
-        COALESCE(SUM(CASE WHEN i."dueDate" >= NOW()::date THEN i."balanceDue" ELSE 0 END), 0)::float AS current,
-        COALESCE(SUM(CASE WHEN i."dueDate" < NOW()::date AND i."dueDate" >= NOW()::date - INTERVAL '30 days' THEN i."balanceDue" ELSE 0 END), 0)::float AS days30,
-        COALESCE(SUM(CASE WHEN i."dueDate" < NOW()::date - INTERVAL '30 days' AND i."dueDate" >= NOW()::date - INTERVAL '60 days' THEN i."balanceDue" ELSE 0 END), 0)::float AS days60,
-        COALESCE(SUM(CASE WHEN i."dueDate" < NOW()::date - INTERVAL '60 days' THEN i."balanceDue" ELSE 0 END), 0)::float AS days90plus,
-        COALESCE(SUM(i."balanceDue"), 0)::float AS total
+        COALESCE(SUM(CASE WHEN i."dueDate" >= NOW()::date THEN (i."total" - COALESCE(i."amountPaid",0)) ELSE 0 END), 0)::float AS current,
+        COALESCE(SUM(CASE WHEN i."dueDate" < NOW()::date AND i."dueDate" >= NOW()::date - INTERVAL '30 days' THEN (i."total" - COALESCE(i."amountPaid",0)) ELSE 0 END), 0)::float AS days30,
+        COALESCE(SUM(CASE WHEN i."dueDate" < NOW()::date - INTERVAL '30 days' AND i."dueDate" >= NOW()::date - INTERVAL '60 days' THEN (i."total" - COALESCE(i."amountPaid",0)) ELSE 0 END), 0)::float AS days60,
+        COALESCE(SUM(CASE WHEN i."dueDate" < NOW()::date - INTERVAL '60 days' THEN (i."total" - COALESCE(i."amountPaid",0)) ELSE 0 END), 0)::float AS days90plus,
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::float AS total
       FROM "Invoice" i
       JOIN "Builder" b ON b."id" = i."builderId"
       WHERE i."status" IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         i."id" AS "invoiceId",
         i."invoiceNumber",
         b."companyName" AS "builderName",
-        i."balanceDue" AS amount,
+        (i."total" - COALESCE(i."amountPaid",0))::float AS amount,
         EXTRACT(DAY FROM NOW() - i."dueDate")::int AS "daysOverdue",
         i."dueDate"
       FROM "Invoice" i
@@ -143,10 +143,10 @@ export async function GET(request: NextRequest) {
         b."id" AS "builderId",
         b."companyName" AS "builderName",
         COALESCE(b."creditLimit", 0)::float AS "creditLimit",
-        COALESCE(SUM(i."balanceDue"), 0)::float AS "arOutstanding",
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::float AS "arOutstanding",
         CASE
           WHEN COALESCE(b."creditLimit", 0) > 0
-          THEN ROUND((COALESCE(SUM(i."balanceDue"), 0) / COALESCE(b."creditLimit", 1)) * 100, 1)::float
+          THEN ROUND((COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) / COALESCE(b."creditLimit", 1)) * 100, 1)::float
           ELSE 0
         END AS utilization
       FROM "Builder" b

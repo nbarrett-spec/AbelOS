@@ -107,9 +107,10 @@ export async function POST(request: NextRequest) {
 
         // Current balance (sum of unpaid invoices)
         const balanceResult: any[] = await prisma.$queryRawUnsafe(`
-          SELECT COALESCE(SUM("balanceDue"), 0) AS "currentBalance"
+          SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) AS "currentBalance"
           FROM "Invoice"
           WHERE "builderId" = $1 AND "status"::text IN ('SENT', 'OVERDUE', 'PARTIALLY_PAID')
+            AND ("total" - COALESCE("amountPaid",0)) > 0
         `, bid)
         const currentBalance = Number(balanceResult[0]?.currentBalance || 0)
 

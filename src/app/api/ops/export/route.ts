@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
           i."taxAmount",
           i."total",
           i."amountPaid",
-          i."balanceDue",
+          (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
           i."issuedAt",
           i."dueDate",
           i."paidAt",

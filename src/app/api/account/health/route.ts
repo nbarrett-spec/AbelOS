@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
     const invoiceSummary: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*)::int AS "totalInvoices",
-        COALESCE(SUM(CASE WHEN "status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF') THEN "balanceDue" ELSE 0 END), 0)::float AS "totalOutstanding",
-        COALESCE(SUM(CASE WHEN "status"::text = 'OVERDUE' THEN "balanceDue" ELSE 0 END), 0)::float AS "overdueAmount",
+        COALESCE(SUM(CASE WHEN "status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF') THEN "total" - COALESCE("amountPaid",0) ELSE 0 END), 0)::float AS "totalOutstanding",
+        COALESCE(SUM(CASE WHEN "status"::text = 'OVERDUE' THEN "total" - COALESCE("amountPaid",0) ELSE 0 END), 0)::float AS "overdueAmount",
         COUNT(CASE WHEN "status"::text = 'OVERDUE' THEN 1 END)::int AS "overdueCount",
         COALESCE(SUM(CASE WHEN "status"::text = 'PAID' AND "paidAt" >= NOW() - INTERVAL '30 days' THEN "total" ELSE 0 END), 0)::float AS "paidLast30Days",
         COUNT(CASE WHEN "status"::text IN ('DRAFT', 'ISSUED', 'SENT', 'PARTIALLY_PAID') THEN 1 END)::int AS "openInvoiceCount"

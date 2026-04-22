@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
     // Update invoice balance if invoice exists
     try {
       const invoiceResult: any[] = await prisma.$queryRawUnsafe(
-        `SELECT "id", "balanceDue", "amountPaid", "total" FROM "Invoice" WHERE "id" = $1`,
+        `SELECT "id", ("total" - COALESCE("amountPaid",0))::float AS "balanceDue", "amountPaid", "total" FROM "Invoice" WHERE "id" = $1`,
         invoiceId
       ) as any[]
 

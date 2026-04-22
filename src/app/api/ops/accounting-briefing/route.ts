@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         i."id",
         i."invoiceNumber",
         b."companyName" AS "builderName",
-        i."balanceDue" AS amount,
+        (i."total" - COALESCE(i."amountPaid",0))::float AS amount,
         EXTRACT(DAY FROM NOW() - i."dueDate")::int AS "daysOverdue",
         CASE
           WHEN EXTRACT(DAY FROM NOW() - i."dueDate") > 10 THEN 3
@@ -105,9 +105,10 @@ export async function GET(request: NextRequest) {
           ELSE 'days90plus'
         END AS bucket,
         COUNT(*)::int AS count,
-        SUM(i."balanceDue")::float AS total
+        SUM(i."total" - COALESCE(i."amountPaid",0))::float AS total
       FROM "Invoice" i
       WHERE i."status"::text IN ${UNPAID_STATUSES}
+        AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       GROUP BY bucket
     `)
 
@@ -145,8 +146,8 @@ export async function GET(request: NextRequest) {
     const arTotals: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*)::int AS "unpaidCount",
-        COALESCE(SUM(i."balanceDue"), 0)::float AS total,
-        COALESCE(SUM(CASE WHEN i."dueDate" < CURRENT_DATE THEN i."balanceDue" ELSE 0 END), 0)::float AS "overdueTotal"
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::float AS total,
+        COALESCE(SUM(CASE WHEN i."dueDate" < CURRENT_DATE THEN (i."total" - COALESCE(i."amountPaid",0)) ELSE 0 END), 0)::float AS "overdueTotal"
       FROM "Invoice" i
       WHERE i."status"::text IN ${UNPAID_STATUSES}
     `)

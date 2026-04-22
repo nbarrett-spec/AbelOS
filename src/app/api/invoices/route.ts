@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         i."status"::text AS "status",
         i."total",
         i."amountPaid",
-        i."balanceDue",
+        (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
         i."subtotal",
         i."taxAmount",
         i."paymentTerm"::text AS "paymentTerm",

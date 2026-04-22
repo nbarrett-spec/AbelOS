@@ -103,9 +103,10 @@ async function getOverviewSection() {
 
   // Total AR (sum of balanceDue from unpaid invoices)
   const arResult: any[] = await prisma.$queryRawUnsafe(`
-    SELECT COALESCE(SUM("balanceDue"), 0) as total_ar
+    SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) as total_ar
     FROM "Invoice"
     WHERE "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND ("total" - COALESCE("amountPaid",0)) > 0
   `)
   const totalAR = Number(arResult[0]?.total_ar || 0)
 
@@ -191,7 +192,7 @@ async function getOverviewSection() {
 
   // Top 5 builders by outstanding balance
   const top5BuildersResult: any[] = await prisma.$queryRawUnsafe(`
-    SELECT b."id", b."companyName", COALESCE(SUM(i."balanceDue"), 0) as outstanding_balance
+    SELECT b."id", b."companyName", COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) as outstanding_balance
     FROM "Builder" b
     LEFT JOIN "Invoice" i ON b."id" = i."builderId"
       AND i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
@@ -245,7 +246,7 @@ async function getARDetailSection() {
   // All unpaid invoices with builder info, days outstanding, aging bucket
   const unpaidInvoicesResult: any[] = await prisma.$queryRawUnsafe(`
     SELECT i."id", i."invoiceNumber", i."builderId", b."companyName" as "builderName",
-           i."total", i."amountPaid", i."balanceDue", i."dueDate",
+           i."total", i."amountPaid", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."dueDate",
            i."status"::text as status, i."createdAt",
            EXTRACT(DAY FROM NOW() - i."dueDate")::int as days_outstanding
     FROM "Invoice" i
@@ -290,7 +291,7 @@ async function getARDetailSection() {
   // AR aging by builder
   const arByBuilderResult: any[] = await prisma.$queryRawUnsafe(`
     SELECT b."id", b."companyName",
-           COALESCE(SUM(i."balanceDue"), 0) as total_balance,
+           COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) as total_balance,
            COUNT(i."id") as invoice_count
     FROM "Builder" b
     LEFT JOIN "Invoice" i ON b."id" = i."builderId"
@@ -639,9 +640,10 @@ async function getCashFlowSection() {
   // AR expected collections by week (next 8 weeks based on due dates)
   const arCollectionsResult: any[] = await prisma.$queryRawUnsafe(`
     SELECT DATE_TRUNC('week', i."dueDate")::date as week,
-           COALESCE(SUM(i."balanceDue"), 0) as expected_collections
+           COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0) as expected_collections
     FROM "Invoice" i
     WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       AND i."dueDate" >= $1 AND i."dueDate" < $2
     GROUP BY DATE_TRUNC('week', i."dueDate")
     ORDER BY week ASC
@@ -731,8 +733,9 @@ async function getKPIsSection() {
 
   // Current Ratio = AR / AP
   const totalARResult: any[] = await prisma.$queryRawUnsafe(`
-    SELECT COALESCE(SUM("balanceDue"), 0) as total FROM "Invoice"
+    SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) as total FROM "Invoice"
     WHERE "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND ("total" - COALESCE("amountPaid",0)) > 0
   `)
   const totalAPResult: any[] = await prisma.$queryRawUnsafe(`
     SELECT COALESCE(SUM("total"), 0) as total FROM "PurchaseOrder"

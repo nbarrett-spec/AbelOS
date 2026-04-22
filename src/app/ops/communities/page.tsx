@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface FloorPlan {
@@ -128,8 +129,17 @@ export default function CommunitiesPage() {
     return () => clearTimeout(debounceTimer)
   }, [search, refreshKey, selectedDivisionFilter])
 
-  const handleCardClick = (id: string) => {
-    setExpandedId(expandedId === id ? null : id)
+  const router = useRouter()
+
+  const handleCardClick = (id: string, e: React.MouseEvent) => {
+    // If clicking on the floor plans toggle, expand inline; otherwise navigate to detail
+    const target = e.target as HTMLElement
+    if (target.closest('[data-toggle-floorplans]')) {
+      e.preventDefault()
+      setExpandedId(expandedId === id ? null : id)
+    } else {
+      router.push(`/ops/communities/${id}`)
+    }
   }
 
   const fetchOrganizations = async () => {
@@ -353,7 +363,7 @@ export default function CommunitiesPage() {
             <div key={community.id}>
               {/* Card */}
               <div
-                onClick={() => handleCardClick(community.id)}
+                onClick={(e) => handleCardClick(community.id, e)}
                 style={{
                   backgroundColor: 'white',
                   borderRadius: '12px',
@@ -449,7 +459,7 @@ export default function CommunitiesPage() {
                   </div>
 
                   {/* Expand Indicator */}
-                  <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  <div data-toggle-floorplans style={{ marginTop: '12px', textAlign: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#C6A24E', fontWeight: 600 }}>
                       {expandedId === community.id ? '▲ Hide Floor Plans' : '▼ View Floor Plans'}
                     </span>

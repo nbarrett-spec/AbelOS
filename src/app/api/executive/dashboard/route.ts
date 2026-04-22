@@ -19,22 +19,30 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     // 1. P&L Summary (current month + prior month)
     // ────────────────────────────────────────────────────────────────────────
+    // Revenue from BOTH Invoice (billed) and Order (InFlow-synced, unbilled)
+    // This ensures we capture all revenue, not just manually invoiced orders
     const pnlCurrent: any[] = await prisma.$queryRawUnsafe(`
-      SELECT
-        COALESCE(SUM(CASE WHEN "status"::text IN ('PAID', 'ISSUED', 'SENT') THEN "total" ELSE 0 END), 0)::float AS "revenue",
-        COALESCE(AVG(p."margin"), 0.35)::float AS "avgMargin"
-      FROM "Invoice" i
-      LEFT JOIN "Product" p ON TRUE
-      WHERE i."createdAt" >= $1 AND i."createdAt" <= $2
+      SELECT COALESCE(inv_rev + ord_rev, 0)::float AS "revenue", 0.35::float AS "avgMargin"
+      FROM (
+        SELECT COALESCE(SUM(CASE WHEN "status"::text IN ('PAID', 'ISSUED', 'SENT', 'PARTIALLY_PAID') THEN "total" ELSE 0 END), 0) AS inv_rev
+        FROM "Invoice" WHERE "createdAt" >= $1 AND "createdAt" <= $2
+      ) inv,
+      (
+        SELECT COALESCE(SUM(CASE WHEN "status"::text IN ('DELIVERED', 'COMPLETE', 'SHIPPED') AND "id" NOT IN (SELECT "orderId" FROM "Invoice" WHERE "orderId" IS NOT NULL) THEN "total" ELSE 0 END), 0) AS ord_rev
+        FROM "Order" WHERE "createdAt" >= $1 AND "createdAt" <= $2
+      ) ord
     `, currentMonthStart, currentMonthEnd)
 
     const pnlPrior: any[] = await prisma.$queryRawUnsafe(`
-      SELECT
-        COALESCE(SUM(CASE WHEN "status"::text IN ('PAID', 'ISSUED', 'SENT') THEN "total" ELSE 0 END), 0)::float AS "revenue",
-        COALESCE(AVG(p."margin"), 0.35)::float AS "avgMargin"
-      FROM "Invoice" i
-      LEFT JOIN "Product" p ON TRUE
-      WHERE i."createdAt" >= $1 AND i."createdAt" <= $2
+      SELECT COALESCE(inv_rev + ord_rev, 0)::float AS "revenue", 0.35::float AS "avgMargin"
+      FROM (
+        SELECT COALESCE(SUM(CASE WHEN "status"::text IN ('PAID', 'ISSUED', 'SENT', 'PARTIALLY_PAID') THEN "total" ELSE 0 END), 0) AS inv_rev
+        FROM "Invoice" WHERE "createdAt" >= $1 AND "createdAt" <= $2
+      ) inv,
+      (
+        SELECT COALESCE(SUM(CASE WHEN "status"::text IN ('DELIVERED', 'COMPLETE', 'SHIPPED') AND "id" NOT IN (SELECT "orderId" FROM "Invoice" WHERE "orderId" IS NOT NULL) THEN "total" ELSE 0 END), 0) AS ord_rev
+        FROM "Order" WHERE "createdAt" >= $1 AND "createdAt" <= $2
+      ) ord
     `, priorMonthStart, priorMonthEnd)
 
     const currentRevenue = pnlCurrent[0]?.revenue || 0
@@ -54,13 +62,19 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     // 2. Cash Position
     // ────────────────────────────────────────────────────────────────────────
-    const cashPos: any[] = await prisma.$queryRawUnsafe(`
-      SELECT
-        COALESCE(SUM(CASE WHEN i."status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF') THEN i."balanceDue" ELSE 0 END), 0)::float AS "totalAR",
-        COALESCE(SUM(CASE WHEN po."status"::text IN ('APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED') THEN po."total" ELSE 0 END), 0)::float AS "totalAP"
-      FROM "Invoice" i, "PurchaseOrder" po
-      WHERE TRUE
+    // AR: sum actual balance (total - amountPaid) for billed invoices only
+    // AP: sum PO totals separately — NO cross join
+    const arResult: any[] = await prisma.$queryRawUnsafe(`
+      SELECT COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0)), 0)::float AS "totalAR"
+      FROM "Invoice" i
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID')
     `)
+    const apResult: any[] = await prisma.$queryRawUnsafe(`
+      SELECT COALESCE(SUM(po."total"), 0)::float AS "totalAP"
+      FROM "PurchaseOrder" po
+      WHERE po."status"::text IN ('APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED')
+    `)
+    const cashPos = [{ totalAR: arResult[0]?.totalAR || 0, totalAP: apResult[0]?.totalAP || 0 }]
 
     const totalAR = cashPos[0]?.totalAR || 0
     const totalAP = cashPos[0]?.totalAP || 0
@@ -71,13 +85,13 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     const arAging: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        COALESCE(SUM(CASE WHEN i."dueDate" > NOW()::date THEN i."balanceDue" ELSE 0 END), 0)::float AS "current",
-        COALESCE(SUM(CASE WHEN i."dueDate" <= NOW()::date AND i."dueDate" > (NOW() - INTERVAL '30 days')::date THEN i."balanceDue" ELSE 0 END), 0)::float AS "days_1_30",
-        COALESCE(SUM(CASE WHEN i."dueDate" <= (NOW() - INTERVAL '30 days')::date AND i."dueDate" > (NOW() - INTERVAL '60 days')::date THEN i."balanceDue" ELSE 0 END), 0)::float AS "days_31_60",
-        COALESCE(SUM(CASE WHEN i."dueDate" <= (NOW() - INTERVAL '60 days')::date AND i."dueDate" > (NOW() - INTERVAL '90 days')::date THEN i."balanceDue" ELSE 0 END), 0)::float AS "days_61_90",
-        COALESCE(SUM(CASE WHEN i."dueDate" <= (NOW() - INTERVAL '90 days')::date THEN i."balanceDue" ELSE 0 END), 0)::float AS "days_90_plus"
+        COALESCE(SUM(CASE WHEN i."dueDate" > NOW()::date THEN (i."total" - COALESCE(i."amountPaid", 0)) ELSE 0 END), 0)::float AS "current",
+        COALESCE(SUM(CASE WHEN i."dueDate" <= NOW()::date AND i."dueDate" > (NOW() - INTERVAL '30 days')::date THEN (i."total" - COALESCE(i."amountPaid", 0)) ELSE 0 END), 0)::float AS "days_1_30",
+        COALESCE(SUM(CASE WHEN i."dueDate" <= (NOW() - INTERVAL '30 days')::date AND i."dueDate" > (NOW() - INTERVAL '60 days')::date THEN (i."total" - COALESCE(i."amountPaid", 0)) ELSE 0 END), 0)::float AS "days_31_60",
+        COALESCE(SUM(CASE WHEN i."dueDate" <= (NOW() - INTERVAL '60 days')::date AND i."dueDate" > (NOW() - INTERVAL '90 days')::date THEN (i."total" - COALESCE(i."amountPaid", 0)) ELSE 0 END), 0)::float AS "days_61_90",
+        COALESCE(SUM(CASE WHEN i."dueDate" <= (NOW() - INTERVAL '90 days')::date THEN (i."total" - COALESCE(i."amountPaid", 0)) ELSE 0 END), 0)::float AS "days_90_plus"
       FROM "Invoice" i
-      WHERE i."status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF')
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID')
     `)
 
     const aging = {
@@ -95,10 +109,10 @@ export async function GET(request: NextRequest) {
       SELECT
         b."id",
         b."companyName",
-        COALESCE(SUM(i."balanceDue"), 0)::float AS "outstanding",
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0)), 0)::float AS "outstanding",
         COALESCE(b."creditLimit", 0)::float AS "creditLimit"
       FROM "Builder" b
-      LEFT JOIN "Invoice" i ON i."builderId" = b."id" AND i."status"::text NOT IN ('PAID', 'VOID', 'WRITE_OFF')
+      LEFT JOIN "Invoice" i ON i."builderId" = b."id" AND i."status"::text IN ('ISSUED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID')
       WHERE b."status"::text = 'ACTIVE'
       GROUP BY b."id", b."companyName", b."creditLimit"
       ORDER BY "outstanding" DESC
@@ -116,14 +130,23 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     // 5. Revenue Trend (12-month)
     // ────────────────────────────────────────────────────────────────────────
+    // Revenue trend: Invoice revenue + uninvoiced Order revenue
     const revenueTrend: any[] = await prisma.$queryRawUnsafe(`
-      SELECT
-        DATE_TRUNC('month', i."createdAt")::date AS "month",
-        COALESCE(SUM(CASE WHEN i."status"::text IN ('PAID', 'ISSUED', 'SENT') THEN i."total" ELSE 0 END), 0)::float AS "revenue"
-      FROM "Invoice" i
-      WHERE i."createdAt" >= NOW() - INTERVAL '12 months'
-      GROUP BY DATE_TRUNC('month', i."createdAt")
-      ORDER BY "month" ASC
+      SELECT m."month", COALESCE(SUM(m."revenue"), 0)::float AS "revenue"
+      FROM (
+        SELECT DATE_TRUNC('month', i."createdAt")::date AS "month", i."total" AS "revenue"
+        FROM "Invoice" i
+        WHERE i."createdAt" >= NOW() - INTERVAL '12 months'
+          AND i."status"::text IN ('PAID', 'ISSUED', 'SENT', 'PARTIALLY_PAID')
+        UNION ALL
+        SELECT DATE_TRUNC('month', o."createdAt")::date AS "month", o."total" AS "revenue"
+        FROM "Order" o
+        WHERE o."createdAt" >= NOW() - INTERVAL '12 months'
+          AND o."status"::text IN ('DELIVERED', 'COMPLETE', 'SHIPPED')
+          AND o."id" NOT IN (SELECT "orderId" FROM "Invoice" WHERE "orderId" IS NOT NULL)
+      ) m
+      GROUP BY m."month"
+      ORDER BY m."month" ASC
     `)
 
     // ────────────────────────────────────────────────────────────────────────
@@ -148,10 +171,9 @@ export async function GET(request: NextRequest) {
     const marginTrend: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         DATE_TRUNC('month', i."createdAt")::date AS "month",
-        COALESCE(SUM(CASE WHEN i."status"::text IN ('PAID', 'ISSUED', 'SENT') THEN i."total" ELSE 0 END), 0)::float AS "revenue",
-        COALESCE(AVG(p."margin"), 0.35)::float AS "avgMargin"
+        COALESCE(SUM(CASE WHEN i."status"::text IN ('PAID', 'ISSUED', 'SENT', 'PARTIALLY_PAID') THEN i."total" ELSE 0 END), 0)::float AS "revenue",
+        0.35::float AS "avgMargin"
       FROM "Invoice" i
-      LEFT JOIN "Product" p ON TRUE
       WHERE i."createdAt" >= NOW() - INTERVAL '6 months'
       GROUP BY DATE_TRUNC('month', i."createdAt")
       ORDER BY "month" ASC

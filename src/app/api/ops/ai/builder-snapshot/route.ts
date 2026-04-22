@@ -56,9 +56,9 @@ export async function POST(request: NextRequest) {
         builderId
       ) as Promise<any[]>,
       prisma.$queryRawUnsafe(
-        `SELECT COALESCE(SUM("balanceDue"),0)::float as outstanding,
-                COALESCE(SUM(CASE WHEN "dueDate" < CURRENT_DATE THEN "balanceDue" ELSE 0 END),0)::float as overdue
-         FROM "Invoice" WHERE "builderId"=$1 AND "status" NOT IN ('PAID','VOID','WRITE_OFF')`,
+        `SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)),0)::float as outstanding,
+                COALESCE(SUM(CASE WHEN "dueDate" < CURRENT_DATE THEN "total" - COALESCE("amountPaid",0) ELSE 0 END),0)::float as overdue
+         FROM "Invoice" WHERE "builderId"=$1 AND "status"::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE') AND ("total" - COALESCE("amountPaid",0)) > 0`,
         builderId
       ) as Promise<any[]>,
       prisma.$queryRawUnsafe(

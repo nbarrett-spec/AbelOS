@@ -15,12 +15,13 @@ export async function GET(request: NextRequest) {
         i."invoiceNumber",
         i."builderId",
         b."companyName",
-        COALESCE(i."balanceDue", 0)::FLOAT as "balanceDue",
+        (i."total" - COALESCE(i."amountPaid", 0))::FLOAT as "balanceDue",
         i."dueDate",
         i."status"
       FROM "Invoice" i
       LEFT JOIN "Builder" b ON b."id" = i."builderId"
-      WHERE COALESCE(i."balanceDue", 0) > 0
+      WHERE (i."total" - COALESCE(i."amountPaid", 0)) > 0
+        AND i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
       ORDER BY i."dueDate" ASC NULLS FIRST
     `)
 

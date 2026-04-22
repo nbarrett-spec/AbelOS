@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         i."taxAmount",
         i."total",
         i."amountPaid",
-        i."balanceDue",
+        (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
         i."status",
         i."paymentTerm",
         i."issuedAt",
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
       FROM "Invoice" i
       JOIN "Builder" b ON i."builderId" = b."id"
       WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+        AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       ORDER BY i."dueDate" ASC NULLS LAST
     `);
 
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
           i."id",
           i."invoiceNumber",
           i."builderId",
-          i."balanceDue",
+          (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
           i."paymentTerm",
           i."dueDate",
           b."companyName",
@@ -254,7 +255,8 @@ export async function POST(request: NextRequest) {
         JOIN "Builder" b ON i."builderId" = b."id"
         WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
           AND CURRENT_DATE > i."dueDate"
-        ORDER BY (i."balanceDue" * (CURRENT_DATE - i."dueDate")) DESC
+          AND (i."total" - COALESCE(i."amountPaid",0)) > 0
+        ORDER BY ((i."total" - COALESCE(i."amountPaid",0)) * (CURRENT_DATE - i."dueDate")) DESC
       `);
 
       const createdActions = [];
@@ -351,7 +353,7 @@ export async function POST(request: NextRequest) {
           AVG(EXTRACT(DAY FROM (COALESCE(i."paidAt", CURRENT_TIMESTAMP) - i."issuedAt")))::int as "avgPaymentDays",
           SUM(CASE WHEN i."paidAt" > i."dueDate" THEN 1 ELSE 0 END)::int as "latePaymentCount",
           SUM(i."total")::numeric as "totalRevenue",
-          SUM(CASE WHEN i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE') THEN i."balanceDue" ELSE 0 END)::numeric as "outstandingBalance"
+          SUM(CASE WHEN i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE') THEN (i."total" - COALESCE(i."amountPaid",0)) ELSE 0 END)::numeric as "outstandingBalance"
         FROM "Builder" b
         LEFT JOIN "Invoice" i ON b."id" = i."builderId"
         WHERE b."id" = $1

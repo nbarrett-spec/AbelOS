@@ -156,9 +156,10 @@ async function fetchFinancialContext(): Promise<AccountingContext> {
     Array<{ total: number | null }>
   >(
     `
-    SELECT COALESCE(SUM("balanceDue"), 0) as total
+    SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) as total
     FROM "Invoice"
-    WHERE "status" NOT IN ('PAID', 'VOID', 'WRITE_OFF')
+    WHERE "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND ("total" - COALESCE("amountPaid",0)) > 0
   `
   )
   const arOutstanding = arResult[0]?.total ?? 0
@@ -180,10 +181,11 @@ async function fetchFinancialContext(): Promise<AccountingContext> {
     Array<{ count: bigint; total: number | null }>
   >(
     `
-    SELECT COUNT(*) as count, COALESCE(SUM("balanceDue"), 0) as total
+    SELECT COUNT(*) as count, COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) as total
     FROM "Invoice"
-    WHERE "status" NOT IN ('PAID', 'VOID', 'WRITE_OFF')
+    WHERE "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
       AND "dueDate" < CURRENT_DATE
+      AND ("total" - COALESCE("amountPaid",0)) > 0
   `
   )
   const overdueInvoicesCount = Number(overdueResult[0]?.count ?? 0)
@@ -232,12 +234,13 @@ async function fetchFinancialContext(): Promise<AccountingContext> {
     SELECT
       i."invoiceNumber",
       b."name" as "builderName",
-      i."balanceDue",
+      (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
       i."dueDate"
     FROM "Invoice" i
     LEFT JOIN "Builder" b ON i."builderId" = b."id"
-    WHERE i."status" NOT IN ('PAID', 'VOID', 'WRITE_OFF')
+    WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
       AND i."dueDate" < CURRENT_DATE
+      AND (i."total" - COALESCE(i."amountPaid",0)) > 0
     ORDER BY i."dueDate" ASC
     LIMIT 5
   `

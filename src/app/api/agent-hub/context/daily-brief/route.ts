@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const rows: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*)::int AS "totalOverdue",
-        COALESCE(SUM("balanceDue"), 0) AS "totalOverdueAmount",
+        COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0) AS "totalOverdueAmount",
         COUNT(CASE WHEN "dueDate" < NOW() - INTERVAL '60 days' THEN 1 END)::int AS "critical60Plus"
       FROM "Invoice"
       WHERE "status"::text IN ('OVERDUE', 'SENT') AND "dueDate" < NOW()

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         (SELECT COALESCE(SUM(total)::numeric, 0) FROM "Order" WHERE "builderId" = $1) as "totalOrdered",
         (SELECT COALESCE(SUM(total)::numeric, 0) FROM "Invoice" WHERE "builderId" = $1 AND "status"::text NOT IN ('VOID', 'WRITE_OFF', 'DRAFT')) as "totalInvoiced",
         (SELECT COALESCE(SUM("amountPaid")::numeric, 0) FROM "Invoice" WHERE "builderId" = $1) as "totalPaid",
-        (SELECT COALESCE(SUM("balanceDue")::numeric, 0) FROM "Invoice" WHERE "builderId" = $1 AND "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')) as "outstandingBalance",
+        (SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0))::numeric, 0) FROM "Invoice" WHERE "builderId" = $1 AND "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE') AND ("total" - COALESCE("amountPaid",0)) > 0) as "outstandingBalance",
         (SELECT COUNT(*)::int FROM "Order" WHERE "builderId" = $1) as "orderCount",
         (SELECT COUNT(*)::int FROM "Invoice" WHERE "builderId" = $1 AND "status"::text = 'OVERDUE') as "overdueCount"
       FROM "Builder" b WHERE b.id = $1

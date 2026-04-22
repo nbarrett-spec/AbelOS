@@ -15,22 +15,14 @@ export async function GET(request: NextRequest) {
   if (authError) return authError
 
   try {
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        status: { in: ['ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-        balanceDue: { gt: 0 },
-      },
-      select: {
-        id: true,
-        invoiceNumber: true,
-        builderId: true,
-        total: true,
-        balanceDue: true,
-        dueDate: true,
-        issuedAt: true,
-        status: true,
-      },
-    })
+    const invoices: any[] = await prisma.$queryRawUnsafe(`
+      SELECT "id", "invoiceNumber", "builderId", "total",
+             ("total" - COALESCE("amountPaid",0))::float AS "balanceDue",
+             "dueDate", "issuedAt", "status"::text AS "status"
+      FROM "Invoice"
+      WHERE "status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+        AND ("total" - COALESCE("amountPaid",0)) > 0
+    `)
 
     const builders = await prisma.builder.findMany({
       where: { id: { in: Array.from(new Set(invoices.map((i) => i.builderId))) } },

@@ -55,10 +55,12 @@ export async function GET(
 
     // Open invoices
     const openInvoices: any[] = await prisma.$queryRawUnsafe(`
-      SELECT "id", "invoiceNumber", "status"::text AS "status", "total", "balanceDue",
+      SELECT "id", "invoiceNumber", "status"::text AS "status", "total",
+             ("total" - COALESCE("amountPaid",0))::float AS "balanceDue",
              "dueDate", "createdAt"
       FROM "Invoice"
       WHERE "builderId" = $1 AND "status"::text NOT IN ('PAID', 'VOID', 'DRAFT', 'WRITE_OFF')
+        AND ("total" - COALESCE("amountPaid",0)) > 0
       ORDER BY "dueDate" ASC
     `, bid)
 

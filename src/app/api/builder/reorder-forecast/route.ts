@@ -202,13 +202,12 @@ async function getSeasonalPatterns(builderId: string) {
       SELECT DISTINCT ON (mo.month)
         mo.month,
         p.category,
-        SUM(o.total) as category_spend
+        SUM(oi2."unitPrice" * oi2."quantity") as category_spend
       FROM monthly_orders mo
-      INNER JOIN "Order" o ON TRUE
-      INNER JOIN "OrderItem" oi ON o.id = oi."orderId"
-      INNER JOIN "Product" p ON oi."productId" = p.id
-      WHERE o."builderId" = $1
-        AND EXTRACT(MONTH FROM o."createdAt")::int = mo.month
+      INNER JOIN "Order" o2 ON o2."builderId" = $1
+        AND EXTRACT(MONTH FROM o2."createdAt")::int = mo.month
+      INNER JOIN "OrderItem" oi2 ON o2.id = oi2."orderId"
+      INNER JOIN "Product" p ON oi2."productId" = p.id
       GROUP BY mo.month, p.category
       ORDER BY mo.month, category_spend DESC
     )

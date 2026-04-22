@@ -21,31 +21,25 @@ export async function GET(request: NextRequest) {
     const ninetyDaysOut = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
 
     const [paymentsLast30, posLast30, openAR, openAP] = await Promise.all([
-      prisma.payment.findMany({
-        where: { receivedAt: { gte: thirtyDaysAgo } },
-        select: { amount: true, receivedAt: true },
-      }),
-      prisma.purchaseOrder.findMany({
-        where: {
-          status: { in: ['RECEIVED', 'PARTIALLY_RECEIVED'] },
-          receivedAt: { gte: thirtyDaysAgo },
-        },
-        select: { total: true, receivedAt: true },
-      }),
-      prisma.invoice.findMany({
-        where: {
-          status: { in: ['ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE'] },
-          dueDate: { lte: ninetyDaysOut },
-        },
-        select: { balanceDue: true, dueDate: true, status: true },
-      }),
-      prisma.purchaseOrder.findMany({
-        where: {
-          status: { in: ['APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED'] },
-          expectedDate: { lte: ninetyDaysOut, gte: now },
-        },
-        select: { total: true, expectedDate: true, status: true },
-      }),
+      prisma.$queryRawUnsafe<any[]>(`
+        SELECT amount::float, "receivedAt" FROM "Payment" WHERE "receivedAt" >= $1
+      `, thirtyDaysAgo),
+      prisma.$queryRawUnsafe<any[]>(`
+        SELECT total::float, "receivedAt" FROM "PurchaseOrder"
+        WHERE status::text IN ('RECEIVED', 'PARTIALLY_RECEIVED') AND "receivedAt" >= $1
+      `, thirtyDaysAgo),
+      prisma.$queryRawUnsafe<any[]>(`
+        SELECT (i."total" - COALESCE(i."amountPaid", 0))::float AS "balanceDue", i."dueDate", i."status"::text AS status
+        FROM "Invoice" i
+        WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+        AND (i."dueDate" IS NULL OR i."dueDate" <= $1)
+        AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
+      `, ninetyDaysOut),
+      prisma.$queryRawUnsafe<any[]>(`
+        SELECT total::float, "expectedDate", status::text AS status FROM "PurchaseOrder"
+        WHERE status::text IN ('APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED')
+        AND ("expectedDate" IS NULL OR ("expectedDate" <= $1 AND "expectedDate" >= $2))
+      `, ninetyDaysOut, now),
     ])
 
     const cashIn30 = paymentsLast30.reduce((s, p) => s + p.amount, 0)

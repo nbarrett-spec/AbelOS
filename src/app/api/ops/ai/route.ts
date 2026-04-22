@@ -155,10 +155,11 @@ async function handleInvoiceQuery(message: string): Promise<AIResponse> {
       SELECT
         id,
         "invoiceNumber",
-        "balanceDue",
+        ("total" - COALESCE("amountPaid",0))::float AS "balanceDue",
         "dueDate"
       FROM "Invoice"
       WHERE status = 'OVERDUE' AND "dueDate" <= $1
+        AND ("total" - COALESCE("amountPaid",0)) > 0
       ORDER BY "dueDate" ASC
       `,
       now

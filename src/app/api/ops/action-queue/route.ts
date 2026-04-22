@@ -45,10 +45,10 @@ export async function GET(request: NextRequest) {
 
     // 2. Overdue invoices
     const overdueInvoices: any[] = await prisma.$queryRawUnsafe(
-      `SELECT i.id, i."invoiceNumber", b."companyName", i."balanceDue", i."dueDate"
+      `SELECT i.id, i."invoiceNumber", b."companyName", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."dueDate"
        FROM "Invoice" i
        JOIN "Builder" b ON b.id = i."builderId"
-       WHERE i.status = 'OVERDUE'::"InvoiceStatus" AND i."balanceDue" > 0
+       WHERE i.status = 'OVERDUE'::"InvoiceStatus" AND (i."total" - COALESCE(i."amountPaid",0)) > 0
        ORDER BY i."dueDate" ASC
        LIMIT 10`
     )

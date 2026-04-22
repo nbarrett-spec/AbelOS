@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     let invoices: any[] = []
     try {
       invoices = await prisma.$queryRawUnsafe(`
-        SELECT i.id, i."invoiceNumber", i.total, i."amountPaid", i."balanceDue",
+        SELECT i.id, i."invoiceNumber", i.total, i."amountPaid", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
                i.status, i."dueDate", i."issuedAt",
                i."stripeSessionId", i."stripePaymentUrl"
         FROM "Invoice" i
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     } catch {
       // Stripe columns may not exist yet — fallback query without them
       invoices = await prisma.$queryRawUnsafe(`
-        SELECT i.id, i."invoiceNumber", i.total, i."amountPaid", i."balanceDue",
+        SELECT i.id, i."invoiceNumber", i.total, i."amountPaid", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
                i.status, i."dueDate", i."issuedAt"
         FROM "Invoice" i
         WHERE i."builderId" = $1
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch the invoice
     const rows: any[] = await prisma.$queryRawUnsafe(`
-      SELECT i.id, i."invoiceNumber", i."balanceDue", i."builderId", i.status,
+      SELECT i.id, i."invoiceNumber", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."builderId", i.status,
              b.email, b."companyName"
       FROM "Invoice" i
       JOIN "Builder" b ON i."builderId" = b.id

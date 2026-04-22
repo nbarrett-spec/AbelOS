@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const rows: any[] = await prisma.$queryRawUnsafe(`
       SELECT i."id", i."invoiceNumber", i."builderId", i."orderId", i."jobId",
              i."createdById", i."subtotal", i."taxAmount", i."total",
-             i."amountPaid", i."balanceDue", i."status"::text AS "status",
+             i."amountPaid", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."status"::text AS "status",
              i."paymentTerm"::text AS "paymentTerm",
              i."issuedAt", i."dueDate", i."paidAt", i."notes",
              i."createdAt", i."updatedAt",

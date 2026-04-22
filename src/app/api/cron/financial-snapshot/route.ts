@@ -28,13 +28,14 @@ async function calculateFinancialSnapshot() {
       Array<{ total: number; current: number; days30: number; days60: number; days90plus: number }>
     >(`
       SELECT
-        COALESCE(SUM(i."balanceDue"), 0)::float AS total,
-        COALESCE(SUM(CASE WHEN i."dueDate" >= $1 THEN i."balanceDue" ELSE 0 END), 0)::float AS current,
-        COALESCE(SUM(CASE WHEN i."dueDate" < $1 AND i."dueDate" >= $2 THEN i."balanceDue" ELSE 0 END), 0)::float AS days30,
-        COALESCE(SUM(CASE WHEN i."dueDate" < $2 AND i."dueDate" >= $3 THEN i."balanceDue" ELSE 0 END), 0)::float AS days60,
-        COALESCE(SUM(CASE WHEN i."dueDate" < $3 THEN i."balanceDue" ELSE 0 END), 0)::float AS days90plus
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0)), 0)::float AS total,
+        COALESCE(SUM(CASE WHEN i."dueDate" >= $1 THEN i."total" - COALESCE(i."amountPaid", 0) ELSE 0 END), 0)::float AS current,
+        COALESCE(SUM(CASE WHEN i."dueDate" < $1 AND i."dueDate" >= $2 THEN i."total" - COALESCE(i."amountPaid", 0) ELSE 0 END), 0)::float AS days30,
+        COALESCE(SUM(CASE WHEN i."dueDate" < $2 AND i."dueDate" >= $3 THEN i."total" - COALESCE(i."amountPaid", 0) ELSE 0 END), 0)::float AS days60,
+        COALESCE(SUM(CASE WHEN i."dueDate" < $3 THEN i."total" - COALESCE(i."amountPaid", 0) ELSE 0 END), 0)::float AS days90plus
       FROM "Invoice" i
-      WHERE i."status" IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+        AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
     `, today, thirtyDaysAgo, ninetyDaysAgo)
 
     const arTotal = arData[0]?.total || 0
@@ -104,9 +105,10 @@ async function calculateFinancialSnapshot() {
       Array<{ builderId: string; builderName: string; balance: number }>
     >(`
       SELECT b."id" AS "builderId", b."companyName" AS "builderName",
-             COALESCE(SUM(i."balanceDue"), 0)::float AS balance
+             COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0)), 0)::float AS balance
       FROM "Invoice" i JOIN "Builder" b ON b."id" = i."builderId"
-      WHERE i."status" IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+        AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
       GROUP BY b."id", b."companyName" ORDER BY balance DESC LIMIT 5
     `)
 

@@ -335,11 +335,11 @@ export async function GET(request: NextRequest) {
     const invoiceSanity: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*)::int AS total,
-        COALESCE(SUM("balanceDue"), 0)::float AS "totalBalance",
-        COUNT(CASE WHEN "balanceDue" > 50000 THEN 1 END)::int AS "over50k",
-        COUNT(CASE WHEN "balanceDue" < 0 THEN 1 END)::int AS "negative",
-        COUNT(CASE WHEN status::text = 'PAID' AND "balanceDue" > 0 THEN 1 END)::int AS "paidWithBalance",
-        COALESCE(MAX("balanceDue"), 0)::float AS "maxBalance"
+        COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0)::float AS "totalBalance",
+        COUNT(CASE WHEN ("total" - COALESCE("amountPaid",0)) > 50000 THEN 1 END)::int AS "over50k",
+        COUNT(CASE WHEN ("total" - COALESCE("amountPaid",0)) < 0 THEN 1 END)::int AS "negative",
+        COUNT(CASE WHEN status::text = 'PAID' AND ("total" - COALESCE("amountPaid",0)) > 0 THEN 1 END)::int AS "paidWithBalance",
+        COALESCE(MAX("total" - COALESCE("amountPaid",0)), 0)::float AS "maxBalance"
       FROM "Invoice"
     `)
     const inv = invoiceSanity[0] || {}
@@ -453,7 +453,7 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*)::int FROM "Order") AS "orders",
         (SELECT COALESCE(SUM(total), 0)::float FROM "Order" WHERE status::text != 'CANCELLED') AS "totalOrderRevenue",
         (SELECT COUNT(*)::int FROM "Invoice") AS "invoices",
-        (SELECT COALESCE(SUM("balanceDue"), 0)::float FROM "Invoice" WHERE status::text NOT IN ('PAID', 'VOID', 'WRITE_OFF')) AS "totalAR",
+        (SELECT COALESCE(SUM("total" - COALESCE("amountPaid",0)), 0)::float FROM "Invoice" WHERE status::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE') AND ("total" - COALESCE("amountPaid",0)) > 0) AS "totalAR",
         (SELECT COUNT(*)::int FROM "Job") AS "jobs",
         (SELECT COUNT(*)::int FROM "Quote") AS "quotes",
         (SELECT COUNT(*)::int FROM "PurchaseOrder") AS "purchaseOrders"

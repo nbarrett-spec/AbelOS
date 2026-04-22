@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         i."invoiceNumber",
         i."builderId",
         i."total",
-        i."balanceDue",
+        (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
         i."dueDate",
         i."status"::text AS "status",
         b."email" AS "builderEmail"

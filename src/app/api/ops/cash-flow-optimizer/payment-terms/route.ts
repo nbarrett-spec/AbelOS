@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         b."paymentTerm" as "currentPaymentTerm",
         COALESCE(SUM(i.total), 0)::float as "totalInvoiced",
         COALESCE(SUM(p.amount), 0)::float as "amountPaid",
-        COALESCE(SUM(i."balanceDue"), 0)::float as "outstandingBalance",
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::float as "outstandingBalance",
         COUNT(DISTINCT i.id)::int as "invoiceCount",
         COUNT(DISTINCT p.id)::int as "paymentCount",
         COALESCE(
@@ -239,7 +239,7 @@ async function handleGenerateRecommendations(): Promise<NextResponse> {
             ROUND((COUNT(DISTINCT p.id)::float / COUNT(DISTINCT i.id)) * 100)
           ELSE 0
         END::int as "onTimeRate",
-        COALESCE(SUM(i."balanceDue"), 0)::float as "outstandingBalance",
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)), 0)::float as "outstandingBalance",
         COUNT(DISTINCT i.id)::int as "invoiceCount",
         COUNT(DISTINCT p.id)::int as "paymentCount"
       FROM "Builder" b

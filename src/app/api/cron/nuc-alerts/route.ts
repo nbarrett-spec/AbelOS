@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
     const creditBreachResults = await prisma.$queryRawUnsafe<
       Array<{ id: string; companyName: string; creditLimit: number; ar: number }>
     >(
-      `SELECT b.id, b."companyName", b."creditLimit", COALESCE(SUM(i."balanceDue"),0)::numeric as ar
+      `SELECT b.id, b."companyName", b."creditLimit", COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)),0)::numeric as ar
        FROM "Builder" b
-       LEFT JOIN "Invoice" i ON i."builderId" = b.id AND i.status IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE')
+       LEFT JOIN "Invoice" i ON i."builderId" = b.id AND i.status::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE')
        WHERE b.status = 'ACTIVE' AND b."creditLimit" > 0
        GROUP BY b.id, b."companyName", b."creditLimit"
-       HAVING COALESCE(SUM(i."balanceDue"),0) > b."creditLimit"`
+       HAVING COALESCE(SUM(i."total" - COALESCE(i."amountPaid",0)),0) > b."creditLimit"`
     );
 
     for (const result of creditBreachResults) {
@@ -163,11 +163,12 @@ export async function GET(request: NextRequest) {
         dueDate: Date;
       }>
     >(
-      `SELECT i.id, i."invoiceNumber", i."balanceDue", b."companyName", i."dueDate"
+      `SELECT i.id, i."invoiceNumber", (i."total" - COALESCE(i."amountPaid",0))::float as "balanceDue", b."companyName", i."dueDate"
        FROM "Invoice" i
        JOIN "Builder" b ON b.id = i."builderId"
        WHERE i."dueDate" < NOW() - INTERVAL '45 days'
-         AND i.status IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE')`
+         AND i.status::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE')
+         AND (i."total" - COALESCE(i."amountPaid",0)) > 0`
     );
 
     for (const result of overdueResults) {

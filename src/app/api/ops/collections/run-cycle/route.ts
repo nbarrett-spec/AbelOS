@@ -36,11 +36,12 @@ export async function POST(request: NextRequest) {
     // Find all overdue or sent invoices where dueDate has passed
     const overdueInvoices: any[] = await prisma.$queryRawUnsafe(`
       SELECT i."id", i."builderId", i."dueDate", i."invoiceNumber",
-             i."status"::text AS "status", i."balanceDue", i."total",
+             i."status"::text AS "status", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."total",
              i."paymentPlanOffered"
       FROM "Invoice" i
       WHERE (i."status"::text IN ('OVERDUE', 'SENT'))
         AND i."dueDate" < NOW()
+        AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       ORDER BY i."dueDate" ASC
     `)
 

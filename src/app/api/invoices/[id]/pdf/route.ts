@@ -21,7 +21,7 @@ export async function GET(
     // Fetch invoice with builder info
     const rows: any[] = await prisma.$queryRawUnsafe(`
       SELECT i.id, i."invoiceNumber", i.status::text as status,
-             i.subtotal, i."taxAmount", i.total, i."amountPaid", i."balanceDue",
+             i.subtotal, i."taxAmount", i.total, i."amountPaid", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
              i."paymentTerm", i."issuedAt", i."dueDate", i."paidAt", i.notes,
              b."companyName", b."contactName", b.email, b.phone,
              b.address, b.city, b.state, b.zip,

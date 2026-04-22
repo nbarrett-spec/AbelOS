@@ -19,9 +19,9 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Overdue invoices (highest priority)
     const overdue: any[] = await prisma.$queryRawUnsafe(`
-      SELECT id, "invoiceNumber", total, "balanceDue", "dueDate"
+      SELECT id, "invoiceNumber", total, ("total" - COALESCE("amountPaid",0))::float AS "balanceDue", "dueDate"
       FROM "Invoice"
-      WHERE "builderId" = $1 AND status = 'OVERDUE'
+      WHERE "builderId" = $1 AND status = 'OVERDUE' AND ("total" - COALESCE("amountPaid",0)) > 0
       ORDER BY "dueDate" ASC LIMIT 5
     `, builderId)
 
@@ -41,11 +41,12 @@ export async function GET(request: NextRequest) {
 
     // 2. Invoices due within 7 days
     const dueSoon: any[] = await prisma.$queryRawUnsafe(`
-      SELECT id, "invoiceNumber", total, "balanceDue", "dueDate"
+      SELECT id, "invoiceNumber", total, ("total" - COALESCE("amountPaid",0))::float AS "balanceDue", "dueDate"
       FROM "Invoice"
       WHERE "builderId" = $1
         AND status IN ('ISSUED', 'SENT', 'PARTIALLY_PAID')
         AND "dueDate" BETWEEN NOW() AND NOW() + INTERVAL '7 days'
+        AND ("total" - COALESCE("amountPaid",0)) > 0
       ORDER BY "dueDate" ASC LIMIT 5
     `, builderId)
 

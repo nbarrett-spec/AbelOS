@@ -13,18 +13,20 @@ export async function GET(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    // Get current cash position
-    const currentPositionResult: any[] = await prisma.$queryRawUnsafe(`
-      SELECT
-        COALESCE(SUM(CASE WHEN i."status" NOT IN ($1::"InvoiceStatus", $2::"InvoiceStatus", $3::"InvoiceStatus") THEN i."balanceDue" ELSE 0 END)::float, 0) as ar,
-        COALESCE(SUM(CASE WHEN po."status" NOT IN ($4::"POStatus", $5::"POStatus") THEN po."total" ELSE 0 END)::float, 0) as ap
+    // Get current cash position — separate queries to avoid cross-join
+    const arResult: any[] = await prisma.$queryRawUnsafe(`
+      SELECT COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0))::float, 0) as ar
       FROM "Invoice" i
-      FULL OUTER JOIN "PurchaseOrder" po ON TRUE
-      WHERE i."status" IS NOT NULL OR po."status" IS NOT NULL
-    `, 'PAID', 'VOID', 'WRITE_OFF', 'RECEIVED', 'CANCELLED');
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+    `);
+    const apResult: any[] = await prisma.$queryRawUnsafe(`
+      SELECT COALESCE(SUM(po."total")::float, 0) as ap
+      FROM "PurchaseOrder" po
+      WHERE po."status"::text IN ('APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED')
+    `);
 
-    const currentAR = currentPositionResult[0]?.ar || 0;
-    const currentAP = currentPositionResult[0]?.ap || 0;
+    const currentAR = arResult[0]?.ar || 0;
+    const currentAP = apResult[0]?.ap || 0;
     const estimatedCash = 125000; // Placeholder - would come from bank integration
     const netWorkingCapital = currentAR - currentAP;
 
@@ -32,11 +34,11 @@ export async function GET(request: NextRequest) {
     const inflowsResult: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COALESCE(i."dueDate", NOW() + INTERVAL '30 days')::DATE as dueDate,
-        COALESCE(SUM(i."balanceDue")::float, 0) as amount
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0))::float, 0) as amount
       FROM "Invoice" i
       WHERE i."status" IN ($1::"InvoiceStatus", $2::"InvoiceStatus", $3::"InvoiceStatus", $4::"InvoiceStatus")
       AND (i."dueDate" IS NULL OR i."dueDate" <= NOW() + INTERVAL '90 days')
-      AND i."balanceDue" > 0
+      AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
       GROUP BY COALESCE(i."dueDate", NOW() + INTERVAL '30 days')::DATE
       ORDER BY dueDate
     `, 'ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE');
@@ -134,10 +136,10 @@ export async function GET(request: NextRequest) {
           WHEN i."dueDate" >= CURRENT_DATE - INTERVAL '90 days' THEN 'days90'
           ELSE 'days90plus'
         END as agingBucket,
-        COALESCE(SUM(i."balanceDue")::float, 0) as amount
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0))::float, 0) as amount
       FROM "Invoice" i
-      WHERE i."status" NOT IN ($1::"InvoiceStatus", $2::"InvoiceStatus", $3::"InvoiceStatus")
-      AND i."balanceDue" > 0
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
       GROUP BY agingBucket
     `, 'PAID', 'VOID', 'WRITE_OFF');
 
@@ -176,11 +178,11 @@ export async function GET(request: NextRequest) {
     const overdueSummaryResult: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*)::int as count,
-        COALESCE(SUM(i."balanceDue")::float, 0) as totalAmount
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0))::float, 0) as totalAmount
       FROM "Invoice" i
       WHERE i."dueDate" < CURRENT_DATE
-      AND i."status" NOT IN ($1::"InvoiceStatus", $2::"InvoiceStatus", $3::"InvoiceStatus")
-      AND i."balanceDue" > 0
+      AND i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
+      AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
     `, 'PAID', 'VOID', 'WRITE_OFF');
 
     const overdueSummary = overdueSummaryResult[0];
@@ -226,10 +228,10 @@ export async function GET(request: NextRequest) {
     const builderPaymentTermsResult: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(DISTINCT i."builderId")::int as builderCount,
-        COALESCE(SUM(i."balanceDue")::float, 0) as totalOpportunity
+        COALESCE(SUM(i."total" - COALESCE(i."amountPaid", 0))::float, 0) as totalOpportunity
       FROM "Invoice" i
       WHERE i."status" IN ($1::"InvoiceStatus", $2::"InvoiceStatus")
-      AND i."balanceDue" > 0
+      AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
       AND i."dueDate" > NOW() + INTERVAL '7 days'
       LIMIT 3
     `, 'ISSUED', 'SENT');
