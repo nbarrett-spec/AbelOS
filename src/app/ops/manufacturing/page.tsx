@@ -161,9 +161,10 @@ export default function ManufacturingDashboard() {
                 <p className="text-sm text-gray-500 py-4">No jobs in production</p>
               ) : (
                 data.productionQueue.slice(0, 5).map((job) => (
-                  <div
+                  <Link
                     key={job.id}
-                    className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    href={`/ops/jobs/${job.id}`}
+                    className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer no-underline"
                   >
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">{job.jobNumber}</p>
@@ -180,7 +181,7 @@ export default function ManufacturingDashboard() {
                         {job.status === 'IN_PRODUCTION' ? 'Production' : 'Staged'}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
@@ -232,8 +233,8 @@ export default function ManufacturingDashboard() {
                   </thead>
                   <tbody className="divide-y">
                     {data.qualityCheckSummary.recentChecks.slice(0, 5).map((check) => (
-                      <tr key={check.id} className="hover:bg-gray-50">
-                        <td className="py-2 px-3 text-gray-900 font-medium">{check.jobNumber}</td>
+                      <tr key={check.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.location.href = `/ops/jobs/${check.jobId}`}>
+                        <td className="py-2 px-3 text-gray-900 font-medium hover:text-[#0f2a3e] hover:underline">{check.jobNumber}</td>
                         <td className="py-2 px-3 text-gray-600">{check.checkType.replace(/_/g, ' ')}</td>
                         <td className="py-2 px-3">
                           <span

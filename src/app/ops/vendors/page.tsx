@@ -191,7 +191,7 @@ export default function VendorsPage() {
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
           {suppliers.map(s => (
-            <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <a key={s.id} href={`/ops/vendors/${s.id}`} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.borderColor = '#0f2a3e'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(15,42,62,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)' }} onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontWeight: 700, fontSize: 16, color: '#111' }}>{s.name}</span>
@@ -227,7 +227,7 @@ export default function VendorsPage() {
                   {s.freightCostPct > 0 && <span style={{ fontSize: 11, background: '#FEE2E2', color: '#991B1B', padding: '2px 6px', borderRadius: 4 }}>Freight: {s.freightCostPct}%</span>}
                 </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       )}

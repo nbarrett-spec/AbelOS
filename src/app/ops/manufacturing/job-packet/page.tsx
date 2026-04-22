@@ -39,6 +39,9 @@ export default function JobPacketPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [showAdvanceModal, setShowAdvanceModal] = useState(false)
+  const [advancing, setAdvancing] = useState(false)
+  const [advanceMessage, setAdvanceMessage] = useState('')
   const printRef = useRef<HTMLDivElement>(null)
 
   const searchJobs = useCallback(async (q: string) => {
@@ -71,6 +74,36 @@ export default function JobPacketPage() {
 
   function handlePrint() {
     window.print()
+    // After printing, prompt to advance job status if applicable
+    const status = data?.job?.status
+    if (status && !['IN_PRODUCTION', 'STAGED', 'LOADED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].includes(status)) {
+      setTimeout(() => setShowAdvanceModal(true), 500)
+    }
+  }
+
+  async function advanceJobStatus() {
+    if (!jobId) return
+    setAdvancing(true)
+    setAdvanceMessage('')
+    try {
+      const res = await fetch('/api/ops/manufacturing/advance-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        setAdvanceMessage(`Job moved to ${result.newStatus || 'next stage'}`)
+        // Reload job data to reflect new status
+        await loadData(jobId)
+      } else {
+        setAdvanceMessage(result.error || 'Cannot advance — check gate requirements')
+      }
+    } catch {
+      setAdvanceMessage('Failed to advance job status')
+    } finally {
+      setAdvancing(false)
+    }
   }
 
   function fmtDate(d: string | null) {
@@ -151,6 +184,36 @@ export default function JobPacketPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Advance Job Status Modal ── */}
+      {showAdvanceModal && (
+        <div className="no-print" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: 12, padding: 32, maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#0f2a3e' }}>Move Job to Production?</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#6B7280', lineHeight: 1.5 }}>
+              You just printed the job packet for <strong>{data?.job?.jobNumber}</strong>.
+              Would you like to advance this job to the next production stage?
+            </p>
+            {advanceMessage && (
+              <div style={{ background: advanceMessage.includes('moved') ? '#D1FAE5' : '#FEF3C7', border: `1px solid ${advanceMessage.includes('moved') ? '#6EE7B7' : '#FCD34D'}`, borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 13, color: advanceMessage.includes('moved') ? '#065F46' : '#92400E' }}>
+                {advanceMessage}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => { setShowAdvanceModal(false); setAdvanceMessage('') }}
+                style={{ padding: '10px 20px', background: 'white', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, cursor: 'pointer' }}>
+                Not Now
+              </button>
+              {!advanceMessage.includes('moved') && (
+                <button onClick={advanceJobStatus} disabled={advancing}
+                  style={{ padding: '10px 20px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: advancing ? 'not-allowed' : 'pointer', opacity: advancing ? 0.7 : 1 }}>
+                  {advancing ? 'Advancing...' : 'Yes, Advance Status'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Printable content ── */}
       <div ref={printRef} id="job-packet">

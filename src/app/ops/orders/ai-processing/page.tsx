@@ -2,55 +2,60 @@
 
 import { useEffect, useState } from 'react';
 
-// Types
+// Types — matched to /api/ops/ai-orders response schema
 interface PORecommendation {
-  id: string;
   vendorId: string;
   vendorName: string;
   items: Array<{
     productId: string;
-    name: string;
-    quantity: number;
+    productName: string;
+    requiredQty: number;
+    availableQty: number;
+    shortfall: number;
+    vendorSku: string;
     unitCost: number;
   }>;
   estimatedTotal: number;
   suggestedOrderDate: string;
   urgency: 'IMMEDIATE' | 'STANDARD' | 'FLEXIBLE';
-  creditUsagePercent: number;
-  creditLimit: number;
-  currentUsage: number;
-  projectedUsage: number;
-  recommendedDeliveryDate: string;
-  neededForManufacturingDate: string;
+  creditImpact: {
+    limit: number;
+    used: number;
+    available: number;
+    afterPO: number;
+  };
 }
 
-interface ReceivedOrder {
-  id: string;
+interface SORecommendation {
+  orderId: string;
   orderNumber: string;
-  builderId: string;
   builderName: string;
-  items: Array<{ name: string; quantity: number; available: number }>;
-  total: number;
-  status: 'RECEIVED';
-  inventoryStatus: 'ALL_AVAILABLE' | 'SOME_SHORT';
-  shortItems?: string[];
+  status: string;
+  allItemsAvailable: boolean;
+  shortItems: Array<{
+    productId: string;
+    productName: string;
+    required: number;
+    available: number;
+    shortfall: number;
+  }>;
 }
 
 interface CreditAlert {
   vendorId: string;
   vendorName: string;
-  creditLimit: number;
-  currentUsage: number;
-  projected30DayUsage: number;
-  utilizationPercent: number;
-  status: 'WARNING' | 'CRITICAL' | 'HEALTHY';
+  limit: number;
+  used: number;
+  available: number;
+  utilization: number;
+  projectedUtilization: number;
 }
 
-interface ActivityLogEntry {
-  id: string;
-  timestamp: string;
-  actionType: 'PO_CREATED' | 'ORDER_CONFIRMED' | 'AUTO_ACTION';
-  details: string;
+interface DashboardSummary {
+  pendingOrders: number;
+  poRecommendations: number;
+  autoConfirmable: number;
+  creditWarnings: number;
 }
 
 // Constants
@@ -62,39 +67,39 @@ const BORDER_COLOR = '#DDDDDD';
 export default function AIOrderCommandCenter() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [recommendations, setRecommendations] = useState<PORecommendation[]>([]);
-  const [receivedOrders, setReceivedOrders] = useState<ReceivedOrder[]>([]);
+  const [receivedOrders, setReceivedOrders] = useState<SORecommendation[]>([]);
   const [creditAlerts, setCreditAlerts] = useState<CreditAlert[]>([]);
-  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary>({ pendingOrders: 0, poRecommendations: 0, autoConfirmable: 0, creditWarnings: 0 });
   const [loading, setLoading] = useState(true);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Load initial data and AI preference
   useEffect(() => {
-    const savedAiState = localStorage.getItem('ai-auto-processing');
-    if (savedAiState) setAiEnabled(JSON.parse(savedAiState));
+    try {
+      const savedAiState = window?.sessionStorage?.getItem?.('ai-auto-processing');
+      if (savedAiState) setAiEnabled(JSON.parse(savedAiState));
+    } catch {}
     fetchAllData();
   }, []);
 
-  // Save AI preference to localStorage
+  // Save AI preference
   useEffect(() => {
-    localStorage.setItem('ai-auto-processing', JSON.stringify(aiEnabled));
+    try { window?.sessionStorage?.setItem?.('ai-auto-processing', JSON.stringify(aiEnabled)); } catch {}
   }, [aiEnabled]);
 
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [poRes, ordersRes, creditsRes, logRes] = await Promise.all([
-        fetch('/api/ops/ai-orders'),
-        fetch('/api/ops/received-orders'),
-        fetch('/api/ops/credit-alerts'),
-        fetch('/api/ops/activity-log'),
-      ]);
-
-      if (poRes.ok) { const d = await poRes.json(); setRecommendations(d.poRecommendations || []); }
-      if (ordersRes.ok) { const d = await ordersRes.json(); setReceivedOrders(d.items || []); }
-      if (creditsRes.ok) { const d = await creditsRes.json(); setCreditAlerts(d.alerts || []); }
-      if (logRes.ok) { const d = await logRes.json(); setActivityLog(d.items || []); }
+      // Single endpoint returns everything: poRecommendations, soRecommendations, creditAlerts, summary
+      const res = await fetch('/api/ops/ai-orders');
+      if (res.ok) {
+        const d = await res.json();
+        setRecommendations(d.poRecommendations || []);
+        setReceivedOrders(d.soRecommendations || []);
+        setCreditAlerts(d.creditAlerts || []);
+        setSummary(d.summary || { pendingOrders: 0, poRecommendations: 0, autoConfirmable: 0, creditWarnings: 0 });
+      }
     } catch (error) {
       showToast('error', 'Failed to load data');
     } finally {
@@ -107,13 +112,13 @@ export default function AIOrderCommandCenter() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const createPO = async (recommendationId: string, vendorName: string) => {
-    setLoadingAction(`po-${recommendationId}`);
+  const createPO = async (recommendationIndex: number, vendorName: string) => {
+    setLoadingAction(`po-${recommendationIndex}`);
     try {
       const res = await fetch('/api/ops/ai-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_po', recommendationId }),
+        body: JSON.stringify({ action: 'create_po', recommendationIndex }),
       });
       if (res.ok) {
         showToast('success', `PO created for ${vendorName}`);
@@ -149,13 +154,13 @@ export default function AIOrderCommandCenter() {
     }
   };
 
-  const confirmOrder = async (orderId: string, partial: boolean = false) => {
+  const confirmOrder = async (orderId: string) => {
     setLoadingAction(`order-${orderId}`);
     try {
-      const res = await fetch('/api/ops/orders', {
+      const res = await fetch('/api/ops/ai-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm', orderId, partial }),
+        body: JSON.stringify({ action: 'confirm_order', orderId }),
       });
       if (res.ok) {
         showToast('success', 'Order confirmed successfully');
@@ -172,18 +177,19 @@ export default function AIOrderCommandCenter() {
 
   const confirmAllOrders = async () => {
     setLoadingAction('confirm-all');
+    let confirmed = 0;
     try {
-      const res = await fetch('/api/ops/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm_all_available' }),
-      });
-      if (res.ok) {
-        showToast('success', 'All available orders confirmed');
-        await fetchAllData();
-      } else {
-        showToast('error', 'Failed to confirm orders');
+      const available = receivedOrders.filter((o) => o.allItemsAvailable);
+      for (const order of available) {
+        const res = await fetch('/api/ops/ai-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'confirm_order', orderId: order.orderId }),
+        });
+        if (res.ok) confirmed++;
       }
+      showToast('success', `${confirmed} orders confirmed`);
+      await fetchAllData();
     } catch (error) {
       showToast('error', 'Error confirming orders');
     } finally {
@@ -210,15 +216,9 @@ export default function AIOrderCommandCenter() {
     return '#27AE60';
   };
 
-  const pendingOrdersCount = receivedOrders.filter(
-    (o) => o.status === 'RECEIVED'
-  ).length;
-  const autoConfirmableCount = receivedOrders.filter(
-    (o) => o.inventoryStatus === 'ALL_AVAILABLE'
-  ).length;
-  const creditWarningsCount = creditAlerts.filter(
-    (c) => c.status !== 'HEALTHY'
-  ).length;
+  const pendingOrdersCount = summary.pendingOrders;
+  const autoConfirmableCount = summary.autoConfirmable;
+  const creditWarningsCount = summary.creditWarnings;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
@@ -493,9 +493,9 @@ export default function AIOrderCommandCenter() {
                 gap: '16px',
               }}
             >
-              {recommendations.map((rec) => (
+              {recommendations.map((rec, recIdx) => (
                 <div
-                  key={rec.id}
+                  key={rec.vendorId}
                   style={{
                     border: `1px solid ${BORDER_COLOR}`,
                     borderRadius: '8px',
@@ -584,10 +584,10 @@ export default function AIOrderCommandCenter() {
                         }}
                       >
                         <span>
-                          {item.name} ({item.quantity}x)
+                          {item.productName} ({item.shortfall}x)
                         </span>
                         <span style={{ fontWeight: 500 }}>
-                          ${(item.quantity * item.unitCost).toFixed(2)}
+                          ${(item.shortfall * item.unitCost).toFixed(2)}
                         </span>
                       </div>
                     ))}
@@ -615,11 +615,9 @@ export default function AIOrderCommandCenter() {
                       }}
                     >
                       Order by{' '}
-                      <strong>{new Date(rec.suggestedOrderDate).toLocaleDateString()}</strong> →
-                      Arrives{' '}
-                      <strong>{new Date(rec.recommendedDeliveryDate).toLocaleDateString()}</strong>{' '}
-                      → Needed{' '}
-                      <strong>{new Date(rec.neededForManufacturingDate).toLocaleDateString()}</strong>
+                      <strong>{new Date(rec.suggestedOrderDate).toLocaleDateString()}</strong>
+                      {' · '}{rec.items.length} item{rec.items.length !== 1 ? 's' : ''} across{' '}
+                      <strong>{rec.items.reduce((sum, i) => sum + i.shortfall, 0)}</strong> units
                     </p>
                   </div>
 
@@ -645,8 +643,8 @@ export default function AIOrderCommandCenter() {
                         color: '#333',
                       }}
                     >
-                      <span>Usage: ${rec.currentUsage.toFixed(2)}</span>
-                      <span>Limit: ${rec.creditLimit.toFixed(2)}</span>
+                      <span>Usage: ${rec.creditImpact.used.toFixed(2)}</span>
+                      <span>Limit: ${rec.creditImpact.limit.toFixed(2)}</span>
                     </div>
                     <div
                       style={{
@@ -660,12 +658,9 @@ export default function AIOrderCommandCenter() {
                     >
                       <div
                         style={{
-                          width: `${Math.min(
-                            (rec.currentUsage / rec.creditLimit) * 100,
-                            100
-                          )}%`,
+                          width: `${rec.creditImpact.limit > 0 ? Math.min((rec.creditImpact.used / rec.creditImpact.limit) * 100, 100) : 0}%`,
                           height: '100%',
-                          backgroundColor: getCreditStatusColor(rec.creditUsagePercent),
+                          backgroundColor: getCreditStatusColor(rec.creditImpact.limit > 0 ? (rec.creditImpact.used / rec.creditImpact.limit) * 100 : 0),
                         }}
                       />
                     </div>
@@ -677,16 +672,16 @@ export default function AIOrderCommandCenter() {
                         color: '#999',
                       }}
                     >
-                      <span>Current: {rec.creditUsagePercent.toFixed(0)}%</span>
-                      <span>After PO: {((rec.projectedUsage / rec.creditLimit) * 100).toFixed(0)}%</span>
+                      <span>Current: {rec.creditImpact.limit > 0 ? ((rec.creditImpact.used / rec.creditImpact.limit) * 100).toFixed(0) : 0}%</span>
+                      <span>After PO: {rec.creditImpact.limit > 0 ? (((rec.creditImpact.used + rec.estimatedTotal) / rec.creditImpact.limit) * 100).toFixed(0) : 0}%</span>
                     </div>
                   </div>
 
                   {/* Action Button */}
                   <div style={{ padding: '16px' }}>
                     <button
-                      onClick={() => createPO(rec.id, rec.vendorName)}
-                      disabled={loadingAction === `po-${rec.id}`}
+                      onClick={() => createPO(recIdx, rec.vendorName)}
+                      disabled={loadingAction === `po-${recIdx}`}
                       style={{
                         width: '100%',
                         padding: '12px',
@@ -697,11 +692,11 @@ export default function AIOrderCommandCenter() {
                         fontSize: '14px',
                         fontWeight: 600,
                         cursor:
-                          loadingAction === `po-${rec.id}` ? 'not-allowed' : 'pointer',
-                        opacity: loadingAction === `po-${rec.id}` ? 0.7 : 1,
+                          loadingAction === `po-${recIdx}` ? 'not-allowed' : 'pointer',
+                        opacity: loadingAction === `po-${recIdx}` ? 0.7 : 1,
                       }}
                     >
-                      {loadingAction === `po-${rec.id}` ? 'Creating...' : 'Create PO'}
+                      {loadingAction === `po-${recIdx}` ? 'Creating...' : 'Create PO'}
                     </button>
                   </div>
                 </div>
@@ -824,17 +819,17 @@ export default function AIOrderCommandCenter() {
                         color: ABEL_NAVY,
                       }}
                     >
-                      Items
+                      Short Items
                     </th>
                     <th
                       style={{
                         padding: '12px 16px',
-                        textAlign: 'right',
+                        textAlign: 'left',
                         fontWeight: 600,
                         color: ABEL_NAVY,
                       }}
                     >
-                      Total
+                      Status
                     </th>
                     <th
                       style={{
@@ -861,10 +856,10 @@ export default function AIOrderCommandCenter() {
                 <tbody>
                   {receivedOrders.map((order) => (
                     <tr
-                      key={order.id}
+                      key={order.orderId}
                       style={{
                         borderBottom: `1px solid ${BORDER_COLOR}`,
-                        backgroundColor: order.inventoryStatus === 'ALL_AVAILABLE' ? '#F0F8FF' : '#FAFAFA',
+                        backgroundColor: order.allItemsAvailable ? '#F0F8FF' : '#FAFAFA',
                       }}
                     >
                       <td style={{ padding: '12px 16px', fontWeight: 500 }}>
@@ -878,16 +873,12 @@ export default function AIOrderCommandCenter() {
                           color: '#666',
                         }}
                       >
-                        {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                        {order.shortItems.length > 0
+                          ? `${order.shortItems.length} short`
+                          : 'None'}
                       </td>
-                      <td
-                        style={{
-                          padding: '12px 16px',
-                          textAlign: 'right',
-                          fontWeight: 600,
-                        }}
-                      >
-                        ${order.total.toFixed(2)}
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ fontSize: '13px', color: '#666' }}>{order.status}</span>
                       </td>
                       <td
                         style={{
@@ -902,17 +893,15 @@ export default function AIOrderCommandCenter() {
                             borderRadius: '4px',
                             fontSize: '12px',
                             fontWeight: 500,
-                            backgroundColor:
-                              order.inventoryStatus === 'ALL_AVAILABLE'
-                                ? '#D4EDDA'
-                                : '#FFF3CD',
-                            color:
-                              order.inventoryStatus === 'ALL_AVAILABLE'
-                                ? '#155724'
-                                : '#856404',
+                            backgroundColor: order.allItemsAvailable
+                              ? '#D4EDDA'
+                              : '#FFF3CD',
+                            color: order.allItemsAvailable
+                              ? '#155724'
+                              : '#856404',
                           }}
                         >
-                          {order.inventoryStatus === 'ALL_AVAILABLE'
+                          {order.allItemsAvailable
                             ? '✓ All Available'
                             : '⚠ Some Short'}
                         </div>
@@ -924,29 +913,26 @@ export default function AIOrderCommandCenter() {
                         }}
                       >
                         <button
-                          onClick={() =>
-                            confirmOrder(order.id, order.inventoryStatus === 'SOME_SHORT')
-                          }
-                          disabled={loadingAction === `order-${order.id}`}
+                          onClick={() => confirmOrder(order.orderId)}
+                          disabled={loadingAction === `order-${order.orderId}`}
                           style={{
                             padding: '6px 12px',
-                            backgroundColor:
-                              order.inventoryStatus === 'ALL_AVAILABLE'
-                                ? '#27AE60'
-                                : ABEL_ORANGE,
+                            backgroundColor: order.allItemsAvailable
+                              ? '#27AE60'
+                              : ABEL_ORANGE,
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
                             fontSize: '12px',
                             fontWeight: 600,
                             cursor:
-                              loadingAction === `order-${order.id}` ? 'not-allowed' : 'pointer',
-                            opacity: loadingAction === `order-${order.id}` ? 0.7 : 1,
+                              loadingAction === `order-${order.orderId}` ? 'not-allowed' : 'pointer',
+                            opacity: loadingAction === `order-${order.orderId}` ? 0.7 : 1,
                           }}
                         >
-                          {loadingAction === `order-${order.id}`
+                          {loadingAction === `order-${order.orderId}`
                             ? 'Processing...'
-                            : order.inventoryStatus === 'ALL_AVAILABLE'
+                            : order.allItemsAvailable
                             ? 'Confirm'
                             : 'Confirm (Partial)'}
                         </button>
@@ -1013,17 +999,20 @@ export default function AIOrderCommandCenter() {
                 gap: '16px',
               }}
             >
-              {creditAlerts.map((alert) => (
+              {creditAlerts.map((alert) => {
+                const statusLabel = alert.utilization >= 95 ? 'CRITICAL' : alert.utilization >= 80 ? 'WARNING' : 'HEALTHY';
+                const projected30Day = alert.limit > 0 ? (alert.projectedUtilization * alert.limit / 100) : 0;
+                return (
                 <div
                   key={alert.vendorId}
                   style={{
-                    border: `2px solid ${getCreditStatusColor(alert.utilizationPercent)}`,
+                    border: `2px solid ${getCreditStatusColor(alert.utilization)}`,
                     borderRadius: '8px',
                     padding: '20px',
                     backgroundColor:
-                      alert.status === 'CRITICAL'
+                      statusLabel === 'CRITICAL'
                         ? '#FADBD8'
-                        : alert.status === 'WARNING'
+                        : statusLabel === 'WARNING'
                         ? '#FFF3E0'
                         : '#E8F8F0',
                   }}
@@ -1054,17 +1043,17 @@ export default function AIOrderCommandCenter() {
                           color: '#666',
                         }}
                       >
-                        {alert.status}
+                        {statusLabel}
                       </p>
                     </div>
                     <div
                       style={{
                         fontSize: '18px',
                         fontWeight: 700,
-                        color: getCreditStatusColor(alert.utilizationPercent),
+                        color: getCreditStatusColor(alert.utilization),
                       }}
                     >
-                      {alert.utilizationPercent.toFixed(0)}%
+                      {alert.utilization.toFixed(0)}%
                     </div>
                   </div>
 
@@ -1076,11 +1065,11 @@ export default function AIOrderCommandCenter() {
                     }}
                   >
                     <p style={{ margin: '0 0 4px 0' }}>
-                      Current: ${alert.currentUsage.toFixed(2)} of $
-                      {alert.creditLimit.toFixed(2)}
+                      Current: ${alert.used.toFixed(2)} of $
+                      {alert.limit.toFixed(2)}
                     </p>
                     <p style={{ margin: '0 0 12px 0', color: '#666' }}>
-                      30-day Projected: ${alert.projected30DayUsage.toFixed(2)}
+                      30-day Projected: ${projected30Day.toFixed(2)}
                     </p>
                   </div>
 
@@ -1095,14 +1084,15 @@ export default function AIOrderCommandCenter() {
                   >
                     <div
                       style={{
-                        width: `${Math.min(alert.utilizationPercent, 100)}%`,
+                        width: `${Math.min(alert.utilization, 100)}%`,
                         height: '100%',
-                        backgroundColor: getCreditStatusColor(alert.utilizationPercent),
+                        backgroundColor: getCreditStatusColor(alert.utilization),
                       }}
                     />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1120,77 +1110,19 @@ export default function AIOrderCommandCenter() {
             Recent Activity
           </h2>
 
-          {loading ? (
-            <div
-              style={{
-                backgroundColor: LIGHT_GRAY,
-                borderRadius: '8px',
-                height: '150px',
-                animation: 'pulse 2s infinite',
-              }}
-            />
-          ) : activityLog.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                backgroundColor: LIGHT_GRAY,
-                borderRadius: '8px',
-                color: '#999',
-              }}
-            >
-              <p style={{ fontSize: '16px', margin: 0 }}>No activity yet</p>
-            </div>
-          ) : (
-            <div
-              style={{
-                backgroundColor: '#FAFAFA',
-                border: `1px solid ${BORDER_COLOR}`,
-                borderRadius: '8px',
-                overflow: 'hidden',
-              }}
-            >
-              {activityLog.slice(0, 10).map((entry) => (
-                <div
-                  key={entry.id}
-                  style={{
-                    padding: '16px',
-                    borderBottom: `1px solid ${BORDER_COLOR}`,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'start',
-                  }}
-                >
-                  <div>
-                    <p
-                      style={{
-                        margin: '0 0 4px 0',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        color: ABEL_NAVY,
-                      }}
-                    >
-                      {entry.actionType.replace(/_/g, ' ')}
-                    </p>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
-                      {entry.details}
-                    </p>
-                  </div>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: '12px',
-                      color: '#999',
-                      whiteSpace: 'nowrap',
-                      marginLeft: '16px',
-                    }}
-                  >
-                    {new Date(entry.timestamp).toLocaleTimeString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              backgroundColor: LIGHT_GRAY,
+              borderRadius: '8px',
+              color: '#999',
+            }}
+          >
+            <p style={{ fontSize: '16px', margin: 0 }}>
+              Activity log will populate as orders are created and confirmed
+            </p>
+          </div>
         </div>
       </div>
 
