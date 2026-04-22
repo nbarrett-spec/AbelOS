@@ -17,13 +17,27 @@ interface InflowConfig {
 }
 
 async function getConfig(): Promise<InflowConfig | null> {
-  const config = await (prisma as any).integrationConfig.findUnique({
-    where: { provider: 'INFLOW' },
-  })
-  if (!config || config.status !== 'CONNECTED' || !config.apiKey || !config.companyId) {
-    return null
+  // Try database first
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "apiKey", "companyId", "status"::text as "status" FROM "IntegrationConfig" WHERE "provider" = 'INFLOW' LIMIT 1`
+    )
+    const config = rows[0]
+    if (config?.apiKey && config?.companyId && config.status === 'CONNECTED') {
+      return { apiKey: config.apiKey, companyId: config.companyId }
+    }
+  } catch {
+    // Table may not exist yet — fall through to env vars
   }
-  return { apiKey: config.apiKey, companyId: config.companyId }
+
+  // Fall back to environment variables
+  const apiKey = process.env.INFLOW_API_KEY
+  const companyId = process.env.INFLOW_COMPANY_ID
+  if (apiKey && companyId) {
+    return { apiKey, companyId }
+  }
+
+  return null
 }
 
 async function inflowFetch(path: string, config: InflowConfig, options?: RequestInit) {
@@ -959,6 +973,12 @@ async function findBuilderByInflowCustomer(customerId: string | null, contactNam
 // ─── Push Order to InFlow ───────────────────────────────────────────
 
 export async function pushOrderToInflow(orderId: string): Promise<{ success: boolean; message: string; inflowOrderId?: string }> {
+  // Block pushes in MIRROR mode — InFlow is source of truth, no writes allowed
+  const mode = await getSyncMode()
+  if (mode === 'MIRROR') {
+    return { success: false, message: 'Push disabled — sync mode is MIRROR (pull-only). Switch to BIDIRECTIONAL to enable pushes.' }
+  }
+
   const config = await getConfig()
   if (!config) return { success: false, message: 'InFlow not configured' }
 

@@ -16,7 +16,11 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get config
-    const configs: any[] = await prisma.$queryRawUnsafe(`
+    // Auto-seed from env vars if no DB config exists
+    const envApiKey = process.env.INFLOW_API_KEY
+    const envCompanyId = process.env.INFLOW_COMPANY_ID
+
+    let configs: any[] = await prisma.$queryRawUnsafe(`
       SELECT "id", "provider", "name", "status"::text as "status",
              "companyId", "syncEnabled", "syncInterval",
              "lastSyncAt", "lastSyncStatus", "metadata",
@@ -27,9 +31,40 @@ export async function GET(request: NextRequest) {
       WHERE "provider" = 'INFLOW'
       LIMIT 1
     `)
+
+    // If no config in DB but env vars are set, auto-create a CONNECTED config
+    if (!configs.length && envApiKey && envCompanyId) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "IntegrationConfig" (
+          "id", "provider", "name", "apiKey", "companyId",
+          "status", "syncEnabled", "syncInterval", "metadata",
+          "createdAt", "updatedAt"
+        ) VALUES (
+          gen_random_uuid()::text, 'INFLOW'::"IntegrationProvider", 'InFlow Inventory',
+          $1, $2,
+          'CONNECTED'::"IntegrationStatus", true, 3600,
+          '{"syncMode": "MIRROR"}'::jsonb,
+          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )`,
+        envApiKey, envCompanyId
+      )
+      // Re-fetch
+      configs = await prisma.$queryRawUnsafe(`
+        SELECT "id", "provider", "name", "status"::text as "status",
+               "companyId", "syncEnabled", "syncInterval",
+               "lastSyncAt", "lastSyncStatus", "metadata",
+               "createdAt", "updatedAt",
+               CASE WHEN "apiKey" IS NOT NULL AND "apiKey" != '' THEN true ELSE false END as "hasApiKey",
+               CASE WHEN "webhookSecret" IS NOT NULL AND "webhookSecret" != '' THEN true ELSE false END as "hasWebhookSecret"
+        FROM "IntegrationConfig"
+        WHERE "provider" = 'INFLOW'
+        LIMIT 1
+      `)
+    }
+
     const config = configs[0] || null
 
-    // Get sync mode from metadata
+    // Get sync mode from metadata — locked to MIRROR by default (pull-only, safe)
     const syncMode = config?.metadata?.syncMode || 'MIRROR'
 
     // Get recent sync logs

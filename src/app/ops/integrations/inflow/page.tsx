@@ -176,6 +176,12 @@ export default function InFlowIntegrationPage() {
   }
 
   const handleSyncModeChange = async (mode: SyncMode) => {
+    if (mode === 'BIDIRECTIONAL') {
+      if (!confirm('Switch to Bidirectional? This will start PUSHING Aegis changes to InFlow. Only do this once your team is entering data in both systems.')) return
+    }
+    if (mode === 'AEGIS_PRIMARY') {
+      if (!confirm('Switch to Aegis Primary? InFlow will become read-only and stop sending updates. Only do this once the team is fully off InFlow.')) return
+    }
     setChangingMode(true)
     try {
       const res = await fetch('/api/ops/integrations/inflow', {
