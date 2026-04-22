@@ -191,24 +191,25 @@ async function getReorderRecommendations() {
       CASE
         WHEN i."onHand" = 0 THEN 'CRITICAL'
         WHEN i."onHand" <= i."safetyStock" THEN 'URGENT'
-        WHEN i."onHand" <= i."reorderPoint" THEN 'REORDER_NOW'
-        WHEN i."avgDailyUsage" > 0 AND (i."onHand" / i."avgDailyUsage") < 14 THEN 'REORDER_SOON'
+        WHEN (i."onHand" + COALESCE(i."onOrder", 0)) <= i."reorderPoint" THEN 'REORDER_NOW'
+        WHEN i."avgDailyUsage" > 0 AND ((i."onHand" + COALESCE(i."onOrder", 0)) / GREATEST(i."avgDailyUsage", 0.01)) < 14 THEN 'REORDER_SOON'
         ELSE 'OK'
       END as "urgency",
       CASE
-        WHEN i."avgDailyUsage" > 0 THEN ROUND((i."onHand"::numeric / i."avgDailyUsage"), 0)
+        WHEN i."avgDailyUsage" > 0 THEN ROUND(((i."onHand" + COALESCE(i."onOrder", 0))::numeric / i."avgDailyUsage"), 0)
         ELSE 999
       END as "daysUntilStockout"
     FROM "InventoryItem" i
     WHERE (
-      i."onHand" <= i."reorderPoint"
-      OR (i."avgDailyUsage" > 0 AND (i."onHand" / GREATEST(i."avgDailyUsage", 0.01)) < 14)
+      (i."onHand" + COALESCE(i."onOrder", 0)) <= i."reorderPoint"
+      OR i."onHand" = 0
+      OR (i."avgDailyUsage" > 0 AND ((i."onHand" + COALESCE(i."onOrder", 0)) / GREATEST(i."avgDailyUsage", 0.01)) < 14)
     )
     ORDER BY
       CASE
         WHEN i."onHand" = 0 THEN 0
         WHEN i."onHand" <= i."safetyStock" THEN 1
-        WHEN i."onHand" <= i."reorderPoint" THEN 2
+        WHEN (i."onHand" + COALESCE(i."onOrder", 0)) <= i."reorderPoint" THEN 2
         ELSE 3
       END,
       i."avgDailyUsage" DESC

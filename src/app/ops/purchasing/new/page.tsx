@@ -67,7 +67,7 @@ function NewPOForm() {
             setProduct(found)
             setForm(prev => ({
               ...prev,
-              quantity: Math.max(found.reorderQty || 0, found.reorderPoint - found.quantityOnHand),
+              quantity: Math.max(found.reorderQty || 0, found.reorderPoint - found.onHand),
               unitCost: found.unitCost || 0,
             }))
           }

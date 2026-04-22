@@ -148,15 +148,15 @@ export async function PATCH(request: NextRequest) {
 
     fields.push(`"updatedAt" = NOW()`)
 
-    // Recalc available = onHand - committed
-    fields.push(`"available" = COALESCE($${idx}, "onHand") - COALESCE($${idx + 1}, "committed")`)
-    values.push(onHand ?? null, committed ?? null)
-    idx += 2
+    // Recalc available = onHand - committed + onOrder
+    fields.push(`"available" = COALESCE($${idx}, "onHand") - COALESCE($${idx + 1}, "committed") + COALESCE($${idx + 2}, "onOrder")`)
+    values.push(onHand ?? null, committed ?? null, onOrder ?? null)
+    idx += 3
 
-    // Recalc days of supply
-    fields.push(`"daysOfSupply" = CASE WHEN COALESCE($${idx}, "avgDailyUsage", 0) > 0 THEN COALESCE($${idx + 1}, "onHand") / COALESCE($${idx}, "avgDailyUsage", 1) ELSE 999 END`)
-    values.push(avgDailyUsage || null, onHand || null)
-    idx += 2
+    // Recalc days of supply = (onHand + onOrder - committed) / avgDailyUsage
+    fields.push(`"daysOfSupply" = CASE WHEN COALESCE($${idx}, "avgDailyUsage", 0) > 0 THEN (COALESCE($${idx + 1}, "onHand") + COALESCE($${idx + 2}, "onOrder", 0) - COALESCE($${idx + 3}, "committed", 0)) / COALESCE($${idx}, "avgDailyUsage", 1) ELSE 999 END`)
+    values.push(avgDailyUsage || null, onHand || null, onOrder ?? null, committed ?? null)
+    idx += 4
 
     values.push(id)
 

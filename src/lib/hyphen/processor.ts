@@ -565,6 +565,80 @@ async function createAbelOrderFromNormalized(
     )
   }
 
+  // ── Create or enrich Job record with address from Hyphen job data ──
+  if (order.job) {
+    const job = order.job
+    const jobAddr = [job.street, job.city, job.stateCode, job.postalCode]
+      .filter(Boolean)
+      .join(', ')
+    const shippingAddr = order.shipping?.address
+      ? [order.shipping.address.street, order.shipping.address.city,
+         order.shipping.address.stateCode, order.shipping.address.postalCode]
+        .filter(Boolean)
+        .join(', ')
+      : null
+    const address = jobAddr || shippingAddr || null
+    const community = job.subdivision || job.communityCode || null
+    const lotBlock = [job.lot, job.block].filter(Boolean).join('/')
+
+    if (address || community) {
+      try {
+        // Try to find existing job by community+lot or order
+        const existingJob: any[] = await prisma.$queryRawUnsafe(
+          `SELECT "id" FROM "Job"
+           WHERE "orderId" = $1
+              OR ("community" ILIKE $2 AND "lotBlock" = $3 AND $2 IS NOT NULL AND $3 != '')
+           LIMIT 1`,
+          orderId,
+          community ? `%${community}%` : null,
+          lotBlock || ''
+        )
+
+        if (existingJob.length > 0) {
+          // Enrich existing job with Hyphen address data
+          await prisma.$executeRawUnsafe(
+            `UPDATE "Job" SET
+              "jobAddress" = COALESCE(NULLIF($1, ''), "jobAddress"),
+              "community" = COALESCE(NULLIF($2, ''), "community"),
+              "lotBlock" = COALESCE(NULLIF($3, ''), "lotBlock"),
+              "hyphenJobId" = COALESCE($4, "hyphenJobId"),
+              "updatedAt" = NOW()
+            WHERE "id" = $5`,
+            address,
+            community,
+            lotBlock || null,
+            order.hyphenOrderId,
+            existingJob[0].id
+          )
+        } else if (address) {
+          // Create a new Job linked to this Hyphen order
+          const jobId = 'job_hyp_' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex')
+          const jobNumber = `JOB-HYP-${(job.jobNum || order.hyphenOrderId || '').toString().slice(-6).toUpperCase()}`
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "Job" (
+              "id", "jobNumber", "orderId", "hyphenJobId",
+              "builderName", "jobAddress", "community", "lotBlock",
+              "scopeType", "status",
+              "createdAt", "updatedAt"
+            ) VALUES (
+              $1, $2, $3, $4,
+              (SELECT "companyName" FROM "Builder" WHERE "id" = $5 LIMIT 1),
+              $6, $7, $8,
+              'FULL_PACKAGE'::"ScopeType", 'CREATED'::"JobStatus",
+              NOW(), NOW()
+            )`,
+            jobId, jobNumber, orderId, order.hyphenOrderId,
+            builderId,
+            address, community, lotBlock || null
+          )
+        }
+      } catch (jobErr: any) {
+        // Non-fatal — log but don't fail the order
+        logger.error('hyphen_job_enrich_failed', jobErr, { orderId })
+      }
+    }
+  }
+
   return { orderId, orderNumber }
 }
 

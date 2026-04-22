@@ -83,7 +83,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         ii."reorderQty",
         ii."unitCost"
       FROM "InventoryItem" ii
-      WHERE ii."onHand" <= ii."reorderPoint"
+      WHERE (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint"
         AND ii."reorderQty" > 0
       ORDER BY ii."productName"
     `)

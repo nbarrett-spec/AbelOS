@@ -115,6 +115,8 @@ export async function GET(request: NextRequest) {
         j."scheduledDate",
         j."actualDate",
         j."completedAt",
+        j."latitude",
+        j."longitude",
         j."createdAt",
         j."updatedAt"
       FROM "Job" j

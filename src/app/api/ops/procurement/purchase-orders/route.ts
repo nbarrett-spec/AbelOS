@@ -107,14 +107,14 @@ export async function POST(request: NextRequest) {
         INSERT INTO "PurchaseOrder" (
           "id", "poNumber", "vendorId", "createdById", "status", "subtotal", "shippingCost",
           "total", "expectedDate", "notes", "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, 'DRAFT'::"POStatus", $5, 0, $6, $7::timestamptz, $8, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, 'DRAFT', $5, 0, $6, $7::timestamptz, $8, NOW(), NOW())
       `, poId, poNum, supplierId, staffId || 'system', subtotal, total, expectedDate, notes || null)
     } else {
       await prisma.$executeRawUnsafe(`
         INSERT INTO "PurchaseOrder" (
           "id", "poNumber", "vendorId", "createdById", "status", "subtotal", "shippingCost",
           "total", "notes", "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, 'DRAFT'::"POStatus", $5, 0, $6, $7, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, 'DRAFT', $5, 0, $6, $7, NOW(), NOW())
       `, poId, poNum, supplierId, staffId || 'system', subtotal, total, notes || null)
     }
 
@@ -122,9 +122,9 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const itemId = `poi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
       await prisma.$executeRawUnsafe(`
-        INSERT INTO "PurchaseOrderItem" ("id", "purchaseOrderId", "vendorSku", "description", "quantity", "unitCost", "lineTotal")
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, itemId, poId, item.vendorSku || item.sku || '', item.description || item.productName || 'Item',
+        INSERT INTO "PurchaseOrderItem" ("id", "purchaseOrderId", "productId", "vendorSku", "description", "quantity", "unitCost", "lineTotal", "receivedQty", "damagedQty", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0, NOW(), NOW())
+      `, itemId, poId, item.productId || null, item.vendorSku || item.sku || '', item.description || item.productName || 'Item',
          item.quantity || 1, item.unitCost || 0, (item.unitCost || 0) * (item.quantity || 0))
     }
 

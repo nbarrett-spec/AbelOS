@@ -1154,12 +1154,12 @@ async function toolGetPOStatus(input: Record<string, any>, canViewFinancials: bo
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
     const rows = await prisma.$queryRawUnsafe(`
-      SELECT po.*, s."name" as "supplierName", s."type" as "supplierType",
-             (SELECT COUNT(*)::int FROM "PurchaseOrderItem" poi WHERE poi."poId" = po."id") as "itemCount",
-             (SELECT COALESCE(SUM(poi."quantityReceived"), 0)::int FROM "PurchaseOrderItem" poi WHERE poi."poId" = po."id") as "totalReceived",
-             (SELECT COALESCE(SUM(poi."quantity"), 0)::int FROM "PurchaseOrderItem" poi WHERE poi."poId" = po."id") as "totalOrdered"
+      SELECT po.*, v."name" as "vendorName",
+             (SELECT COUNT(*)::int FROM "PurchaseOrderItem" poi WHERE poi."purchaseOrderId" = po."id") as "itemCount",
+             (SELECT COALESCE(SUM(COALESCE(poi."receivedQty", 0)), 0)::int FROM "PurchaseOrderItem" poi WHERE poi."purchaseOrderId" = po."id") as "totalReceived",
+             (SELECT COALESCE(SUM(poi."quantity"), 0)::int FROM "PurchaseOrderItem" poi WHERE poi."purchaseOrderId" = po."id") as "totalOrdered"
       FROM "PurchaseOrder" po
-      JOIN "Supplier" s ON po."supplierId" = s."id"
+      LEFT JOIN "Vendor" v ON po."vendorId" = v."id"
       ${where}
       ORDER BY po."createdAt" DESC
       LIMIT 15

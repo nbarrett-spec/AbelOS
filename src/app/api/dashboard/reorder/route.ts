@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN "Product" p ON p."id" = oi."productId"
       LEFT JOIN "ProductInventory" pi ON pi."productId" = p."id"
       WHERE o."builderId" = $1
-        AND o."status"::text IN ('DELIVERED', 'SHIPPED', 'PROCESSING', 'READY_TO_SHIP', 'COMPLETE')
+        AND o."status"::text IN ('DELIVERED', 'SHIPPED', 'IN_PRODUCTION', 'READY_TO_SHIP', 'COMPLETE')
         AND o."createdAt" >= NOW() - INTERVAL '6 months'
       GROUP BY o."id", o."orderNumber", o."createdAt", o."status", o."total"
       ORDER BY o."createdAt" DESC

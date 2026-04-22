@@ -170,7 +170,7 @@ async function getConsolidationOpportunities() {
     JOIN "Product" p ON i."productId" = p.id
     JOIN "VendorProduct" vp ON p.id = vp."productId" AND vp.preferred = true
     JOIN "Vendor" v ON vp."vendorId" = v.id
-    WHERE i."reorderPoint" > 0 AND i."onHand" <= i."reorderPoint"
+    WHERE i."reorderPoint" > 0 AND (i."onHand" + COALESCE(i."onOrder", 0)) <= i."reorderPoint"
     GROUP BY v.id, v.name, v.code
     HAVING COUNT(DISTINCT i.id) > 1
     ORDER BY "estimatedPOValue" DESC

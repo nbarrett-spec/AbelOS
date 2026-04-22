@@ -47,6 +47,8 @@ interface Job {
   community: string | null
   lotBlock: string | null
   jobAddress: string | null
+  latitude: number | null
+  longitude: number | null
   status: string
   scopeType: string
   scheduledDate?: string | null
@@ -221,16 +223,26 @@ export default function LiveMapPage() {
 
     async function geocodeAll() {
       setGeocoding(true)
-      const withAddress = jobs.filter((j) => j.jobAddress && j.jobAddress.trim().length > 5)
-      setGeocodeProgress({ done: 0, total: withAddress.length })
       const results: GeocodedJob[] = []
 
-      for (let i = 0; i < withAddress.length; i++) {
+      // Step 1: Use persisted lat/lng (instant, no API call)
+      const alreadyGeocoded = jobs.filter((j) => j.latitude != null && j.longitude != null)
+      for (const job of alreadyGeocoded) {
+        results.push({ ...job, lat: job.latitude!, lng: job.longitude! })
+      }
+
+      // Step 2: Geocode jobs with address but no persisted coords (fallback)
+      const needsGeocoding = jobs.filter(
+        (j) => j.jobAddress && j.jobAddress.trim().length > 5 && (j.latitude == null || j.longitude == null)
+      )
+      setGeocodeProgress({ done: alreadyGeocoded.length, total: alreadyGeocoded.length + needsGeocoding.length })
+
+      for (let i = 0; i < needsGeocoding.length; i++) {
         if (cancelled) break
-        const job = withAddress[i]
+        const job = needsGeocoding[i]
         const coords = await geocodeAddress(job.jobAddress!)
         if (coords) results.push({ ...job, lat: coords.lat, lng: coords.lng })
-        setGeocodeProgress({ done: i + 1, total: withAddress.length })
+        setGeocodeProgress({ done: alreadyGeocoded.length + i + 1, total: alreadyGeocoded.length + needsGeocoding.length })
         if (!geocodeCache.has(job.jobAddress!)) {
           await new Promise((r) => setTimeout(r, 1100))
         }

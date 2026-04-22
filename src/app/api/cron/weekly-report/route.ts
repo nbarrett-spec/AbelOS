@@ -396,7 +396,7 @@ export async function GET(request: NextRequest) {
         COALESCE(SUM(CASE WHEN i."dueDate" < NOW() THEN i."total" ELSE 0 END), 0)::float AS "overdue",
         COALESCE(SUM(CASE WHEN i."dueDate" < NOW() - INTERVAL '30 days' THEN i."total" ELSE 0 END), 0)::float AS "overdue30plus",
         COALESCE(SUM(CASE WHEN i."dueDate" < NOW() - INTERVAL '60 days' THEN i."total" ELSE 0 END), 0)::float AS "overdue60plus"
-      FROM "Invoice" i WHERE i."status"::text IN ('SENT','OVERDUE','PARTIAL')
+      FROM "Invoice" i WHERE i."status"::text IN ('SENT','OVERDUE','PARTIALLY_PAID')
     `)
 
     if (arResults.length > 0) {

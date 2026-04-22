@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       FROM "InventoryItem" ii
       LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = TRUE
       LEFT JOIN "Vendor" v ON v.id = vp."vendorId" AND v.active = TRUE
-      WHERE ii."onHand" <= ii."reorderPoint"
+      WHERE (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint"
         AND ii."reorderQty" > 0
       ORDER BY (ii."onHand"::float / NULLIF(ii."reorderPoint", 0)::float) ASC
     `)
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     // Summary stats
     const statsResult: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        COUNT(CASE WHEN ii."onHand" <= ii."reorderPoint" AND ii."reorderPoint" > 0 THEN 1 END)::int AS "needsReorder",
+        COUNT(CASE WHEN (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint" AND ii."reorderPoint" > 0 THEN 1 END)::int AS "needsReorder",
         COUNT(CASE WHEN ii."onHand" <= 0 THEN 1 END)::int AS "outOfStock",
         COUNT(*)::int AS "totalTracked"
       FROM "InventoryItem" ii
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       FROM "InventoryItem" ii
       LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = TRUE
       LEFT JOIN "Vendor" v ON v.id = vp."vendorId" AND v.active = TRUE
-      WHERE ii."onHand" <= ii."reorderPoint"
+      WHERE (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint"
         AND ii."reorderQty" > 0
     `)
 

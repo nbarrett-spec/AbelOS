@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       const avgLeadTime = 14 // default, could be supplier-specific
       const reorderPoint = Math.ceil(avgDaily * avgLeadTime) + safetyStock
       const reorderQty = Math.max(Math.ceil(avgDaily * 30), 10)
-      const daysOfSupply = avgDaily > 0 ? 999 : 999 // Will be calculated from on-hand
 
       const result = await prisma.$queryRawUnsafe(`
         UPDATE "InventoryItem"
@@ -55,7 +54,8 @@ export async function POST(request: NextRequest) {
             "reorderPoint" = GREATEST($2, "reorderPoint"),
             "safetyStock" = GREATEST($3, "safetyStock"),
             "reorderQty" = GREATEST($4, "reorderQty"),
-            "daysOfSupply" = CASE WHEN $1 > 0 THEN "onHand" / $1 ELSE 999 END,
+            "available" = "onHand" - COALESCE("committed", 0) + COALESCE("onOrder", 0),
+            "daysOfSupply" = CASE WHEN $1 > 0 THEN ("onHand" + COALESCE("onOrder", 0) - COALESCE("committed", 0)) / $1 ELSE 999 END,
             "status" = CASE
               WHEN "onHand" = 0 THEN 'OUT_OF_STOCK'
               WHEN "onHand" <= $3 THEN 'CRITICAL'

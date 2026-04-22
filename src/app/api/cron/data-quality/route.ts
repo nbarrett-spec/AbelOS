@@ -54,7 +54,7 @@ const DEFAULT_RULES = [
     description: 'Invoices unpaid for 90+ days',
     entity: 'Invoice',
     severity: 'CRITICAL',
-    query: `SELECT id, "invoiceNumber" FROM "Invoice" WHERE "dueDate" < NOW() - INTERVAL '90 days' AND status NOT IN ('PAID', 'VOIDED', 'CANCELLED')`,
+    query: `SELECT id, "invoiceNumber" FROM "Invoice" WHERE "dueDate" < NOW() - INTERVAL '90 days' AND status::text NOT IN ('PAID', 'VOID', 'WRITE_OFF')`,
     fixUrl: '/ops/finance/invoices/{id}',
   },
   {

@@ -11,8 +11,8 @@ interface Candidate {
   reorderPoint: number
   reorderQty: number
   unitCost: number
-  supplierId: string | null
-  supplierName: string | null
+  vendorId: string | null
+  vendorName: string | null
 }
 
 interface RecentPO {
@@ -21,7 +21,7 @@ interface RecentPO {
   status: string
   total: number
   createdAt: string
-  supplierName: string | null
+  vendorName: string | null
   lineCount: number
 }
 
@@ -42,7 +42,7 @@ interface CreateResponse {
   purchaseOrders: Array<{
     poId: string
     poNumber: string
-    supplierName: string
+    vendorName: string
     lineCount: number
     total: number
   }>
@@ -375,7 +375,7 @@ export default function AutoPOPage() {
                           {candidate.reorderQty}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
-                          {candidate.supplierName || '—'}
+                          {candidate.vendorName || '—'}
                         </td>
                         <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
                           {formatCurrency(
@@ -492,7 +492,7 @@ export default function AutoPOPage() {
                         {po.poNumber}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
-                        {po.supplierName || '—'}
+                        {po.vendorName || '—'}
                       </td>
                       <td className="px-6 py-4 text-right text-sm text-gray-900">
                         {po.lineCount}

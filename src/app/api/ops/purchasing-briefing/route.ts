@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
         p."id",
         p."sku",
         p."name",
-        poi."quantity" as "quantityReceived",
+        COALESCE(poi."receivedQty", poi."quantity") as "quantityReceived",
         po."poNumber",
         po."updatedAt" as "receivedDate"
       FROM "PurchaseOrderItem" poi

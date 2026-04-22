@@ -894,6 +894,19 @@ export async function syncSalesOrders(): Promise<SyncResult> {
           const tax = parseFloat(ifSO.tax1 || ifSO.tax || ifSO.taxAmount || 0) || 0
           const shipping = parseFloat(ifSO.orderFreight || ifSO.freight || ifSO.shippingCost || 0) || 0
 
+          // Extract shipping/delivery address from InFlow SO
+          // InFlow may send address as: shipTo, shippingAddress, location, deliveryAddress, or flat fields
+          const shipTo = ifSO.shipTo || ifSO.shippingAddress || ifSO.deliveryAddress || ifSO.location || {}
+          const jobAddress = (typeof shipTo === 'string' ? shipTo : null) ||
+            [
+              shipTo.address || shipTo.street || shipTo.address1 || ifSO.shipToAddress || ifSO.deliveryAddr || null,
+              shipTo.city || ifSO.shipToCity || null,
+              shipTo.state || shipTo.stateCode || ifSO.shipToState || null,
+              shipTo.zip || shipTo.postalCode || ifSO.shipToZip || null,
+            ].filter(Boolean).join(', ') || null
+          const jobCommunity = ifSO.community || ifSO.subdivision || shipTo.subdivision || shipTo.community || null
+          const jobLotBlock = ifSO.lotBlock || ifSO.lot || shipTo.lot || shipTo.lotBlock || null
+
           if (existing.length > 0) {
             await prisma.$executeRawUnsafe(
               `UPDATE "Order" SET
@@ -936,6 +949,31 @@ export async function syncSalesOrders(): Promise<SyncResult> {
               inflowOrderId, rawCustomerId || null
             )
             created++
+          }
+
+          // Enrich linked Job records with address from InFlow SO
+          if (jobAddress && jobAddress.length > 3) {
+            // Find the order we just created/updated to get its ID
+            const orderRow: any[] = await prisma.$queryRawUnsafe(
+              `SELECT "id" FROM "Order" WHERE "inflowOrderId" = $1 LIMIT 1`,
+              inflowOrderId
+            )
+            if (orderRow.length > 0) {
+              // Update any Jobs linked to this order that don't have an address
+              await prisma.$executeRawUnsafe(
+                `UPDATE "Job" SET
+                  "jobAddress" = COALESCE(NULLIF("jobAddress", ''), $1),
+                  "community" = COALESCE(NULLIF("community", ''), $2),
+                  "lotBlock" = COALESCE(NULLIF("lotBlock", ''), $3),
+                  "updatedAt" = NOW()
+                WHERE "orderId" = $4
+                  AND ("jobAddress" IS NULL OR "jobAddress" = '')`,
+                jobAddress,
+                jobCommunity,
+                jobLotBlock,
+                orderRow[0].id
+              )
+            }
           }
         } catch (err: any) {
           failed++

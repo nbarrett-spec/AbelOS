@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         FROM "InventoryItem" ii
         LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = true
         LEFT JOIN "Vendor" v ON v.id = vp."vendorId"
-        WHERE ii."onHand" <= ii."reorderPoint" AND ii."reorderPoint" > 0
+        WHERE (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint" AND ii."reorderPoint" > 0
         ORDER BY (ii."onHand"::float / NULLIF(ii."reorderPoint",0)) ASC`
       ),
 

@@ -136,17 +136,19 @@ export async function POST(request: NextRequest) {
     // ── PurchaseOrderItem ───────────────────────────────────────────────
     await prisma.$queryRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "PurchaseOrderItem" (
-        "id"            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        "poId"          TEXT NOT NULL REFERENCES "PurchaseOrder"("id") ON DELETE CASCADE,
-        "productId"     TEXT REFERENCES "Product"("id"),
-        "sku"           TEXT,
-        "productName"   TEXT NOT NULL,
-        "quantity"      INTEGER NOT NULL,
-        "unitCost"      DOUBLE PRECISION NOT NULL,
-        "lineTotal"     DOUBLE PRECISION NOT NULL,
-        "quantityReceived" INTEGER DEFAULT 0,
-        "notes"         TEXT,
-        "createdAt"     TIMESTAMPTZ DEFAULT NOW()
+        "id"              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        "purchaseOrderId" TEXT NOT NULL REFERENCES "PurchaseOrder"("id") ON DELETE CASCADE,
+        "productId"       TEXT REFERENCES "Product"("id"),
+        "vendorSku"       TEXT,
+        "description"     TEXT,
+        "quantity"        INTEGER NOT NULL,
+        "unitCost"        DOUBLE PRECISION NOT NULL,
+        "lineTotal"       DOUBLE PRECISION NOT NULL,
+        "receivedQty"     INTEGER DEFAULT 0,
+        "damagedQty"      INTEGER DEFAULT 0,
+        "notes"           TEXT,
+        "createdAt"       TIMESTAMPTZ DEFAULT NOW(),
+        "updatedAt"       TIMESTAMPTZ DEFAULT NOW()
       )
     `)
 
@@ -201,10 +203,10 @@ export async function POST(request: NextRequest) {
       `CREATE INDEX IF NOT EXISTS "idx_inventory_category" ON "InventoryItem"("category")`,
       `CREATE INDEX IF NOT EXISTS "idx_inventory_status" ON "InventoryItem"("status")`,
       `CREATE INDEX IF NOT EXISTS "idx_inventory_product" ON "InventoryItem"("productId")`,
-      `CREATE INDEX IF NOT EXISTS "idx_po_supplier" ON "PurchaseOrder"("supplierId")`,
+      `CREATE INDEX IF NOT EXISTS "idx_po_vendor" ON "PurchaseOrder"("vendorId")`,
       `CREATE INDEX IF NOT EXISTS "idx_po_status" ON "PurchaseOrder"("status")`,
       `CREATE INDEX IF NOT EXISTS "idx_po_number" ON "PurchaseOrder"("poNumber")`,
-      `CREATE INDEX IF NOT EXISTS "idx_poitem_po" ON "PurchaseOrderItem"("poId")`,
+      `CREATE INDEX IF NOT EXISTS "idx_poitem_po" ON "PurchaseOrderItem"("purchaseOrderId")`,
       `CREATE INDEX IF NOT EXISTS "idx_alert_type" ON "ProcurementAlert"("type")`,
       `CREATE INDEX IF NOT EXISTS "idx_alert_status" ON "ProcurementAlert"("status")`,
       `CREATE INDEX IF NOT EXISTS "idx_forecast_sku" ON "DemandForecast"("sku")`,

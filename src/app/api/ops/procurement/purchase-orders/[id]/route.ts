@@ -69,7 +69,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (action === 'send') {
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
-        SET "status" = 'SENT', "updatedAt" = NOW()
+        SET "status" = 'SENT_TO_VENDOR', "orderedAt" = COALESCE("orderedAt", NOW()), "updatedAt" = NOW()
         WHERE "id" = $1
       `, id)
       await audit(request, 'SEND', 'PurchaseOrder', id, {})
@@ -80,10 +80,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (action === 'in_transit') {
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
-        SET "status" = 'IN_TRANSIT', "trackingNumber" = $1, "updatedAt" = NOW()
+        SET "status" = 'SENT_TO_VENDOR', "trackingNumber" = $1, "updatedAt" = NOW()
         WHERE "id" = $2
       `, body.trackingNumber || null, id)
-      await audit(request, 'UPDATE', 'PurchaseOrder', id, { status: 'IN_TRANSIT', trackingNumber: body.trackingNumber })
+      await audit(request, 'UPDATE', 'PurchaseOrder', id, { status: 'SENT_TO_VENDOR', trackingNumber: body.trackingNumber })
       return NextResponse.json({ success: true, message: 'PO marked in transit' })
     }
 
@@ -95,11 +95,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         // Update PO item received qty
         await prisma.$queryRawUnsafe(`
           UPDATE "PurchaseOrderItem"
-          SET "quantityReceived" = "quantityReceived" + $1
+          SET "receivedQty" = COALESCE("receivedQty", 0) + $1, "updatedAt" = NOW()
           WHERE "id" = $2
         `, ri.quantityReceived, ri.itemId)
 
-        // Update inventory
+        // Update inventory — recalculate available, daysOfSupply, status
         const poItems = await prisma.$queryRawUnsafe(`
           SELECT "productId", "vendorSku" FROM "PurchaseOrderItem" WHERE "id" = $1
         `, ri.itemId) as any[]
@@ -108,8 +108,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           await prisma.$queryRawUnsafe(`
             UPDATE "InventoryItem"
             SET "onHand" = "onHand" + $1,
-                "onOrder" = GREATEST("onOrder" - $1, 0),
-                "available" = "available" + $1,
+                "onOrder" = GREATEST(COALESCE("onOrder", 0) - $1, 0),
+                "available" = ("onHand" + $1) - COALESCE("committed", 0) + GREATEST(COALESCE("onOrder", 0) - $1, 0),
+                "daysOfSupply" = CASE
+                  WHEN COALESCE("avgDailyUsage", 0) > 0
+                  THEN (("onHand" + $1) + GREATEST(COALESCE("onOrder", 0) - $1, 0) - COALESCE("committed", 0)) / "avgDailyUsage"
+                  ELSE 999
+                END,
+                "status" = CASE
+                  WHEN ("onHand" + $1) = 0 THEN 'OUT_OF_STOCK'
+                  WHEN ("onHand" + $1) <= COALESCE("safetyStock", 0) THEN 'CRITICAL'
+                  WHEN ("onHand" + $1) <= COALESCE("reorderPoint", 0) THEN 'LOW_STOCK'
+                  WHEN ("onHand" + $1) > COALESCE("maxStock", 99999) THEN 'OVERSTOCK'
+                  ELSE 'IN_STOCK'
+                END,
+                "lastReceivedAt" = NOW(),
                 "updatedAt" = NOW()
             WHERE "productId" = $2
           `, ri.quantityReceived, poItems[0].productId)
@@ -120,7 +133,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       const check = await prisma.$queryRawUnsafe(`
         SELECT
           COALESCE(SUM("quantity"), 0)::int as "totalOrdered",
-          COALESCE(SUM("quantityReceived"), 0)::int as "totalReceived"
+          COALESCE(SUM(COALESCE("receivedQty", 0)), 0)::int as "totalReceived"
         FROM "PurchaseOrderItem" WHERE "purchaseOrderId" = $1
       `, id) as any[]
 

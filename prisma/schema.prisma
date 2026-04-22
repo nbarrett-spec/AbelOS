@@ -964,6 +964,8 @@ model Job {
   builderName    String // Denormalized for quick display
   builderContact String?
   jobAddress     String?
+  latitude       Float?
+  longitude      Float?
   bwpPoNumber    String? // Builder's PO number
 
   // Scope

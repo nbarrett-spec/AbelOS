@@ -13,7 +13,7 @@ interface DemandForecast {
 
 interface ReorderRec {
   id: string; sku: string; productName: string; category: string
-  quantityOnHand: number; reorderPoint: number; safetyStock: number
+  onHand: number; reorderPoint: number; safetyStock: number
   avgDailyUsage: number; urgency: string; daysUntilStockout: number
   recommendedSupplier: any; aiReason: string; suggestedQty: number; estimatedCost: number
   allSuppliers: any[]
@@ -201,7 +201,7 @@ export default function ProcurementIntelligencePage() {
                   <span style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#fff', background: urgencyColor(r.urgency) }}>{r.urgency}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{r.productName}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280' }}>{r.sku} • {r.quantityOnHand} on hand • {r.daysUntilStockout} days left</div>
+                    <div style={{ fontSize: 12, color: '#6B7280' }}>{r.sku} • {r.onHand} on hand • {r.daysUntilStockout} days left</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12 }}>
                     <div style={{ fontWeight: 600, color: '#0f2a3e' }}>Order {r.suggestedQty} units</div>
@@ -310,7 +310,7 @@ export default function ProcurementIntelligencePage() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>{r.sku} • {r.category} • {r.daysUntilStockout} days until stockout</div>
                 </div>
                 <div style={{ textAlign: 'right', fontSize: 12, color: '#6B7280' }}>
-                  <div>On Hand: <strong>{r.quantityOnHand}</strong></div>
+                  <div>On Hand: <strong>{r.onHand}</strong></div>
                   <div>Reorder Pt: {r.reorderPoint}</div>
                 </div>
               </div>
