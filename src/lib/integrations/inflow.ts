@@ -350,9 +350,33 @@ export async function syncInventory(): Promise<SyncResult> {
   }
 }
 
+// ─── Sync Mode Helper ────────────────────────────────────────────────
+
+export type SyncMode = 'MIRROR' | 'BIDIRECTIONAL' | 'AEGIS_PRIMARY'
+
+export async function getSyncMode(): Promise<SyncMode> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "metadata" FROM "IntegrationConfig" WHERE "provider" = 'INFLOW' LIMIT 1`
+    )
+    return (rows[0]?.metadata?.syncMode as SyncMode) || 'MIRROR'
+  } catch {
+    return 'MIRROR'
+  }
+}
+
 // ─── Webhook Handler ─────────────────────────────────────────────────
+// Respects sync mode: in AEGIS_PRIMARY mode, incoming InFlow webhooks
+// are ignored because Aegis owns the data.
 
 export async function handleInflowWebhook(eventType: string, payload: any) {
+  // In AEGIS_PRIMARY mode, InFlow changes are ignored
+  const mode = await getSyncMode()
+  if (mode === 'AEGIS_PRIMARY') {
+    console.log(`[InFlow Webhook] Ignoring ${eventType} — Aegis is primary`)
+    return
+  }
+
   switch (eventType) {
     case 'product.updated':
     case 'product.created': {
@@ -983,6 +1007,46 @@ export async function pushOrderToInflow(orderId: string): Promise<{ success: boo
       message: `Order ${order.orderNumber} pushed to InFlow`,
       inflowOrderId: result?.id ? String(result.id) : undefined,
     }
+  } catch (error: any) {
+    return { success: false, message: error.message }
+  }
+}
+
+// ─── Push Inventory Adjustment to InFlow ────────────────────────────
+
+export async function pushInventoryAdjustment(
+  productId: string,
+  newQuantity: number,
+  reason?: string
+): Promise<{ success: boolean; message: string }> {
+  const mode = await getSyncMode()
+  if (mode === 'MIRROR') {
+    return { success: false, message: 'Cannot push to InFlow in MIRROR mode — InFlow is source of truth' }
+  }
+
+  const config = await getConfig()
+  if (!config) return { success: false, message: 'InFlow not configured' }
+
+  try {
+    // Look up the InFlow product ID
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "inflowId", "sku", "name" FROM "Product" WHERE "id" = $1 LIMIT 1`, productId
+    )
+    const product = rows[0]
+    if (!product?.inflowId) {
+      return { success: false, message: 'Product not linked to InFlow' }
+    }
+
+    await inflowFetch(`/products/${product.inflowId}/inventory-adjustments`, config, {
+      method: 'POST',
+      body: JSON.stringify({
+        quantityAdjusted: newQuantity,
+        reason: reason || 'Adjusted from Aegis',
+        date: new Date().toISOString(),
+      }),
+    })
+
+    return { success: true, message: `Inventory adjustment pushed for ${product.sku}` }
   } catch (error: any) {
     return { success: false, message: error.message }
   }
