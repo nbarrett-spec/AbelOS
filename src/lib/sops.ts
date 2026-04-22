@@ -134,7 +134,7 @@ export const SOPS: SOP[] = [
     category: 'quotes',
     steps: [
       'Go to Quotes and click "New Quote".',
-      'Select the builder. If it's a new builder, create the account first under Accounts.',
+      "Select the builder. If it's a new builder, create the account first under Accounts.",
       'Add line items with products, quantities, and pricing.',
       'If the builder has a tier pricing agreement, prices auto-populate from their price list.',
       'Set the "Valid Until" date (default is 30 days).',
@@ -228,7 +228,7 @@ export const SOPS: SOP[] = [
       'Click "Send" to email the invoice to the builder.',
     ],
     tips: [
-      'Always check the builder's payment terms before issuing — they may have negotiated custom terms.',
+      "Always check the builder's payment terms before issuing — they may have negotiated custom terms.",
       'Invoices older than the payment terms auto-flag as OVERDUE.',
       'The Collections page shows all overdue invoices ranked by amount.',
     ],
@@ -247,7 +247,7 @@ export const SOPS: SOP[] = [
       'Save the payment. The invoice status updates automatically (PARTIALLY_PAID or PAID).',
     ],
     tips: [
-      'Always match payments to specific invoices — don't leave them unallocated.',
+      "Always match payments to specific invoices — don't leave them unallocated.",
       'If a builder pays by check, record the check number for reconciliation.',
       'Payments via Stripe are auto-recorded when the builder pays through the portal.',
     ],
@@ -287,7 +287,7 @@ export const SOPS: SOP[] = [
     tips: [
       'Available quantity is what matters for new orders, not On Hand.',
       '"Days of Supply" tells you how long current stock will last based on usage history.',
-      'If On Hand and physical count don't match, report it to the warehouse lead for a cycle count.',
+      "If On Hand and physical count don't match, report it to the warehouse lead for a cycle count.",
     ],
   },
   {
@@ -305,7 +305,7 @@ export const SOPS: SOP[] = [
       'If partial shipment, the PO stays open until fully received.',
     ],
     troubleshooting: [
-      'Received quantity doesn't match PO → mark as partial receive and notify Purchasing.',
+      "Received quantity doesn't match PO → mark as partial receive and notify Purchasing.",
       'Wrong product delivered → reject and notify Purchasing to arrange return/replacement.',
     ],
   },
@@ -355,7 +355,7 @@ export const SOPS: SOP[] = [
     ],
     tips: [
       'Check the route optimizer to batch nearby deliveries on the same truck run.',
-      'Delivery notifications go to the builder's primary contact automatically.',
+      "Delivery notifications go to the builder's primary contact automatically.",
       'If a builder requests a specific time window, note it in the order delivery instructions.',
     ],
   },
@@ -370,7 +370,7 @@ export const SOPS: SOP[] = [
       'Review each stop: address, access instructions, items being delivered.',
       'When you depart the warehouse, mark the first delivery as IN_TRANSIT.',
       'At each site: unload, get signature if required, mark as DELIVERED.',
-      'If there's an issue (site locked, wrong address, damaged goods), take a photo and add a note.',
+      "If there's an issue (site locked, wrong address, damaged goods), take a photo and add a note.",
       'After all deliveries, return to the warehouse portal to check for afternoon adds.',
     ],
   },
@@ -438,13 +438,13 @@ export const SOPS: SOP[] = [
       '  - "What items need reorder?"',
       '  - "Daily briefing — what happened today?"',
       'The AI uses your role to determine what data you can access.',
-      'If it looks up data, you'll see "Tools used" badges below the response.',
-      'If it recommends an action, you'll see action cards you can review.',
+      "If it looks up data, you'll see \"Tools used\" badges below the response.",
+      "If it recommends an action, you'll see action cards you can review.",
     ],
     tips: [
       'Be specific: "Overdue invoices for Brookfield" works better than just "invoices".',
       'The AI can draft emails but cannot send them — you copy and send from your email client.',
-      'Your data access is limited to your role. If you need data you can't access, ask your manager.',
+      "Your data access is limited to your role. If you need data you can't access, ask your manager.",
     ],
   },
 
@@ -478,7 +478,7 @@ export const SOPS: SOP[] = [
     pages: ['/ops'],
     category: 'general',
     steps: [
-      'Log in to app.abellumber.com and go to your role's portal page.',
+      "Log in to app.abellumber.com and go to your role's portal page.",
       'Check the dashboard for any urgent alerts (overdue invoices, out-of-stock items, pending approvals).',
       'Review your notifications for any new assignments or messages.',
       'Use the AI Assistant for a daily briefing: "Daily briefing — what needs my attention?"',
@@ -487,7 +487,7 @@ export const SOPS: SOP[] = [
     tips: [
       'Bookmark your portal page for faster access.',
       'The sidebar highlights pages with pending items.',
-      'If something looks wrong in the data, report it — don't try to fix it manually.',
+      "If something looks wrong in the data, report it — don't try to fix it manually.",
     ],
   },
 ]
