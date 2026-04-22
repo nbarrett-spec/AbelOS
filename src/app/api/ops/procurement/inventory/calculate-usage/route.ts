@@ -55,12 +55,12 @@ export async function POST(request: NextRequest) {
             "reorderPoint" = GREATEST($2, "reorderPoint"),
             "safetyStock" = GREATEST($3, "safetyStock"),
             "reorderQty" = GREATEST($4, "reorderQty"),
-            "daysOfSupply" = CASE WHEN $1 > 0 THEN "quantityOnHand" / $1 ELSE 999 END,
+            "daysOfSupply" = CASE WHEN $1 > 0 THEN "onHand" / $1 ELSE 999 END,
             "status" = CASE
-              WHEN "quantityOnHand" = 0 THEN 'OUT_OF_STOCK'
-              WHEN "quantityOnHand" <= $3 THEN 'CRITICAL'
-              WHEN "quantityOnHand" <= $2 THEN 'LOW_STOCK'
-              WHEN "quantityOnHand" > "maxStock" THEN 'OVERSTOCK'
+              WHEN "onHand" = 0 THEN 'OUT_OF_STOCK'
+              WHEN "onHand" <= $3 THEN 'CRITICAL'
+              WHEN "onHand" <= $2 THEN 'LOW_STOCK'
+              WHEN "onHand" > "maxStock" THEN 'OVERSTOCK'
               ELSE 'IN_STOCK'
             END,
             "updatedAt" = NOW()

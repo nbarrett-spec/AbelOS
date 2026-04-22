@@ -189,26 +189,26 @@ async function getReorderRecommendations() {
   const needsReorder = await prisma.$queryRawUnsafe(`
     SELECT i.*,
       CASE
-        WHEN i."quantityOnHand" = 0 THEN 'CRITICAL'
-        WHEN i."quantityOnHand" <= i."safetyStock" THEN 'URGENT'
-        WHEN i."quantityOnHand" <= i."reorderPoint" THEN 'REORDER_NOW'
-        WHEN i."avgDailyUsage" > 0 AND (i."quantityOnHand" / i."avgDailyUsage") < 14 THEN 'REORDER_SOON'
+        WHEN i."onHand" = 0 THEN 'CRITICAL'
+        WHEN i."onHand" <= i."safetyStock" THEN 'URGENT'
+        WHEN i."onHand" <= i."reorderPoint" THEN 'REORDER_NOW'
+        WHEN i."avgDailyUsage" > 0 AND (i."onHand" / i."avgDailyUsage") < 14 THEN 'REORDER_SOON'
         ELSE 'OK'
       END as "urgency",
       CASE
-        WHEN i."avgDailyUsage" > 0 THEN ROUND((i."quantityOnHand"::numeric / i."avgDailyUsage"), 0)
+        WHEN i."avgDailyUsage" > 0 THEN ROUND((i."onHand"::numeric / i."avgDailyUsage"), 0)
         ELSE 999
       END as "daysUntilStockout"
     FROM "InventoryItem" i
     WHERE (
-      i."quantityOnHand" <= i."reorderPoint"
-      OR (i."avgDailyUsage" > 0 AND (i."quantityOnHand" / GREATEST(i."avgDailyUsage", 0.01)) < 14)
+      i."onHand" <= i."reorderPoint"
+      OR (i."avgDailyUsage" > 0 AND (i."onHand" / GREATEST(i."avgDailyUsage", 0.01)) < 14)
     )
     ORDER BY
       CASE
-        WHEN i."quantityOnHand" = 0 THEN 0
-        WHEN i."quantityOnHand" <= i."safetyStock" THEN 1
-        WHEN i."quantityOnHand" <= i."reorderPoint" THEN 2
+        WHEN i."onHand" = 0 THEN 0
+        WHEN i."onHand" <= i."safetyStock" THEN 1
+        WHEN i."onHand" <= i."reorderPoint" THEN 2
         ELSE 3
       END,
       i."avgDailyUsage" DESC
@@ -377,13 +377,13 @@ async function generatePOSchedule() {
   const items = await prisma.$queryRawUnsafe(`
     SELECT i.*,
       CASE
-        WHEN i."avgDailyUsage" > 0 THEN ROUND((i."quantityOnHand"::numeric / i."avgDailyUsage"), 0)
+        WHEN i."avgDailyUsage" > 0 THEN ROUND((i."onHand"::numeric / i."avgDailyUsage"), 0)
         ELSE 999
       END as "daysUntilStockout"
     FROM "InventoryItem" i
-    WHERE i."quantityOnHand" <= i."reorderPoint" * 1.5
+    WHERE i."onHand" <= i."reorderPoint" * 1.5
     ORDER BY
-      CASE WHEN i."avgDailyUsage" > 0 THEN (i."quantityOnHand" / i."avgDailyUsage") ELSE 999 END ASC
+      CASE WHEN i."avgDailyUsage" > 0 THEN (i."onHand" / i."avgDailyUsage") ELSE 999 END ASC
   `) as any[]
 
   // Group by best supplier and generate PO recommendations
@@ -514,14 +514,14 @@ async function inventoryHealthCheck() {
     SELECT
       "category",
       COUNT(*)::int as "totalItems",
-      SUM("quantityOnHand")::int as "totalUnits",
-      ROUND(SUM("quantityOnHand" * "unitCost")::numeric, 2) as "totalValue",
-      COUNT(*) FILTER (WHERE "quantityOnHand" = 0)::int as "outOfStock",
-      COUNT(*) FILTER (WHERE "quantityOnHand" <= "safetyStock" AND "quantityOnHand" > 0)::int as "critical",
-      COUNT(*) FILTER (WHERE "quantityOnHand" <= "reorderPoint" AND "quantityOnHand" > "safetyStock")::int as "lowStock",
-      COUNT(*) FILTER (WHERE "quantityOnHand" > "maxStock")::int as "overstock",
+      SUM("onHand")::int as "totalUnits",
+      ROUND(SUM("onHand" * "unitCost")::numeric, 2) as "totalValue",
+      COUNT(*) FILTER (WHERE "onHand" = 0)::int as "outOfStock",
+      COUNT(*) FILTER (WHERE "onHand" <= "safetyStock" AND "onHand" > 0)::int as "critical",
+      COUNT(*) FILTER (WHERE "onHand" <= "reorderPoint" AND "onHand" > "safetyStock")::int as "lowStock",
+      COUNT(*) FILTER (WHERE "onHand" > "maxStock")::int as "overstock",
       ROUND(AVG("avgDailyUsage")::numeric, 2) as "avgUsage",
-      ROUND(AVG(CASE WHEN "avgDailyUsage" > 0 THEN "quantityOnHand" / "avgDailyUsage" ELSE NULL END)::numeric, 1) as "avgDaysOfSupply"
+      ROUND(AVG(CASE WHEN "avgDailyUsage" > 0 THEN "onHand" / "avgDailyUsage" ELSE NULL END)::numeric, 1) as "avgDaysOfSupply"
     FROM "InventoryItem"
     GROUP BY "category"
     ORDER BY "category"
@@ -530,11 +530,11 @@ async function inventoryHealthCheck() {
   const totals = await prisma.$queryRawUnsafe(`
     SELECT
       COUNT(*)::int as "totalSkus",
-      COALESCE(SUM("quantityOnHand" * "unitCost"), 0)::numeric as "totalInventoryValue",
-      COUNT(*) FILTER (WHERE "quantityOnHand" = 0)::int as "outOfStockSkus",
-      COUNT(*) FILTER (WHERE "quantityOnHand" <= "reorderPoint")::int as "belowReorderPoint",
-      COUNT(*) FILTER (WHERE "quantityOnHand" > "maxStock")::int as "overstocked",
-      ROUND(AVG(CASE WHEN "avgDailyUsage" > 0 THEN "quantityOnHand" / "avgDailyUsage" ELSE NULL END)::numeric, 1) as "avgDaysOfSupply"
+      COALESCE(SUM("onHand" * "unitCost"), 0)::numeric as "totalInventoryValue",
+      COUNT(*) FILTER (WHERE "onHand" = 0)::int as "outOfStockSkus",
+      COUNT(*) FILTER (WHERE "onHand" <= "reorderPoint")::int as "belowReorderPoint",
+      COUNT(*) FILTER (WHERE "onHand" > "maxStock")::int as "overstocked",
+      ROUND(AVG(CASE WHEN "avgDailyUsage" > 0 THEN "onHand" / "avgDailyUsage" ELSE NULL END)::numeric, 1) as "avgDaysOfSupply"
     FROM "InventoryItem"
   `) as any[]
 

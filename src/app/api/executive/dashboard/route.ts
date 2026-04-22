@@ -191,11 +191,9 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     const alerts: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        COUNT(CASE WHEN i."status"::text = 'OVERDUE' THEN 1 END)::int AS "overdueCount",
-        COUNT(CASE WHEN b."creditUtilization" > 0.9 THEN 1 END)::int AS "creditBreachCount",
-        COUNT(CASE WHEN p."quantityOnHand" < p."minimumStock" THEN 1 END)::int AS "stockoutCount"
-      FROM "Invoice" i, "Builder" b, "Product" p
-      WHERE TRUE
+        (SELECT COUNT(*)::int FROM "Invoice" WHERE status::text = 'OVERDUE') AS "overdueCount",
+        (SELECT COUNT(*)::int FROM "Builder" WHERE "creditUtilization" > 0.9) AS "creditBreachCount",
+        (SELECT COUNT(*)::int FROM "InventoryItem" WHERE "onHand" <= "reorderPoint" AND "reorderPoint" > 0) AS "stockoutCount"
     `)
 
     const alertCounts = {
