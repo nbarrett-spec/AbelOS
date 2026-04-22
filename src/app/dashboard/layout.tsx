@@ -6,6 +6,7 @@ import MobileQuickActions from '@/components/MobileQuickActions'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import AegisBackground from '@/components/AegisBackground'
 import PortalBackground from '@/components/PortalBackground'
+import PageBackgroundRouter from '@/components/PageBackgroundRouter'
 
 export default function DashboardLayout({
   children,
@@ -19,9 +20,10 @@ export default function DashboardLayout({
       <div className="relative z-[1]">
         <Navbar />
         <OfflineIndicator />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 relative">
+          <PageBackgroundRouter />
           <Breadcrumbs />
-          <div className="animate-enter">{children}</div>
+          <div className="animate-enter relative z-[1]">{children}</div>
         </main>
         <AgentChat />
         <MobileQuickActions />

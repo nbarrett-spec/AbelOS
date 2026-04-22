@@ -118,16 +118,16 @@ export async function GET(request: NextRequest) {
         const invStats = await prisma.$queryRawUnsafe(`
           SELECT
             COUNT(*)::int as "totalItems",
-            COUNT(*) FILTER (WHERE "quantityOnHand" = 0)::int as "outOfStock",
-            COUNT(*) FILTER (WHERE "quantityOnHand" <= "reorderPoint" AND "quantityOnHand" > 0)::int as "lowStock",
-            COUNT(*) FILTER (WHERE "quantityOnHand" <= "safetyStock" AND "quantityOnHand" > 0)::int as "critical"
+            COUNT(*) FILTER (WHERE "onHand" = 0)::int as "outOfStock",
+            COUNT(*) FILTER (WHERE "onHand" <= "reorderPoint" AND "onHand" > 0)::int as "lowStock",
+            COUNT(*) FILTER (WHERE "onHand" <= "safetyStock" AND "onHand" > 0)::int as "critical"
           FROM "InventoryItem"
         `) as any[]
 
         const criticalItems = await prisma.$queryRawUnsafe(`
-          SELECT "productName", "sku", "quantityOnHand", "reorderPoint", "daysOfSupply"
+          SELECT "productName", "sku", "onHand", "reorderPoint", "daysOfSupply"
           FROM "InventoryItem"
-          WHERE "quantityOnHand" <= "reorderPoint"
+          WHERE "onHand" <= "reorderPoint"
           ORDER BY "daysOfSupply" ASC
           LIMIT 5
         `) as any[]
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
           items: criticalItems.map((item: any) => ({
             name: item.productName,
             sku: item.sku,
-            onHand: item.quantityOnHand,
+            onHand: item.onHand,
             reorderPoint: item.reorderPoint,
             daysOfSupply: Number(item.daysOfSupply || 0),
           })),

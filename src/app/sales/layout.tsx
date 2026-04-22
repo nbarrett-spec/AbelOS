@@ -6,6 +6,7 @@ import { parseRoles } from '@/lib/permissions'
 import Link from 'next/link'
 import SalesTopNav from './components/SalesTopNav'
 import PortalBackground from '@/components/PortalBackground'
+import PageBackgroundRouter from '@/components/PageBackgroundRouter'
 
 const STAFF_COOKIE_NAME = 'abel_staff_session'
 
@@ -64,8 +65,9 @@ export default async function SalesLayout({
         email={session.email}
         role={session.role}
       />
-      <main className="flex-1 overflow-auto bg-canvas">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-enter">
+      <main className="flex-1 overflow-auto bg-canvas relative">
+        <PageBackgroundRouter />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-enter relative z-[1]">
           {children}
         </div>
       </main>

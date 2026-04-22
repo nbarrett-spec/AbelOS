@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface ChatMessage {
   id: string
@@ -8,15 +9,14 @@ interface ChatMessage {
   content: string
   timestamp: Date
   isTyping?: boolean
-}
-
-interface AssistantResponse {
-  text: string
-  data?: {
+  toolsUsed?: Array<{ tool: string; summary: string }>
+  actions?: Array<{
     type: string
-    content: string
-  }
-  suggestions?: string[]
+    label: string
+    description: string
+    endpoint: string
+    payload: any
+  }>
 }
 
 export default function AIAssistantPage() {
@@ -24,21 +24,23 @@ export default function AIAssistantPage() {
     {
       id: '0',
       role: 'assistant',
-      content: 'Hello! I\'m the Abel Lumber AI Assistant. I can help you with scheduling, communications, and workflow decisions. What would you like assistance with today?',
+      content: 'I\'m the Abel Lumber AI — powered by Claude with full access to your operations data. I can look up jobs, invoices, builders, inventory, pricing, and more. I can also draft emails, analyze trends, and recommend actions.\n\nWhat do you need?',
       timestamp: new Date(),
     },
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
 
   // Quick action buttons
   const quickActions = [
-    { text: 'Draft email to builder', emoji: '✉️' },
-    { text: 'Suggest schedule for next week', emoji: '📅' },
-    { text: 'Analyze overdue invoices', emoji: '💰' },
-    { text: 'Generate job status report', emoji: '📊' },
-    { text: 'Check material availability', emoji: '📦' },
+    { text: 'Show me overdue invoices and total exposure', emoji: '💰' },
+    { text: 'Job pipeline summary — what needs attention?', emoji: '📊' },
+    { text: 'Which builders have the most open orders?', emoji: '🏗️' },
+    { text: 'Low stock items that need reorder', emoji: '📦' },
+    { text: 'Draft a follow-up email for a stale quote', emoji: '✉️' },
+    { text: 'Daily briefing — what happened today?', emoji: '📅' },
   ]
 
   const scrollToBottom = () => {
@@ -49,9 +51,9 @@ export default function AIAssistantPage() {
     scrollToBottom()
   }, [messages])
 
-  const handleSendMessage = async (text?: string) => {
+  const handleSendMessage = useCallback(async (text?: string) => {
     const messageText = text || input.trim()
-    if (!messageText) return
+    if (!messageText || loading) return
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -79,13 +81,22 @@ export default function AIAssistantPage() {
     ])
 
     try {
-      const response = await fetch('/api/ops/ai', {
+      // Build conversation history for Claude context (last 20 messages)
+      const history = [...messages, userMessage]
+        .filter(m => !m.isTyping)
+        .slice(-20)
+        .map(m => ({ role: m.role, content: m.content }))
+
+      const response = await fetch('/api/ops/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText }),
+        body: JSON.stringify({
+          messages: history,
+          context: `Currently on page: ${pathname}`,
+        }),
       })
 
-      const data: AssistantResponse = await response.json()
+      const data = await response.json()
 
       // Remove typing indicator and add response
       setMessages((prev) => {
@@ -95,8 +106,10 @@ export default function AIAssistantPage() {
           {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
-            content: data.text,
+            content: data.message || data.error || 'No response received.',
             timestamp: new Date(),
+            toolsUsed: data.toolsUsed,
+            actions: data.actions,
           },
         ]
       })
@@ -109,7 +122,7 @@ export default function AIAssistantPage() {
           {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
-            content: 'Sorry, I encountered an error processing your request. Please try again.',
+            content: 'Connection error — could not reach the AI service. Please try again.',
             timestamp: new Date(),
           },
         ]
@@ -117,7 +130,7 @@ export default function AIAssistantPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [input, loading, messages, pathname])
 
   return (
     <div className="h-full flex flex-col bg-white rounded-xl border overflow-hidden">
@@ -125,48 +138,66 @@ export default function AIAssistantPage() {
       <div className="bg-gradient-to-r from-[#0f2a3e] to-[#0a1a28] px-6 py-4 text-white">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <span className="text-2xl">🤖</span>
-          AI Assistant
+          Abel AI
         </h1>
         <p className="text-sm text-blue-100 mt-1">
-          Scheduling, communications, and workflow insights powered by AI
+          Claude-powered assistant with full access to jobs, orders, inventory, invoicing, and builder data
         </p>
       </div>
 
       {/* Chat container */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <p className="text-4xl mb-2">🤖</p>
-              <p className="text-gray-500">No messages yet. Start by clicking a quick action or typing a question.</p>
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-2xl px-4 py-3 rounded-lg ${
+                msg.role === 'user'
+                  ? 'bg-[#0f2a3e] text-white rounded-br-none'
+                  : 'bg-gray-200 text-gray-900 rounded-bl-none'
+              }`}
+            >
+              {msg.isTyping ? (
+                <div className="flex gap-1 py-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+                  {/* Show tools Claude used */}
+                  {msg.toolsUsed && msg.toolsUsed.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-300/50">
+                      <p className="text-xs text-gray-500 font-medium mb-1">Tools used:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {msg.toolsUsed.map((t, i) => (
+                          <span key={i} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                            {t.summary}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Show actionable recommendations */}
+                  {msg.actions && msg.actions.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-300/50 space-y-2">
+                      <p className="text-xs text-gray-500 font-medium">Recommended actions:</p>
+                      {msg.actions.map((action, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                          <span className="font-medium text-amber-800">{action.label}</span>
+                          <span className="text-amber-600">{action.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
-        ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-md lg:max-w-lg px-4 py-3 rounded-lg ${
-                  msg.role === 'user'
-                    ? 'bg-[#0f2a3e] text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                }`}
-              >
-                {msg.isTyping ? (
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  </div>
-                ) : (
-                  <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
-                )}
-              </div>
-            </div>
-          ))
-        )}
+        ))}
         <div ref={messagesEndRef} />
       </div>
 

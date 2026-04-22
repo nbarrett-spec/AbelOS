@@ -12,8 +12,9 @@
  */
 
 import { memo } from 'react'
+import { BomBlueprintSVG } from './BOMBlueprintBackground'
 
-export type PortalType = 'ops' | 'sales' | 'dashboard' | 'homeowner' | 'admin'
+export type PortalType = 'ops' | 'sales' | 'dashboard' | 'homeowner' | 'admin' | 'bom'
 
 interface PortalBackgroundProps {
   portal: PortalType
@@ -660,6 +661,7 @@ const PORTAL_MAP: Record<PortalType, React.FC> = {
   dashboard: DashboardBackground,
   homeowner: HomeownerBackground,
   admin: AdminBackground,
+  bom: BomBlueprintSVG,
 }
 
 function PortalBackgroundImpl({ portal, className = '' }: PortalBackgroundProps) {
@@ -669,7 +671,7 @@ function PortalBackgroundImpl({ portal, className = '' }: PortalBackgroundProps)
   return (
     <div
       className={`fixed inset-0 pointer-events-none overflow-hidden ${className}`}
-      style={{ zIndex: 0, opacity: 0.12 }}
+      style={{ zIndex: 0, opacity: 0.14 }}
       aria-hidden="true"
     >
       <div className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--fg)' }}>

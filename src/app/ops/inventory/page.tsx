@@ -1,409 +1,528 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useToast } from '@/contexts/ToastContext'
+/**
+ * Inventory list — Aegis Glass v3 rebuild.
+ * KPIs (AnimatedCounter) + filters + datatable. Click a row → product detail.
+ */
 
-interface InventoryItem {
-  id: string; sku: string; productName: string; category: string; location: string
-  quantityOnHand: number; quantityCommitted: number; quantityOnOrder: number; quantityAvailable: number
-  reorderPoint: number; reorderQty: number; safetyStock: number; maxStock: number
-  unitCost: number; totalValue: number; lastReceivedAt: string; avgDailyUsage: number
-  daysOfSupply: number; stockStatus: string; calcDaysOfSupply: number; status: string
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { AnimatedCounter } from '@/components/ui/experience'
+
+type StatusKey = '' | 'healthy' | 'low' | 'critical' | 'out' | 'overstocked'
+
+interface Row {
+  id: string
+  sku: string
+  name: string
+  displayName: string | null
+  category: string | null
+  subcategory: string | null
+  manufacturer: string | null
+  basePrice: number | null
+  cost: number | null
+  imageUrl: string | null
+  thumbnailUrl: string | null
+  leadTimeDays: number | null
+  active: boolean
+  inStock: boolean
+  onHand: number
+  committed: number
+  available: number
+  onOrder: number
+  reorderPoint: number
+  reorderQty: number
+  safetyStock: number
+  maxStock: number | null
+  unitCost: number | null
+  warehouseZone: string | null
+  binLocation: string | null
+  invStatus: string | null
+  lastCountedAt: string | null
+  lastReceivedAt: string | null
+  avgDailyUsage: number | null
+  daysOfSupply: number | null
 }
 
-interface Stats {
-  totalItems: number; totalValue: number; lowStockCount: number; outOfStockCount: number
-  overstockCount: number; criticalCount: number
+interface Kpis {
+  totalSkus: number
+  trackedSkus: number
+  totalOnHand: number
+  totalOnHandValue: number
+  belowReorder: number
+  outOfStock: number
+  overstocked: number
+  avgInventoryTurns: number
+  lowStockUrgency: number
+  criticalItems: Array<{
+    id: string
+    sku: string
+    name: string
+    onHand: number
+    available: number
+    reorderPoint: number
+  }>
 }
 
-export default function InventoryPage() {
-  const { addToast } = useToast()
-  const [inventory, setInventory] = useState<InventoryItem[]>([])
-  const [stats, setStats] = useState<Stats | null>(null)
+function deriveStatus(r: Row): { key: 'out' | 'critical' | 'low' | 'healthy' | 'overstocked'; label: string; tone: 'danger' | 'warning' | 'success' | 'info' | 'neutral' } {
+  if (r.onHand <= 0) return { key: 'out', label: 'Out', tone: 'danger' }
+  if (r.onHand <= r.safetyStock) return { key: 'critical', label: 'Critical', tone: 'danger' }
+  if (r.onHand <= r.reorderPoint) return { key: 'low', label: 'Low', tone: 'warning' }
+  if (r.maxStock != null && r.onHand > r.maxStock) return { key: 'overstocked', label: 'Overstocked', tone: 'info' }
+  return { key: 'healthy', label: 'Healthy', tone: 'success' }
+}
+
+function fmtMoney(n: number | null | undefined): string {
+  if (n == null) return '—'
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+}
+
+function fmtDate(s: string | null | undefined): string {
+  if (!s) return '—'
+  try {
+    return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+  } catch { return '—' }
+}
+
+export default function InventoryListPage() {
+  const router = useRouter()
+
+  const [rows, setRows] = useState<Row[]>([])
+  const [kpis, setKpis] = useState<Kpis | null>(null)
+  const [categories, setCategories] = useState<string[]>([])
+  const [zones, setZones] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState({ category: '', status: '', search: '', sort: 'daysOfSupply' })
-  const [editItem, setEditItem] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<any>({})
-  const [syncing, setSyncing] = useState(false)
-  const [expandedItem, setExpandedItem] = useState<string | null>(null)
 
-  const fetchInventory = useCallback(async () => {
+  // Filters
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const [status, setStatus] = useState<StatusKey>('')
+  const [zone, setZone] = useState('')
+  const [sort, setSort] = useState('name')
+  const [dir, setDir] = useState<'asc' | 'desc'>('asc')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  const loadKpis = useCallback(async () => {
+    try {
+      const res = await fetch('/api/ops/inventory/kpis')
+      if (res.ok) setKpis(await res.json())
+    } catch (e) {
+      console.error('[Inventory] kpi load failed:', e)
+    }
+  }, [])
+
+  const loadRows = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (filter.category) params.set('category', filter.category)
-      if (filter.status) params.set('status', filter.status)
-      if (filter.search) params.set('search', filter.search)
-      if (filter.sort) params.set('sort', filter.sort)
-      const res = await fetch(`/api/ops/procurement/inventory?${params}`)
-      if (res.ok) { const d = await res.json(); setInventory(d.inventory || []); setStats(d.stats || null) }
-    } catch (err) {
-      console.error('[Inventory] Failed to load inventory:', err)
-    } finally { setLoading(false) }
-  }, [filter])
+      const qs = new URLSearchParams()
+      if (search) qs.set('search', search)
+      if (category) qs.set('category', category)
+      if (status) qs.set('status', status)
+      if (zone) qs.set('zone', zone)
+      qs.set('sort', sort)
+      qs.set('dir', dir)
+      qs.set('page', String(page))
+      qs.set('limit', '50')
+      const res = await fetch(`/api/ops/inventory?${qs.toString()}`)
+      if (res.ok) {
+        const d = await res.json()
+        setRows(d.products || [])
+        setCategories(d.categories || [])
+        setZones(d.zones || [])
+        setTotalPages(d.totalPages || 1)
+        setTotal(d.total || 0)
+      }
+    } catch (e) {
+      console.error('[Inventory] list load failed:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [search, category, status, zone, sort, dir, page])
 
-  useEffect(() => {
-    fetch('/api/ops/procurement/setup', { method: 'POST' }).then(() => fetchInventory())
-  }, []) // eslint-disable-line
+  useEffect(() => { loadKpis() }, [loadKpis])
+  useEffect(() => { loadRows() }, [loadRows])
+  useEffect(() => { setPage(1) }, [search, category, status, zone, sort, dir])
 
-  useEffect(() => { fetchInventory() }, [fetchInventory])
-
-  const syncProducts = async () => {
-    setSyncing(true)
-    try {
-      const res = await fetch('/api/ops/procurement/inventory', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_products' }),
-      })
-      if (res.ok) { const d = await res.json(); addToast({ type: 'success', title: 'Sync Complete', message: d.message }); fetchInventory() }
-    } catch (err) {
-      console.error('[Inventory] Failed to sync products:', err)
-    } finally { setSyncing(false) }
-  }
-
-  const updateItem = async (id: string) => {
-    try {
-      await fetch('/api/ops/procurement/inventory', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...editForm }),
-      })
-      setEditItem(null)
-      fetchInventory()
-    } catch (err) {
-      console.error('[Inventory] Failed to update inventory item:', err)
+  const handleSort = (col: string) => {
+    if (sort === col) {
+      setDir(dir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSort(col)
+      setDir(['onHand', 'available', 'lastMovement'].includes(col) ? 'desc' : 'asc')
     }
   }
 
-  const statusColor = (s: string) => {
-    const m: Record<string, string> = { OUT_OF_STOCK: '#DC2626', CRITICAL: '#EA580C', LOW_STOCK: '#D97706', OVERSTOCK: '#7C3AED', IN_STOCK: '#16A34A' }
-    return m[s] || '#6B7280'
-  }
+  const sortIndicator = (col: string) =>
+    sort !== col ? '' : (dir === 'asc' ? ' ↑' : ' ↓')
 
-  const categories = Array.from(new Set(inventory.map(i => i.category))).sort()
+  const ariaSort = (col: string): 'ascending' | 'descending' | 'none' =>
+    sort !== col ? 'none' : (dir === 'asc' ? 'ascending' : 'descending')
+
+  const showingFrom = useMemo(() => total === 0 ? 0 : (page - 1) * 50 + 1, [page, total])
+  const showingTo = useMemo(() => Math.min(total, page * 50), [page, total])
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div style={{ padding: '24px 28px', maxWidth: 1600, margin: '0 auto' }}>
+      {/* ── Header ── */}
+      <header style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>📦 Inventory Management</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>Track stock levels, reorder points & daily usage</p>
+          <div className="eyebrow">Supply Chain</div>
+          <h1 className="heading-gradient" style={{ fontSize: 32, fontWeight: 700, margin: '4px 0 0', letterSpacing: '-0.02em' }}>
+            Inventory
+          </h1>
+          <p style={{ color: 'var(--fg-muted)', margin: '6px 0 0', fontSize: 14 }}>
+            {total.toLocaleString()} products tracked across {zones.length} warehouse zones
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a href="/ops/procurement-intelligence" style={{ padding: '10px 16px', borderRadius: 8, background: '#C6A24E', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: 13 }}>
-            🤖 AI Analysis
-          </a>
-          <button onClick={syncProducts} disabled={syncing}
-            style={{ padding: '10px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: syncing ? '#9CA3AF' : '#0f2a3e', color: '#fff', fontWeight: 600, fontSize: 13 }}>
-            {syncing ? '⏳ Syncing...' : '🔄 Sync Products'}
+          <button className="btn btn-secondary btn-sm" onClick={() => { loadKpis(); loadRows() }}>
+            Refresh
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
+            Print
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Stats */}
-      {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
-          {[
-            { label: 'Total Items', value: stats.totalItems, color: '#0f2a3e', icon: '📦', status: '' },
-            { label: 'Inventory Value', value: `$${Number(stats.totalValue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#16A34A', icon: '💰', status: '' },
-            { label: 'Out of Stock', value: stats.outOfStockCount, color: '#DC2626', icon: '🚫', status: 'OUT_OF_STOCK' },
-            { label: 'Critical', value: stats.criticalCount, color: '#EA580C', icon: '🚨', status: 'CRITICAL' },
-            { label: 'Low Stock', value: stats.lowStockCount, color: '#D97706', icon: '⚠️', status: 'LOW_STOCK' },
-            { label: 'Overstocked', value: stats.overstockCount, color: '#7C3AED', icon: '📈', status: 'OVERSTOCK' },
-          ].map((s, i) => (
-            <div key={i} onClick={s.status ? () => setFilter({ ...filter, status: s.status }) : undefined}
-              style={{
-                background: '#fff',
-                borderRadius: 10,
-                border: '1px solid #E5E7EB',
-                padding: 14,
-                textAlign: 'center',
-                cursor: s.status ? 'pointer' : 'default',
-                transition: 'all 0.2s ease',
-                boxShadow: filter.status === s.status ? '0 0 0 2px ' + s.color : 'none'
-              }}
-              onMouseEnter={(e) => s.status && (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)')}
-              onMouseLeave={(e) => s.status && (e.currentTarget.style.boxShadow = filter.status === s.status ? '0 0 0 2px ' + s.color : 'none')}
-            >
-              <div style={{ fontSize: 11, color: '#6B7280' }}>{s.icon} {s.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
-            </div>
-          ))}
+      {/* ── KPI Bar ── */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div className="kpi-card glass-card glass-card-shimmer">
+          <div className="kpi-card-title">Total SKUs</div>
+          <div className="kpi-card-value">
+            <AnimatedCounter value={kpis?.totalSkus ?? 0} />
+          </div>
+          <div className="kpi-card-delta" style={{ color: 'var(--fg-subtle)' }}>
+            {kpis?.trackedSkus ?? 0} with stock records
+          </div>
         </div>
-      )}
-
-      {/* Low Stock Alert Panel */}
-      {!loading && inventory.filter(i => ['OUT_OF_STOCK', 'CRITICAL', 'LOW_STOCK'].includes(i.stockStatus)).length > 0 && (
-        <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#991B1B' }}>
-              Reorder Alerts — {inventory.filter(i => ['OUT_OF_STOCK', 'CRITICAL', 'LOW_STOCK'].includes(i.stockStatus)).length} items need attention
-            </h3>
+        <div className="kpi-card glass-card glass-card-shimmer">
+          <div className="kpi-card-title">On-Hand Value</div>
+          <div className="kpi-card-value">
+            <AnimatedCounter value={Math.round(kpis?.totalOnHandValue ?? 0)} prefix="$" />
+          </div>
+          <div className="kpi-card-delta" style={{ color: 'var(--fg-subtle)' }}>
+            {(kpis?.totalOnHand ?? 0).toLocaleString()} units
+          </div>
+        </div>
+        <div className="kpi-card glass-card glass-card-shimmer">
+          <div className="kpi-card-title">Below Reorder</div>
+          <div className="kpi-card-value" style={{ color: (kpis?.belowReorder ?? 0) > 0 ? 'var(--data-warning)' : 'var(--fg)' }}>
+            <AnimatedCounter value={kpis?.belowReorder ?? 0} />
+          </div>
+          <div className="kpi-card-delta">
             <button
-              onClick={() => setFilter({ ...filter, status: 'LOW_STOCK' })}
-              style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #FCA5A5', background: '#fff', color: '#991B1B', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}
+              className="btn btn-ghost btn-sm"
+              style={{ height: 22, padding: '0 6px', fontSize: 11 }}
+              onClick={() => setStatus('low')}
             >
-              View All Low Stock
+              View ›
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-            {inventory
-              .filter(i => ['OUT_OF_STOCK', 'CRITICAL', 'LOW_STOCK'].includes(i.stockStatus))
-              .sort((a, b) => (a.calcDaysOfSupply || a.daysOfSupply || 999) - (b.calcDaysOfSupply || b.daysOfSupply || 999))
-              .slice(0, 6)
-              .map(item => {
-                const needQty = Math.max(item.reorderPoint - item.quantityOnHand, 0)
-                const daysLeft = Number(item.calcDaysOfSupply || item.daysOfSupply || 0)
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                    style={{
-                      background: '#fff',
-                      borderRadius: 8,
-                      padding: 12,
-                      border: item.stockStatus === 'OUT_OF_STOCK' ? '2px solid #DC2626' : '1px solid #FECACA',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none' }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.productName}</div>
-                        <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'monospace' }}>{item.sku}</div>
-                      </div>
-                      <span style={{
-                        padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff', marginLeft: 8, whiteSpace: 'nowrap',
-                        background: item.stockStatus === 'OUT_OF_STOCK' ? '#DC2626' : item.stockStatus === 'CRITICAL' ? '#EA580C' : '#D97706'
-                      }}>
-                        {item.stockStatus.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-                      <div><span style={{ color: '#6B7280' }}>On Hand:</span> <span style={{ fontWeight: 700, color: item.quantityOnHand === 0 ? '#DC2626' : '#111' }}>{item.quantityOnHand}</span></div>
-                      <div><span style={{ color: '#6B7280' }}>Need:</span> <span style={{ fontWeight: 700, color: '#DC2626' }}>{needQty}</span></div>
-                      <div><span style={{ color: '#6B7280' }}>Days Left:</span> <span style={{ fontWeight: 700, color: daysLeft < 7 ? '#DC2626' : '#D97706' }}>{daysLeft >= 999 ? '—' : Math.round(daysLeft)}</span></div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                      <a
-                        href={`/ops/purchasing/new?product=${item.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ padding: '4px 10px', borderRadius: 4, background: '#0f2a3e', color: '#fff', textDecoration: 'none', fontSize: 11, fontWeight: 600 }}
-                      >
-                        Create PO
-                      </a>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setExpandedItem(item.id) }}
-                        style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', fontSize: 11, fontWeight: 500, cursor: 'pointer' }}
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
+        </div>
+        <div className="kpi-card glass-card glass-card-shimmer">
+          <div className="kpi-card-title">Out of Stock</div>
+          <div className="kpi-card-value" style={{ color: (kpis?.outOfStock ?? 0) > 0 ? 'var(--data-negative)' : 'var(--fg)' }}>
+            <AnimatedCounter value={kpis?.outOfStock ?? 0} />
+          </div>
+          <div className="kpi-card-delta">
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ height: 22, padding: '0 6px', fontSize: 11 }}
+              onClick={() => setStatus('out')}
+            >
+              View ›
+            </button>
           </div>
         </div>
-      )}
-
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input placeholder="Search SKU or product..." value={filter.search} onChange={e => setFilter({ ...filter, search: e.target.value })}
-          style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14, minWidth: 200 }} />
-        <select value={filter.category} onChange={e => setFilter({ ...filter, category: e.target.value })}
-          style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}>
-          <option value="">All Categories</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={filter.status} onChange={e => setFilter({ ...filter, status: e.target.value })}
-          style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}>
-          <option value="">All Status</option>
-          <option value="OUT_OF_STOCK">Out of Stock</option>
-          <option value="LOW_STOCK">Low Stock</option>
-          <option value="IN_STOCK">In Stock</option>
-          <option value="OVERSTOCK">Overstocked</option>
-        </select>
-        <select value={filter.sort} onChange={e => setFilter({ ...filter, sort: e.target.value })}
-          style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}>
-          <option value="daysOfSupply">Sort: Days of Supply</option>
-          <option value="name">Sort: Name</option>
-          <option value="value">Sort: Value</option>
-          <option value="usage">Sort: Usage</option>
-        </select>
-      </div>
-
-      {/* Inventory Table */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>Loading inventory...</div>
-      ) : inventory.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, background: '#F9FAFB', borderRadius: 12 }}>
-          <div style={{ fontSize: 48 }}>📦</div>
-          <h3 style={{ color: '#0f2a3e' }}>No inventory items</h3>
-          <p style={{ color: '#6B7280' }}>Click "Sync Products" to populate inventory from your product catalog.</p>
+        <div className="kpi-card glass-card glass-card-shimmer">
+          <div className="kpi-card-title">Inventory Turns</div>
+          <div className="kpi-card-value">
+            <AnimatedCounter value={kpis?.avgInventoryTurns ?? 0} suffix="x" />
+          </div>
+          <div className="kpi-card-delta" style={{ color: 'var(--fg-subtle)' }}>
+            Annualized (180d basis)
+          </div>
         </div>
-      ) : (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 900 }}>
-            <thead>
-              <tr style={{ background: '#F8FAFC' }}>
-                {['Status', 'Product', 'SKU', 'Category', 'On Hand', 'Committed', 'Available', 'On Order', 'Reorder Pt', 'Safety', 'Usage/Day', 'Days Supply', 'Value', 'Actions'].map(h => (
-                  <th key={h} style={{ textAlign: ['Product', 'SKU', 'Category', 'Status'].includes(h) ? 'left' : 'right', padding: '10px 8px', color: '#6B7280', fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {inventory.map((item, i) => {
-                const isExpanded = expandedItem === item.id
-                const needsReorder = item.quantityOnHand < item.reorderPoint
-                const reorderQty = needsReorder ? item.reorderPoint - item.quantityOnHand : 0
-                const stockPercent = Math.min(100, (item.quantityOnHand / item.maxStock) * 100)
-                const reorderPercent = Math.min(100, (item.reorderPoint / item.maxStock) * 100)
+      </section>
 
-                return (
-                  <React.Fragment key={i}>
+      {/* ── Filters ── */}
+      <section className="glass-card" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 2fr) repeat(4, minmax(140px, 1fr))', gap: 10, alignItems: 'end' }}>
+          <div>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Search</label>
+            <input
+              className="input"
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="SKU, name, description"
+              aria-label="Search inventory"
+            />
+          </div>
+          <div>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Category</label>
+            <select className="input" value={category} onChange={e => setCategory(e.target.value)} aria-label="Filter by category">
+              <option value="">All categories</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Status</label>
+            <select className="input" value={status} onChange={e => setStatus(e.target.value as StatusKey)} aria-label="Filter by status">
+              <option value="">Any status</option>
+              <option value="healthy">Healthy</option>
+              <option value="low">Below reorder</option>
+              <option value="critical">Critical</option>
+              <option value="out">Out of stock</option>
+              <option value="overstocked">Overstocked</option>
+            </select>
+          </div>
+          <div>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Zone</label>
+            <select className="input" value={zone} onChange={e => setZone(e.target.value)} aria-label="Filter by warehouse zone">
+              <option value="">All zones</option>
+              {zones.map(z => <option key={z} value={z}>{z}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Sort</label>
+            <select className="input" value={`${sort}:${dir}`} onChange={e => {
+              const [s, d] = e.target.value.split(':')
+              setSort(s); setDir(d as 'asc' | 'desc')
+            }}>
+              <option value="name:asc">Name A–Z</option>
+              <option value="name:desc">Name Z–A</option>
+              <option value="sku:asc">SKU A–Z</option>
+              <option value="category:asc">Category A–Z</option>
+              <option value="onHand:desc">On-hand high→low</option>
+              <option value="onHand:asc">On-hand low→high</option>
+              <option value="available:desc">Available high→low</option>
+              <option value="available:asc">Available low→high</option>
+              <option value="lastMovement:desc">Recent movement</option>
+            </select>
+          </div>
+        </div>
+        {(search || category || status || zone) && (
+          <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: 'var(--fg-subtle)' }}>Active filters:</span>
+            {search && <span className="badge badge-info">Search: {search}</span>}
+            {category && <span className="badge badge-info">Category: {category}</span>}
+            {status && <span className="badge badge-info">Status: {status}</span>}
+            {zone && <span className="badge badge-info">Zone: {zone}</span>}
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => { setSearch(''); setCategory(''); setStatus(''); setZone('') }}
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* ── Table ── */}
+      <section className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 80, textAlign: 'center', color: 'var(--fg-muted)' }}>
+            Loading inventory…
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="empty-state" style={{ padding: '60px 20px' }}>
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
+            </svg>
+            <h3 style={{ margin: '12px 0 4px', fontWeight: 600 }}>No products match these filters</h3>
+            <p style={{ color: 'var(--fg-muted)', fontSize: 13, margin: 0 }}>
+              Try clearing a filter or adjusting the search term.
+            </p>
+            {(search || category || status || zone) && (
+              <button
+                className="btn btn-secondary btn-sm"
+                style={{ marginTop: 16 }}
+                onClick={() => { setSearch(''); setCategory(''); setStatus(''); setZone('') }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="datatable density-comfortable" style={{ minWidth: 1100 }}>
+              <thead>
+                <tr>
+                  <th style={{ width: 56 }}></th>
+                  <th aria-sort={ariaSort('sku')} onClick={() => handleSort('sku')}>SKU{sortIndicator('sku')}</th>
+                  <th aria-sort={ariaSort('name')} onClick={() => handleSort('name')}>Name{sortIndicator('name')}</th>
+                  <th aria-sort={ariaSort('category')} onClick={() => handleSort('category')}>Category{sortIndicator('category')}</th>
+                  <th className="num" aria-sort={ariaSort('onHand')} onClick={() => handleSort('onHand')}>
+                    On Hand{sortIndicator('onHand')}
+                  </th>
+                  <th className="num">Committed</th>
+                  <th className="num" aria-sort={ariaSort('available')} onClick={() => handleSort('available')}>
+                    Available{sortIndicator('available')}
+                  </th>
+                  <th>Zone / Bin</th>
+                  <th className="num">Reorder Pt</th>
+                  <th>Status</th>
+                  <th aria-sort={ariaSort('lastMovement')} onClick={() => handleSort('lastMovement')}>
+                    Last Movement{sortIndicator('lastMovement')}
+                  </th>
+                  <th style={{ width: 80 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => {
+                  const s = deriveStatus(r)
+                  const borderColor =
+                    s.key === 'out' ? 'var(--data-negative)' :
+                    s.key === 'critical' ? 'var(--data-negative)' :
+                    s.key === 'low' ? 'var(--data-warning)' :
+                    'transparent'
+                  return (
                     <tr
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest('button')) return
-                        setExpandedItem(isExpanded ? null : item.id)
-                      }}
+                      key={r.id}
+                      onClick={() => router.push(`/ops/inventory/${r.id}`)}
                       style={{
-                        borderBottom: '1px solid #F3F4F6',
-                        background: item.stockStatus === 'OUT_OF_STOCK' ? '#FEF2F2' : item.stockStatus === 'CRITICAL' ? '#FFF7ED' : 'transparent',
                         cursor: 'pointer',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.backgroundColor = '#F9FAFB')}
-                      onMouseLeave={(e) => {
-                        if (item.stockStatus === 'OUT_OF_STOCK') e.currentTarget.style.backgroundColor = '#FEF2F2'
-                        else if (item.stockStatus === 'CRITICAL') e.currentTarget.style.backgroundColor = '#FFF7ED'
-                        else e.currentTarget.style.backgroundColor = 'transparent'
+                        boxShadow: borderColor !== 'transparent' ? `inset 3px 0 0 ${borderColor}` : undefined,
                       }}
                     >
-                      <td style={{ padding: '8px' }}>
-                        <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff', background: statusColor(item.stockStatus), whiteSpace: 'nowrap' }}>
-                          {(item.stockStatus || 'N/A').replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px', fontWeight: 500, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.productName}</td>
-                      <td style={{ padding: '8px', fontFamily: 'monospace', fontSize: 11, color: '#6B7280' }}>{item.sku}</td>
-                      <td style={{ padding: '8px', fontSize: 12 }}>{item.category}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: item.quantityOnHand === 0 ? '#DC2626' : '#111' }}>
-                        {editItem === item.id ? (
-                          <input type="number" value={editForm.quantityOnHand ?? item.quantityOnHand} onChange={e => setEditForm({ ...editForm, quantityOnHand: Number(e.target.value) })}
-                            style={{ width: 60, padding: 2, textAlign: 'right', border: '1px solid #2563EB', borderRadius: 4 }} />
-                        ) : item.quantityOnHand}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantityCommitted}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600, color: (item.quantityAvailable || 0) < 0 ? '#DC2626' : '#111' }}>{item.quantityAvailable}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: '#2563EB' }}>{item.quantityOnOrder}</td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>
-                        {editItem === item.id ? (
-                          <input type="number" value={editForm.reorderPoint ?? item.reorderPoint} onChange={e => setEditForm({ ...editForm, reorderPoint: Number(e.target.value) })}
-                            style={{ width: 50, padding: 2, textAlign: 'right', border: '1px solid #2563EB', borderRadius: 4 }} />
-                        ) : item.reorderPoint}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>{item.safetyStock}</td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>
-                        {editItem === item.id ? (
-                          <input type="number" step="0.1" value={editForm.avgDailyUsage ?? item.avgDailyUsage} onChange={e => setEditForm({ ...editForm, avgDailyUsage: Number(e.target.value) })}
-                            style={{ width: 50, padding: 2, textAlign: 'right', border: '1px solid #2563EB', borderRadius: 4 }} />
-                        ) : Number(item.avgDailyUsage || 0).toFixed(1)}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600, color: Number(item.calcDaysOfSupply || item.daysOfSupply) < 7 ? '#DC2626' : Number(item.calcDaysOfSupply || item.daysOfSupply) < 14 ? '#D97706' : '#16A34A' }}>
-                        {Number(item.calcDaysOfSupply || item.daysOfSupply) >= 999 ? '∞' : Math.round(Number(item.calcDaysOfSupply || item.daysOfSupply))}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right', fontSize: 12, color: '#6B7280' }}>
-                        ${Number(item.totalValue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>
-                        {editItem === item.id ? (
-                          <div style={{ display: 'flex', gap: 4 }}>
-                            <button onClick={() => updateItem(item.id)} style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#16A34A', color: '#fff', cursor: 'pointer', fontSize: 11 }}>Save</button>
-                            <button onClick={() => setEditItem(null)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontSize: 11 }}>×</button>
-                          </div>
+                      <td>
+                        {r.thumbnailUrl || r.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={r.thumbnailUrl || r.imageUrl || ''}
+                            alt={r.name}
+                            style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', border: '1px solid var(--border)' }}
+                          />
                         ) : (
-                          <button onClick={() => { setEditItem(item.id); setEditForm({}) }}
-                            style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontSize: 11, color: '#2563EB' }}>Edit</button>
+                          <div style={{
+                            width: 40, height: 40, borderRadius: 6,
+                            border: '1px dashed var(--border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'var(--fg-subtle)', fontSize: 10
+                          }}>
+                            ▢
+                          </div>
                         )}
                       </td>
+                      <td>
+                        <span className="data-mono" style={{ fontSize: 12 }}>{r.sku}</span>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{r.displayName || r.name}</div>
+                        {r.manufacturer && (
+                          <div style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>{r.manufacturer}</div>
+                        )}
+                      </td>
+                      <td>
+                        <div>{r.category || '—'}</div>
+                        {r.subcategory && (
+                          <div style={{ fontSize: 11, color: 'var(--fg-subtle)' }}>{r.subcategory}</div>
+                        )}
+                      </td>
+                      <td className="num data-mono">{r.onHand.toLocaleString()}</td>
+                      <td className="num data-mono" style={{ color: 'var(--fg-muted)' }}>{r.committed.toLocaleString()}</td>
+                      <td className="num data-mono" style={{ fontWeight: 600 }}>{r.available.toLocaleString()}</td>
+                      <td>
+                        {r.warehouseZone ? (
+                          <span className="data-mono" style={{ fontSize: 12 }}>
+                            {r.warehouseZone}{r.binLocation ? ` · ${r.binLocation}` : ''}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--fg-subtle)' }}>—</span>
+                        )}
+                      </td>
+                      <td className="num data-mono" style={{ color: 'var(--fg-muted)' }}>
+                        {r.reorderPoint > 0 ? r.reorderPoint.toLocaleString() : '—'}
+                      </td>
+                      <td>
+                        <span className={`badge badge-${s.tone} badge-dot`}>{s.label}</span>
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+                        {fmtDate(r.lastReceivedAt)}
+                      </td>
+                      <td onClick={e => e.stopPropagation()}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => router.push(`/ops/inventory/${r.id}`)}
+                          aria-label={`Open ${r.name}`}
+                        >
+                          Open
+                        </button>
+                      </td>
                     </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                    {isExpanded && (
-                      <tr style={{ borderBottom: '1px solid #F3F4F6', background: '#FAFBFC' }}>
-                        <td colSpan={14} style={{ padding: 0 }}>
-                          <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                            <div>
-                              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e', margin: '0 0 12px 0' }}>{item.productName}</h3>
-                              <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>SKU: <span style={{ fontFamily: 'monospace', color: '#111', fontWeight: 600 }}>{item.sku}</span></div>
+        {/* ── Pagination ── */}
+        {!loading && rows.length > 0 && (
+          <div style={{
+            padding: '12px 16px',
+            borderTop: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 8,
+          }}>
+            <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+              Showing <strong>{showingFrom.toLocaleString()}–{showingTo.toLocaleString()}</strong> of {total.toLocaleString()}
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                ‹ Previous
+              </button>
+              <span style={{ fontSize: 12, color: 'var(--fg-muted)', padding: '0 8px' }}>
+                Page {page} / {totalPages}
+              </span>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
-                              <div style={{ marginBottom: 16 }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 8 }}>Stock Level Visualization</div>
-                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                  <div style={{ flex: 1, height: 24, background: '#E5E7EB', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-                                    <div style={{ height: '100%', width: stockPercent + '%', background: item.quantityOnHand < item.reorderPoint ? '#DC2626' : item.quantityOnHand < item.reorderPoint * 1.5 ? '#D97706' : '#16A34A', transition: 'width 0.3s' }} />
-                                    <div style={{ position: 'absolute', top: 0, left: reorderPercent + '%', height: '100%', width: '2px', background: '#2563EB', opacity: 0.7 }} />
-                                  </div>
-                                  <div style={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}>{item.quantityOnHand} / {item.maxStock}</div>
-                                </div>
-                                <div style={{ fontSize: 10, color: '#6B7280', marginTop: 4 }}>
-                                  Reorder Point: {item.reorderPoint} | Safety Stock: {item.safetyStock}
-                                </div>
-                              </div>
-
-                              {needsReorder && (
-                                <div style={{ padding: 12, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 6, marginBottom: 16 }}>
-                                  <div style={{ fontSize: 12, color: '#DC2626', fontWeight: 600 }}>⚠️ Reorder Alert</div>
-                                  <div style={{ fontSize: 13, color: '#991B1B', marginTop: 4, fontWeight: 600 }}>Need to order {reorderQty} units to reach reorder point</div>
-                                </div>
-                              )}
-
-                              <a href={`/ops/purchasing/new?product=${item.id}`}
-                                style={{ display: 'inline-block', padding: '10px 16px', background: '#0f2a3e', color: '#fff', borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                                + Create PO
-                              </a>
-                            </div>
-
-                            <div>
-                              <div style={{ marginBottom: 16 }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Last Received</div>
-                                <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
-                                  {item.lastReceivedAt ? new Date(item.lastReceivedAt).toLocaleDateString() : 'No records'}
-                                </div>
-                              </div>
-
-                              <div style={{ marginBottom: 16 }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Daily Usage Trend</div>
-                                <div style={{ fontSize: 13, color: '#111' }}>
-                                  <div style={{ marginBottom: 8 }}>
-                                    <span style={{ fontWeight: 600 }}>{Number(item.avgDailyUsage || 0).toFixed(1)}</span>
-                                    <span style={{ color: '#6B7280', marginLeft: 4 }}>units/day</span>
-                                  </div>
-                                  <div style={{ fontSize: 12, color: '#6B7280' }}>
-                                    Days of Supply: <span style={{ fontWeight: 600, color: Number(item.calcDaysOfSupply || item.daysOfSupply) < 7 ? '#DC2626' : '#16A34A' }}>
-                                      {Number(item.calcDaysOfSupply || item.daysOfSupply) >= 999 ? '∞' : Math.round(Number(item.calcDaysOfSupply || item.daysOfSupply))} days
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div>
-                                <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Inventory Value</div>
-                                <div style={{ fontSize: 16, fontWeight: 700, color: '#16A34A' }}>
-                                  ${Number(item.totalValue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      {/* ── Critical items quick link ── */}
+      {kpis && kpis.criticalItems.length > 0 && (
+        <section className="glass-card" style={{ padding: 16, marginTop: 16 }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>⚠ Top Critical Items</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
+            {kpis.criticalItems.map(c => (
+              <button
+                key={c.id}
+                onClick={() => router.push(`/ops/inventory/${c.id}`)}
+                style={{
+                  textAlign: 'left',
+                  padding: 10,
+                  borderRadius: 8,
+                  border: '1px solid var(--data-negative)',
+                  background: 'var(--data-negative-bg)',
+                  cursor: 'pointer',
+                  color: 'var(--data-negative-fg)',
+                }}
+              >
+                <div className="data-mono" style={{ fontSize: 11 }}>{c.sku}</div>
+                <div style={{ fontWeight: 600, fontSize: 13, marginTop: 2 }}>{c.name}</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>
+                  {c.onHand} on hand · reorder at {c.reorderPoint}
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   )

@@ -11,6 +11,8 @@ import AICopilot from './components/AICopilot'
 import ThemeProvider from './components/ThemeProvider'
 import AegisBackground from '@/components/AegisBackground'
 import PortalBackground from '@/components/PortalBackground'
+import PageBackground from '@/components/PageBackground'
+import { getSectionForPath } from '@/lib/page-backgrounds'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import Tooltip from '@/components/ui/Tooltip'
@@ -751,6 +753,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           <div className="flex-1 overflow-auto bg-canvas relative">
             <AegisBackground variant="full" orbCount={3} doorBlueprint />
             <PortalBackground portal="ops" />
+            <PageBackground section={getSectionForPath(pathname)} />
             <div className="relative z-[1] p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
               {children}
             </div>

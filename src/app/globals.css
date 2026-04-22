@@ -24,9 +24,9 @@
   --grad-subtle: linear-gradient(135deg, var(--c1), var(--c2));
 
   /* ── Blueprint primitives ────────────────────────────────────────────── */
-  --bp-fine:       rgba(79,70,229,0.035);    /* thin grid lines */
-  --bp-major:      rgba(79,70,229,0.06);     /* thick grid lines */
-  --bp-annotation: rgba(79,70,229,0.12);     /* callout/dimension lines */
+  --bp-fine:       rgba(79,70,229,0.045);    /* thin grid lines */
+  --bp-major:      rgba(79,70,229,0.075);    /* thick grid lines */
+  --bp-annotation: rgba(79,70,229,0.15);     /* callout/dimension lines */
   --bp-redline:    rgba(239,68,68,0.6);      /* change/alert markup */
 
   /* ── Legacy Drafting Room primitives (backward compat aliases) ────── */
@@ -70,11 +70,11 @@
   --forecast-900: #0C0E17;
 
   /* ── Glass system ────────────────────────────────────────────────────── */
-  --glass:         rgba(255,255,255,0.65);
-  --glass-border:  rgba(255,255,255,0.8);
+  --glass:         rgba(255,255,255,0.72);
+  --glass-border:  rgba(79,70,229,0.14);
   --glass-blur:    blur(24px) saturate(1.4);
-  --glass-shadow:  0 8px 40px rgba(30,58,138,0.07);
-  --glass-hover:   0 24px 72px rgba(30,58,138,0.12);
+  --glass-shadow:  0 10px 44px rgba(30,58,138,0.10), 0 0 0 1px rgba(79,70,229,0.03);
+  --glass-hover:   0 28px 80px rgba(30,58,138,0.16), 0 0 0 1px rgba(79,70,229,0.06);
 
   /* ── Typography stacks ──────────────────────────────────────────────── */
   --font-sans-stack:    'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -251,17 +251,17 @@ html.dark {
   --c4: #2DD4BF;   /* teal-300 */
 
   /* Blueprint grid brighter in dark — visible but not overwhelming */
-  --bp-fine:       rgba(99,102,241,0.06);
-  --bp-major:      rgba(99,102,241,0.10);
-  --bp-annotation: rgba(99,102,241,0.22);
+  --bp-fine:       rgba(99,102,241,0.07);
+  --bp-major:      rgba(99,102,241,0.12);
+  --bp-annotation: rgba(99,102,241,0.26);
   --bp-redline:    rgba(248,113,113,0.65);
 
   /* Glass system — deeper frosting in dark, strong panel separation */
-  --glass:         rgba(12,18,36,0.82);
-  --glass-border:  rgba(99,102,241,0.18);
+  --glass:         rgba(10,14,30,0.88);
+  --glass-border:  rgba(99,102,241,0.22);
   --glass-blur:    blur(28px) saturate(1.5);
-  --glass-shadow:  0 8px 40px rgba(0,0,0,0.35), 0 0 1px rgba(99,102,241,0.15);
-  --glass-hover:   0 24px 72px rgba(0,0,0,0.45), 0 0 1px rgba(99,102,241,0.25);
+  --glass-shadow:  0 10px 44px rgba(0,0,0,0.42), 0 0 1px rgba(99,102,241,0.22), 0 0 0 1px rgba(99,102,241,0.04);
+  --glass-hover:   0 28px 80px rgba(0,0,0,0.5), 0 0 1px rgba(99,102,241,0.32), 0 0 0 1px rgba(99,102,241,0.06);
 
   --border:             rgba(99,102,241,0.08);
   --border-strong:      rgba(99,102,241,0.16);

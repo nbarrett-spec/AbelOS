@@ -7,6 +7,8 @@ import Navbar from '@/components/Navbar'
 import CriticalAlertBanner from '@/components/CriticalAlertBanner'
 import AegisBackground from '@/components/AegisBackground'
 import PortalBackground from '@/components/PortalBackground'
+import PageBackground from '@/components/PageBackground'
+import { getSectionForPath } from '@/lib/page-backgrounds'
 
 export default function AdminLayout({
   children,
@@ -78,8 +80,9 @@ export default function AdminLayout({
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1">
-            <div className="p-8 animate-enter">
+          <main className="flex-1 relative">
+            <PageBackground section={getSectionForPath(pathname)} />
+            <div className="p-8 animate-enter relative z-[1]">
               {children}
             </div>
           </main>
