@@ -2955,3 +2955,37 @@ model AIInvocation {
   @@index([staffId])
   @@index([createdAt(sort: Desc)])
 }
+
+// ── Stock Transfers ─────────────────────────────────────────────
+model StockTransfer {
+  id             String              @id @default(cuid())
+  transferNumber String              @unique
+  fromLocation   String
+  toLocation     String
+  status         String              @default("PENDING") // PENDING | IN_TRANSIT | COMPLETED | CANCELLED
+  notes          String?
+  createdById    String
+  completedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  items          StockTransferItem[]
+
+  @@index([status])
+  @@index([createdById])
+}
+
+model StockTransferItem {
+  id          String        @id @default(cuid())
+  transferId  String
+  transfer    StockTransfer @relation(fields: [transferId], references: [id])
+  productId   String
+  sku         String?
+  productName String?
+  quantity    Int
+  damagedQty  Int           @default(0)
+  notes       String?
+  createdAt   DateTime      @default(now())
+
+  @@index([transferId])
+  @@index([productId])
+}

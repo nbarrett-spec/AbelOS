@@ -315,6 +315,28 @@ export async function POST(request: NextRequest) {
     const builder = (builderResult as any[])[0];
     const paymentTerm = builder?.paymentTerm || 'NET_15';
 
+    // ── Credit hold enforcement ──────────────────────────────────
+    if (builder) {
+      const builderStatus = builder.status || builder.accountStatus;
+      if (builderStatus === 'SUSPENDED' || builderStatus === 'ON_HOLD') {
+        return NextResponse.json(
+          { error: `Order blocked: account is ${builderStatus.replace('_', ' ').toLowerCase()}. Contact accounting.` },
+          { status: 403 }
+        );
+      }
+      if (builder.creditLimit && Number(builder.creditLimit) > 0) {
+        const arQuery = `SELECT COALESCE(SUM("total"), 0) as balance FROM "Order" WHERE "builderId" = $1 AND "paymentStatus" != 'PAID'`;
+        const arResult = await prisma.$queryRawUnsafe(arQuery, finalBuilderId);
+        const currentAR = Number((arResult as any[])[0]?.balance || 0);
+        if (currentAR + Number(quote.total || 0) > Number(builder.creditLimit)) {
+          return NextResponse.json(
+            { error: `Order blocked: would exceed credit limit ($${Number(builder.creditLimit).toLocaleString()}). Current AR: $${currentAR.toLocaleString()}.` },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     // Generate order ID
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 

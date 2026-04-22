@@ -48,6 +48,35 @@ export async function POST(
       return NextResponse.json({ error: `Cannot convert a ${quote.status} quote. Only SENT or APPROVED quotes can be converted.` }, { status: 400 })
     }
 
+    // ── Credit hold enforcement ──────────────────────────────────
+    const builderInfo: any[] = await prisma.$queryRawUnsafe(
+      `SELECT status, "accountStatus", "creditLimit" FROM "Builder" WHERE "id" = $1`,
+      session.builderId
+    )
+    const bldr = builderInfo[0]
+    if (bldr) {
+      const bStatus = bldr.status || bldr.accountStatus
+      if (bStatus === 'SUSPENDED' || bStatus === 'ON_HOLD') {
+        return NextResponse.json(
+          { error: `Order blocked: account is ${bStatus.replace('_', ' ').toLowerCase()}. Contact your rep.` },
+          { status: 403 }
+        )
+      }
+      if (bldr.creditLimit && Number(bldr.creditLimit) > 0) {
+        const arRows: any[] = await prisma.$queryRawUnsafe(
+          `SELECT COALESCE(SUM("total"), 0) as balance FROM "Order" WHERE "builderId" = $1 AND "paymentStatus" != 'PAID'`,
+          session.builderId
+        )
+        const currentAR = Number(arRows[0]?.balance || 0)
+        if (currentAR + Number(quote.total) > Number(bldr.creditLimit)) {
+          return NextResponse.json(
+            { error: `Order blocked: would exceed credit limit. Contact your rep.` },
+            { status: 403 }
+          )
+        }
+      }
+    }
+
     // Generate order number
     const countRows: any[] = await prisma.$queryRawUnsafe(
       `SELECT COUNT(*)::int as count FROM "Order" WHERE "builderId" = $1`,
