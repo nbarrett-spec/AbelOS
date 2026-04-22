@@ -998,16 +998,91 @@ function mapInflowPaymentStatus(status: string | null): string {
   }
 }
 
+// Hardcoded customer → builder ID map from scripts/customer_builder_map.json
+// Loaded once at module scope. Provides deterministic mapping for InFlow customer names.
+const CUSTOMER_BUILDER_MAP: Record<string, string> = {
+  "Joseph Paul Homes": "cmntqir6q0015q3287m7thy1f",
+  "AGD Homes": "cmntqiptc000hq328ijf250o3",
+  "NEWPORT HOMEBUILDERS": "cmmzrun0v029393opnztcg7wa",
+  "TRUTH CONSTRUCTION": "cmmzruodk029r93op0j00ax4o",
+  "MILLCREEK AMAVI CELINA": "cmmzrumvu029093opi1m6bax6",
+  "Beechwood Custom Homes": "cmntqiq1k000lq328ezrcbctj",
+  "TOLL BROTHERS": "cmmzruo7q029o93oppxwad5zs",
+  "Pulte Homes": "cmmzrun6g029693opxsz3wu2t",
+  "FIG TREE HOMES": "cmmzrulpd028a93opehwtn9vt",
+  "James Lancaster": "cmmzrum6u028l93oprtyjqx5k",
+  "First Texas Homes": "cmntqiqof000wq328sz1hzcpe",
+  "GH HOMES": "cmmzrulud028d93opuo968cjv",
+  "Villa-May Construction": "cmmzruoho029t93opz481wi5n",
+  "STONEHOLLOW": "cmmzrunvz029i93op3ytcgkl8",
+  "Stately Design and Renovation": "cmmzruntx029h93op6onuxcds",
+  "Country Road Homebuilders": "cmntqiqbl000qq328orqh0u2n",
+  "DFW Installations": "cmn96ibm40011q67b7lnknviz",
+  "BROOKFIELD": "cmmzrukex027i93op82wtbgg4",
+  "Josh Barrett": "cmmzrumda028p93ophz3jh98r",
+  "JASON & SHELBY LAMB": "cmmzrum8n028m93opmsbomu5b",
+  "Lia Gravley": "cmmzrumlm028u93op8pa8ic6o",
+  "Forward Builders": "cmmzrulsm028c93op7a36c4d4",
+  "Clinton Calmes": "cmmzrukot027o93opmi2drsdr",
+  "Donna Bursell": "cmmzrukd3027h93op2wqezsw3",
+  "De La Rosa Doors & Trim": "cmmzrulfc028493opr5jo117e",
+  "Cudd Realty & iTxProp Management": "cmmzrul1u027w93opft39r7mv",
+  "Davenport Development": "cmmzrulak028193oprycz7r67",
+  "Bloomfield Homes": "cmmzrukir027l93opi3p2sj0h",
+  "PINNACLE": "cmmzrunlz029d93opxn4x4xfk",
+  "GRAND HOMES": "cmmzrulx0028e93op2pf7g12w",
+  "MCGUYER HOMEBUILDERS INC": "cmmzrumqh028y93op20g16pnm",
+  "JDS HOMES": "cmmzrumcz028o93opa1kqcqfv",
+  "K Hovnanian Homes": "cmntqir0h0013q328dtmccmcv",
+  "DR HORTON": "cmmzrulfv028593opikqrcfsh",
+  "Venture Homes": "cmmzruohl029u93opxo3jpdea",
+  "James Pence Homes": "cmntqiqjp000tq328t3x9ihx9",
+  "KB HOME": "cmmzrum9q028n93opu4vwqaog",
+  "LANDON HOMES": "cmmzrumkt028t93opsh4ky8ng",
+  "LENNAR": "cmmzrumo0028w93opoy2ntqdn",
+  "Taylor Morrison": "cmntqirc40019q328b1hncl9k",
+  "ASHTON WOODS": "cmmzruk8r027f93opzjnrpjn2",
+  "PERRY HOMES": "cmmzruniq029c93op4f0hh1ug",
+  "HIGHLAND HOMES": "cmmzrum2d028i93opj2q4exrz",
+  "MERITAGE HOMES": "cmmzrumsd028z93opicdmjz0y",
+  "TROPHY SIGNATURE HOMES": "cmmzruob9029n93opc73dpnny",
+  "Tommy Richardson": "cmmzruo6n029m93opfv2s3yjb",
+  "SOUTHGATE HOMES": "cmmzrunp2029f93opu94g7uh2",
+  "Kera Miller": "cmmzrumhh028r93opsfzaopba",
+  "Kindred Homes": "cmntqiqsq000yq3283gzq6bwc",
+  "Mattamy Homes": "cmntqiqwn0011q3283gxgbmmv",
+  "Shaddock Homes": "cmntqir8j0017q3283j66b8fg",
+  "PACESETTER HOMES": "cmmzrunet029a93opg2f2fkhm",
+  "PLANTATION HOMES": "cmmzrunow029e93opwojhg1ar",
+  "RENDITION HOMES": "cmmzrunsa029g93opj5a6hxcj",
+  "SAXONY HOMES": "cmmzrunxs029j93op6eqwskgb",
+  "DREAM FINDERS HOMES": "cmmzrulhp028693opiylbxhz3",
+}
+
 async function findBuilderByInflowCustomer(customerId: string | null, contactName: string | null): Promise<string | null> {
   if (!customerId) return null
 
-  // Try matching by inflowCustomerId on existing orders
+  // Tier 1: Check hardcoded customer→builder map (deterministic, fastest)
+  if (contactName) {
+    const normalizedName = contactName.trim()
+    // Exact match
+    if (CUSTOMER_BUILDER_MAP[normalizedName]) {
+      return CUSTOMER_BUILDER_MAP[normalizedName]
+    }
+    // Case-insensitive match
+    const upperName = normalizedName.toUpperCase()
+    for (const [key, builderId] of Object.entries(CUSTOMER_BUILDER_MAP)) {
+      if (key.toUpperCase() === upperName) return builderId
+    }
+  }
+
+  // Tier 2: Check existing orders for this InFlow customer ID (learns from past syncs)
   const byInflow: any[] = await prisma.$queryRawUnsafe(
     `SELECT "builderId" FROM "Order" WHERE "inflowCustomerId" = $1 LIMIT 1`, customerId
   )
   if (byInflow.length > 0) return byInflow[0].builderId
 
-  // Try matching by contact name against builder company/contact
+  // Tier 3: Fuzzy match by contact name against builder company/contact
   if (contactName) {
     const byName: any[] = await prisma.$queryRawUnsafe(
       `SELECT id FROM "Builder" WHERE LOWER("companyName") ILIKE $1 OR LOWER("contactName") ILIKE $1 LIMIT 1`,
