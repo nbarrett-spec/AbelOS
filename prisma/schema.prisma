@@ -833,6 +833,17 @@ model Staff {
   active       Boolean    @default(true)
   hireDate     DateTime?
 
+  // Reporting hierarchy (self-referential)
+  managerId    String?
+  manager      Staff?     @relation("StaffManager", fields: [managerId], references: [id])
+  directReports Staff[]   @relation("StaffManager")
+
+  // Compensation
+  salary         Float?          // Annual salary (null if hourly)
+  payType        PayType?        // SALARY or HOURLY
+  employmentType EmploymentType? // FULL_TIME_EXEMPT, FULL_TIME_NON_EXEMPT, etc.
+  employeeId     String?         // Internal ID (AL-001, etc.)
+
   // Auth — password reset flow
   resetToken        String?   @unique
   resetTokenExpiry  DateTime?
@@ -893,6 +904,7 @@ model Staff {
   @@index([role])
   @@index([department])
   @@index([active])
+  @@index([managerId])
 }
 
 model StaffPreferences {
@@ -931,14 +943,30 @@ enum StaffRole {
 enum Department {
   EXECUTIVE
   SALES
+  BUSINESS_DEVELOPMENT
   ESTIMATING
+  PROJECT_MANAGEMENT
   OPERATIONS
   MANUFACTURING
+  PRODUCTION
   WAREHOUSE
+  LOGISTICS
   DELIVERY
   INSTALLATION
   ACCOUNTING
   PURCHASING
+}
+
+enum PayType {
+  SALARY
+  HOURLY
+}
+
+enum EmploymentType {
+  FULL_TIME_EXEMPT
+  FULL_TIME_NON_EXEMPT
+  PART_TIME
+  CONTRACT
 }
 
 // ─── JOBS (Operational unit — links Quote/Order to field work) ───────

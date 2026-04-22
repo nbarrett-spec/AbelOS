@@ -24,10 +24,15 @@ export async function GET(
 
     const staffRows: any[] = await prisma.$queryRawUnsafe(
       `SELECT
-        "id", "firstName", "lastName", "email", "phone", "role"::text, "department"::text,
-        "title", "avatar", "active", "hireDate", "createdAt", "updatedAt"
-      FROM "Staff"
-      WHERE "id" = $1`,
+        s."id", s."firstName", s."lastName", s."email", s."phone", s."role"::text, s."department"::text,
+        s."title", s."avatar", s."active", s."hireDate",
+        s."hourlyRate", s."salary", s."payType"::text AS "payType",
+        s."employmentType"::text AS "employmentType", s."employeeId",
+        s."managerId", m."firstName" || ' ' || m."lastName" AS "managerName",
+        s."createdAt", s."updatedAt"
+      FROM "Staff" s
+      LEFT JOIN "Staff" m ON s."managerId" = m.id
+      WHERE s."id" = $1`,
       id
     )
 
@@ -107,7 +112,7 @@ export async function PATCH(
     const {
       firstName, lastName, email, phone, role,
       roles, department, title, avatar, active, hireDate,
-      portalOverrides,
+      portalOverrides, managerId, salary, hourlyRate, payType, employmentType, employeeId,
     } = body
 
     // Build update data
@@ -121,6 +126,12 @@ export async function PATCH(
     if (avatar !== undefined) updateData.avatar = avatar
     if (active !== undefined) updateData.active = active
     if (hireDate !== undefined) updateData.hireDate = hireDate ? new Date(hireDate) : null
+    if (managerId !== undefined) updateData.managerId = managerId || null
+    if (salary !== undefined) updateData.salary = salary
+    if (hourlyRate !== undefined) updateData.hourlyRate = hourlyRate
+    if (payType !== undefined) updateData.payType = payType
+    if (employmentType !== undefined) updateData.employmentType = employmentType
+    if (employeeId !== undefined) updateData.employeeId = employeeId
 
     // Handle roles
     const allRoles: string[] | null = roles && Array.isArray(roles) && roles.length > 0 ? roles : null
@@ -150,12 +161,23 @@ export async function PATCH(
     // Validate department
     if (updateData.department) {
       const validDepartments = [
-        'EXECUTIVE', 'SALES', 'ESTIMATING', 'OPERATIONS', 'MANUFACTURING',
-        'WAREHOUSE', 'DELIVERY', 'INSTALLATION', 'ACCOUNTING', 'PURCHASING',
+        'EXECUTIVE', 'SALES', 'BUSINESS_DEVELOPMENT', 'ESTIMATING', 'PROJECT_MANAGEMENT',
+        'OPERATIONS', 'MANUFACTURING', 'PRODUCTION', 'WAREHOUSE', 'LOGISTICS',
+        'DELIVERY', 'INSTALLATION', 'ACCOUNTING', 'PURCHASING',
       ]
       if (!validDepartments.includes(updateData.department)) {
         return NextResponse.json({ error: `Invalid department` }, { status: 400 })
       }
+    }
+
+    // Validate payType
+    if (updateData.payType && !['SALARY', 'HOURLY'].includes(updateData.payType)) {
+      return NextResponse.json({ error: 'Invalid payType' }, { status: 400 })
+    }
+
+    // Validate employmentType
+    if (updateData.employmentType && !['FULL_TIME_EXEMPT', 'FULL_TIME_NON_EXEMPT', 'PART_TIME', 'CONTRACT'].includes(updateData.employmentType)) {
+      return NextResponse.json({ error: 'Invalid employmentType' }, { status: 400 })
     }
 
     // Build dynamic SET clause
@@ -214,6 +236,37 @@ export async function PATCH(
       paramIndex++
     }
 
+    if (updateData.managerId !== undefined) {
+      setClauses.push(`"managerId" = $${paramIndex}`)
+      sqlParams.push(updateData.managerId)
+      paramIndex++
+    }
+    if (updateData.salary !== undefined) {
+      setClauses.push(`"salary" = $${paramIndex}`)
+      sqlParams.push(updateData.salary)
+      paramIndex++
+    }
+    if (updateData.hourlyRate !== undefined) {
+      setClauses.push(`"hourlyRate" = $${paramIndex}`)
+      sqlParams.push(updateData.hourlyRate)
+      paramIndex++
+    }
+    if (updateData.payType !== undefined) {
+      setClauses.push(`"payType" = $${paramIndex}::"PayType"`)
+      sqlParams.push(updateData.payType)
+      paramIndex++
+    }
+    if (updateData.employmentType !== undefined) {
+      setClauses.push(`"employmentType" = $${paramIndex}::"EmploymentType"`)
+      sqlParams.push(updateData.employmentType)
+      paramIndex++
+    }
+    if (updateData.employeeId !== undefined) {
+      setClauses.push(`"employeeId" = $${paramIndex}`)
+      sqlParams.push(updateData.employeeId)
+      paramIndex++
+    }
+
     if (portalOverrides !== undefined) {
       setClauses.push(`"portalOverrides" = $${paramIndex}::jsonb`)
       sqlParams.push(JSON.stringify(portalOverrides))
@@ -232,7 +285,9 @@ export async function PATCH(
       WHERE "id" = $1
       RETURNING
         "id", "firstName", "lastName", "email", "phone", "role"::text, "department"::text,
-        "title", "avatar", "active", "hireDate", "portalOverrides", "createdAt", "updatedAt"
+        "title", "avatar", "active", "hireDate", "hourlyRate", "salary",
+        "payType"::text, "employmentType"::text, "employeeId", "managerId",
+        "portalOverrides", "createdAt", "updatedAt"
     `
 
     const updatedRows: any[] = await prisma.$queryRawUnsafe(updateSql, ...sqlParams)

@@ -32,64 +32,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if hourlyRate column exists
-    const columnExists: any[] = await (prisma as any).$queryRawUnsafe(
-      `SELECT column_name FROM information_schema.columns
-       WHERE table_name = 'Staff' AND column_name = 'hourlyRate'`
-    )
-
-    const hasHourlyRate = columnExists.length > 0
-
-    // Get all staff with their onboarding status
-    const selectClause = hasHourlyRate
-      ? `SELECT
-        id,
-        "firstName",
-        "lastName",
-        email,
-        phone,
-        role,
-        department,
-        title,
-        active,
-        "hireDate",
-        "hourlyRate",
-        "inviteToken",
-        "inviteTokenExpiry",
-        "passwordHash",
-        "handbookSignedAt",
-        "handbookVersion",
-        "passwordSetAt",
-        "portalOverrides",
-        "createdAt",
-        "updatedAt"
-      FROM "Staff"
-      ORDER BY "createdAt" DESC`
-      : `SELECT
-        id,
-        "firstName",
-        "lastName",
-        email,
-        phone,
-        role,
-        department,
-        title,
-        active,
-        "hireDate",
-        NULL as "hourlyRate",
-        "inviteToken",
-        "inviteTokenExpiry",
-        "passwordHash",
-        "handbookSignedAt",
-        "handbookVersion",
-        "passwordSetAt",
-        "portalOverrides",
-        "createdAt",
-        "updatedAt"
-      FROM "Staff"
-      ORDER BY "createdAt" DESC`
-
-    const staff: any[] = await (prisma as any).$queryRawUnsafe(selectClause)
+    // Get all staff with onboarding status + hierarchy + comp
+    const staff: any[] = await (prisma as any).$queryRawUnsafe(`
+      SELECT
+        s.id, s."firstName", s."lastName", s.email, s.phone,
+        s.role::text AS role, s.department::text AS department, s.title,
+        s.active, s."hireDate", s."hourlyRate",
+        s.salary, s."payType"::text AS "payType",
+        s."employmentType"::text AS "employmentType",
+        s."employeeId", s."managerId",
+        m."firstName" || ' ' || m."lastName" AS "managerName",
+        s."inviteToken", s."inviteTokenExpiry",
+        s."passwordHash", s."handbookSignedAt", s."handbookVersion",
+        s."passwordSetAt", s."portalOverrides",
+        s."createdAt", s."updatedAt"
+      FROM "Staff" s
+      LEFT JOIN "Staff" m ON s."managerId" = m.id
+      ORDER BY s."lastName" ASC, s."firstName" ASC
+    `)
 
     // Transform staff data to include status
     const enrichedStaff = staff.map((s: any) => {
@@ -104,6 +64,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: s.id,
+        employeeId: s.employeeId,
         firstName: s.firstName,
         lastName: s.lastName,
         email: s.email,
@@ -113,8 +74,16 @@ export async function GET(request: NextRequest) {
         title: s.title,
         active: s.active,
         hireDate: s.hireDate,
+        // Reporting hierarchy
+        managerId: s.managerId,
+        managerName: s.managerName,
         // Compensation data: ADMIN only
-        ...(isAdmin ? { hourlyRate: s.hourlyRate } : {}),
+        ...(isAdmin ? {
+          hourlyRate: s.hourlyRate,
+          salary: s.salary,
+          payType: s.payType,
+          employmentType: s.employmentType,
+        } : {}),
         status,
         handbookSignedAt: s.handbookSignedAt,
         handbookVersion: s.handbookVersion,
