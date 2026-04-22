@@ -39,23 +39,34 @@ export interface SyncResult {
 // ─── InFlow Types ──────────────────────────────────────────────────────
 
 export interface InflowProduct {
-  id: number
+  // InFlow Cloud API returns 'productId' (UUID string), NOT 'id'
+  productId: string
+  id?: number // legacy fallback — not present in current API
   name: string
   sku: string
   barcode?: string
+  categoryId?: string
   category?: string
   subcategory?: string
   description?: string
-  cost: number
-  price: number
+  itemType?: string // 'stockedProduct', 'service', 'assembly', etc.
+  // Pricing — NOT on the /products listing endpoint; keep optional
+  cost?: number
+  price?: number
   isActive: boolean
-  quantityOnHand: number
-  quantityOnOrder: number
-  quantityCommitted: number
+  // Stock levels — NOT on the /products listing endpoint; keep optional
+  quantityOnHand?: number
+  quantityOnOrder?: number
+  quantityCommitted?: number
   reorderPoint?: number
   reorderQuantity?: number
   location?: string
-  lastModified: string
+  lastModifiedDateTime?: string
+  lastModified?: string
+  lastVendorId?: string
+  standardUomName?: string
+  purchasingUom?: { name: string; conversionRatio?: any }
+  salesUom?: { name: string; conversionRatio?: any }
 }
 
 export interface InflowPurchaseOrder {

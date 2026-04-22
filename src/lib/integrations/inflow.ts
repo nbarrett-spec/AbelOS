@@ -120,29 +120,55 @@ export async function syncProducts(): Promise<SyncResult> {
 
       if (!products.length) break
 
+      // Log first-page shape for debugging
+      if (page === 1 && products.length > 0) {
+        console.log('[InFlow Product Sync] First record keys:', Object.keys(products[0]).join(', '))
+      }
+
       for (const ifProduct of products) {
         try {
+          // InFlow Cloud API uses 'productId' (UUID), NOT 'id'
+          const inflowProductId = String(ifProduct.productId || ifProduct.id || '')
+          if (!inflowProductId || inflowProductId === 'undefined') {
+            skipped++
+            continue
+          }
+
           // Find existing product by inflowId or SKU using raw SQL
           const existing: any[] = await prisma.$queryRawUnsafe(
-            `SELECT "id", "description", "inflowCategory" FROM "Product"
+            `SELECT "id", "description", "inflowCategory", "cost", "basePrice" FROM "Product"
              WHERE "inflowId" = $1 OR "sku" = $2
              LIMIT 1`,
-            String(ifProduct.id), ifProduct.sku || ''
+            inflowProductId, ifProduct.sku || ''
           )
+
+          // InFlow listing endpoint doesn't include cost/price/qty.
+          // Only overwrite if InFlow actually provides them; otherwise keep existing values.
+          const hasCost = ifProduct.cost !== undefined && ifProduct.cost !== null
+          const hasPrice = ifProduct.price !== undefined && ifProduct.price !== null
+          const hasQty = ifProduct.quantityOnHand !== undefined && ifProduct.quantityOnHand !== null
 
           if (existing.length > 0) {
             await prisma.$executeRawUnsafe(
               `UPDATE "Product" SET
-                "name" = $1, "description" = COALESCE($2, "description"),
-                "cost" = $3, "basePrice" = $4, "active" = $5,
-                "inStock" = $6, "inflowId" = $7,
-                "inflowCategory" = COALESCE($8, "inflowCategory"),
+                "name" = $1, "description" = COALESCE(NULLIF($2, ''), "description"),
+                "cost" = CASE WHEN $3::boolean THEN $4 ELSE "cost" END,
+                "basePrice" = CASE WHEN $5::boolean THEN $6 ELSE "basePrice" END,
+                "active" = $7,
+                "inStock" = CASE WHEN $8::boolean THEN $9 ELSE "inStock" END,
+                "inflowId" = $10,
+                "inflowCategory" = COALESCE(NULLIF($11, ''), "inflowCategory"),
                 "lastSyncedAt" = CURRENT_TIMESTAMP, "updatedAt" = CURRENT_TIMESTAMP
-              WHERE "id" = $9`,
-              ifProduct.name, ifProduct.description || null,
-              ifProduct.cost || 0, ifProduct.price || 0, ifProduct.isActive !== false,
-              (ifProduct.quantityOnHand || 0) > 0, String(ifProduct.id),
-              ifProduct.category || null, existing[0].id
+              WHERE "id" = $12`,
+              (ifProduct.name || '').trim(),
+              ifProduct.description || '',
+              hasCost, ifProduct.cost || 0,
+              hasPrice, ifProduct.price || 0,
+              ifProduct.isActive !== false,
+              hasQty, hasQty ? ((ifProduct.quantityOnHand || 0) > 0) : false,
+              inflowProductId,
+              ifProduct.category || '',
+              existing[0].id
             )
             updated++
           } else {
@@ -158,15 +184,15 @@ export async function syncProducts(): Promise<SyncResult> {
                 $10, $11, CURRENT_TIMESTAMP,
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
               )`,
-              ifProduct.sku || `IF-${String(ifProduct.id).substring(0, 8)}`,
-              ifProduct.name || 'Unknown Product',
+              ifProduct.sku || `IF-${inflowProductId.substring(0, 8)}`,
+              (ifProduct.name || 'Unknown Product').trim(),
               ifProduct.description || null,
               ifProduct.category || 'Miscellaneous',
               ifProduct.subcategory || null,
               ifProduct.cost || 0, ifProduct.price || 0,
               ifProduct.isActive !== false,
-              (ifProduct.quantityOnHand || 0) > 0,
-              String(ifProduct.id), ifProduct.category || null
+              hasQty ? ((ifProduct.quantityOnHand || 0) > 0) : false,
+              inflowProductId, ifProduct.category || null
             )
             created++
           }
@@ -251,10 +277,11 @@ export async function syncInventory(): Promise<SyncResult> {
 
       for (const ifProduct of products) {
         try {
-          // Find the Product record by inflowId or SKU
+          // Find the Product record by inflowId or SKU (InFlow uses 'productId' not 'id')
+          const inflowProdId = String(ifProduct.productId || ifProduct.id || '')
           const productRows: any[] = await prisma.$queryRawUnsafe(
             `SELECT "id" FROM "Product" WHERE "inflowId" = $1 OR "sku" = $2 LIMIT 1`,
-            String(ifProduct.id), ifProduct.sku || ''
+            inflowProdId, ifProduct.sku || ''
           )
 
           if (!productRows.length) {
@@ -377,7 +404,7 @@ export async function handleInflowWebhook(eventType: string, payload: any) {
         WHERE "inflowId" = $6`,
         ifProduct.name, ifProduct.cost || 0, ifProduct.price || 0,
         ifProduct.isActive !== false, (ifProduct.quantityOnHand || 0) > 0,
-        String(ifProduct.id)
+        String(ifProduct.productId || ifProduct.id)
       )
       break
     }
