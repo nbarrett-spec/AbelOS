@@ -17,11 +17,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const { id } = params
     const pos = await prisma.$queryRawUnsafe(`
-      SELECT po.*, s."name" as "supplierName", s."type" as "supplierType",
-        s."contactName" as "supplierContact", s."contactEmail" as "supplierEmail",
-        s."country" as "supplierCountry", s."avgLeadTimeDays" as "supplierLeadTime"
+      SELECT po.*, v."name" as "vendorName",
+        v."contactName" as "vendorContact", v."contactEmail" as "vendorEmail",
+        v."phone" as "vendorPhone"
       FROM "PurchaseOrder" po
-      JOIN "Supplier" s ON po."supplierId" = s."id"
+      LEFT JOIN "Vendor" v ON po."vendorId" = v."id"
       WHERE po."id" = $1
     `, id) as any[]
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       SELECT poi.*, p."name" as "catalogName", p."category" as "productCategory"
       FROM "PurchaseOrderItem" poi
       LEFT JOIN "Product" p ON poi."productId" = p."id"
-      WHERE poi."poId" = $1
+      WHERE poi."purchaseOrderId" = $1
       ORDER BY poi."createdAt" ASC
     `, id)
 
@@ -101,15 +101,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
         // Update inventory
         const poItems = await prisma.$queryRawUnsafe(`
-          SELECT "productId", "sku" FROM "PurchaseOrderItem" WHERE "id" = $1
+          SELECT "productId", "vendorSku" FROM "PurchaseOrderItem" WHERE "id" = $1
         `, ri.itemId) as any[]
 
         if (poItems[0]?.productId) {
           await prisma.$queryRawUnsafe(`
             UPDATE "InventoryItem"
-            SET "quantityOnHand" = "quantityOnHand" + $1,
-                "quantityOnOrder" = GREATEST("quantityOnOrder" - $1, 0),
-                "lastReceivedAt" = NOW(),
+            SET "onHand" = "onHand" + $1,
+                "onOrder" = GREATEST("onOrder" - $1, 0),
+                "available" = "available" + $1,
                 "updatedAt" = NOW()
             WHERE "productId" = $2
           `, ri.quantityReceived, poItems[0].productId)
@@ -121,7 +121,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         SELECT
           COALESCE(SUM("quantity"), 0)::int as "totalOrdered",
           COALESCE(SUM("quantityReceived"), 0)::int as "totalReceived"
-        FROM "PurchaseOrderItem" WHERE "poId" = $1
+        FROM "PurchaseOrderItem" WHERE "purchaseOrderId" = $1
       `, id) as any[]
 
       const fullyReceived = check[0].totalReceived >= check[0].totalOrdered
@@ -145,6 +145,50 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       await audit(request, 'RECEIVE', 'PurchaseOrder', id, { status: newStatus, fullyReceived, itemCount: (receivedItems || []).length })
 
       return NextResponse.json({ success: true, status: newStatus, fullyReceived })
+    }
+
+    // ── Mark Paid (AP payment recording) ──────────────────────────────
+    // PO schema doesn't have amountPaid/paidAt yet — store payment record in notes
+    // and mark RECEIVED if not already. Full BillPayment model planned for Phase 2.
+    if (action === 'mark_paid') {
+      const { paymentAmount, paymentMethod, paymentReference } = body
+      const amount = Number(paymentAmount) || 0
+
+      if (amount <= 0) {
+        return NextResponse.json({ error: 'Payment amount must be positive' }, { status: 400 })
+      }
+
+      const currentPO = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT total, status, notes FROM "PurchaseOrder" WHERE id = $1
+      `, id)
+
+      if (!currentPO.length) {
+        return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      }
+
+      const paymentNote = `\n[AP PAYMENT] $${amount.toFixed(2)} via ${paymentMethod || 'CHECK'}${paymentReference ? ` ref: ${paymentReference}` : ''} on ${new Date().toISOString().slice(0, 10)} by ${staffId}`
+
+      // If PO was already RECEIVED, keep RECEIVED. Otherwise mark RECEIVED now.
+      const newStatus = ['RECEIVED', 'CANCELLED'].includes(currentPO[0].status) ? currentPO[0].status : 'RECEIVED'
+
+      await prisma.$executeRawUnsafe(`
+        UPDATE "PurchaseOrder"
+        SET "status" = $1::"POStatus",
+            "notes" = COALESCE("notes", '') || $2,
+            "receivedAt" = COALESCE("receivedAt", NOW()),
+            "updatedAt" = NOW()
+        WHERE id = $3
+      `, newStatus, paymentNote, id)
+
+      await audit(request, 'PAYMENT', 'PurchaseOrder', id, {
+        paymentAmount: amount, paymentMethod, paymentReference
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: `Payment of $${amount.toFixed(2)} recorded`,
+        status: newStatus,
+      })
     }
 
     // ── Cancel PO ───────────────────────────────────────────────────────

@@ -7,106 +7,73 @@ import { audit } from '@/lib/audit'
 
 /**
  * GET /api/ops/auto-po
- * Returns current auto-PO candidates and recent auto-generated POs
+ * Returns auto-PO candidates (products below reorder point) and recent auto-generated POs.
+ * Uses InventoryItem + VendorProduct (preferred vendor) — same data as /api/ops/inventory/auto-reorder.
  */
 export async function GET(req: NextRequest) {
   try {
     await checkStaffAuthWithFallback(req)
 
-    // 1. Get products at or below reorder point
-    const candidates = await prisma.$queryRaw`
+    // Products below reorder point from InventoryItem, joined to preferred VendorProduct
+    const candidates: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        p."id",
-        p."name",
-        p."sku",
-        p."currentStock"::int,
-        p."reorderPoint"::int,
-        p."reorderQty"::int,
-        p."unitCost"::float,
-        p."supplierId",
-        s."name" AS "supplierName"
-      FROM "Product" p
-      LEFT JOIN "Supplier" s ON s."id" = p."supplierId"
-      WHERE p."active" = true
-        AND p."reorderPoint" > 0
-        AND p."currentStock" <= p."reorderPoint"
-      ORDER BY (p."currentStock"::float / NULLIF(p."reorderPoint", 0)::float) ASC
-    ` as Array<{
-      id: string
-      name: string
-      sku: string
-      currentStock: number
-      reorderPoint: number
-      reorderQty: number
-      unitCost: number
-      supplierId: string | null
-      supplierName: string | null
-    }>
+        ii.id,
+        ii."productId",
+        ii."productName" as name,
+        ii.sku,
+        ii."onHand" as "currentStock",
+        ii."reorderPoint",
+        ii."reorderQty",
+        ii."unitCost",
+        vp."vendorId",
+        v.name as "vendorName"
+      FROM "InventoryItem" ii
+      LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = TRUE
+      LEFT JOIN "Vendor" v ON v.id = vp."vendorId" AND v.active = TRUE
+      WHERE ii."onHand" <= ii."reorderPoint"
+        AND ii."reorderQty" > 0
+      ORDER BY (ii."onHand"::float / NULLIF(ii."reorderPoint", 0)::float) ASC
+    `)
 
-    // 2. Get recent auto-generated POs (last 30 days)
-    const recentPOs = await prisma.$queryRaw`
+    // Recent auto-generated POs (last 30 days)
+    const recentPOs: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        po."id",
+        po.id,
         po."poNumber",
-        po."status"::text,
-        po."total"::float,
+        po.status::text as status,
+        po.total::float as total,
         po."createdAt",
-        s."name" AS "supplierName",
-        COUNT(pol."id")::int AS "lineCount"
+        v.name as "vendorName",
+        (SELECT COUNT(*)::int FROM "PurchaseOrderItem" poi WHERE poi."purchaseOrderId" = po.id) as "lineCount"
       FROM "PurchaseOrder" po
-      LEFT JOIN "Supplier" s ON s."id" = po."supplierId"
-      LEFT JOIN "PurchaseOrderLine" pol ON pol."purchaseOrderId" = po."id"
+      LEFT JOIN "Vendor" v ON v.id = po."vendorId"
       WHERE po."createdAt" >= NOW() - INTERVAL '30 days'
-      GROUP BY po."id", po."poNumber", po."status", po."total", po."createdAt", s."name"
+        AND po.notes ILIKE '%auto%'
       ORDER BY po."createdAt" DESC
       LIMIT 20
-    ` as Array<{
-      id: string
-      poNumber: string
-      status: string
-      total: number
-      createdAt: Date
-      supplierName: string | null
-      lineCount: number
-    }>
+    `)
 
-    // 3. Get summary stats
-    const statsResult = await prisma.$queryRaw`
+    // Summary stats
+    const statsResult: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        COUNT(CASE WHEN p."currentStock" <= p."reorderPoint" AND p."reorderPoint" > 0 THEN 1 END)::int AS "needsReorder",
-        COUNT(CASE WHEN p."currentStock" <= 0 THEN 1 END)::int AS "outOfStock",
+        COUNT(CASE WHEN ii."onHand" <= ii."reorderPoint" AND ii."reorderPoint" > 0 THEN 1 END)::int AS "needsReorder",
+        COUNT(CASE WHEN ii."onHand" <= 0 THEN 1 END)::int AS "outOfStock",
         COUNT(*)::int AS "totalTracked"
-      FROM "Product" p
-      WHERE p."active" = true
-    ` as Array<{
-      needsReorder: number
-      outOfStock: number
-      totalTracked: number
-    }>
+      FROM "InventoryItem" ii
+    `)
 
-    const stats = statsResult[0] || {
-      needsReorder: 0,
-      outOfStock: 0,
-      totalTracked: 0,
-    }
+    const stats = statsResult[0] || { needsReorder: 0, outOfStock: 0, totalTracked: 0 }
 
-    return NextResponse.json({
-      candidates,
-      recentPOs,
-      stats,
-    })
+    return NextResponse.json({ candidates, recentPOs, stats })
   } catch (error) {
     console.error('Error fetching auto-PO candidates:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch auto-PO candidates' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch auto-PO candidates' }, { status: 500 })
   }
 }
 
 /**
  * POST /api/ops/auto-po
- * Generate draft purchase orders from candidates
+ * Generate draft POs grouped by vendor from auto-reorder candidates.
  * Body: { productIds?: string[] } or { all: true }
  */
 export async function POST(req: NextRequest) {
@@ -114,133 +81,101 @@ export async function POST(req: NextRequest) {
     await checkStaffAuthWithFallback(req)
 
     const body = await req.json()
-    const { productIds = [], all = false } = body as {
-      productIds?: string[]
-      all?: boolean
-    }
+    const { productIds = [], all = false } = body as { productIds?: string[]; all?: boolean }
+    const staffId = req.headers.get('x-staff-id') || 'system'
+
     audit(req, 'GENERATE_DRAFT_POS', 'PurchaseOrder', undefined, { productIds, all }).catch(() => {})
 
-    // Fetch candidate products
-    let candidateProducts = await prisma.$queryRaw`
+    // Fetch candidate items from InventoryItem + preferred vendor
+    let candidates: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        p."id",
-        p."name",
-        p."sku",
-        p."currentStock"::int,
-        p."reorderPoint"::int,
-        p."reorderQty"::int,
-        p."unitCost"::float,
-        p."supplierId"
-      FROM "Product" p
-      WHERE p."active" = true
-        AND p."reorderPoint" > 0
-        AND p."currentStock" <= p."reorderPoint"
-    ` as Array<{
-      id: string
-      name: string
-      sku: string
-      currentStock: number
-      reorderPoint: number
-      reorderQty: number
-      unitCost: number
-      supplierId: string | null
-    }>
+        ii."productId",
+        ii."productName" as name,
+        ii.sku,
+        ii."onHand" as "currentStock",
+        ii."reorderPoint",
+        ii."reorderQty",
+        ii."unitCost",
+        vp."vendorId",
+        vp."vendorSku",
+        vp."vendorCost",
+        v.name as "vendorName"
+      FROM "InventoryItem" ii
+      LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = TRUE
+      LEFT JOIN "Vendor" v ON v.id = vp."vendorId" AND v.active = TRUE
+      WHERE ii."onHand" <= ii."reorderPoint"
+        AND ii."reorderQty" > 0
+    `)
 
     // Filter to selected products if not "all"
     if (!all && productIds.length > 0) {
-      candidateProducts = candidateProducts.filter((p) =>
-        productIds.includes(p.id)
-      )
+      candidates = candidates.filter(p => productIds.includes(p.productId))
     }
 
-    if (candidateProducts.length === 0) {
-      return NextResponse.json({
-        created: 0,
-        purchaseOrders: [],
-      })
+    if (candidates.length === 0) {
+      return NextResponse.json({ created: 0, purchaseOrders: [] })
     }
 
-    // Group by supplier
-    const groupedBySupplier = candidateProducts.reduce(
-      (acc, product) => {
-        const supplierId = product.supplierId || 'no-supplier'
-        if (!acc[supplierId]) {
-          acc[supplierId] = []
-        }
-        acc[supplierId].push(product)
-        return acc
-      },
-      {} as Record<string, typeof candidateProducts>
+    // Group by vendor
+    const grouped: Record<string, any[]> = {}
+    for (const c of candidates) {
+      const key = c.vendorId || 'no-vendor'
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(c)
+    }
+
+    // Get next PO sequence
+    const currentYear = new Date().getFullYear()
+    const lastPO: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "poNumber" FROM "PurchaseOrder" WHERE "poNumber" LIKE $1 ORDER BY "poNumber" DESC LIMIT 1`,
+      `PO-${currentYear}-%`
     )
+    let nextSeq = 1
+    if (lastPO.length > 0) {
+      const parts = lastPO[0].poNumber.split('-')
+      if (parts.length === 3) { const n = parseInt(parts[2], 10); if (!isNaN(n)) nextSeq = n + 1 }
+    }
 
     const createdPOs = []
-    const timestamp = Date.now()
-    let poSequence = 0
 
-    // Create a PO for each supplier group
-    for (const supplierId in groupedBySupplier) {
-      const products = groupedBySupplier[supplierId]
-      const validSupplierId =
-        supplierId !== 'no-supplier' ? supplierId : null
+    for (const vendorId of Object.keys(grouped)) {
+      const items = grouped[vendorId]
+      if (vendorId === 'no-vendor') continue // Skip items with no vendor
 
-      // Calculate total
-      let poTotal = 0
-      for (const product of products) {
-        const lineTotal = product.reorderQty * product.unitCost
-        poTotal += lineTotal
+      let subtotal = 0
+      const poItems: any[] = []
+      for (const item of items) {
+        const cost = item.vendorCost || item.unitCost || 0
+        const lineTotal = item.reorderQty * cost
+        subtotal += lineTotal
+        poItems.push({ productId: item.productId, vendorSku: item.vendorSku || item.sku || '', description: item.name || '', quantity: item.reorderQty, unitCost: cost, lineTotal })
       }
 
-      // Generate PO ID and number
-      const poId = `po_${timestamp}_${Math.random()
-        .toString(36)
-        .slice(2, 8)}`
-      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '')
-      poSequence++
-      const poNumber = `AUTO-${dateStr}-${String(poSequence).padStart(3, '0')}`
+      const poId = 'po_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+      const poNumber = `PO-${currentYear}-${String(nextSeq).padStart(4, '0')}`
+      nextSeq++
 
-      // Create PO via raw SQL
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "PurchaseOrder" (id, "poNumber", "supplierId", status, subtotal, "shippingCost", total, "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, 'DRAFT', $4, 0, $5, NOW(), NOW())`,
-        poId, poNumber, validSupplierId, poTotal, poTotal
+        `INSERT INTO "PurchaseOrder" (id, "poNumber", "vendorId", "createdById", status, subtotal, "shippingCost", total, notes, "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, 'DRAFT', $5, 0, $6, $7, NOW(), NOW())`,
+        poId, poNumber, vendorId, staffId, subtotal, subtotal, 'Auto-generated reorder PO'
       )
 
-      // Create PO lines
-      let lineCount = 0
-      for (const product of products) {
-        const lineTotal = product.reorderQty * product.unitCost
-        const lineId = `pol_${timestamp}_${Math.random().toString(36).slice(2, 8)}`
+      for (const item of poItems) {
+        const itemId = 'poi_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
         await prisma.$executeRawUnsafe(
-          `INSERT INTO "PurchaseOrderLine" (id, "purchaseOrderId", "productId", quantity, "unitCost", total, "createdAt")
-           VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-          lineId, poId, product.id, product.reorderQty, product.unitCost, lineTotal
+          `INSERT INTO "PurchaseOrderItem" (id, "purchaseOrderId", "productId", "vendorSku", description, quantity, "unitCost", "lineTotal", "receivedQty", "damagedQty", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0, NOW(), NOW())`,
+          itemId, poId, item.productId, item.vendorSku, item.description, item.quantity, item.unitCost, item.lineTotal
         )
-        lineCount++
       }
 
-      // Get supplier name
-      const supplierResult: any[] = validSupplierId
-        ? await prisma.$queryRawUnsafe(`SELECT name FROM "Supplier" WHERE id = $1`, validSupplierId)
-        : []
-
-      createdPOs.push({
-        poId,
-        poNumber,
-        supplierName: supplierResult[0]?.name || 'No Supplier',
-        lineCount,
-        total: poTotal,
-      })
+      createdPOs.push({ poId, poNumber, vendorName: items[0]?.vendorName || 'Unknown', lineCount: poItems.length, total: subtotal })
     }
 
-    return NextResponse.json({
-      created: createdPOs.length,
-      purchaseOrders: createdPOs,
-    })
+    return NextResponse.json({ created: createdPOs.length, purchaseOrders: createdPOs })
   } catch (error) {
     console.error('Error generating auto-POs:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate auto-POs' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to generate auto-POs' }, { status: 500 })
   }
 }

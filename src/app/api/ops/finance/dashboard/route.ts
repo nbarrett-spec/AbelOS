@@ -79,18 +79,18 @@ export async function GET(request: NextRequest) {
       const issueDate = inv.issuedAt || inv.createdAt
       const daysOutstanding = Math.floor((now.getTime() - issueDate.getTime()) / (1000 * 60 * 60 * 24))
 
-      if (daysOutstanding <= 30) {
-        arAging.current.count++
-        arAging.current.amount += balance
-      } else if (daysOutstanding <= 60) {
-        arAging.days1to30.count++
-        arAging.days1to30.amount += balance
-      } else if (daysOutstanding <= 90) {
-        arAging.days31to60.count++
-        arAging.days31to60.amount += balance
-      } else {
+      if (daysOutstanding > 60) {
         arAging.days60plus.count++
         arAging.days60plus.amount += balance
+      } else if (daysOutstanding > 30) {
+        arAging.days31to60.count++
+        arAging.days31to60.amount += balance
+      } else if (daysOutstanding > 0) {
+        arAging.days1to30.count++
+        arAging.days1to30.amount += balance
+      } else {
+        arAging.current.count++
+        arAging.current.amount += balance
       }
     })
 

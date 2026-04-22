@@ -97,7 +97,10 @@ export default function JobPacketPage() {
         // Reload job data to reflect new status
         await loadData(jobId)
       } else {
-        setAdvanceMessage(result.error || 'Cannot advance — check gate requirements')
+        const gateMsg = result.gateFailures?.length
+          ? `\nBlocked by: ${result.gateFailures.join(', ')}`
+          : ''
+        setAdvanceMessage((result.error || 'Cannot advance — check gate requirements') + gateMsg)
       }
     } catch {
       setAdvanceMessage('Failed to advance job status')
@@ -195,7 +198,7 @@ export default function JobPacketPage() {
               Would you like to advance this job to the next production stage?
             </p>
             {advanceMessage && (
-              <div style={{ background: advanceMessage.includes('moved') ? '#D1FAE5' : '#FEF3C7', border: `1px solid ${advanceMessage.includes('moved') ? '#6EE7B7' : '#FCD34D'}`, borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 13, color: advanceMessage.includes('moved') ? '#065F46' : '#92400E' }}>
+              <div style={{ background: advanceMessage.includes('moved') ? '#D1FAE5' : '#FEF3C7', border: `1px solid ${advanceMessage.includes('moved') ? '#6EE7B7' : '#FCD34D'}`, borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 13, color: advanceMessage.includes('moved') ? '#065F46' : '#92400E', whiteSpace: 'pre-line' }}>
                 {advanceMessage}
               </div>
             )}

@@ -75,6 +75,43 @@ export default function AccountsPayablePage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [tick, setTick] = useState<number | null>(null)
 
+  // Payment modal state
+  const [payModal, setPayModal] = useState<{ poId: string; poNumber: string; amount: number } | null>(null)
+  const [payAmount, setPayAmount] = useState('')
+  const [payMethod, setPayMethod] = useState('CHECK')
+  const [payRef, setPayRef] = useState('')
+  const [paySubmitting, setPaySubmitting] = useState(false)
+  const [payResult, setPayResult] = useState('')
+
+  async function recordPayment() {
+    if (!payModal) return
+    setPaySubmitting(true)
+    setPayResult('')
+    try {
+      const res = await fetch(`/api/ops/procurement/purchase-orders/${payModal.poId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mark_paid',
+          paymentAmount: parseFloat(payAmount) || payModal.amount,
+          paymentMethod: payMethod,
+          paymentReference: payRef,
+        }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        setPayResult(`Payment recorded: ${result.message}`)
+        setTimeout(() => { setPayModal(null); setPayResult(''); fetchData() }, 1500)
+      } else {
+        setPayResult(result.error || 'Payment failed')
+      }
+    } catch {
+      setPayResult('Network error — try again')
+    } finally {
+      setPaySubmitting(false)
+    }
+  }
+
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
@@ -323,6 +360,9 @@ export default function AccountsPayablePage() {
             show: (r) => r.status === 'PENDING_APPROVAL' },
           { id: 'vendor', icon: <Building className="w-3.5 h-3.5" />, label: 'Open vendor',
             onClick: (r) => router.push(`/ops/vendors/${r.vendorId}`) },
+          { id: 'pay', icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Record payment',
+            onClick: (r) => { setPayModal({ poId: r.id, poNumber: r.poNumber, amount: r.amount }); setPayAmount(String(r.amount)); setPayMethod('CHECK'); setPayRef(''); setPayResult('') },
+            show: (r) => ['APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED', 'RECEIVED'].includes(r.status) },
         ]}
         empty={
           <EmptyState
@@ -335,6 +375,59 @@ export default function AccountsPayablePage() {
           />
         }
       />
+
+      {/* Payment modal */}
+      {payModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setPayModal(null)}>
+          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}
+            onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600 }}>Record Payment</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B7280' }}>PO {payModal.poNumber}</p>
+
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Amount</label>
+            <input type="number" step="0.01" value={payAmount}
+              onChange={(e) => setPayAmount(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, marginBottom: 12 }}
+              placeholder="0.00" />
+
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Method</label>
+            <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, marginBottom: 12 }}>
+              <option value="CHECK">Check</option>
+              <option value="ACH">ACH</option>
+              <option value="WIRE">Wire</option>
+              <option value="CREDIT_CARD">Credit Card</option>
+              <option value="CASH">Cash</option>
+            </select>
+
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Reference # (optional)</label>
+            <input type="text" value={payRef}
+              onChange={(e) => setPayRef(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, marginBottom: 16 }}
+              placeholder="Check #, ACH ref, etc." />
+
+            {payResult && (
+              <div style={{ padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 13,
+                background: payResult.includes('recorded') ? '#D1FAE5' : '#FEE2E2',
+                color: payResult.includes('recorded') ? '#065F46' : '#991B1B' }}>
+                {payResult}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setPayModal(null)}
+                style={{ padding: '8px 16px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'white' }}>
+                Cancel
+              </button>
+              <button onClick={recordPayment} disabled={paySubmitting || !payAmount}
+                style={{ padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: paySubmitting ? 'not-allowed' : 'pointer', opacity: paySubmitting ? 0.7 : 1 }}>
+                {paySubmitting ? 'Recording...' : 'Record Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

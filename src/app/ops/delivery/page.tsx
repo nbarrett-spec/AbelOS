@@ -72,7 +72,7 @@ export default function DeliveryCommandCenter() {
 
       const [deliveriesRes, jobsRes] = await Promise.all([
         fetch(`/api/ops/delivery/tracking?date=${today}`),
-        fetch(`/api/ops/jobs?scheduledDate=${today}`),
+        fetch(`/api/ops/jobs?scheduledDateFrom=${today}&scheduledDateTo=${today}`),
       ])
 
       if (deliveriesRes.ok) {
