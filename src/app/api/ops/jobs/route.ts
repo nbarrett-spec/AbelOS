@@ -32,9 +32,18 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1;
 
     if (status) {
-      whereConditions.push(`j."status" = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
+      // Support comma-separated status values (e.g., "CREATED,IN_PRODUCTION,STAGED")
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean)
+      if (statuses.length === 1) {
+        whereConditions.push(`j."status"::text = $${paramIndex}`)
+        params.push(statuses[0])
+        paramIndex++
+      } else if (statuses.length > 1) {
+        const placeholders = statuses.map((_, i) => `$${paramIndex + i}`).join(', ')
+        whereConditions.push(`j."status"::text IN (${placeholders})`)
+        params.push(...statuses)
+        paramIndex += statuses.length
+      }
     }
 
     if (assignedPMId) {
