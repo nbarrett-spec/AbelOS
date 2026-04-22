@@ -91,10 +91,10 @@ export default function AIOrderCommandCenter() {
         fetch('/api/ops/activity-log'),
       ]);
 
-      if (poRes.ok) setRecommendations(await poRes.json());
-      if (ordersRes.ok) setReceivedOrders(await ordersRes.json());
-      if (creditsRes.ok) setCreditAlerts(await creditsRes.json());
-      if (logRes.ok) setActivityLog(await logRes.json());
+      if (poRes.ok) { const d = await poRes.json(); setRecommendations(d.poRecommendations || []); }
+      if (ordersRes.ok) { const d = await ordersRes.json(); setReceivedOrders(d.items || []); }
+      if (creditsRes.ok) { const d = await creditsRes.json(); setCreditAlerts(d.alerts || []); }
+      if (logRes.ok) { const d = await logRes.json(); setActivityLog(d.items || []); }
     } catch (error) {
       showToast('error', 'Failed to load data');
     } finally {

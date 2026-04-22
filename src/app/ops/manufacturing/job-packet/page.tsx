@@ -47,7 +47,7 @@ export default function JobPacketPage() {
       const res = await fetch(`/api/ops/jobs?search=${encodeURIComponent(q)}&limit=8`)
       if (res.ok) {
         const d = await res.json()
-        setSearchResults(d.jobs || [])
+        setSearchResults(d.data || [])
       }
     } catch { /* */ }
   }, [])
