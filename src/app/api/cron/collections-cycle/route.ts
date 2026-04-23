@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { startCronRun, finishCronRun } from '@/lib/cron'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { createTaskForOverdueInvoice } from '@/lib/events/task'
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -46,13 +47,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(payload)
     }
 
-    // Find all overdue invoices
+    // Find all open invoices past due with a balance — covers the full open
+    // bucket of the InvoiceStatus enum: ISSUED | SENT | PARTIALLY_PAID | OVERDUE.
     const overdueInvoices: any[] = await prisma.$queryRawUnsafe(`
       SELECT i."id", i."builderId", i."dueDate", i."invoiceNumber",
              i."status"::text AS "status", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."total",
              i."paymentPlanOffered"
       FROM "Invoice" i
-      WHERE (i."status"::text IN ('OVERDUE', 'SENT'))
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
         AND i."dueDate" < NOW()
         AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       ORDER BY i."dueDate" ASC
@@ -97,6 +99,10 @@ export async function GET(request: NextRequest) {
       const daysOverdue = Math.floor(
         (now.getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)
       )
+
+      // Event: ensure an Accounting task exists for every overdue invoice.
+      // Idempotent via sourceKey — reruns of this cron won't duplicate.
+      createTaskForOverdueInvoice(invoice.id).catch(() => {})
 
       const intel = intelligenceMap[invoice.builderId] || null
       const tone = determineTone(intel, daysOverdue)

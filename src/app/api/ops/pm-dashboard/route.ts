@@ -9,6 +9,17 @@ export async function GET(request: NextRequest) {
   if (authError) return authError
 
   const staffId = request.headers.get('x-staff-id') || ''
+  const rolesHeader = (request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || '').toUpperCase()
+  const isPrivileged = /ADMIN|MANAGER/.test(rolesHeader)
+  const allOverride = request.nextUrl.searchParams.get('all') === '1' && isPrivileged
+  const pmFilterId = allOverride ? null : staffId
+
+  // When pmFilterId is null, we drop the j."assignedPMId" = $1 predicate but
+  // keep the $1 slot so the rest of the parameterization is stable.
+  const pmWhere = pmFilterId
+    ? `j."assignedPMId" = $1`
+    : `($1::text IS NULL OR j."assignedPMId" IS NOT NULL)`
+  const pmParam = pmFilterId ?? null
 
   try {
     // ── My Active Jobs ──────────────────────────────────────────────
@@ -25,10 +36,10 @@ export async function GET(request: NextRequest) {
         j."builderName",
         EXTRACT(DAY FROM NOW() - j."createdAt")::int as "daysOpen"
       FROM "Job" j
-      WHERE j."assignedPMId" = $1
+      WHERE ${pmWhere}
         AND j."status"::text NOT IN ('CLOSED', 'CANCELLED')
       ORDER BY j."updatedAt" DESC
-    `, staffId)
+    `, pmParam)
 
     // ── At-Risk Jobs (stalled > 7 days, or in early stages > 14 days) ──
     const atRiskJobs = myJobs.filter(j => {
@@ -53,13 +64,14 @@ export async function GET(request: NextRequest) {
     })
 
     // ── Completed jobs in last 30 days ──
+    // Reuse pmWhere by aliasing the base table so the predicate still binds.
     const completedRecent: any[] = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*)::int as count
-      FROM "Job"
-      WHERE "assignedPMId" = $1
-        AND "status"::text IN ('INVOICED', 'CLOSED')
-        AND "updatedAt" > NOW() - INTERVAL '30 days'
-    `, staffId)
+      FROM "Job" j
+      WHERE ${pmWhere}
+        AND j."status"::text IN ('INVOICED', 'CLOSED')
+        AND j."updatedAt" > NOW() - INTERVAL '30 days'
+    `, pmParam)
 
     // ── On-Time Delivery Rate (deliveries completed on schedule) ──
     const deliveryStats: any[] = await prisma.$queryRawUnsafe(`
@@ -69,10 +81,10 @@ export async function GET(request: NextRequest) {
         COUNT(CASE WHEN se."status"::text = 'RESCHEDULED' THEN 1 END)::int as rescheduled
       FROM "ScheduleEntry" se
       JOIN "Job" j ON se."jobId" = j."id"
-      WHERE j."assignedPMId" = $1
+      WHERE ${pmWhere}
         AND se."entryType"::text = 'DELIVERY'
         AND se."scheduledDate" > NOW() - INTERVAL '90 days'
-    `, staffId)
+    `, pmParam)
 
     const ds = deliveryStats[0] || { total: 0, completed: 0, rescheduled: 0 }
     const onTimeRate = ds.total > 0 ? Math.round((ds.completed / ds.total) * 100) : 100
@@ -91,12 +103,12 @@ export async function GET(request: NextRequest) {
       FROM "ScheduleEntry" se
       JOIN "Job" j ON se."jobId" = j."id"
       LEFT JOIN "Crew" c ON se."crewId" = c."id"
-      WHERE j."assignedPMId" = $1
+      WHERE ${pmWhere}
         AND se."scheduledDate" BETWEEN NOW() AND NOW() + INTERVAL '7 days'
         AND se."status"::text NOT IN ('CANCELLED')
       ORDER BY se."scheduledDate" ASC
       LIMIT 20
-    `, staffId)
+    `, pmParam)
 
     // ── Crew utilization (crews on my jobs) ──
     const crewUtil: any[] = await prisma.$queryRawUnsafe(`
@@ -109,25 +121,26 @@ export async function GET(request: NextRequest) {
       FROM "Crew" c
       JOIN "ScheduleEntry" se ON se."crewId" = c."id"
       JOIN "Job" j ON se."jobId" = j."id"
-      WHERE j."assignedPMId" = $1
+      WHERE ${pmWhere}
         AND se."scheduledDate" > NOW() - INTERVAL '30 days'
         AND c."active" = true
       GROUP BY c."id", c."name", c."crewType"
       ORDER BY "scheduledEntries" DESC
       LIMIT 10
-    `, staffId)
+    `, pmParam)
 
     // ── Average days to complete a job ──
     const avgCycle: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        ROUND(AVG(EXTRACT(DAY FROM "updatedAt" - "createdAt")))::int as "avgDays"
-      FROM "Job"
-      WHERE "assignedPMId" = $1
-        AND "status"::text IN ('INVOICED', 'CLOSED')
-        AND "updatedAt" > NOW() - INTERVAL '180 days'
-    `, staffId)
+        ROUND(AVG(EXTRACT(DAY FROM j."updatedAt" - j."createdAt")))::int as "avgDays"
+      FROM "Job" j
+      WHERE ${pmWhere}
+        AND j."status"::text IN ('INVOICED', 'CLOSED')
+        AND j."updatedAt" > NOW() - INTERVAL '180 days'
+    `, pmParam)
 
     return safeJson({
+      scope: pmFilterId ? 'pm' : 'all',
       kpis: {
         activeJobs: myJobs.length,
         completedLast30: completedRecent[0]?.count || 0,

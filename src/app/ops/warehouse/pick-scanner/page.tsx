@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -9,6 +9,8 @@ const PICK_STATUSES = [
   { key: 'PICKING', label: 'Picking', color: '#F1C40F' },
   { key: 'PICKED', label: 'Picked', color: '#3498DB' },
   { key: 'VERIFIED', label: 'Verified', color: '#27AE60' },
+  { key: 'SHORT', label: 'Short', color: '#E74C3C' },
+  { key: 'SUBSTITUTED', label: 'Substituted', color: '#9B59B6' },
 ]
 
 interface MaterialPick {
@@ -23,177 +25,488 @@ interface MaterialPick {
   product: { id: string; name: string; sku: string } | null
 }
 
-interface Job {
+interface ReadyJob {
   id: string
   jobNumber: string
   builderName: string
-  deliveryDate: string
+  scheduledDate: string | null
+  status: string
+  orderNumber: string | null
+  orderId: string | null
+  totalPicks: number
+  verifiedPicks: number
+  pickedPicks: number
+  shortPicks: number
+  pendingPicks: number
+  allComplete: boolean
 }
+
+// Tap-target minimum 48px for mobile/tablet picker use
+const TAP_TARGET = 48
 
 export default function PickScannerPage() {
   const { addToast } = useToast()
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [selectedJobId, setSelectedJobId] = useState('')
+  const [jobs, setJobs] = useState<ReadyJob[]>([])
+  const [jobsLoading, setJobsLoading] = useState(true)
+  const [jobsError, setJobsError] = useState<string | null>(null)
+
+  const [selectedJob, setSelectedJob] = useState<ReadyJob | null>(null)
   const [picks, setPicks] = useState<MaterialPick[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [skuFilter, setSkuFilter] = useState('')
   const [scanInput, setScanInput] = useState('')
   const [flashFeedback, setFlashFeedback] = useState<'success' | 'error' | null>(null)
+  const [lastScanMessage, setLastScanMessage] = useState<string | null>(null)
   const [verifying, setVerifying] = useState(false)
-  const scanInputRef = useRef<HTMLInputElement>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Focus scanner input on mount
-  useEffect(() => {
-    scanInputRef.current?.focus()
+  const scanInputRef = useRef<HTMLInputElement>(null)
+
+  // ── Load ready-to-pick jobs ────────────────────────────────────────────
+  const fetchJobs = useCallback(async () => {
+    try {
+      setJobsLoading(true)
+      setJobsError(null)
+      const res = await fetch('/api/ops/warehouse/ready-to-pick')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setJobs(data.jobs || [])
+    } catch (err) {
+      setJobsError(err instanceof Error ? err.message : 'Failed to load jobs')
+      setJobs([])
+    } finally {
+      setJobsLoading(false)
+    }
   }, [])
 
-  // Load active jobs on mount (simplified - in real app would filter by status)
   useEffect(() => {
     fetchJobs()
-  }, [])
+  }, [fetchJobs])
 
-  const fetchJobs = async () => {
-    try {
-      // This would normally come from an API that returns active jobs
-      // For now, we'll show a message that jobs would be loaded
-      setJobs([])
-    } catch (err) {
-      console.error('Failed to fetch jobs:', err)
-    }
-  }
-
-  const handleJobSelect = async (jobId: string) => {
-    setSelectedJobId(jobId)
-    await fetchPicks(jobId)
-    setTimeout(() => scanInputRef.current?.focus(), 100)
-  }
-
-  const fetchPicks = async (jobId: string) => {
+  // ── Load picks for a specific job ──────────────────────────────────────
+  const fetchPicks = useCallback(async (jobId: string) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`/api/ops/warehouse/picks-for-job?jobId=${jobId}`)
-      if (!response.ok) throw new Error('Failed to fetch picks')
-      const data = await response.json()
+      const res = await fetch(`/api/ops/warehouse/picks-for-job?jobId=${jobId}`)
+      if (!res.ok) throw new Error('Failed to fetch picks')
+      const data = await res.json()
       setPicks(data.picks || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load picks')
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  const startPicking = async (job: ReadyJob) => {
+    setSelectedJob(job)
+    setPicks([])
+    setError(null)
+    setLastScanMessage(null)
+    await fetchPicks(job.id)
+    setTimeout(() => scanInputRef.current?.focus(), 100)
   }
 
+  const backToJobList = () => {
+    setSelectedJob(null)
+    setPicks([])
+    setScanInput('')
+    setSkuFilter('')
+    setError(null)
+    setLastScanMessage(null)
+    fetchJobs()
+  }
+
+  // ── Audio feedback ─────────────────────────────────────────────────────
   const playSound = (type: 'success' | 'error') => {
-    // Create audio context for beep sounds
-    if (!audioRef.current) {
-      audioRef.current = new Audio()
-    }
-    if (type === 'success') {
-      // Success beep
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+    try {
+      const AC = window.AudioContext || (window as any).webkitAudioContext
+      if (!AC) return
+      const audioContext = new AC()
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
       oscillator.connect(gainNode)
       gainNode.connect(audioContext.destination)
-      oscillator.frequency.value = 800
+      oscillator.frequency.value = type === 'success' ? 800 : 300
       oscillator.type = 'sine'
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + (type === 'success' ? 0.1 : 0.15)
+      )
       oscillator.start(audioContext.currentTime)
-      oscillator.stop(audioContext.currentTime + 0.1)
-    } else {
-      // Error beep
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const oscillator = audioContext.createOscillator()
-      const gainNode = audioContext.createGain()
-      oscillator.connect(gainNode)
-      gainNode.connect(audioContext.destination)
-      oscillator.frequency.value = 300
-      oscillator.type = 'sine'
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15)
-      oscillator.start(audioContext.currentTime)
-      oscillator.stop(audioContext.currentTime + 0.15)
+      oscillator.stop(audioContext.currentTime + (type === 'success' ? 0.1 : 0.15))
+    } catch {
+      /* audio blocked — non-fatal */
     }
   }
 
+  // ── Scan flow ──────────────────────────────────────────────────────────
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!scanInput.trim() || !selectedJobId || verifying) return
-
+    if (!scanInput.trim() || !selectedJob || verifying) return
     setVerifying(true)
+    setError(null)
     const scannedSku = scanInput.trim()
 
     try {
-      // Find the first unverified pick
-      const nextPick = picks.find(p => p.status !== 'VERIFIED')
-      if (!nextPick) {
+      // Find the first pick that still needs action, preferring one that
+      // matches the scanned SKU (so pickers can scan any bin in any order).
+      const targetBySku =
+        picks.find(
+          p =>
+            p.status !== 'VERIFIED' &&
+            p.status !== 'PICKED' &&
+            p.status !== 'SHORT' &&
+            p.sku.trim().toUpperCase() === scannedSku.toUpperCase()
+        ) ||
+        picks.find(
+          p =>
+            p.status !== 'VERIFIED' && p.status !== 'PICKED' && p.status !== 'SHORT'
+        )
+
+      if (!targetBySku) {
         setFlashFeedback('error')
         playSound('error')
-        setError('All items have been verified!')
+        setError('All items on this job are already picked or short.')
+        setTimeout(() => setFlashFeedback(null), 600)
         setScanInput('')
-        setTimeout(() => setFlashFeedback(null), 500)
         setVerifying(false)
         return
       }
 
-      // Verify the pick
-      const response = await fetch('/api/ops/warehouse/pick-verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pickId: nextPick.id,
-          scannedSku,
-        }),
-      })
+      const res = await fetch(
+        `/api/ops/warehouse/picks/${targetBySku.id}/scan`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scannedSku }),
+        }
+      )
 
-      const result = await response.json()
+      const result = await res.json().catch(() => ({}))
 
-      if (result.verified) {
+      if (res.ok && result.verified) {
         setFlashFeedback('success')
         playSound('success')
-        // Update the local picks list
-        setPicks(
-          picks.map(p =>
-            p.id === nextPick.id ? { ...p, status: 'VERIFIED' } : p
+        setLastScanMessage(`Picked ${targetBySku.sku}`)
+        setPicks(prev =>
+          prev.map(p =>
+            p.id === targetBySku.id
+              ? { ...p, status: 'PICKED', pickedQty: p.quantity }
+              : p
           )
         )
+        if (result.jobAdvanced) {
+          addToast({
+            type: 'success',
+            title: 'Job Staged',
+            message: `All picks complete — ${selectedJob.jobNumber} advanced to STAGED.`,
+          })
+        }
       } else {
         setFlashFeedback('error')
         playSound('error')
         setError(
-          `SKU Mismatch: Expected ${result.expected}, Scanned ${result.scanned}`
+          result?.expected && result?.scanned
+            ? `SKU Mismatch — expected ${result.expected}, scanned ${result.scanned}`
+            : result?.error || 'Scan failed'
         )
       }
-
-      setScanInput('')
-      setTimeout(() => {
-        setFlashFeedback(null)
-        scanInputRef.current?.focus()
-      }, 500)
     } catch (err) {
       setFlashFeedback('error')
       playSound('error')
       setError(err instanceof Error ? err.message : 'Scan failed')
+    } finally {
       setScanInput('')
       setTimeout(() => {
         setFlashFeedback(null)
         scanInputRef.current?.focus()
       }, 500)
-    } finally {
       setVerifying(false)
     }
   }
 
-  const verifiedCount = picks.filter(p => p.status === 'VERIFIED').length
-  const totalCount = picks.length
-
-  const getStatusColor = (status: string): string => {
-    const statusConfig = PICK_STATUSES.find(s => s.key === status)
-    return statusConfig?.color || '#95A5A6'
+  // ── Short-pick action ──────────────────────────────────────────────────
+  const markShort = async (pick: MaterialPick) => {
+    const reason = window.prompt(
+      `Mark ${pick.sku} as SHORT. Reason? (opens purchasing inbox item)`,
+      'Bin empty'
+    )
+    if (reason === null) return
+    try {
+      const res = await fetch(`/api/ops/warehouse/picks/${pick.id}/short`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      })
+      if (!res.ok) throw new Error('Failed to mark short')
+      setPicks(prev =>
+        prev.map(p => (p.id === pick.id ? { ...p, status: 'SHORT' } : p))
+      )
+      playSound('success')
+      addToast({
+        type: 'info',
+        title: 'Short-pick filed',
+        message: `${pick.sku} flagged for purchasing re-order.`,
+      })
+    } catch (err) {
+      playSound('error')
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: err instanceof Error ? err.message : 'Failed to mark short',
+      })
+    }
   }
 
+  // ── Derived ────────────────────────────────────────────────────────────
+  const pickedCount = picks.filter(
+    p => p.status === 'VERIFIED' || p.status === 'PICKED'
+  ).length
+  const shortCount = picks.filter(p => p.status === 'SHORT').length
+  const totalCount = picks.length
+
+  const filteredPicks = skuFilter.trim()
+    ? picks.filter(
+        p =>
+          p.sku.toLowerCase().includes(skuFilter.trim().toLowerCase()) ||
+          (p.description || '')
+            .toLowerCase()
+            .includes(skuFilter.trim().toLowerCase()) ||
+          (p.binLocation || '')
+            .toLowerCase()
+            .includes(skuFilter.trim().toLowerCase())
+      )
+    : picks
+
+  const getStatusColor = (status: string): string => {
+    const cfg = PICK_STATUSES.find(s => s.key === status)
+    return cfg?.color || '#95A5A6'
+  }
+
+  // ── JOB LIST VIEW ──────────────────────────────────────────────────────
+  if (!selectedJob) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#1a1a2e',
+          color: '#fff',
+          padding: '1rem',
+        }}
+      >
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', margin: 0 }}>
+            Warehouse Pick Scanner
+          </h1>
+          <p style={{ color: '#aaa', margin: '0.5rem 0 0 0', fontSize: '0.875rem' }}>
+            Select a job to begin picking
+          </p>
+        </div>
+
+        {/* Actions row */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <button
+            onClick={fetchJobs}
+            style={{
+              minHeight: TAP_TARGET,
+              padding: '0.75rem 1.25rem',
+              backgroundColor: '#2a2a3e',
+              color: '#fff',
+              border: '2px solid #C6A24E',
+              borderRadius: '0.5rem',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            Refresh
+          </button>
+          <Link
+            href="/ops/manufacturing"
+            style={{
+              minHeight: TAP_TARGET,
+              padding: '0.75rem 1.25rem',
+              backgroundColor: 'transparent',
+              color: '#C6A24E',
+              border: '2px solid #444',
+              borderRadius: '0.5rem',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
+            Back to Manufacturing
+          </Link>
+        </div>
+
+        {jobsLoading ? (
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>Loading</div>
+            <p>Fetching ready-to-pick jobs...</p>
+          </div>
+        ) : jobsError ? (
+          <div
+            style={{
+              backgroundColor: 'rgba(231, 76, 60, 0.2)',
+              border: '2px solid #E74C3C',
+              borderRadius: '0.5rem',
+              padding: '1rem',
+              color: '#FF6B6B',
+              fontWeight: 'bold',
+            }}
+          >
+            {jobsError}
+          </div>
+        ) : jobs.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>No jobs</div>
+            <p style={{ color: '#ccc', fontSize: '1rem' }}>
+              No jobs are ready for picking. Jobs appear here when status is
+              IN_PRODUCTION or MATERIALS_LOCKED with a generated pick list.
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {jobs.map(j => {
+              const pct =
+                j.totalPicks > 0
+                  ? Math.round(
+                      ((j.verifiedPicks + j.pickedPicks) / j.totalPicks) * 100
+                    )
+                  : 0
+              return (
+                <div
+                  key={j.id}
+                  style={{
+                    backgroundColor: '#2a2a3e',
+                    border: '1px solid #444',
+                    borderRadius: '0.75rem',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: 'monospace',
+                          color: '#C6A24E',
+                          fontSize: '1.25rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {j.jobNumber}
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: '#ccc' }}>
+                        {j.builderName}
+                        {j.orderNumber ? ` · ${j.orderNumber}` : ''}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '0.25rem',
+                        backgroundColor: '#1a1a2e',
+                        border: '1px solid #555',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {j.status}
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: '0.875rem', color: '#aaa' }}>
+                    Scheduled:{' '}
+                    {j.scheduledDate
+                      ? new Date(j.scheduledDate).toLocaleDateString()
+                      : 'TBD'}
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '0.5rem',
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    <Stat label="Total" value={j.totalPicks} />
+                    <Stat
+                      label="Picked"
+                      value={j.verifiedPicks + j.pickedPicks}
+                      color="#27AE60"
+                    />
+                    <Stat label="Pending" value={j.pendingPicks} color="#F1C40F" />
+                    <Stat label="Short" value={j.shortPicks} color="#E74C3C" />
+                  </div>
+
+                  {/* Progress bar */}
+                  <div
+                    style={{
+                      height: '0.5rem',
+                      backgroundColor: '#3a3a4e',
+                      borderRadius: '0.25rem',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${pct}%`,
+                        backgroundColor: '#27AE60',
+                        transition: 'width 0.3s',
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => startPicking(j)}
+                    style={{
+                      minHeight: TAP_TARGET,
+                      padding: '0.875rem',
+                      backgroundColor: '#C6A24E',
+                      color: '#1a1a2e',
+                      fontWeight: 'bold',
+                      fontSize: '1rem',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {j.allComplete ? 'Review' : 'Start Picking'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── PICK VIEW (selected job) ───────────────────────────────────────────
   return (
     <div
       style={{
@@ -222,264 +535,321 @@ export default function PickScannerPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '4rem',
+            fontSize: '5rem',
+            fontWeight: 'bold',
             animation: 'fadeOut 0.5s ease-out',
+            pointerEvents: 'none',
           }}
         >
-          {flashFeedback === 'success' ? '✓' : '✗'}
+          {flashFeedback === 'success' ? 'OK' : 'X'}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', margin: 0 }}>
-          Warehouse Pick Scanner
-        </h1>
-        <p style={{ color: '#aaa', margin: '0.5rem 0 0 0', fontSize: '0.875rem' }}>
-          Scan SKU barcodes to verify warehouse picks
-        </p>
+      <div
+        style={{
+          marginBottom: '1rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+            {selectedJob.jobNumber}
+          </h1>
+          <p style={{ color: '#aaa', margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>
+            {selectedJob.builderName}
+            {selectedJob.orderNumber ? ` · ${selectedJob.orderNumber}` : ''}
+          </p>
+        </div>
+        <button
+          onClick={backToJobList}
+          style={{
+            minHeight: TAP_TARGET,
+            padding: '0.75rem 1rem',
+            backgroundColor: '#2a2a3e',
+            color: '#fff',
+            border: '2px solid #444',
+            borderRadius: '0.5rem',
+            fontSize: '0.9rem',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+          }}
+        >
+          Back to Jobs
+        </button>
       </div>
 
-      {/* Job Selector */}
-      {!selectedJobId ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <p style={{ marginBottom: '1rem', color: '#ccc' }}>
-            No jobs loaded. In production, select an active job to begin picking.
+      {/* Big scan input — always-on focus, autofocus for barcode HID */}
+      <form onSubmit={handleScan} style={{ marginBottom: '1rem' }}>
+        <label
+          style={{
+            display: 'block',
+            color: '#ccc',
+            fontSize: '0.875rem',
+            marginBottom: '0.5rem',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+          }}
+        >
+          Scan SKU
+        </label>
+        <input
+          ref={scanInputRef}
+          type="text"
+          autoFocus
+          value={scanInput}
+          onChange={e => setScanInput(e.target.value)}
+          placeholder="SCAN OR TYPE SKU"
+          style={{
+            width: '100%',
+            minHeight: '64px',
+            padding: '1.25rem',
+            fontSize: '1.5rem',
+            backgroundColor: '#2a2a3e',
+            border: '3px solid #C6A24E',
+            borderRadius: '0.5rem',
+            color: '#fff',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}
+          disabled={verifying}
+          autoComplete="off"
+        />
+      </form>
+
+      {/* SKU search filter — separate from scan input so pickers can lookup */}
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="text"
+          value={skuFilter}
+          onChange={e => setSkuFilter(e.target.value)}
+          placeholder="Search SKU / description / bin..."
+          style={{
+            width: '100%',
+            minHeight: TAP_TARGET,
+            padding: '0.75rem 1rem',
+            fontSize: '1rem',
+            backgroundColor: '#2a2a3e',
+            border: '1px solid #444',
+            borderRadius: '0.5rem',
+            color: '#fff',
+          }}
+          autoComplete="off"
+        />
+      </div>
+
+      {/* Progress bar */}
+      {totalCount > 0 && (
+        <div style={{ marginBottom: '1rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 'bold',
+            }}
+          >
+            <span>Progress</span>
+            <span>
+              {pickedCount} of {totalCount} picked · {shortCount} short
+            </span>
+          </div>
+          <div
+            style={{
+              width: '100%',
+              height: '1.5rem',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.5rem',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${totalCount > 0 ? (pickedCount / totalCount) * 100 : 0}%`,
+                backgroundColor: '#27AE60',
+                transition: 'width 0.3s',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Last scan message */}
+      {lastScanMessage && !error && (
+        <div
+          style={{
+            backgroundColor: 'rgba(39, 174, 96, 0.15)',
+            border: '2px solid #27AE60',
+            borderRadius: '0.5rem',
+            padding: '0.75rem 1rem',
+            marginBottom: '1rem',
+            color: '#B6EFCA',
+            fontSize: '0.95rem',
+            fontWeight: 'bold',
+          }}
+        >
+          {lastScanMessage}
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div
+          style={{
+            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+            border: '2px solid #E74C3C',
+            borderRadius: '0.5rem',
+            padding: '0.75rem 1rem',
+            marginBottom: '1rem',
+            color: '#FF6B6B',
+            fontSize: '0.95rem',
+            fontWeight: 'bold',
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Pick list */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <p>Loading picks...</p>
+        </div>
+      ) : filteredPicks.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <p>
+            {picks.length === 0
+              ? 'No picks for this job.'
+              : 'No picks match the current filter.'}
           </p>
-          <Link href="/ops/manufacturing" style={{ color: '#C6A24E' }}>
-            ← Back to Manufacturing
-          </Link>
         </div>
       ) : (
-        <>
-          {/* Scan input - extra large for accessibility */}
-          <form onSubmit={handleScan} style={{ marginBottom: '2rem' }}>
-            <input
-              ref={scanInputRef}
-              type="text"
-              value={scanInput}
-              onChange={e => setScanInput(e.target.value)}
-              placeholder="SCAN SKU HERE"
-              style={{
-                width: '100%',
-                padding: '1.5rem',
-                fontSize: '1.5rem',
-                backgroundColor: '#2a2a3e',
-                border: '3px solid #C6A24E',
-                borderRadius: '0.5rem',
-                color: '#fff',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                textTransform: 'uppercase',
-              }}
-              disabled={verifying}
-              autoComplete="off"
-            />
-          </form>
-
-          {/* Progress Bar */}
-          {totalCount > 0 && (
-            <div style={{ marginBottom: '2rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            flex: 1,
+            overflowY: 'auto',
+          }}
+        >
+          {filteredPicks.map(pick => {
+            const statusColor = getStatusColor(pick.status)
+            const isDone = pick.status === 'VERIFIED' || pick.status === 'PICKED'
+            const isShort = pick.status === 'SHORT'
+            return (
               <div
+                key={pick.id}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold',
-                }}
-              >
-                <span>Progress</span>
-                <span>
-                  {verifiedCount} of {totalCount}
-                </span>
-              </div>
-              <div
-                style={{
-                  width: '100%',
-                  height: '2rem',
-                  backgroundColor: '#3a3a4e',
-                  borderRadius: '0.5rem',
-                  overflow: 'hidden',
+                  backgroundColor: isDone ? '#1f3324' : isShort ? '#3a1f1f' : '#2a2a3e',
+                  border: `2px solid ${isDone ? '#27AE60' : isShort ? '#E74C3C' : '#444'}`,
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                  opacity: isDone ? 0.75 : 1,
                 }}
               >
                 <div
                   style={{
-                    height: '100%',
-                    width: `${totalCount > 0 ? (verifiedCount / totalCount) * 100 : 0}%`,
-                    backgroundColor: '#27AE60',
-                    transition: 'width 0.3s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
+                    fontSize: '1.25rem',
                     fontWeight: 'bold',
+                    color: '#C6A24E',
+                    marginBottom: '0.5rem',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  {pick.sku}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.95rem',
+                    color: '#ccc',
+                    marginBottom: '0.75rem',
+                  }}
+                >
+                  {pick.description}
+                </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.75rem',
+                    marginBottom: '0.75rem',
                     fontSize: '0.875rem',
                   }}
                 >
-                  {totalCount > 0 && verifiedCount > 0 && `${verifiedCount}/${totalCount}`}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Error message */}
-          {error && (
-            <div
-              style={{
-                backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                border: '2px solid #E74C3C',
-                borderRadius: '0.5rem',
-                padding: '1rem',
-                marginBottom: '1.5rem',
-                color: '#FF6B6B',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Pick list - cards for large touch targets */}
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-              <p>Loading picks...</p>
-            </div>
-          ) : picks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📦</div>
-              <p>No picks for this job</p>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-                flex: 1,
-                overflowY: 'auto',
-              }}
-            >
-              {picks.map((pick, idx) => {
-                const isNext = pick.status !== 'VERIFIED' && idx === picks.findIndex(p => p.status !== 'VERIFIED')
-                const statusColor = getStatusColor(pick.status)
-
-                return (
-                  <div
-                    key={pick.id}
-                    style={{
-                      backgroundColor: isNext ? '#3a3a4e' : '#2a2a3e',
-                      border: isNext ? '3px solid #C6A24E' : '1px solid #444',
-                      borderRadius: '0.75rem',
-                      padding: '1.5rem',
-                      opacity: pick.status === 'VERIFIED' ? 0.6 : 1,
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {/* SKU - large and bold */}
-                    <div
-                      style={{
-                        fontSize: '1.5rem',
-                        fontWeight: 'bold',
-                        color: '#C6A24E',
-                        marginBottom: '0.75rem',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      {pick.sku}
-                    </div>
-
-                    {/* Product name */}
-                    <div
-                      style={{
-                        fontSize: '1rem',
-                        color: '#ccc',
-                        marginBottom: '0.75rem',
-                      }}
-                    >
-                      {pick.description}
-                    </div>
-
-                    {/* Qty and location */}
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '1rem',
-                        marginBottom: '1rem',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      <div>
-                        <div style={{ color: '#999', marginBottom: '0.25rem' }}>QTY NEEDED</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-                          {pick.quantity}
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ color: '#999', marginBottom: '0.25rem' }}>
-                          BIN LOCATION
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '1.25rem',
-                            fontWeight: 'bold',
-                            color: '#27AE60',
-                          }}
-                        >
-                          {pick.warehouseZone} {pick.binLocation}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Status badge */}
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.25rem',
-                        backgroundColor: statusColor,
-                        color: '#fff',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {pick.status}
+                  <div>
+                    <div style={{ color: '#999' }}>QTY</div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 'bold' }}>
+                      {pick.pickedQty}/{pick.quantity}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Complete button */}
-          {totalCount > 0 && verifiedCount === totalCount && (
-            <div style={{ marginTop: '2rem' }}>
-              <button
-                style={{
-                  width: '100%',
-                  padding: '1.5rem',
-                  backgroundColor: '#27AE60',
-                  color: '#fff',
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                }}
-                onClick={() => {
-                  // In production, would update job status
-                  addToast({ type: 'success', title: 'Success', message: 'All items verified! Job ready for next stage.' })
-                }}
-              >
-                ✓ All Items Verified — Mark Job Ready
-              </button>
-            </div>
-          )}
-        </>
+                  <div>
+                    <div style={{ color: '#999' }}>BIN</div>
+                    <div
+                      style={{
+                        fontSize: '1.15rem',
+                        fontWeight: 'bold',
+                        color: '#27AE60',
+                      }}
+                    >
+                      {pick.warehouseZone || ''} {pick.binLocation || ''}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.4rem 0.75rem',
+                      borderRadius: '0.25rem',
+                      backgroundColor: statusColor,
+                      color: '#fff',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {pick.status}
+                  </div>
+                  {!isDone && !isShort && (
+                    <button
+                      onClick={() => markShort(pick)}
+                      style={{
+                        minHeight: TAP_TARGET,
+                        padding: '0.5rem 1rem',
+                        backgroundColor: 'transparent',
+                        color: '#E74C3C',
+                        border: '2px solid #E74C3C',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Mark Short
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       )}
 
       <style jsx>{`
@@ -492,6 +862,41 @@ export default function PickScannerPage() {
           }
         }
       `}</style>
+    </div>
+  )
+}
+
+function Stat({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: number
+  color?: string
+}) {
+  return (
+    <div
+      style={{
+        backgroundColor: '#1a1a2e',
+        border: '1px solid #3a3a4e',
+        borderRadius: '0.25rem',
+        padding: '0.5rem',
+        textAlign: 'center',
+      }}
+    >
+      <div style={{ color: '#888', fontSize: '0.65rem', textTransform: 'uppercase' }}>
+        {label}
+      </div>
+      <div
+        style={{
+          color: color || '#fff',
+          fontWeight: 'bold',
+          fontSize: '1.1rem',
+        }}
+      >
+        {value}
+      </div>
     </div>
   )
 }

@@ -98,20 +98,21 @@ export default function AIAssistantPage() {
 
       const data = await response.json()
 
-      // Remove typing indicator and add response
+      // Remove typing indicator and add response (cap at 50 messages)
       setMessages((prev) => {
         const filtered = prev.filter((m) => m.id !== typingId)
-        return [
+        const updated = [
           ...filtered,
           {
             id: (Date.now() + 2).toString(),
-            role: 'assistant',
+            role: 'assistant' as const,
             content: data.message || data.error || 'No response received.',
             timestamp: new Date(),
             toolsUsed: data.toolsUsed,
             actions: data.actions,
           },
         ]
+        return updated.length > 50 ? updated.slice(-50) : updated
       })
     } catch (error) {
       console.error('Failed to send message:', error)
@@ -202,7 +203,7 @@ export default function AIAssistantPage() {
       </div>
 
       {/* Quick actions (only show when there's just the initial message) */}
-      {messages.length === 1 && (
+      {messages.filter(m => m.role === 'user').length === 0 && (
         <div className="px-6 py-4 bg-white border-t">
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">
             Quick Actions

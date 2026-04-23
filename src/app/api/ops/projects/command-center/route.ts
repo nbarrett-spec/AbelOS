@@ -16,6 +16,15 @@ export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  const staffId = request.headers.get('x-staff-id') || ''
+  const rolesHeader = (request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || '').toUpperCase()
+  const isPrivileged = /ADMIN|MANAGER/.test(rolesHeader)
+  const allOverride = request.nextUrl.searchParams.get('all') === '1' && isPrivileged
+  // Scope to this PM unless caller is ADMIN/MANAGER with ?all=1 (or no staff id).
+  const pmFilterId = !isPrivileged && staffId
+    ? staffId
+    : (allOverride ? null : (isPrivileged ? null : staffId))
+
   try {
     const activeStatuses: any[] = [
       'DRAFT',
@@ -29,8 +38,33 @@ export async function GET(request: NextRequest) {
       'DELIVERED',
     ]
 
+    // If scoped to a PM, restrict Projects to those that have at least one Job
+    // assigned to this PM (via quote.order.jobs). We pre-compute the eligible
+    // projectIds so findMany stays readable.
+    let projectIdFilter: { in: string[] } | undefined = undefined
+    if (pmFilterId) {
+      const scopedProjectIds: any[] = await prisma.$queryRawUnsafe(
+        `
+          SELECT DISTINCT q."projectId" AS id
+          FROM "Job" j
+          JOIN "Order" o ON j."orderId" = o."id"
+          JOIN "Quote" q ON o."quoteId" = q."id"
+          WHERE j."assignedPMId" = $1
+            AND q."projectId" IS NOT NULL
+        `,
+        pmFilterId,
+      )
+      const ids = scopedProjectIds.map((r: any) => r.id).filter(Boolean) as string[]
+      // If the PM owns zero projects, force an empty result instead of
+      // returning the whole table.
+      projectIdFilter = { in: ids.length ? ids : ['__none__'] }
+    }
+
     const projects = await prisma.project.findMany({
-      where: { status: { in: activeStatuses } },
+      where: {
+        status: { in: activeStatuses },
+        ...(projectIdFilter ? { id: projectIdFilter } : {}),
+      },
       select: {
         id: true,
         name: true,
@@ -153,6 +187,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       asOf: now.toISOString(),
+      scope: pmFilterId ? 'pm' : 'all',
       total: rows.length,
       groups,
       summary: {

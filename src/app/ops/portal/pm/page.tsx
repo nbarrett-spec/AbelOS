@@ -43,6 +43,7 @@ interface Builder {
   companyName: string
   activeJobsCount?: number
   ytdRevenue?: number
+  revenue?: number // trailing 12mo revenue from pm-briefing
 }
 
 export default function PMPortal() {
@@ -78,21 +79,24 @@ export default function PMPortal() {
       const todayStr = today.toISOString().split('T')[0]
       const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0]
 
-      const [jobsRes, deliveriesRes, tasksRes, notesRes, buildersRes] = await Promise.all([
+      // Top builders come from pm-briefing (per-PM, revenue-sorted trailing 12mo);
+      // other widgets stay on the existing endpoints.
+      const [jobsRes, deliveriesRes, tasksRes, notesRes, briefingRes] = await Promise.all([
         fetch('/api/ops/jobs?limit=10&status=CREATED,READINESS_CHECK,MATERIALS_LOCKED,IN_PRODUCTION,STAGED'),
         fetch(`/api/ops/schedule?startDate=${todayStr}&endDate=${sevenDaysStr}&entryType=DELIVERY&limit=5`),
         fetch('/api/ops/jobs?limit=10'),
         fetch('/api/ops/jobs?limit=10'),
-        fetch('/api/ops/builders?limit=4&sortBy=createdAt&sortDir=desc'),
+        fetch('/api/ops/pm-briefing'),
       ])
 
-      const [jobsData, deliveriesData, tasksData, notesData, buildersData] = await Promise.all([
+      const [jobsData, deliveriesData, tasksData, notesData, briefingData] = await Promise.all([
         jobsRes.ok ? jobsRes.json() : { jobs: [] },
         deliveriesRes.ok ? deliveriesRes.json() : { entries: [] },
         tasksRes.ok ? tasksRes.json() : { jobs: [] },
         notesRes.ok ? notesRes.json() : { jobs: [] },
-        buildersRes.ok ? buildersRes.json() : { builders: [] },
+        briefingRes.ok ? briefingRes.json() : { topBuilders: [] },
       ])
+      const buildersData = { builders: briefingData.topBuilders || [] }
 
       setMyJobs((jobsData.jobs || []).slice(0, 5))
       setUpcomingDeliveries((deliveriesData.entries || []).slice(0, 5))
@@ -121,12 +125,12 @@ export default function PMPortal() {
       })
       setRecentNotes(allNotes.slice(0, 5))
 
-      // Set top builders with real data
+      // Set top builders with real data (from pm-briefing — revenue trailing 12mo)
       const builders = (buildersData.builders || []).map((builder: any) => ({
         id: builder.id,
         companyName: builder.companyName,
         activeJobsCount: builder.activeJobsCount || 0,
-        ytdRevenue: builder.ytdRevenue || 0,
+        ytdRevenue: builder.revenue ?? builder.ytdRevenue ?? 0,
       }))
       setTopBuilders(builders.slice(0, 4))
     } catch (error) {

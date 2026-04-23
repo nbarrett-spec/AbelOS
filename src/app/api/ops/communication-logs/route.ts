@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { recordCommunicationActivity } from '@/lib/events/activity'
 
 // GET /api/ops/communication-logs — List communication logs with filters
 export async function GET(request: NextRequest) {
@@ -124,6 +125,12 @@ export async function POST(request: NextRequest) {
       sentAt ? new Date(sentAt) : new Date(),
       duration || null, logStatus || 'LOGGED'
     )
+
+    // Event: mirror this comm into Activity so CRM portals can render it.
+    // Fire-and-forget; must never block the primary response.
+    if (result[0]?.id) {
+      recordCommunicationActivity(result[0].id).catch(() => {})
+    }
 
     return NextResponse.json(result[0], { status: 201 })
   } catch (error: any) {

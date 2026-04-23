@@ -5,6 +5,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { sendBuilderNotification } from '@/lib/notifications'
 import { audit } from '@/lib/audit'
+import { createTaskForOverdueInvoice } from '@/lib/events/task'
 
 // ──────────────────────────────────────────────────────────────────
 // SEND INVOICE PAYMENT REMINDER TO BUILDER
@@ -88,6 +89,10 @@ export async function POST(request: NextRequest) {
 
     // Send notification
     await sendBuilderNotification(notificationEvent as any)
+
+    // Event: ensure an Accounting Task exists to chase payment. Idempotent —
+    // second reminder on same invoice reuses the existing task.
+    createTaskForOverdueInvoice(invoiceId).catch(() => {})
 
     return safeJson({
       success: true,

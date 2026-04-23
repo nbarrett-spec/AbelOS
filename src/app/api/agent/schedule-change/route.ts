@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
+import { createTaskForDeliveryReschedule } from '@/lib/events/task'
 
 // POST: Submit a schedule change request from builder chat
 export async function POST(request: NextRequest) {
@@ -149,6 +150,18 @@ export async function POST(request: NextRequest) {
           UPDATE "ScheduleEntry" SET "scheduledDate" = $1::date, status = 'RESCHEDULED'::"ScheduleStatus"
           WHERE id = $2
         `, requestedDate, scheduleEntryId)
+      }
+
+      // Event: notify dispatch via a Task so the change doesn't silently
+      // fall on the floor. Idempotent; one task per deliveryId+newDate.
+      if (deliveryId) {
+        createTaskForDeliveryReschedule({
+          deliveryId,
+          oldDate: currentDate,
+          newDate: requestedDate,
+          jobId,
+          reason: reason || 'Builder-requested via portal',
+        }).catch(() => {})
       }
     }
 

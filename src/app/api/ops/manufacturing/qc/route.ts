@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { mirrorQualityCheckToInspection } from '@/lib/events/inspection'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -203,6 +204,10 @@ export async function POST(request: NextRequest) {
 
     const fullChecks: any = await prisma.$queryRawUnsafe(fetchQuery, newId)
     const fullCheck = fullChecks[0]
+
+    // Mirror into Inspection so QC portal sees live queue.
+    // On FAIL: also emits PunchItem + PM Task. Fire-and-forget; never blocks.
+    mirrorQualityCheckToInspection(newId).catch(() => {})
 
     const response = {
       id: fullCheck.id,

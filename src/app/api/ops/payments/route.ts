@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { onInvoicePaid } from '@/lib/cascades/invoice-lifecycle'
 
 interface PaymentRecord {
   id: string
@@ -240,6 +241,16 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       )
+    }
+
+    // Cross-entity cascade — invoice fully paid closes the loop back to the
+    // Order (paymentStatus → PAID) and any linked Jobs (→ CLOSED), and drops
+    // a PM inbox item. Fire-and-forget; failures logged but won't reverse the
+    // payment insert.
+    if (newBalanceDue <= 0) {
+      onInvoicePaid(invoiceId).catch((err: any) => {
+        console.error('[payments] cascade onInvoicePaid failed', invoiceId, err?.message || err)
+      })
     }
 
     // Fetch and return created payment

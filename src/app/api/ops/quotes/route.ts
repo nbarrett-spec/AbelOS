@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendQuoteReadyEmail } from '@/lib/email'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { recordQuoteActivity } from '@/lib/events/activity'
 
 // GET /api/ops/quotes — List all quotes (ops-side, no builder auth required)
 export async function GET(request: NextRequest) {
@@ -506,23 +507,15 @@ export async function PATCH(request: NextRequest) {
           // Continue without failing the request
         }
 
-        // Log activity record
-        const activityId = crypto.randomUUID()
-        await prisma.$executeRawUnsafe(
-          `INSERT INTO "Activity" ("id", "type", "description", "builderId", "staffId", "metadata", "createdAt")
-           VALUES ($1, 'QUOTE_SENT', $2, $3, $4, $5, NOW())`,
-          activityId,
-          `Quote ${updatedQuote.quoteNumber} sent to builder`,
-          updatedQuote.builder_id,
-          null, // staffId from the request session would be captured separately if needed
-          JSON.stringify({
-            quoteId: id,
-            quoteNumber: updatedQuote.quoteNumber,
-            email: updatedQuote.builder_email,
-            projectName: updatedQuote.project_name,
-            total: Number(updatedQuote.total),
-          })
-        )
+        // Log activity record — use the idempotent event helper.
+        // (The prior inline INSERT referenced non-existent columns and would crash.)
+        recordQuoteActivity({
+          quoteId: id,
+          builderId: updatedQuote.builder_id,
+          staffId: request.headers.get('x-staff-id'),
+          quoteNumber: updatedQuote.quoteNumber,
+          total: Number(updatedQuote.total),
+        }).catch(() => {})
       } catch (emailError: any) {
         console.warn('Failed to send quote ready email:', emailError)
         // Continue without failing the request

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { recordCommunicationActivity } from '@/lib/events/activity'
 
 // ──────────────────────────────────────────────────────────────────────────
 // /api/ops/communication-logs/gmail-sync
@@ -230,6 +231,11 @@ export async function POST(request: NextRequest) {
 
       created++
       results.push({ messageId: email.messageId, status: 'created', id: result[0]?.id })
+
+      // Event: mirror this comm into Activity (fire-and-forget, idempotent).
+      if (result[0]?.id) {
+        recordCommunicationActivity(result[0].id).catch(() => {})
+      }
     } catch (error: any) {
       errors++
       results.push({ messageId: email.messageId, status: 'error', error: error.message })

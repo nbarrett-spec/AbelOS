@@ -22,8 +22,14 @@ export async function GET(request: NextRequest) {
     const params: any[] = []
     let idx = 1
 
-    // Only overdue or sent invoices
-    conditions.push(`i."status" IN ('OVERDUE'::"InvoiceStatus", 'SENT'::"InvoiceStatus")`)
+    // Open invoices with a balance (any non-terminal status) — matches the
+    // InvoiceStatus enum exactly: ISSUED | SENT | PARTIALLY_PAID | OVERDUE.
+    // Excludes DRAFT, PAID, VOID, WRITE_OFF. We also require an unpaid balance
+    // so fully-paid-but-still-tagged invoices don't slip in.
+    conditions.push(
+      `i."status"::text IN ('ISSUED','SENT','PARTIALLY_PAID','OVERDUE') ` +
+      `AND (i."total" - COALESCE(i."amountPaid", 0)) > 0`
+    )
 
     if (builderId) {
       conditions.push(`i."builderId" = $${idx}`)

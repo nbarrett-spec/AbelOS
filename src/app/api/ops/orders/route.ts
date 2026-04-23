@@ -5,6 +5,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { runOrderStatusCascades, onOrderConfirmed } from '@/lib/cascades/order-lifecycle'
 import { checkBuilderCreditStatus } from '@/lib/credit-hold'
+import { createTaskForOrderReceived } from '@/lib/events/task'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -414,6 +415,10 @@ export async function POST(request: NextRequest) {
     await audit(request, 'CREATE', 'Order', orderId, {
       orderNumber, builderId: finalBuilderId, quoteId, total: quote.total, itemCount: (quoteItems as any[]).length,
     });
+
+    // Event: new order lands at RECEIVED — create a PM task to confirm it.
+    // Fire-and-forget; task failure must never roll back the order.
+    createTaskForOrderReceived(orderId).catch(() => {})
 
     // Update project status to ORDERED if it exists
     if (quote.project_id) {

@@ -49,8 +49,9 @@ export async function GET(request: NextRequest) {
         b."email"
       FROM "Invoice" i
       JOIN "Builder" b ON b."id" = i."builderId"
-      WHERE i."status"::text IN ('SENT', 'OVERDUE', 'PARTIALLY_PAID')
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'OVERDUE', 'PARTIALLY_PAID')
         AND i."dueDate" < NOW()
+        AND (i."total" - COALESCE(i."amountPaid", 0)) > 0
       ORDER BY "daysOverdue" DESC
     `)
 
@@ -114,14 +115,17 @@ export async function GET(request: NextRequest) {
         // Communication audit trail should be tracked through CollectionAction records instead.
         // Optionally, log to invoice's CollectionAction for audit trail.
 
-        // Update invoice statuses from SENT to OVERDUE
+        // Promote non-terminal pre-overdue statuses to OVERDUE once past due.
+        // ISSUED or SENT invoices that are past due become OVERDUE. PARTIALLY_PAID
+        // is left alone because it carries its own meaning (a partial payment
+        // has been applied) which we don't want to clobber with OVERDUE.
         for (const invoice of builder.invoices) {
           if (invoice.daysOverdue > 0) {
             await prisma.$executeRawUnsafe(
               `
               UPDATE "Invoice"
               SET "status" = 'OVERDUE', "updatedAt" = NOW()
-              WHERE "id" = $1 AND "status"::text = 'SENT'
+              WHERE "id" = $1 AND "status"::text IN ('ISSUED', 'SENT')
               `,
               invoice.id
             )

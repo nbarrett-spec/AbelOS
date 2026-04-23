@@ -504,6 +504,26 @@ export default function CommandCenterPage() {
                   )}
                 </tbody>
               </table>
+              {/* Task pagination */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', fontSize: 13, color: '#6B7280' }}>
+                <span>Page {taskPage} {tasksTotal > 0 && `of ${Math.ceil(tasksTotal / 20)}`} ({tasksTotal} total)</span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => setTaskPage(p => Math.max(1, p - 1))}
+                    disabled={taskPage <= 1}
+                    style={{ padding: '4px 12px', border: '1px solid #d1d5db', borderRadius: 4, background: taskPage <= 1 ? '#f3f4f6' : '#fff', cursor: taskPage <= 1 ? 'not-allowed' : 'pointer', opacity: taskPage <= 1 ? 0.5 : 1 }}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setTaskPage(p => p + 1)}
+                    disabled={taskPage >= Math.ceil(tasksTotal / 20)}
+                    style={{ padding: '4px 12px', border: '1px solid #d1d5db', borderRadius: 4, background: taskPage >= Math.ceil(tasksTotal / 20) ? '#f3f4f6' : '#fff', cursor: taskPage >= Math.ceil(tasksTotal / 20) ? 'not-allowed' : 'pointer', opacity: taskPage >= Math.ceil(tasksTotal / 20) ? 0.5 : 1 }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         )}

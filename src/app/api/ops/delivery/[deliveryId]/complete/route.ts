@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
+import { onDeliveryComplete } from '@/lib/cascades/delivery-lifecycle'
 
 /**
  * POST /api/ops/delivery/[deliveryId]/complete
@@ -135,6 +136,16 @@ export async function POST(
       damagedItemsCount: damagedItems.length,
       partialComplete,
     })
+
+    // Cross-entity cascade — on full-complete, advance the linked Order to
+    // DELIVERED, trigger the invoice-on-delivery draft, and notify the PM.
+    // Skip for partial deliveries (those stay PARTIAL_DELIVERY until a
+    // follow-up delivery closes the remainder). Fire-and-forget.
+    if (!partialComplete) {
+      onDeliveryComplete(delivery.id).catch((err: any) => {
+        console.error('[delivery complete] cascade failure', delivery.id, err?.message || err)
+      })
+    }
 
     return NextResponse.json({
       ok: true,

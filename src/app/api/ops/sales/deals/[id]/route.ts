@@ -5,6 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { logAudit, audit } from '@/lib/audit'
 import { executeWorkflows } from '@/lib/workflows'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { recordDealActivity } from '@/lib/events/activity'
 
 // GET /api/ops/sales/deals/[id] — Single deal with activities, contracts, documents
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -267,6 +268,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         oldStage: previousStage,
         newStage,
         dealData: updatedDeal[0],
+      }).catch(() => {})
+
+      // Event: mirror the stage change into Activity so sales/CRM portals show it.
+      recordDealActivity({
+        dealId,
+        fromStage: previousStage,
+        toStage: newStage,
+        staffId,
       }).catch(() => {})
     }
 

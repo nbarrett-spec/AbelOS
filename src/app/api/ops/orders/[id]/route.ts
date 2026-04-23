@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { notifyOrderConfirmed, notifyOrderShipped, notifyOrderDelivered } from '@/lib/notifications'
+import { onDeliveryScheduled } from '@/lib/cascades/delivery-lifecycle'
+import { runOrderStatusCascades } from '@/lib/cascades/order-lifecycle'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // GET /api/ops/orders/[id] — Get single order with all relations
 export async function GET(
@@ -108,6 +111,29 @@ export async function PATCH(
     const body = await request.json()
     const { status, paymentStatus, deliveryDate, deliveryNotes, poNumber, confirmDelivery } = body
 
+    // ── Status guard: enforce OrderStatus state machine before any write. ──
+    // When a `status` (or `confirmDelivery` → DELIVERED) is coming in, load the
+    // current status from the DB and validate against state-machines.ts. This
+    // is the canonical pattern — see docs/STATUS_GUARD_WIRING.md.
+    if (status || confirmDelivery) {
+      const currentRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "status"::text AS "status" FROM "Order" WHERE "id" = $1`,
+        id
+      )
+      if (currentRows.length === 0) {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      }
+      const currentStatus: string = currentRows[0].status
+      const targetStatus: string = status || 'DELIVERED'
+      try {
+        requireValidTransition('order', currentStatus, targetStatus)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
+
     const setClauses: string[] = ['"updatedAt" = NOW()']
 
     if (status) {
@@ -191,6 +217,30 @@ export async function PATCH(
       }
     }
 
+    // ── Cross-entity cascades (Job on CONFIRMED, Invoice DRAFT on DELIVERED,
+    // Job close on COMPLETE). Fire-and-forget so cascade failures never roll
+    // back the PATCH. The `confirmDelivery` shortcut implies DELIVERED.
+    const cascadeStatus = status || (confirmDelivery ? 'DELIVERED' : null)
+    if (cascadeStatus) {
+      runOrderStatusCascades(id, cascadeStatus).catch((err: any) => {
+        console.error('[orders PATCH] cascade failure', id, cascadeStatus, err?.message || err)
+      })
+    }
+
+    // ── Delivery lifecycle: create a SCHEDULED Delivery when Order → READY_TO_SHIP ──
+    // The bug this fixes: Deliveries were only ever written at COMPLETE (so 100%
+    // of rows showed status=COMPLETE on insert), which broke the driver portal
+    // (no SCHEDULED stops ever appeared) and the executive on-time metric.
+    //
+    // Now, when an order flips to READY_TO_SHIP, we ensure its Job has a paired
+    // Delivery row in SCHEDULED state with a proper deliveryNumber and address.
+    // No crew is assigned yet — Dispatch picks it up from there.
+    if (status === 'READY_TO_SHIP') {
+      createScheduledDeliveryForOrder(id).catch((err: any) => {
+        console.error('[orders PATCH] delivery creation failure', id, err?.message || err)
+      })
+    }
+
     // Return updated order (re-fetch)
     const updatedRows: any[] = await prisma.$queryRawUnsafe(`
       SELECT o.*, o."status"::text AS "status",
@@ -206,5 +256,81 @@ export async function PATCH(
   } catch (error: any) {
     console.error('PATCH /api/ops/orders/[id] error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// ── Delivery lifecycle helper ────────────────────────────────────────────
+//
+// Creates a SCHEDULED Delivery row for an Order that just moved to READY_TO_SHIP.
+// Idempotent: if the Order's Job already has a non-cancelled Delivery, skip.
+// If the Order has no Job yet, skip; once a Job is created the next PATCH to
+// READY_TO_SHIP will find it and create the Delivery.
+async function createScheduledDeliveryForOrder(orderId: string): Promise<void> {
+  try {
+    // Resolve the Job for this order and best available address.
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT j."id" AS "jobId", j."jobAddress",
+              b."address" AS "builderAddress", b."city" AS "builderCity",
+              b."state" AS "builderState", b."zip" AS "builderZip"
+       FROM "Order" o
+       LEFT JOIN "Job" j ON j."orderId" = o."id"
+       LEFT JOIN "Builder" b ON b."id" = o."builderId"
+       WHERE o."id" = $1
+       ORDER BY j."createdAt" DESC NULLS LAST
+       LIMIT 1`,
+      orderId
+    )
+    if (rows.length === 0 || !rows[0].jobId) {
+      // No Job yet — an earlier cascade usually creates one on CONFIRMED.
+      // Don't create an orphan Delivery without a Job.
+      return
+    }
+    const r = rows[0]
+    const jobId: string = r.jobId
+
+    // Idempotency — skip if a Delivery already exists for this Job in any
+    // live lifecycle state.
+    const existing: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Delivery"
+       WHERE "jobId" = $1
+         AND "status"::text NOT IN ('REFUSED', 'RESCHEDULED')
+       LIMIT 1`,
+      jobId
+    )
+    if (existing.length > 0) return
+
+    // Build address: prefer Job.jobAddress, fall back to Builder address.
+    const address =
+      r.jobAddress ||
+      [r.builderAddress, r.builderCity, r.builderState, r.builderZip]
+        .filter(Boolean)
+        .join(', ') ||
+      'TBD'
+
+    // Generate a DEL-YYYY-NNNN number from the current max.
+    const year = new Date().getFullYear()
+    const maxRow: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COALESCE(MAX(CAST(SUBSTRING("deliveryNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
+       FROM "Delivery" WHERE "deliveryNumber" LIKE $1`,
+      `DEL-${year}-%`
+    )
+    const nextNumber = Number(maxRow[0]?.max_num || 0) + 1
+    const deliveryNumber = `DEL-${year}-${String(nextNumber).padStart(4, '0')}`
+    const deliveryId = `del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Delivery" (
+        "id", "jobId", "deliveryNumber", "routeOrder",
+        "address", "status", "createdAt", "updatedAt"
+      ) VALUES (
+        $1, $2, $3, 0, $4, 'SCHEDULED'::"DeliveryStatus", NOW(), NOW()
+      )`,
+      deliveryId, jobId, deliveryNumber, address,
+    )
+
+    // Kick the schedule-side cascade (ScheduleEntry + PM inbox item).
+    onDeliveryScheduled(deliveryId).catch(() => undefined)
+  } catch (err: any) {
+    console.error('[createScheduledDeliveryForOrder] failed', orderId, err?.message || err)
   }
 }

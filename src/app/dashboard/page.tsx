@@ -206,8 +206,8 @@ export default function DashboardPage() {
         tierName: pricingRes?.tierStatus?.currentTier || 'STANDARD',
         ytdSavings: savings,
       })
-    } catch {
-      // Silently fall through — insights are non-critical
+    } catch (err) {
+      console.warn('[Dashboard] Insights fetch failed:', err)
     }
   }, [])
 
@@ -221,8 +221,8 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/account/health')
       if (res.ok) setHealth(await res.json())
-    } catch {
-      // Non-critical
+    } catch (err) {
+      console.warn('[Dashboard] Fetch failed:', err)
     }
   }
 
@@ -233,8 +233,8 @@ export default function DashboardPage() {
         const data = await res.json()
         setOrders((data.orders || []).slice(0, 10))
       }
-    } catch {
-      // Non-critical
+    } catch (err) {
+      console.warn('[Dashboard] Fetch failed:', err)
     }
   }
 

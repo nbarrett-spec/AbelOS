@@ -1,0 +1,5504 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AIInvocation {
+  id               String   @id
+  endpoint         String
+  inputHash        String
+  model            String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  costEstimate     Float    @default(0)
+  durationMs       Int      @default(0)
+  staffId          String?
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)], map: "AIInvocation_createdAt_desc_idx")
+  @@index([endpoint])
+  @@index([staffId])
+}
+
+model AccountCategoryMargin {
+  id           String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId    String
+  category     String
+  categoryType CategoryType @default(CORE)
+  targetMargin Float        @default(0.25)
+  minMargin    Float        @default(0.15)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now())
+  Builder      Builder      @relation(fields: [builderId], references: [id], onDelete: Cascade)
+
+  @@unique([builderId, category], map: "AccountCategoryMargin_builder_cat_key")
+  @@index([builderId])
+}
+
+model AccountMarginTarget {
+  id                  String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId           String   @unique
+  targetBlendedMargin Float    @default(0.30)
+  notes               String?
+  setById             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now())
+  Builder             Builder  @relation(fields: [builderId], references: [id], onDelete: Cascade)
+}
+
+model AccountReviewTrigger {
+  id          String    @id
+  builderId   String
+  triggerType String
+  severity    String?   @default("MEDIUM")
+  description String?
+  isResolved  Boolean?  @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime? @db.Timestamptz(6)
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([builderId], map: "idx_review_trigger_builder")
+  @@index([isResolved], map: "idx_review_trigger_resolved")
+}
+
+model AccountTouchpoint {
+  id           String    @id
+  builderId    String
+  staffId      String?
+  touchType    String
+  channel      String?   @default("PHONE")
+  subject      String?
+  notes        String?
+  outcome      String?
+  followUpDate DateTime? @db.Date
+  createdAt    DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([builderId], map: "idx_touchpoint_builder")
+  @@index([createdAt], map: "idx_touchpoint_date")
+}
+
+model Activity {
+  id           String       @id
+  staffId      String
+  builderId    String?
+  jobId        String?
+  activityType ActivityType
+  subject      String
+  notes        String?
+  outcome      String?
+  scheduledAt  DateTime?
+  completedAt  DateTime?
+  durationMins Int?
+  createdAt    DateTime     @default(now())
+  communityId  String?
+  Job          Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  Staff        Staff        @relation(fields: [staffId], references: [id])
+
+  @@index([activityType])
+  @@index([builderId])
+  @@index([communityId])
+  @@index([createdAt])
+  @@index([jobId])
+  @@index([staffId])
+  @@index([builderId, createdAt(sort: Desc)], map: "idx_activity_builder_created")
+  @@index([jobId, createdAt(sort: Desc)], map: "idx_activity_job_created")
+}
+
+model AgentConfig {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  agentRole   String
+  configKey   String
+  configValue Json
+  description String?
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@unique([agentRole, configKey], map: "AgentConfig_role_key_unique")
+  @@index([agentRole], map: "idx_agentconfig_role")
+}
+
+model AgentConversation {
+  id                    String                  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId             String
+  channel               String                  @default("PORTAL")
+  status                String                  @default("ACTIVE")
+  subject               String?
+  lastMessageAt         DateTime?               @default(now()) @db.Timestamptz(6)
+  escalatedTo           String?
+  escalatedAt           DateTime?               @db.Timestamptz(6)
+  resolvedAt            DateTime?               @db.Timestamptz(6)
+  metadata              Json?                   @default("{}")
+  createdAt             DateTime?               @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime?               @default(now()) @db.Timestamptz(6)
+  Builder               Builder                 @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Staff                 Staff?                  @relation(fields: [escalatedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AgentEmailLog         AgentEmailLog[]
+  AgentSmsLog           AgentSmsLog[]
+  ScheduleChangeRequest ScheduleChangeRequest[]
+
+  @@index([builderId], map: "idx_agent_conv_builder")
+  @@index([channel], map: "idx_agent_conv_channel")
+  @@index([status], map: "idx_agent_conv_status")
+}
+
+model AgentEmailLog {
+  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId    String?
+  builderId         String?
+  fromEmail         String
+  toEmail           String
+  subject           String?
+  body              String
+  direction         String             @default("INBOUND")
+  externalId        String?
+  status            String?            @default("RECEIVED")
+  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  Builder           Builder?           @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AgentConversation AgentConversation? @relation(fields: [conversationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([conversationId], map: "idx_email_log_conv")
+}
+
+model AgentMessage {
+  id            String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  fromAgent     String
+  toAgent       String
+  messageType   String     @default("INFO")
+  subject       String
+  body          Json?
+  priority      String     @default("NORMAL")
+  relatedTaskId String?
+  readAt        DateTime?
+  respondedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  AgentTask     AgentTask? @relation(fields: [relatedTaskId], references: [id])
+
+  @@index([fromAgent, createdAt], map: "idx_agentmsg_from")
+  @@index([toAgent, readAt], map: "idx_agentmsg_to")
+  @@index([messageType], map: "idx_agentmsg_type")
+}
+
+model AgentSession {
+  id                  String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  agentRole           String     @unique
+  status              String     @default("OFFLINE")
+  currentTaskId       String?
+  lastHeartbeat       DateTime?
+  tasksCompletedToday Int        @default(0)
+  tasksFailedToday    Int        @default(0)
+  errorsToday         Int        @default(0)
+  startedAt           DateTime?
+  metadata            Json?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @default(now())
+  AgentTask           AgentTask? @relation(fields: [currentTaskId], references: [id])
+}
+
+model AgentSmsLog {
+  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId    String?
+  builderId         String?
+  phoneNumber       String
+  direction         String             @default("INBOUND")
+  body              String
+  externalId        String?
+  status            String?            @default("SENT")
+  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  Builder           Builder?           @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AgentConversation AgentConversation? @relation(fields: [conversationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([conversationId], map: "idx_sms_log_conv")
+}
+
+model AgentTask {
+  id               String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  agentRole        String
+  taskType         String
+  priority         String         @default("NORMAL")
+  status           String         @default("PENDING")
+  title            String
+  description      String?
+  payload          Json?
+  result           Json?
+  createdBy        String
+  assignedTo       String?
+  parentTaskId     String?
+  requiresApproval Boolean        @default(false)
+  approvedBy       String?
+  approvedAt       DateTime?
+  claimedAt        DateTime?
+  completedAt      DateTime?
+  failedAt         DateTime?
+  failReason       String?
+  dueBy            DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now())
+  AgentMessage     AgentMessage[]
+  AgentSession     AgentSession[]
+
+  @@index([assignedTo, status], map: "idx_agenttask_assignedto")
+  @@index([parentTaskId], map: "idx_agenttask_parent")
+  @@index([priority, createdAt], map: "idx_agenttask_priority")
+  @@index([agentRole, status], map: "idx_agenttask_role_status")
+  @@index([taskType, status], map: "idx_agenttask_type")
+}
+
+model AlertIncident {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  alertId         String
+  title           String
+  href            String?
+  description     String?
+  startedAt       DateTime  @default(now()) @db.Timestamptz(6)
+  endedAt         DateTime? @db.Timestamptz(6)
+  peakCount       Int       @default(0)
+  peakSeverity    String
+  lastSeverity    String
+  lastCount       Int       @default(0)
+  lastSeenAt      DateTime  @default(now()) @db.Timestamptz(6)
+  tickCount       Int       @default(1)
+  notifiedAt      DateTime? @db.Timestamptz(6)
+  escalationCount Int       @default(0)
+
+  @@index([alertId, startedAt(sort: Desc)], map: "idx_alertincident_alertid")
+  @@index([startedAt(sort: Desc)], map: "idx_alertincident_started")
+}
+
+model AlertMute {
+  alertId    String   @id
+  mutedUntil DateTime @db.Timestamptz(6)
+  reason     String?
+  mutedBy    String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([mutedUntil(sort: Desc)], map: "idx_alertmute_until")
+}
+
+model AuditLog {
+  id        String   @id
+  staffId   String?
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  severity  String?  @default("INFO")
+
+  @@index([createdAt(sort: Desc)])
+  @@index([staffId])
+  @@index([action], map: "idx_auditlog_action")
+  @@index([createdAt(sort: Desc)], map: "idx_auditlog_created")
+  @@index([entity, entityId], map: "idx_auditlog_entity")
+  @@index([severity], map: "idx_auditlog_severity")
+  @@index([staffId, createdAt(sort: Desc)], map: "idx_auditlog_staff")
+}
+
+model AutoPurchaseOrder {
+  id             String    @id
+  vendorName     String    @default("Unknown")
+  vendorId       String?
+  status         String    @default("RECOMMENDED")
+  items          Json      @default("[]")
+  estimatedTotal Float     @default(0)
+  reason         String?
+  approvedBy     String?
+  approvedAt     DateTime?
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+
+  @@index([status])
+  @@index([status], map: "idx_autopo_status")
+}
+
+model AutomationLog {
+  id             String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  ruleId         String?
+  ruleName       String?
+  trigger        String?
+  status         String?         @default("SUCCESS")
+  actionsRun     Int?            @default(0)
+  details        Json?           @default("{}")
+  error          String?
+  executedAt     DateTime?       @default(now()) @db.Timestamptz(6)
+  AutomationRule AutomationRule? @relation(fields: [ruleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([ruleId], map: "idx_automation_log_rule")
+}
+
+model AutomationRule {
+  id            String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name          String
+  description   String?
+  trigger       String
+  conditions    Json?           @default("{}")
+  actions       Json?           @default("[]")
+  roles         String[]        @default([])
+  frequency     String?         @default("ON_TRIGGER")
+  enabled       Boolean?        @default(true)
+  lastRunAt     DateTime?       @db.Timestamptz(6)
+  runCount      Int?            @default(0)
+  createdById   String?
+  createdAt     DateTime?       @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?       @default(now()) @db.Timestamptz(6)
+  AutomationLog AutomationLog[]
+
+  @@index([trigger], map: "idx_automation_rule_trigger")
+}
+
+model BTProjectMapping {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  btProjectId    String    @unique(map: "BTProjectMapping_btProjectId_unique")
+  btProjectName  String?
+  btBuilderName  String?
+  btCommunity    String?
+  btLot          String?
+  btStatus       String?
+  btScheduleData Json?     @default("{}")
+  builderId      String?
+  projectId      String?
+  jobId          String?
+  lastSyncedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+  Builder        Builder?  @relation(fields: [builderId], references: [id])
+  Job            Job?      @relation(fields: [jobId], references: [id])
+
+  @@index([builderId])
+}
+
+model BackorderItem {
+  id                    String    @id
+  orderId               String
+  orderItemId           String?
+  deliveryId            String?
+  productId             String
+  sku                   String
+  productName           String
+  qtyOrdered            Int
+  qtyShipped            Int       @default(0)
+  qtyBackordered        Int       @default(0)
+  status                String    @default("BACKORDERED")
+  followUpDeliveryId    String?
+  scheduledDeliveryDate DateTime?
+  materialArrivedAt     DateTime?
+  purchaseOrderId       String?
+  builderNotified       Boolean   @default(false)
+  builderNotifiedAt     DateTime?
+  notes                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now())
+
+  @@index([deliveryId])
+  @@index([followUpDeliveryId])
+  @@index([orderId])
+  @@index([productId])
+  @@index([purchaseOrderId])
+  @@index([status])
+}
+
+model BayMovement {
+  id                                               String        @id
+  doorId                                           String
+  fromBayId                                        String?
+  toBayId                                          String
+  movedBy                                          String?
+  movedByName                                      String?
+  reason                                           String?
+  createdAt                                        DateTime?     @default(now()) @db.Timestamp(6)
+  DoorIdentity                                     DoorIdentity  @relation(fields: [doorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  WarehouseBay_BayMovement_fromBayIdToWarehouseBay WarehouseBay? @relation("BayMovement_fromBayIdToWarehouseBay", fields: [fromBayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  WarehouseBay_BayMovement_toBayIdToWarehouseBay   WarehouseBay  @relation("BayMovement_toBayIdToWarehouseBay", fields: [toBayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([doorId], map: "idx_bay_movement_doorId")
+  @@index([toBayId], map: "idx_bay_movement_toBayId")
+}
+
+model Blueprint {
+  id               String           @id
+  projectId        String
+  fileName         String
+  fileUrl          String
+  fileSize         Int
+  fileType         String
+  pageCount        Int?
+  processedAt      DateTime?
+  processingStatus ProcessingStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+  Project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  Takeoff          Takeoff[]
+
+  @@index([processingStatus])
+  @@index([projectId])
+}
+
+model BoltCommunity {
+  id         String    @id
+  boltId     String    @unique
+  name       String
+  city       String?
+  state      String?
+  customer   String?
+  supervisor String?
+  active     Boolean?  @default(true)
+  createdAt  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BoltCrew {
+  id        String    @id
+  boltId    String    @unique
+  name      String
+  truck     String?
+  active    Boolean?  @default(true)
+  phone     String?
+  crewType  String?   @default("Other")
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BoltCustomer {
+  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  boltId    String?   @unique
+  name      String?
+  status    String?
+  rawCells  Json?
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BoltEmployee {
+  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  boltId    String?   @unique
+  name      String?
+  email     String?
+  role      String?
+  rawCells  Json?
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BoltFloorplan {
+  id         String    @id
+  boltId     String    @unique
+  name       String
+  sqft       Int?
+  community  String?
+  customer   String?
+  city       String?
+  state      String?
+  activeDate DateTime? @db.Timestamptz(6)
+  createdAt  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BoltJob {
+  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  boltId    String?   @unique
+  address   String?
+  zip       String?
+  floorplan String?
+  community String?
+  city      String?
+  jobType   String?
+  startDate DateTime? @db.Timestamptz(6)
+  closeDate DateTime? @db.Timestamptz(6)
+  startRaw  String?
+  closeRaw  String?
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([address], map: "idx_boltjob_addr")
+  @@index([community], map: "idx_boltjob_comm")
+}
+
+model BoltWOType {
+  id        String    @id
+  name      String    @unique
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BoltWorkOrder {
+  id            String    @id
+  boltId        String    @unique
+  jobAddress    String?
+  woType        String?
+  scheduledDate DateTime? @db.Timestamptz(6)
+  stage         String?
+  assignedTo    String?
+  orderedBy     String?
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+  jobId         String?
+
+  @@index([jobAddress], map: "idx_boltwo_addr")
+  @@index([stage], map: "idx_boltwo_stage")
+}
+
+model BomEntry {
+  id                                    String   @id
+  parentId                              String
+  componentId                           String
+  quantity                              Float    @default(1)
+  componentType                         String?
+  createdAt                             DateTime @default(now())
+  updatedAt                             DateTime @default(now())
+  Product_BomEntry_componentIdToProduct Product  @relation("BomEntry_componentIdToProduct", fields: [componentId], references: [id], onDelete: Cascade)
+  Product_BomEntry_parentIdToProduct    Product  @relation("BomEntry_parentIdToProduct", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, componentId])
+  @@index([parentId])
+}
+
+model BpwCheck {
+  id          String    @id
+  bpwCheckId  String    @unique
+  checkNumber String?
+  checkDate   DateTime? @db.Timestamptz(6)
+  total       Float?    @default(0)
+  ach         String?   @default("No")
+  vendor      String?
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([checkDate], map: "idx_bpw_check_date")
+}
+
+model BpwCommunity {
+  id        String    @id
+  bpwId     String    @unique
+  name      String
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BpwFieldPO {
+  id            String    @id
+  poNumber      String    @unique
+  effectiveDate DateTime? @db.Timestamptz(6)
+  type          String?
+  issuer        String?
+  community     String?
+  lot           String?
+  description   String?
+  amount        Float?    @default(0)
+  status        String?
+  invoiceInfo   String?
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([community], map: "idx_bpw_fpo_community")
+}
+
+model BpwInvoice {
+  id            String    @id
+  bpwInvoiceId  String    @unique
+  invoiceNumber String?
+  invoiceDate   DateTime? @db.Timestamptz(6)
+  description   String?
+  amount        Float?    @default(0)
+  checkNumber   String?
+  bpwCheckId    String?
+  checkDate     DateTime? @db.Timestamptz(6)
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([checkNumber], map: "idx_bpw_invoice_checkNumber")
+  @@index([invoiceDate], map: "idx_bpw_invoice_date")
+}
+
+model BpwJobDetail {
+  id                String    @id
+  jobId             String
+  bpwPulteId        String    @unique
+  plan              String?
+  elevation         String?
+  npc               String?
+  fieldManager      String?
+  fieldManagerPhone String?
+  permit            String?
+  scarStart         DateTime? @db.Timestamptz(6)
+  scarEnd           DateTime? @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([jobId], map: "idx_bpw_job_detail_jobId")
+}
+
+model Builder {
+  id                                                         String                  @id
+  companyName                                                String
+  contactName                                                String
+  email                                                      String                  @unique
+  passwordHash                                               String
+  phone                                                      String?
+  address                                                    String?
+  city                                                       String?
+  state                                                      String?
+  zip                                                        String?
+  licenseNumber                                              String?
+  paymentTerm                                                PaymentTerm             @default(NET_15)
+  creditLimit                                                Float?
+  accountBalance                                             Float                   @default(0)
+  taxExempt                                                  Boolean                 @default(false)
+  taxId                                                      String?
+  status                                                     AccountStatus           @default(PENDING)
+  emailVerified                                              Boolean                 @default(false)
+  verifyToken                                                String?
+  createdAt                                                  DateTime                @default(now())
+  updatedAt                                                  DateTime
+  organizationId                                             String?
+  role                                                       BuilderRole             @default(PRIMARY)
+  source                                                     LeadSource?
+  sourceDetail                                               String?
+  resetToken                                                 String?
+  resetTokenExpiry                                           DateTime?               @db.Timestamp(6)
+  approvalStatus                                             String?                 @default("ACTIVE")
+  qbListId                                                   String?
+  qbSyncedAt                                                 DateTime?
+  segmentTag                                                 String?                 @default("STANDARD")
+  lifetimeValue                                              Float?                  @default(0)
+  churnRisk                                                  String?                 @default("LOW")
+  lastAnalyzedAt                                             DateTime?
+  divisionId                                                 String?
+  pricingTier                                                String?                 @default("STANDARD")
+  notifyEmail                                                Boolean?                @default(true)
+  notifySms                                                  Boolean?                @default(false)
+  notifyDeliveryUpdates                                      Boolean?                @default(true)
+  notifyInvoiceReady                                         Boolean?                @default(true)
+  notifyPaymentReceived                                      Boolean?                @default(true)
+  builderType                                                BuilderType?            @default(CUSTOM)
+  territory                                                  String?
+  annualVolume                                               Int?
+  website                                                    String?
+  AccountCategoryMargin                                      AccountCategoryMargin[]
+  AccountMarginTarget                                        AccountMarginTarget?
+  AgentConversation                                          AgentConversation[]
+  AgentEmailLog                                              AgentEmailLog[]
+  AgentSmsLog                                                AgentSmsLog[]
+  BTProjectMapping                                           BTProjectMapping[]
+  Division                                                   Division?               @relation(fields: [divisionId], references: [id])
+  BuilderOrganization                                        BuilderOrganization?    @relation(fields: [organizationId], references: [id])
+  BuilderBranding                                            BuilderBranding?
+  BuilderCatalog                                             BuilderCatalog[]
+  BuilderContact                                             BuilderContact[]
+  BuilderIntelligence                                        BuilderIntelligence?
+  BuilderPhaseConfig                                         BuilderPhaseConfig[]
+  BuilderPricing                                             BuilderPricing[]
+  BuilderReferral_BuilderReferral_referredBuilderIdToBuilder BuilderReferral[]       @relation("BuilderReferral_referredBuilderIdToBuilder")
+  BuilderReferral_BuilderReferral_referrerIdToBuilder        BuilderReferral[]       @relation("BuilderReferral_referrerIdToBuilder")
+  BuilderScheduleShare                                       BuilderScheduleShare[]
+  CommunicationLog                                           CommunicationLog[]
+  Community                                                  Community[]
+  HomeownerAccess                                            HomeownerAccess[]
+  LienRelease                                                LienRelease[]
+  MessageReadReceipt                                         MessageReadReceipt[]
+  Order                                                      Order[]
+  OrderTemplate                                              OrderTemplate[]
+  Project                                                    Project[]
+  ReorderSuggestion                                          ReorderSuggestion[]
+  SavedCart                                                  SavedCart[]
+  ScheduleChangeRequest                                      ScheduleChangeRequest[]
+  SubcontractorPricing                                       SubcontractorPricing[]
+  TradeReview                                                TradeReview[]
+
+  @@index([builderType])
+  @@index([createdAt])
+  @@index([divisionId])
+  @@index([email])
+  @@index([organizationId])
+  @@index([resetToken])
+  @@index([status])
+  @@index([pricingTier], map: "idx_builder_pricing_tier")
+  @@index([status, companyName], map: "idx_builder_status_company")
+}
+
+model BuilderApplication {
+  id                    String    @id
+  builderId             String?
+  companyName           String
+  contactName           String
+  contactEmail          String
+  contactPhone          String?
+  address               String?
+  city                  String?
+  state                 String?
+  zip                   String?
+  businessLicense       String?
+  taxId                 String?
+  estimatedAnnualVolume String?
+  referralSource        String?
+  notes                 String?
+  status                String    @default("PENDING_APPROVAL")
+  reviewedById          String?
+  reviewNotes           String?
+  reviewedAt            DateTime?
+  referenceNumber       String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now())
+
+  @@index([status], map: "idx_builder_app_status")
+  @@index([contactEmail], map: "idx_builderapplication_email")
+  @@index([status], map: "idx_builderapplication_status")
+}
+
+model BuilderBranding {
+  id              String   @id
+  builderId       String   @unique
+  logoUrl         String?
+  primaryColor    String   @default("#1B4F72")
+  secondaryColor  String   @default("#E67E22")
+  accentColor     String   @default("#2ECC71")
+  fontFamily      String   @default("Inter")
+  portalTitle     String?
+  welcomeMessage  String?
+  theme           String   @default("light")
+  compactMode     Boolean  @default(false)
+  dashboardLayout Json?    @default("{}")
+  hiddenWidgets   Json?    @default("[]")
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @db.Timestamptz(6)
+  Builder         Builder  @relation(fields: [builderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([builderId])
+}
+
+model BuilderCatalog {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId   String
+  name        String
+  description String?
+  productIds  String[] @default([])
+  isDefault   Boolean? @default(false)
+  active      Boolean? @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @db.Timestamptz(6)
+  Builder     Builder  @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model BuilderContact {
+  id              String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId       String
+  communityId     String?
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  mobile          String?
+  title           String?
+  role            ContactRole? @default(OTHER)
+  isPrimary       Boolean?     @default(false)
+  receivesPO      Boolean?     @default(false)
+  receivesInvoice Boolean?     @default(false)
+  notes           String?
+  active          Boolean?     @default(true)
+  createdAt       DateTime?    @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime?    @default(now()) @db.Timestamptz(6)
+  Builder         Builder      @relation(fields: [builderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Community       Community?   @relation(fields: [communityId], references: [id], onUpdate: NoAction)
+
+  @@index([builderId])
+  @@index([communityId])
+  @@index([email])
+  @@index([role])
+}
+
+model BuilderIntelligence {
+  id                         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId                  String    @unique
+  avgOrderValue              Decimal?  @default(0) @db.Decimal(12, 2)
+  orderFrequencyDays         Int?      @default(0)
+  lastOrderDate              DateTime?
+  totalLifetimeValue         Decimal?  @default(0) @db.Decimal(12, 2)
+  totalOrders                Int?      @default(0)
+  topProductCategories       Json?     @default("[]")
+  seasonalPattern            Json?     @default("{}")
+  avgDaysToPayment           Int?      @default(0)
+  onTimePaymentRate          Decimal?  @default(0) @db.Decimal(5, 2)
+  currentBalance             Decimal?  @default(0) @db.Decimal(12, 2)
+  creditRiskScore            Int?      @default(50)
+  paymentTrend               String?   @default("STABLE")
+  healthScore                Int?      @default(50)
+  orderTrend                 String?   @default("STABLE")
+  daysSinceLastOrder         Int?      @default(0)
+  daysSinceLastCommunication Int?      @default(0)
+  complaintCount             Int?      @default(0)
+  npsScore                   Int?
+  priceElasticity            String?   @default("MEDIUM")
+  acceptsStandardPricing     Boolean?  @default(true)
+  negotiatedCategories       Json?     @default("[]")
+  missingCategories          Json?     @default("[]")
+  estimatedWalletShare       Decimal?  @default(0) @db.Decimal(5, 2)
+  crossSellScore             Int?      @default(0)
+  nextOrderEstimate          DateTime?
+  estimatedNextOrderValue    Decimal?  @default(0) @db.Decimal(12, 2)
+  activeProjectCount         Int?      @default(0)
+  pipelineValue              Decimal?  @default(0) @db.Decimal(12, 2)
+  dataQualityScore           Int?      @default(0)
+  lastUpdated                DateTime  @default(now())
+  createdAt                  DateTime  @default(now())
+  Builder                    Builder   @relation(fields: [builderId], references: [id], onDelete: Cascade)
+
+  @@index([builderId], map: "idx_bi_builder")
+  @@index([crossSellScore(sort: Desc)], map: "idx_bi_crosssell")
+  @@index([healthScore], map: "idx_bi_health")
+  @@index([creditRiskScore], map: "idx_bi_risk")
+  @@index([orderTrend], map: "idx_bi_trend")
+}
+
+model BuilderMessage {
+  id             String    @id
+  builderId      String
+  subject        String
+  body           String
+  category       String    @default("GENERAL")
+  status         String    @default("OPEN")
+  staffReply     String?
+  staffReplyById String?
+  staffReplyAt   DateTime?
+  readByBuilder  Boolean   @default(false)
+  readByStaff    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+
+  @@index([builderId], map: "idx_bmsg_builder")
+  @@index([status], map: "idx_bmsg_status")
+}
+
+model BuilderNotification {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId String
+  type      String   @default("GENERAL")
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([builderId], map: "idx_bnotif_builder")
+}
+
+model BuilderNotificationPrefs {
+  builderId       String   @id
+  orderUpdates    Boolean  @default(true)
+  quoteReady      Boolean  @default(true)
+  deliveryAlerts  Boolean  @default(true)
+  warrantyUpdates Boolean  @default(true)
+  promotions      Boolean  @default(false)
+  invoiceAlerts   Boolean  @default(true)
+  weeklyDigest    Boolean  @default(false)
+  updatedAt       DateTime @default(now())
+}
+
+model BuilderOrganization {
+  id                 String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name               String             @unique
+  code               String             @unique
+  type               OrgType            @default(NATIONAL)
+  contactName        String?
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  zip                String?
+  website            String?
+  boltCustomerId     String?
+  inflowCustomerId   String?
+  hyphenSupplierId   String?
+  defaultPaymentTerm PaymentTerm        @default(NET_30)
+  creditLimit        Float?
+  taxExempt          Boolean            @default(false)
+  taxId              String?
+  active             Boolean            @default(true)
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @default(now())
+  Builder            Builder[]
+  CommunicationLog   CommunicationLog[]
+  Community_legacy   Community_legacy[]
+  Contract           Contract[]
+  Division           Division[]
+}
+
+model BuilderPhaseConfig {
+  id               String            @id
+  builderId        String
+  templateId       String?
+  name             String
+  description      String?
+  sortOrder        Int               @default(0)
+  amountType       PhaseAmountType   @default(MILESTONE)
+  percentage       Float?
+  fixedAmount      Float?
+  isActive         Boolean           @default(true)
+  isRequired       Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now())
+  Builder          Builder           @relation(fields: [builderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  JobPhaseTemplate JobPhaseTemplate? @relation(fields: [templateId], references: [id], onUpdate: NoAction)
+  JobPhase         JobPhase[]
+
+  @@unique([builderId, name])
+  @@index([builderId])
+  @@index([templateId])
+}
+
+model BuilderPricing {
+  id          String   @id
+  builderId   String
+  productId   String
+  customPrice Float
+  margin      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  Builder     Builder  @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  Product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([builderId, productId])
+  @@index([builderId])
+}
+
+model BuilderReferral {
+  id                                                 String         @id
+  referrerId                                         String
+  referredCompany                                    String
+  referredContact                                    String
+  referredEmail                                      String
+  referredPhone                                      String
+  referralCode                                       String         @unique
+  notes                                              String?
+  status                                             ReferralStatus @default(PENDING)
+  referredBuilderId                                  String?
+  creditAmount                                       Float          @default(250)
+  referrerCredited                                   Boolean        @default(false)
+  referreeCredited                                   Boolean        @default(false)
+  creditedAt                                         DateTime?
+  createdAt                                          DateTime       @default(now())
+  updatedAt                                          DateTime       @default(now())
+  Builder_BuilderReferral_referredBuilderIdToBuilder Builder?       @relation("BuilderReferral_referredBuilderIdToBuilder", fields: [referredBuilderId], references: [id], onUpdate: NoAction)
+  Builder_BuilderReferral_referrerIdToBuilder        Builder        @relation("BuilderReferral_referrerIdToBuilder", fields: [referrerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([referredBuilderId])
+  @@index([referrerId])
+  @@index([status])
+}
+
+model BuilderScheduleShare {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId       String
+  jobId           String
+  shareToken      String    @unique
+  showMilestones  Boolean?  @default(true)
+  showDeliveryETA Boolean?  @default(true)
+  showPhotos      Boolean?  @default(true)
+  active          Boolean?  @default(true)
+  lastViewedAt    DateTime? @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  Builder         Builder   @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Job             Job       @relation(fields: [jobId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([shareToken], map: "idx_builder_schedule_token")
+}
+
+model BuilderValueProfile {
+  id                     String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId              String    @unique
+  lifetimeRevenue        Float?    @default(0)
+  lifetimeOrders         Int?      @default(0)
+  lifetimeQuotes         Int?      @default(0)
+  quoteToOrderRate       Float?    @default(0)
+  avgOrderValue          Float?    @default(0)
+  avgOrderFrequencyDays  Float?    @default(0)
+  lastOrderDate          DateTime?
+  daysSinceLastOrder     Int?      @default(0)
+  predictedNextOrderDate DateTime?
+  predictedAnnualRevenue Float?    @default(0)
+  lifetimeValueScore     Float?    @default(0)
+  growthTrend            String?   @default("STABLE")
+  churnRisk              String?   @default("LOW")
+  churnRiskScore         Float?    @default(0)
+  preferredCategories    Json?     @default("[]")
+  preferredVendors       Json?     @default("[]")
+  priceElasticity        String?   @default("NORMAL")
+  avgMarginPercent       Float?    @default(0)
+  paymentReliability     String?   @default("GOOD")
+  upsellOpportunities    Json?     @default("[]")
+  crossSellOpportunities Json?     @default("[]")
+  segmentTag             String?   @default("STANDARD")
+  lastAnalyzedAt         DateTime?
+  updatedAt              DateTime  @default(now())
+
+  @@index([builderId])
+  @@index([churnRisk])
+  @@index([lifetimeValueScore])
+  @@index([segmentTag])
+  @@index([builderId], map: "idx_builder_value_profile_builderId")
+}
+
+model BwpBackcharge {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  poNumber      String?
+  date          DateTime? @db.Timestamptz(6)
+  community     String?
+  amount        Float?    @default(0)
+  issuer        String?
+  description   String?
+  invoiceNumber String?
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([poNumber, invoiceNumber], map: "uq_bwp_backcharge_po_inv")
+}
+
+model BwpCheck {
+  id                 String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  checkId            String?   @unique
+  cashCode           String?
+  checkDate          DateTime? @db.Timestamptz(6)
+  checkNumber        String?
+  eftIndicator       String?
+  ach                String?
+  total              Float?    @default(0)
+  lawsonVendorNumber String?
+  checkVoidSeq       String?
+  createdAt          DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BwpContact {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name          String?
+  title         String?
+  department    String?
+  email         String?
+  phone         String?
+  mobile        String?
+  officeAddress String?
+  city          String?
+  state         String?
+  zip           String?
+  status        String?
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([name, email], map: "uq_bwp_contact_name_email")
+}
+
+model BwpFieldPO {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  poNumber        String?   @unique
+  effectiveDate   DateTime? @db.Timestamptz(6)
+  community       String?
+  communityNumber String?
+  lots            String?
+  amount          Float?    @default(0)
+  status          String?
+  isBackcharge    Boolean?  @default(false)
+  description     String?
+  issuer          String?
+  approver        String?
+  invoiceNumber   String?
+  invoiceAmount   Float?    @default(0)
+  invoiceDate     DateTime? @db.Timestamptz(6)
+  vendorName      String?
+  vendorNumber    String?
+  note            String?
+  linkedPo        String?
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BwpFieldPOLine {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  poNumber        String?
+  lineId          String?   @unique
+  accountCategory String?
+  glAccount       String?
+  community       String?
+  communityNumber String?
+  lotBlock        String?
+  lotAddress      String?
+  amount          Float?    @default(0)
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model BwpInvoice {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  invoiceNumber String?
+  sequence      String?
+  invoiceDate   DateTime? @db.Timestamptz(6)
+  description   String?
+  amount        Float?    @default(0)
+  checkNumber   String?
+  checkDate     DateTime? @db.Timestamptz(6)
+  status        String?
+  cashCode      String?
+  eft           String?
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([invoiceNumber, sequence], map: "uq_bwp_invoice_num_seq")
+}
+
+model CampaignRecipient {
+  id                String            @id
+  campaignId        String
+  builderId         String
+  status            String            @default("QUEUED")
+  sentAt            DateTime?         @db.Timestamptz(6)
+  openedAt          DateTime?         @db.Timestamptz(6)
+  clickedAt         DateTime?         @db.Timestamptz(6)
+  convertedAt       DateTime?         @db.Timestamptz(6)
+  createdAt         DateTime?         @default(now()) @db.Timestamptz(6)
+  MarketingCampaign MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([builderId], map: "idx_campaign_recipient_builder")
+  @@index([campaignId], map: "idx_campaign_recipient_campaign")
+}
+
+model CashFlowForecast {
+  id                String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  forecastDate      DateTime @db.Date
+  projectedInflows  Float?   @default(0)
+  projectedOutflows Float?   @default(0)
+  netCashFlow       Float?   @default(0)
+  runningBalance    Float?   @default(0)
+  inflowSources     Json?    @default("{}")
+  outflowCategories Json?    @default("{}")
+  confidenceLevel   Float?   @default(0)
+  scenario          String?  @default("BASE")
+  assumptions       Json?    @default("{}")
+  createdAt         DateTime @default(now())
+
+  @@index([forecastDate], map: "idx_cashflow_forecast_date")
+  @@index([scenario], map: "idx_cashflow_forecast_scenario")
+  @@index([forecastDate], map: "idx_cashflowforecast_forecastdate")
+  @@index([scenario], map: "idx_cashflowforecast_scenario")
+}
+
+model CategoryMarginDefault {
+  id                  String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  category            String       @unique
+  categoryType        CategoryType @default(CORE)
+  defaultTargetMargin Float        @default(0.25)
+  defaultMinMargin    Float        @default(0.15)
+  sortOrder           Int          @default(0)
+  active              Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now())
+}
+
+model ChangeOrder {
+  id                String    @id
+  changeNumber      String    @unique
+  jobId             String
+  orderId           String?
+  requestedById     String?
+  approvedById      String?
+  status            String    @default("DRAFT")
+  reason            String
+  description       String?
+  lineItems         Json?     @default("[]")
+  originalTotal     Float?    @default(0)
+  revisedTotal      Float?    @default(0)
+  costImpact        Float?    @default(0)
+  scheduleImpact    String?
+  builderApproval   Boolean?  @default(false)
+  builderApprovedAt DateTime? @db.Timestamptz(6)
+  internalNotes     String?
+  submittedAt       DateTime? @db.Timestamptz(6)
+  approvedAt        DateTime? @db.Timestamptz(6)
+  rejectedAt        DateTime? @db.Timestamptz(6)
+  rejectionReason   String?
+  createdAt         DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([jobId], map: "idx_co_job")
+  @@index([changeNumber], map: "idx_co_number")
+  @@index([orderId], map: "idx_co_order")
+  @@index([status], map: "idx_co_status")
+}
+
+model ClientError {
+  id        String   @id
+  digest    String?
+  scope     String?
+  path      String?
+  message   String?
+  stack     String?
+  userAgent String?
+  ipAddress String?
+  requestId String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)], map: "idx_clienterror_created")
+  @@index([digest], map: "idx_clienterror_digest")
+  @@index([requestId], map: "idx_clienterror_request")
+  @@index([scope], map: "idx_clienterror_scope")
+}
+
+model CollectionAction {
+  id                   String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  invoiceId            String
+  actionType           String
+  channel              String    @default("EMAIL")
+  sentAt               DateTime  @default(now())
+  sentBy               String?
+  notes                String?
+  response             String?
+  respondedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  requiresApproval     Boolean   @default(false)
+  approvedAt           DateTime?
+  approvedBy           String?
+  toneUsed             String?
+  intelligenceSnapshot Json?
+  Invoice              Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([invoiceId], map: "idx_collection_invoice")
+  @@index([actionType, sentAt], map: "idx_collection_type_sent")
+}
+
+model CollectionRule {
+  id           String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name         String
+  daysOverdue  Int
+  actionType   String
+  channel      String   @default("EMAIL")
+  templateBody String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model CommAttachment {
+  id                 String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communicationLogId String
+  fileName           String
+  fileType           String
+  fileSize           Int?
+  fileUrl            String?
+  gmailAttachmentId  String?
+  createdAt          DateTime         @default(now())
+  CommunicationLog   CommunicationLog @relation(fields: [communicationLogId], references: [id], onDelete: Cascade)
+
+  @@index([communicationLogId])
+}
+
+model CommunicationLog {
+  id                  String               @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId           String?
+  organizationId      String?
+  staffId             String?
+  jobId               String?
+  channel             CommChannel
+  direction           CommDirection
+  subject             String?
+  body                String?
+  bodyHtml            String?
+  fromAddress         String?
+  toAddresses         String[]             @default([])
+  ccAddresses         String[]             @default([])
+  gmailMessageId      String?              @unique
+  gmailThreadId       String?
+  hyphenEventId       String?
+  sentAt              DateTime?
+  duration            Int?
+  hasAttachments      Boolean              @default(false)
+  attachmentCount     Int                  @default(0)
+  aiSummary           String?
+  aiSentiment         String?
+  aiActionItems       String[]             @default([])
+  status              CommLogStatus        @default(LOGGED)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now())
+  communityId         String?
+  syncAccount         String?
+  CommAttachment      CommAttachment[]
+  Builder             Builder?             @relation(fields: [builderId], references: [id])
+  BuilderOrganization BuilderOrganization? @relation(fields: [organizationId], references: [id])
+
+  @@index([builderId])
+  @@index([channel])
+  @@index([organizationId])
+  @@index([sentAt])
+  @@index([communityId], map: "idx_commlog_community")
+  @@index([syncAccount], map: "idx_commlog_sync_account")
+}
+
+model Community {
+  id                 String               @id(map: "Community_pkey1") @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId          String
+  name               String
+  code               String?
+  address            String?
+  city               String?
+  state              String?
+  zip                String?
+  county             String?
+  totalLots          Int?                 @default(0)
+  activeLots         Int?                 @default(0)
+  phase              String?
+  status             CommunityStatus?     @default(ACTIVE)
+  division           String?
+  avgOrderValue      Float?
+  totalRevenue       Float?               @default(0)
+  totalOrders        Int?                 @default(0)
+  notes              String?
+  boltId             String?
+  createdAt          DateTime?            @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime?            @default(now()) @db.Timestamptz(6)
+  BuilderContact     BuilderContact[]
+  Builder            Builder              @relation(fields: [builderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  CommunityFloorPlan CommunityFloorPlan[]
+
+  @@unique([builderId, name])
+  @@index([boltId])
+  @@index([builderId])
+  @@index([city, state])
+  @@index([status])
+}
+
+model CommunityFloorPlan {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId       String
+  name              String
+  planNumber        String?
+  sqFootage         Int?
+  bedrooms          Int?
+  bathrooms         Float?
+  stories           Int?      @default(1)
+  garageType        String?
+  interiorDoorCount Int?
+  exteriorDoorCount Int?
+  basePackagePrice  Float?
+  blueprintUrl      String?
+  takeoffNotes      String?
+  active            Boolean?  @default(true)
+  createdAt         DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @db.Timestamptz(6)
+  Community         Community @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([communityId, name])
+  @@index([communityId])
+}
+
+model CommunityNote {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId String
+  authorId    String
+  category    String?   @default("GENERAL")
+  content     String
+  pinned      Boolean?  @default(false)
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([category])
+  @@index([communityId])
+}
+
+model Community_legacy {
+  id                  String              @id(map: "Community_pkey") @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId      String
+  name                String
+  code                String?
+  city                String?
+  state               String?
+  zip                 String?
+  address             String?
+  hyphenProjectId     String?
+  totalLots           Int?
+  activeLots          Int                 @default(0)
+  completedLots       Int                 @default(0)
+  active              Boolean             @default(true)
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @default(now())
+  divisionId          String?
+  Division            Division?           @relation(fields: [divisionId], references: [id], map: "Community_divisionId_fkey")
+  BuilderOrganization BuilderOrganization @relation(fields: [organizationId], references: [id], map: "Community_organizationId_fkey")
+  Job                 Job[]
+
+  @@unique([organizationId, name], map: "Community_organizationId_name_key")
+  @@index([divisionId], map: "Community_divisionId_idx")
+}
+
+model CompetitorPrice {
+  id              String   @id
+  productCategory String
+  competitorName  String
+  productName     String?
+  price           Float
+  source          String?
+  notes           String?
+  checkedAt       DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([productCategory], map: "CompetitorPrice_category_idx")
+}
+
+model Contract {
+  id                  String                @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId      String
+  contractNumber      String                @unique
+  title               String
+  description         String?
+  paymentTerm         PaymentTerm           @default(NET_30)
+  discountPercent     Float                 @default(0)
+  rebatePercent       Float                 @default(0)
+  status              ContractStatus        @default(DRAFT)
+  effectiveDate       DateTime?
+  expirationDate      DateTime?
+  signedAt            DateTime?
+  signedBy            String?
+  autoRenew           Boolean               @default(false)
+  notes               String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @default(now())
+  dealId              String?
+  builderId           String?
+  type                ContractType?         @default(SUPPLY_AGREEMENT)
+  creditLimit         Float?
+  estimatedAnnual     Float?
+  terms               String?
+  specialClauses      String?
+  startDate           DateTime?
+  endDate             DateTime?
+  sentDate            DateTime?
+  signedDate          DateTime?
+  expiresDate         DateTime?
+  createdById         String?
+  documentUrl         String?
+  templateUsed        String?
+  divisionId          String?
+  Staff               Staff?                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  Deal                Deal?                 @relation(fields: [dealId], references: [id])
+  Division            Division?             @relation(fields: [divisionId], references: [id])
+  BuilderOrganization BuilderOrganization   @relation(fields: [organizationId], references: [id])
+  ContractPricingTier ContractPricingTier[]
+
+  @@index([builderId])
+  @@index([createdById])
+  @@index([dealId])
+  @@index([divisionId])
+  @@index([organizationId])
+  @@index([startDate])
+  @@index([status])
+}
+
+model ContractPricingTier {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  contractId  String
+  category    String
+  subcategory String?
+  priceType   PriceType @default(FIXED)
+  fixedPrice  Float?
+  discountPct Float?
+  costPlusPct Float?
+  description String?
+  sortOrder   Int       @default(0)
+  Contract    Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+}
+
+model Conversation {
+  id                      String                    @id
+  type                    ConversationType
+  name                    String?
+  departmentScope         String?
+  createdById             String
+  lastMessageAt           DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  Staff                   Staff                     @relation(fields: [createdById], references: [id])
+  ConversationParticipant ConversationParticipant[]
+  Message                 Message[]
+
+  @@index([createdAt])
+  @@index([type])
+}
+
+model ConversationParticipant {
+  id             String       @id
+  conversationId String
+  staffId        String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  Staff          Staff        @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, staffId])
+}
+
+model CostTrendAnalysis {
+  id                 String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  productId          String?
+  productCategory    String
+  vendorId           String?
+  periodStart        DateTime
+  periodEnd          DateTime
+  avgUnitCost        Float
+  minUnitCost        Float?
+  maxUnitCost        Float?
+  totalUnits         Int?     @default(0)
+  totalSpend         Float?   @default(0)
+  costChangePercent  Float?   @default(0)
+  forecastNextPeriod Float?
+  forecastConfidence Float?
+  createdAt          DateTime @default(now())
+
+  @@index([periodStart], map: "idx_costtrendanalysis_periodstart")
+  @@index([productCategory], map: "idx_costtrendanalysis_productcategory")
+  @@index([vendorId], map: "idx_costtrendanalysis_vendorid")
+}
+
+model CreditLineTracker {
+  id                 String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId          String    @unique
+  creditLimit        Float?    @default(0)
+  currentBalance     Float?    @default(0)
+  availableCredit    Float?    @default(0)
+  utilizationPercent Float?    @default(0)
+  peakUtilization    Float?    @default(0)
+  avgUtilization30d  Float?    @default(0)
+  creditScore        Int?      @default(50)
+  recommendedLimit   Float?
+  limitChangeReason  String?
+  paymentBehavior    String?   @default("NORMAL")
+  lastReviewedAt     DateTime?
+  nextReviewAt       DateTime?
+  metadata           Json?     @default("{}")
+  updatedAt          DateTime  @default(now())
+
+  @@index([builderId], map: "idx_credit_line_builder")
+}
+
+model Crew {
+  id                   String                 @id
+  name                 String
+  crewType             CrewType
+  active               Boolean                @default(true)
+  vehicleId            String?
+  vehiclePlate         String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  isSubcontractor      Boolean                @default(false)
+  companyName          String?
+  contactPhone         String?
+  contactEmail         String?
+  CrewMember           CrewMember[]
+  Delivery             Delivery[]
+  Installation         Installation[]
+  ScheduleEntry        ScheduleEntry[]
+  SubcontractorPricing SubcontractorPricing[]
+}
+
+model CrewMember {
+  id        String    @id
+  crewId    String
+  staffId   String
+  role      String    @default("Member")
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @default(now())
+  Crew      Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  Staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([crewId, staffId])
+}
+
+model CronRun {
+  id          String    @id
+  name        String
+  status      String    @default("RUNNING")
+  startedAt   DateTime  @default(now()) @db.Timestamptz(6)
+  finishedAt  DateTime? @db.Timestamptz(6)
+  durationMs  Int?
+  result      Json?
+  error       String?
+  triggeredBy String?   @default("schedule")
+
+  @@index([name, startedAt(sort: Desc)], map: "idx_cronrun_name_started")
+  @@index([status], map: "idx_cronrun_status")
+}
+
+model DataQualityIssue {
+  id              String          @id
+  ruleId          String
+  entityType      String
+  entityId        String
+  entityLabel     String?
+  status          String          @default("OPEN")
+  fixedAt         DateTime?
+  fixedBy         String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now())
+  DataQualityRule DataQualityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([ruleId, entityId])
+  @@index([entityType, entityId])
+  @@index([ruleId, status])
+  @@index([status])
+}
+
+model DataQualityRule {
+  id               String             @id
+  name             String
+  description      String?
+  entity           String
+  severity         String             @default("WARNING")
+  query            String
+  fixUrl           String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  DataQualityIssue DataQualityIssue[]
+
+  @@index([entity])
+  @@index([isActive])
+}
+
+model Deal {
+  id                String            @id
+  dealNumber        String            @unique
+  companyName       String
+  contactName       String
+  contactEmail      String?
+  contactPhone      String?
+  address           String?
+  city              String?
+  state             String?
+  zip               String?
+  stage             DealStage         @default(PROSPECT)
+  probability       Int               @default(10)
+  dealValue         Float             @default(0)
+  source            DealSource        @default(OUTBOUND)
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  lostDate          DateTime?
+  lostReason        String?
+  ownerId           String
+  builderId         String?
+  description       String?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @default(now())
+  Contract          Contract[]
+  Staff             Staff             @relation(fields: [ownerId], references: [id])
+  DealActivity      DealActivity[]
+  DocumentRequest   DocumentRequest[]
+
+  @@index([builderId])
+  @@index([createdAt])
+  @@index([expectedCloseDate])
+  @@index([ownerId])
+  @@index([source])
+  @@index([stage])
+  @@index([ownerId, stage], map: "idx_deal_owner_stage")
+  @@index([stage, expectedCloseDate], map: "idx_deal_stage_close")
+}
+
+model DealActivity {
+  id           String           @id
+  dealId       String
+  staffId      String
+  type         DealActivityType
+  subject      String
+  notes        String?
+  outcome      String?
+  followUpDate DateTime?
+  followUpDone Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  Deal         Deal             @relation(fields: [dealId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Staff        Staff            @relation(fields: [staffId], references: [id])
+
+  @@index([dealId])
+  @@index([followUpDate])
+  @@index([staffId])
+  @@index([type])
+}
+
+model DecisionNote {
+  id            String           @id
+  jobId         String
+  authorId      String
+  noteType      DecisionNoteType
+  subject       String
+  body          String
+  priority      NotePriority     @default(NORMAL)
+  attachmentUrl String?
+  relatedTaskId String?
+  createdAt     DateTime         @default(now())
+  Staff         Staff            @relation(fields: [authorId], references: [id])
+  Job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([jobId])
+  @@index([noteType])
+  @@index([priority])
+  @@index([jobId, createdAt(sort: Desc)], map: "idx_decisionnote_job_created")
+}
+
+model Delivery {
+  id                    String                  @id
+  jobId                 String
+  crewId                String?
+  deliveryNumber        String                  @unique
+  routeOrder            Int                     @default(0)
+  address               String
+  status                DeliveryStatus          @default(SCHEDULED)
+  departedAt            DateTime?
+  arrivedAt             DateTime?
+  completedAt           DateTime?
+  loadPhotos            String[]
+  sitePhotos            String[]
+  signedBy              String?
+  damageNotes           String?
+  returnItems           String?
+  notes                 String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  Crew                  Crew?                   @relation(fields: [crewId], references: [id])
+  Job                   Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  DeliveryTracking      DeliveryTracking[]
+  ScheduleChangeRequest ScheduleChangeRequest[]
+
+  @@index([createdAt])
+  @@index([crewId])
+  @@index([jobId])
+  @@index([status])
+  @@index([crewId, status], map: "idx_delivery_crew_status")
+  @@index([jobId, status], map: "idx_delivery_job_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model DeliveryFeedback {
+  id              String    @id
+  orderId         String
+  builderId       String
+  rating          Int
+  onTimeRating    Int?
+  conditionRating Int?
+  crewRating      Int?
+  comment         String?
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([builderId], map: "idx_delivery_feedback_builder")
+  @@index([orderId], map: "idx_delivery_feedback_order")
+}
+
+model DeliveryNotification {
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  deliveryId String
+  builderId  String
+  type       String
+  channel    String    @default("EMAIL")
+  subject    String?
+  body       String
+  sentAt     DateTime?
+  status     String    @default("PENDING")
+  error      String?
+  metadata   Json?     @default("{}")
+  createdAt  DateTime  @default(now())
+
+  @@index([builderId])
+  @@index([deliveryId])
+  @@index([status])
+}
+
+model DeliveryTracking {
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  deliveryId String
+  status     String
+  location   String?
+  notes      String?
+  eta        DateTime?
+  updatedBy  String?
+  timestamp  DateTime  @default(now())
+  Delivery   Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId, timestamp], map: "idx_tracking_delivery")
+  @@index([status], map: "idx_tracking_status")
+}
+
+model DemandForecast {
+  id              String   @id
+  productId       String
+  forecastDate    DateTime
+  periodDays      Int      @default(30)
+  predictedDemand Int      @default(0)
+  actualDemand    Int?
+  confidenceLevel Float    @default(0.5)
+  basedOn         Json?    @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+
+  @@index([forecastDate])
+  @@index([productId])
+}
+
+model Division {
+  id                  String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId      String
+  name                String
+  code                String?
+  region              String?
+  contactName         String?
+  email               String?
+  phone               String?
+  address             String?
+  city                String?
+  state               String?
+  zip                 String?
+  defaultPaymentTerm  PaymentTerm?
+  creditLimit         Float?
+  taxExempt           Boolean?
+  taxId               String?
+  active              Boolean             @default(true)
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @default(now())
+  Builder             Builder[]
+  Community_legacy    Community_legacy[]
+  Contract            Contract[]
+  BuilderOrganization BuilderOrganization @relation(fields: [organizationId], references: [id])
+  Job                 Job[]
+
+  @@unique([organizationId, name], map: "Division_orgId_name_key")
+  @@index([organizationId])
+  @@index([region])
+}
+
+model DocumentRequest {
+  id            String                @id
+  dealId        String?
+  builderId     String?
+  documentType  DocumentType
+  title         String
+  description   String?
+  status        DocumentRequestStatus @default(PENDING)
+  requestedById String
+  fileUrl       String?
+  fileName      String?
+  dueDate       DateTime?
+  receivedDate  DateTime?
+  expiresDate   DateTime?
+  reminderSent  Boolean               @default(false)
+  reminderDate  DateTime?
+  notes         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @default(now())
+  Deal          Deal?                 @relation(fields: [dealId], references: [id])
+  Staff         Staff                 @relation(fields: [requestedById], references: [id])
+
+  @@index([builderId])
+  @@index([dealId])
+  @@index([documentType])
+  @@index([dueDate])
+  @@index([requestedById])
+  @@index([status])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model DocumentVault {
+  id                  String    @id
+  fileName            String
+  fileType            String
+  mimeType            String
+  fileSize            Int
+  category            String    @default("GENERAL")
+  description         String?
+  tags                String[]  @default([])
+  storageType         String    @default("DATABASE")
+  blobUrl             String?
+  blobPathname        String?
+  fileData            String?
+  entityType          String?
+  entityId            String?
+  secondaryEntityType String?
+  secondaryEntityId   String?
+  builderId           String?
+  orderId             String?
+  jobId               String?
+  quoteId             String?
+  invoiceId           String?
+  dealId              String?
+  vendorId            String?
+  purchaseOrderId     String?
+  doorIdentityId      String?
+  uploadedBy          String
+  uploadedByName      String?
+  isArchived          Boolean?  @default(false)
+  version             Int?      @default(1)
+  parentDocumentId    String?
+  checksum            String?
+  createdAt           DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([isArchived], map: "idx_vault_archived")
+  @@index([builderId], map: "idx_vault_builder")
+  @@index([category], map: "idx_vault_category")
+  @@index([createdAt(sort: Desc)], map: "idx_vault_created")
+  @@index([dealId], map: "idx_vault_deal")
+  @@index([doorIdentityId], map: "idx_vault_door")
+  @@index([entityType, entityId], map: "idx_vault_entity")
+  @@index([invoiceId], map: "idx_vault_invoice")
+  @@index([jobId], map: "idx_vault_job")
+  @@index([orderId], map: "idx_vault_order")
+  @@index([parentDocumentId], map: "idx_vault_parent")
+  @@index([purchaseOrderId], map: "idx_vault_po")
+  @@index([quoteId], map: "idx_vault_quote")
+  @@index([uploadedBy], map: "idx_vault_uploaded")
+  @@index([vendorId], map: "idx_vault_vendor")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model DocumentVaultActivity {
+  id         String    @id
+  documentId String
+  action     String
+  staffId    String
+  staffName  String?
+  details    String?
+  createdAt  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)], map: "idx_vault_activity_created")
+  @@index([documentId], map: "idx_vault_activity_doc")
+  @@index([staffId], map: "idx_vault_activity_staff")
+}
+
+model DoorEvent {
+  id              String       @id
+  doorId          String
+  eventType       String
+  previousStatus  String?
+  newStatus       String?
+  performedBy     String?
+  performedByName String?
+  bayId           String?
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime?    @default(now()) @db.Timestamp(6)
+  DoorIdentity    DoorIdentity @relation(fields: [doorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([doorId], map: "idx_door_event_door")
+  @@index([doorId], map: "idx_door_event_doorId")
+  @@index([eventType], map: "idx_door_event_type")
+}
+
+model DoorIdentity {
+  id                String           @id
+  serialNumber      String           @unique
+  nfcTagId          String?          @unique
+  nfcUrl            String?
+  status            String           @default("PRODUCTION")
+  productId         String?
+  orderId           String?
+  orderItemId       String?
+  jobId             String?
+  bayId             String?
+  warrantyPolicyId  String?
+  builderId         String?
+  builderName       String?
+  manufacturedAt    DateTime?        @db.Timestamp(6)
+  manufacturedBy    String?
+  qcPassedAt        DateTime?        @db.Timestamp(6)
+  qcPassedBy        String?
+  qcNotes           String?
+  stagedAt          DateTime?        @db.Timestamp(6)
+  stagedBy          String?
+  deliveredAt       DateTime?        @db.Timestamp(6)
+  deliveredBy       String?
+  deliveryNotes     String?
+  installedAt       DateTime?        @db.Timestamp(6)
+  installedBy       String?
+  installAddress    String?
+  installCity       String?
+  installState      String?          @default("TX")
+  installZip        String?
+  installNotes      String?
+  homeownerName     String?
+  homeownerEmail    String?
+  homeownerPhone    String?
+  warrantyStartDate DateTime?        @db.Timestamp(6)
+  warrantyEndDate   DateTime?        @db.Timestamp(6)
+  bomSnapshot       Json?
+  createdAt         DateTime?        @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime?        @default(now()) @db.Timestamp(6)
+  BayMovement       BayMovement[]
+  DoorEvent         DoorEvent[]
+  WarehouseBay      WarehouseBay?    @relation(fields: [bayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Product           Product?         @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  WarrantyPolicy    WarrantyPolicy?  @relation(fields: [warrantyPolicyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ServiceRequest    ServiceRequest[]
+
+  @@index([bayId], map: "idx_door_identity_bay")
+  @@index([bayId], map: "idx_door_identity_bayId")
+  @@index([jobId], map: "idx_door_identity_job")
+  @@index([jobId], map: "idx_door_identity_jobId")
+  @@index([nfcTagId], map: "idx_door_identity_nfc")
+  @@index([nfcTagId], map: "idx_door_identity_nfcTagId")
+  @@index([orderId], map: "idx_door_identity_order")
+  @@index([orderId], map: "idx_door_identity_orderId")
+  @@index([productId], map: "idx_door_identity_product")
+  @@index([productId], map: "idx_door_identity_productId")
+  @@index([serialNumber], map: "idx_door_identity_serial")
+  @@index([status], map: "idx_door_identity_status")
+}
+
+model DynamicPriceRule {
+  id                 String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name               String
+  description        String?
+  ruleType           String   @default("MARGIN_FLOOR")
+  productCategory    String?
+  productId          String?
+  builderSegment     String?
+  builderId          String?
+  condition          Json     @default("{}")
+  adjustment         Json     @default("{}")
+  priority           Int?     @default(0)
+  isActive           Boolean? @default(true)
+  appliedCount       Int?     @default(0)
+  totalRevenueImpact Float?   @default(0)
+  createdById        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now())
+
+  @@index([builderSegment])
+  @@index([isActive])
+  @@index([productCategory])
+  @@index([ruleType])
+  @@index([isActive], map: "idx_dynamic_price_rule_active")
+}
+
+model EmailQueue {
+  id           String    @id
+  to           String
+  subject      String
+  body         String
+  templateId   String?
+  status       String    @default("QUEUED")
+  attempts     Int       @default(0)
+  lastError    String?
+  scheduledFor DateTime? @default(now())
+  sentAt       DateTime?
+  dealId       String?
+  staffId      String?
+  createdAt    DateTime  @default(now())
+
+  @@index([dealId], map: "idx_emailqueue_deal")
+  @@index([status, scheduledFor], map: "idx_emailqueue_status")
+}
+
+model EngineSnapshot {
+  id         String   @id
+  source     String
+  method     String
+  queryHash  String?
+  payload    Json
+  fetchedAt  DateTime @default(now()) @db.Timestamptz(6)
+  ttlSeconds Int      @default(86400)
+
+  @@index([source, method, fetchedAt(sort: Desc)], map: "idx_engsnap_source_method")
+}
+
+model FinancialSnapshot {
+  id              String   @id
+  snapshotDate    DateTime @unique @default(now())
+  cashOnHand      Float    @default(0)
+  arTotal         Float    @default(0)
+  apTotal         Float    @default(0)
+  netCashPosition Float    @default(0)
+  arCurrent       Float    @default(0)
+  ar30            Float    @default(0)
+  ar60            Float    @default(0)
+  ar90Plus        Float    @default(0)
+  dso             Float    @default(0)
+  dpo             Float    @default(0)
+  currentRatio    Float    @default(0)
+  revenueMonth    Float    @default(0)
+  revenuePrior    Float    @default(0)
+  revenueYTD      Float    @default(0)
+  openPOTotal     Float    @default(0)
+  pendingInvoices Float    @default(0)
+  overdueARPct    Float    @default(0)
+  topExposure     Json?
+  createdAt       DateTime @default(now())
+
+  @@index([snapshotDate(sort: Desc)])
+}
+
+model FloorPlan {
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  projectId    String
+  label        String    @default("Floor Plan")
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  fileType     String
+  pageCount    Int?
+  version      Int       @default(1)
+  notes        String?
+  uploadedById String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+  Project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Staff        Staff?    @relation(fields: [uploadedById], references: [id], onUpdate: NoAction)
+  Quote        Quote[]
+  Takeoff      Takeoff[]
+
+  @@index([active])
+  @@index([projectId])
+}
+
+model HomeownerAccess {
+  id                 String               @id
+  builderId          String
+  projectId          String
+  name               String
+  email              String
+  phone              String?
+  accessToken        String               @unique
+  active             Boolean              @default(true)
+  expiresAt          DateTime?
+  lastVisitAt        DateTime?
+  createdAt          DateTime             @default(now())
+  Builder            Builder              @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  Project            Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  HomeownerSelection HomeownerSelection[]
+
+  @@index([accessToken])
+  @@index([projectId])
+}
+
+model HomeownerSelection {
+  id                String          @id
+  homeownerAccessId String
+  location          String
+  baseProductId     String
+  selectedProductId String
+  adderCost         Float
+  status            SelectionStatus @default(PENDING)
+  confirmedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  HomeownerAccess   HomeownerAccess @relation(fields: [homeownerAccessId], references: [id], onDelete: Cascade)
+}
+
+model HyphenAccessToken {
+  id           String    @id
+  credentialId String
+  tokenHash    String    @unique
+  scope        String?
+  issuedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  expiresAt    DateTime  @db.Timestamptz(6)
+  lastUsedAt   DateTime? @db.Timestamptz(6)
+  revokedAt    DateTime? @db.Timestamptz(6)
+
+  @@index([credentialId], map: "idx_hyphentoken_cred")
+  @@index([expiresAt], map: "idx_hyphentoken_expires")
+}
+
+model HyphenBuilderAlias {
+  id         String   @id
+  aliasType  String
+  aliasValue String
+  builderId  String
+  note       String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([aliasType, aliasValue])
+  @@index([builderId], map: "idx_hyphenbalias_builder")
+}
+
+model HyphenCredential {
+  id          String    @id
+  clientId    String    @unique
+  secretHash  String
+  label       String
+  scope       String?
+  status      String    @default("ACTIVE")
+  createdById String?
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  lastUsedAt  DateTime? @db.Timestamptz(6)
+  revokedAt   DateTime? @db.Timestamptz(6)
+
+  @@index([status], map: "idx_hyphencred_status")
+}
+
+model HyphenOrder {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  hyphId           String?   @unique
+  refOrderId       String?
+  jobId            String?
+  builderOrderNum  String?
+  supplierOrderNum String?
+  account          String?
+  builderName      String?
+  subdivision      String?
+  phase            String?
+  groupName        String?
+  lotBlockPlan     String?
+  address          String?
+  task             String?
+  total            Float?    @default(0)
+  requestedStart   DateTime? @db.Timestamptz(6)
+  requestedEnd     DateTime? @db.Timestamptz(6)
+  actualStart      DateTime? @db.Timestamptz(6)
+  actualEnd        DateTime? @db.Timestamptz(6)
+  orderStatus      String?
+  builderStatus    String?
+  rawDates         String?
+  rawStatus        String?
+  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([builderName], map: "idx_hyphen_order_builder")
+  @@index([hyphId], map: "idx_hyphen_order_hyphId")
+  @@index([refOrderId], map: "idx_hyphen_order_so")
+}
+
+model HyphenOrderEvent {
+  id                 String    @id
+  credentialId       String?
+  kind               String
+  externalId         String?
+  builderOrderNumber String?
+  status             String    @default("RECEIVED")
+  error              String?
+  rawPayload         Json      @default("{}")
+  mappedOrderId      String?
+  receivedAt         DateTime  @default(now()) @db.Timestamptz(6)
+  processedAt        DateTime? @db.Timestamptz(6)
+
+  @@index([externalId], map: "idx_hyphenevent_external")
+  @@index([kind], map: "idx_hyphenevent_kind")
+  @@index([receivedAt(sort: Desc)], map: "idx_hyphenevent_received")
+  @@index([status], map: "idx_hyphenevent_status")
+}
+
+model HyphenPayment {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderAccount   String?
+  builderName      String?
+  orderNumber      String?
+  address          String?
+  subdivision      String?
+  lotBlockPlan     String?
+  supplierOrderNum String?
+  taskDescription  String?
+  soNumber         String?
+  invoiceNumber    String?
+  checkNumber      String?
+  paymentDate      DateTime? @db.Timestamptz(6)
+  amount           Float?    @default(0)
+  paymentType      String?
+  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
+  jobId            String?
+
+  @@index([builderName], map: "idx_hyphen_payment_builder")
+  @@index([checkNumber], map: "idx_hyphen_payment_check")
+  @@index([orderNumber, checkNumber, amount], map: "idx_hyphen_payment_dedupe")
+}
+
+model HyphenProductAlias {
+  id         String   @id
+  aliasType  String
+  aliasValue String
+  productId  String
+  note       String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([aliasType, aliasValue])
+  @@index([productId], map: "idx_hyphenpalias_product")
+}
+
+model InboxItem {
+  id              String    @id
+  type            String
+  source          String
+  title           String
+  description     String?
+  priority        String    @default("MEDIUM")
+  status          String    @default("PENDING")
+  entityType      String?
+  entityId        String?
+  financialImpact Float?
+  assignedTo      String?
+  actionData      Json?
+  result          Json?
+  dueBy           DateTime?
+  snoozedUntil    DateTime?
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+
+  @@index([assignedTo, status])
+  @@index([createdAt(sort: Desc)], map: "InboxItem_createdAt_desc_idx")
+  @@index([dueBy])
+  @@index([entityType, entityId])
+  @@index([status, priority])
+  @@index([type, status])
+}
+
+model Inspection {
+  id                 String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  templateId         String?
+  jobId              String?
+  inspectorId        String?
+  status             String              @default("PENDING")
+  scheduledDate      DateTime?           @db.Timestamptz(6)
+  completedDate      DateTime?           @db.Timestamptz(6)
+  results            Json?               @default("{}")
+  passRate           Float?
+  notes              String?
+  photos             Json?               @default("[]")
+  signatureData      String?
+  createdAt          DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime            @default(now()) @db.Timestamptz(6)
+  Staff              Staff?              @relation(fields: [inspectorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Job                Job?                @relation(fields: [jobId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  InspectionTemplate InspectionTemplate? @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([jobId])
+  @@index([status])
+  @@index([jobId], map: "idx_inspection_jobId")
+}
+
+model InspectionTemplate {
+  id          String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  code        String       @unique
+  description String?
+  category    String       @default("GENERAL")
+  items       Json         @default("[]")
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime     @default(now()) @db.Timestamptz(6)
+  Inspection  Inspection[]
+}
+
+model Installation {
+  id            String             @id
+  jobId         String
+  crewId        String?
+  installNumber String             @unique
+  scopeNotes    String?
+  status        InstallationStatus @default(SCHEDULED)
+  scheduledDate DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  passedQC      Boolean            @default(false)
+  punchItems    String?
+  beforePhotos  String[]
+  afterPhotos   String[]
+  notes         String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime
+  Crew          Crew?              @relation(fields: [crewId], references: [id])
+  Job           Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([crewId])
+  @@index([jobId])
+  @@index([status])
+  @@index([crewId, status], map: "idx_install_crew_status")
+  @@index([jobId, status], map: "idx_install_job_status")
+}
+
+model InstantQuoteRequest {
+  id             String    @id
+  builderEmail   String
+  builderCompany String?
+  contactName    String?
+  phone          String?
+  isNewBuilder   Boolean?  @default(false)
+  projectName    String?
+  projectAddress String?
+  community      String?
+  estimatedDoors Int?
+  targetDelivery String?
+  doorLines      Json?
+  notes          String?
+  totalEstimate  Float?
+  source         String?   @default("WEBSITE")
+  status         String?   @default("NEW")
+  assignedTo     String?
+  assignedAt     DateTime? @db.Timestamptz(6)
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([assignedTo], map: "idx_iqr_assigned")
+  @@index([builderEmail], map: "idx_iqr_email")
+  @@index([status], map: "idx_iqr_status")
+}
+
+model IntegrationConfig {
+  id               String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  provider         IntegrationProvider @unique
+  name             String
+  apiKey           String?
+  apiSecret        String?
+  accessToken      String?
+  refreshToken     String?
+  tokenExpiresAt   DateTime?
+  baseUrl          String?
+  companyId        String?
+  webhookSecret    String?
+  gmailWatchExpiry DateTime?
+  gmailHistoryId   String?
+  syncEnabled      Boolean             @default(true)
+  syncInterval     Int                 @default(300)
+  lastSyncAt       DateTime?
+  lastSyncStatus   String?
+  lastSyncError    String?
+  status           IntegrationStatus   @default(PENDING)
+  configuredById   String?
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @default(now())
+
+  @@index([status])
+}
+
+model InventoryAllocation {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  productId      String
+  orderId        String?
+  jobId          String?
+  quantity       Int       @default(0)
+  allocationType String    @default("SALES_ORDER")
+  status         String    @default("RESERVED")
+  allocatedBy    String?
+  notes          String?
+  allocatedAt    DateTime? @default(now()) @db.Timestamptz(6)
+  releasedAt     DateTime? @db.Timestamptz(6)
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([jobId])
+  @@index([orderId])
+  @@index([productId])
+  @@index([status])
+  @@index([orderId], map: "idx_inv_alloc_order")
+  @@index([productId], map: "idx_inv_alloc_product")
+  @@index([status], map: "idx_inv_alloc_status")
+}
+
+model InventoryItem {
+  id             String    @id
+  productId      String    @unique
+  onHand         Int       @default(0)
+  committed      Int       @default(0)
+  onOrder        Int       @default(0)
+  available      Int       @default(0)
+  reorderPoint   Int       @default(0)
+  reorderQty     Int       @default(0)
+  warehouseZone  String?
+  binLocation    String?
+  lastCountedAt  DateTime?
+  lastReceivedAt DateTime?
+  updatedAt      DateTime
+  minStockLevel  Int?      @default(0)
+  sku            String?
+  productName    String?
+  category       String?
+  safetyStock    Int       @default(5)
+  maxStock       Int       @default(200)
+  unitCost       Float     @default(0)
+  avgDailyUsage  Float     @default(0)
+  daysOfSupply   Float     @default(0)
+  location       String    @default("MAIN_WAREHOUSE")
+  status         String    @default("IN_STOCK")
+
+  @@index([category])
+  @@index([lastCountedAt])
+  @@index([productId])
+  @@index([productId, onHand])
+  @@index([sku])
+  @@index([status])
+  @@index([warehouseZone])
+  @@index([category], map: "idx_inventory_category")
+  @@index([productId], map: "idx_inventory_product")
+  @@index([sku], map: "idx_inventory_sku")
+  @@index([status], map: "idx_inventory_status")
+}
+
+model Invoice {
+  id                 String             @id
+  invoiceNumber      String             @unique
+  builderId          String
+  orderId            String?
+  jobId              String?
+  createdById        String
+  subtotal           Float
+  taxAmount          Float              @default(0)
+  total              Float
+  amountPaid         Float              @default(0)
+  balanceDue         Float
+  status             InvoiceStatus      @default(DRAFT)
+  paymentTerm        PaymentTerm
+  issuedAt           DateTime?
+  dueDate            DateTime?
+  paidAt             DateTime?
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime
+  qbTxnId            String?
+  qbSyncedAt         DateTime?
+  qbSyncStatus       String?            @default("PENDING")
+  stripeSessionId    String?
+  stripePaymentUrl   String?
+  stripeCustomerId   String?
+  paymentPlanOffered Boolean            @default(false)
+  paymentPlanDetails Json?
+  CollectionAction   CollectionAction[]
+  Staff              Staff              @relation(fields: [createdById], references: [id])
+  InvoiceItem        InvoiceItem[]
+  Payment            Payment[]
+
+  @@index([builderId])
+  @@index([builderId, status])
+  @@index([createdById])
+  @@index([dueDate])
+  @@index([issuedAt])
+  @@index([orderId])
+  @@index([status])
+  @@index([builderId], map: "idx_inv_builder")
+  @@index([createdAt], map: "idx_inv_created")
+  @@index([status], map: "idx_inv_status")
+  @@index([builderId, status], map: "idx_invoice_builder_status")
+  @@index([jobId], map: "idx_invoice_job")
+  @@index([status, dueDate], map: "idx_invoice_status_due")
+}
+
+model InvoiceItem {
+  id          String  @id
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Int
+  unitPrice   Float
+  lineTotal   Float
+  Invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model InvoiceTimingRule {
+  id                String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name              String
+  description       String?
+  triggerEvent      String
+  delayDays         Int?     @default(0)
+  conditions        Json?    @default("{}")
+  isActive          Boolean? @default(true)
+  appliedCount      Int?     @default(0)
+  avgCollectionDays Float?
+  createdAt         DateTime @default(now())
+
+  @@index([isActive], map: "idx_invoice_timing_active")
+}
+
+model Job {
+  id                    String                  @id
+  jobNumber             String                  @unique
+  boltJobId             String?
+  inflowJobId           String?
+  orderId               String?
+  projectId             String?
+  lotBlock              String?
+  community             String?
+  builderName           String
+  builderContact        String?
+  jobAddress            String?
+  scopeType             ScopeType
+  dropPlan              String?
+  assignedPMId          String?
+  status                JobStatus               @default(CREATED)
+  readinessCheck        Boolean                 @default(false)
+  materialsLocked       Boolean                 @default(false)
+  loadConfirmed         Boolean                 @default(false)
+  scheduledDate         DateTime?
+  actualDate            DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  communityId           String?
+  hyphenJobId           String?
+  hyphenScheduleId      String?
+  divisionId            String?
+  qcRequired            Boolean?                @default(true)
+  allMaterialsAllocated Boolean?                @default(false)
+  pickListGenerated     Boolean?                @default(false)
+  buildSheetNotes       String?
+  locationId            String?                 @default("loc_abel_dfw")
+  bwpPoNumber           String?
+  latitude              Float?
+  longitude             Float?
+  Activity              Activity[]
+  BTProjectMapping      BTProjectMapping[]
+  BuilderScheduleShare  BuilderScheduleShare[]
+  DecisionNote          DecisionNote[]
+  Delivery              Delivery[]
+  Inspection            Inspection[]
+  Installation          Installation[]
+  Staff                 Staff?                  @relation(fields: [assignedPMId], references: [id])
+  Community_legacy      Community_legacy?       @relation(fields: [communityId], references: [id])
+  Division              Division?               @relation(fields: [divisionId], references: [id])
+  Order                 Order?                  @relation(fields: [orderId], references: [id])
+  JobPhase              JobPhase[]
+  LienRelease           LienRelease[]
+  MaterialPick          MaterialPick[]
+  QualityCheck          QualityCheck[]
+  ScheduleChangeRequest ScheduleChangeRequest[]
+  ScheduleEntry         ScheduleEntry[]
+  ScheduleMilestone     ScheduleMilestone[]
+  Task                  Task[]
+  TradeReview           TradeReview[]
+
+  @@index([assignedPMId])
+  @@index([boltJobId])
+  @@index([builderName])
+  @@index([communityId])
+  @@index([community])
+  @@index([divisionId])
+  @@index([inflowJobId])
+  @@index([orderId])
+  @@index([projectId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([builderName, community], map: "idx_job_builder_community")
+  @@index([assignedPMId, status], map: "idx_job_pm_status")
+  @@index([status, scheduledDate], map: "idx_job_status_scheduled")
+}
+
+model JobPhase {
+  id                 String              @id
+  jobId              String
+  templateId         String?
+  configId           String?
+  name               String
+  sortOrder          Int                 @default(0)
+  status             PhaseStatus         @default(PENDING)
+  amountType         PhaseAmountType     @default(MILESTONE)
+  percentage         Float?
+  expectedAmount     Float?
+  actualAmount       Float?
+  invoiceId          String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  invoicedAt         DateTime?
+  skippedAt          DateTime?
+  skippedBy          String?
+  notes              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now())
+  BuilderPhaseConfig BuilderPhaseConfig? @relation(fields: [configId], references: [id], onUpdate: NoAction)
+  Job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  JobPhaseTemplate   JobPhaseTemplate?   @relation(fields: [templateId], references: [id], onUpdate: NoAction)
+
+  @@unique([jobId, name])
+  @@index([configId])
+  @@index([invoiceId])
+  @@index([jobId])
+  @@index([status])
+  @@index([templateId])
+}
+
+model JobPhaseTemplate {
+  id                 String               @id
+  name               String
+  description        String?
+  builderType        BuilderType
+  sortOrder          Int                  @default(0)
+  amountType         PhaseAmountType      @default(MILESTONE)
+  percentage         Float?
+  fixedAmount        Float?
+  isDefault          Boolean              @default(true)
+  isRequired         Boolean              @default(false)
+  createdById        String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now())
+  BuilderPhaseConfig BuilderPhaseConfig[]
+  JobPhase           JobPhase[]
+
+  @@unique([builderType, name])
+  @@index([builderType])
+  @@index([sortOrder])
+}
+
+model LienRelease {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  jobId         String?
+  builderId     String?
+  invoiceId     String?
+  type          String    @default("CONDITIONAL")
+  status        String    @default("PENDING")
+  amount        Float     @default(0)
+  throughDate   DateTime? @db.Date
+  issuedDate    DateTime? @db.Date
+  signedDate    DateTime? @db.Date
+  signedBy      String?
+  signatureData String?
+  documentUrl   String?
+  notes         String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  Builder       Builder?  @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Job           Job?      @relation(fields: [jobId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([jobId])
+  @@index([status])
+  @@index([jobId], map: "idx_lien_release_jobId")
+}
+
+model Location {
+  id                               String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name                             String
+  code                             String   @unique
+  type                             String   @default("WAREHOUSE")
+  address                          String?
+  city                             String?
+  state                            String?
+  zip                              String?
+  phone                            String?
+  managerId                        String?
+  active                           Boolean  @default(true)
+  isPrimary                        Boolean  @default(false)
+  timezone                         String?  @default("America/Chicago")
+  createdAt                        DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                        DateTime @default(now()) @db.Timestamptz(6)
+  Staff_Location_managerIdToStaff  Staff?   @relation("Location_managerIdToStaff", fields: [managerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Staff_Staff_locationIdToLocation Staff[]  @relation("Staff_locationIdToLocation")
+
+  @@index([active], map: "idx_location_active")
+}
+
+model MarketingCampaign {
+  id                String              @id
+  name              String
+  type              String              @default("EMAIL")
+  status            String              @default("DRAFT")
+  subject           String?
+  body              String?
+  targetSegment     String?
+  targetQuery       String?
+  recipientCount    Int?                @default(0)
+  sentCount         Int?                @default(0)
+  openCount         Int?                @default(0)
+  clickCount        Int?                @default(0)
+  convertCount      Int?                @default(0)
+  scheduledAt       DateTime?           @db.Timestamptz(6)
+  sentAt            DateTime?           @db.Timestamptz(6)
+  createdBy         String?
+  createdAt         DateTime?           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?           @default(now()) @db.Timestamptz(6)
+  CampaignRecipient CampaignRecipient[]
+}
+
+model MaterialLeadTime {
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  productId       String?
+  productCategory String?
+  vendorId        String
+  avgLeadDays     Float?   @default(0)
+  minLeadDays     Int?     @default(0)
+  maxLeadDays     Int?     @default(0)
+  stdDevDays      Float?   @default(0)
+  confidenceLevel Float?   @default(0)
+  sampleSize      Int?     @default(0)
+  seasonalFactors Json?    @default("{}")
+  lastUpdatedAt   DateTime @default(now())
+
+  @@index([productCategory], map: "idx_materialleadtime_productcategory")
+  @@index([productId], map: "idx_materialleadtime_productid")
+  @@index([vendorId], map: "idx_materialleadtime_vendorid")
+}
+
+model MaterialPick {
+  id              String     @id
+  jobId           String
+  productId       String?
+  sku             String
+  description     String
+  quantity        Int
+  pickedQty       Int        @default(0)
+  status          PickStatus @default(PENDING)
+  zone            String?
+  pickedAt        DateTime?
+  verifiedAt      DateTime?
+  notes           String?
+  createdAt       DateTime   @default(now())
+  pickedById      String?
+  verifiedById    String?
+  orderItemId     String?
+  bomEntryId      String?
+  parentProductId String?
+  allocationId    String?
+  Job             Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([jobId])
+  @@index([productId])
+  @@index([status])
+  @@index([jobId, status], map: "idx_materialpick_job_status")
+}
+
+model MaterialWatch {
+  id               String    @id
+  orderId          String
+  orderItemId      String?
+  productId        String
+  jobId            String?
+  sku              String
+  productName      String
+  qtyNeeded        Int
+  qtyAvailable     Int       @default(0)
+  status           String    @default("AWAITING")
+  notifiedSalesRep Boolean   @default(false)
+  notifiedOps      Boolean   @default(false)
+  arrivedAt        DateTime? @db.Timestamptz(6)
+  salesRepId       String?
+  createdById      String?
+  purchaseOrderId  String?
+  notes            String?
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @db.Timestamptz(6)
+}
+
+model Message {
+  id             String       @id
+  conversationId String
+  senderId       String
+  body           String
+  readBy         String[]
+  createdAt      DateTime     @default(now())
+  threadId       String?
+  mentions       Json?        @default("[]")
+  reactions      Json?        @default("[]")
+  isEdited       Boolean?     @default(false)
+  editedAt       DateTime?    @db.Timestamptz(6)
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  Staff          Staff        @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([senderId])
+  @@index([conversationId, createdAt(sort: Desc)], map: "idx_message_conv_created")
+}
+
+model MessageReadReceipt {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  messageId String
+  staffId   String?
+  builderId String?
+  readAt    DateTime @default(now()) @db.Timestamptz(6)
+  Builder   Builder? @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Staff     Staff?   @relation(fields: [staffId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([messageId], map: "idx_message_read_receipt")
+}
+
+model Notification {
+  id        String           @id
+  staffId   String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  Staff     Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([read])
+  @@index([staffId])
+  @@index([type])
+  @@index([staffId, read, createdAt(sort: Desc)], map: "idx_notification_staff")
+  @@index([staffId, createdAt(sort: Desc)], map: "idx_notification_staff_created")
+  @@index([staffId, read], map: "idx_notification_staff_read")
+}
+
+model Order {
+  id                  String          @id
+  builderId           String
+  quoteId             String?         @unique
+  orderNumber         String          @unique
+  poNumber            String?
+  subtotal            Float
+  taxAmount           Float           @default(0)
+  shippingCost        Float           @default(0)
+  total               Float
+  paymentTerm         PaymentTerm
+  paymentStatus       PaymentStatus   @default(PENDING)
+  paidAt              DateTime?
+  dueDate             DateTime?
+  status              OrderStatus     @default(RECEIVED)
+  deliveryDate        DateTime?
+  deliveryNotes       String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime
+  driverId            String?
+  deliveryConfirmedAt DateTime?       @db.Timestamp(6)
+  deliverySignature   String?
+  inflowOrderId       String?         @unique
+  trackingUpdates     Json?           @default("[]")
+  qbTxnId             String?
+  qbSyncedAt          DateTime?
+  inflowCustomerId    String?
+  orderDate           DateTime?       @db.Timestamptz(6)
+  isForecast          Boolean         @default(false)
+  Job                 Job[]
+  Builder             Builder         @relation(fields: [builderId], references: [id])
+  Quote               Quote?          @relation(fields: [quoteId], references: [id])
+  OrderItem           OrderItem[]
+  OrderTemplate       OrderTemplate[]
+
+  @@index([builderId])
+  @@index([builderId, status])
+  @@index([createdAt])
+  @@index([deliveryDate])
+  @@index([dueDate])
+  @@index([isForecast])
+  @@index([orderDate])
+  @@index([orderNumber])
+  @@index([paymentStatus])
+  @@index([status])
+  @@index([builderId, status], map: "idx_order_builder_status")
+  @@index([status, createdAt(sort: Desc)], map: "idx_order_status_created")
+}
+
+model OrderItem {
+  id          String  @id
+  orderId     String
+  productId   String
+  description String
+  quantity    Int
+  unitPrice   Float
+  lineTotal   Float
+  Order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  Product     Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([orderId, productId])
+  @@index([productId])
+}
+
+model OrderTemplate {
+  id                String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId         String
+  name              String
+  description       String?
+  sourceOrderId     String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now())
+  Builder           Builder             @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  Order             Order?              @relation(fields: [sourceOrderId], references: [id])
+  OrderTemplateItem OrderTemplateItem[]
+
+  @@index([builderId], map: "idx_template_builder")
+}
+
+model OrderTemplateItem {
+  id            String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  templateId    String
+  productId     String
+  quantity      Int           @default(1)
+  notes         String?
+  Product       Product       @relation(fields: [productId], references: [id])
+  OrderTemplate OrderTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId], map: "idx_templateitem_template")
+}
+
+model OutreachActivity {
+  id           String    @id
+  prospectId   String
+  type         String    @default("EMAIL")
+  subject      String?
+  body         String?
+  outcome      String?   @default("PENDING")
+  followUpDate DateTime? @db.Date
+  performedBy  String?
+  performedAt  DateTime? @default(now()) @db.Timestamptz(6)
+  createdAt    DateTime? @default(now()) @db.Timestamptz(6)
+  Prospect     Prospect  @relation(fields: [prospectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([prospectId], map: "idx_outreach_prospect")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model OutreachEnrollment {
+  id                     String                   @id
+  sequenceId             String
+  prospectId             String?
+  email                  String
+  companyName            String
+  contactName            String
+  currentStep            Int?                     @default(0)
+  status                 String                   @default("ACTIVE")
+  enrolledAt             DateTime?                @default(now()) @db.Timestamptz(6)
+  completedAt            DateTime?                @db.Timestamptz(6)
+  updatedAt              DateTime?                @default(now()) @db.Timestamptz(6)
+  OutreachSequence       OutreachSequence         @relation(fields: [sequenceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OutreachEnrollmentStep OutreachEnrollmentStep[]
+
+  @@index([status])
+  @@index([email], map: "idx_outreach_enrollment_email")
+  @@index([sequenceId], map: "idx_outreach_enrollment_sequence")
+  @@index([status], map: "idx_outreach_enrollment_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model OutreachEnrollmentStep {
+  id                 String             @id
+  enrollmentId       String
+  stepId             String
+  status             String             @default("PENDING")
+  scheduledAt        DateTime           @db.Timestamptz(6)
+  sentAt             DateTime?          @db.Timestamptz(6)
+  openedAt           DateTime?          @db.Timestamptz(6)
+  repliedAt          DateTime?          @db.Timestamptz(6)
+  editedSubject      String?
+  editedBody         String?
+  createdAt          DateTime?          @default(now()) @db.Timestamptz(6)
+  OutreachEnrollment OutreachEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OutreachStep       OutreachStep       @relation(fields: [stepId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status, scheduledAt])
+  @@index([enrollmentId], map: "idx_enrollment_step_enrollment")
+  @@index([scheduledAt], map: "idx_enrollment_step_scheduled")
+  @@index([status], map: "idx_enrollment_step_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model OutreachSequence {
+  id                 String               @id
+  name               String
+  type               String
+  mode               String
+  stepCount          Int?                 @default(0)
+  active             Boolean?             @default(true)
+  createdBy          String
+  createdAt          DateTime?            @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime?            @default(now()) @db.Timestamptz(6)
+  OutreachEnrollment OutreachEnrollment[]
+  OutreachStep       OutreachStep[]
+
+  @@index([active], map: "idx_outreach_sequence_active")
+  @@index([type], map: "idx_outreach_sequence_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model OutreachStep {
+  id                     String                   @id
+  sequenceId             String
+  stepNumber             Int
+  delayDays              Int
+  channel                String
+  subject                String?
+  bodyTemplate           String
+  createdAt              DateTime?                @default(now()) @db.Timestamptz(6)
+  OutreachEnrollmentStep OutreachEnrollmentStep[]
+  OutreachSequence       OutreachSequence         @relation(fields: [sequenceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sequenceId], map: "idx_outreach_step_sequence")
+}
+
+model OutreachTemplate {
+  id           String    @id
+  templateType String
+  name         String
+  subject      String
+  body         String
+  category     String?
+  createdAt    DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([templateType], map: "idx_outreach_template_type")
+}
+
+model Payment {
+  id              String        @id
+  invoiceId       String
+  amount          Float
+  method          PaymentMethod
+  reference       String?
+  receivedAt      DateTime      @default(now())
+  notes           String?
+  builderId       String?
+  status          String        @default("PENDING")
+  referenceNumber String?
+  processedById   String?
+  processedAt     DateTime?
+  createdAt       DateTime?     @default(now())
+  Invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([builderId], map: "idx_payment_builder")
+  @@index([invoiceId], map: "idx_payment_invoice")
+  @@index([status], map: "idx_payment_status")
+}
+
+model PaymentOptimization {
+  id                       String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId                String
+  avgPaymentDays           Float?    @default(0)
+  medianPaymentDays        Float?    @default(0)
+  onTimeRate               Float?    @default(0)
+  latePaymentCount         Int?      @default(0)
+  totalInvoices            Int?      @default(0)
+  totalRevenue             Float?    @default(0)
+  outstandingBalance       Float?    @default(0)
+  creditRisk               String?   @default("LOW")
+  recommendedTerms         String?
+  earlyPayDiscountEligible Boolean?  @default(false)
+  projectedCollectionDate  DateTime?
+  lastAnalyzedAt           DateTime?
+  updatedAt                DateTime  @default(now())
+
+  @@index([builderId], map: "idx_payment_opt_builder")
+  @@index([builderId], map: "idx_paymentoptimization_builderid")
+  @@index([creditRisk], map: "idx_paymentoptimization_creditrisk")
+}
+
+model PaymentTermRecommendation {
+  id                  String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId           String
+  currentTerm         String
+  recommendedTerm     String
+  reasoning           String?
+  estimatedCashImpact Float?    @default(0)
+  estimatedRiskChange String?   @default("NEUTRAL")
+  confidence          Float?    @default(0)
+  status              String?   @default("PENDING")
+  reviewedById        String?
+  reviewedAt          DateTime?
+  createdAt           DateTime  @default(now())
+
+  @@index([builderId], map: "idx_payment_term_rec_builder")
+  @@index([status], map: "idx_payment_term_rec_status")
+}
+
+model PermitLead {
+  id               String    @id
+  permitNumber     String?
+  address          String
+  city             String?
+  county           String?
+  state            String?   @default("TX")
+  builderName      String?
+  builderFound     Boolean   @default(false)
+  matchedBuilderId String?
+  matchedDealId    String?
+  projectType      String    @default("RESIDENTIAL")
+  estimatedValue   Float?    @default(0)
+  filingDate       DateTime?
+  status           String    @default("NEW")
+  source           String?   @default("MANUAL")
+  notes            String?
+  researchData     Json?     @default("{}")
+  outreachSentAt   DateTime?
+  convertedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now())
+
+  @@index([builderName])
+  @@index([filingDate])
+  @@index([status])
+}
+
+model PricingEvent {
+  id           String   @id
+  builderId    String?
+  productId    String?
+  orderId      String?
+  basePrice    Float    @default(0)
+  finalPrice   Float    @default(0)
+  rulesApplied Json?    @default("[]")
+  margin       Float?
+  savings      Float?   @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([builderId])
+}
+
+model PricingRule {
+  id            String    @id
+  name          String
+  ruleType      String
+  conditions    Json      @default("{}")
+  adjustment    Json      @default("{}")
+  priority      Int       @default(50)
+  isActive      Boolean   @default(true)
+  effectiveDate DateTime?
+  expiryDate    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
+
+  @@index([ruleType])
+  @@index([ruleType], map: "idx_pricingrule_type")
+}
+
+model PricingTier {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String    @unique
+  displayName String
+  description String?
+  isDefault   Boolean?  @default(false)
+  sortOrder   Int?      @default(0)
+  active      Boolean?  @default(true)
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model PricingTierRule {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  tierName       String
+  category       String
+  marginPercent  Float
+  flatAdjustment Float?    @default(0)
+  minMargin      Float?    @default(0.10)
+  active         Boolean?  @default(true)
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([tierName, category])
+  @@index([category], map: "idx_pricing_tier_rule_cat")
+  @@index([tierName], map: "idx_pricing_tier_rule_tier")
+}
+
+model ProcurementAlert {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  type        String
+  priority    String?   @default("MEDIUM")
+  title       String
+  message     String
+  category    String?
+  productId   String?
+  supplierId  String?
+  data        Json?     @default("{}")
+  status      String?   @default("ACTIVE")
+  actionTaken String?
+  resolvedAt  DateTime? @db.Timestamptz(6)
+  resolvedBy  String?
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([status], map: "idx_alert_status")
+  @@index([type], map: "idx_alert_type")
+}
+
+model Product {
+  id                                             String              @id
+  sku                                            String              @unique
+  name                                           String
+  description                                    String?
+  category                                       String
+  subcategory                                    String?
+  cost                                           Float
+  basePrice                                      Float
+  minMargin                                      Float               @default(0.25)
+  doorSize                                       String?
+  handing                                        String?
+  coreType                                       String?
+  panelStyle                                     String?
+  jambSize                                       String?
+  casingCode                                     String?
+  hardwareFinish                                 String?
+  material                                       String?
+  fireRating                                     String?
+  active                                         Boolean             @default(true)
+  inStock                                        Boolean             @default(true)
+  leadTimeDays                                   Int?
+  inflowId                                       String?
+  inflowCategory                                 String?
+  lastSyncedAt                                   DateTime?
+  createdAt                                      DateTime            @default(now())
+  updatedAt                                      DateTime
+  imageAlt                                       String?
+  imageUrl                                       String?
+  thumbnailUrl                                   String?
+  displayName                                    String?
+  laborCost                                      Float?              @default(0)
+  overheadCost                                   Float?              @default(0)
+  locationId                                     String?             @default("loc_abel_dfw")
+  categoryId                                     String?             @default("cat_doors")
+  supplierId                                     String?
+  supplierSku                                    String?
+  weight                                         Float?
+  dimensions                                     Json?               @default("{}")
+  minOrderQty                                    Int?                @default(1)
+  BomEntry_BomEntry_componentIdToProduct         BomEntry[]          @relation("BomEntry_componentIdToProduct")
+  BomEntry_BomEntry_parentIdToProduct            BomEntry[]          @relation("BomEntry_parentIdToProduct")
+  BuilderPricing                                 BuilderPricing[]
+  DoorIdentity                                   DoorIdentity[]
+  OrderItem                                      OrderItem[]
+  OrderTemplateItem                              OrderTemplateItem[]
+  QuoteItem                                      QuoteItem[]
+  SupplierProduct                                SupplierProduct[]
+  TakeoffItem                                    TakeoffItem[]
+  UpgradePath_UpgradePath_fromProductIdToProduct UpgradePath[]       @relation("UpgradePath_fromProductIdToProduct")
+  UpgradePath_UpgradePath_toProductIdToProduct   UpgradePath[]       @relation("UpgradePath_toProductIdToProduct")
+
+  @@index([active])
+  @@index([category])
+  @@index([lastSyncedAt])
+  @@index([sku])
+  @@index([active, name], map: "idx_product_active_name")
+  @@index([category, active], map: "idx_product_category_active")
+  @@index([categoryId], map: "idx_product_category_id")
+}
+
+model ProductCategory {
+  id                    String            @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name                  String
+  slug                  String            @unique
+  parentId              String?
+  description           String?
+  icon                  String?
+  sortOrder             Int?              @default(0)
+  active                Boolean?          @default(true)
+  productCount          Int?              @default(0)
+  marginTarget          Float?            @default(0.35)
+  createdAt             DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime          @default(now()) @db.Timestamptz(6)
+  ProductCategory       ProductCategory?  @relation("ProductCategoryToProductCategory", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_ProductCategory ProductCategory[] @relation("ProductCategoryToProductCategory")
+
+  @@index([parentId], map: "idx_product_category_parent")
+  @@index([slug], map: "idx_product_category_slug")
+}
+
+model ProfitOptimizationLog {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  category          String
+  action            String
+  description       String?
+  estimatedImpact   Float?    @default(0)
+  actualImpact      Float?
+  status            String?   @default("IDENTIFIED")
+  implementedAt     DateTime?
+  implementedById   String?
+  relatedEntityType String?
+  relatedEntityId   String?
+  metadata          Json?     @default("{}")
+  createdAt         DateTime  @default(now())
+
+  @@index([category], map: "idx_profit_opt_category")
+  @@index([status], map: "idx_profit_opt_status")
+  @@index([category], map: "idx_profitoptimizationlog_category")
+  @@index([status], map: "idx_profitoptimizationlog_status")
+}
+
+model Project {
+  id              String            @id
+  builderId       String
+  name            String
+  jobAddress      String?
+  city            String?
+  state           String?
+  lotNumber       String?
+  subdivision     String?
+  planName        String?
+  sqFootage       Int?
+  status          ProjectStatus     @default(DRAFT)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  Blueprint       Blueprint[]
+  FloorPlan       FloorPlan[]
+  HomeownerAccess HomeownerAccess[]
+  Builder         Builder           @relation(fields: [builderId], references: [id])
+  Quote           Quote[]
+  Takeoff         Takeoff[]
+
+  @@index([builderId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model Prospect {
+  id                    String             @id
+  companyName           String
+  contactName           String?
+  email                 String?
+  phone                 String?
+  address               String?
+  city                  String?
+  state                 String?
+  source                String?            @default("MANUAL")
+  licenseNumber         String?
+  estimatedAnnualVolume Decimal?           @db.Decimal(12, 2)
+  status                String             @default("NEW")
+  assignedTo            String?
+  notes                 String?
+  convertedBuilderId    String?
+  convertedAt           DateTime?          @db.Timestamptz(6)
+  createdAt             DateTime?          @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime?          @default(now()) @db.Timestamptz(6)
+  OutreachActivity      OutreachActivity[]
+
+  @@index([status], map: "idx_prospect_status")
+}
+
+model PunchItem {
+  id              String    @id
+  punchNumber     String
+  installationId  String
+  jobId           String
+  location        String?
+  description     String
+  severity        String    @default("MINOR")
+  status          String    @default("OPEN")
+  assignedToId    String?
+  reportedById    String?
+  photoUrls       String[]  @default([])
+  fixPhotoUrls    String[]  @default([])
+  dueDate         DateTime? @db.Timestamptz(6)
+  resolvedAt      DateTime? @db.Timestamptz(6)
+  resolvedById    String?
+  resolutionNotes String?
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([installationId], map: "idx_pi_install")
+  @@index([jobId], map: "idx_pi_job")
+  @@index([severity], map: "idx_pi_severity")
+  @@index([status], map: "idx_pi_status")
+}
+
+model PurchaseOrder {
+  id                                      String              @id
+  poNumber                                String              @unique
+  vendorId                                String
+  createdById                             String
+  approvedById                            String?
+  status                                  POStatus            @default(DRAFT)
+  subtotal                                Float               @default(0)
+  shippingCost                            Float               @default(0)
+  total                                   Float               @default(0)
+  orderedAt                               DateTime?
+  expectedDate                            DateTime?
+  receivedAt                              DateTime?
+  notes                                   String?
+  createdAt                               DateTime            @default(now())
+  updatedAt                               DateTime
+  qbTxnId                                 String?
+  qbSyncedAt                              DateTime?
+  aiGenerated                             Boolean?            @default(false)
+  recommendationId                        String?
+  consolidationGroupId                    String?
+  projectedLeadDays                       Int?
+  actualLeadDays                          Int?
+  savingsVsLastOrder                      Float?              @default(0)
+  inflowId                                String?             @unique
+  inflowVendorId                          String?
+  source                                  String?
+  Staff_PurchaseOrder_approvedByIdToStaff Staff?              @relation("PurchaseOrder_approvedByIdToStaff", fields: [approvedById], references: [id])
+  Staff_PurchaseOrder_createdByIdToStaff  Staff               @relation("PurchaseOrder_createdByIdToStaff", fields: [createdById], references: [id])
+  Vendor                                  Vendor              @relation(fields: [vendorId], references: [id])
+  PurchaseOrderItem                       PurchaseOrderItem[]
+
+  @@index([createdAt])
+  @@index([createdById])
+  @@index([expectedDate])
+  @@index([qbTxnId])
+  @@index([receivedAt])
+  @@index([source])
+  @@index([status])
+  @@index([vendorId])
+  @@index([poNumber], map: "idx_po_number")
+  @@index([status], map: "idx_po_status")
+  @@index([status, expectedDate], map: "idx_po_status_expected")
+  @@index([vendorId], map: "idx_po_vendor")
+  @@index([vendorId, status], map: "idx_po_vendor_status")
+}
+
+model PurchaseOrderItem {
+  id              String        @id
+  purchaseOrderId String
+  productId       String?
+  vendorSku       String
+  description     String
+  quantity        Int
+  unitCost        Float
+  lineTotal       Float
+  receivedQty     Int           @default(0)
+  damagedQty      Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
+  jobId           String?
+  PurchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([productId])
+  @@index([purchaseOrderId])
+  @@index([purchaseOrderId], map: "idx_poitem_po")
+}
+
+model QBSyncQueue {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  action      String
+  entityType  String
+  entityId    String
+  qbTxnId     String?
+  qbListId    String?
+  requestXml  String?
+  responseXml String?
+  payload     Json      @default("{}")
+  status      String    @default("QUEUED")
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([entityType, status], map: "QBSyncQueue_entityType_idx")
+  @@index([status])
+  @@index([status, createdAt], map: "idx_qbsync_status_created")
+}
+
+model QualityCheck {
+  id             String   @id
+  jobId          String?
+  inspectorId    String
+  checkType      QCType
+  result         QCResult
+  notes          String?
+  defectCodes    String[]
+  photos         String[]
+  createdAt      DateTime @default(now())
+  materialPickId String?
+  Staff          Staff    @relation(fields: [inspectorId], references: [id])
+  Job            Job?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([checkType])
+  @@index([jobId])
+}
+
+model QualityPrediction {
+  id             String    @id
+  jobId          String
+  deliveryId     String?
+  riskScore      Int       @default(50)
+  riskFactors    Json      @default("[]")
+  recommendation String    @default("STANDARD")
+  resolved       Boolean   @default(false)
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+
+  @@index([jobId])
+  @@index([riskScore])
+}
+
+model Quote {
+  id                String      @id
+  projectId         String
+  takeoffId         String      @unique
+  quoteNumber       String      @unique
+  version           Int         @default(1)
+  subtotal          Float
+  taxRate           Float       @default(0)
+  taxAmount         Float       @default(0)
+  termAdjustment    Float       @default(0)
+  total             Float
+  status            QuoteStatus @default(DRAFT)
+  validUntil        DateTime?
+  approvedAt        DateTime?
+  approvedBy        String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime
+  signatureData     String?
+  rejectedAt        DateTime?   @db.Timestamp(6)
+  rejectionReason   String?
+  changeNotes       String?
+  aiOptimized       Boolean?    @default(false)
+  originalTotal     Float?
+  marginPercent     Float?
+  aiRecommendations Json?
+  floorPlanId       String?
+  notes             String?
+  Order             Order?
+  FloorPlan         FloorPlan?  @relation(fields: [floorPlanId], references: [id], onUpdate: NoAction)
+  Project           Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  Takeoff           Takeoff     @relation(fields: [takeoffId], references: [id], onDelete: Cascade)
+  QuoteItem         QuoteItem[]
+
+  @@index([projectId])
+  @@index([quoteNumber])
+  @@index([status])
+  @@index([validUntil])
+  @@index([projectId, status], map: "idx_quote_project_status")
+  @@index([status, createdAt(sort: Desc)], map: "idx_quote_status_created")
+}
+
+model QuoteItem {
+  id            String   @id
+  quoteId       String
+  productId     String?
+  description   String
+  quantity      Int
+  unitPrice     Float
+  lineTotal     Float
+  isUpgrade     Boolean  @default(false)
+  baseProductId String?
+  upgradeAdder  Float?
+  location      String?
+  sortOrder     Int      @default(0)
+  Product       Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  Quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
+model QuoteOptimizationLog {
+  id                  String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  quoteId             String
+  builderId           String
+  originalTotal       Float?   @default(0)
+  optimizedTotal      Float?   @default(0)
+  marginBefore        Float?   @default(0)
+  marginAfter         Float?   @default(0)
+  rulesApplied        Json?    @default("[]")
+  upsellsRecommended  Json?    @default("[]")
+  upsellsAccepted     Json?    @default("[]")
+  revenueImpact       Float?   @default(0)
+  builderSegment      String?
+  competitivePosition String?  @default("MARKET")
+  aiConfidence        Float?   @default(0)
+  aiReasoning         String?
+  createdAt           DateTime @default(now())
+
+  @@index([builderId])
+  @@index([createdAt])
+  @@index([quoteId])
+  @@index([quoteId], map: "idx_quote_opt_log_quoteId")
+}
+
+model QuoteRequest {
+  id                     String    @id
+  builderId              String?
+  referenceNumber        String?
+  projectName            String
+  projectAddress         String?
+  city                   String?
+  state                  String?
+  zip                    String?
+  description            String?
+  estimatedSquareFootage Float?
+  productCategories      Json?     @default("[]")
+  preferredDeliveryDate  DateTime?
+  attachmentUrls         Json?     @default("[]")
+  notes                  String?
+  status                 String    @default("NEW")
+  assignedTo             String?
+  quoteId                String?
+  staffNotes             String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now())
+
+  @@index([builderId], map: "idx_qr_builder")
+  @@index([createdAt], map: "idx_qr_created")
+  @@index([status], map: "idx_qr_status")
+  @@index([builderId], map: "idx_quoterequest_builder")
+  @@index([status], map: "idx_quoterequest_status")
+}
+
+model ReorderSuggestion {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId       String
+  productId       String
+  productName     String
+  lastOrderedAt   DateTime? @db.Timestamptz(6)
+  avgQuantity     Int?      @default(1)
+  avgIntervalDays Int?
+  suggestedDate   DateTime? @db.Date
+  status          String    @default("ACTIVE")
+  dismissed       Boolean?  @default(false)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  Builder         Builder   @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([builderId], map: "idx_reorder_suggestion_builder")
+}
+
+model RetentionAction {
+  id                     String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId              String
+  triggerType            String
+  triggerReason          String
+  suggestedAction        String
+  urgency                String    @default("NORMAL")
+  estimatedRevenueAtRisk Float?    @default(0)
+  status                 String    @default("PENDING")
+  assignedToId           String?
+  completedAt            DateTime?
+  outcome                String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now())
+
+  @@index([builderId])
+  @@index([status])
+  @@index([triggerType])
+  @@index([urgency])
+  @@index([builderId], map: "idx_retention_action_builderId")
+}
+
+model RevenueForecast {
+  id               String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  periodStart      DateTime @db.Date
+  periodEnd        DateTime @db.Date
+  periodType       String   @default("MONTHLY")
+  projectedRevenue Float?   @default(0)
+  projectedOrders  Int?     @default(0)
+  projectedMargin  Float?   @default(0)
+  pipelineValue    Float?   @default(0)
+  weightedPipeline Float?   @default(0)
+  sourcesBreakdown Json?    @default("{}")
+  scenarioType     String?  @default("BASE")
+  confidenceLevel  Float?   @default(0)
+  actualRevenue    Float?
+  actualOrders     Int?
+  forecastAccuracy Float?
+  createdAt        DateTime @default(now())
+
+  @@index([periodStart])
+  @@index([periodType])
+  @@index([scenarioType])
+}
+
+model SEOContent {
+  id              String    @id
+  title           String
+  slug            String    @unique
+  contentType     String    @default("BLOG")
+  targetKeywords  Json?     @default("[]")
+  content         String    @default("")
+  metaDescription String?
+  excerpt         String?
+  author          String?   @default("Abel Lumber")
+  status          String    @default("DRAFT")
+  publishedAt     DateTime?
+  lastUpdated     DateTime?
+  pageViews       Int       @default(0)
+  avgTimeOnPage   Float?    @default(0)
+  bounceRate      Float?    @default(0)
+  conversions     Int       @default(0)
+  featuredImage   String?
+  tags            Json?     @default("[]")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+
+  @@index([slug])
+  @@index([status])
+  @@index([contentType], map: "SEOContent_type_idx")
+}
+
+model SEOKeyword {
+  id           String    @id
+  keyword      String    @unique(map: "SEOKeyword_keyword_idx")
+  searchVolume Int?      @default(0)
+  difficulty   Int?      @default(50)
+  currentRank  Int?
+  previousRank Int?
+  targetPage   String?
+  contentId    String?
+  category     String?
+  intent       String?   @default("INFORMATIONAL")
+  lastChecked  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+
+  @@index([currentRank], map: "SEOKeyword_rank_idx")
+}
+
+model SavedCart {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId String
+  name      String   @default("My Cart")
+  items     Json     @default("[]")
+  subtotal  Float?   @default(0)
+  isDefault Boolean? @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+  Builder   Builder  @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ScheduleChangeRequest {
+  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  requestNumber     String             @unique
+  builderId         String
+  conversationId    String?
+  jobId             String?
+  deliveryId        String?
+  scheduleEntryId   String?
+  requestType       String             @default("RESCHEDULE")
+  currentDate       DateTime?          @db.Date
+  requestedDate     DateTime?          @db.Date
+  requestedTime     String?
+  reason            String?
+  autoApproved      Boolean?           @default(false)
+  status            String             @default("PENDING")
+  reviewedById      String?
+  reviewedAt        DateTime?          @db.Timestamptz(6)
+  reviewNotes       String?
+  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  Builder           Builder            @relation(fields: [builderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AgentConversation AgentConversation? @relation(fields: [conversationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Delivery          Delivery?          @relation(fields: [deliveryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Job               Job?               @relation(fields: [jobId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Staff             Staff?             @relation(fields: [reviewedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ScheduleEntry     ScheduleEntry?     @relation(fields: [scheduleEntryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([builderId], map: "idx_schedule_change_builder")
+  @@index([status], map: "idx_schedule_change_status")
+}
+
+model ScheduleEntry {
+  id                    String                  @id
+  jobId                 String
+  entryType             ScheduleType
+  title                 String
+  scheduledDate         DateTime
+  scheduledTime         String?
+  crewId                String?
+  status                ScheduleStatus          @default(TENTATIVE)
+  notes                 String?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  ScheduleChangeRequest ScheduleChangeRequest[]
+  Crew                  Crew?                   @relation(fields: [crewId], references: [id])
+  Job                   Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([crewId])
+  @@index([entryType])
+  @@index([jobId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([crewId, scheduledDate], map: "idx_schedule_crew_date")
+  @@index([scheduledDate, status], map: "idx_schedule_date_status")
+}
+
+model ScheduleMilestone {
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  jobId        String
+  name         String
+  code         String
+  plannedDate  DateTime? @db.Timestamptz(6)
+  actualDate   DateTime? @db.Timestamptz(6)
+  status       String    @default("PENDING")
+  dependsOn    String[]
+  durationDays Int?      @default(1)
+  sortOrder    Int?      @default(0)
+  notes        String?
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @db.Timestamptz(6)
+  Job          Job       @relation(fields: [jobId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([jobId], map: "idx_schedule_milestone_jobId")
+}
+
+model SecurityEvent {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  createdAt DateTime @default(now())
+  kind      String
+  path      String?
+  method    String?
+  ip        String?
+  userAgent String?
+  requestId String?
+  details   Json?
+
+  @@index([createdAt(sort: Desc)], map: "idx_securityevent_created")
+  @@index([ip], map: "idx_securityevent_ip")
+  @@index([kind, createdAt(sort: Desc)], map: "idx_securityevent_kind_created")
+}
+
+model ServerError {
+  id         String   @id
+  digest     String?
+  level      String   @default("error")
+  msg        String
+  errName    String?
+  errMessage String?
+  errStack   String?
+  requestId  String?
+  ctx        Json?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)], map: "idx_servererror_created")
+  @@index([digest], map: "idx_servererror_digest")
+  @@index([requestId], map: "idx_servererror_request")
+}
+
+model ServiceRequest {
+  id               String       @id
+  doorId           String
+  requestedBy      String?
+  requestedByName  String?
+  requestedByEmail String?
+  requestedByPhone String?
+  issueType        String       @default("GENERAL")
+  description      String
+  photoUrls        Json?
+  status           String       @default("NEW")
+  assignedTo       String?
+  resolution       String?
+  resolvedAt       DateTime?    @db.Timestamp(6)
+  isWarrantyClaim  Boolean?     @default(false)
+  warrantyApproved Boolean?
+  createdAt        DateTime?    @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime?    @default(now()) @db.Timestamp(6)
+  DoorIdentity     DoorIdentity @relation(fields: [doorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([doorId], map: "idx_service_request_doorId")
+  @@index([status], map: "idx_service_request_status")
+}
+
+model SlowQueryLog {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  createdAt   DateTime @default(now())
+  model       String
+  operation   String
+  durationMs  Int
+  thresholdMs Int
+  digest      String?
+  sqlSample   String?
+
+  @@index([createdAt(sort: Desc)], map: "idx_slowquerylog_created")
+  @@index([digest], map: "idx_slowquerylog_digest")
+  @@index([durationMs(sort: Desc)], map: "idx_slowquerylog_duration")
+}
+
+model SmartPORecommendation {
+  id                   String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  vendorId             String
+  productId            String?
+  productCategory      String?
+  recommendationType   String    @default("REORDER")
+  urgency              String    @default("NORMAL")
+  triggerReason        String
+  recommendedQty       Int       @default(0)
+  estimatedCost        Float?    @default(0)
+  estimatedSavings     Float?    @default(0)
+  targetDeliveryDate   DateTime?
+  orderByDate          DateTime?
+  relatedJobIds        Json?     @default("[]")
+  relatedOrderIds      Json?     @default("[]")
+  consolidationGroupId String?
+  status               String    @default("PENDING")
+  approvedById         String?
+  approvedAt           DateTime?
+  convertedPOId        String?
+  aiConfidence         Float?    @default(0)
+  aiReasoning          String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @default(now())
+
+  @@index([orderByDate], map: "idx_smartporecommendation_orderbydate")
+  @@index([status], map: "idx_smartporecommendation_status")
+  @@index([urgency], map: "idx_smartporecommendation_urgency")
+  @@index([vendorId], map: "idx_smartporecommendation_vendorid")
+}
+
+model Staff {
+  id                                                       String                    @id
+  firstName                                                String
+  lastName                                                 String
+  email                                                    String                    @unique
+  passwordHash                                             String
+  phone                                                    String?
+  role                                                     StaffRole
+  department                                               Department
+  title                                                    String?
+  avatar                                                   String?
+  active                                                   Boolean                   @default(true)
+  hireDate                                                 DateTime?
+  createdAt                                                DateTime                  @default(now())
+  updatedAt                                                DateTime
+  resetToken                                               String?
+  resetTokenExpiry                                         DateTime?
+  inviteToken                                              String?                   @unique @db.VarChar(255)
+  inviteTokenExpiry                                        DateTime?                 @db.Timestamp(6)
+  handbookSignedAt                                         DateTime?                 @db.Timestamp(6)
+  handbookVersion                                          String?                   @db.VarChar(50)
+  passwordSetAt                                            DateTime?                 @db.Timestamp(6)
+  mustChangePassword                                       Boolean?                  @default(false)
+  portalOverrides                                          Json?                     @default("{}")
+  locationId                                               String?                   @default("loc_abel_dfw")
+  roles                                                    String?
+  hourlyRate                                               Float?
+  annualSalary                                             Float?
+  burdenRate                                               Float?
+  fullyLoadedHourly                                        Float?
+  monthlyCost                                              Float?
+  costCenter                                               String?
+  payrollTitle                                             String?
+  payrollUpdatedAt                                         DateTime?                 @db.Timestamptz(6)
+  preferences                                              Json?
+  managerId                                                String?
+  salary                                                   Float?
+  payType                                                  PayType?
+  employmentType                                           EmploymentType?
+  employeeId                                               String?
+  Activity                                                 Activity[]
+  AgentConversation                                        AgentConversation[]
+  Contract                                                 Contract[]
+  Conversation                                             Conversation[]
+  ConversationParticipant                                  ConversationParticipant[]
+  CrewMember                                               CrewMember[]
+  Deal                                                     Deal[]
+  DealActivity                                             DealActivity[]
+  DecisionNote                                             DecisionNote[]
+  DocumentRequest                                          DocumentRequest[]
+  FloorPlan                                                FloorPlan[]
+  Inspection                                               Inspection[]
+  Invoice                                                  Invoice[]
+  Job                                                      Job[]
+  Location_Location_managerIdToStaff                       Location[]                @relation("Location_managerIdToStaff")
+  Message                                                  Message[]
+  MessageReadReceipt                                       MessageReadReceipt[]
+  Notification                                             Notification[]
+  PurchaseOrder_PurchaseOrder_approvedByIdToStaff          PurchaseOrder[]           @relation("PurchaseOrder_approvedByIdToStaff")
+  PurchaseOrder_PurchaseOrder_createdByIdToStaff           PurchaseOrder[]           @relation("PurchaseOrder_createdByIdToStaff")
+  QualityCheck                                             QualityCheck[]
+  ScheduleChangeRequest                                    ScheduleChangeRequest[]
+  Location_Staff_locationIdToLocation                      Location?                 @relation("Staff_locationIdToLocation", fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Staff                                                    Staff?                    @relation("StaffToStaff", fields: [managerId], references: [id], onUpdate: NoAction)
+  other_Staff                                              Staff[]                   @relation("StaffToStaff")
+  StaffPreferences                                         StaffPreferences?
+  StaffRoles                                               StaffRoles[]
+  TakeoffInquiry                                           TakeoffInquiry[]
+  Task_Task_assigneeIdToStaff                              Task[]                    @relation("Task_assigneeIdToStaff")
+  Task_Task_creatorIdToStaff                               Task[]                    @relation("Task_creatorIdToStaff")
+  Trade                                                    Trade[]
+  TradeReview                                              TradeReview[]
+  WorkloadDelegation_WorkloadDelegation_createdByIdToStaff WorkloadDelegation[]      @relation("WorkloadDelegation_createdByIdToStaff")
+  WorkloadDelegation_WorkloadDelegation_delegateIdToStaff  WorkloadDelegation[]      @relation("WorkloadDelegation_delegateIdToStaff")
+  WorkloadDelegation_WorkloadDelegation_delegatorIdToStaff WorkloadDelegation[]      @relation("WorkloadDelegation_delegatorIdToStaff")
+
+  @@index([active])
+  @@index([createdAt])
+  @@index([department])
+  @@index([email])
+  @@index([inviteToken])
+  @@index([managerId])
+  @@index([preferences], map: "Staff_preferences_gin_idx", type: Gin)
+  @@index([role])
+  @@index([roles])
+}
+
+model StaffPayrollStaging {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  rawName           String?   @unique
+  normalizedName    String?
+  title             String?
+  costCenter        String?
+  hourlyRate        Float?
+  annualSalary      Float?
+  burdenRate        Float?
+  fullyLoadedHourly Float?
+  monthlyCost       Float?
+  matchedStaffId    String?
+  createdAt         DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model StaffPreferences {
+  id               String   @id
+  staffId          String   @unique
+  theme            String   @default("system")
+  accentColor      String   @default("#E67E22")
+  sidebarCollapsed Boolean  @default(false)
+  compactMode      Boolean  @default(false)
+  dashboardLayout  Json?    @default("{}")
+  hiddenSections   Json?    @default("[]")
+  pinnedSections   Json?    @default("[]")
+  fontSize         String   @default("medium")
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @db.Timestamptz(6)
+  Staff            Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([staffId])
+}
+
+model StaffRoles {
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  staffId    String
+  role       StaffRole
+  assignedAt DateTime  @default(now())
+  assignedBy String?
+  Staff      Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([staffId, role])
+  @@index([staffId])
+}
+
+model StockTransfer {
+  id                String              @id
+  transferNumber    String              @unique
+  fromLocation      String
+  toLocation        String
+  status            String              @default("PENDING")
+  notes             String?
+  createdById       String
+  completedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now())
+  StockTransferItem StockTransferItem[]
+
+  @@index([createdById])
+  @@index([status])
+}
+
+model StockTransferItem {
+  id            String        @id
+  transferId    String
+  productId     String
+  sku           String?
+  productName   String?
+  quantity      Int
+  damagedQty    Int           @default(0)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  StockTransfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([productId])
+  @@index([transferId])
+}
+
+model SubcontractorPricing {
+  id                  String    @id
+  crewId              String
+  builderId           String?
+  pricePerSqFt        Float     @default(0)
+  pricingType         String    @default("PER_SQFT")
+  pricePerDoor        Float     @default(0)
+  pricePerHardwareSet Float     @default(0)
+  pricePerTrimPiece   Float     @default(0)
+  pricePerWindow      Float     @default(0)
+  flatRatePerUnit     Float?
+  effectiveDate       DateTime  @default(now())
+  expiresAt           DateTime?
+  notes               String?
+  active              Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now())
+  Builder             Builder?  @relation(fields: [builderId], references: [id], onUpdate: NoAction)
+  Crew                Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([builderId])
+  @@index([crewId, builderId])
+  @@index([crewId])
+  @@index([effectiveDate])
+}
+
+model Supplier {
+  id                String            @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name              String
+  code              String?           @unique
+  type              String            @default("DOMESTIC")
+  country           String?           @default("US")
+  region            String?
+  contactName       String?
+  contactEmail      String?
+  contactPhone      String?
+  website           String?
+  address           String?
+  city              String?
+  state             String?
+  zip               String?
+  paymentTerms      String?           @default("NET_30")
+  currency          String?           @default("USD")
+  minOrderValue     Float?            @default(0)
+  avgLeadTimeDays   Int?              @default(7)
+  shippingMethod    String?
+  dutyRate          Float?            @default(0)
+  freightCostPct    Float?            @default(0)
+  qualityRating     Float?            @default(3.0)
+  reliabilityScore  Float?            @default(3.0)
+  onTimeDeliveryPct Float?            @default(90)
+  categories        String[]
+  notes             String?
+  status            String?           @default("ACTIVE")
+  createdAt         DateTime?         @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?         @default(now()) @db.Timestamptz(6)
+  SupplierProduct   SupplierProduct[]
+
+  @@index([status], map: "idx_supplier_status")
+  @@index([type], map: "idx_supplier_type")
+}
+
+model SupplierPriceUpdate {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  supplier         String
+  batchId          String
+  productId        String?
+  supplierSku      String
+  productName      String?
+  previousCost     Float?
+  newCost          Float
+  costChange       Float?
+  costChangePct    Float?
+  currentPrice     Float?
+  suggestedPrice   Float?
+  currentMarginPct Float?
+  newMarginPct     Float?
+  status           String    @default("PENDING")
+  appliedAt        DateTime?
+  appliedById      String?
+  createdAt        DateTime  @default(now())
+
+  @@index([batchId])
+  @@index([status])
+  @@index([supplier])
+  @@index([batchId], map: "idx_supplier_price_update_batch_id")
+  @@index([productId], map: "idx_supplier_price_update_product_id")
+  @@index([status], map: "idx_supplier_price_update_status")
+  @@index([supplier], map: "idx_supplier_price_update_supplier")
+}
+
+model SupplierProduct {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  supplierId      String
+  productId       String?
+  sku             String?
+  productName     String
+  category        String
+  unitCost        Float
+  moq             Int?      @default(1)
+  leadTimeDays    Int?      @default(14)
+  packSize        Int?      @default(1)
+  currency        String?   @default("USD")
+  landedCost      Float?
+  lastQuoteDate   DateTime? @db.Timestamptz(6)
+  priceValidUntil DateTime? @db.Timestamptz(6)
+  notes           String?
+  active          Boolean?  @default(true)
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
+  Product         Product?  @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Supplier        Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([supplierId], map: "idx_supplier_product_supplier")
+  @@index([category], map: "idx_supplierproduct_category")
+  @@index([productId], map: "idx_supplierproduct_product")
+  @@index([supplierId], map: "idx_supplierproduct_supplier")
+}
+
+model SyncLog {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  provider         String
+  syncType         String
+  direction        String
+  status           String
+  recordsProcessed Int       @default(0)
+  recordsCreated   Int       @default(0)
+  recordsUpdated   Int       @default(0)
+  recordsSkipped   Int       @default(0)
+  recordsFailed    Int       @default(0)
+  errorMessage     String?
+  errorDetails     Json?
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+  durationMs       Int?
+  integration      String    @default("QUICKBOOKS")
+  entity           String    @default("Invoice")
+  entityId         String?
+  details          Json?
+  error            String?
+  syncedAt         DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([completedAt(sort: Desc)])
+  @@index([provider])
+  @@index([startedAt])
+  @@index([status])
+  @@index([syncType])
+  @@index([integration, status], map: "idx_synclog_integration")
+}
+
+model Takeoff {
+  id          String        @id
+  projectId   String
+  blueprintId String
+  status      TakeoffStatus @default(PROCESSING)
+  confidence  Float?
+  rawResult   Json?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  floorPlanId String?
+  Quote       Quote?
+  Blueprint   Blueprint     @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  FloorPlan   FloorPlan?    @relation(fields: [floorPlanId], references: [id], onUpdate: NoAction)
+  Project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  TakeoffItem TakeoffItem[]
+
+  @@index([blueprintId])
+  @@index([projectId])
+}
+
+model TakeoffInquiry {
+  id                 String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  inquiryNumber      String          @unique
+  contactName        String
+  companyName        String?
+  email              String
+  phone              String?
+  blueprintUrl       String?
+  blueprintPages     Int?
+  projectAddress     String?
+  projectCity        String?
+  projectState       String?
+  projectType        String?
+  scopeNotes         String?
+  status             InquiryStatus   @default(NEW)
+  priority           InquiryPriority @default(NORMAL)
+  assignedToId       String?
+  assignedAt         DateTime?
+  convertedBuilderId String?
+  convertedProjectId String?
+  convertedAt        DateTime?
+  aiEstimatedValue   Float?
+  aiComplexity       String?
+  aiNotes            String?
+  notes              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @default(now())
+  Staff              Staff?          @relation(fields: [assignedToId], references: [id])
+
+  @@index([status])
+}
+
+model TakeoffItem {
+  id           String   @id
+  takeoffId    String
+  category     String
+  description  String
+  location     String?
+  quantity     Int
+  productId    String?
+  confidence   Float?
+  aiNotes      String?
+  overridden   Boolean  @default(false)
+  originalDesc String?
+  createdAt    DateTime @default(now())
+  Product      Product? @relation(fields: [productId], references: [id])
+  Takeoff      Takeoff  @relation(fields: [takeoffId], references: [id], onDelete: Cascade)
+
+  @@index([takeoffId])
+}
+
+model Task {
+  id                           String       @id
+  assigneeId                   String
+  creatorId                    String
+  jobId                        String?
+  builderId                    String?
+  title                        String
+  description                  String?
+  priority                     TaskPriority @default(MEDIUM)
+  status                       TaskStatus   @default(TODO)
+  category                     TaskCategory @default(GENERAL)
+  dueDate                      DateTime?
+  completedAt                  DateTime?
+  createdAt                    DateTime     @default(now())
+  updatedAt                    DateTime
+  dealId                       String?
+  createdById                  String?
+  communityId                  String?
+  Staff_Task_assigneeIdToStaff Staff        @relation("Task_assigneeIdToStaff", fields: [assigneeId], references: [id])
+  Staff_Task_creatorIdToStaff  Staff        @relation("Task_creatorIdToStaff", fields: [creatorId], references: [id])
+  Job                          Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([assigneeId])
+  @@index([category])
+  @@index([communityId])
+  @@index([createdAt])
+  @@index([creatorId])
+  @@index([dueDate])
+  @@index([jobId])
+  @@index([status])
+  @@index([assigneeId, status], map: "idx_task_assignee")
+  @@index([assigneeId, status], map: "idx_task_assignee_status")
+  @@index([dealId], map: "idx_task_deal")
+  @@index([jobId, status], map: "idx_task_job_status")
+  @@index([status, dueDate], map: "idx_task_status")
+  @@index([status, dueDate], map: "idx_task_status_due")
+}
+
+model Trade {
+  id              String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  companyName     String
+  tradeType       String
+  contactName     String?
+  email           String?
+  phone           String?
+  website         String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  serviceArea     String[]      @default([])
+  description     String?
+  licenses        Json?         @default("[]")
+  insurance       Json?         @default("{}")
+  insuranceExpiry DateTime?     @db.Date
+  rating          Float?        @default(0)
+  reviewCount     Int?          @default(0)
+  verified        Boolean?      @default(false)
+  active          Boolean?      @default(true)
+  addedById       String?
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime      @default(now()) @db.Timestamptz(6)
+  Staff           Staff?        @relation(fields: [addedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  TradeReview     TradeReview[]
+
+  @@index([tradeType], map: "idx_trade_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model TradeReview {
+  id                String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  tradeId           String
+  reviewerId        String?
+  builderReviewerId String?
+  jobId             String?
+  rating            Int
+  quality           Int?
+  reliability       Int?
+  communication     Int?
+  comment           String?
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  Builder           Builder? @relation(fields: [builderReviewerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Job               Job?     @relation(fields: [jobId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Staff             Staff?   @relation(fields: [reviewerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Trade             Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UpgradePath {
+  id                                         String   @id
+  fromProductId                              String
+  toProductId                                String
+  upgradeType                                String
+  costDelta                                  Float
+  priceDelta                                 Float
+  description                                String?
+  createdAt                                  DateTime @default(now())
+  updatedAt                                  DateTime @default(now())
+  Product_UpgradePath_fromProductIdToProduct Product  @relation("UpgradePath_fromProductIdToProduct", fields: [fromProductId], references: [id], onDelete: Cascade)
+  Product_UpgradePath_toProductIdToProduct   Product  @relation("UpgradePath_toProductIdToProduct", fields: [toProductId], references: [id], onDelete: Cascade)
+
+  @@unique([fromProductId, toProductId])
+}
+
+model UpsellRecommendation {
+  id                 String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  sourceProductId    String?
+  sourceCategory     String
+  targetProductId    String?
+  targetCategory     String
+  recommendationType String   @default("UPGRADE")
+  title              String
+  description        String?
+  priceIncrease      Float?   @default(0)
+  marginIncrease     Float?   @default(0)
+  acceptanceRate     Float?   @default(0)
+  timesShown         Int?     @default(0)
+  timesAccepted      Int?     @default(0)
+  isActive           Boolean? @default(true)
+  createdAt          DateTime @default(now())
+
+  @@index([recommendationType])
+  @@index([sourceCategory])
+  @@index([targetCategory])
+}
+
+model UptimeProbe {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  createdAt DateTime @default(now())
+  status    String
+  totalMs   Int
+  dbMs      Int?
+  dbOk      Boolean
+  envOk     Boolean
+  error     String?
+
+  @@index([createdAt(sort: Desc)], map: "idx_uptimeprobe_created")
+}
+
+model VehicleLocation {
+  id               String   @id
+  crewId           String
+  vehicleId        String?
+  latitude         Float
+  longitude        Float
+  heading          Float?
+  speed            Float?
+  status           String   @default("IDLE")
+  address          String?
+  activeDeliveryId String?
+  timestamp        DateTime @default(now())
+
+  @@index([activeDeliveryId])
+  @@index([crewId])
+  @@index([timestamp])
+  @@index([vehicleId])
+}
+
+model Vendor {
+  id                    String          @id
+  name                  String
+  code                  String          @unique
+  contactName           String?
+  email                 String?
+  phone                 String?
+  address               String?
+  website               String?
+  accountNumber         String?
+  avgLeadDays           Int?
+  onTimeRate            Float?
+  active                Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime
+  paymentTerms          String?
+  minOrderValue         Float?          @default(0)
+  bulkDiscountThreshold Float?
+  bulkDiscountPercent   Float?
+  riskScore             Float?          @default(0)
+  creditLimit           Float?          @default(0)
+  creditUsed            Float?          @default(0)
+  creditHold            Boolean?        @default(false)
+  paymentTermDays       Int?            @default(30)
+  earlyPayDiscount      Float?          @default(0)
+  earlyPayDays          Int?            @default(0)
+  taxId                 String?
+  notes                 String?
+  inflowVendorId        String?         @unique
+  PurchaseOrder         PurchaseOrder[]
+  VendorProduct         VendorProduct[]
+
+  @@index([active])
+  @@index([code])
+}
+
+model VendorPerformance {
+  id             Int       @id @default(autoincrement())
+  vendorId       String
+  month          DateTime  @db.Date
+  onTimeRate     Decimal?  @default(0) @db.Decimal(5, 2)
+  qualityScore   Decimal?  @default(0) @db.Decimal(5, 2)
+  responseTime   Decimal?  @default(0) @db.Decimal(5, 2)
+  totalOrders    Int?      @default(0)
+  lateOrders     Int?      @default(0)
+  returnedOrders Int?      @default(0)
+  ytdSpend       Decimal?  @default(0) @db.Decimal(12, 2)
+  createdAt      DateTime? @default(now()) @db.Timestamp(6)
+
+  @@unique([vendorId, month])
+}
+
+model VendorPerformanceLog {
+  id                 String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  vendorId           String
+  purchaseOrderId    String?
+  productCategory    String?
+  orderedAt          DateTime?
+  expectedDeliveryAt DateTime?
+  actualDeliveryAt   DateTime?
+  leadTimeDays       Int?
+  daysLateOrEarly    Int?      @default(0)
+  quantityOrdered    Int?      @default(0)
+  quantityReceived   Int?      @default(0)
+  quantityDamaged    Int?      @default(0)
+  fillRate           Float?    @default(1.0)
+  qualityScore       Float?    @default(1.0)
+  unitCostAtOrder    Float?
+  notes              String?
+  createdAt          DateTime  @default(now())
+
+  @@index([actualDeliveryAt], map: "idx_vendorperformancelog_actualdeliveryat")
+  @@index([purchaseOrderId], map: "idx_vendorperformancelog_purchaseorderid")
+  @@index([vendorId], map: "idx_vendorperformancelog_vendorid")
+}
+
+model VendorProduct {
+  id           String   @id
+  vendorId     String
+  productId    String
+  vendorSku    String
+  vendorName   String?
+  vendorCost   Float?
+  minOrderQty  Int      @default(1)
+  leadTimeDays Int?
+  preferred    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+  Vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, productId])
+  @@index([productId])
+}
+
+model VendorReturn {
+  id               String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  returnNumber     String             @unique
+  purchaseOrderId  String
+  vendorId         String
+  status           String             @default("PENDING")
+  reason           String
+  returnType       String             @default("DEFECTIVE")
+  totalAmount      Float?             @default(0)
+  creditReceived   Float?             @default(0)
+  trackingNumber   String?
+  rmaNumber        String?
+  createdById      String?
+  approvedById     String?
+  shippedAt        DateTime?          @db.Timestamptz(6)
+  resolvedAt       DateTime?          @db.Timestamptz(6)
+  notes            String?
+  createdAt        DateTime?          @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime?          @default(now()) @db.Timestamptz(6)
+  VendorReturnItem VendorReturnItem[]
+
+  @@index([purchaseOrderId], map: "idx_vendor_return_po")
+  @@index([status], map: "idx_vendor_return_status")
+  @@index([vendorId], map: "idx_vendor_return_vendor")
+}
+
+model VendorReturnItem {
+  id                  String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  vendorReturnId      String
+  purchaseOrderItemId String?
+  productId           String?
+  description         String
+  quantity            Int
+  unitCost            Float        @default(0)
+  lineTotal           Float        @default(0)
+  reason              String       @default("DEFECTIVE")
+  condition           String?      @default("DAMAGED")
+  VendorReturn        VendorReturn @relation(fields: [vendorReturnId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model VendorScorecard {
+  id                 String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  vendorId           String    @unique
+  overallScore       Float?    @default(0)
+  deliveryScore      Float?    @default(0)
+  qualityScore       Float?    @default(0)
+  costScore          Float?    @default(0)
+  communicationScore Float?    @default(0)
+  avgLeadTimeDays    Float?    @default(0)
+  leadTimeStdDev     Float?    @default(0)
+  onTimeRate         Float?    @default(0)
+  earlyRate          Float?    @default(0)
+  lateRate           Float?    @default(0)
+  avgFillRate        Float?    @default(1.0)
+  avgDamageRate      Float?    @default(0)
+  totalPOs           Int?      @default(0)
+  totalSpend         Float?    @default(0)
+  avgPOValue         Float?    @default(0)
+  costTrend          String?   @default("STABLE")
+  riskLevel          String?   @default("LOW")
+  lastEvaluatedAt    DateTime?
+  updatedAt          DateTime  @default(now())
+
+  @@index([overallScore], map: "idx_vendorscorecard_overallscore")
+  @@index([vendorId], map: "idx_vendorscorecard_vendorid")
+}
+
+model WarehouseBay {
+  id                                              String         @id
+  bayNumber                                       String         @unique
+  zone                                            String         @default("MAIN")
+  aisle                                           String?
+  position                                        String?
+  nfcTagId                                        String?        @unique
+  capacity                                        Int?           @default(20)
+  currentCount                                    Int?           @default(0)
+  description                                     String?
+  active                                          Boolean?       @default(true)
+  createdAt                                       DateTime?      @default(now()) @db.Timestamp(6)
+  updatedAt                                       DateTime?      @default(now()) @db.Timestamp(6)
+  BayMovement_BayMovement_fromBayIdToWarehouseBay BayMovement[]  @relation("BayMovement_fromBayIdToWarehouseBay")
+  BayMovement_BayMovement_toBayIdToWarehouseBay   BayMovement[]  @relation("BayMovement_toBayIdToWarehouseBay")
+  DoorIdentity                                    DoorIdentity[]
+
+  @@index([nfcTagId], map: "idx_warehouse_bay_nfcTagId")
+  @@index([bayNumber], map: "idx_warehouse_bay_number")
+  @@index([zone], map: "idx_warehouse_bay_zone")
+}
+
+model WarrantyClaim {
+  id                 String    @id
+  claimNumber        String    @unique
+  policyId           String?
+  builderId          String?
+  orderId            String?
+  projectId          String?
+  type               String    @default("PRODUCT")
+  status             String    @default("SUBMITTED")
+  priority           String    @default("MEDIUM")
+  subject            String
+  description        String
+  productName        String?
+  productSku         String?
+  installDate        DateTime?
+  issueDate          DateTime?
+  photoUrls          Json?     @default("[]")
+  contactName        String?
+  contactEmail       String?
+  contactPhone       String?
+  siteAddress        String?
+  siteCity           String?
+  siteState          String?
+  siteZip            String?
+  assignedTo         String?
+  resolution         String?
+  resolutionType     String?
+  resolutionNotes    String?
+  resolutionCost     Float?    @default(0)
+  creditAmount       Float?    @default(0)
+  replacementOrderId String?
+  resolvedAt         DateTime?
+  resolvedById       String?
+  submittedById      String?
+  internalNotes      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now())
+  slaResponseDue     DateTime? @db.Timestamptz(6)
+  slaResolutionDue   DateTime? @db.Timestamptz(6)
+  slaBreached        Boolean?  @default(false)
+  photos             Json?     @default("[]")
+  selfServiceToken   String?
+  homeownerEmail     String?
+  homeownerPhone     String?
+
+  @@index([assignedTo], map: "idx_warrantyclaim_assigned")
+  @@index([builderId], map: "idx_warrantyclaim_builder")
+  @@index([claimNumber], map: "idx_warrantyclaim_number")
+  @@index([status], map: "idx_warrantyclaim_status")
+  @@index([type], map: "idx_warrantyclaim_type")
+}
+
+model WarrantyInspection {
+  id             String    @id
+  claimId        String
+  inspectorId    String?
+  scheduledDate  DateTime?
+  completedDate  DateTime?
+  status         String    @default("SCHEDULED")
+  findings       String?
+  recommendation String?
+  photoUrls      Json?     @default("[]")
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+
+  @@index([claimId], map: "idx_warrantyinspection_claim")
+  @@index([status], map: "idx_warrantyinspection_status")
+}
+
+model WarrantyPolicy {
+  id                String         @id
+  name              String
+  type              String         @default("PRODUCT")
+  category          String?
+  description       String?
+  durationMonths    Int            @default(12)
+  coverageDetails   String?
+  exclusions        String?
+  claimProcess      String?
+  isActive          Boolean        @default(true)
+  appliesToProducts Json?          @default("[]")
+  createdById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now())
+  appliesToCategory String?
+  DoorIdentity      DoorIdentity[]
+
+  @@index([appliesToCategory], map: "idx_warranty_policy_category")
+  @@index([type, isActive], map: "idx_warrantypolicy_type")
+}
+
+model WarrantyTracker {
+  id            String    @id
+  orderId       String?
+  orderItemId   String?
+  builderId     String
+  productId     String?
+  productName   String?
+  warrantyType  String?   @default("STANDARD")
+  startDate     DateTime  @db.Date
+  endDate       DateTime  @db.Date
+  status        String?   @default("ACTIVE")
+  claimCount    Int?      @default(0)
+  lastClaimDate DateTime? @db.Date
+  notes         String?
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([builderId], map: "idx_warranty_builder")
+  @@index([endDate], map: "idx_warranty_end")
+}
+
+model WebhookEvent {
+  id            String    @id
+  provider      String
+  eventId       String
+  eventType     String?
+  status        String    @default("RECEIVED")
+  error         String?
+  receivedAt    DateTime  @default(now()) @db.Timestamptz(6)
+  processedAt   DateTime? @db.Timestamptz(6)
+  payload       Json?
+  retryCount    Int       @default(0)
+  maxRetries    Int       @default(5)
+  nextRetryAt   DateTime? @db.Timestamptz(6)
+  lastAttemptAt DateTime? @db.Timestamptz(6)
+
+  @@unique([provider, eventId])
+  @@index([receivedAt(sort: Desc)], map: "idx_webhookevent_received")
+  @@index([status, nextRetryAt], map: "idx_webhookevent_retry")
+  @@index([provider, status], map: "idx_webhookevent_status")
+}
+
+model WorkingCapitalSnapshot {
+  id                  String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  snapshotDate        DateTime @unique @db.Date
+  totalAR             Float?   @default(0)
+  totalAP             Float?   @default(0)
+  inventory           Float?   @default(0)
+  cashOnHand          Float?   @default(0)
+  workingCapital      Float?   @default(0)
+  currentRatio        Float?   @default(0)
+  quickRatio          Float?   @default(0)
+  dso                 Float?   @default(0)
+  dpo                 Float?   @default(0)
+  cashConversionCycle Float?   @default(0)
+  metadata            Json?    @default("{}")
+  createdAt           DateTime @default(now())
+
+  @@index([snapshotDate(sort: Desc)], map: "idx_working_capital_date")
+}
+
+model WorkloadDelegation {
+  id                                          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  delegatorId                                 String
+  delegateId                                  String
+  startDate                                   DateTime
+  endDate                                     DateTime
+  reason                                      String   @default("VACATION")
+  scope                                       String   @default("ALL")
+  notes                                       String?
+  status                                      String   @default("SCHEDULED")
+  createdById                                 String
+  createdAt                                   DateTime @default(now())
+  updatedAt                                   DateTime @default(now())
+  Staff_WorkloadDelegation_createdByIdToStaff Staff    @relation("WorkloadDelegation_createdByIdToStaff", fields: [createdById], references: [id], onDelete: Cascade)
+  Staff_WorkloadDelegation_delegateIdToStaff  Staff    @relation("WorkloadDelegation_delegateIdToStaff", fields: [delegateId], references: [id], onDelete: Cascade)
+  Staff_WorkloadDelegation_delegatorIdToStaff Staff    @relation("WorkloadDelegation_delegatorIdToStaff", fields: [delegatorId], references: [id], onDelete: Cascade)
+
+  @@index([startDate, endDate], map: "WorkloadDelegation_dates_idx")
+  @@index([delegateId])
+  @@index([delegatorId])
+  @@index([status])
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  SITE_VISIT
+  TEXT_MESSAGE
+  NOTE
+  QUOTE_SENT
+  QUOTE_FOLLOW_UP
+  ISSUE_REPORTED
+  ISSUE_RESOLVED
+}
+
+enum BuilderRole {
+  PRIMARY
+  SUPERINTENDENT
+  PURCHASING
+  PROJECT_MANAGER
+  ESTIMATOR
+  OTHER
+}
+
+enum BuilderType {
+  PRODUCTION
+  CUSTOM
+}
+
+enum CategoryType {
+  CORE
+  ADD_ON
+}
+
+enum CommChannel {
+  EMAIL
+  PHONE
+  TEXT
+  IN_PERSON
+  VIDEO_CALL
+  HYPHEN_NOTIFICATION
+  SYSTEM
+}
+
+enum CommDirection {
+  INBOUND
+  OUTBOUND
+  INTERNAL
+}
+
+enum CommLogStatus {
+  LOGGED
+  NEEDS_FOLLOW_UP
+  FOLLOWED_UP
+  ARCHIVED
+  SYNCED
+}
+
+enum CommunityStatus {
+  PLANNING
+  ACTIVE
+  WINDING_DOWN
+  CLOSED
+}
+
+enum ContactRole {
+  OWNER
+  DIVISION_VP
+  PURCHASING
+  SUPERINTENDENT
+  PROJECT_MANAGER
+  ESTIMATOR
+  ACCOUNTS_PAYABLE
+  OTHER
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+enum ContractType {
+  SUPPLY_AGREEMENT
+  MASTER_SERVICE
+  PRICING_AGREEMENT
+  NDA
+  CREDIT_APPLICATION
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  CHANNEL
+  DEPARTMENT
+}
+
+enum CrewType {
+  DELIVERY
+  INSTALLATION
+  DELIVERY_AND_INSTALL
+}
+
+enum DealActivityType {
+  CALL
+  EMAIL
+  MEETING
+  SITE_VISIT
+  TEXT
+  NOTE
+  STAGE_CHANGE
+  BID_SENT
+  BID_REVISED
+  CONTRACT_SENT
+  CONTRACT_SIGNED
+  DOCUMENT_REQUESTED
+  DOCUMENT_RECEIVED
+  FOLLOW_UP
+}
+
+enum DealSource {
+  OUTBOUND
+  REFERRAL
+  INBOUND
+  TRADE_SHOW
+  REACTIVATION
+  WEBSITE
+  EXISTING_CUSTOMER
+}
+
+enum DealStage {
+  PROSPECT
+  DISCOVERY
+  WALKTHROUGH
+  BID_SUBMITTED
+  BID_REVIEW
+  NEGOTIATION
+  WON
+  LOST
+  ONBOARDED
+}
+
+enum DecisionNoteType {
+  READINESS
+  LOCK
+  ARRIVED
+  COMPLETE
+  EXCEPTION
+  ESCALATION
+  APPROVAL
+  CLOSEOUT
+  GENERAL
+}
+
+enum DeliveryStatus {
+  SCHEDULED
+  LOADING
+  IN_TRANSIT
+  ARRIVED
+  UNLOADING
+  COMPLETE
+  PARTIAL_DELIVERY
+  REFUSED
+  RESCHEDULED
+}
+
+enum Department {
+  EXECUTIVE
+  SALES
+  ESTIMATING
+  OPERATIONS
+  MANUFACTURING
+  WAREHOUSE
+  DELIVERY
+  INSTALLATION
+  ACCOUNTING
+  PURCHASING
+  BUSINESS_DEVELOPMENT
+  PROJECT_MANAGEMENT
+  PRODUCTION
+  LOGISTICS
+}
+
+enum DocumentRequestStatus {
+  PENDING
+  SENT
+  RECEIVED
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum DocumentType {
+  COI
+  W9
+  CREDIT_APPLICATION
+  BUSINESS_LICENSE
+  TAX_EXEMPT_CERT
+  BOND
+  REFERENCES
+  FINANCIAL_STATEMENT
+  OTHER
+}
+
+enum DoorEventType {
+  CREATED
+  QC_PASS
+  QC_FAIL
+  NFC_LINKED
+  STORED
+  STAGED
+  LOADED
+  DELIVERED
+  INSTALLED
+  WARRANTY_CLAIMED
+  WARRANTY_RESOLVED
+  RETURNED
+  NOTE
+}
+
+enum DoorStatus {
+  PRODUCTION
+  QC_PASSED
+  QC_FAILED
+  STORED
+  STAGED
+  LOADED
+  DELIVERED
+  INSTALLED
+  WARRANTY_CLAIM
+  RETURNED
+}
+
+enum EmploymentType {
+  FULL_TIME_EXEMPT
+  FULL_TIME_NON_EXEMPT
+  PART_TIME
+  CONTRACT
+}
+
+enum InquiryPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum InquiryStatus {
+  NEW
+  REVIEWING
+  ASSIGNED
+  TAKEOFF_IN_PROGRESS
+  TAKEOFF_COMPLETE
+  QUOTE_SENT
+  CONVERTED
+  DECLINED
+  STALE
+}
+
+enum InstallationStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETE
+  PUNCH_LIST
+  REWORK
+  CANCELLED
+}
+
+enum IntegrationProvider {
+  INFLOW
+  ECI_BOLT
+  GMAIL
+  HYPHEN
+  QUICKBOOKS_DESKTOP
+  BUILDERTREND
+  BOISE_CASCADE
+}
+
+enum IntegrationStatus {
+  PENDING
+  CONFIGURING
+  CONNECTED
+  ERROR
+  DISABLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+  WRITE_OFF
+}
+
+enum JobStatus {
+  CREATED
+  READINESS_CHECK
+  MATERIALS_LOCKED
+  IN_PRODUCTION
+  STAGED
+  LOADED
+  IN_TRANSIT
+  DELIVERED
+  INSTALLING
+  PUNCH_LIST
+  COMPLETE
+  INVOICED
+  CLOSED
+}
+
+enum LeadSource {
+  AI_TAKEOFF
+  REFERRAL
+  WEBSITE
+  TRADE_SHOW
+  COLD_CALL
+  HYPHEN
+  EXISTING
+  OTHER
+}
+
+enum NotePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  JOB_UPDATE
+  TASK_ASSIGNED
+  MESSAGE
+  PO_APPROVAL
+  DELIVERY_UPDATE
+  QC_ALERT
+  INVOICE_OVERDUE
+  SCHEDULE_CHANGE
+  SYSTEM
+}
+
+enum OrderStatus {
+  RECEIVED
+  CONFIRMED
+  IN_PRODUCTION
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+  COMPLETE
+  CANCELLED
+}
+
+enum OrgType {
+  NATIONAL
+  REGIONAL
+  LOCAL
+  CUSTOM_HOME
+  COMMERCIAL
+}
+
+enum POStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SENT_TO_VENDOR
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum PayType {
+  SALARY
+  HOURLY
+}
+
+enum PaymentMethod {
+  CHECK
+  ACH
+  WIRE
+  CREDIT_CARD
+  CASH
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  INVOICED
+  PAID
+  OVERDUE
+  REFUNDED
+}
+
+enum PaymentTerm {
+  PAY_AT_ORDER
+  PAY_ON_DELIVERY
+  NET_15
+  NET_30
+  DUE_ON_RECEIPT
+}
+
+enum PhaseAmountType {
+  PERCENTAGE
+  FIXED
+  MILESTONE
+}
+
+enum PhaseStatus {
+  PENDING
+  ACTIVE
+  READY
+  INVOICED
+  PAID
+  SKIPPED
+}
+
+enum PickStatus {
+  PENDING
+  PICKING
+  PICKED
+  VERIFIED
+  SHORT
+  SUBSTITUTED
+}
+
+enum PriceType {
+  FIXED
+  DISCOUNT_PCT
+  COST_PLUS
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+enum ProjectStatus {
+  DRAFT
+  BLUEPRINT_UPLOADED
+  TAKEOFF_PENDING
+  TAKEOFF_COMPLETE
+  QUOTE_GENERATED
+  QUOTE_APPROVED
+  ORDERED
+  IN_PROGRESS
+  DELIVERED
+  COMPLETE
+}
+
+enum QCResult {
+  PASS
+  FAIL
+  CONDITIONAL_PASS
+}
+
+enum QCType {
+  PRE_PRODUCTION
+  IN_PROCESS
+  FINAL_UNIT
+  PRE_DELIVERY
+  POST_INSTALL
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+  ORDERED
+}
+
+enum ReferralStatus {
+  PENDING
+  CONTACTED
+  SIGNED_UP
+  FIRST_ORDER
+  CREDITED
+}
+
+enum ScheduleStatus {
+  TENTATIVE
+  FIRM
+  IN_PROGRESS
+  COMPLETED
+  RESCHEDULED
+  CANCELLED
+}
+
+enum ScheduleType {
+  DELIVERY
+  INSTALLATION
+  PICKUP
+  RETURN
+  INSPECTION
+  RESTOCKING
+}
+
+enum ScopeType {
+  DOORS_ONLY
+  TRIM_ONLY
+  DOORS_AND_TRIM
+  HARDWARE_ONLY
+  FULL_PACKAGE
+  CUSTOM
+}
+
+enum SelectionStatus {
+  PENDING
+  CONFIRMED
+  LOCKED
+}
+
+enum StaffRole {
+  ADMIN
+  MANAGER
+  PROJECT_MANAGER
+  ESTIMATOR
+  SALES_REP
+  PURCHASING
+  WAREHOUSE_LEAD
+  WAREHOUSE_TECH
+  DRIVER
+  INSTALLER
+  QC_INSPECTOR
+  ACCOUNTING
+  VIEWER
+}
+
+enum SyncDirection {
+  PULL
+  PUSH
+  BIDIRECTIONAL
+}
+
+enum SyncStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum TakeoffStatus {
+  PROCESSING
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum TaskCategory {
+  GENERAL
+  READINESS_CHECK
+  MATERIAL_VERIFICATION
+  BUILDER_COMMUNICATION
+  CREW_DISPATCH
+  QUALITY_REVIEW
+  INVOICE_FOLLOW_UP
+  SCHEDULING
+  EXCEPTION_RESOLUTION
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+}

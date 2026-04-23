@@ -34,13 +34,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Find all overdue or sent invoices where dueDate has passed
+    // Find all open invoices (any non-terminal status) where dueDate has
+    // passed and there is an outstanding balance. Covers the full open bucket
+    // in the InvoiceStatus enum: ISSUED | SENT | PARTIALLY_PAID | OVERDUE.
     const overdueInvoices: any[] = await prisma.$queryRawUnsafe(`
       SELECT i."id", i."builderId", i."dueDate", i."invoiceNumber",
              i."status"::text AS "status", (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue", i."total",
              i."paymentPlanOffered"
       FROM "Invoice" i
-      WHERE (i."status"::text IN ('OVERDUE', 'SENT'))
+      WHERE i."status"::text IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE')
         AND i."dueDate" < NOW()
         AND (i."total" - COALESCE(i."amountPaid",0)) > 0
       ORDER BY i."dueDate" ASC

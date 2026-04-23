@@ -272,7 +272,7 @@ export default function BlueprintsPage() {
                                 bp.takeoff.confidence >= 0.9
                                   ? 'text-green-600'
                                   : bp.takeoff.confidence >= 0.8
-                                  ? 'text-signal'
+                                  ? 'text-amber-500'
                                   : 'text-red-600'
                               }`}
                             >
