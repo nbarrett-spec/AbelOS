@@ -13,7 +13,7 @@ import {
   Avatar,
   Badge,
 } from '@/components/ui'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, ExternalLink, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, ExternalLink, Search, Shuffle, X } from 'lucide-react'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Material Calendar — weekly/monthly grid of upcoming job delivery dates,
@@ -652,7 +652,21 @@ export default function MaterialCalendarPage() {
           ) : undefined
         }
       >
-        <DrillContent data={drillData} loading={drillLoading} />
+        <DrillContent
+          data={drillData}
+          loading={drillLoading}
+          onApplied={() => {
+            // Refetch drill + calendar after a substitute is applied
+            if (drillJobId) {
+              setDrillLoading(true)
+              fetch(`/api/ops/material-calendar/job/${drillJobId}`, { cache: 'no-store' })
+                .then((r) => r.json())
+                .then((j) => setDrillData(j))
+                .finally(() => setDrillLoading(false))
+            }
+            fetchCalendar()
+          }}
+        />
       </Sheet>
     </div>
   )
@@ -906,7 +920,75 @@ function MonthView({
 
 // ── Drill content ─────────────────────────────────────────────────────────
 
-function DrillContent({ data, loading }: { data: JobDrillResponse | null; loading: boolean }) {
+interface SubstituteOption {
+  id: string
+  substituteProductId: string
+  sku: string | null
+  name: string | null
+  category: string | null
+  onHand: number
+  available: number
+  priceDelta: number | null
+  substitutionType: string
+  compatibility: string | null
+  conditions: string | null
+  source: string | null
+  score: number
+}
+
+function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | null; loading: boolean; onApplied?: () => void }) {
+  const [subRow, setSubRow] = useState<DrillRow | null>(null)
+  const [subOptions, setSubOptions] = useState<SubstituteOption[]>([])
+  const [subLoading, setSubLoading] = useState(false)
+  const [subError, setSubError] = useState<string | null>(null)
+  const [applying, setApplying] = useState<string | null>(null)
+
+  const openSubSheet = useCallback(async (row: DrillRow) => {
+    setSubRow(row)
+    setSubOptions([])
+    setSubError(null)
+    setSubLoading(true)
+    try {
+      const res = await fetch(`/api/ops/products/${row.productId}/substitutes`, { cache: 'no-store' })
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}))
+        throw new Error(b.error || `HTTP ${res.status}`)
+      }
+      const json = await res.json()
+      setSubOptions(json.substitutes ?? [])
+    } catch (e: any) {
+      setSubError(e?.message ?? 'Failed to load substitutes')
+    } finally {
+      setSubLoading(false)
+    }
+  }, [])
+
+  const applySub = useCallback(async (row: DrillRow, sub: SubstituteOption) => {
+    if (!data?.job?.id) return
+    setApplying(sub.id)
+    try {
+      const res = await fetch(`/api/ops/products/${row.productId}/substitutes/apply`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          jobId: data.job.id,
+          substituteProductId: sub.substituteProductId,
+          quantity: Math.max(1, row.shortfall || row.required - row.allocated),
+        }),
+      })
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}))
+        throw new Error(b.error || `HTTP ${res.status}`)
+      }
+      setSubRow(null)
+      onApplied?.()
+    } catch (e: any) {
+      setSubError(e?.message ?? 'Failed to apply substitute')
+    } finally {
+      setApplying(null)
+    }
+  }, [data?.job?.id, onApplied])
+
   if (loading && !data) {
     return <div className="text-[13px] text-fg-muted">Loading BoM…</div>
   }
@@ -973,6 +1055,7 @@ function DrillContent({ data, loading }: { data: JobDrillResponse | null; loadin
                 <th className="text-left px-2 py-1.5 font-medium">Incoming</th>
                 <th className="text-right px-2 py-1.5 font-medium">Short</th>
                 <th className="text-left px-2 py-1.5 font-medium w-[72px]">Status</th>
+                <th className="text-left px-2 py-1.5 font-medium w-[88px]">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -1012,6 +1095,17 @@ function DrillContent({ data, loading }: { data: JobDrillResponse | null; loadin
                         {r.status}
                       </div>
                     </td>
+                    <td className="px-2 py-1.5">
+                      {r.shortfall > 0 ? (
+                        <button
+                          onClick={() => openSubSheet(r)}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10.5px] rounded border border-border hover:border-fg-muted hover:bg-surface-muted/40 transition"
+                          title="Find substitute"
+                        >
+                          <Shuffle className="w-3 h-3" /> Sub
+                        </button>
+                      ) : null}
+                    </td>
                   </tr>
                 )
               })}
@@ -1021,8 +1115,129 @@ function DrillContent({ data, loading }: { data: JobDrillResponse | null; loadin
       )}
 
       <div className="text-[10.5px] text-fg-subtle">
-        Row-level actions (expedite, substitute, flag for PM) — TODO — hook to
-        purchasing + messaging endpoints.
+        Row-level actions: Sub = find substitute SKU. Expedite + flag-for-PM TODO.
+      </div>
+
+      {/* Substitute picker modal */}
+      {subRow && (
+        <SubstituteModal
+          row={subRow}
+          options={subOptions}
+          loading={subLoading}
+          error={subError}
+          applying={applying}
+          onClose={() => setSubRow(null)}
+          onApply={(sub) => applySub(subRow, sub)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Substitute picker modal ───────────────────────────────────────────────
+
+function SubstituteModal({
+  row,
+  options,
+  loading,
+  error,
+  applying,
+  onClose,
+  onApply,
+}: {
+  row: DrillRow
+  options: SubstituteOption[]
+  loading: boolean
+  error: string | null
+  applying: string | null
+  onClose: () => void
+  onApply: (sub: SubstituteOption) => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-bg border border-border rounded-lg shadow-xl w-[640px] max-h-[80vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+          <div>
+            <div className="text-[13px] font-medium text-fg">Substitutes for {row.sku ?? 'unknown SKU'}</div>
+            <div className="text-[11px] text-fg-muted truncate max-w-[520px]" title={row.productName ?? undefined}>
+              Short {row.shortfall} of {row.required} — {row.productName ?? '—'}
+            </div>
+          </div>
+          <button
+            className="p-1 rounded hover:bg-surface-muted/40"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="overflow-auto p-3">
+          {loading ? (
+            <div className="text-[12px] text-fg-muted">Loading substitutes…</div>
+          ) : error ? (
+            <div className="text-[12px] text-[var(--alert,#ef4444)]">{error}</div>
+          ) : options.length === 0 ? (
+            <div className="text-[12px] text-fg-muted italic">
+              No registered substitutes for this SKU. Seed more via
+              <code className="mx-1 text-fg">scripts/seed-substitutions.mjs</code>
+              or add a manual entry.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {options.map((s) => {
+                const canApply = s.available > 0
+                const rank = s.substitutionType === 'DIRECT' ? 'DIRECT' :
+                             s.substitutionType === 'UPGRADE' ? 'UPGRADE' :
+                             s.substitutionType === 'VE' ? 'VE' : 'DOWNGRADE'
+                const compColor = s.compatibility === 'IDENTICAL' ? '#10b981'
+                                : s.compatibility === 'COMPATIBLE' ? '#b48a3a'
+                                : '#ef4444'
+                return (
+                  <div
+                    key={s.id}
+                    className="border border-border rounded p-2 hover:bg-surface-muted/20 flex items-start gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-[12px]">
+                        <span className="font-mono text-fg">{s.sku ?? '—'}</span>
+                        <Badge style={{ borderColor: compColor, color: compColor }}>{rank}</Badge>
+                        {s.source === 'VE_PROPOSAL' && (
+                          <Badge variant="neutral">VE</Badge>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-fg-muted truncate max-w-[400px]" title={s.name ?? undefined}>
+                        {s.name ?? '—'}
+                      </div>
+                      <div className="text-[10.5px] text-fg-subtle flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                        <span>onHand: <span className="font-mono text-fg">{s.onHand}</span></span>
+                        <span>avail: <span className="font-mono text-fg">{s.available}</span></span>
+                        <span>Δ cost: <span className="font-mono text-fg">{s.priceDelta == null ? '—' : (s.priceDelta >= 0 ? '+' : '') + s.priceDelta.toFixed(2)}</span></span>
+                        <span>score: <span className="font-mono text-fg">{s.score}</span></span>
+                      </div>
+                      {s.conditions && (
+                        <div className="text-[10.5px] text-fg-subtle italic mt-0.5">{s.conditions}</div>
+                      )}
+                    </div>
+                    <button
+                      className="px-2 py-1 text-[11px] rounded border border-border hover:border-fg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!canApply || applying === s.id}
+                      onClick={() => onApply(s)}
+                      title={canApply ? 'Apply this substitute' : 'No stock available for this substitute'}
+                    >
+                      {applying === s.id ? 'Applying…' : 'Apply'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
