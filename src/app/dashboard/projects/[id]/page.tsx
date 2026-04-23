@@ -80,7 +80,7 @@ const ORDER_STATUS_LABELS: Record<string, { label: string; color: string; icon: 
 }
 
 const INVOICE_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700' },
+  DRAFT: { label: 'Draft', color: 'bg-surface-muted text-fg-muted' },
   SENT: { label: 'Sent', color: 'bg-blue-100 text-blue-700' },
   PAID: { label: 'Paid', color: 'bg-green-100 text-green-700' },
   OVERDUE: { label: 'Overdue', color: 'bg-red-100 text-red-700' },
@@ -188,7 +188,7 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="text-center py-20">
-        <p className="text-gray-500 mb-4">{error || 'Project not found'}</p>
+        <p className="text-fg-muted mb-4">{error || 'Project not found'}</p>
         <Link href="/dashboard/projects" className="text-[#0f2a3e] font-medium hover:underline">
           Back to Projects
         </Link>
@@ -205,14 +205,14 @@ export default function ProjectDetailPage() {
             <Link href="/dashboard/projects" className="text-[#0f2a3e] hover:underline text-sm font-medium">
               Projects
             </Link>
-            <span className="text-gray-400">/</span>
-            <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+            <span className="text-fg-subtle">/</span>
+            <h1 className="text-3xl font-bold text-fg">{project.name}</h1>
           </div>
           {project.address && (
-            <p className="text-gray-600 text-sm">{project.address}</p>
+            <p className="text-fg-muted text-sm">{project.address}</p>
           )}
           {project.community && (
-            <p className="text-gray-500 text-xs mt-1">Community: {project.community}</p>
+            <p className="text-fg-muted text-xs mt-1">Community: {project.community}</p>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -233,27 +233,27 @@ export default function ProjectDetailPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Total Orders</p>
+        <div className="bg-white rounded-xl border border-border p-4">
+          <p className="text-xs text-fg-muted uppercase font-semibold mb-2">Total Orders</p>
           <p className="text-3xl font-bold text-[#0f2a3e]">{project.orderCount}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Total Spend</p>
-          <p className="text-3xl font-bold text-gray-900">{formatCurrency(project.totalSpend)}</p>
+        <div className="bg-white rounded-xl border border-border p-4">
+          <p className="text-xs text-fg-muted uppercase font-semibold mb-2">Total Spend</p>
+          <p className="text-3xl font-bold text-fg">{formatCurrency(project.totalSpend)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Upcoming Deliveries</p>
+        <div className="bg-white rounded-xl border border-border p-4">
+          <p className="text-xs text-fg-muted uppercase font-semibold mb-2">Upcoming Deliveries</p>
           <p className="text-3xl font-bold text-signal">{project.upcomingDeliveryCount}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Invoices</p>
-          <p className="text-3xl font-bold text-gray-900">{project.invoices.length}</p>
+        <div className="bg-white rounded-xl border border-border p-4">
+          <p className="text-xs text-fg-muted uppercase font-semibold mb-2">Invoices</p>
+          <p className="text-3xl font-bold text-fg">{project.invoices.length}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200">
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="flex border-b border-border">
           {(['overview', 'orders', 'deliveries', 'invoices'] as const).map(tab => (
             <button
               key={tab}
@@ -261,7 +261,7 @@ export default function ProjectDetailPage() {
               className={`px-6 py-4 font-semibold text-sm border-b-2 transition-colors ${
                 activeTab === tab
                   ? 'text-[#0f2a3e] border-[#0f2a3e]'
-                  : 'text-gray-600 border-transparent hover:text-gray-900'
+                  : 'text-fg-muted border-transparent hover:text-fg'
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -275,52 +275,52 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Project Info */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Project Information</h3>
+                <h3 className="font-semibold text-fg mb-4">Project Information</h3>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Name</p>
-                    <p className="text-sm font-medium text-gray-900">{project.name}</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold mb-1">Name</p>
+                    <p className="text-sm font-medium text-fg">{project.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Address</p>
-                    <p className="text-sm font-medium text-gray-900">{project.address || 'Not specified'}</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold mb-1">Address</p>
+                    <p className="text-sm font-medium text-fg">{project.address || 'Not specified'}</p>
                   </div>
                   {project.community && (
                     <div>
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Community</p>
-                      <p className="text-sm font-medium text-gray-900">{project.community}</p>
+                      <p className="text-xs text-fg-muted uppercase font-semibold mb-1">Community</p>
+                      <p className="text-sm font-medium text-fg">{project.community}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
-                    <p className="text-sm font-medium text-gray-900">{project.status}</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold mb-1">Status</p>
+                    <p className="text-sm font-medium text-fg">{project.status}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Created</p>
-                    <p className="text-sm font-medium text-gray-900">{formatDate(project.createdAt)}</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold mb-1">Created</p>
+                    <p className="text-sm font-medium text-fg">{formatDate(project.createdAt)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Quick Stats */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Summary</h3>
-                <div className="space-y-3 bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-sm text-gray-600">Total Orders</span>
-                    <span className="font-bold text-gray-900">{project.orderCount}</span>
+                <h3 className="font-semibold text-fg mb-4">Summary</h3>
+                <div className="space-y-3 bg-surface-muted rounded-lg p-4">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-fg-muted">Total Orders</span>
+                    <span className="font-bold text-fg">{project.orderCount}</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-sm text-gray-600">Total Spent</span>
-                    <span className="font-bold text-gray-900">{formatCurrencyFull(project.totalSpend)}</span>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-fg-muted">Total Spent</span>
+                    <span className="font-bold text-fg">{formatCurrencyFull(project.totalSpend)}</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-sm text-gray-600">Pending Deliveries</span>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-fg-muted">Pending Deliveries</span>
                     <span className="font-bold text-signal">{project.upcomingDeliveryCount}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-gray-600">Total Invoices</span>
-                    <span className="font-bold text-gray-900">{project.invoices.length}</span>
+                    <span className="text-sm text-fg-muted">Total Invoices</span>
+                    <span className="font-bold text-fg">{project.invoices.length}</span>
                   </div>
                 </div>
               </div>
@@ -333,7 +333,7 @@ export default function ProjectDetailPage() {
           <div className="p-6">
             {project.orders.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No orders for this project yet</p>
+                <p className="text-fg-muted mb-4">No orders for this project yet</p>
                 <Link
                   href="/catalog"
                   className="text-[#0f2a3e] font-medium hover:underline"
@@ -344,12 +344,12 @@ export default function ProjectDetailPage() {
             ) : (
               <div className="space-y-3">
                 {project.orders.map(order => {
-                  const os = ORDER_STATUS_LABELS[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-700', icon: '📋' }
+                  const os = ORDER_STATUS_LABELS[order.status] || { label: order.status, color: 'bg-surface-muted text-fg-muted', icon: '📋' }
                   return (
                     <Link
                       key={order.id}
                       href={`/orders/${order.id}`}
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#C6A24E] hover:bg-gray-50 transition-all"
+                      className="flex items-center gap-4 p-4 border border-border rounded-lg hover:border-[#C6A24E] hover:bg-surface-muted transition-all"
                     >
                       <span className="text-2xl">{os.icon}</span>
                       <div className="flex-1 min-w-0">
@@ -359,11 +359,11 @@ export default function ProjectDetailPage() {
                             {os.label}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-fg-muted mt-0.5">
                           {order.itemCount} items · {formatDate(order.createdAt)}
                         </p>
                       </div>
-                      <p className="text-sm font-bold text-gray-900">{formatCurrencyFull(order.total)}</p>
+                      <p className="text-sm font-bold text-fg">{formatCurrencyFull(order.total)}</p>
                     </Link>
                   )
                 })}
@@ -377,7 +377,7 @@ export default function ProjectDetailPage() {
           <div className="p-6">
             {project.deliveries.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500">No deliveries scheduled yet</p>
+                <p className="text-fg-muted">No deliveries scheduled yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -387,7 +387,7 @@ export default function ProjectDetailPage() {
                   return (
                     <div
                       key={delivery.id}
-                      className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#C6A24E] hover:bg-gray-50 transition-all"
+                      className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-[#C6A24E] hover:bg-surface-muted transition-all"
                     >
                       <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${
                         isPast
@@ -402,14 +402,14 @@ export default function ProjectDetailPage() {
                         <span className="text-[9px] uppercase font-medium">{isPast ? 'ago' : 'days'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-fg">
                           {formatDate(delivery.deliveryDate)}
                         </p>
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-fg-muted mt-1">
                           Job: {delivery.jobId}
                         </p>
                         {delivery.notes && (
-                          <p className="text-xs text-gray-500 mt-1 italic">{delivery.notes}</p>
+                          <p className="text-xs text-fg-muted mt-1 italic">{delivery.notes}</p>
                         )}
                       </div>
                       <span className="px-2 py-1 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 whitespace-nowrap">
@@ -428,17 +428,17 @@ export default function ProjectDetailPage() {
           <div className="p-6">
             {project.invoices.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500">No invoices for this project</p>
+                <p className="text-fg-muted">No invoices for this project</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {project.invoices.map(invoice => {
-                  const is = INVOICE_STATUS_LABELS[invoice.status] || { label: invoice.status, color: 'bg-gray-100 text-gray-700' }
+                  const is = INVOICE_STATUS_LABELS[invoice.status] || { label: invoice.status, color: 'bg-surface-muted text-fg-muted' }
                   return (
                     <Link
                       key={invoice.id}
                       href={`/dashboard/invoices`}
-                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-[#C6A24E] hover:bg-gray-50 transition-all"
+                      className="flex items-center gap-4 p-4 border border-border rounded-lg hover:border-[#C6A24E] hover:bg-surface-muted transition-all"
                     >
                       <span className="text-2xl">💳</span>
                       <div className="flex-1 min-w-0">
@@ -448,12 +448,12 @@ export default function ProjectDetailPage() {
                             {is.label}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-fg-muted mt-0.5">
                           {formatDate(invoice.createdAt)}
                           {invoice.dueDate && ` · Due ${formatDate(invoice.dueDate)}`}
                         </p>
                       </div>
-                      <p className="text-sm font-bold text-gray-900">{formatCurrencyFull(invoice.amount)}</p>
+                      <p className="text-sm font-bold text-fg">{formatCurrencyFull(invoice.amount)}</p>
                     </Link>
                   )
                 })}
@@ -475,42 +475,42 @@ export default function ProjectDetailPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8l-6-4m6 4l6-4" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Share with Homeowner</h3>
+                  <h3 className="text-lg font-bold text-fg">Share with Homeowner</h3>
                 </div>
 
-                <p className="text-sm text-gray-600 mb-5">
+                <p className="text-sm text-fg-muted mb-5">
                   Create an access code for the homeowner to view and select upgrades for this project.
                 </p>
 
                 <div className="space-y-4 mb-5">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Homeowner Name *</label>
+                    <label className="block text-xs font-semibold text-fg-muted uppercase mb-1.5">Homeowner Name *</label>
                     <input
                       type="text"
                       value={homeownerName}
                       onChange={(e) => setHomeownerName(e.target.value)}
                       placeholder="John Smith"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Email *</label>
+                    <label className="block text-xs font-semibold text-fg-muted uppercase mb-1.5">Email *</label>
                     <input
                       type="email"
                       value={homeownerEmail}
                       onChange={(e) => setHomeownerEmail(e.target.value)}
                       placeholder="john@example.com"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Phone (Optional)</label>
+                    <label className="block text-xs font-semibold text-fg-muted uppercase mb-1.5">Phone (Optional)</label>
                     <input
                       type="tel"
                       value={homeownerPhone}
                       onChange={(e) => setHomeownerPhone(e.target.value)}
                       placeholder="555-1234"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
+                      className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -519,7 +519,7 @@ export default function ProjectDetailPage() {
                   <button
                     onClick={handleResetModal}
                     disabled={creatingAccess}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                    className="flex-1 px-4 py-2.5 border border-border-strong rounded-lg text-sm font-medium text-fg-muted hover:bg-surface-muted transition disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -547,20 +547,20 @@ export default function ProjectDetailPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Access Code Generated</h3>
+                  <h3 className="text-lg font-bold text-fg">Access Code Generated</h3>
                 </div>
 
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-fg-muted mb-4">
                   Share this link with {homeownerName}:
                 </p>
 
-                <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                <div className="bg-surface-muted rounded-lg p-4 mb-4 border border-border">
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={accessUrl}
                       readOnly
-                      className="flex-1 bg-white px-3 py-2 border border-gray-300 rounded text-xs font-mono text-gray-700"
+                      className="flex-1 bg-white px-3 py-2 border border-border-strong rounded text-xs font-mono text-fg-muted"
                     />
                     <button
                       onClick={handleCopyUrl}

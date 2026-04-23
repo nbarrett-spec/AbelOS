@@ -245,19 +245,19 @@ export default function BuilderChatPage() {
 
         <div className="flex-1 overflow-y-auto">
           {loading && conversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
+            <div className="p-4 text-center text-fg-subtle text-sm">Loading...</div>
           ) : conversations.length === 0 ? (
             <div className="p-6 text-center">
-              <div className="text-gray-400 text-3xl mb-2">💬</div>
-              <p className="text-gray-500 text-sm">No conversations yet</p>
-              <p className="text-gray-400 text-xs mt-1">Start one to chat with Abel Lumber</p>
+              <div className="text-fg-subtle text-3xl mb-2">💬</div>
+              <p className="text-fg-muted text-sm">No conversations yet</p>
+              <p className="text-fg-subtle text-xs mt-1">Start one to chat with Abel Lumber</p>
             </div>
           ) : (
             conversations.map(conv => (
               <button
                 key={conv.id}
                 onClick={() => { setSelectedId(conv.id); setShowNew(false) }}
-                className={`w-full text-left p-4 border-b hover:bg-gray-50 transition ${
+                className={`w-full text-left p-4 border-b hover:bg-surface-muted transition ${
                   selectedId === conv.id ? 'bg-blue-50 border-l-4 border-l-[#0f2a3e]' : ''
                 }`}
               >
@@ -274,13 +274,13 @@ export default function BuilderChatPage() {
                       )}
                     </div>
                     {conv.lastMessagePreview && (
-                      <p className="text-xs text-gray-500 truncate mt-1">
+                      <p className="text-xs text-fg-muted truncate mt-1">
                         {conv.lastMessagePreview}
                       </p>
                     )}
                   </div>
                   {conv.lastMessageAt && (
-                    <span className="text-[10px] text-gray-400 ml-2 shrink-0">
+                    <span className="text-[10px] text-fg-subtle ml-2 shrink-0">
                       {timeAgo(conv.lastMessageAt)}
                     </span>
                   )}
@@ -292,7 +292,7 @@ export default function BuilderChatPage() {
       </div>
 
       {/* ── Main Area ── */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col bg-surface-muted">
         {showNew ? (
           /* ── New Conversation Form ── */
           <div className="flex-1 flex items-start justify-center p-8">
@@ -300,7 +300,7 @@ export default function BuilderChatPage() {
               <h3 className="text-lg font-bold text-[#1B2A4A] mb-4">New Conversation</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Subject</label>
+                  <label className="block text-sm font-medium text-fg-muted mb-1">Subject</label>
                   <input
                     type="text"
                     value={newSubject}
@@ -310,7 +310,7 @@ export default function BuilderChatPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-fg-muted mb-1">Category</label>
                   <select
                     value={newCategory}
                     onChange={e => setNewCategory(e.target.value)}
@@ -322,7 +322,7 @@ export default function BuilderChatPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Message</label>
+                  <label className="block text-sm font-medium text-fg-muted mb-1">Message</label>
                   <textarea
                     value={newBody}
                     onChange={e => setNewBody(e.target.value)}
@@ -333,7 +333,7 @@ export default function BuilderChatPage() {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowNew(false)}
-                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                    className="px-4 py-2 text-sm text-fg-muted hover:bg-surface-muted rounded-lg transition"
                   >
                     Cancel
                   </button>
@@ -357,11 +357,11 @@ export default function BuilderChatPage() {
                 <h3 className="font-semibold text-[#1B2A4A]">
                   {conversations.find(c => c.id === selectedId)?.subject || 'Support Thread'}
                 </h3>
-                <p className="text-xs text-gray-400">Abel Lumber Support</p>
+                <p className="text-xs text-fg-subtle">Abel Lumber Support</p>
               </div>
               <button
                 onClick={() => setSelectedId(null)}
-                className="text-gray-400 hover:text-gray-600 text-lg sm:hidden"
+                className="text-fg-subtle hover:text-fg-muted text-lg sm:hidden"
               >
                 &times;
               </button>
@@ -370,11 +370,11 @@ export default function BuilderChatPage() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {loadingMessages ? (
-                <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-full text-fg-subtle text-sm">
                   Loading messages...
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-full text-fg-subtle text-sm">
                   No messages yet
                 </div>
               ) : (
@@ -382,9 +382,9 @@ export default function BuilderChatPage() {
                   <div key={gi}>
                     {/* Date separator */}
                     <div className="flex items-center gap-3 my-4">
-                      <div className="flex-1 h-px bg-gray-200" />
-                      <span className="text-xs text-gray-400 font-medium">{group.date}</span>
-                      <div className="flex-1 h-px bg-gray-200" />
+                      <div className="flex-1 h-px bg-surface-muted" />
+                      <span className="text-xs text-fg-subtle font-medium">{group.date}</span>
+                      <div className="flex-1 h-px bg-surface-muted" />
                     </div>
 
                     {group.messages.map(msg => {
@@ -397,10 +397,10 @@ export default function BuilderChatPage() {
                           <div className={`max-w-[75%] ${isBuilder ? 'order-2' : ''}`}>
                             {/* Sender name */}
                             {!isBuilder && msg.sender && msg.sender.firstName && (
-                              <p className="text-xs text-gray-500 mb-1 ml-1">
+                              <p className="text-xs text-fg-muted mb-1 ml-1">
                                 {msg.sender.firstName} {msg.sender.lastName}
                                 {msg.sender.title && (
-                                  <span className="text-gray-400"> · {msg.sender.title}</span>
+                                  <span className="text-fg-subtle"> · {msg.sender.title}</span>
                                 )}
                               </p>
                             )}
@@ -410,14 +410,14 @@ export default function BuilderChatPage() {
                               className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                                 isBuilder
                                   ? 'bg-[#0f2a3e] text-white rounded-br-sm'
-                                  : 'bg-white border text-gray-800 rounded-bl-sm shadow-sm'
+                                  : 'bg-white border text-fg rounded-bl-sm shadow-sm'
                               }`}
                             >
                               <p className="whitespace-pre-wrap">{msg.body}</p>
                             </div>
 
                             {/* Timestamp */}
-                            <p className={`text-[10px] text-gray-400 mt-1 ${isBuilder ? 'text-right mr-1' : 'ml-1'}`}>
+                            <p className={`text-[10px] text-fg-subtle mt-1 ${isBuilder ? 'text-right mr-1' : 'ml-1'}`}>
                               {formatTime(msg.createdAt)}
                             </p>
                           </div>
@@ -450,20 +450,20 @@ export default function BuilderChatPage() {
                   {sending ? '...' : 'Send'}
                 </button>
               </div>
-              <p className="text-[10px] text-gray-400 mt-1 ml-1">Press Enter to send, Shift+Enter for new line</p>
+              <p className="text-[10px] text-fg-subtle mt-1 ml-1">Press Enter to send, Shift+Enter for new line</p>
             </div>
           </>
         ) : (
           /* ── Empty State ── */
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 bg-surface-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-fg-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-[#1B2A4A] mb-1">Chat with Abel Lumber</h3>
-              <p className="text-sm text-gray-500 mb-4">Select a conversation or start a new one</p>
+              <p className="text-sm text-fg-muted mb-4">Select a conversation or start a new one</p>
               <button
                 onClick={() => setShowNew(true)}
                 className="bg-[#C6A24E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition"

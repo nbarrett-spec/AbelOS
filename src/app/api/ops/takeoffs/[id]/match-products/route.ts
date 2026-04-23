@@ -26,6 +26,7 @@ export async function POST(
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  try {
   const roles = parseRoles(
     request.headers.get('x-staff-roles') || request.headers.get('x-staff-role'),
   )
@@ -86,6 +87,10 @@ export async function POST(
   })
 
   return NextResponse.json({ matched, total: items.length, matches })
+  } catch (error: any) {
+    console.error('[Match Products] Error:', error)
+    return NextResponse.json({ error: 'Failed to match products' }, { status: 500 })
+  }
 }
 
 interface Candidate {

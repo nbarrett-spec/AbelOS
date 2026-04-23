@@ -167,7 +167,7 @@ export default function BuilderOrdersPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Order History</h1>
-          <p className="text-gray-500 text-sm">Search and reorder past purchases</p>
+          <p className="text-fg-muted text-sm">Search and reorder past purchases</p>
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function BuilderOrdersPage() {
           placeholder="Search by order #, product name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+          className="flex-1 min-w-[200px] px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
         />
       </div>
 
@@ -189,7 +189,7 @@ export default function BuilderOrdersPage() {
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             statusFilter === ''
               ? 'bg-[#0f2a3e] text-white'
-              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              : 'bg-white border border-border-strong text-fg-muted hover:bg-surface-muted'
           }`}
         >
           All Orders
@@ -201,7 +201,7 @@ export default function BuilderOrdersPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               statusFilter === status
                 ? 'bg-[#0f2a3e] text-white'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                : 'bg-white border border-border-strong text-fg-muted hover:bg-surface-muted'
             }`}
           >
             {STATUS_CONFIG[status]?.label || status}
@@ -212,7 +212,7 @@ export default function BuilderOrdersPage() {
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             statusFilter === 'COMPLETE'
               ? 'bg-[#0f2a3e] text-white'
-              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              : 'bg-white border border-border-strong text-fg-muted hover:bg-surface-muted'
           }`}
         >
           Completed
@@ -226,8 +226,8 @@ export default function BuilderOrdersPage() {
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-lg border p-16 text-center">
           <div className="text-5xl mb-3">📦</div>
-          <h3 className="font-semibold text-gray-800 mb-1">No orders found</h3>
-          <p className="text-gray-500 text-sm mb-4">Try adjusting your search or filters.</p>
+          <h3 className="font-semibold text-fg mb-1">No orders found</h3>
+          <p className="text-fg-muted text-sm mb-4">Try adjusting your search or filters.</p>
         </div>
       ) : (
         <>
@@ -257,7 +257,7 @@ export default function BuilderOrdersPage() {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
                     p === page
                       ? 'bg-[#0f2a3e] text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      : 'bg-white border border-border-strong text-fg-muted hover:bg-surface-muted'
                   }`}
                 >
                   {p}
@@ -271,19 +271,19 @@ export default function BuilderOrdersPage() {
       {/* Reorder Modal */}
       {reorderModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-xl border border-border max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Reorder {reorderModal.orderNumber}</h3>
+              <h3 className="text-lg font-bold text-fg">Reorder {reorderModal.orderNumber}</h3>
               <button
                 onClick={closeReorderModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-fg-subtle hover:text-fg-muted"
               >
                 ✕
               </button>
             </div>
 
             {reorderModal.loading ? (
-              <div className="text-center py-8 text-gray-500">Loading order details...</div>
+              <div className="text-center py-8 text-fg-muted">Loading order details...</div>
             ) : (
               <>
                 {reorderModal.warnings.length > 0 && (
@@ -298,30 +298,30 @@ export default function BuilderOrdersPage() {
                 <div className="mb-4 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-3 py-2 text-left font-semibold text-gray-900">Product</th>
-                        <th className="px-3 py-2 text-center font-semibold text-gray-900">Qty</th>
-                        <th className="px-3 py-2 text-right font-semibold text-gray-900">Original</th>
-                        <th className="px-3 py-2 text-right font-semibold text-gray-900">Current</th>
+                      <tr className="bg-surface-muted border-b border-border">
+                        <th className="px-3 py-2 text-left font-semibold text-fg">Product</th>
+                        <th className="px-3 py-2 text-center font-semibold text-fg">Qty</th>
+                        <th className="px-3 py-2 text-right font-semibold text-fg">Original</th>
+                        <th className="px-3 py-2 text-right font-semibold text-fg">Current</th>
                       </tr>
                     </thead>
                     <tbody>
                       {reorderModal.items.map(item => (
                         <tr
                           key={item.productId}
-                          className={`border-b border-gray-100 ${
+                          className={`border-b border-border ${
                             item.discontinued || !item.inStock ? 'opacity-60' : ''
                           } ${item.priceChanged ? 'bg-yellow-50' : ''}`}
                         >
                           <td className="px-3 py-3">
-                            <div className="font-medium text-gray-900">{item.productName}</div>
-                            <div className="text-xs text-gray-500">SKU: {item.sku}</div>
+                            <div className="font-medium text-fg">{item.productName}</div>
+                            <div className="text-xs text-fg-muted">SKU: {item.sku}</div>
                             {item.discontinued && <div className="text-xs text-red-600">Discontinued</div>}
                             {!item.inStock && !item.discontinued && <div className="text-xs text-signal">Out of stock</div>}
                           </td>
-                          <td className="px-3 py-3 text-center text-gray-900">{item.quantity}</td>
-                          <td className="px-3 py-3 text-right text-gray-900">{fmt(item.originalUnitPrice)}</td>
-                          <td className={`px-3 py-3 text-right font-medium ${item.priceChanged ? 'text-[#C6A24E]' : 'text-gray-900'}`}>
+                          <td className="px-3 py-3 text-center text-fg">{item.quantity}</td>
+                          <td className="px-3 py-3 text-right text-fg">{fmt(item.originalUnitPrice)}</td>
+                          <td className={`px-3 py-3 text-right font-medium ${item.priceChanged ? 'text-[#C6A24E]' : 'text-fg'}`}>
                             {fmt(item.currentUnitPrice)}
                             {item.priceChanged && (
                               <div className="text-xs text-[#C6A24E]">
@@ -346,7 +346,7 @@ export default function BuilderOrdersPage() {
                   </button>
                   <button
                     onClick={closeReorderModal}
-                    className="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                    className="flex-1 px-4 py-2 bg-white border border-border-strong text-fg-muted font-semibold rounded-lg hover:bg-surface-muted transition"
                   >
                     Cancel
                   </button>
@@ -371,7 +371,7 @@ function OrderCard({
   onToggleExpand: () => void
   onReorder: () => void
 }) {
-  const cfg = STATUS_CONFIG[order.status] || { bg: 'bg-gray-50', text: 'text-gray-700', label: order.status }
+  const cfg = STATUS_CONFIG[order.status] || { bg: 'bg-surface-muted', text: 'text-fg-muted', label: order.status }
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateDesc, setTemplateDesc] = useState('')
@@ -421,10 +421,10 @@ function OrderCard({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="font-semibold text-[#1B2A4A]">{order.orderNumber}</div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-sm text-fg-muted mt-1">
                 {new Date(order.createdAt).toLocaleDateString()} • {order.itemCount} items
               </div>
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-sm text-fg-muted mt-1">
                 {order.itemPreview.slice(0, 3).join(', ')}
                 {order.itemPreview.length > 3 && ` +${order.itemPreview.length - 3} more`}
               </div>
@@ -435,20 +435,20 @@ function OrderCard({
                 {cfg.label}
               </span>
             </div>
-            <div className="ml-4 text-gray-400">{isExpanded ? '▼' : '▶'}</div>
+            <div className="ml-4 text-fg-subtle">{isExpanded ? '▼' : '▶'}</div>
           </div>
         </div>
 
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="mb-4">
-              <p className="text-sm font-semibold text-gray-700 mb-2">Items ({order.itemCount})</p>
+              <p className="text-sm font-semibold text-fg-muted mb-2">Items ({order.itemCount})</p>
               <div className="space-y-2">
                 {order.itemPreview.map((item, i) => (
-                  <div key={i} className="text-sm text-gray-600">• {item}</div>
+                  <div key={i} className="text-sm text-fg-muted">• {item}</div>
                 ))}
                 {order.itemPreview.length > 10 && (
-                  <div className="text-sm text-gray-500">+{order.itemPreview.length - 10} more</div>
+                  <div className="text-sm text-fg-muted">+{order.itemPreview.length - 10} more</div>
                 )}
               </div>
             </div>
@@ -484,11 +484,11 @@ function OrderCard({
       {/* Save Template Modal */}
       {showSaveTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Save Order as Template</h3>
+          <div className="bg-white rounded-xl border border-border max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-fg mb-4">Save Order as Template</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-fg-muted mb-2">
                 Template Name <span className="text-red-600">*</span>
               </label>
               <input
@@ -496,20 +496,20 @@ function OrderCard({
                 value={templateName}
                 onChange={e => setTemplateName(e.target.value)}
                 placeholder={`${order.orderNumber} Template`}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 autoFocus
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-fg-muted mb-2">
                 Description (Optional)
               </label>
               <textarea
                 value={templateDesc}
                 onChange={e => setTemplateDesc(e.target.value)}
                 placeholder="e.g., Standard items for this project type..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 rows={3}
               />
             </div>
@@ -535,7 +535,7 @@ function OrderCard({
                   setError('')
                 }}
                 disabled={savingTemplate}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
               >
                 Cancel
               </button>

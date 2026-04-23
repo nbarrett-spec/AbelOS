@@ -35,18 +35,22 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // List discoverable users
-  const users = await listDomainUsers()
+  try {
+    const users = await listDomainUsers()
 
-  return NextResponse.json({
-    status: 'configured',
-    serviceAccount: 'gmail-sync@abel-os-gmail-sync.iam.gserviceaccount.com',
-    domainUsers: users,
-    userCount: users.length,
-    message: users.length > 0
-      ? `Ready to sync ${users.length} mailboxes. POST to trigger sync.`
-      : 'Service account key found but could not list users — check Admin SDK scope.',
-  })
+    return NextResponse.json({
+      status: 'configured',
+      serviceAccount: 'gmail-sync@abel-os-gmail-sync.iam.gserviceaccount.com',
+      domainUsers: users,
+      userCount: users.length,
+      message: users.length > 0
+        ? `Ready to sync ${users.length} mailboxes. POST to trigger sync.`
+        : 'Service account key found but could not list users — check Admin SDK scope.',
+    })
+  } catch (error: any) {
+    console.error('[Gmail Fetch] GET error:', error)
+    return NextResponse.json({ error: 'Failed to check Gmail configuration' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -55,15 +59,20 @@ export async function POST(request: NextRequest) {
 
   audit(request, 'CREATE', 'Integration', undefined, { action: 'gmail-sync-all' }).catch(() => {})
 
-  const { searchParams } = new URL(request.url)
-  const query = searchParams.get('query') || 'newer_than:1d'
-  const maxPerAccount = parseInt(searchParams.get('max') || '100')
+  try {
+    const { searchParams } = new URL(request.url)
+    const query = searchParams.get('query') || 'newer_than:1d'
+    const maxPerAccount = parseInt(searchParams.get('max') || '100')
 
-  const result = await syncAllAccounts(maxPerAccount, query)
+    const result = await syncAllAccounts(maxPerAccount, query)
 
-  return NextResponse.json({
-    ...result,
-    query,
-    maxPerAccount,
-  }, { status: result.status === 'FAILED' ? 500 : 200 })
+    return NextResponse.json({
+      ...result,
+      query,
+      maxPerAccount,
+    }, { status: result.status === 'FAILED' ? 500 : 200 })
+  } catch (error: any) {
+    console.error('[Gmail Fetch] POST error:', error)
+    return NextResponse.json({ error: 'Gmail sync failed' }, { status: 500 })
+  }
 }

@@ -69,15 +69,15 @@ const REQUEST_STATUS_COLORS: Record<string, string> = {
   QUOTED: 'bg-green-100 text-green-700',
   ACCEPTED: 'bg-emerald-100 text-emerald-700',
   REJECTED: 'bg-red-100 text-red-700',
-  EXPIRED: 'bg-gray-100 text-gray-700',
+  EXPIRED: 'bg-surface-muted text-fg-muted',
 }
 
 const QUOTE_STATUS_CONFIG: Record<string, { color: string; label: string }> = {
-  DRAFT: { color: 'bg-gray-100 text-gray-700', label: 'Draft' },
+  DRAFT: { color: 'bg-surface-muted text-fg-muted', label: 'Draft' },
   SENT: { color: 'bg-blue-100 text-blue-700', label: 'Ready for Review' },
   APPROVED: { color: 'bg-green-100 text-green-700', label: 'Approved' },
   REJECTED: { color: 'bg-red-100 text-red-700', label: 'Rejected' },
-  EXPIRED: { color: 'bg-gray-100 text-gray-500', label: 'Expired' },
+  EXPIRED: { color: 'bg-surface-muted text-fg-muted', label: 'Expired' },
   ORDERED: { color: 'bg-emerald-100 text-emerald-700', label: 'Ordered' },
 }
 
@@ -239,7 +239,7 @@ export default function QuotesPage() {
   if (!builder) {
     return (
       <div className="text-center py-20">
-        <p className="text-gray-500">Please sign in to access quotes.</p>
+        <p className="text-fg-muted">Please sign in to access quotes.</p>
       </div>
     )
   }
@@ -262,8 +262,8 @@ export default function QuotesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quotes</h1>
-          <p className="text-gray-500 text-sm mt-1">View quotes and submit new requests</p>
+          <h1 className="text-3xl font-bold text-fg">Quotes</h1>
+          <p className="text-fg-muted text-sm mt-1">View quotes and submit new requests</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -286,13 +286,13 @@ export default function QuotesPage() {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-surface-muted rounded-lg p-1 w-fit">
         <button
           onClick={() => setActiveTab('quotes')}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
             activeTab === 'quotes'
               ? 'bg-white text-[#0f2a3e] shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-fg-muted hover:text-fg-muted'
           }`}
         >
           Formal Quotes
@@ -307,7 +307,7 @@ export default function QuotesPage() {
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
             activeTab === 'requests'
               ? 'bg-white text-[#0f2a3e] shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-fg-muted hover:text-fg-muted'
           }`}
         >
           Quote Requests
@@ -321,18 +321,18 @@ export default function QuotesPage() {
 
       {/* ──── Formal Quotes Tab ──── */}
       {activeTab === 'quotes' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="w-6 h-6 mx-auto border-3 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : quotes.length === 0 ? (
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto text-fg-subtle mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No quotes yet</h3>
-              <p className="text-gray-500 mb-6">Once Abel Lumber prepares a quote for you, it will appear here for review and approval.</p>
+              <h3 className="text-lg font-medium text-fg mb-2">No quotes yet</h3>
+              <p className="text-fg-muted mb-6">Once Abel Lumber prepares a quote for you, it will appear here for review and approval.</p>
               <button
                 onClick={() => { setActiveTab('requests'); setShowModal(true) }}
                 className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
@@ -343,46 +343,46 @@ export default function QuotesPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-surface-muted border-b border-border">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Quote #</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Project</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Items</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Valid Until</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Action</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Quote #</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Project</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Items</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Total</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Valid Until</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-border">
                   {quotes.map(q => {
-                    const cfg = QUOTE_STATUS_CONFIG[q.status] || { color: 'bg-gray-100 text-gray-700', label: q.status }
+                    const cfg = QUOTE_STATUS_CONFIG[q.status] || { color: 'bg-surface-muted text-fg-muted', label: q.status }
                     const isExpired = q.validUntil && new Date(q.validUntil) < new Date()
                     const needsAction = q.status === 'SENT' || q.status === 'DRAFT'
 
                     return (
-                      <tr key={q.id} className={`hover:bg-gray-50 transition-colors ${needsAction ? 'bg-blue-50/30' : ''}`}>
+                      <tr key={q.id} className={`hover:bg-surface-muted transition-colors ${needsAction ? 'bg-blue-50/30' : ''}`}>
                         <td className="px-6 py-4">
                           <Link href={`/dashboard/quotes/${q.id}`} className="text-sm font-mono font-semibold text-[#0f2a3e] hover:underline">
                             {q.quoteNumber}
                           </Link>
-                          <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(q.createdAt)}</p>
+                          <p className="text-[11px] text-fg-subtle mt-0.5">{formatDate(q.createdAt)}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-sm font-medium text-gray-900">{q.project?.name || '—'}</p>
+                          <p className="text-sm font-medium text-fg">{q.project?.name || '—'}</p>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-4 text-sm text-fg-muted">
                           {q.items?.length || 0} items
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm font-bold text-gray-900">{fmt(q.total)}</span>
+                          <span className="text-sm font-bold text-fg">{fmt(q.total)}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-semibold ${isExpired && q.status === 'SENT' ? 'bg-gray-100 text-gray-500' : cfg.color}`}>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-semibold ${isExpired && q.status === 'SENT' ? 'bg-surface-muted text-fg-muted' : cfg.color}`}>
                             {isExpired && q.status === 'SENT' ? 'Expired' : cfg.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-6 py-4 text-sm text-fg-muted">
                           {q.validUntil ? formatDate(q.validUntil) : '—'}
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -432,18 +432,18 @@ export default function QuotesPage() {
 
       {/* ──── Quote Requests Tab ──── */}
       {activeTab === 'requests' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="w-6 h-6 mx-auto border-3 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : requests.length === 0 ? (
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto text-fg-subtle mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No quote requests yet</h3>
-              <p className="text-gray-500 mb-6">Submit a new quote request for your project.</p>
+              <h3 className="text-lg font-medium text-fg mb-2">No quote requests yet</h3>
+              <p className="text-fg-muted mb-6">Submit a new quote request for your project.</p>
               <button
                 onClick={() => setShowModal(true)}
                 className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
@@ -454,16 +454,16 @@ export default function QuotesPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-surface-muted border-b border-border">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Reference</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Project</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categories</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Reference</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Project</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Categories</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-border">
                   {requests.map(req => {
                     const cats = Array.isArray(req.productCategories)
                       ? req.productCategories
@@ -475,45 +475,45 @@ export default function QuotesPage() {
                     return (
                       <Fragment key={req.id}>
                         <tr
-                          className="hover:bg-gray-50 transition-colors cursor-pointer"
+                          className="hover:bg-surface-muted transition-colors cursor-pointer"
                           onClick={() => setExpandedId(isExpanded ? null : req.id)}
                         >
                           <td className="px-6 py-4 text-sm font-mono font-semibold text-[#1B2A4A]">
-                            <span className="inline-block w-4 mr-1 text-gray-400">{isExpanded ? '▾' : '▸'}</span>
+                            <span className="inline-block w-4 mr-1 text-fg-subtle">{isExpanded ? '▾' : '▸'}</span>
                             {req.referenceNumber}
                           </td>
                           <td className="px-6 py-4">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{req.projectName}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{req.projectAddress}</p>
+                              <p className="text-sm font-medium text-fg">{req.projectName}</p>
+                              <p className="text-xs text-fg-muted mt-0.5">{req.projectAddress}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex flex-wrap gap-1">
                               {cats.map((cat, idx) => (
-                                <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 text-[10px] rounded font-medium">
+                                <span key={idx} className="px-2 py-1 bg-surface-muted text-fg-muted text-[10px] rounded font-medium">
                                   {cat}
                                 </span>
                               ))}
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-semibold ${REQUEST_STATUS_COLORS[req.status] || 'bg-gray-100 text-gray-700'}`}>
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-semibold ${REQUEST_STATUS_COLORS[req.status] || 'bg-surface-muted text-fg-muted'}`}>
                               {req.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className="px-6 py-4 text-sm text-fg-muted">
                             {formatDate(req.createdAt)}
                           </td>
                         </tr>
                         {isExpanded && (
                           <tr key={`${req.id}-detail`}>
-                            <td colSpan={5} className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                            <td colSpan={5} className="px-6 py-4 bg-surface-muted border-t border-border">
                               <div className="max-w-3xl space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
-                                    <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Project Address</p>
-                                    <p className="text-sm text-gray-900 mt-1">
+                                    <p className="text-xs text-fg-muted uppercase tracking-wide font-semibold">Project Address</p>
+                                    <p className="text-sm text-fg mt-1">
                                       {req.projectAddress}
                                       {req.city && `, ${req.city}`}
                                       {req.state && `, ${req.state}`}
@@ -522,20 +522,20 @@ export default function QuotesPage() {
                                   </div>
                                   {req.estimatedSquareFootage && (
                                     <div>
-                                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Square Footage</p>
-                                      <p className="text-sm text-gray-900 mt-1">{req.estimatedSquareFootage.toLocaleString()} sq ft</p>
+                                      <p className="text-xs text-fg-muted uppercase tracking-wide font-semibold">Square Footage</p>
+                                      <p className="text-sm text-fg mt-1">{req.estimatedSquareFootage.toLocaleString()} sq ft</p>
                                     </div>
                                   )}
                                   {req.preferredDeliveryDate && (
                                     <div>
-                                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Preferred Delivery</p>
-                                      <p className="text-sm text-gray-900 mt-1">{formatDate(req.preferredDeliveryDate)}</p>
+                                      <p className="text-xs text-fg-muted uppercase tracking-wide font-semibold">Preferred Delivery</p>
+                                      <p className="text-sm text-fg mt-1">{formatDate(req.preferredDeliveryDate)}</p>
                                     </div>
                                   )}
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Description</p>
-                                  <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{req.description}</p>
+                                  <p className="text-xs text-fg-muted uppercase tracking-wide font-semibold">Description</p>
+                                  <p className="text-sm text-fg-muted mt-1 whitespace-pre-wrap">{req.description}</p>
                                 </div>
                                 {req.notes && (
                                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -561,11 +561,11 @@ export default function QuotesPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Request a Quote</h2>
+            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-fg">Request a Quote</h2>
               <button
                 onClick={() => { setShowModal(false); setError('') }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-fg-subtle hover:text-fg-muted transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -581,74 +581,74 @@ export default function QuotesPage() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Project Name *</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Project Name *</label>
                 <input type="text" name="projectName" value={formData.projectName} onChange={handleInputChange}
                   placeholder="e.g., Downtown Commercial Complex"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Project Address *</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Project Address *</label>
                 <input type="text" name="projectAddress" value={formData.projectAddress} onChange={handleInputChange}
                   placeholder="e.g., 123 Main St"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">City</label>
+                  <label className="block text-sm font-semibold text-fg mb-1">City</label>
                   <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">State</label>
+                  <label className="block text-sm font-semibold text-fg mb-1">State</label>
                   <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="TX" maxLength={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">Zip</label>
+                  <label className="block text-sm font-semibold text-fg mb-1">Zip</label>
                   <input type="text" name="zip" value={formData.zip} onChange={handleInputChange} placeholder="75001"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Project Description *</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Project Description *</label>
                 <textarea name="description" value={formData.description} onChange={handleInputChange}
                   placeholder="Describe your project, scope, and requirements..." rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Product Categories * (comma-separated)</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Product Categories * (comma-separated)</label>
                 <input type="text" name="productCategories" value={formData.productCategories} onChange={handleInputChange}
                   placeholder="e.g., Interior Doors, Hardware, Trim"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Estimated Square Footage</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Estimated Square Footage</label>
                 <input type="number" name="estimatedSquareFootage" value={formData.estimatedSquareFootage} onChange={handleInputChange}
                   placeholder="e.g., 5000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Preferred Delivery Date</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Preferred Delivery Date</label>
                 <input type="date" name="preferredDeliveryDate" value={formData.preferredDeliveryDate} onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Additional Notes</label>
+                <label className="block text-sm font-semibold text-fg mb-1">Additional Notes</label>
                 <textarea name="notes" value={formData.notes} onChange={handleInputChange}
                   placeholder="Any additional information..." rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
               </div>
 
-              <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
+              <div className="flex gap-3 justify-end pt-4 border-t border-border">
                 <button type="button" onClick={() => { setShowModal(false); setError('') }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
+                  className="px-4 py-2 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition-colors">
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting}

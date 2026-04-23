@@ -30,19 +30,19 @@ const STATUS_COLORS: Record<string, string> = {
   SHIPPED: 'bg-orange-100 text-orange-700',
   DELIVERED: 'bg-green-100 text-green-700',
   COMPLETE: 'bg-green-100 text-green-700',
-  DRAFT: 'bg-gray-100 text-gray-600',
+  DRAFT: 'bg-surface-muted text-fg-muted',
   SENT: 'bg-blue-100 text-blue-700',
   APPROVED: 'bg-green-100 text-green-700',
   REJECTED: 'bg-red-100 text-red-700',
-  EXPIRED: 'bg-gray-100 text-gray-500',
+  EXPIRED: 'bg-surface-muted text-fg-muted',
   ORDERED: 'bg-green-100 text-green-700',
   OPEN: 'bg-blue-100 text-blue-700',
   IN_PROGRESS: 'bg-yellow-100 text-yellow-700',
   RESOLVED: 'bg-green-100 text-green-700',
-  CLOSED: 'bg-gray-100 text-gray-600',
+  CLOSED: 'bg-surface-muted text-fg-muted',
   PAID: 'bg-green-100 text-green-700',
   OVERDUE: 'bg-red-100 text-red-700',
-  CANCELLED: 'bg-gray-100 text-gray-500',
+  CANCELLED: 'bg-surface-muted text-fg-muted',
 }
 
 function timeAgo(dateStr: string): string {
@@ -108,8 +108,8 @@ export default function ActivityPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Activity Log</h1>
-          <p className="text-gray-500 text-sm mt-1">Recent activity across your account</p>
+          <h1 className="text-2xl font-bold text-fg">Activity Log</h1>
+          <p className="text-fg-muted text-sm mt-1">Recent activity across your account</p>
         </div>
         <Link href="/dashboard" className="text-sm text-[#0f2a3e] hover:underline">
           ← Back to Dashboard
@@ -131,7 +131,7 @@ export default function ActivityPage() {
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
               filter === f.key
                 ? 'bg-[#0f2a3e] text-white'
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                : 'bg-white border border-border text-fg-muted hover:bg-surface-muted'
             }`}
           >
             {f.label}
@@ -146,13 +146,13 @@ export default function ActivityPage() {
 
       {filtered.length === 0 ? (
         <div className="bg-white rounded-2xl border p-12 text-center">
-          <p className="text-gray-400 text-lg">No activity found</p>
+          <p className="text-fg-subtle text-lg">No activity found</p>
         </div>
       ) : (
         <div className="space-y-8">
           {Object.entries(grouped).map(([dateLabel, items]) => (
             <div key={dateLabel}>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{dateLabel}</h3>
+              <h3 className="text-xs font-semibold text-fg-subtle uppercase tracking-wider mb-3">{dateLabel}</h3>
               <div className="space-y-2">
                 {items.map(activity => {
                   const config = TYPE_CONFIG[activity.type] || TYPE_CONFIG.ORDER
@@ -160,27 +160,27 @@ export default function ActivityPage() {
                     <Link
                       key={activity.id}
                       href={activity.link}
-                      className="flex items-start gap-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition p-4"
+                      className="flex items-start gap-4 bg-white rounded-xl border border-border hover:border-border hover:shadow-sm transition p-4"
                     >
                       <div className={`w-10 h-10 rounded-lg ${config.bg} flex items-center justify-center text-lg flex-shrink-0`}>
                         {config.icon}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-gray-900 text-sm">{activity.title}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[activity.status] || 'bg-gray-100 text-gray-600'}`}>
+                          <span className="font-medium text-fg text-sm">{activity.title}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[activity.status] || 'bg-surface-muted text-fg-muted'}`}>
                             {activity.status.replace(/_/g, ' ')}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-0.5">{activity.description}</p>
+                        <p className="text-sm text-fg-muted mt-0.5">{activity.description}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         {activity.amount !== undefined && activity.amount !== null && (
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className="text-sm font-semibold text-fg">
                             ${activity.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </p>
                         )}
-                        <p className="text-xs text-gray-400 mt-0.5">{timeAgo(activity.timestamp)}</p>
+                        <p className="text-xs text-fg-subtle mt-0.5">{timeAgo(activity.timestamp)}</p>
                       </div>
                     </Link>
                   )

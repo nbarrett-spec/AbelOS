@@ -237,8 +237,8 @@ export default function ReorderPage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Reorder</h1>
-        <p className="text-gray-600">Reorder from your previous orders in seconds</p>
+        <h1 className="text-3xl font-bold text-fg mb-2">Quick Reorder</h1>
+        <p className="text-fg-muted">Reorder from your previous orders in seconds</p>
       </div>
 
       {error && (
@@ -254,7 +254,7 @@ export default function ReorderPage() {
           {loading && (
             <div className="space-y-6">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-100 rounded animate-pulse" />
+                <div key={i} className="h-32 bg-surface-muted rounded animate-pulse" />
               ))}
             </div>
           )}
@@ -263,22 +263,22 @@ export default function ReorderPage() {
             <>
               {/* Frequently Ordered */}
               <section>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Frequently Ordered</h2>
+                <h2 className="text-xl font-semibold text-fg mb-4">Frequently Ordered</h2>
                 {frequentItems.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No order history yet</div>
+                  <div className="text-center py-8 text-fg-muted">No order history yet</div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {frequentItems.map(product => (
                       <div
                         key={product.productId}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                        className="border border-border rounded-lg p-4 hover:shadow-md transition"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 text-sm">
+                            <h3 className="font-semibold text-fg text-sm">
                               {product.productName}
                             </h3>
-                            <p className="text-xs text-gray-500 mt-1">SKU: {product.sku}</p>
+                            <p className="text-xs text-fg-muted mt-1">SKU: {product.sku}</p>
                           </div>
                           {product.inStock ? (
                             <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
@@ -291,20 +291,20 @@ export default function ReorderPage() {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                        <div className="grid grid-cols-2 gap-2 text-xs text-fg-muted mb-3">
                           <div>
-                            <span className="text-gray-500">Price: </span>
-                            <span className="font-semibold text-gray-900">
+                            <span className="text-fg-muted">Price: </span>
+                            <span className="font-semibold text-fg">
                               {formatCurrency(product.currentPrice)}
                             </span>
                           </div>
                           <div>
-                            <span className="text-gray-500">Times Ordered: </span>
-                            <span className="font-semibold text-gray-900">{product.orderCount}</span>
+                            <span className="text-fg-muted">Times Ordered: </span>
+                            <span className="font-semibold text-fg">{product.orderCount}</span>
                           </div>
                           <div className="col-span-2">
-                            <span className="text-gray-500">Last Ordered: </span>
-                            <span className="text-gray-700">{formatDate(product.lastOrdered)}</span>
+                            <span className="text-fg-muted">Last Ordered: </span>
+                            <span className="text-fg-muted">{formatDate(product.lastOrdered)}</span>
                           </div>
                         </div>
 
@@ -319,7 +319,7 @@ export default function ReorderPage() {
                                 [product.productId]: parseInt(e.target.value) || 1,
                               })
                             }
-                            className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-16 px-2 py-1 border border-border-strong rounded text-sm"
                           />
                           <button
                             onClick={() => addFrequentItemToCart(product)}
@@ -337,43 +337,43 @@ export default function ReorderPage() {
 
               {/* Recent Orders */}
               <section>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Orders</h2>
+                <h2 className="text-xl font-semibold text-fg mb-4">Recent Orders</h2>
                 {recentOrders.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No completed orders yet</div>
+                  <div className="text-center py-8 text-fg-muted">No completed orders yet</div>
                 ) : (
                   <div className="space-y-2">
                     {recentOrders.map(order => (
-                      <div key={order.orderId} className="border border-gray-200 rounded-lg">
+                      <div key={order.orderId} className="border border-border rounded-lg">
                         <button
                           onClick={() => toggleOrder(order.orderId)}
-                          className="w-full px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition"
+                          className="w-full px-4 py-3 flex justify-between items-center hover:bg-surface-muted transition"
                         >
                           <div className="text-left flex-1">
-                            <div className="font-semibold text-gray-900">
+                            <div className="font-semibold text-fg">
                               {order.orderNumber}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-fg-muted">
                               {formatDate(order.orderDate)} · {order.itemCount} items ·{' '}
                               {formatCurrency(order.orderTotal)}
                             </div>
                           </div>
-                          <span className="text-xl text-gray-400">
+                          <span className="text-xl text-fg-subtle">
                             {expandedOrders.has(order.orderId) ? '−' : '+'}
                           </span>
                         </button>
 
                         {expandedOrders.has(order.orderId) && (
-                          <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-3">
+                          <div className="border-t border-border bg-surface-muted p-4 space-y-3">
                             {order.items.map(line => (
                               <div
                                 key={line.lineId}
-                                className="flex justify-between items-start gap-3 pb-3 border-b border-gray-200 last:border-0 last:pb-0"
+                                className="flex justify-between items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0"
                               >
                                 <div className="flex-1 text-sm">
-                                  <div className="font-medium text-gray-900">
+                                  <div className="font-medium text-fg">
                                     {line.productName}
                                   </div>
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-fg-muted">
                                     SKU: {line.sku} · Qty: {line.quantity} ·{' '}
                                     {formatCurrency(line.unitPrice)} each
                                   </div>
@@ -405,7 +405,7 @@ export default function ReorderPage() {
 
         {/* Cart Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+          <div className="sticky top-4 border border-border rounded-lg bg-white shadow-sm">
             <div className="bg-walnut text-white px-6 py-4 rounded-t-lg">
               <h3 className="font-semibold text-lg">Order Summary</h3>
             </div>
@@ -413,21 +413,21 @@ export default function ReorderPage() {
             <div className="p-6 space-y-4">
               {cart.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 text-sm">Your cart is empty</p>
+                  <p className="text-fg-muted text-sm">Your cart is empty</p>
                 </div>
               ) : (
                 <>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {cart.map(item => (
-                      <div key={item.productId} className="text-sm border-b border-gray-100 pb-3">
+                      <div key={item.productId} className="text-sm border-b border-border pb-3">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <div className="font-medium text-gray-900">{item.productName}</div>
-                            <div className="text-xs text-gray-500">SKU: {item.sku}</div>
+                            <div className="font-medium text-fg">{item.productName}</div>
+                            <div className="text-xs text-fg-muted">SKU: {item.sku}</div>
                           </div>
                           <button
                             onClick={() => removeFromCart(item.productId)}
-                            className="text-gray-400 hover:text-red-600 text-lg leading-none"
+                            className="text-fg-subtle hover:text-red-600 text-lg leading-none"
                           >
                             ×
                           </button>
@@ -440,12 +440,12 @@ export default function ReorderPage() {
                             onChange={e =>
                               updateCartQty(item.productId, parseInt(e.target.value) || 1)
                             }
-                            className="w-12 px-2 py-1 border border-gray-300 rounded text-xs"
+                            className="w-12 px-2 py-1 border border-border-strong rounded text-xs"
                           />
-                          <span className="text-gray-600 flex-1">
+                          <span className="text-fg-muted flex-1">
                             @ {formatCurrency(item.unitPrice)}
                           </span>
-                          <span className="font-semibold text-gray-900">
+                          <span className="font-semibold text-fg">
                             {formatCurrency(item.lineTotal)}
                           </span>
                         </div>
@@ -453,27 +453,27 @@ export default function ReorderPage() {
                     ))}
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200 space-y-3">
+                  <div className="pt-4 border-t border-border space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Items:</span>
-                      <span className="font-semibold text-gray-900">{cart.length}</span>
+                      <span className="text-fg-muted">Items:</span>
+                      <span className="font-semibold text-fg">{cart.length}</span>
                     </div>
                     <div className="flex justify-between items-center text-lg font-semibold">
-                      <span className="text-gray-900">Total:</span>
+                      <span className="text-fg">Total:</span>
                       <span className="text-walnut">{formatCurrency(cartTotal)}</span>
                     </div>
                   </div>
 
                   <div className="pt-3 space-y-3">
                     <label className="block">
-                      <span className="text-xs font-medium text-gray-700 mb-1 block">
+                      <span className="text-xs font-medium text-fg-muted mb-1 block">
                         Order Notes (optional)
                       </span>
                       <textarea
                         value={notes}
                         onChange={e => setNotes(e.target.value)}
                         placeholder="Add any special requests or delivery notes..."
-                        className="w-full px-3 py-2 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                        className="w-full px-3 py-2 text-xs border border-border-strong rounded focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
                         rows={3}
                       />
                     </label>

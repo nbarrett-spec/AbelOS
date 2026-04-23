@@ -176,8 +176,8 @@ export default function ProjectSelectionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Homeowner Selections</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-fg">Homeowner Selections</h1>
+          <p className="text-sm text-fg-muted mt-1">
             Manage door and hardware selections from your homeowners
           </p>
         </div>
@@ -191,11 +191,11 @@ export default function ProjectSelectionsPage() {
 
       {/* New Homeowner Access Form */}
       {showNewHomeowner && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Create Homeowner Access</h3>
+        <div className="bg-white rounded-xl border border-border p-6 mb-6">
+          <h3 className="text-lg font-bold text-fg mb-4">Create Homeowner Access</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-fg-muted mb-1">
                 Homeowner Name
               </label>
               <input
@@ -205,11 +205,11 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, name: e.target.value })
                 }
                 placeholder="e.g., John Smith"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
+                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-fg-muted mb-1">
                 Email Address
               </label>
               <input
@@ -219,11 +219,11 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, email: e.target.value })
                 }
                 placeholder="john@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
+                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-fg-muted mb-1">
                 Phone (Optional)
               </label>
               <input
@@ -233,19 +233,19 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, phone: e.target.value })
                 }
                 placeholder="(555) 123-4567"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
+                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
               />
             </div>
 
             {newAccessUrl && (
               <div className="bg-[#0f2a3e]/5 border border-[#0f2a3e]/20 rounded-lg p-4">
-                <p className="text-xs font-medium text-gray-600 mb-2">Access Link Created</p>
+                <p className="text-xs font-medium text-fg-muted mb-2">Access Link Created</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     readOnly
                     value={newAccessUrl}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-xs font-mono"
+                    className="flex-1 px-3 py-2 bg-white border border-border-strong rounded text-xs font-mono"
                   />
                   <button
                     onClick={copyToClipboard}
@@ -270,21 +270,21 @@ export default function ProjectSelectionsPage() {
 
       {/* Homeowner Access List */}
       {homeownerAccesses.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-sm font-bold text-gray-900">Homeowner Access Links</h3>
+        <div className="bg-white rounded-xl border border-border overflow-hidden mb-6">
+          <div className="px-6 py-4 bg-surface-muted border-b border-border">
+            <h3 className="text-sm font-bold text-fg">Homeowner Access Links</h3>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-border">
             {homeownerAccesses.map((homeowner) => (
               <div key={homeowner.id} className="px-6 py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">{homeowner.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{homeowner.email}</p>
+                    <p className="font-medium text-fg text-sm">{homeowner.name}</p>
+                    <p className="text-xs text-fg-muted mt-0.5">{homeowner.email}</p>
                     {homeowner.phone && (
-                      <p className="text-xs text-gray-500">{homeowner.phone}</p>
+                      <p className="text-xs text-fg-muted">{homeowner.phone}</p>
                     )}
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-fg-subtle mt-1">
                       {homeowner._count.selections} selection{homeowner._count.selections !== 1 ? 's' : ''}
                       {homeowner.lastVisitAt && (
                         <>
@@ -298,7 +298,7 @@ export default function ProjectSelectionsPage() {
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       homeowner.active
                         ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
+                        : 'bg-surface-muted text-fg-muted'
                     }`}>
                       {homeowner.active ? 'Active' : 'Inactive'}
                     </span>
@@ -312,50 +312,50 @@ export default function ProjectSelectionsPage() {
 
       {/* Selections Table */}
       {selectionsData && selectionsData.selections.length > 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-sm font-bold text-gray-900">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="px-6 py-4 bg-surface-muted border-b border-border">
+            <h3 className="text-sm font-bold text-fg">
               All Selections ({selectionsData.totalSelections})
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-white">
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Homeowner</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Location</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Base Product</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Selected Product</th>
-                  <th className="px-6 py-3 text-right font-semibold text-gray-700">Upgrade Cost</th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Status</th>
+                <tr className="border-b border-border bg-white">
+                  <th className="px-6 py-3 text-left font-semibold text-fg-muted">Homeowner</th>
+                  <th className="px-6 py-3 text-left font-semibold text-fg-muted">Location</th>
+                  <th className="px-6 py-3 text-left font-semibold text-fg-muted">Base Product</th>
+                  <th className="px-6 py-3 text-left font-semibold text-fg-muted">Selected Product</th>
+                  <th className="px-6 py-3 text-right font-semibold text-fg-muted">Upgrade Cost</th>
+                  <th className="px-6 py-3 text-center font-semibold text-fg-muted">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {selectionsData.selections.map((selection) => (
-                  <tr key={selection.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={selection.id} className="border-b border-border hover:bg-surface-muted">
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-gray-900">{selection.homeownerName}</p>
-                        <p className="text-xs text-gray-500">{selection.homeownerEmail}</p>
+                        <p className="font-medium text-fg">{selection.homeownerName}</p>
+                        <p className="text-xs text-fg-muted">{selection.homeownerEmail}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-gray-900 font-medium">{selection.location}</span>
+                      <span className="text-fg font-medium">{selection.location}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="max-w-xs">
-                        <p className="text-gray-900 text-sm">
+                        <p className="text-fg text-sm">
                           {selection.baseProduct?.name || 'Unknown'}
                         </p>
-                        <p className="text-xs text-gray-500">{selection.baseProduct?.sku}</p>
+                        <p className="text-xs text-fg-muted">{selection.baseProduct?.sku}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="max-w-xs">
-                        <p className="text-gray-900 text-sm font-medium">
+                        <p className="text-fg text-sm font-medium">
                           {selection.selectedProduct?.name || 'Unknown'}
                         </p>
-                        <p className="text-xs text-gray-500">{selection.selectedProduct?.sku}</p>
+                        <p className="text-xs text-fg-muted">{selection.selectedProduct?.sku}</p>
                         {isUpgraded(selection) && (
                           <span className="inline-block px-2 py-0.5 mt-1 rounded-full text-[10px] font-semibold bg-[#C6A24E]/10 text-[#C6A24E]">
                             Upgraded
@@ -371,14 +371,14 @@ export default function ProjectSelectionsPage() {
                           })}
                         </span>
                       ) : (
-                        <span className="text-gray-400">Included</span>
+                        <span className="text-fg-subtle">Included</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
                         selection.status === 'CONFIRMED' || selection.status === 'LOCKED'
                           ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-surface-muted text-fg-muted'
                       }`}>
                         {selection.status === 'CONFIRMED' ? 'Confirmed' : selection.status}
                       </span>
@@ -390,9 +390,9 @@ export default function ProjectSelectionsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <p className="text-gray-400 mb-2">No homeowner selections yet</p>
-          <p className="text-xs text-gray-300">
+        <div className="bg-white rounded-xl border border-border p-8 text-center">
+          <p className="text-fg-subtle mb-2">No homeowner selections yet</p>
+          <p className="text-xs text-fg-subtle">
             Generate access links above to let homeowners make selections
           </p>
         </div>
@@ -401,20 +401,20 @@ export default function ProjectSelectionsPage() {
       {/* Summary Stats */}
       {selectionsData && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-xs text-gray-500 font-medium mb-1">Total Homeowners</p>
+          <div className="bg-white rounded-xl border border-border p-6">
+            <p className="text-xs text-fg-muted font-medium mb-1">Total Homeowners</p>
             <p className="text-2xl font-bold text-[#0f2a3e]">
               {selectionsData.totalHomeowners}
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-xs text-gray-500 font-medium mb-1">Total Selections</p>
+          <div className="bg-white rounded-xl border border-border p-6">
+            <p className="text-xs text-fg-muted font-medium mb-1">Total Selections</p>
             <p className="text-2xl font-bold text-[#0f2a3e]">
               {selectionsData.totalSelections}
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <p className="text-xs text-gray-500 font-medium mb-1">Total Upgrade Cost</p>
+          <div className="bg-white rounded-xl border border-border p-6">
+            <p className="text-xs text-fg-muted font-medium mb-1">Total Upgrade Cost</p>
             <p className="text-2xl font-bold text-[#C6A24E]">
               +$
               {selectionsData.selections

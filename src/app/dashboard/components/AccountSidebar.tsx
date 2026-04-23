@@ -61,7 +61,7 @@ export default function AccountSidebar({
             <div className="w-5 h-5 rounded flex items-center justify-center text-signal">
               <MessageSquare className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Your Account Manager</h3>
+            <h3 className="text-sm font-bold text-fg">Your Account Manager</h3>
           </div>
 
           <div className="flex items-center gap-3 mb-4">
@@ -71,10 +71,10 @@ export default function AccountSidebar({
               status="online"
             />
             <div>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">
+              <p className="text-sm font-bold text-fg">
                 {accountRep.firstName} {accountRep.lastName}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-fg-muted">
                 {accountRep.title || 'Account Manager'}
               </p>
             </div>
@@ -84,18 +84,18 @@ export default function AccountSidebar({
             {accountRep.email && (
               <a
                 href={`mailto:${accountRep.email}`}
-                className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-brand-hover transition-colors"
+                className="flex items-center gap-2.5 text-sm text-fg-muted hover:text-brand dark:hover:text-brand-hover transition-colors"
               >
-                <Mail className="w-3.5 h-3.5 text-gray-400" />
+                <Mail className="w-3.5 h-3.5 text-fg-subtle" />
                 {accountRep.email}
               </a>
             )}
             {accountRep.phone && (
               <a
                 href={`tel:${accountRep.phone}`}
-                className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-brand-hover transition-colors"
+                className="flex items-center gap-2.5 text-sm text-fg-muted hover:text-brand dark:hover:text-brand-hover transition-colors"
               >
-                <Phone className="w-3.5 h-3.5 text-gray-400" />
+                <Phone className="w-3.5 h-3.5 text-fg-subtle" />
                 {accountRep.phone}
               </a>
             )}
@@ -119,32 +119,32 @@ export default function AccountSidebar({
         <Card variant="default" padding="md" rounded="2xl" className="animate-enter animate-enter-delay-2">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-4 h-4 text-signal" />
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Payment Summary</h3>
+            <h3 className="text-sm font-bold text-fg">Payment Summary</h3>
           </div>
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Open Invoices</span>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <span className="text-xs text-fg-muted">Open Invoices</span>
+              <span className="text-sm font-bold text-fg">
                 {paymentSummary.openInvoiceCount}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Total Outstanding</span>
+              <span className="text-xs text-fg-muted">Total Outstanding</span>
               <span className="text-sm font-bold text-signal">
                 {formatCurrencyFull(paymentSummary.totalOutstanding)}
               </span>
             </div>
             {paymentSummary.overdueAmount > 0 && (
-              <div className="flex justify-between items-center pt-2.5 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex justify-between items-center pt-2.5 border-t border-border">
                 <span className="text-xs text-danger-600 dark:text-danger-400 font-medium">Overdue</span>
                 <span className="text-sm font-bold text-danger-600 dark:text-danger-400">
                   {formatCurrencyFull(paymentSummary.overdueAmount)}
                 </span>
               </div>
             )}
-            <div className="flex justify-between items-center pt-2.5 border-t border-gray-100 dark:border-gray-800">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Paid (Last 30 days)</span>
+            <div className="flex justify-between items-center pt-2.5 border-t border-border">
+              <span className="text-xs text-fg-muted">Paid (Last 30 days)</span>
               <span className="text-sm font-bold text-success-600 dark:text-success-400">
                 {formatCurrencyFull(paymentSummary.paidLast30Days)}
               </span>
@@ -156,16 +156,16 @@ export default function AccountSidebar({
       {/* ── Recent Payments ──────────────────────────────────── */}
       {recentPayments && recentPayments.length > 0 && (
         <Card variant="default" padding="md" rounded="2xl" className="animate-enter animate-enter-delay-3">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Recent Payments</h3>
+          <h3 className="text-sm font-bold text-fg mb-4">Recent Payments</h3>
           <div className="space-y-2.5">
             {recentPayments.slice(0, 3).map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
               >
                 <div>
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{p.invoiceNumber}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-xs font-semibold text-fg">{p.invoiceNumber}</p>
+                  <p className="text-[11px] text-fg-muted mt-0.5">
                     {p.method} &middot;{' '}
                     {new Date(p.receivedAt).toLocaleDateString('en-US', {
                       month: 'short',
@@ -187,26 +187,26 @@ export default function AccountSidebar({
         <Card variant="default" padding="md" rounded="2xl" className="animate-enter animate-enter-delay-4">
           <div className="flex items-center gap-2 mb-4">
             <Award className="w-4 h-4 text-signal" />
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Lifetime Stats</h3>
+            <h3 className="text-sm font-bold text-fg">Lifetime Stats</h3>
           </div>
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Total Orders</span>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">{lifetimeStats.totalOrders}</span>
+              <span className="text-xs text-fg-muted">Total Orders</span>
+              <span className="text-sm font-bold text-fg">{lifetimeStats.totalOrders}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Lifetime Value</span>
+              <span className="text-xs text-fg-muted">Lifetime Value</span>
               <span className="text-sm font-bold text-signal">{formatCurrency(lifetimeStats.lifetimeValue)}</span>
             </div>
-            <div className="flex justify-between items-center pt-2.5 border-t border-gray-100 dark:border-gray-800">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Last 30 Days</span>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+            <div className="flex justify-between items-center pt-2.5 border-t border-border">
+              <span className="text-xs text-fg-muted">Last 30 Days</span>
+              <span className="text-sm font-bold text-fg">
                 {formatCurrency(lifetimeStats.last30DaysValue)}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Account Status</span>
+              <span className="text-xs text-fg-muted">Account Status</span>
               <Badge variant="success" size="sm" dot>{lifetimeStats.status}</Badge>
             </div>
           </div>

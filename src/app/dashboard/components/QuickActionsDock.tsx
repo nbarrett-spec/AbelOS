@@ -83,8 +83,8 @@ const ACTIONS: QuickAction[] = [
     href: '/dashboard/settings',
     icon: <Settings className="w-5 h-5" />,
     label: 'Settings',
-    color: 'text-gray-600 dark:text-gray-400',
-    hoverBg: 'group-hover:bg-gray-50 dark:group-hover:bg-gray-800',
+    color: 'text-fg-muted',
+    hoverBg: 'group-hover:bg-surface-muted dark:group-hover:bg-gray-800',
   },
 ]
 
@@ -95,7 +95,7 @@ export default function QuickActionsDock() {
         <Tooltip key={action.href} content={action.label} side="bottom" delay={300}>
           <Link
             href={action.href}
-            className="group flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none animate-enter"
+            className="group flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl bg-surface border border-border transition-all duration-200 hover:border-border-strong dark:hover:border-gray-700 hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none animate-enter"
             style={{ animationDelay: `${idx * 30}ms` }}
             aria-label={action.label}
           >
@@ -104,7 +104,7 @@ export default function QuickActionsDock() {
             >
               {action.icon}
             </div>
-            <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors text-center leading-tight">
+            <span className="text-[11px] font-semibold text-fg-muted group-hover:text-fg dark:group-hover:text-white transition-colors text-center leading-tight">
               {action.label}
             </span>
           </Link>

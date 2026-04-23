@@ -241,13 +241,13 @@ export default function BlueprintUploadPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/dashboard/blueprints"
-          className="p-2 hover:bg-gray-100 rounded-lg transition"
+          className="p-2 hover:bg-surface-muted rounded-lg transition"
         >
           ← Back
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Upload Blueprint</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-fg">Upload Blueprint</h1>
+          <p className="text-sm text-fg-muted">
             Upload floor plans and our AI will generate a complete material takeoff
           </p>
         </div>
@@ -268,14 +268,14 @@ export default function BlueprintUploadPage() {
                     ? 'bg-green-500 text-white'
                     : isActive
                     ? 'bg-[#0f2a3e] text-white'
-                    : 'bg-gray-200 text-gray-500'
+                    : 'bg-surface-muted text-fg-muted'
                 }`}
               >
                 {isDone ? '✓' : i + 1}
               </div>
               <span
                 className={`text-sm font-medium ${
-                  isActive || isDone ? 'text-gray-900' : 'text-gray-400'
+                  isActive || isDone ? 'text-fg' : 'text-fg-subtle'
                 }`}
               >
                 {label}
@@ -283,7 +283,7 @@ export default function BlueprintUploadPage() {
               {i < 2 && (
                 <div
                   className={`flex-1 h-0.5 ${
-                    isDone ? 'bg-green-300' : 'bg-gray-200'
+                    isDone ? 'bg-green-300' : 'bg-surface-muted'
                   }`}
                 />
               )}
@@ -295,12 +295,12 @@ export default function BlueprintUploadPage() {
       {/* Step 1: Project Selection */}
       {step === 'select-project' && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-fg mb-4">
             Which project is this blueprint for?
           </h2>
           {projects.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">
+              <p className="text-fg-muted mb-4">
                 You need a project to upload blueprints to.
               </p>
               <Link
@@ -322,11 +322,11 @@ export default function BlueprintUploadPage() {
                   className={`w-full text-left p-4 rounded-xl border-2 transition ${
                     selectedProject === project.id
                       ? 'border-[#0f2a3e] bg-[#0f2a3e]/5'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-border hover:border-border-strong'
                   }`}
                 >
-                  <p className="font-medium text-gray-900">{project.name}</p>
-                  <p className="text-sm text-gray-500">{project.address}</p>
+                  <p className="font-medium text-fg">{project.name}</p>
+                  <p className="text-sm text-fg-muted">{project.address}</p>
                 </button>
               ))}
             </div>
@@ -340,8 +340,8 @@ export default function BlueprintUploadPage() {
           {/* Selected Project Banner */}
           <div className="bg-[#0f2a3e]/5 border border-[#0f2a3e]/20 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 uppercase font-medium">Project</p>
-              <p className="font-medium text-gray-900">
+              <p className="text-xs text-fg-muted uppercase font-medium">Project</p>
+              <p className="font-medium text-fg">
                 {projects.find((p) => p.id === selectedProject)?.name}
               </p>
             </div>
@@ -363,7 +363,7 @@ export default function BlueprintUploadPage() {
             className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition ${
               isDragging
                 ? 'border-[#C6A24E] bg-orange-50'
-                : 'border-gray-300 hover:border-[#0f2a3e] hover:bg-gray-50'
+                : 'border-border-strong hover:border-[#0f2a3e] hover:bg-surface-muted'
             }`}
           >
             <input
@@ -378,10 +378,10 @@ export default function BlueprintUploadPage() {
               className="hidden"
             />
             <div className="text-5xl mb-4">📐</div>
-            <p className="text-lg font-medium text-gray-700">
+            <p className="text-lg font-medium text-fg-muted">
               {isDragging ? 'Drop files here' : 'Drag & drop blueprints here'}
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-fg-muted mt-1">
               or click to browse • PDF, PNG, JPG up to 50 MB each
             </p>
           </div>
@@ -402,7 +402,7 @@ export default function BlueprintUploadPage() {
                   className="flex items-center gap-4 bg-white rounded-xl border p-4"
                 >
                   {/* Preview / Icon */}
-                  <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-lg bg-surface-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {f.preview ? (
                       // Blob URL from FileReader — next/image would need the
                       // loader disabled; raw img is the right call here.
@@ -422,10 +422,10 @@ export default function BlueprintUploadPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
+                    <p className="font-medium text-fg truncate">
                       {f.file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-fg-muted">
                       {(f.file.size / 1024 / 1024).toFixed(1)} MB •{' '}
                       {f.file.type.split('/')[1]?.toUpperCase()}
                     </p>
@@ -436,7 +436,7 @@ export default function BlueprintUploadPage() {
 
                   <button
                     onClick={() => removeFile(i)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                    className="p-2 text-fg-subtle hover:text-red-500 hover:bg-red-50 rounded-lg transition"
                   >
                     ✕
                   </button>
@@ -465,18 +465,18 @@ export default function BlueprintUploadPage() {
             {step === 'done' ? (
               <>
                 <div className="text-5xl mb-4">✅</div>
-                <h2 className="text-xl font-bold text-gray-900">Takeoff Complete!</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-xl font-bold text-fg">Takeoff Complete!</h2>
+                <p className="text-sm text-fg-muted mt-1">
                   Redirecting to your results...
                 </p>
               </>
             ) : (
               <>
                 <div className="text-5xl mb-4 animate-pulse">🤖</div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-fg">
                   {analyzing ? 'AI is Analyzing Your Blueprint...' : 'Uploading...'}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-fg-muted mt-1">
                   {analyzing
                     ? 'Reading dimensions, identifying materials, calculating quantities'
                     : 'Sending your files to the server'}
@@ -489,14 +489,14 @@ export default function BlueprintUploadPage() {
           <div className="space-y-3">
             {files.map((f, i) => (
               <div key={i} className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-surface-muted flex items-center justify-center text-lg flex-shrink-0">
                   {f.progress === 100 ? '✅' : f.error ? '❌' : '📄'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-fg truncate">
                     {f.file.name}
                   </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                  <div className="w-full bg-surface-muted rounded-full h-2 mt-1">
                     <div
                       className={`h-2 rounded-full transition-all duration-500 ${
                         f.error
@@ -512,7 +512,7 @@ export default function BlueprintUploadPage() {
                     <p className="text-xs text-red-600 mt-1">{f.error}</p>
                   )}
                 </div>
-                <span className="text-sm font-medium text-gray-500 w-10 text-right">
+                <span className="text-sm font-medium text-fg-muted w-10 text-right">
                   {f.progress}%
                 </span>
               </div>

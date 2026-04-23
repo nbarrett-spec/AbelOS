@@ -46,7 +46,7 @@ const NOTIF_COLORS: Record<string, { bg: string; text: string; border: string }>
   invoice_created: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-l-4 border-slate-400' },
   invoice_overdue: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-l-4 border-red-400' },
   payment_received: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-l-4 border-emerald-400' },
-  general: { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-l-4 border-gray-400' },
+  general: { bg: 'bg-surface-muted', text: 'text-fg-muted', border: 'border-l-4 border-gray-400' },
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -189,13 +189,13 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-surface-muted">
+      <div className="bg-white border-b border-border sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-              <p className="text-gray-500 mt-1">
+              <h1 className="text-3xl font-bold text-fg">Notifications</h1>
+              <p className="text-fg-muted mt-1">
                 {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}` : 'All caught up!'}
               </p>
             </div>
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'all'
                 ? 'bg-brand text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
+                : 'bg-white text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
             All ({notifications.length})
@@ -228,7 +228,7 @@ export default function NotificationsPage() {
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'unread'
                 ? 'bg-brand text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
+                : 'bg-white text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
             Unread ({notifications.filter(n => !n.read).length})
@@ -240,16 +240,16 @@ export default function NotificationsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-4 border-gray-300 border-t-signal rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-500">Loading notifications...</p>
+              <div className="w-8 h-8 border-4 border-border-strong border-t-signal rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-fg-muted">Loading notifications...</p>
             </div>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 py-12 text-center">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white rounded-lg border border-border py-12 text-center">
+            <svg className="w-16 h-16 text-fg-subtle mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            <p className="text-gray-500 font-medium">
+            <p className="text-fg-muted font-medium">
               {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
             </p>
           </div>
@@ -278,7 +278,7 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={notif.id}
-                  className={`${colors.border} bg-white border border-gray-200 rounded-lg p-4 transition hover:shadow-md cursor-pointer ${
+                  className={`${colors.border} bg-white border border-border rounded-lg p-4 transition hover:shadow-md cursor-pointer ${
                     !notif.read ? 'ring-1 ring-signal/20' : ''
                   }`}
                   onClick={() => handleNotificationClick(notif)}
@@ -295,7 +295,7 @@ export default function NotificationsPage() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => { }}
-                        className="w-5 h-5 rounded border-gray-300 text-signal focus:ring-signal/20 cursor-pointer"
+                        className="w-5 h-5 rounded border-border-strong text-signal focus:ring-signal/20 cursor-pointer"
                       />
                     </div>
 
@@ -307,15 +307,15 @@ export default function NotificationsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className={`font-semibold ${!notif.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                            <p className={`font-semibold ${!notif.read ? 'text-fg' : 'text-fg-muted'}`}>
                               {notif.title}
                             </p>
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-muted text-fg-muted">
                               {label}
                             </span>
                           </div>
-                          <p className="text-gray-600 mt-1 text-sm">{notif.message}</p>
-                          <p className="text-gray-400 text-xs mt-2">{getTimeAgo(notif.createdAt)}</p>
+                          <p className="text-fg-muted mt-1 text-sm">{notif.message}</p>
+                          <p className="text-fg-subtle text-xs mt-2">{getTimeAgo(notif.createdAt)}</p>
                         </div>
 
                         {!notif.read && (

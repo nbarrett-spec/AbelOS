@@ -164,10 +164,10 @@ export default function CartPage() {
   if (cart.items.length === 0) {
     return (
       <div className="max-w-2xl mx-auto py-12">
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-xl border border-border p-8 text-center">
           <div className="text-5xl mb-4">🛒</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-fg mb-2">Your Cart is Empty</h2>
+          <p className="text-fg-muted mb-6">
             Browse our product catalog and add items to get started.
           </p>
           <Link
@@ -189,7 +189,7 @@ export default function CartPage() {
       </Link>
 
       {/* Header */}
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Review Cart</h1>
+      <h1 className="text-3xl font-bold text-fg mb-6">Review Cart</h1>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -198,14 +198,14 @@ export default function CartPage() {
       )}
 
       {/* Cart Items Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700">Items ({cart.items.length})</h3>
+      <div className="bg-white rounded-xl border border-border overflow-hidden mb-6">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="text-sm font-semibold text-fg-muted">Items ({cart.items.length})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr className="text-xs text-gray-500 uppercase tracking-wider">
+            <thead className="bg-surface-muted">
+              <tr className="text-xs text-fg-muted uppercase tracking-wider">
                 <th className="px-5 py-3 text-left font-semibold">Product</th>
                 <th className="px-5 py-3 text-center font-semibold">Quantity</th>
                 <th className="px-5 py-3 text-right font-semibold">Unit Price</th>
@@ -213,18 +213,18 @@ export default function CartPage() {
                 <th className="px-5 py-3 text-center font-semibold">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {cart.items.map(item => (
                 <tr key={item.productId}>
                   <td className="px-5 py-4">
-                    <p className="text-sm font-medium text-gray-900">{item.description}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">SKU: {item.sku}</p>
+                    <p className="text-sm font-medium text-fg">{item.description}</p>
+                    <p className="text-xs text-fg-subtle mt-0.5">SKU: {item.sku}</p>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded border border-gray-300 hover:bg-gray-50 transition"
+                        className="w-8 h-8 flex items-center justify-center rounded border border-border-strong hover:bg-surface-muted transition"
                       >
                         −
                       </button>
@@ -235,18 +235,18 @@ export default function CartPage() {
                           const val = parseInt(e.target.value)
                           if (!isNaN(val) && val > 0) handleUpdateQuantity(item.productId, val)
                         }}
-                        className="w-12 text-center px-2 py-1 border border-gray-300 rounded text-sm"
+                        className="w-12 text-center px-2 py-1 border border-border-strong rounded text-sm"
                       />
                       <button
                         onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded border border-gray-300 hover:bg-gray-50 transition"
+                        className="w-8 h-8 flex items-center justify-center rounded border border-border-strong hover:bg-surface-muted transition"
                       >
                         +
                       </button>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-sm text-gray-700 text-right">{fmt(item.unitPrice)}</td>
-                  <td className="px-5 py-4 text-sm font-semibold text-gray-900 text-right">
+                  <td className="px-5 py-4 text-sm text-fg-muted text-right">{fmt(item.unitPrice)}</td>
+                  <td className="px-5 py-4 text-sm font-semibold text-fg text-right">
                     {fmt(item.unitPrice * item.quantity)}
                   </td>
                   <td className="px-5 py-4 text-center">
@@ -265,17 +265,17 @@ export default function CartPage() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-xl border border-border p-6 mb-6">
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Items ({cart.items.length})</span>
-            <span className="text-sm font-semibold text-gray-900">{fmt(subtotal)}</span>
+            <span className="text-sm font-medium text-fg-muted">Items ({cart.items.length})</span>
+            <span className="text-sm font-semibold text-fg">{fmt(subtotal)}</span>
           </div>
           <div className="flex justify-between items-center border-t pt-3">
-            <span className="text-base font-bold text-gray-900">Subtotal</span>
+            <span className="text-base font-bold text-fg">Subtotal</span>
             <span className="text-base font-bold text-[#0f2a3e]">{fmt(subtotal)}</span>
           </div>
-          <p className="text-xs text-gray-500 pt-2">
+          <p className="text-xs text-fg-muted pt-2">
             Tax will be calculated and final pricing shown after generating a quote based on your project details.
           </p>
         </div>
@@ -291,7 +291,7 @@ export default function CartPage() {
         </button>
         <Link
           href="/catalog"
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-4 px-6 rounded-lg transition text-center"
+          className="flex-1 bg-surface-muted hover:bg-gray-300 text-fg font-bold py-4 px-6 rounded-lg transition text-center"
         >
           Continue Shopping
         </Link>
@@ -303,11 +303,11 @@ export default function CartPage() {
       {/* Generate Quote Modal */}
       {showQuoteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Generate Quote</h3>
+          <div className="bg-white rounded-xl border border-border max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-fg mb-4">Generate Quote</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-fg-muted mb-2">
                 Project Name <span className="text-red-600">*</span>
               </label>
               <input
@@ -315,20 +315,20 @@ export default function CartPage() {
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="e.g., Kitchen Renovation, Deck Project..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 autoFocus
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-fg-muted mb-2">
                 Delivery Notes (Optional)
               </label>
               <textarea
                 value={deliveryNotes}
                 onChange={e => setDeliveryNotes(e.target.value)}
                 placeholder="e.g., Preferred delivery dates, special instructions..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 rows={3}
               />
             </div>
@@ -349,7 +349,7 @@ export default function CartPage() {
               <button
                 onClick={() => setShowQuoteModal(false)}
                 disabled={generating}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
               >
                 Cancel
               </button>

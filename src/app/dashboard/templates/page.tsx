@@ -207,8 +207,8 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Order Templates</h1>
-          <p className="text-gray-600 text-sm mt-1">Save and reuse your common orders</p>
+          <h1 className="text-3xl font-bold text-fg">Order Templates</h1>
+          <p className="text-fg-muted text-sm mt-1">Save and reuse your common orders</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -226,10 +226,10 @@ export default function TemplatesPage() {
 
       {/* Empty State */}
       {templates.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl border border-border p-12 text-center">
           <div className="text-5xl mb-4">📋</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Templates Yet</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-fg mb-2">No Templates Yet</h2>
+          <p className="text-fg-muted mb-6">
             Create templates from your orders to quickly reorder common products.
           </p>
           <button
@@ -242,12 +242,12 @@ export default function TemplatesPage() {
       ) : (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {templates.map(template => (
-            <div key={template.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition">
+            <div key={template.id} className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg transition">
               {/* Card Header */}
-              <div className="p-5 border-b border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 line-clamp-2">{template.name}</h3>
+              <div className="p-5 border-b border-border">
+                <h3 className="text-lg font-bold text-fg line-clamp-2">{template.name}</h3>
                 {template.description && (
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{template.description}</p>
+                  <p className="text-sm text-fg-muted mt-1 line-clamp-2">{template.description}</p>
                 )}
               </div>
 
@@ -255,11 +255,11 @@ export default function TemplatesPage() {
               <div className="p-5 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold">Items</p>
-                    <p className="text-lg font-bold text-gray-900">{template.itemCount}</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold">Items</p>
+                    <p className="text-lg font-bold text-fg">{template.itemCount}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold">Est. Total</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold">Est. Total</p>
                     <p className="text-lg font-bold text-[#0f2a3e]">{fmt(template.estimatedTotal)}</p>
                   </div>
                 </div>
@@ -274,14 +274,14 @@ export default function TemplatesPage() {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-fg-subtle">
                   Created {formatDate(template.createdAt)}
                 </p>
               </div>
 
               {/* Expanded Items View */}
               {expandedTemplateId === template.id && (
-                <div className="border-t border-gray-100 bg-gray-50 p-4">
+                <div className="border-t border-border bg-surface-muted p-4">
                   {loadingItems ? (
                     <div className="flex justify-center py-4">
                       <div className="w-5 h-5 border-2 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
@@ -289,13 +289,13 @@ export default function TemplatesPage() {
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {templateItems.map(item => (
-                        <div key={item.id} className="text-xs bg-white rounded p-2 border border-gray-200">
-                          <p className="font-semibold text-gray-900">{item.productName}</p>
-                          <p className="text-gray-600">SKU: {item.sku}</p>
-                          <p className="text-gray-700">
+                        <div key={item.id} className="text-xs bg-white rounded p-2 border border-border">
+                          <p className="font-semibold text-fg">{item.productName}</p>
+                          <p className="text-fg-muted">SKU: {item.sku}</p>
+                          <p className="text-fg-muted">
                             {item.quantity}x @ {fmt(item.unitPrice)} = {fmt(item.estimatedLineTotal)}
                           </p>
-                          {item.notes && <p className="text-gray-500 italic">Note: {item.notes}</p>}
+                          {item.notes && <p className="text-fg-muted italic">Note: {item.notes}</p>}
                         </div>
                       ))}
                     </div>
@@ -304,7 +304,7 @@ export default function TemplatesPage() {
               )}
 
               {/* Card Footer - Actions */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-2">
+              <div className="p-4 border-t border-border bg-surface-muted flex gap-2">
                 <button
                   onClick={() => handleLoadToCart(template.id)}
                   disabled={loadingToCartId === template.id}
@@ -317,13 +317,13 @@ export default function TemplatesPage() {
                 </button>
                 <button
                   onClick={() => handleExpandTemplate(template.id)}
-                  className="flex-1 bg-white hover:bg-gray-100 text-gray-700 font-semibold text-sm py-2 rounded border border-gray-300 transition"
+                  className="flex-1 bg-white hover:bg-surface-muted text-fg-muted font-semibold text-sm py-2 rounded border border-border-strong transition"
                 >
                   {expandedTemplateId === template.id ? 'Hide' : 'View'} Items
                 </button>
                 <button
                   onClick={() => handleDeleteTemplate(template.id)}
-                  className="px-3 bg-white hover:bg-red-50 text-red-600 font-semibold text-sm py-2 rounded border border-gray-300 transition"
+                  className="px-3 bg-white hover:bg-red-50 text-red-600 font-semibold text-sm py-2 rounded border border-border-strong transition"
                   title="Delete template"
                 >
                   ×
@@ -337,11 +337,11 @@ export default function TemplatesPage() {
       {/* Create Template Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Create New Template</h3>
+          <div className="bg-white rounded-xl border border-border max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-fg mb-4">Create New Template</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-fg-muted mb-2">
                 Template Name <span className="text-red-600">*</span>
               </label>
               <input
@@ -349,26 +349,26 @@ export default function TemplatesPage() {
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
                 placeholder="e.g., Kitchen Remodel Standard, Deck Setup..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 autoFocus
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-fg-muted mb-2">
                 Description (Optional)
               </label>
               <textarea
                 value={formDescription}
                 onChange={e => setFormDescription(e.target.value)}
                 placeholder="e.g., Our standard package for kitchen renovations..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                 rows={3}
               />
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-fg-muted mb-3">
                 Create from:
               </label>
               <div className="space-y-2">
@@ -384,7 +384,7 @@ export default function TemplatesPage() {
                     }}
                     className="rounded"
                   />
-                  <span className="text-sm text-gray-700">Start from scratch (add items later)</span>
+                  <span className="text-sm text-fg-muted">Start from scratch (add items later)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -398,20 +398,20 @@ export default function TemplatesPage() {
                     }}
                     className="rounded"
                   />
-                  <span className="text-sm text-gray-700">Copy items from an existing order</span>
+                  <span className="text-sm text-fg-muted">Copy items from an existing order</span>
                 </label>
               </div>
             </div>
 
             {formMode === 'fromOrder' && (
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-fg-muted mb-2">
                   Select Order <span className="text-red-600">*</span>
                 </label>
                 <select
                   value={formSourceOrderId}
                   onChange={e => setFormSourceOrderId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
                   disabled={loadingOrders}
                 >
                   <option value="">
@@ -443,7 +443,7 @@ export default function TemplatesPage() {
                   setError('')
                 }}
                 disabled={creatingTemplate}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
               >
                 Cancel
               </button>

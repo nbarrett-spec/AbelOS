@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  try {
   const staffRole = request.headers.get('x-staff-role') || 'VIEWER'
   const staffRoles = parseRoles(request.headers.get('x-staff-roles') || staffRole) as StaffRole[]
 
@@ -52,4 +53,8 @@ export async function GET(request: NextRequest) {
     })),
     total: sops.length,
   })
+  } catch (error: any) {
+    console.error('[SOPs] Error:', error)
+    return NextResponse.json({ error: 'Failed to load SOPs' }, { status: 500 })
+  }
 }

@@ -49,11 +49,11 @@ function fmt(n: number) {
 }
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string; icon: string }> = {
-  DRAFT: { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-700', label: 'Draft', icon: '📝' },
+  DRAFT: { bg: 'bg-surface-muted border-border', text: 'text-fg-muted', label: 'Draft', icon: '📝' },
   SENT: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Ready for Review', icon: '📬' },
   APPROVED: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Approved', icon: '✅' },
   REJECTED: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Rejected', icon: '❌' },
-  EXPIRED: { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-500', label: 'Expired', icon: '⏰' },
+  EXPIRED: { bg: 'bg-surface-muted border-border', text: 'text-fg-muted', label: 'Expired', icon: '⏰' },
   ORDERED: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', label: 'Ordered', icon: '📦' },
 }
 
@@ -130,7 +130,7 @@ function SignaturePad({ onSignature }: { onSignature: (data: string) => void }) 
 
   return (
     <div>
-      <div className="relative border-2 border-dashed border-gray-300 rounded-lg bg-white overflow-hidden">
+      <div className="relative border-2 border-dashed border-border-strong rounded-lg bg-white overflow-hidden">
         <canvas
           ref={canvasRef}
           width={560}
@@ -147,13 +147,13 @@ function SignaturePad({ onSignature }: { onSignature: (data: string) => void }) 
         />
         {!hasDrawn && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-gray-400 text-sm">Sign here — draw your signature above</p>
+            <p className="text-fg-subtle text-sm">Sign here — draw your signature above</p>
           </div>
         )}
       </div>
       {hasDrawn && (
         <button type="button" onClick={clearSignature}
-          className="mt-2 text-xs text-gray-500 hover:text-red-500 transition-colors">
+          className="mt-2 text-xs text-fg-muted hover:text-red-500 transition-colors">
           Clear signature
         </button>
       )}
@@ -306,13 +306,13 @@ export default function QuoteDetailPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
+          <div className="h-8 bg-surface-muted rounded w-1/3" />
+          <div className="h-4 bg-surface-muted rounded w-1/2" />
           <div className="grid grid-cols-2 gap-6 mt-6">
-            <div className="h-40 bg-gray-200 rounded-xl" />
-            <div className="h-40 bg-gray-200 rounded-xl" />
+            <div className="h-40 bg-surface-muted rounded-xl" />
+            <div className="h-40 bg-surface-muted rounded-xl" />
           </div>
-          <div className="h-60 bg-gray-200 rounded-xl mt-4" />
+          <div className="h-60 bg-surface-muted rounded-xl mt-4" />
         </div>
       </div>
     )
@@ -322,8 +322,8 @@ export default function QuoteDetailPage() {
     return (
       <div className="max-w-3xl mx-auto py-12 text-center">
         <div className="text-5xl mb-4">📋</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Quote Not Found</h2>
-        <p className="text-gray-500 mb-6">{error || 'This quote could not be loaded.'}</p>
+        <h2 className="text-xl font-bold text-fg mb-2">Quote Not Found</h2>
+        <p className="text-fg-muted mb-6">{error || 'This quote could not be loaded.'}</p>
         <Link href="/dashboard/quotes" className="text-[#0f2a3e] font-semibold hover:underline">
           &larr; Back to Quotes
         </Link>
@@ -345,11 +345,11 @@ export default function QuoteDetailPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-green-700 mb-2">Quote Approved & Order Created</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-fg-muted mb-6">
             Your signature has been recorded and the order has been submitted to the Abel Lumber fulfillment team.
           </p>
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-500">Order Number</p>
+          <div className="bg-surface-muted rounded-lg p-4 mb-6">
+            <p className="text-sm text-fg-muted">Order Number</p>
             <p className="text-xl font-mono font-bold text-[#0f2a3e]">{orderSuccess.orderNumber}</p>
           </div>
           <div className="flex flex-col gap-3">
@@ -370,7 +370,7 @@ export default function QuoteDetailPage() {
 
   // ─── Quote Details ──────────────────────────────────────────────
 
-  const cfg = STATUS_CONFIG[quote.status] || { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-700', label: quote.status, icon: '📋' }
+  const cfg = STATUS_CONFIG[quote.status] || { bg: 'bg-surface-muted border-border', text: 'text-fg-muted', label: quote.status, icon: '📋' }
   const isExpired = quote.validUntil && new Date(quote.validUntil) < new Date()
   const canTakeAction = (quote.status === 'SENT' || quote.status === 'DRAFT') && !isExpired
 
@@ -401,8 +401,8 @@ export default function QuoteDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{quote.quoteNumber}</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl font-bold text-fg">{quote.quoteNumber}</h1>
+          <p className="text-sm text-fg-muted mt-1">
             Created {new Date(quote.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
             {quote.project?.name && <span> &middot; {quote.project.name}</span>}
           </p>
@@ -461,17 +461,17 @@ export default function QuoteDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Project Info */}
         {quote.project && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Project Information</h3>
+          <div className="bg-white rounded-xl border border-border p-5">
+            <h3 className="text-sm font-semibold text-fg-muted mb-3">Project Information</h3>
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-gray-500">Project Name</p>
-                <p className="text-sm font-semibold text-gray-900">{quote.project.name}</p>
+                <p className="text-xs text-fg-muted">Project Name</p>
+                <p className="text-sm font-semibold text-fg">{quote.project.name}</p>
               </div>
               {quote.project.jobAddress && (
                 <div>
-                  <p className="text-xs text-gray-500">Address</p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-xs text-fg-muted">Address</p>
+                  <p className="text-sm text-fg">
                     {quote.project.jobAddress}
                     {quote.project.city && `, ${quote.project.city}`}
                     {quote.project.state && `, ${quote.project.state}`}
@@ -480,8 +480,8 @@ export default function QuoteDetailPage() {
               )}
               {quote.project.planName && (
                 <div>
-                  <p className="text-xs text-gray-500">Plan</p>
-                  <p className="text-sm text-gray-900">{quote.project.planName}</p>
+                  <p className="text-xs text-fg-muted">Plan</p>
+                  <p className="text-sm text-fg">{quote.project.planName}</p>
                 </div>
               )}
             </div>
@@ -489,29 +489,29 @@ export default function QuoteDetailPage() {
         )}
 
         {/* Quote Summary */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Quote Summary</h3>
+        <div className="bg-white rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-fg-muted mb-3">Quote Summary</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Subtotal</span>
-              <span className="text-sm font-medium text-gray-900">{fmt(quote.subtotal)}</span>
+              <span className="text-sm text-fg-muted">Subtotal</span>
+              <span className="text-sm font-medium text-fg">{fmt(quote.subtotal)}</span>
             </div>
             {quote.termAdjustment !== 0 && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Payment Term Adjustment</span>
+                <span className="text-sm text-fg-muted">Payment Term Adjustment</span>
                 <span className={`text-sm font-medium ${quote.termAdjustment > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {quote.termAdjustment > 0 ? '+' : ''}{fmt(quote.termAdjustment)}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center border-t pt-2">
-              <span className="text-sm font-bold text-gray-900">Total</span>
+              <span className="text-sm font-bold text-fg">Total</span>
               <span className="text-lg font-bold text-[#0f2a3e]">{fmt(quote.total)}</span>
             </div>
             {quote.validUntil && (
               <div className="pt-2 border-t">
-                <p className="text-xs text-gray-500">Valid Until</p>
-                <p className={`text-sm font-medium ${isExpired ? 'text-red-600' : 'text-gray-900'}`}>
+                <p className="text-xs text-fg-muted">Valid Until</p>
+                <p className={`text-sm font-medium ${isExpired ? 'text-red-600' : 'text-fg'}`}>
                   {new Date(quote.validUntil).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   {isExpired && ' (Expired)'}
                 </p>
@@ -541,14 +541,14 @@ export default function QuoteDetailPage() {
       )}
 
       {/* Line Items */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700">Quote Items ({quote.items?.length || 0})</h3>
+      <div className="bg-white rounded-xl border border-border overflow-hidden mb-6">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="text-sm font-semibold text-fg-muted">Quote Items ({quote.items?.length || 0})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr className="text-xs text-gray-500 uppercase tracking-wider">
+            <thead className="bg-surface-muted">
+              <tr className="text-xs text-fg-muted uppercase tracking-wider">
                 <th className="px-5 py-3 text-left font-semibold">Description</th>
                 {quote.items.some(i => i.location) && (
                   <th className="px-5 py-3 text-left font-semibold">Location</th>
@@ -558,38 +558,38 @@ export default function QuoteDetailPage() {
                 <th className="px-5 py-3 text-right font-semibold">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {quote.items.map(item => (
-                <tr key={item.id} className="hover:bg-gray-50/50">
+                <tr key={item.id} className="hover:bg-surface-muted/50">
                   <td className="px-5 py-3">
-                    <p className="text-sm font-medium text-gray-900">{item.description}</p>
-                    {item.sku && <p className="text-[11px] text-gray-400 font-mono mt-0.5">{item.sku}</p>}
+                    <p className="text-sm font-medium text-fg">{item.description}</p>
+                    {item.sku && <p className="text-[11px] text-fg-subtle font-mono mt-0.5">{item.sku}</p>}
                   </td>
                   {quote.items.some(i => i.location) && (
-                    <td className="px-5 py-3 text-sm text-gray-600">{item.location || '—'}</td>
+                    <td className="px-5 py-3 text-sm text-fg-muted">{item.location || '—'}</td>
                   )}
-                  <td className="px-5 py-3 text-sm text-gray-700 text-right">{item.quantity}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700 text-right">{fmt(item.unitPrice)}</td>
-                  <td className="px-5 py-3 text-sm font-semibold text-gray-900 text-right">{fmt(item.lineTotal)}</td>
+                  <td className="px-5 py-3 text-sm text-fg-muted text-right">{item.quantity}</td>
+                  <td className="px-5 py-3 text-sm text-fg-muted text-right">{fmt(item.unitPrice)}</td>
+                  <td className="px-5 py-3 text-sm font-semibold text-fg text-right">{fmt(item.lineTotal)}</td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-gray-50 border-t border-gray-200">
+            <tfoot className="bg-surface-muted border-t border-border">
               <tr>
                 <td colSpan={quote.items.some(i => i.location) ? 3 : 2} />
-                <td className="px-5 py-3 text-sm font-semibold text-gray-700 text-right">Subtotal</td>
-                <td className="px-5 py-3 text-sm font-semibold text-gray-900 text-right">{fmt(quote.subtotal)}</td>
+                <td className="px-5 py-3 text-sm font-semibold text-fg-muted text-right">Subtotal</td>
+                <td className="px-5 py-3 text-sm font-semibold text-fg text-right">{fmt(quote.subtotal)}</td>
               </tr>
               {quote.termAdjustment !== 0 && (
                 <tr>
                   <td colSpan={quote.items.some(i => i.location) ? 3 : 2} />
-                  <td className="px-5 py-3 text-sm text-gray-500 text-right">Term Adj.</td>
-                  <td className="px-5 py-3 text-sm text-gray-700 text-right">{fmt(quote.termAdjustment)}</td>
+                  <td className="px-5 py-3 text-sm text-fg-muted text-right">Term Adj.</td>
+                  <td className="px-5 py-3 text-sm text-fg-muted text-right">{fmt(quote.termAdjustment)}</td>
                 </tr>
               )}
               <tr>
                 <td colSpan={quote.items.some(i => i.location) ? 3 : 2} />
-                <td className="px-5 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
+                <td className="px-5 py-3 text-sm font-bold text-fg text-right">Total</td>
                 <td className="px-5 py-3 text-lg font-bold text-[#0f2a3e] text-right">{fmt(quote.total)}</td>
               </tr>
             </tfoot>
@@ -602,7 +602,7 @@ export default function QuoteDetailPage() {
         <div className="flex gap-3 mb-8">
           <button
             onClick={() => setShowChangesModal(true)}
-            className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors text-center"
+            className="flex-1 px-4 py-3 border border-border-strong text-fg-muted font-semibold rounded-lg hover:bg-surface-muted transition-colors text-center"
           >
             Request Changes
           </button>
@@ -625,10 +625,10 @@ export default function QuoteDetailPage() {
       {showApproveModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Approve Quote</h2>
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-bold text-fg">Approve Quote</h2>
               <button onClick={() => { setShowApproveModal(false); setError('') }}
-                className="text-gray-400 hover:text-gray-600">
+                className="text-fg-subtle hover:text-fg-muted">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -644,7 +644,7 @@ export default function QuoteDetailPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Your Signature *</label>
+                <label className="block text-sm font-semibold text-fg mb-2">Your Signature *</label>
                 <SignaturePad onSignature={setSignatureData} />
               </div>
 
@@ -656,7 +656,7 @@ export default function QuoteDetailPage() {
 
               <div className="flex gap-3 pt-2">
                 <button onClick={() => { setShowApproveModal(false); setError('') }} disabled={actionInProgress}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50">
+                  className="flex-1 px-4 py-2.5 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted disabled:opacity-50">
                   Cancel
                 </button>
                 <button onClick={handleApprove} disabled={actionInProgress || !signatureData}
@@ -674,10 +674,10 @@ export default function QuoteDetailPage() {
       {showRejectModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Decline Quote</h2>
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-bold text-fg">Decline Quote</h2>
               <button onClick={() => { setShowRejectModal(false); setError('') }}
-                className="text-gray-400 hover:text-gray-600">
+                className="text-fg-subtle hover:text-fg-muted">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -685,18 +685,18 @@ export default function QuoteDetailPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-fg-muted">
                 Please let us know why this quote doesn't work for you. This feedback helps us prepare better quotes in the future.
               </p>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Reason for declining *</label>
+                <label className="block text-sm font-semibold text-fg mb-2">Reason for declining *</label>
                 <textarea
                   value={rejectionReason}
                   onChange={e => setRejectionReason(e.target.value)}
                   placeholder="e.g., Pricing is above budget, need different products, project scope changed..."
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
                 />
               </div>
 
@@ -708,7 +708,7 @@ export default function QuoteDetailPage() {
 
               <div className="flex gap-3 pt-2">
                 <button onClick={() => { setShowRejectModal(false); setError('') }} disabled={actionInProgress}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50">
+                  className="flex-1 px-4 py-2.5 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted disabled:opacity-50">
                   Cancel
                 </button>
                 <button onClick={handleReject} disabled={actionInProgress || !rejectionReason.trim()}
@@ -726,10 +726,10 @@ export default function QuoteDetailPage() {
       {showChangesModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Request Changes</h2>
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-bold text-fg">Request Changes</h2>
               <button onClick={() => { setShowChangesModal(false); setError('') }}
-                className="text-gray-400 hover:text-gray-600">
+                className="text-fg-subtle hover:text-fg-muted">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -737,18 +737,18 @@ export default function QuoteDetailPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-fg-muted">
                 Describe what changes you'd like Abel Lumber to make. The quote will be returned to Draft status for revision.
               </p>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">What changes do you need? *</label>
+                <label className="block text-sm font-semibold text-fg mb-2">What changes do you need? *</label>
                 <textarea
                   value={changeNotes}
                   onChange={e => setChangeNotes(e.target.value)}
                   placeholder="e.g., Please swap the 2-panel doors for Shaker style, add hardware for 3 additional interior doors, adjust quantity on exterior door to 2..."
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] resize-none"
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] resize-none"
                 />
               </div>
 
@@ -760,7 +760,7 @@ export default function QuoteDetailPage() {
 
               <div className="flex gap-3 pt-2">
                 <button onClick={() => { setShowChangesModal(false); setError('') }} disabled={actionInProgress}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50">
+                  className="flex-1 px-4 py-2.5 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted disabled:opacity-50">
                   Cancel
                 </button>
                 <button onClick={handleRequestChanges} disabled={actionInProgress || !changeNotes.trim()}

@@ -191,8 +191,8 @@ export default function OnboardingPage() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">All set!</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-fg mb-2">All set!</h2>
+          <p className="text-fg-muted mb-6">
             Thank you for completing your onboarding. Your account is ready to use.
           </p>
           <Link
@@ -211,8 +211,8 @@ export default function OnboardingPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Abel Lumber</h1>
-          <p className="text-gray-600">Let's get your account set up in a few minutes</p>
+          <h1 className="text-3xl font-bold text-fg mb-2">Welcome to Abel Lumber</h1>
+          <p className="text-fg-muted">Let's get your account set up in a few minutes</p>
         </div>
 
         {/* Step Indicator */}
@@ -237,18 +237,18 @@ export default function OnboardingPage() {
                         ? 'bg-brand text-white'
                         : isPast
                         ? 'bg-abel-green text-white'
-                        : 'bg-gray-200 text-gray-600'
+                        : 'bg-surface-muted text-fg-muted'
                     }`}
                   >
                     {isPast ? '✓' : idx + 1}
                   </div>
-                  <div className="text-xs font-medium text-gray-700 ml-2 hidden sm:block">
+                  <div className="text-xs font-medium text-fg-muted ml-2 hidden sm:block">
                     {labels[step]}
                   </div>
                   {idx < STEP_ORDER.length - 1 && (
                     <div
                       className={`flex-1 h-1 mx-2 rounded ${
-                        isPast ? 'bg-abel-green' : 'bg-gray-200'
+                        isPast ? 'bg-abel-green' : 'bg-surface-muted'
                       }`}
                     />
                   )}
@@ -269,96 +269,96 @@ export default function OnboardingPage() {
           {/* Company Info Step */}
           {currentStep === 'company' && (
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Company Information</h2>
+              <h2 className="text-xl font-bold text-fg mb-6">Company Information</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg-muted mb-1">
                     Company Name
                   </label>
                   <input
                     type="text"
                     value={data.company.name}
                     onChange={e => handleCompanyChange('name', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="Your company name"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg-muted mb-1">
                     Street Address
                   </label>
                   <input
                     type="text"
                     value={data.company.address}
                     onChange={e => handleCompanyChange('address', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="123 Main St"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <label className="block text-sm font-medium text-fg-muted mb-1">City</label>
                   <input
                     type="text"
                     value={data.company.city}
                     onChange={e => handleCompanyChange('city', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="Dallas"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <label className="block text-sm font-medium text-fg-muted mb-1">State</label>
                   <input
                     type="text"
                     maxLength={2}
                     value={data.company.state}
                     onChange={e => handleCompanyChange('state', e.target.value.toUpperCase())}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="TX"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
+                  <label className="block text-sm font-medium text-fg-muted mb-1">ZIP</label>
                   <input
                     type="text"
                     value={data.company.zip}
                     onChange={e => handleCompanyChange('zip', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="75201"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg-muted mb-1">
                     Primary Contact Name
                   </label>
                   <input
                     type="text"
                     value={data.company.contactName}
                     onChange={e => handleCompanyChange('contactName', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="John Smith"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg-muted mb-1">
                     Contact Email
                   </label>
                   <input
                     type="email"
                     value={data.company.contactEmail}
                     onChange={e => handleCompanyChange('contactEmail', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="john@example.com"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg-muted mb-1">
                     Contact Phone
                   </label>
                   <input
                     type="tel"
                     value={data.company.contactPhone}
                     onChange={e => handleCompanyChange('contactPhone', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                     placeholder="(214) 555-1234"
                   />
                 </div>
@@ -369,70 +369,70 @@ export default function OnboardingPage() {
           {/* Credit Application Step */}
           {currentStep === 'credit' && (
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Credit Application</h2>
-              <div className="bg-signal/5 border border-signal/20 rounded p-4 mb-6 text-sm text-gray-700">
+              <h2 className="text-xl font-bold text-fg mb-6">Credit Application</h2>
+              <div className="bg-signal/5 border border-signal/20 rounded p-4 mb-6 text-sm text-fg-muted">
                 We'll use this information to set up your credit terms with us.
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-muted mb-1">
                   Requested Credit Limit
                 </label>
                 <input
                   type="text"
                   value={data.credit.creditLimit}
                   onChange={e => handleCreditChange('creditLimit', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                   placeholder="$50,000"
                 />
               </div>
               <div className="border-t pt-4 mt-4">
-                <h3 className="font-semibold text-gray-900 mb-4 text-sm">Trade References</h3>
+                <h3 className="font-semibold text-fg mb-4 text-sm">Trade References</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-fg-muted mb-1">
                       Reference 1 Company
                     </label>
                     <input
                       type="text"
                       value={data.credit.reference1Name}
                       onChange={e => handleCreditChange('reference1Name', e.target.value)}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                      className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                       placeholder="Company name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-fg-muted mb-1">
                       Contact Phone
                     </label>
                     <input
                       type="tel"
                       value={data.credit.reference1Phone}
                       onChange={e => handleCreditChange('reference1Phone', e.target.value)}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                      className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                       placeholder="(214) 555-0001"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-fg-muted mb-1">
                       Reference 2 Company
                     </label>
                     <input
                       type="text"
                       value={data.credit.reference2Name}
                       onChange={e => handleCreditChange('reference2Name', e.target.value)}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                      className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                       placeholder="Company name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-fg-muted mb-1">
                       Contact Phone
                     </label>
                     <input
                       type="tel"
                       value={data.credit.reference2Phone}
                       onChange={e => handleCreditChange('reference2Phone', e.target.value)}
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                      className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                       placeholder="(214) 555-0002"
                     />
                   </div>
@@ -444,8 +444,8 @@ export default function OnboardingPage() {
           {/* Catalog Preferences Step */}
           {currentStep === 'catalog' && (
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Product Categories</h2>
-              <p className="text-gray-600 text-sm mb-4">
+              <h2 className="text-xl font-bold text-fg mb-6">Product Categories</h2>
+              <p className="text-fg-muted text-sm mb-4">
                 Select the categories that interest your company.
               </p>
               <div className="space-y-3">
@@ -456,15 +456,15 @@ export default function OnboardingPage() {
                   { key: 'lumber', label: 'Lumber & Plywood', icon: '🪵' },
                   { key: 'accessories', label: 'Accessories', icon: '✨' },
                 ].map(cat => (
-                  <label key={cat.key} className="flex items-center p-3 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
+                  <label key={cat.key} className="flex items-center p-3 border border-border rounded hover:bg-surface-muted cursor-pointer">
                     <input
                       type="checkbox"
                       checked={data.catalog[cat.key as keyof typeof data.catalog]}
                       onChange={() => handleCatalogChange(cat.key as keyof typeof data.catalog)}
-                      className="w-4 h-4 rounded border-gray-300 text-brand"
+                      className="w-4 h-4 rounded border-border-strong text-brand"
                     />
                     <span className="ml-3 text-base">{cat.icon}</span>
-                    <span className="ml-2 font-medium text-gray-900">{cat.label}</span>
+                    <span className="ml-2 font-medium text-fg">{cat.label}</span>
                   </label>
                 ))}
               </div>
@@ -474,9 +474,9 @@ export default function OnboardingPage() {
           {/* Delivery Preferences Step */}
           {currentStep === 'delivery' && (
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Delivery Preferences</h2>
+              <h2 className="text-xl font-bold text-fg mb-6">Delivery Preferences</h2>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-fg-muted mb-3">
                   Preferred Delivery Days
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
                       className={`py-2 px-3 rounded text-sm font-medium border transition ${
                         data.delivery.preferredDays.includes(day)
                           ? 'bg-brand text-white border-brand'
-                          : 'bg-white text-gray-900 border-gray-300 hover:border-brand'
+                          : 'bg-white text-fg border-border-strong hover:border-brand'
                       }`}
                     >
                       {day.slice(0, 3)}
@@ -497,13 +497,13 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-muted mb-1">
                   Preferred Time Window
                 </label>
                 <select
                   value={data.delivery.preferredTimes}
                   onChange={e => handleDeliveryChange('preferredTimes', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                 >
                   <option value="">Select a time window</option>
                   <option value="early">Early morning (6-9 AM)</option>
@@ -513,26 +513,26 @@ export default function OnboardingPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-muted mb-1">
                   Site Access Notes
                 </label>
                 <textarea
                   value={data.delivery.siteAccessNotes}
                   onChange={e => handleDeliveryChange('siteAccessNotes', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                   rows={3}
                   placeholder="e.g., Gate code is 1234, call 10 min before arrival"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-muted mb-1">
                   Delivery Contact Name
                 </label>
                 <input
                   type="text"
                   value={data.delivery.deliveryContact}
                   onChange={e => handleDeliveryChange('deliveryContact', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-border-strong rounded px-3 py-2 text-sm"
                   placeholder="Job manager or supervisor"
                 />
               </div>
@@ -542,11 +542,11 @@ export default function OnboardingPage() {
           {/* Review Step */}
           {currentStep === 'review' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Review Your Information</h2>
+              <h2 className="text-xl font-bold text-fg mb-6">Review Your Information</h2>
 
               <div className="border-l-4 border-signal bg-amber-50 p-4 rounded">
-                <h3 className="font-semibold text-gray-900 text-sm mb-2">Company Info</h3>
-                <dl className="text-sm text-gray-700 space-y-1">
+                <h3 className="font-semibold text-fg text-sm mb-2">Company Info</h3>
+                <dl className="text-sm text-fg-muted space-y-1">
                   <div><dt className="font-medium inline">Name: </dt><dd className="inline">{data.company.name}</dd></div>
                   <div><dt className="font-medium inline">Address: </dt><dd className="inline">{data.company.address}, {data.company.city}, {data.company.state} {data.company.zip}</dd></div>
                   <div><dt className="font-medium inline">Contact: </dt><dd className="inline">{data.company.contactName} ({data.company.contactPhone})</dd></div>
@@ -554,16 +554,16 @@ export default function OnboardingPage() {
               </div>
 
               <div className="border-l-4 border-brand bg-amber-50 p-4 rounded">
-                <h3 className="font-semibold text-gray-900 text-sm mb-2">Credit Application</h3>
-                <dl className="text-sm text-gray-700 space-y-1">
+                <h3 className="font-semibold text-fg text-sm mb-2">Credit Application</h3>
+                <dl className="text-sm text-fg-muted space-y-1">
                   <div><dt className="font-medium inline">Requested Limit: </dt><dd className="inline">{data.credit.creditLimit || '—'}</dd></div>
                   <div><dt className="font-medium inline">References: </dt><dd className="inline">{data.credit.reference1Name || '—'}, {data.credit.reference2Name || '—'}</dd></div>
                 </dl>
               </div>
 
               <div className="border-l-4 border-abel-green bg-green-50 p-4 rounded">
-                <h3 className="font-semibold text-gray-900 text-sm mb-2">Categories</h3>
-                <dl className="text-sm text-gray-700">
+                <h3 className="font-semibold text-fg text-sm mb-2">Categories</h3>
+                <dl className="text-sm text-fg-muted">
                   <dd className="inline">
                     {Object.entries(data.catalog)
                       .filter(([_, v]) => v)
@@ -582,15 +582,15 @@ export default function OnboardingPage() {
                 </dl>
               </div>
 
-              <div className="border-l-4 border-gray-400 bg-gray-50 p-4 rounded">
-                <h3 className="font-semibold text-gray-900 text-sm mb-2">Delivery</h3>
-                <dl className="text-sm text-gray-700 space-y-1">
+              <div className="border-l-4 border-gray-400 bg-surface-muted p-4 rounded">
+                <h3 className="font-semibold text-fg text-sm mb-2">Delivery</h3>
+                <dl className="text-sm text-fg-muted space-y-1">
                   <div><dt className="font-medium inline">Days: </dt><dd className="inline">{data.delivery.preferredDays.length > 0 ? data.delivery.preferredDays.join(', ') : '—'}</dd></div>
                   <div><dt className="font-medium inline">Time: </dt><dd className="inline">{data.delivery.preferredTimes || '—'}</dd></div>
                 </dl>
               </div>
 
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-fg-muted">
                 By submitting, you confirm that the information above is accurate and complete.
               </p>
             </div>
@@ -603,8 +603,8 @@ export default function OnboardingPage() {
               disabled={isFirstStep}
               className={`flex-1 py-2 px-4 rounded font-medium transition ${
                 isFirstStep
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                  ? 'bg-surface-muted text-fg-subtle cursor-not-allowed'
+                  : 'bg-surface-muted text-fg hover:bg-gray-300'
               }`}
             >
               Back

@@ -76,14 +76,14 @@ export default function AccountHealthPanel({
   return (
     <Card variant="default" padding="none" rounded="2xl" className="overflow-hidden animate-enter animate-enter-delay-2">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+      <div className="px-6 py-5 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${config.iconColor}`}>
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-surface-muted ${config.iconColor}`}>
             <StatusIcon className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Account Health</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{paymentTerms}</p>
+            <h3 className="text-base font-bold text-fg">Account Health</h3>
+            <p className="text-xs text-fg-muted mt-0.5">{paymentTerms}</p>
           </div>
         </div>
         <Badge variant={config.badge} size="md" dot>{config.label}</Badge>
@@ -93,8 +93,8 @@ export default function AccountHealthPanel({
       <div className="p-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Outstanding */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Outstanding</p>
+          <div className="bg-surface-muted rounded-xl p-4">
+            <p className="text-xs font-medium text-fg-muted mb-1">Outstanding</p>
             <p className={`text-xl font-bold ${outstandingBalance > 0 ? 'text-signal dark:text-signal-hover' : 'text-success-600 dark:text-success-400'}`}>
               {formatCurrency(outstandingBalance)}
             </p>
@@ -107,26 +107,26 @@ export default function AccountHealthPanel({
           </div>
 
           {/* Credit Available */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Credit Available</p>
+          <div className="bg-surface-muted rounded-xl p-4">
+            <p className="text-xs font-medium text-fg-muted mb-1">Credit Available</p>
             <p className="text-xl font-bold text-success-600 dark:text-success-400">
               {formatCurrency(creditAvailable)}
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+            <p className="text-xs text-fg-subtle mt-1.5">
               of {formatCurrency(creditLimit)}
             </p>
           </div>
 
           {/* Active Orders */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Active Orders</p>
+          <div className="bg-surface-muted rounded-xl p-4">
+            <p className="text-xs font-medium text-fg-muted mb-1">Active Orders</p>
             <p className="text-xl font-bold text-brand dark:text-brand-hover">{activeOrders}</p>
           </div>
 
           {/* Account Balance */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Balance Used</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="bg-surface-muted rounded-xl p-4">
+            <p className="text-xs font-medium text-fg-muted mb-1">Balance Used</p>
+            <p className="text-xl font-bold text-fg">
               {formatCurrency(accountBalance)}
             </p>
           </div>
@@ -148,7 +148,7 @@ export default function AccountHealthPanel({
         {/* Action */}
         <Link
           href="/dashboard/invoices"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand dark:text-brand-hover hover:text-navy-deep dark:hover:text-white transition-colors group"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand dark:text-brand-hover hover:text-fg dark:hover:text-white transition-colors group"
         >
           View All Invoices
           <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

@@ -24,7 +24,7 @@ interface BlueprintEntry {
 }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; icon: string }> = {
-  PENDING: { label: 'Uploaded', color: 'bg-gray-100 text-gray-700', icon: '📄' },
+  PENDING: { label: 'Uploaded', color: 'bg-surface-muted text-fg-muted', icon: '📄' },
   PROCESSING: { label: 'Analyzing...', color: 'bg-blue-100 text-blue-700', icon: '⏳' },
   COMPLETE: { label: 'Ready', color: 'bg-green-100 text-green-700', icon: '✅' },
   FAILED: { label: 'Failed', color: 'bg-red-100 text-red-700', icon: '❌' },
@@ -116,8 +116,8 @@ export default function BlueprintsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Blueprint Takeoff</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-fg">AI Blueprint Takeoff</h1>
+          <p className="text-sm text-fg-muted mt-1">
             Upload blueprints, get instant AI-generated material lists and quotes
           </p>
         </div>
@@ -173,7 +173,7 @@ export default function BlueprintsPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               filter === f.key
                 ? 'bg-[#0f2a3e] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-surface-muted text-fg-muted hover:bg-surface-muted'
             }`}
           >
             {f.label} ({counts[f.key as keyof typeof counts] || 0})
@@ -192,12 +192,12 @@ export default function BlueprintsPage() {
       {filtered.length === 0 && !error && (
         <div className="bg-white rounded-xl border p-12 text-center">
           <div className="text-5xl mb-4">📐</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-fg mb-2">
             {filter === 'all'
               ? 'No blueprints yet'
               : `No ${filter.toLowerCase()} blueprints`}
           </h3>
-          <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+          <p className="text-sm text-fg-muted mb-6 max-w-md mx-auto">
             Upload your first blueprint and our AI will analyze it to generate a
             complete material takeoff with quantities and pricing.
           </p>
@@ -236,7 +236,7 @@ export default function BlueprintsPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-semibold text-fg truncate">
                           {bp.fileName}
                         </h3>
                         <span
@@ -253,7 +253,7 @@ export default function BlueprintsPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 mt-1 text-xs text-fg-muted">
                         <span>{bp.project.name}</span>
                         <span>•</span>
                         <span>{formatFileSize(bp.fileSize)}</span>
@@ -263,7 +263,7 @@ export default function BlueprintsPage() {
 
                       {bp.takeoff && (
                         <div className="flex items-center gap-4 mt-2 text-xs">
-                          <span className="text-gray-600">
+                          <span className="text-fg-muted">
                             📦 {bp.takeoff.itemCount} items
                           </span>
                           {bp.takeoff.confidence && (
@@ -350,7 +350,7 @@ function StatCard({
     <div className={`${color} rounded-xl border p-4`}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{icon}</span>
-        <span className="text-xs font-medium text-gray-500 uppercase">{label}</span>
+        <span className="text-xs font-medium text-fg-muted uppercase">{label}</span>
       </div>
       <p className="text-2xl font-bold text-[#0f2a3e]">{value}</p>
     </div>

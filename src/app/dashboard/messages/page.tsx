@@ -28,7 +28,7 @@ const CATEGORY_OPTIONS = [
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
   OPEN: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Open' },
   REPLIED: { bg: 'bg-green-50', text: 'text-green-700', label: 'Replied' },
-  CLOSED: { bg: 'bg-gray-50', text: 'text-gray-500', label: 'Closed' },
+  CLOSED: { bg: 'bg-surface-muted', text: 'text-fg-muted', label: 'Closed' },
 }
 
 export default function BuilderMessagesPage() {
@@ -125,7 +125,7 @@ export default function BuilderMessagesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Messages</h1>
-          <p className="text-gray-500 text-sm">Communicate with Abel Lumber</p>
+          <p className="text-fg-muted text-sm">Communicate with Abel Lumber</p>
         </div>
         <button
           onClick={() => { setShowCompose(true); setSelected(null) }}
@@ -140,12 +140,12 @@ export default function BuilderMessagesPage() {
         <div className="bg-white rounded-lg border p-6 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-[#1B2A4A]">New Message</h2>
-            <button onClick={() => setShowCompose(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            <button onClick={() => setShowCompose(false)} className="text-fg-subtle hover:text-fg-muted text-xl">&times;</button>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Subject</label>
+                <label className="block text-sm font-medium text-fg-muted mb-1">Subject</label>
                 <input
                   type="text"
                   value={subject}
@@ -155,7 +155,7 @@ export default function BuilderMessagesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
+                <label className="block text-sm font-medium text-fg-muted mb-1">Category</label>
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value)}
@@ -168,7 +168,7 @@ export default function BuilderMessagesPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Message</label>
+              <label className="block text-sm font-medium text-fg-muted mb-1">Message</label>
               <textarea
                 value={body}
                 onChange={e => setBody(e.target.value)}
@@ -180,7 +180,7 @@ export default function BuilderMessagesPage() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowCompose(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg"
               >
                 Cancel
               </button>
@@ -206,8 +206,8 @@ export default function BuilderMessagesPage() {
           ) : messages.length === 0 ? (
             <div className="bg-white rounded-lg border p-16 text-center">
               <div className="text-5xl mb-3">💬</div>
-              <h3 className="font-semibold text-gray-800 mb-1">No messages yet</h3>
-              <p className="text-gray-500 text-sm mb-4">Send a message to Abel Lumber about orders, deliveries, billing, or anything else.</p>
+              <h3 className="font-semibold text-fg mb-1">No messages yet</h3>
+              <p className="text-fg-muted text-sm mb-4">Send a message to Abel Lumber about orders, deliveries, billing, or anything else.</p>
               <button
                 onClick={() => setShowCompose(true)}
                 className="bg-[#C6A24E] text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-[#A8882A] transition"
@@ -233,12 +233,12 @@ export default function BuilderMessagesPage() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sCfg.bg} ${sCfg.text}`}>
                           {sCfg.label}
                         </span>
-                        <span className="text-xs text-gray-400">{timeAgo(msg.updatedAt)}</span>
+                        <span className="text-xs text-fg-subtle">{timeAgo(msg.updatedAt)}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 truncate">{msg.body}</p>
+                    <p className="text-sm text-fg-muted truncate">{msg.body}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+                      <span className="text-xs text-fg-subtle bg-surface-muted px-2 py-0.5 rounded">
                         {CATEGORY_OPTIONS.find(c => c.value === msg.category)?.label || msg.category}
                       </span>
                       {msg.staffReply && (
@@ -257,7 +257,7 @@ export default function BuilderMessagesPage() {
           <div className="w-96 bg-white rounded-lg border p-5 sticky top-4 self-start">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-[#1B2A4A] text-sm">{selected.subject}</h3>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">&times;</button>
+              <button onClick={() => setSelected(null)} className="text-fg-subtle hover:text-fg-muted">&times;</button>
             </div>
 
             <div className="space-y-4 text-sm">
@@ -265,7 +265,7 @@ export default function BuilderMessagesPage() {
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[selected.status]?.bg || ''} ${STATUS_CONFIG[selected.status]?.text || ''}`}>
                   {STATUS_CONFIG[selected.status]?.label || selected.status}
                 </span>
-                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+                <span className="text-xs text-fg-subtle bg-surface-muted px-2 py-0.5 rounded">
                   {CATEGORY_OPTIONS.find(c => c.value === selected.category)?.label || selected.category}
                 </span>
               </div>
@@ -278,7 +278,7 @@ export default function BuilderMessagesPage() {
                     {new Date(selected.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
-                <p className="text-gray-700 whitespace-pre-line text-sm">{selected.body}</p>
+                <p className="text-fg-muted whitespace-pre-line text-sm">{selected.body}</p>
               </div>
 
               {/* Staff reply */}
@@ -294,10 +294,10 @@ export default function BuilderMessagesPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-700 whitespace-pre-line text-sm">{selected.staffReply}</p>
+                  <p className="text-fg-muted whitespace-pre-line text-sm">{selected.staffReply}</p>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-lg p-3 text-center text-gray-400 text-xs">
+                <div className="bg-surface-muted rounded-lg p-3 text-center text-fg-subtle text-xs">
                   Awaiting response from Abel Lumber
                 </div>
               )}

@@ -182,7 +182,7 @@ export default function BlueprintDetailPage() {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center">
         <div className="text-5xl mb-4">😕</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{error}</h2>
+        <h2 className="text-xl font-bold text-fg mb-2">{error}</h2>
         <Link
           href="/dashboard/blueprints"
           className="text-[#0f2a3e] hover:underline"
@@ -196,7 +196,7 @@ export default function BlueprintDetailPage() {
   if (!blueprint) return null
 
   const STATUS_MAP: Record<string, { label: string; color: string; icon: string }> = {
-    PENDING: { label: 'Uploaded — Ready to Analyze', color: 'bg-gray-100 text-gray-700', icon: '📄' },
+    PENDING: { label: 'Uploaded — Ready to Analyze', color: 'bg-surface-muted text-fg-muted', icon: '📄' },
     PROCESSING: { label: 'AI Analysis in Progress', color: 'bg-blue-100 text-blue-700', icon: '⏳' },
     COMPLETE: { label: 'Analysis Complete', color: 'bg-green-100 text-green-700', icon: '✅' },
     FAILED: { label: 'Analysis Failed', color: 'bg-red-100 text-red-700', icon: '❌' },
@@ -211,13 +211,13 @@ export default function BlueprintDetailPage() {
         <div className="flex items-start gap-4">
           <Link
             href="/dashboard/blueprints"
-            className="p-2 hover:bg-gray-100 rounded-lg transition mt-1"
+            className="p-2 hover:bg-surface-muted rounded-lg transition mt-1"
           >
             ←
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{blueprint.fileName}</h1>
-            <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-fg">{blueprint.fileName}</h1>
+            <div className="flex items-center gap-3 mt-1 text-sm text-fg-muted">
               <span>{blueprint.project.name}</span>
               <span>•</span>
               <span>{blueprint.project.address}</span>
@@ -284,10 +284,10 @@ export default function BlueprintDetailPage() {
       {!takeoff && blueprint.processingStatus === 'PENDING' && (
         <div className="bg-white rounded-xl border p-8 text-center">
           <div className="text-5xl mb-4">🤖</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl font-bold text-fg mb-2">
             Ready for AI Analysis
           </h2>
-          <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+          <p className="text-sm text-fg-muted mb-6 max-w-md mx-auto">
             Our AI will read your blueprint, identify all doors, windows, trim,
             hardware, and closet components, then generate a complete material
             list with quantities and pricing.
@@ -303,7 +303,7 @@ export default function BlueprintDetailPage() {
               ? '📦 Generating Takeoff...'
               : '🤖 Run AI Analysis'}
           </button>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-fg-subtle mt-3">
             Takes 30–60 seconds depending on blueprint complexity
           </p>
         </div>
@@ -313,10 +313,10 @@ export default function BlueprintDetailPage() {
       {!takeoff && blueprint.processingStatus === 'FAILED' && (
         <div className="bg-white rounded-xl border p-8 text-center">
           <div className="text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl font-bold text-fg mb-2">
             Analysis Failed
           </h2>
-          <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+          <p className="text-sm text-fg-muted mb-6 max-w-md mx-auto">
             The AI couldn't analyze this blueprint. This can happen with
             low-resolution images or unusual formats. Try re-uploading a clearer version.
           </p>
@@ -334,13 +334,13 @@ export default function BlueprintDetailPage() {
       {!takeoff && blueprint.processingStatus === 'PROCESSING' && (
         <div className="bg-white rounded-xl border p-8 text-center">
           <div className="text-5xl mb-4 animate-pulse">🤖</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl font-bold text-fg mb-2">
             AI Analysis in Progress
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-fg-muted mb-4">
             Reading dimensions, identifying materials, calculating quantities...
           </p>
-          <div className="w-48 mx-auto bg-gray-200 rounded-full h-2">
+          <div className="w-48 mx-auto bg-surface-muted rounded-full h-2">
             <div className="bg-[#C6A24E] h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
           </div>
         </div>
@@ -395,7 +395,7 @@ export default function BlueprintDetailPage() {
               </Link>
               <Link
                 href={`/dashboard/projects`}
-                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                className="px-4 py-2 text-sm font-medium text-fg-muted bg-surface-muted hover:bg-surface-muted rounded-lg transition"
               >
                 📁 Back to Projects
               </Link>

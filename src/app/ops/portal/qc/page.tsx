@@ -178,29 +178,29 @@ export default function QCPortal() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quality Control Center</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quality Control Center</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-2">
           <button
             onClick={() => setShowLogModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+            className="px-3 sm:px-4 py-2 min-h-[48px] bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
           >
             Log Result
           </button>
           <Link
             href="/ops/portal/qc/queue"
-            className="px-4 py-2 bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium"
+            className="px-3 sm:px-4 py-2 min-h-[48px] bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium flex items-center justify-center text-center"
           >
             + Start Inspection
           </Link>
           <Link
             href="/ops/manufacturing/qc"
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            className="px-3 sm:px-4 py-2 min-h-[48px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center text-center"
           >
             All Checks
           </Link>
@@ -208,7 +208,7 @@ export default function QCPortal() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs font-medium text-gray-600 uppercase">Inspections Today</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">{briefing.summary.inspectionsToday}</p>

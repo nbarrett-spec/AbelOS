@@ -244,21 +244,21 @@ export default function SettingsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C6A24E] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading settings...</p>
+          <p className="text-fg-muted">Loading settings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-muted">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-4">
             <Link
               href="/dashboard"
-              className="text-gray-600 hover:text-gray-900 transition"
+              className="text-fg-muted hover:text-fg transition"
             >
               <ChevronLeft className="w-5 h-5" />
             </Link>
@@ -266,7 +266,7 @@ export default function SettingsPage() {
               <h1 className="text-3xl font-bold text-[#1B2A4A]">
                 Account Settings
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-fg-muted mt-1">
                 Manage your profile, security, and preferences
               </p>
             </div>
@@ -292,8 +292,8 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Section 1: Company Profile */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
+          <div className="bg-white rounded-lg shadow-sm border border-border">
+            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
               <h2 className="text-xl font-bold text-white">Company Profile</h2>
             </div>
 
@@ -301,7 +301,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Company Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Company Name
                   </label>
                   <input
@@ -310,13 +310,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('companyName', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* Contact Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Contact Name
                   </label>
                   <input
@@ -325,13 +325,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactName', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* Contact Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Contact Email
                   </label>
                   <input
@@ -340,13 +340,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactEmail', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* Contact Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Contact Phone
                   </label>
                   <input
@@ -355,13 +355,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactPhone', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* Address */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Address
                   </label>
                   <input
@@ -370,13 +370,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('address', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* City */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     City
                   </label>
                   <input
@@ -385,13 +385,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('city', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* State */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     State
                   </label>
                   <input
@@ -400,13 +400,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('state', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* ZIP */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     ZIP Code
                   </label>
                   <input
@@ -415,7 +415,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('zip', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
               </div>
@@ -434,8 +434,8 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 2: Change Password */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
+          <div className="bg-white rounded-lg shadow-sm border border-border">
+            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
               <h2 className="text-xl font-bold text-white">Change Password</h2>
             </div>
 
@@ -443,7 +443,7 @@ export default function SettingsPage() {
               <div className="space-y-6 max-w-md">
                 {/* Current Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Current Password
                   </label>
                   <input
@@ -452,13 +452,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('currentPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
                 {/* New Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     New Password
                   </label>
                   <input
@@ -467,16 +467,16 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('newPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-fg-muted mt-1">
                     Minimum 8 characters
                   </p>
                 </div>
 
                 {/* Confirm Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-fg-muted mb-2">
                     Confirm Password
                   </label>
                   <input
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('confirmPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -511,8 +511,8 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 3: Notification Preferences */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
+          <div className="bg-white rounded-lg shadow-sm border border-border">
+            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
               <h2 className="text-xl font-bold text-white">
                 Notification Preferences
               </h2>
@@ -521,12 +521,12 @@ export default function SettingsPage() {
             <div className="p-6">
               <div className="space-y-4">
                 {/* Order Updates */}
-                <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between py-4 border-b border-border">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Order Updates
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Receive notifications about your order status
                     </p>
                   </div>
@@ -545,12 +545,12 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Quote Ready */}
-                <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between py-4 border-b border-border">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Quote Ready
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Notify me when my quotes are ready for review
                     </p>
                   </div>
@@ -569,12 +569,12 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Delivery Alerts */}
-                <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between py-4 border-b border-border">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Delivery Alerts
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Get notified about shipment and delivery updates
                     </p>
                   </div>
@@ -593,12 +593,12 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Warranty Updates */}
-                <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between py-4 border-b border-border">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Warranty Updates
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Receive warranty information and coverage alerts
                     </p>
                   </div>
@@ -617,12 +617,12 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Invoice Alerts */}
-                <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between py-4 border-b border-border">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Invoice Alerts
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Get notified about new invoices and payment reminders
                     </p>
                   </div>
@@ -641,12 +641,12 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Promotions */}
-                <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between py-4 border-b border-border">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Promotions & Special Offers
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Receive information about new products and special deals
                     </p>
                   </div>
@@ -667,10 +667,10 @@ export default function SettingsPage() {
                 {/* Weekly Digest */}
                 <div className="flex items-center justify-between py-4">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <h3 className="text-sm font-medium text-fg">
                       Weekly Digest
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-fg-muted mt-1">
                       Receive a weekly email summary of your account activity
                     </p>
                   </div>

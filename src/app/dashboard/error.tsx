@@ -30,11 +30,11 @@ export default function DashboardError({
           </svg>
         </div>
         <h1 className="text-xl font-bold text-brand mb-2">Couldn&apos;t load this dashboard</h1>
-        <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+        <p className="text-sm text-fg-muted mb-5 leading-relaxed">
           We hit an error loading your data. It&apos;s usually temporary — try again in a moment.
         </p>
         {error.digest && (
-          <div className="inline-block px-3 py-1.5 bg-gray-100 rounded-md font-mono text-xs text-gray-600 mb-5">
+          <div className="inline-block px-3 py-1.5 bg-surface-muted rounded-md font-mono text-xs text-fg-muted mb-5">
             Error ID: {error.digest}
           </div>
         )}

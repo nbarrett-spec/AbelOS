@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  try {
   const preview = request.nextUrl.searchParams.get('preview')
 
   if (preview) {
@@ -39,4 +40,8 @@ export async function GET(request: NextRequest) {
     byCategory: getTemplatesByCategory(),
     totalCount: EMAIL_TEMPLATE_REGISTRY.length,
   })
+  } catch (error: any) {
+    console.error('[Email Templates] Error:', error)
+    return NextResponse.json({ error: 'Failed to load templates' }, { status: 500 })
+  }
 }

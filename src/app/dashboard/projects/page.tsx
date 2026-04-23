@@ -86,8 +86,8 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
-          <p className="text-gray-600 text-sm mt-1">Manage your construction and renovation projects</p>
+          <h1 className="text-3xl font-bold text-fg">Projects</h1>
+          <p className="text-fg-muted text-sm mt-1">Manage your construction and renovation projects</p>
         </div>
         <Link
           href="/projects/new"
@@ -105,10 +105,10 @@ export default function ProjectsPage() {
 
       {/* Empty State */}
       {projects.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-xl border border-border p-12 text-center">
           <div className="text-5xl mb-4">🏗️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Projects Yet</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-fg mb-2">No Projects Yet</h2>
+          <p className="text-fg-muted mb-6">
             Start by creating your first project to organize your orders and deliveries.
           </p>
           <Link
@@ -124,18 +124,18 @@ export default function ProjectsPage() {
             <Link
               key={project.id}
               href={`/dashboard/projects/${project.id}`}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-[#C6A24E] transition-all group cursor-pointer"
+              className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-[#C6A24E] transition-all group cursor-pointer"
             >
               {/* Card Header */}
-              <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white group-hover:from-[#C6A24E]/5 group-hover:to-white transition-colors">
+              <div className="p-5 border-b border-border bg-gradient-to-r from-gray-50 to-white group-hover:from-[#C6A24E]/5 group-hover:to-white transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-[#0f2a3e] transition-colors">{project.name}</h3>
+                    <h3 className="text-lg font-bold text-fg line-clamp-2 group-hover:text-[#0f2a3e] transition-colors">{project.name}</h3>
                     {project.address && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-1">{project.address}</p>
+                      <p className="text-sm text-fg-muted mt-1 line-clamp-1">{project.address}</p>
                     )}
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 ${STATUS_COLORS[project.status] || 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 ${STATUS_COLORS[project.status] || 'bg-surface-muted text-fg-muted'}`}>
                     {project.status}
                   </span>
                 </div>
@@ -145,13 +145,13 @@ export default function ProjectsPage() {
               <div className="p-5 space-y-4">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 uppercase font-semibold">Orders</p>
+                  <div className="bg-surface-muted rounded-lg p-3">
+                    <p className="text-xs text-fg-muted uppercase font-semibold">Orders</p>
                     <p className="text-lg font-bold text-[#0f2a3e]">{project.orderCount}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 uppercase font-semibold">Total Spend</p>
-                    <p className="text-lg font-bold text-gray-900">{formatCurrency(project.totalSpend)}</p>
+                  <div className="bg-surface-muted rounded-lg p-3">
+                    <p className="text-xs text-fg-muted uppercase font-semibold">Total Spend</p>
+                    <p className="text-lg font-bold text-fg">{formatCurrency(project.totalSpend)}</p>
                   </div>
                 </div>
 
@@ -173,20 +173,20 @@ export default function ProjectsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-600">No upcoming deliveries</p>
+                  <div className="bg-surface-muted rounded-lg p-3">
+                    <p className="text-xs text-fg-muted">No upcoming deliveries</p>
                   </div>
                 )}
 
                 {/* Created */}
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-fg-subtle">
                   Created {formatDate(project.createdAt)}
                 </p>
               </div>
 
               {/* Card Footer - Hover Effect */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between group-hover:bg-[#C6A24E]/5 transition-colors">
-                <span className="text-xs font-medium text-gray-600 group-hover:text-[#0f2a3e]">
+              <div className="p-4 border-t border-border bg-surface-muted flex items-center justify-between group-hover:bg-[#C6A24E]/5 transition-colors">
+                <span className="text-xs font-medium text-fg-muted group-hover:text-[#0f2a3e]">
                   View Details
                 </span>
                 <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>

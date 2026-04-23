@@ -9,6 +9,12 @@
  *   - what action was taken (APPROVE | REJECT | SNOOZE | COMPLETED) + result JSON
  *   - linked records (order / PO / payment / invoice, resolved by entityType+entityId)
  *   - brainAcknowledgedAt so the engine can tell if we already saw it
+ *   - timeline: chronological AuditLog entries scoped to this InboxItem
+ *   - beforeState / afterState: best-effort snapshots of the linked entity,
+ *     reconstructed from AuditLog.details where available (first-seen vs. latest)
+ *   - actorContext: role / department / active-session-time for the resolver
+ *   - similarItems: recent resolutions of the same type+source, for NUC
+ *     pattern learning
  *
  * Returns 404 if the inbox item doesn't exist, 409 if it's still open.
  *
@@ -52,6 +58,9 @@ const LINKED_LOOKUPS: Record<
   Task: { table: 'Task', columns: ['id', 'title', 'status', 'jobId'] },
 }
 
+// How many similar resolved items to pull back for NUC pattern learning.
+const SIMILAR_LIMIT = 5
+
 interface Params {
   params: { inboxItemId: string }
 }
@@ -91,7 +100,9 @@ export async function GET(req: NextRequest, { params }: Params) {
          resolver."firstName" AS "resolverFirstName",
          resolver."lastName"  AS "resolverLastName",
          resolver."email"     AS "resolverEmail",
-         resolver."role"::text AS "resolverRole"
+         resolver."role"::text AS "resolverRole",
+         resolver."department"::text AS "resolverDepartment",
+         resolver."title"     AS "resolverTitle"
        FROM "InboxItem" i
        LEFT JOIN "Staff" resolver ON resolver."id" = i."resolvedBy"
        WHERE i."id" = $1
@@ -113,30 +124,38 @@ export async function GET(req: NextRequest, { params }: Params) {
     // /pending instead of hammering this endpoint.
     const isResolved = !!item.resolvedAt || ['APPROVED', 'REJECTED', 'COMPLETED', 'EXPIRED'].includes(item.status)
 
-    // Pull audit trail (chronological) for a fuller picture of what changed.
-    let auditTrail: any[] = []
+    // ── Timeline (audit log scoped to this InboxItem, chronological) ──
+    // Wave 3 enrichment: caller asked for a true "creation -> resolution"
+    // sequence. Also reused downstream for before/after state derivation.
+    let timeline: any[] = []
     try {
       const audits = await prisma.$queryRawUnsafe<any[]>(
-        `SELECT "action", "details", "staffId", "staffName", "createdAt", "severity"
+        `SELECT "id", "action", "details", "staffId", "createdAt", "severity", "ipAddress", "userAgent"
          FROM "AuditLog"
          WHERE "entity" = 'InboxItem' AND "entityId" = $1
          ORDER BY "createdAt" ASC`,
         inboxItemId
       )
-      auditTrail = audits.map((a) => ({
+      timeline = audits.map((a) => ({
+        id: a.id,
         action: a.action,
         details: a.details,
         staffId: a.staffId || null,
-        staffName: a.staffName || null,
         severity: a.severity || 'INFO',
+        ipAddress: a.ipAddress || null,
+        userAgent: a.userAgent || null,
         at: a.createdAt,
       }))
     } catch {
       // AuditLog is best-effort
     }
 
-    // Hydrate the linked entity (order / PO / payment / invoice / ...)
+    // Backward-compat alias: older NUC versions consume `auditTrail`.
+    const auditTrail = timeline
+
+    // ── Linked entity (current / "after" state) ──
     let linkedRecord: Record<string, any> | null = null
+    let afterState: Record<string, any> | null = null
     const lookup = item.entityType ? LINKED_LOOKUPS[item.entityType] : undefined
     if (lookup && item.entityId) {
       try {
@@ -151,10 +170,136 @@ export async function GET(req: NextRequest, { params }: Params) {
             entityId: item.entityId,
             data: linked[0],
           }
+          afterState = linked[0]
         }
       } catch {
         // Linked table may not exist yet or column set mismatched — skip.
       }
+    }
+
+    // ── beforeState (best-effort reconstruction) ──
+    // AuditLog.details often carries `{ before: {...}, after: {...} }` or the
+    // pre-mutation snapshot under keys like `previous`, `snapshot`, or `old`.
+    // We walk the timeline (oldest-first) and pick the earliest snapshot we
+    // can find. This is a hint, not a guarantee.
+    let beforeState: Record<string, any> | null = null
+    if (timeline.length > 0) {
+      for (const evt of timeline) {
+        const d: any = evt.details || {}
+        const candidate = d.before ?? d.previous ?? d.old ?? d.snapshot ?? null
+        if (candidate && typeof candidate === 'object') {
+          beforeState = candidate
+          break
+        }
+      }
+    }
+
+    // ── actorContext (resolver role/department/session proxy) ──
+    // activeSessionTimeMs is a proxy: seconds between the resolver's first
+    // audit-log action today and the resolution timestamp. Gives the NUC a
+    // rough "how long had this person been working" signal without needing
+    // a dedicated StaffSession table.
+    let actorContext: Record<string, any> | null = null
+    if (item.resolverId) {
+      let activeSessionTimeMs: number | null = null
+      let todaysActionCount: number | null = null
+      try {
+        const sessionRows = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT
+             MIN("createdAt") AS "sessionStart",
+             COUNT(*)::int    AS "actionCount"
+           FROM "AuditLog"
+           WHERE "staffId" = $1
+             AND "createdAt" >= date_trunc('day', NOW())`,
+          item.resolverId
+        )
+        if (sessionRows.length > 0) {
+          const start: Date | null = sessionRows[0].sessionStart
+            ? new Date(sessionRows[0].sessionStart)
+            : null
+          const end = item.resolvedAt ? new Date(item.resolvedAt) : new Date()
+          if (start) {
+            activeSessionTimeMs = Math.max(0, end.getTime() - start.getTime())
+          }
+          todaysActionCount = sessionRows[0].actionCount ?? null
+        }
+      } catch {
+        // best-effort
+      }
+
+      actorContext = {
+        staffId: item.resolverId,
+        role: item.resolverRole,
+        department: item.resolverDepartment,
+        title: item.resolverTitle,
+        activeSessionTimeMs,
+        todaysActionCount,
+      }
+    }
+
+    // ── Similar recently-resolved items (for NUC pattern learning) ──
+    let similarItems: any[] = []
+    try {
+      const sim = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT
+           i."id",
+           i."type",
+           i."source",
+           i."title",
+           i."status",
+           i."priority",
+           i."entityType",
+           i."entityId",
+           i."result",
+           i."resolvedAt",
+           i."createdAt",
+           i."resolvedBy",
+           s."firstName" AS "resolverFirstName",
+           s."lastName"  AS "resolverLastName",
+           s."role"::text AS "resolverRole"
+         FROM "InboxItem" i
+         LEFT JOIN "Staff" s ON s."id" = i."resolvedBy"
+         WHERE i."type" = $1
+           AND i."source" = $2
+           AND i."id" <> $3
+           AND i."resolvedAt" IS NOT NULL
+         ORDER BY i."resolvedAt" DESC
+         LIMIT $4`,
+        item.type,
+        item.source,
+        inboxItemId,
+        SIMILAR_LIMIT
+      )
+      similarItems = sim.map((r) => {
+        const created = r.createdAt ? new Date(r.createdAt) : null
+        const resolved = r.resolvedAt ? new Date(r.resolvedAt) : null
+        const resolutionMs =
+          created && resolved ? Math.max(0, resolved.getTime() - created.getTime()) : null
+        return {
+          id: r.id,
+          type: r.type,
+          source: r.source,
+          title: r.title,
+          status: r.status,
+          priority: r.priority,
+          entityType: r.entityType,
+          entityId: r.entityId,
+          result: r.result,
+          resolvedAt: r.resolvedAt,
+          createdAt: r.createdAt,
+          resolutionTimeMs: resolutionMs,
+          resolver: r.resolvedBy
+            ? {
+                id: r.resolvedBy,
+                firstName: r.resolverFirstName,
+                lastName: r.resolverLastName,
+                role: r.resolverRole,
+              }
+            : null,
+        }
+      })
+    } catch {
+      // pattern pool is best-effort
     }
 
     return NextResponse.json({
@@ -180,6 +325,7 @@ export async function GET(req: NextRequest, { params }: Params) {
             lastName: item.resolverLastName,
             email: item.resolverEmail,
             role: item.resolverRole,
+            department: item.resolverDepartment,
           }
         : null,
       result: item.result ?? null,
@@ -197,6 +343,13 @@ export async function GET(req: NextRequest, { params }: Params) {
         updatedAt: item.updatedAt,
       },
       linkedRecord,
+      // Wave-3 enrichment surface
+      beforeState,
+      afterState,
+      actorContext,
+      similarItems,
+      timeline,
+      // Deprecated alias retained for older NUC coordinator builds.
       auditTrail,
     })
   } catch (e: any) {

@@ -145,28 +145,28 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       {/* Hero skeleton */}
-      <div className="h-44 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+      <div className="h-44 rounded-2xl bg-surface-muted" />
       {/* KPI row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-28 rounded-xl bg-gray-200 dark:bg-gray-800" />
+          <div key={i} className="h-28 rounded-xl bg-surface-muted" />
         ))}
       </div>
       {/* Quick actions */}
       <div className="grid grid-cols-5 lg:grid-cols-9 gap-2.5">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="h-20 rounded-xl bg-gray-200 dark:bg-gray-800" />
+          <div key={i} className="h-20 rounded-xl bg-surface-muted" />
         ))}
       </div>
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="h-64 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-          <div className="h-72 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+          <div className="h-64 rounded-2xl bg-surface-muted" />
+          <div className="h-72 rounded-2xl bg-surface-muted" />
         </div>
         <div className="space-y-5">
-          <div className="h-52 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-          <div className="h-44 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+          <div className="h-52 rounded-2xl bg-surface-muted" />
+          <div className="h-44 rounded-2xl bg-surface-muted" />
         </div>
       </div>
     </div>
@@ -244,11 +244,11 @@ export default function DashboardPage() {
   if (!builder) {
     return (
       <div className="flex flex-col items-center justify-center py-24 animate-enter">
-        <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-5">
-          <Package className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+        <div className="w-16 h-16 rounded-2xl bg-surface-muted flex items-center justify-center mb-5">
+          <Package className="w-8 h-8 text-fg-subtle" />
         </div>
-        <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">Sign in required</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Access your projects and orders</p>
+        <p className="text-base font-semibold text-fg mb-1">Sign in required</p>
+        <p className="text-sm text-fg-muted mb-6">Access your projects and orders</p>
         <Link href="/login">
           <Button variant="accent" iconRight={<ArrowRight className="w-4 h-4" />}>
             Sign In
@@ -309,7 +309,7 @@ export default function DashboardPage() {
 
       {/* Quick Actions Dock */}
       <div>
-        <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2.5 uppercase tracking-widest px-0.5">
+        <h3 className="text-xs font-bold text-fg-subtle mb-2.5 uppercase tracking-widest px-0.5">
           Quick Actions
         </h3>
         <QuickActionsDock />
@@ -346,19 +346,19 @@ export default function DashboardPage() {
           {h && h.upcomingDeliveries.length > 0 && (
             <Card variant="default" padding="none" rounded="2xl" className="overflow-hidden animate-enter">
               <CardHeader className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <h3 className="text-base font-bold text-fg flex items-center gap-2">
                   <Truck className="w-4.5 h-4.5 text-cyan-600 dark:text-cyan-400" />
                   Upcoming Deliveries
                 </h3>
                 <Link
                   href="/dashboard/deliveries"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-brand dark:text-brand-hover hover:text-navy-deep dark:hover:text-white transition-colors group"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-brand dark:text-brand-hover hover:text-fg dark:hover:text-white transition-colors group"
                 >
                   View All
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </CardHeader>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="divide-y divide-border">
                 {h.upcomingDeliveries.slice(0, 3).map((d) => {
                   const daysLeft = Math.ceil(
                     (new Date(d.deliveryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -366,7 +366,7 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={d.id}
-                      className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                      className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-muted transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-11 h-11 rounded-xl bg-cyan-50 dark:bg-cyan-900/20 flex flex-col items-center justify-center">
@@ -378,10 +378,10 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          <p className="text-sm font-bold text-fg">
                             {d.orderNumber}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                          <p className="text-xs text-fg-muted mt-0.5 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {new Date(d.deliveryDate).toLocaleDateString('en-US', {
                               weekday: 'short',
@@ -392,7 +392,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      <span className="text-sm font-bold text-fg">
                         {formatCurrency(d.total)}
                       </span>
                     </div>
