@@ -23,8 +23,17 @@ async function handle(request: NextRequest) {
   // Check if Hyphen is configured. Record the CronRun either way so the
   // /ops/crons observability page doesn't flag the job as stale/dead when
   // it's intentionally short-circuiting on missing credentials.
+  //
+  // Pre-check must match what lib/integrations/hyphen.ts::getConfig() actually
+  // requires (status=CONNECTED AND apiKey AND baseUrl) — otherwise a half-
+  // configured row makes the three sync funcs each return FAILED, which the
+  // cron surfaces as the unhelpful "One or more sync operations FAILED".
   const hyphenConfig: any[] = await (await import('@/lib/prisma')).prisma.$queryRawUnsafe(
-    `SELECT id FROM "IntegrationConfig" WHERE provider::text = 'HYPHEN' AND status::text = 'CONNECTED' LIMIT 1`
+    `SELECT id,
+            ("apiKey" IS NOT NULL AND "apiKey" <> '')   AS has_api_key,
+            ("baseUrl" IS NOT NULL AND "baseUrl" <> '') AS has_base_url
+     FROM "IntegrationConfig"
+     WHERE provider::text = 'HYPHEN' AND status::text = 'CONNECTED' LIMIT 1`
   )
   const runId = await startCronRun('hyphen-sync', 'schedule')
   const started = Date.now()
@@ -33,6 +42,21 @@ async function handle(request: NextRequest) {
     const msg = 'Hyphen not configured — skipping sync. Add IntegrationConfig with provider=HYPHEN to enable.'
     await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
       result: { skipped: true, reason: 'NO_HYPHEN_CONFIG', message: msg },
+    })
+    return NextResponse.json({ success: true, skipped: true, message: msg })
+  }
+
+  // CONNECTED row exists but credentials incomplete — surface clearly rather
+  // than letting each of the three syncs fail with the generic error.
+  const cfgRow = hyphenConfig[0]
+  if (!cfgRow.has_api_key || !cfgRow.has_base_url) {
+    const missing = [
+      !cfgRow.has_api_key ? 'apiKey' : null,
+      !cfgRow.has_base_url ? 'baseUrl' : null,
+    ].filter(Boolean).join(', ')
+    const msg = `Hyphen IntegrationConfig is CONNECTED but missing: ${missing}. Update the row and re-test the connection.`
+    await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
+      result: { skipped: true, reason: 'HYPHEN_CONFIG_INCOMPLETE', missing, message: msg },
     })
     return NextResponse.json({ success: true, skipped: true, message: msg })
   }
@@ -56,9 +80,18 @@ async function handle(request: NextRequest) {
         orders: ordersResult,
       },
     }
+
+    // Surface the actual sync errorMessage(s) on failure instead of the
+    // generic "One or more sync operations FAILED" — otherwise /admin/crons
+    // shows a useless error and whoever's on-call has to dig through JSON.
+    const failureSummary = allSuccess ? undefined : [scheduleResult, paymentsResult, ordersResult]
+      .filter(r => r.status === 'FAILED')
+      .map(r => `${r.syncType}: ${r.errorMessage || 'unknown'}`)
+      .join(' | ') || 'One or more sync operations FAILED'
+
     await finishCronRun(runId, allSuccess ? 'SUCCESS' : 'FAILURE', Date.now() - started, {
       result: payload,
-      error: allSuccess ? undefined : 'One or more sync operations FAILED',
+      error: failureSummary,
     })
     return NextResponse.json(payload, { status: allSuccess ? 200 : 207 })
   } catch (error: any) {
