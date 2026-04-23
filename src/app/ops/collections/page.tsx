@@ -1,612 +1,565 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useToast } from '@/contexts/ToastContext'
+// ──────────────────────────────────────────────────────────────────────────
+// Collections Action Center — /ops/collections
+//
+// For Dawn: one screen, one question — "what do I need to do right now?".
+// Pulls from /api/ops/collections/today, which already decides each row's
+// next action (REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, or FOLLOW_UP).
+// Quick-action buttons POST to /api/ops/collections/[invoiceId]/action and
+// reload in place.
+// ──────────────────────────────────────────────────────────────────────────
 
-interface OverdueInvoice {
-  id: string
-  invoiceNumber: string
-  builderId: string
-  builderName: string
-  builderContact: string | null
-  total: number
-  balanceDue: number
-  status: string
-  dueDate: string
-  createdAt: string
-  daysOverdue: number
-  agingBucket: string
-  lastAction: {
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  Send, Phone, AlertTriangle, Ban, CheckSquare, MessageSquare,
+  RefreshCw, Clock, Mail, ExternalLink, Filter,
+} from 'lucide-react'
+import {
+  PageHeader, KPICard, Badge, StatusBadge, Card, CardHeader, CardTitle,
+  CardDescription, CardBody, EmptyState, LiveDataIndicator,
+} from '@/components/ui'
+import { useToast } from '@/contexts/ToastContext'
+import { cn } from '@/lib/utils'
+
+interface QueueRow {
+  invoice: {
+    id: string
+    invoiceNumber: string
+    total: number
+    amountPaid: number
+    balanceDue: number
+    status: string
+    dueDate: string | null
+    issuedAt: string | null
+    daysPastDue: number
+  }
+  builder: {
+    id: string
+    name: string
+    contactName: string | null
+    email: string | null
+    phone: string | null
+  }
+  nextAction: {
+    ruleId: string | null
+    ruleName: string
+    actionType: string
+    channel: string
+    triggerDays: number | null
+  }
+  lastContact: {
     actionType: string
     channel: string
     sentAt: string
+    sentBy: string | null
     notes: string | null
   } | null
+  priorActionCount: number
+  priorActions: Array<{
+    id: string
+    actionType: string
+    channel: string
+    sentAt: string
+    sentBy: string | null
+    notes: string | null
+  }>
 }
 
-interface CollectionRule {
-  id: string
-  name: string
-  daysOverdue: number
-  actionType: string
-  channel: string
-  isActive: boolean
+interface QueueData {
+  asOf: string
+  total: number
+  totalOutstanding: number
+  queue: QueueRow[]
 }
 
-interface SummaryStats {
-  totalOverdueAmount: number
-  countByBucket: Record<string, number>
-  totalOverdueInvoices: number
-  actionsThisMonth: number
+const MONO_STYLE = { fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace' } as const
+
+const fmtMoney = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+
+const fmtMoneyExact = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+
+const fmtMoneyCompact = (n: number) => {
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
+  if (Math.abs(n) >= 10_000) return `$${Math.round(n / 1000)}K`
+  if (Math.abs(n) >= 1_000) return `$${(n / 1000).toFixed(1)}K`
+  return fmtMoney(n)
 }
 
-const NAVY = '#0f2a3e'
-const ORANGE = '#C6A24E'
+const fmtShortDate = (s: string | null) => {
+  if (!s) return '—'
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
-export default function CollectionsPage() {
+const fmtRelative = (s: string | null) => {
+  if (!s) return '—'
+  const ms = Date.now() - new Date(s).getTime()
+  const days = Math.floor(ms / 86_400_000)
+  if (days === 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  return `${Math.floor(days / 30)}mo ago`
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  REMINDER: 'Send reminder',
+  PAST_DUE: 'Send past-due notice',
+  FINAL_NOTICE: 'Send FINAL NOTICE',
+  ACCOUNT_HOLD: 'Place account hold',
+  PHONE_CALL: 'Log call',
+  PAYMENT_PLAN: 'Mark payment plan',
+  FOLLOW_UP: 'Needs follow-up',
+  NOTE: 'Add note',
+  PROMISED: 'Mark promised',
+}
+
+const ACTION_ACCENT: Record<string, 'brand' | 'accent' | 'negative' | 'neutral'> = {
+  REMINDER: 'brand',
+  PAST_DUE: 'accent',
+  FINAL_NOTICE: 'negative',
+  ACCOUNT_HOLD: 'negative',
+  FOLLOW_UP: 'neutral',
+  PHONE_CALL: 'brand',
+  PAYMENT_PLAN: 'brand',
+  NOTE: 'neutral',
+  PROMISED: 'brand',
+}
+
+export default function CollectionsActionCenter() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { addToast } = useToast()
-  const [summary, setSummary] = useState<SummaryStats | null>(null)
-  const [invoices, setInvoices] = useState<OverdueInvoice[]>([])
-  const [rules, setRules] = useState<CollectionRule[]>([])
+
+  const builderFilter = searchParams.get('builder')
+  const invoiceFilter = searchParams.get('invoice')
+
+  const [data, setData] = useState<QueueData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [bucket, setBucket] = useState<string | null>(null)
-  const [processingCycle, setProcessingCycle] = useState(false)
-  const [cycleMessage, setCycleMessage] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [refreshTick, setRefreshTick] = useState<number | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  // Load collections data
-  useEffect(() => {
-    loadCollectionsData()
-  }, [page, bucket])
+  useEffect(() => { fetchData() }, [])
 
-  const loadCollectionsData = async () => {
-    setLoading(true)
+  async function fetchData() {
+    setRefreshing(true)
     try {
-      const params = new URLSearchParams()
-      params.append('page', page.toString())
-      params.append('limit', '20')
-      if (bucket) params.append('bucket', bucket)
-
-      const res = await fetch(`/api/ops/collections?${params.toString()}`)
-      const data = await res.json()
-      setSummary(data.summary)
-      setInvoices(data.data || [])
-      setTotalPages(data.pagination?.pages || 1)
-
-      // Load rules
-      const rulesRes = await fetch('/api/ops/collections/rules')
-      if (rulesRes.ok) {
-        const rulesData = await rulesRes.json()
-        setRules(rulesData.rules || [])
-      }
+      const res = await fetch('/api/ops/collections/today')
+      if (!res.ok) throw new Error('Failed to load collections queue')
+      setData(await res.json())
+      setRefreshTick(Date.now())
     } catch (err) {
-      console.error('Failed to load collections data:', err)
+      console.error('Collections fetch error:', err)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
-  const handleAction = async (invoiceId: string, actionType: string) => {
+  async function logAction(
+    invoiceId: string,
+    actionType: string,
+    channel: string,
+    opts: { sendEmail?: boolean; notes?: string } = {},
+  ) {
+    setPendingAction(`${invoiceId}:${actionType}`)
     try {
-      const res = await fetch('/api/ops/collections', {
+      const res = await fetch(`/api/ops/collections/${invoiceId}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          invoiceId,
           actionType,
-          channel: 'EMAIL',
-          notes: `Action taken from dashboard: ${actionType}`,
+          channel,
+          sendEmail: opts.sendEmail ?? false,
+          notes: opts.notes || null,
         }),
       })
-      if (res.ok) {
-        addToast({ type: 'success', title: 'Action Recorded', message: `${actionType} recorded successfully` })
-        loadCollectionsData()
-      } else {
-        addToast({ type: 'error', title: 'Error', message: 'Failed to record action' })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        addToast({ type: 'error', title: 'Action failed', message: body?.error || 'Unknown error' })
+        return
       }
-    } catch (err) {
-      console.error('Action error:', err)
-      addToast({ type: 'error', title: 'Error', message: 'Error recording action' })
-    }
-  }
-
-  const handleRunCycle = async () => {
-    setProcessingCycle(true)
-    setCycleMessage('')
-    try {
-      const res = await fetch('/api/ops/collections/run-cycle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+      const emailNote =
+        body?.email?.attempted && body?.email?.success
+          ? ' (email sent)'
+          : body?.email?.attempted
+            ? ` (email failed: ${body.email.error || 'unknown'})`
+            : ''
+      addToast({
+        type: 'success',
+        title: ACTION_LABEL[actionType] || actionType,
+        message: `Logged${emailNote}`,
       })
-      const data = await res.json()
-      setCycleMessage(
-        `Cycle completed: ${data.actionsCreated} actions created from ${data.invoicesProcessed} overdue invoices`
-      )
-      loadCollectionsData()
-    } catch (err) {
-      setCycleMessage('Error running collection cycle')
-      console.error('Cycle error:', err)
+      await fetchData()
+    } catch (err: any) {
+      addToast({ type: 'error', title: 'Action failed', message: err?.message || String(err) })
     } finally {
-      setProcessingCycle(false)
+      setPendingAction(null)
     }
   }
 
-  if (loading) {
+  const filteredQueue = useMemo(() => {
+    if (!data) return []
+    return data.queue.filter((r) => {
+      if (builderFilter && r.builder.id !== builderFilter) return false
+      if (invoiceFilter && r.invoice.id !== invoiceFilter) return false
+      return true
+    })
+  }, [data, builderFilter, invoiceFilter])
+
+  const kpi = useMemo(() => {
+    if (!data) return { count: 0, total: 0, critical: 0, criticalTotal: 0 }
+    const critical = data.queue.filter((r) => r.invoice.daysPastDue >= 45)
+    return {
+      count: data.queue.length,
+      total: data.queue.reduce((s, r) => s + r.invoice.balanceDue, 0),
+      critical: critical.length,
+      criticalTotal: critical.reduce((s, r) => s + r.invoice.balanceDue, 0),
+    }
+  }, [data])
+
+  if (loading || !data) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '18px', color: '#666' }}>Loading collections dashboard...</div>
+      <div className="space-y-5">
+        <PageHeader eyebrow="Finance" title="Collections" description="Accounts needing action today." />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[0, 1, 2, 3].map((i) => <KPICard key={i} title="" value="" loading />)}
+        </div>
+        <div className="h-64 skeleton rounded-lg" />
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '0', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <div style={{ backgroundColor: NAVY, color: 'white', padding: '30px 40px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 8px 0' }}>
-              Collections Dashboard
-            </h1>
-            <p style={{ fontSize: '14px', color: '#ccc', margin: '0' }}>
-              Manage overdue invoices, track aging, and execute collection workflows
-            </p>
-          </div>
-          <button
-            onClick={handleRunCycle}
-            disabled={processingCycle}
-            style={{
-              backgroundColor: ORANGE,
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '4px',
-              cursor: processingCycle ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              opacity: processingCycle ? 0.6 : 1,
-            }}
-          >
-            {processingCycle ? 'Running...' : 'Run Collection Cycle'}
+    <div className="space-y-5 animate-enter">
+      <LiveDataIndicator trigger={refreshTick} />
+
+      <PageHeader
+        eyebrow="Finance"
+        title="Collections"
+        description="Accounts needing action today · ladder-driven queue · one-click actions."
+        actions={
+          <button onClick={fetchData} className="btn btn-secondary btn-sm" disabled={refreshing}>
+            <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
+            Refresh
           </button>
-        </div>
+        }
+      />
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard
+          title="Accounts Needing Action"
+          value={<span style={MONO_STYLE}>{kpi.count}</span>}
+          subtitle="open in queue"
+          icon={<Clock className="w-3.5 h-3.5" />}
+          accent="brand"
+        />
+        <KPICard
+          title="Outstanding (Queue)"
+          value={<span style={MONO_STYLE}>{fmtMoneyCompact(kpi.total)}</span>}
+          subtitle="total past due"
+          icon={<AlertTriangle className="w-3.5 h-3.5" />}
+          accent={kpi.total > 50_000 ? 'negative' : 'accent'}
+        />
+        <KPICard
+          title="Critical (45d+)"
+          value={<span style={MONO_STYLE}>{kpi.critical}</span>}
+          subtitle={fmtMoneyCompact(kpi.criticalTotal)}
+          icon={<Ban className="w-3.5 h-3.5" />}
+          accent={kpi.critical > 0 ? 'negative' : 'positive'}
+        />
+        <KPICard
+          title="Snapshot Time"
+          value={<span style={MONO_STYLE}>{new Date(data.asOf).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+          subtitle={new Date(data.asOf).toLocaleDateString()}
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
+          accent="neutral"
+        />
       </div>
 
-      {cycleMessage && (
-        <div
-          style={{
-            backgroundColor: '#d4edda',
-            color: '#155724',
-            padding: '12px 40px',
-            marginBottom: '20px',
-            borderLeft: `4px solid #28a745`,
-          }}
-        >
-          {cycleMessage}
-        </div>
+      {(builderFilter || invoiceFilter) && (
+        <Card variant="default">
+          <CardBody className="py-2 flex items-center gap-3">
+            <Filter className="w-3.5 h-3.5 text-fg-muted" />
+            <span className="text-[12px] text-fg-muted">Filter active:</span>
+            {builderFilter && <Badge variant="neutral" size="xs">builder={builderFilter.slice(0, 8)}</Badge>}
+            {invoiceFilter && <Badge variant="neutral" size="xs">invoice={invoiceFilter.slice(0, 8)}</Badge>}
+            <button onClick={() => router.push('/ops/collections')} className="btn btn-ghost btn-xs">
+              Clear
+            </button>
+          </CardBody>
+        </Card>
       )}
 
-      {/* Top Stats Bar */}
-      <div style={{ padding: '0 40px 20px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
-        <div
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            padding: '20px',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
-            Total Overdue Amount
+      {/* Action queue */}
+      <Card variant="default" padding="none">
+        <CardHeader>
+          <div>
+            <CardTitle>Accounts Needing Action Today</CardTitle>
+            <CardDescription>
+              Each row shows the next ladder step based on days-past-due and prior CollectionActions.
+              Click "Send email" to fire the templated email through Resend; "Log call" and "Mark promised"
+              just record the action without sending.
+            </CardDescription>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: NAVY }}>
-            ${summary?.totalOverdueAmount.toFixed(2) || '0.00'}
-          </div>
-        </div>
-        <div
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            padding: '20px',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
-            Total Overdue Invoices
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: ORANGE }}>
-            {summary?.totalOverdueInvoices || 0}
-          </div>
-        </div>
-        <div
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            padding: '20px',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
-            Actions This Month
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: NAVY }}>
-            {summary?.actionsThisMonth || 0}
-          </div>
-        </div>
-        <div
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            padding: '20px',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
-            Collection Rate
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#27ae60' }}>
-            {((summary?.countByBucket['1-30'] || 0) / (summary?.totalOverdueInvoices || 1) * 100).toFixed(1)}%
-          </div>
-        </div>
-      </div>
-
-      {/* Aging Buckets */}
-      <div style={{ padding: '0 40px 20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              padding: '15px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              backgroundColor: bucket === '1-30' ? `${NAVY}20` : 'white',
-              borderColor: bucket === '1-30' ? NAVY : '#ddd',
-            }}
-            onClick={() => {
-              setBucket(bucket === '1-30' ? null : '1-30')
-              setPage(1)
-            }}
-          >
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>1-30 Days</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: NAVY }}>
-              {summary?.countByBucket['1-30'] || 0}
-            </div>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>invoices</div>
-          </div>
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              padding: '15px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              backgroundColor: bucket === '31-60' ? `${NAVY}20` : 'white',
-              borderColor: bucket === '31-60' ? NAVY : '#ddd',
-            }}
-            onClick={() => {
-              setBucket(bucket === '31-60' ? null : '31-60')
-              setPage(1)
-            }}
-          >
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>31-60 Days</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: ORANGE }}>
-              {summary?.countByBucket['31-60'] || 0}
-            </div>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>invoices</div>
-          </div>
-          <div
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              padding: '15px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              backgroundColor: bucket === '60plus' ? `${NAVY}20` : 'white',
-              borderColor: bucket === '60plus' ? NAVY : '#ddd',
-            }}
-            onClick={() => {
-              setBucket(bucket === '60plus' ? null : '60plus')
-              setPage(1)
-            }}
-          >
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>60+ Days</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#c0392b' }}>
-              {summary?.countByBucket['60plus'] || 0}
-            </div>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>invoices</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Overdue Invoices Table */}
-      <div style={{ padding: '0 40px 20px' }}>
-        <div
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ padding: '20px', borderBottom: '1px solid #eee' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: NAVY }}>
-              Overdue Invoices {bucket ? `(${bucket} Days)` : ''}
-            </h2>
-          </div>
-
-          {invoices.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-              No overdue invoices in this period
-            </div>
+        </CardHeader>
+        <CardBody>
+          {filteredQueue.length === 0 ? (
+            <EmptyState
+              icon="check"
+              size="compact"
+              title="Nothing due right now"
+              description="No invoices past any active collection rule threshold. Monday inbox zero."
+            />
           ) : (
-            <>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f9f9f9', borderBottom: '2px solid #ddd' }}>
-                      <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                        Invoice
-                      </th>
-                      <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                        Builder
-                      </th>
-                      <th style={{ padding: '12px 15px', textAlign: 'right', fontSize: '13px', fontWeight: '600' }}>
-                        Amount
-                      </th>
-                      <th style={{ padding: '12px 15px', textAlign: 'right', fontSize: '13px', fontWeight: '600' }}>
-                        Days Overdue
-                      </th>
-                      <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                        Last Action
-                      </th>
-                      <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoices.map((inv) => (
-                      <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '500' }}>
-                          {inv.invoiceNumber}
-                        </td>
-                        <td style={{ padding: '12px 15px', fontSize: '13px' }}>
-                          <div style={{ fontWeight: '500', color: NAVY }}>{inv.builderName || 'Unknown'}</div>
-                          {inv.builderContact && (
-                            <div style={{ fontSize: '12px', color: '#999' }}>{inv.builderContact}</div>
+            <div className="space-y-2">
+              {filteredQueue.map((row) => {
+                const isExpanded = expandedId === row.invoice.id
+                const actionKey = `${row.invoice.id}:${row.nextAction.actionType}`
+                const isPending = pendingAction === actionKey
+                const severity =
+                  row.invoice.daysPastDue >= 60 ? 'critical' :
+                    row.invoice.daysPastDue >= 45 ? 'warning' :
+                      row.invoice.daysPastDue >= 15 ? 'notice' : 'neutral'
+                const severityBorder =
+                  severity === 'critical' ? 'border-l-data-negative' :
+                    severity === 'warning' ? 'border-l-accent' :
+                      severity === 'notice' ? 'border-l-brand' : 'border-l-border-subtle'
+
+                return (
+                  <div
+                    key={row.invoice.id}
+                    className={cn(
+                      'border border-border-subtle rounded-md overflow-hidden bg-surface transition-all',
+                      'border-l-4', severityBorder,
+                      isExpanded && 'shadow-sm',
+                    )}
+                  >
+                    {/* Row summary */}
+                    <div
+                      className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center px-4 py-3 cursor-pointer hover:bg-surface-muted/40"
+                      onClick={() => setExpandedId(isExpanded ? null : row.invoice.id)}
+                    >
+                      {/* Builder + invoice */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-fg text-[13px] truncate">{row.builder.name}</span>
+                          <span className="text-fg-subtle text-[12px] font-mono" style={MONO_STYLE}>
+                            {row.invoice.invoiceNumber}
+                          </span>
+                          <StatusBadge status={row.invoice.status} size="sm" />
+                          {row.priorActionCount > 0 && (
+                            <Badge variant="neutral" size="xs">
+                              {row.priorActionCount} prior
+                            </Badge>
                           )}
-                        </td>
-                        <td style={{ padding: '12px 15px', fontSize: '13px', textAlign: 'right', fontWeight: '600' }}>
-                          ${inv.balanceDue.toFixed(2)}
-                        </td>
-                        <td
-                          style={{
-                            padding: '12px 15px',
-                            fontSize: '13px',
-                            textAlign: 'right',
-                            fontWeight: '600',
-                            color: inv.daysOverdue > 60 ? '#c0392b' : inv.daysOverdue > 30 ? ORANGE : '#27ae60',
-                          }}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-[11px] text-fg-muted">
+                          {row.builder.contactName && <span>{row.builder.contactName}</span>}
+                          {row.builder.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3" />{row.builder.email}
+                            </span>
+                          )}
+                          {row.builder.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />{row.builder.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Days past due */}
+                      <div className="text-right">
+                        <div
+                          className={cn(
+                            'text-[18px] font-bold tabular-nums',
+                            severity === 'critical' && 'text-data-negative',
+                            severity === 'warning' && 'text-accent',
+                            severity === 'notice' && 'text-fg',
+                            severity === 'neutral' && 'text-fg-muted',
+                          )}
+                          style={MONO_STYLE}
                         >
-                          {inv.daysOverdue}
-                        </td>
-                        <td style={{ padding: '12px 15px', fontSize: '12px' }}>
-                          {inv.lastAction ? (
-                            <div>
-                              <div style={{ fontWeight: '500', color: NAVY }}>{inv.lastAction.actionType}</div>
-                              <div style={{ fontSize: '11px', color: '#999' }}>
-                                {new Date(inv.lastAction.sentAt).toLocaleDateString()}
-                              </div>
+                          {row.invoice.daysPastDue}d
+                        </div>
+                        <div className="text-[10px] text-fg-subtle eyebrow">past due</div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="text-right">
+                        <div className="text-[15px] font-bold tabular-nums" style={MONO_STYLE}>
+                          {fmtMoneyExact(row.invoice.balanceDue)}
+                        </div>
+                        <div className="text-[10px] text-fg-subtle">
+                          due {fmtShortDate(row.invoice.dueDate)}
+                        </div>
+                      </div>
+
+                      {/* Last contact */}
+                      <div className="text-right min-w-[110px]">
+                        {row.lastContact ? (
+                          <>
+                            <div className="text-[12px] text-fg">{row.lastContact.actionType}</div>
+                            <div className="text-[10px] text-fg-subtle">
+                              {fmtRelative(row.lastContact.sentAt)}
                             </div>
-                          ) : (
-                            <span style={{ color: '#999' }}>No action</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '12px 15px', fontSize: '12px' }}>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            <button
-                              onClick={() => handleAction(inv.id, 'REMINDER')}
-                              style={{
-                                backgroundColor: '#3498db',
-                                color: 'white',
-                                border: 'none',
-                                padding: '5px 10px',
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                              }}
-                            >
-                              Reminder
-                            </button>
-                            <button
-                              onClick={() => handleAction(inv.id, 'PHONE_CALL')}
-                              style={{
-                                backgroundColor: '#9b59b6',
-                                color: 'white',
-                                border: 'none',
-                                padding: '5px 10px',
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                              }}
-                            >
-                              Call
-                            </button>
-                            <button
-                              onClick={() => handleAction(inv.id, 'PAYMENT_PLAN')}
-                              style={{
-                                backgroundColor: '#27ae60',
-                                color: 'white',
-                                border: 'none',
-                                padding: '5px 10px',
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                              }}
-                            >
-                              Plan
-                            </button>
-                            {inv.daysOverdue > 60 && (
-                              <button
-                                onClick={() => handleAction(inv.id, 'ACCOUNT_HOLD')}
-                                style={{
-                                  backgroundColor: '#c0392b',
-                                  color: 'white',
-                                  border: 'none',
-                                  padding: '5px 10px',
-                                  borderRadius: '3px',
-                                  cursor: 'pointer',
-                                  fontSize: '11px',
-                                }}
-                              >
-                                Hold
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          </>
+                        ) : (
+                          <span className="text-[11px] text-fg-subtle">No prior contact</span>
+                        )}
+                      </div>
+                    </div>
 
-              {/* Pagination */}
-              <div
-                style={{
-                  padding: '15px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  borderTop: '1px solid #eee',
-                }}
-              >
-                <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: page === 1 ? '#eee' : NAVY,
-                    color: page === 1 ? '#999' : 'white',
-                    border: 'none',
-                    borderRadius: '3px',
-                    cursor: page === 1 ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                  }}
-                >
-                  Prev
-                </button>
-                <span style={{ fontSize: '12px', color: '#666', padding: '6px 12px' }}>
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page === totalPages}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: page === totalPages ? '#eee' : NAVY,
-                    color: page === totalPages ? '#999' : 'white',
-                    border: 'none',
-                    borderRadius: '3px',
-                    cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                  }}
-                >
-                  Next
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Collection Rules */}
-      <div style={{ padding: '0 40px 40px' }}>
-        <div
-          style={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ padding: '20px', borderBottom: '1px solid #eee' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: NAVY }}>
-              Collection Rules
-            </h2>
-          </div>
-
-          {rules.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-              No collection rules configured
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f9f9f9', borderBottom: '2px solid #ddd' }}>
-                    <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                      Rule Name
-                    </th>
-                    <th style={{ padding: '12px 15px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>
-                      Days Overdue
-                    </th>
-                    <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                      Action Type
-                    </th>
-                    <th style={{ padding: '12px 15px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>
-                      Channel
-                    </th>
-                    <th style={{ padding: '12px 15px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rules.map((rule) => (
-                    <tr key={rule.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '12px 15px', fontSize: '13px', fontWeight: '500' }}>
-                        {rule.name}
-                      </td>
-                      <td style={{ padding: '12px 15px', fontSize: '13px', textAlign: 'center' }}>
-                        {rule.daysOverdue}+
-                      </td>
-                      <td style={{ padding: '12px 15px', fontSize: '13px' }}>
-                        <span
-                          style={{
-                            backgroundColor: `${NAVY}20`,
-                            color: NAVY,
-                            padding: '3px 8px',
-                            borderRadius: '3px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                          }}
-                        >
-                          {rule.actionType}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 15px', fontSize: '13px' }}>{rule.channel}</td>
-                      <td
-                        style={{
-                          padding: '12px 15px',
-                          fontSize: '13px',
-                          textAlign: 'center',
-                          color: rule.isActive ? '#27ae60' : '#c0392b',
-                          fontWeight: '500',
-                        }}
+                    {/* Next-action + buttons bar */}
+                    <div className="px-4 py-2 bg-surface-muted/30 border-t border-border-subtle flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] text-fg-muted">Next:</span>
+                      <Badge
+                        variant={ACTION_ACCENT[row.nextAction.actionType] === 'negative' ? 'danger' : ACTION_ACCENT[row.nextAction.actionType] === 'accent' ? 'warning' : 'neutral'}
+                        size="xs"
                       >
-                        {rule.isActive ? 'Active' : 'Inactive'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        {ACTION_LABEL[row.nextAction.actionType] || row.nextAction.actionType}
+                      </Badge>
+                      <span className="text-[10px] text-fg-subtle">
+                        {row.nextAction.triggerDays !== null
+                          ? `rule: ${row.nextAction.ruleName} (${row.nextAction.triggerDays}+d)`
+                          : 'no remaining automated steps'}
+                      </span>
+
+                      <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                        {/* Send email now — only if nextAction maps to an email template */}
+                        {['REMINDER', 'PAST_DUE', 'FINAL_NOTICE', 'ACCOUNT_HOLD'].includes(row.nextAction.actionType) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              logAction(row.invoice.id, row.nextAction.actionType, 'EMAIL', { sendEmail: true })
+                            }}
+                            disabled={isPending || !row.builder.email}
+                            className={cn(
+                              'btn btn-primary btn-xs',
+                              (!row.builder.email) && 'opacity-50 cursor-not-allowed',
+                            )}
+                            title={!row.builder.email ? 'No email on file' : 'Fire the templated email now'}
+                          >
+                            <Send className="w-3 h-3" />
+                            Send email now
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const noteText = typeof window !== 'undefined'
+                              ? window.prompt('Call notes (optional):', '')
+                              : null
+                            if (noteText === null) return // cancelled
+                            logAction(row.invoice.id, 'PHONE_CALL', 'PHONE', { notes: noteText || 'Call logged' })
+                          }}
+                          disabled={isPending}
+                          className="btn btn-secondary btn-xs"
+                        >
+                          <Phone className="w-3 h-3" />
+                          Log call
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const promiseDate = typeof window !== 'undefined'
+                              ? window.prompt('Promised payment date (e.g. 2026-05-01):', '')
+                              : null
+                            if (promiseDate === null) return
+                            logAction(row.invoice.id, 'PROMISED', 'NOTE', {
+                              notes: promiseDate ? `Promised pay by ${promiseDate}` : 'Payment promised (no date)',
+                            })
+                          }}
+                          disabled={isPending}
+                          className="btn btn-secondary btn-xs"
+                        >
+                          <CheckSquare className="w-3 h-3" />
+                          Mark promised
+                        </button>
+                        {row.invoice.daysPastDue >= 45 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (typeof window !== 'undefined' &&
+                                !window.confirm(`Escalate ${row.builder.name} to ACCOUNT_HOLD? This suspends the builder and emails them + Nate.`)) return
+                              logAction(row.invoice.id, 'ACCOUNT_HOLD', 'EMAIL', {
+                                sendEmail: true,
+                                notes: 'Manually escalated to account hold from collections action center',
+                              })
+                            }}
+                            disabled={isPending}
+                            className="btn btn-xs bg-data-negative text-white hover:opacity-90"
+                          >
+                            <Ban className="w-3 h-3" />
+                            Escalate
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Activity history — expanded view */}
+                    {isExpanded && (
+                      <div className="px-4 py-3 border-t border-border-subtle bg-canvas">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="eyebrow text-[10px] text-fg-muted">Activity history</div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/ops/invoices/${row.invoice.id}`)
+                            }}
+                            className="btn btn-ghost btn-xs"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Open invoice
+                          </button>
+                        </div>
+                        {row.priorActions.length === 0 ? (
+                          <p className="text-[12px] text-fg-subtle">No prior actions on this invoice.</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {row.priorActions.map((a) => (
+                              <li
+                                key={a.id}
+                                className="flex items-start gap-2 text-[12px] border-l-2 border-border-subtle pl-2"
+                              >
+                                <MessageSquare className="w-3 h-3 mt-[3px] text-fg-muted flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium text-fg">{a.actionType}</span>
+                                    <span className="text-fg-subtle text-[11px]">{a.channel}</span>
+                                    <span className="text-fg-subtle text-[11px]">
+                                      {new Date(a.sentAt).toLocaleString()}
+                                    </span>
+                                    {a.sentBy && (
+                                      <span className="text-fg-subtle text-[11px]">by {a.sentBy}</span>
+                                    )}
+                                  </div>
+                                  {a.notes && (
+                                    <p className="text-fg-muted text-[11px] mt-0.5 whitespace-pre-wrap">
+                                      {a.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
-        </div>
-      </div>
+        </CardBody>
+      </Card>
     </div>
   )
 }

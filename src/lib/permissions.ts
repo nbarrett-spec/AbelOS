@@ -83,6 +83,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'PURCHASING', 'SALES_REP', 'ESTIMATOR'],
   '/ops/finance/patterns': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/ops/finance/ap-forecast': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
+  // AR aging dashboard — primary owners: Dawn (ACCOUNTING) + leadership.
+  // Matches /ops/ar-aging pattern so every finance-adjacent role keeps visibility.
+  '/ops/finance/ar': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
   '/ops/invoices': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
   '/ops/payments': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER'],
   '/ops/ar-aging': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
@@ -331,6 +334,10 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/finance/payment-patterns': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/finance/ap-forecast': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
   '/api/ops/finance/ar-predict': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
+  // AR aging dashboard feed — same audience as the /ops/finance/ar page
+  '/api/ops/finance/ar': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
+  // Collections action center endpoints — Dawn + leadership
+  '/api/ops/collections': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
   '/api/ops/finance/ap-waterfall': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
   '/api/ops/sync-health': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/invoices': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
