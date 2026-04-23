@@ -367,6 +367,9 @@ export default function PMPortal() {
             <Link href="/ops/schedule" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all text-sm font-medium text-gray-900">
               📅 Schedule Delivery
             </Link>
+            <Link href="/ops/portal/pm/material" className="block px-4 py-3 rounded-lg border border-[#0f2a3e] bg-blue-50 hover:bg-blue-100 transition-all text-sm font-medium text-gray-900">
+              📊 My Material Status
+            </Link>
             <Link href="/ops/portal/pm/material-eta" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#0f2a3e] transition-all text-sm font-medium text-gray-900">
               📦 Material ETA
             </Link>
