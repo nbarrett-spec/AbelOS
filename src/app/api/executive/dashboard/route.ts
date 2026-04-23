@@ -182,12 +182,21 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     // 8. Delivery Performance (30-day on-time %)
     // ────────────────────────────────────────────────────────────────────────
+    // Delivery schema: completedAt = actual delivery; scheduled date lives on
+    // ScheduleEntry joined via jobId. Use MAX(scheduledDate) per job as target.
     const deliveryPerf: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*)::int AS "total",
-        COUNT(CASE WHEN d."actualDeliveryDate" <= d."scheduledDeliveryDate" THEN 1 END)::int AS "onTime"
+        COUNT(CASE
+          WHEN d."completedAt" IS NOT NULL
+            AND d."completedAt" <= (
+              SELECT MAX(se."scheduledDate")
+              FROM "ScheduleEntry" se
+              WHERE se."jobId" = d."jobId"
+            )
+          THEN 1 END)::int AS "onTime"
       FROM "Delivery" d
-      WHERE d."actualDeliveryDate" IS NOT NULL
+      WHERE d."completedAt" IS NOT NULL
         AND d."createdAt" >= NOW() - INTERVAL '30 days'
     `)
 
@@ -203,7 +212,7 @@ export async function GET(request: NextRequest) {
         COALESCE(s."department", 'Other')::text AS "department",
         COUNT(*)::int AS "count"
       FROM "Staff" s
-      WHERE s."status"::text = 'ACTIVE'
+      WHERE s."active" = true
       GROUP BY s."department"
       ORDER BY "count" DESC
     `)
@@ -214,7 +223,7 @@ export async function GET(request: NextRequest) {
     const alerts: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         (SELECT COUNT(*)::int FROM "Invoice" WHERE status::text = 'OVERDUE') AS "overdueCount",
-        (SELECT COUNT(*)::int FROM "Builder" WHERE "creditUtilization" > 0.9) AS "creditBreachCount",
+        (SELECT COUNT(*)::int FROM "Builder" WHERE "creditLimit" > 0 AND "accountBalance" / "creditLimit" > 0.9) AS "creditBreachCount",
         (SELECT COUNT(*)::int FROM "InventoryItem" WHERE "onHand" <= "reorderPoint" AND "reorderPoint" > 0) AS "stockoutCount"
     `)
 

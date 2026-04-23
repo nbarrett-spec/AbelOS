@@ -39,7 +39,7 @@ const DEFAULT_RULES = [
     entity: 'Builder',
     severity: 'WARNING',
     query: `SELECT id, "companyName" FROM "Builder" WHERE ("paymentTermDays" IS NULL OR "paymentTermDays" = 0) AND status = 'ACTIVE'`,
-    fixUrl: '/ops/builders/{id}',
+    fixUrl: '/ops/accounts/{id}',
   },
   {
     name: 'Builders missing contact email',
@@ -47,7 +47,7 @@ const DEFAULT_RULES = [
     entity: 'Builder',
     severity: 'CRITICAL',
     query: `SELECT id, "companyName" FROM "Builder" WHERE (email IS NULL OR email = '') AND status = 'ACTIVE'`,
-    fixUrl: '/ops/builders/{id}',
+    fixUrl: '/ops/accounts/{id}',
   },
   {
     name: 'Invoices overdue 90+ days',

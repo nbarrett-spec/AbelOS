@@ -408,7 +408,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       generatedAt: new Date().toISOString(),
     } as TrendsResponse)
   } catch (error: any) {
-    console.error('Trends API error:', error)
-    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
+    console.error('Trends API error:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack?.split('\n').slice(0, 8).join('\n'),
+    })
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        detail: error?.message?.slice(0, 400) || null,
+        code: error?.code || null,
+      },
+      { status: 500 }
+    )
   }
 }

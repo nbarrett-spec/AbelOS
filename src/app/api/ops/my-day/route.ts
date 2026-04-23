@@ -141,7 +141,7 @@ async function getAdminManagerTasks(): Promise<Task[]> {
       label: `${pendingBuildersCount} builder application${pendingBuildersCount !== 1 ? 's' : ''} to approve`,
       count: pendingBuildersCount,
       priority: 'MEDIUM',
-      href: '/ops/customers/builders',
+      href: '/ops/accounts/applications',
       category: 'Customers',
     })
   }

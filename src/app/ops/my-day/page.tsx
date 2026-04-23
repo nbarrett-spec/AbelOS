@@ -24,10 +24,13 @@ interface MyDayData {
   }
 }
 
+type PriorityFilter = 'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'
+
 export default function MyDayPage() {
   const [data, setData] = useState<MyDayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<PriorityFilter>('ALL')
 
   const fetchMyDay = async () => {
     try {
@@ -90,8 +93,9 @@ export default function MyDayPage() {
     }
   }
 
-  // Group tasks by category
-  const groupedTasks = data?.tasks.reduce(
+  // Apply priority filter, then group tasks by category
+  const visibleTasks = data?.tasks.filter((t) => filter === 'ALL' || t.priority === filter) ?? []
+  const groupedTasks = visibleTasks.reduce(
     (acc, task) => {
       if (!acc[task.category]) {
         acc[task.category] = []
@@ -129,31 +133,55 @@ export default function MyDayPage() {
               <p className="text-lg text-slate-600">{data.date}</p>
             </div>
 
-            {/* Summary Cards */}
+            {/* Summary Cards — clickable filters */}
             <div className="grid grid-cols-4 gap-4 mb-8">
-              {/* Total Tasks */}
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md transition">
+              <button
+                type="button"
+                onClick={() => setFilter('ALL')}
+                aria-pressed={filter === 'ALL'}
+                className={`text-left bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-slate-400 ${
+                  filter === 'ALL' ? 'border-slate-900 ring-2 ring-slate-900' : 'border-slate-200'
+                }`}
+              >
                 <p className="text-slate-600 text-sm font-medium">Total Tasks</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">{data.summary.totalTasks}</p>
-              </div>
+              </button>
 
-              {/* High Priority */}
-              <div className="bg-red-50 rounded-lg shadow-sm border border-red-200 p-4 hover:shadow-md transition">
+              <button
+                type="button"
+                onClick={() => setFilter(filter === 'HIGH' ? 'ALL' : 'HIGH')}
+                aria-pressed={filter === 'HIGH'}
+                className={`text-left bg-red-50 rounded-lg shadow-sm border p-4 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                  filter === 'HIGH' ? 'border-red-600 ring-2 ring-red-600' : 'border-red-200'
+                }`}
+              >
                 <p className="text-red-700 text-sm font-medium">High Priority</p>
                 <p className="text-3xl font-bold text-red-900 mt-2">{data.summary.highPriority}</p>
-              </div>
+              </button>
 
-              {/* Medium Priority */}
-              <div className="bg-amber-50 rounded-lg shadow-sm border border-amber-200 p-4 hover:shadow-md transition">
+              <button
+                type="button"
+                onClick={() => setFilter(filter === 'MEDIUM' ? 'ALL' : 'MEDIUM')}
+                aria-pressed={filter === 'MEDIUM'}
+                className={`text-left bg-amber-50 rounded-lg shadow-sm border p-4 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                  filter === 'MEDIUM' ? 'border-amber-600 ring-2 ring-amber-600' : 'border-amber-200'
+                }`}
+              >
                 <p className="text-amber-700 text-sm font-medium">Medium Priority</p>
                 <p className="text-3xl font-bold text-amber-900 mt-2">{data.summary.mediumPriority}</p>
-              </div>
+              </button>
 
-              {/* Low Priority */}
-              <div className="bg-green-50 rounded-lg shadow-sm border border-green-200 p-4 hover:shadow-md transition">
+              <button
+                type="button"
+                onClick={() => setFilter(filter === 'LOW' ? 'ALL' : 'LOW')}
+                aria-pressed={filter === 'LOW'}
+                className={`text-left bg-green-50 rounded-lg shadow-sm border p-4 hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  filter === 'LOW' ? 'border-green-600 ring-2 ring-green-600' : 'border-green-200'
+                }`}
+              >
                 <p className="text-green-700 text-sm font-medium">Low Priority</p>
                 <p className="text-3xl font-bold text-green-900 mt-2">{data.summary.lowPriority}</p>
-              </div>
+              </button>
             </div>
 
             {/* Task List by Category */}
