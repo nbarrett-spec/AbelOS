@@ -48,6 +48,7 @@ export default function ManufacturingDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [qcBlockedCount, setQcBlockedCount] = useState<number>(0)
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -69,6 +70,15 @@ export default function ManufacturingDashboard() {
     }
 
     fetchDashboard()
+
+    // Count jobs blocked by failing QC (fire-and-forget).
+    fetch('/api/ops/inspections?status=FAIL&limit=100')
+      .then((r) => (r.ok ? r.json() : { inspections: [] }))
+      .then((d) => {
+        const unique = new Set((d.inspections || []).map((i: any) => i.jobId).filter(Boolean))
+        setQcBlockedCount(unique.size)
+      })
+      .catch(() => setQcBlockedCount(0))
   }, [])
 
   if (loading) {
@@ -106,6 +116,26 @@ export default function ManufacturingDashboard() {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
           Error loading dashboard: {error}
+        </div>
+      )}
+
+      {/* QC-blocked banner */}
+      {qcBlockedCount > 0 && (
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-red-800">
+              QC FAIL — {qcBlockedCount} job{qcBlockedCount === 1 ? '' : 's'} blocked from advancement.
+            </p>
+            <p className="text-xs text-red-700 mt-0.5">
+              These jobs have an unresolved failing inspection and cannot ship until re-inspected.
+            </p>
+          </div>
+          <Link
+            href="/ops/portal/qc/queue"
+            className="px-3 py-1.5 bg-[#C0392B] text-white rounded text-sm font-medium hover:bg-[#A93226]"
+          >
+            Review Queue
+          </Link>
         </div>
       )}
 

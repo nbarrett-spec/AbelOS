@@ -113,6 +113,11 @@ export default function JobDetailPage() {
   const [showPunch, setShowPunch] = useState(false)
   const [punchForm, setPunchForm] = useState({ description: '', location: '', severity: 'MINOR', installationId: '' })
   const [showPunchForm, setShowPunchForm] = useState(false)
+  const [qcStatus, setQcStatus] = useState<{
+    failing: boolean
+    passing: boolean
+    openPunchItems: number
+  } | null>(null)
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -133,6 +138,39 @@ export default function JobDetailPage() {
       }
     }
     if (jobId) fetchJob()
+  }, [jobId])
+
+  // Fetch QC status for the banner — failing inspections + open punch items.
+  useEffect(() => {
+    if (!jobId) return
+    let cancel = false
+    ;(async () => {
+      try {
+        const [inspRes, punchRes] = await Promise.all([
+          fetch(`/api/ops/inspections?jobId=${jobId}&limit=20`),
+          fetch(`/api/ops/punch-items?jobId=${jobId}`),
+        ])
+        if (cancel) return
+        const inspData = inspRes.ok ? await inspRes.json() : { inspections: [] }
+        const punchData = punchRes.ok ? await punchRes.json() : { punchItems: [] }
+
+        // Treat most-recent inspection row as the "current" state (sorted DESC
+        // by createdAt in the inspections list route).
+        const rows = (inspData.inspections || []) as any[]
+        const latest = rows[0]
+        const failing = !!latest && ['FAIL', 'FAILED'].includes(String(latest.status))
+        const passing = !!rows.find((r) =>
+          ['PASS', 'PASS_WITH_NOTES', 'PASSED'].includes(String(r.status))
+        )
+        const openPunch = (punchData.punchItems || []).filter(
+          (p: any) => p.status !== 'RESOLVED'
+        ).length
+        setQcStatus({ failing, passing, openPunchItems: openPunch })
+      } catch {
+        // ignore — banner is optional
+      }
+    })()
+    return () => { cancel = true }
   }, [jobId])
 
   const loadProfitability = async () => {
@@ -304,6 +342,28 @@ export default function JobDetailPage() {
           )}
         </div>
       </div>
+
+      {/* QC status banner — blocks the eye whenever a failing inspection exists. */}
+      {qcStatus?.failing && (
+        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-red-800">
+              QC FAIL — Blocked from advancement.
+            </p>
+            <p className="text-xs text-red-700 mt-0.5">
+              {qcStatus.openPunchItems > 0
+                ? `Resolve ${qcStatus.openPunchItems} punch item${qcStatus.openPunchItems === 1 ? '' : 's'} and record a passing inspection to proceed.`
+                : 'Record a passing inspection to proceed.'}
+            </p>
+          </div>
+          <Link
+            href="/ops/portal/qc/queue"
+            className="px-3 py-1.5 bg-[#C0392B] text-white rounded text-sm font-medium hover:bg-[#A93226]"
+          >
+            Go to QC Queue
+          </Link>
+        </div>
+      )}
 
       {/* Status Progress */}
       <div className="bg-white rounded-lg border p-4 mb-6 overflow-x-auto">

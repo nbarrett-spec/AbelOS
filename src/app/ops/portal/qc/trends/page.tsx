@@ -56,19 +56,37 @@ interface QCTrends {
   resultBreakdown: ResultBreakdown[]
 }
 
+interface QCMetrics {
+  passRate: { d7: number; d30: number; d90: number }
+  totals: { d7: number; d30: number; d90: number }
+  pass: { d7: number; d30: number; d90: number }
+  fail: { d7: number; d30: number; d90: number }
+  topFailureReasons: Array<{ reason: string; count: number }>
+  perOperator: Array<{
+    inspectorId: string
+    name: string
+    total: number
+    passed: number
+    failed: number
+    passRate: number
+  }>
+}
+
 export default function QCTrendsPage() {
   const [trends, setTrends] = useState<QCTrends | null>(null)
+  const [metrics, setMetrics] = useState<QCMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<'30' | '90' | '180' | '365'>('90')
 
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch(`/api/ops/qc-trends?period=${period}`)
-        if (res.ok) {
-          const data = await res.json()
-          setTrends(data)
-        }
+        const [tRes, mRes] = await Promise.all([
+          fetch(`/api/ops/qc-trends?period=${period}`),
+          fetch(`/api/ops/qc/metrics`),
+        ])
+        if (tRes.ok) setTrends(await tRes.json())
+        if (mRes.ok) setMetrics(await mRes.json())
       } catch (error) {
         console.error('Failed to load QC trends:', error)
       } finally {
@@ -138,6 +156,76 @@ export default function QCTrendsPage() {
           ))}
         </div>
       </div>
+
+      {/* Unified QC metrics (7/30/90d) — from /api/ops/qc/metrics */}
+      {metrics && (
+        <div className="bg-white rounded-xl border p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Rolling Pass Rate</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(['d7', 'd30', 'd90'] as const).map((k) => (
+              <div key={k} className="p-4 rounded-lg bg-gray-50 border">
+                <p className="text-xs font-medium text-gray-600 uppercase">
+                  Last {k === 'd7' ? '7' : k === 'd30' ? '30' : '90'} days
+                </p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {metrics.passRate[k]}%
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {metrics.pass[k]} pass / {metrics.fail[k]} fail ({metrics.totals[k]} total)
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {metrics.topFailureReasons.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                Top failure reasons (90d)
+              </h3>
+              <div className="space-y-1">
+                {metrics.topFailureReasons.slice(0, 5).map((r) => (
+                  <div key={r.reason} className="flex items-center justify-between text-sm py-1">
+                    <span className="text-gray-700">{r.reason}</span>
+                    <span className="font-semibold text-[#C0392B]">{r.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {metrics.perOperator.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                Pass rate by inspector (90d)
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-2 px-3 font-semibold text-gray-600">Inspector</th>
+                      <th className="text-right py-2 px-3 font-semibold text-gray-600">Passed</th>
+                      <th className="text-right py-2 px-3 font-semibold text-gray-600">Failed</th>
+                      <th className="text-right py-2 px-3 font-semibold text-gray-600">Total</th>
+                      <th className="text-right py-2 px-3 font-semibold text-gray-600">Pass %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.perOperator.map((op) => (
+                      <tr key={op.inspectorId} className="border-b border-gray-100">
+                        <td className="py-2 px-3 text-gray-900">{op.name}</td>
+                        <td className="py-2 px-3 text-right text-green-600">{op.passed}</td>
+                        <td className="py-2 px-3 text-right text-red-600">{op.failed}</td>
+                        <td className="py-2 px-3 text-right text-gray-600">{op.total}</td>
+                        <td className="py-2 px-3 text-right font-semibold">{op.passRate}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

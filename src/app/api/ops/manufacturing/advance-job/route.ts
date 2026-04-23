@@ -164,6 +164,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── QC HARD GATE ─────────────────────────────────────────────────
+    // Block any transition to a ship/deliver status if the job is in or past
+    // IN_PRODUCTION and has NO passing inspection in EITHER inspection store
+    // (QualityCheck + Inspection). The pre-ship statuses are LOADED, IN_TRANSIT,
+    // DELIVERED. See /api/ops/inspections (raw SQL 'Inspection' table) and
+    // QualityCheck (Prisma model) — both are treated as authoritative.
+    const preShipTargets = ['LOADED', 'IN_TRANSIT', 'DELIVERED']
+    const inProductionOrLater = [
+      'IN_PRODUCTION', 'STAGED', 'LOADED', 'IN_TRANSIT', 'DELIVERED',
+      'INSTALLING', 'PUNCH_LIST',
+    ]
+    const needsQcGate = preShipTargets.includes(targetStatus) &&
+      inProductionOrLater.includes(currentStatus)
+
+    // Also block if any FAIL/FAILED exists without a subsequent PASS — treat
+    // an unresolved failing inspection as a hard stop regardless of status.
+    const failingInspection = await hasUnresolvedFailingInspection(jobId)
+
+    if (needsQcGate || failingInspection) {
+      const qcPassing = await hasPassingInspection(jobId)
+
+      if (!qcPassing || failingInspection) {
+        // Admin-with-overrideReason can bypass
+        if (!(isAdmin && overrideReason)) {
+          return NextResponse.json(
+            {
+              blocked: true,
+              reason: failingInspection ? 'qc_failed_unresolved' : 'qc_required',
+              message: failingInspection
+                ? 'Job has an unresolved failing QC inspection — resolve before advancing'
+                : 'Job cannot advance past IN_PRODUCTION without a passing QC inspection',
+              currentStatus,
+              targetStatus,
+              hint: 'ADMIN can override by passing overrideReason in the request body',
+            },
+            { status: 409 }
+          )
+        }
+
+        // ADMIN override — audit CRITICAL
+        await audit(
+          request,
+          'QC_GATE_OVERRIDDEN',
+          'Job',
+          jobId,
+          {
+            jobNumber: job.jobNumber,
+            from: currentStatus,
+            to: targetStatus,
+            overrideReason,
+            reason: failingInspection ? 'qc_failed_unresolved' : 'qc_required',
+          },
+          'CRITICAL'
+        )
+      }
+    }
+
     // If gates failed and no admin override
     if (gateFailures.length > 0 && !canOverride) {
       return NextResponse.json({
@@ -244,4 +301,84 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// ── QC inspection helpers ────────────────────────────────────────────
+// Two stores exist: QualityCheck (Prisma) and Inspection (raw SQL via
+// /api/ops/inspections). Either is accepted as authoritative evidence.
+
+async function hasPassingInspection(jobId: string): Promise<boolean> {
+  try {
+    const qc: any[] = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "QualityCheck"
+       WHERE "jobId" = $1
+         AND result::text IN ('PASS', 'CONDITIONAL_PASS')
+       LIMIT 1`,
+      jobId
+    )
+    if (qc.length > 0) return true
+  } catch {
+    // QualityCheck optional — continue
+  }
+  try {
+    const insp: any[] = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "Inspection"
+       WHERE "jobId" = $1
+         AND "status" IN ('PASS', 'PASS_WITH_NOTES', 'PASSED')
+       LIMIT 1`,
+      jobId
+    )
+    if (insp.length > 0) return true
+  } catch {
+    // Inspection table may not exist in dev
+  }
+  return false
+}
+
+async function hasUnresolvedFailingInspection(jobId: string): Promise<boolean> {
+  // A FAIL is "unresolved" if there is no later PASS record on the same job.
+  try {
+    const qc: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "createdAt" FROM "QualityCheck"
+       WHERE "jobId" = $1 AND result::text = 'FAIL'
+       ORDER BY "createdAt" DESC LIMIT 1`,
+      jobId
+    )
+    if (qc.length > 0) {
+      const failAt: Date = qc[0].createdAt
+      const laterPass: any[] = await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM "QualityCheck"
+         WHERE "jobId" = $1
+           AND result::text IN ('PASS', 'CONDITIONAL_PASS')
+           AND "createdAt" > $2
+         LIMIT 1`,
+        jobId, failAt
+      )
+      if (laterPass.length === 0) return true
+    }
+  } catch { /* ignore */ }
+
+  try {
+    const insp: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COALESCE("completedDate", "updatedAt", "createdAt") AS at
+       FROM "Inspection"
+       WHERE "jobId" = $1 AND "status" IN ('FAIL', 'FAILED')
+       ORDER BY at DESC LIMIT 1`,
+      jobId
+    )
+    if (insp.length > 0) {
+      const failAt: Date = insp[0].at
+      const laterPass: any[] = await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM "Inspection"
+         WHERE "jobId" = $1
+           AND "status" IN ('PASS', 'PASS_WITH_NOTES', 'PASSED')
+           AND COALESCE("completedDate", "updatedAt", "createdAt") > $2
+         LIMIT 1`,
+        jobId, failAt
+      )
+      if (laterPass.length === 0) return true
+    }
+  } catch { /* ignore */ }
+
+  return false
 }
