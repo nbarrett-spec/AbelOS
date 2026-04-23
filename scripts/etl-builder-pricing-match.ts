@@ -17,6 +17,13 @@ const FILE = path.resolve(__dirname, '..', '..', 'Abel_Product_Catalog_LIVE.xlsx
 const MANUAL_OVERRIDES: Record<string, string | null> = {
   // Millcreek is a developer whose only Aegis record is the Celina community.
   Millcreek: 'MILLCREEK AMAVI CELINA',
+  // Created 2026-04-22 via scripts/etl-create-orphan-builders.ts — exact match
+  // now succeeds, but listed here for documentation.
+  Daniel: 'Daniel',
+  'Hunt Homes': 'Hunt Homes',
+  'JCLI Homes': 'JCLI Homes',
+  McClintock: 'McClintock',
+  'TX BUILT CONST': 'TX BUILT CONST',
 }
 
 function normalize(s: string): string {

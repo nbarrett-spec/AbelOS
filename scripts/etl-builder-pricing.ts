@@ -32,6 +32,13 @@ const FILE = arg('--file') || path.resolve(__dirname, '..', '..', 'Abel_Product_
 // Same override map as the match script — keep in sync.
 const MANUAL_OVERRIDES: Record<string, string | null> = {
   Millcreek: 'MILLCREEK AMAVI CELINA',
+  // Created 2026-04-22 via scripts/etl-create-orphan-builders.ts — exact match
+  // now succeeds, but listed here for documentation.
+  Daniel: 'Daniel',
+  'Hunt Homes': 'Hunt Homes',
+  'JCLI Homes': 'JCLI Homes',
+  McClintock: 'McClintock',
+  'TX BUILT CONST': 'TX BUILT CONST',
 }
 
 function normalize(s: string): string {
