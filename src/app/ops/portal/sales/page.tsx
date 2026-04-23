@@ -113,7 +113,7 @@ export default function SalesPortal() {
 
     setSubmittingActivity(true)
     try {
-      const response = await fetch(`/api/ops/deals/${selectedFollowUpDealId}/activity`, {
+      const response = await fetch(`/api/ops/sales/deals/${selectedFollowUpDealId}/activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

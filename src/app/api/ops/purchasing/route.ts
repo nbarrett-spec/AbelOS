@@ -227,15 +227,42 @@ export async function POST(request: NextRequest) {
       poId, poNumber, vendorId, createdById, subtotal, total, notes || null, expectedDate || null
     );
 
-    // Insert items
+    // Insert items + bump InventoryItem.onOrder for linked products so MRP sees
+    // incoming stock immediately. The receiving route decrements onOrder when
+    // goods arrive.
     for (const item of items) {
       const itemId = `poi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
       const lineTotal = item.quantity * item.unitCost;
+      const productId: string | null = item.productId || null;
+      const qty = Number(item.quantity) || 0;
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "PurchaseOrderItem" ("id", "purchaseOrderId", "vendorSku", "description", "quantity", "unitCost", "lineTotal")
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        itemId, poId, item.vendorSku, item.description, item.quantity, item.unitCost, lineTotal
+        `INSERT INTO "PurchaseOrderItem" ("id", "purchaseOrderId", "productId", "vendorSku", "description", "quantity", "unitCost", "lineTotal")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        itemId, poId, productId, item.vendorSku, item.description, qty, item.unitCost, lineTotal
       );
+
+      // If linked to a product, bump onOrder on its InventoryItem (create if absent)
+      if (productId && qty > 0) {
+        const inv: any[] = await prisma.$queryRawUnsafe(
+          `SELECT "id" FROM "InventoryItem" WHERE "productId" = $1`, productId
+        );
+        if (inv && inv.length > 0) {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "InventoryItem"
+             SET "onOrder" = COALESCE("onOrder", 0) + $1,
+                 "updatedAt" = NOW()
+             WHERE "productId" = $2`,
+            qty, productId
+          );
+        } else {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "InventoryItem"
+               ("id", "productId", "onHand", "committed", "onOrder", "available", "updatedAt")
+             VALUES (gen_random_uuid()::text, $1, 0, 0, $2, 0, NOW())`,
+            productId, qty
+          );
+        }
+      }
     }
 
     // Fetch created PO with items, vendor, and createdBy
@@ -317,9 +344,9 @@ export async function PATCH(request: NextRequest) {
 
     const updatedPO = updatedRows[0];
 
-    // Fetch vendor info
+    // Fetch vendor info — quote mixed-case columns so Postgres does not fold them
     const vendorQuery = `
-      SELECT id, name, code, contactName, email, phone
+      SELECT "id", "name", "code", "contactName", "email", "phone"
       FROM "Vendor"
       WHERE "id" = $1
     `;

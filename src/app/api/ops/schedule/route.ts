@@ -266,12 +266,12 @@ export async function POST(request: NextRequest) {
       createdNow
     ];
 
-    // Insert the ScheduleEntry
+    // Insert the ScheduleEntry — cast enum strings explicitly
     const insertQuery = `
       INSERT INTO "ScheduleEntry"
         ("id", "jobId", "crewId", "entryType", "title", "scheduledDate", "scheduledTime", "status", "notes", "createdAt", "updatedAt")
       VALUES
-        ($1, $2, $3, $4, $5, $6::timestamptz, $7, $8, $9, $10::timestamptz, $11::timestamptz)
+        ($1, $2, $3, $4::"ScheduleType", $5, $6::timestamptz, $7, $8::"ScheduleStatus", $9, $10::timestamptz, $11::timestamptz)
     `;
 
     await prisma.$executeRawUnsafe(insertQuery, ...insertParams);
@@ -299,12 +299,12 @@ export async function POST(request: NextRequest) {
         // Generate delivery ID
         const deliveryId = `del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-        // Insert Delivery record using parameterized query
+        // Insert Delivery record — cast enum status
         const deliveryInsertQuery = `
           INSERT INTO "Delivery"
             ("id", "jobId", "crewId", "deliveryNumber", "address", "status", "createdAt", "updatedAt")
           VALUES
-            ($1, $2, $3, $4, $5, 'SCHEDULED', $6::timestamptz, $7::timestamptz)
+            ($1, $2, $3, $4, $5, 'SCHEDULED'::"DeliveryStatus", $6::timestamptz, $7::timestamptz)
         `;
 
         await prisma.$executeRawUnsafe(deliveryInsertQuery, deliveryId, jobId, crewId || null, deliveryNumber, jobRow.jobAddress, createdNow, createdNow);

@@ -198,37 +198,48 @@ export async function POST(request: NextRequest) {
       notes || null
     )
 
-    // Update invoice balance if invoice exists
+    // Update invoice balance — surface errors instead of swallowing them.
+    // The payment already inserted, so if the invoice update fails we need to
+    // know and return 500 so the caller can retry/reconcile. Previously we
+    // silently swallowed errors (commented console.log) which hid breakage.
+    const invoiceResult: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id", "amountPaid", "total" FROM "Invoice" WHERE "id" = $1`,
+      invoiceId
+    ) as any[]
+
+    if (invoiceResult.length === 0) {
+      return NextResponse.json(
+        { error: `Payment recorded (${paymentId}) but linked invoice ${invoiceId} not found. Manual reconciliation required.` },
+        { status: 404 }
+      )
+    }
+
+    const invoice = invoiceResult[0]
+    const newAmountPaid = Number(invoice.amountPaid || 0) + Number(amount)
+    const newBalanceDue = Math.max(0, Number(invoice.total) - newAmountPaid)
+
+    // Status transitions: PAID when balance 0, otherwise PARTIALLY_PAID
+    const newStatus = newBalanceDue === 0 ? 'PAID' : 'PARTIALLY_PAID'
+
     try {
-      const invoiceResult: any[] = await prisma.$queryRawUnsafe(
-        `SELECT "id", ("total" - COALESCE("amountPaid",0))::float AS "balanceDue", "amountPaid", "total" FROM "Invoice" WHERE "id" = $1`,
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Invoice"
+         SET "amountPaid" = $1, "balanceDue" = $2, "status" = $3::"InvoiceStatus", "updatedAt" = NOW()
+         WHERE "id" = $4`,
+        newAmountPaid,
+        newBalanceDue,
+        newStatus,
         invoiceId
-      ) as any[]
-
-      if (invoiceResult.length > 0) {
-        const invoice = invoiceResult[0]
-        const newAmountPaid = (invoice.amountPaid || 0) + amount
-        const newBalanceDue = Math.max(0, invoice.total - newAmountPaid)
-
-        // Determine new status
-        let newStatus = 'PARTIALLY_PAID'
-        if (newBalanceDue === 0) {
-          newStatus = 'PAID'
-        }
-
-        await prisma.$executeRawUnsafe(
-          `UPDATE "Invoice"
-           SET "amountPaid" = $1, "balanceDue" = $2, "status" = $3, "updatedAt" = NOW()
-           WHERE "id" = $4`,
-          newAmountPaid,
-          newBalanceDue,
-          newStatus,
-          invoiceId
-        )
-      }
-    } catch (e) {
-      // Invoice might not exist, continue
-      // console.log('Invoice not found or error updating balance:', e)
+      )
+    } catch (e: any) {
+      console.error('[payments] invoice update failed for', invoiceId, e?.message || e)
+      return NextResponse.json(
+        {
+          error: `Payment recorded (${paymentId}) but invoice update failed: ${e?.message || String(e)}. Manual reconciliation required.`,
+          paymentId,
+        },
+        { status: 500 }
+      )
     }
 
     // Fetch and return created payment

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withCronRun } from '@/lib/cron'
@@ -8,8 +9,9 @@ import { logger } from '@/lib/logger'
  * Runs daily at 6am UTC to capture critical financial KPIs
  */
 
-function getCronSecret() {
-  return process.env.CRON_SECRET || 'dev-secret'
+function getCronSecret(): string | null {
+  const secret = process.env.CRON_SECRET
+  return secret && secret.length > 0 ? secret : null
 }
 
 async function calculateFinancialSnapshot() {
@@ -148,8 +150,12 @@ async function calculateFinancialSnapshot() {
 }
 
 export async function GET(request: NextRequest) {
+  const expected = getCronSecret()
+  if (!expected) {
+    return new Response('Not configured', { status: 500 })
+  }
   const secret = request.headers.get('authorization')?.split('Bearer ')[1]
-  if (secret !== getCronSecret()) {
+  if (secret !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

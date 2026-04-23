@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
 
-const CRON_SECRET = process.env.CRON_SECRET || 'not-set'
+// Never fall back to a default — if CRON_SECRET isn't set we must refuse to run
+const CRON_SECRET = process.env.CRON_SECRET
 
 interface BrainKnowledgeEntry {
   category: 'customers' | 'products' | 'vendors' | 'staff' | 'inventory' | 'deals' | 'financial'
@@ -39,6 +40,9 @@ interface BrainSeedResponse {
 export async function POST(request: NextRequest) {
   try {
     // ─── AUTH CHECK ────────────────────────────────────────────────────
+    if (!CRON_SECRET) {
+      return new Response('Not configured', { status: 500 })
+    }
     const authHeader = request.headers.get('Authorization')
     if (!authHeader || authHeader !== `Bearer ${CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -217,11 +217,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { builderId, projectId, items, validDays = 30, notes } = body
+    const { builderId, projectId, takeoffId, items, validDays = 30, notes } = body
 
     if (!builderId || !items || items.length === 0) {
       return NextResponse.json(
         { error: 'builderId and items are required' },
+        { status: 400 }
+      )
+    }
+
+    // takeoffId is NOT NULL in the Quote table — require it up front with a clean 400
+    if (!takeoffId || typeof takeoffId !== 'string') {
+      return NextResponse.json(
+        { error: 'takeoffId is required (the takeoff this quote is based on)' },
         { status: 400 }
       )
     }
@@ -273,16 +281,16 @@ export async function POST(request: NextRequest) {
 
     const createQuoteQuery = `
       INSERT INTO "Quote" (
-        "id", "quoteNumber", "projectId", "subtotal", "termAdjustment", "total",
+        "id", "quoteNumber", "projectId", "takeoffId", "subtotal", "termAdjustment", "total",
         "status", "validUntil", "notes", "version", "createdAt", "updatedAt"
       )
-      VALUES ($1, $2, $3, $4, $5, $6, 'DRAFT'::"QuoteStatus", $7::timestamptz, $8, 1, $9::timestamptz, $10::timestamptz)
-      RETURNING "id", "quoteNumber", "projectId", "subtotal", "taxRate", "taxAmount",
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::"QuoteStatus", $9::timestamptz, $10, 1, $11::timestamptz, $12::timestamptz)
+      RETURNING "id", "quoteNumber", "projectId", "takeoffId", "subtotal", "taxRate", "taxAmount",
                 "termAdjustment", "total", "status", "validUntil", "version", "notes",
                 "createdAt", "updatedAt"
     `
     const quoteResult = await prisma.$queryRawUnsafe<any[]>(
-      createQuoteQuery, quoteId, quoteNumber, projectId || null, subtotal, termAdjustment, total, validUntil, notes || null, now, now
+      createQuoteQuery, quoteId, quoteNumber, projectId || null, takeoffId, subtotal, termAdjustment, total, 'DRAFT', validUntil, notes || null, now, now
     )
     const createdQuote = quoteResult[0]
 

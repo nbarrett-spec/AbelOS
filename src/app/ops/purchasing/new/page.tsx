@@ -50,7 +50,7 @@ function NewPOForm() {
     setLoading(true)
     try {
       // Fetch vendors
-      const vendorRes = await fetch('/api/ops/procurement/vendors?active=true')
+      const vendorRes = await fetch('/api/ops/vendors?active=true')
       if (vendorRes.ok) {
         const vData = await vendorRes.json()
         setVendors(vData.vendors || [])

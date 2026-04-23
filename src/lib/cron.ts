@@ -172,6 +172,15 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'material-watch', schedule: '*/30 * * * *', description: 'Check material watch status and notify when available' },
   { name: 'collections-cycle', schedule: '0 13 * * 1-5', description: 'Daily collections: tone-aware notices, payment plan offers, approval gates' },
   { name: 'data-quality', schedule: '0 2 * * *', description: 'Nightly data quality watchdog: detect violations, auto-fix resolved issues' },
+  // Drift fix 2026-04-22: routes exist and fire, so register them so /admin/crons stops flagging "missing"
+  { name: 'nuc-alerts', schedule: '*/5 * * * *', description: 'Poll NUC engine for new alerts and funnel to inbox' },
+  { name: 'morning-briefing', schedule: '0 6 * * 1-5', description: 'Daily ops/exec morning briefing email' },
+  { name: 'collections-email', schedule: '0 10 * * 1-5', description: 'Send scheduled collections emails (past-due + follow-ups)' },
+  { name: 'weekly-report', schedule: '0 8 * * 1', description: 'Weekly KPI + health report for Nate' },
+  { name: 'pm-daily-tasks', schedule: '0 7 * * 1-5', description: 'PM daily task generator (jobs needing attention)' },
+  { name: 'financial-snapshot', schedule: '0 6 * * *', description: 'Daily financial snapshot (cash, AR, DSO, aging)' },
+  { name: 'brain-sync', schedule: '0 */4 * * *', description: 'Push Aegis deltas to NUC brain (non-staff tables)' },
+  { name: 'brain-sync-staff', schedule: '30 */4 * * *', description: 'Push Aegis Staff deltas to NUC brain' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

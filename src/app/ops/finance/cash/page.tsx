@@ -465,17 +465,12 @@ export default function CashCommandCenter() {
   )
 
   async function sendCollectionEmail(builderId: string, builderName: string) {
-    try {
-      const res = await fetch('/api/collections/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ builderId }),
-      })
-      if (res.ok) alert(`Collection email queued for ${builderName}.`)
-      else alert('Collection endpoint not configured yet.')
-    } catch {
-      alert('Unable to send collection email.')
-    }
+    // TODO: no /api/ops/collections/send-email endpoint exists yet (only
+    // /api/ops/collections, /api/ops/collections/run-cycle, /api/ops/collections/rules).
+    // Fail loudly instead of a silent "queued" toast so we don't pretend to
+    // have sent anything. Wire to a real endpoint when one ships.
+    void builderId
+    alert(`Not implemented: collection email for ${builderName}. No backing endpoint yet.`)
   }
 }
 

@@ -62,7 +62,7 @@ export function CreateJobModal({
       try {
         const [buildersRes, pmsRes] = await Promise.all([
           fetch('/api/ops/builders'),
-          fetch('/api/staff?role=PROJECT_MANAGER'),
+          fetch('/api/ops/staff?role=PROJECT_MANAGER'),
         ])
 
         if (buildersRes.ok) {

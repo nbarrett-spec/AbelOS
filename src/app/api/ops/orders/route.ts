@@ -237,6 +237,7 @@ export async function POST(request: NextRequest) {
       builderId,
       deliveryDate,
       deliveryNotes,
+      orderDate,
     } = body;
 
     if (!quoteId) {
@@ -340,14 +341,21 @@ export async function POST(request: NextRequest) {
     // Generate order ID
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-    // Insert order
+    // Insert order — cast enum strings, always populate orderDate
+    const resolvedOrderDate = orderDate
+      ? new Date(orderDate).toISOString()
+      : new Date().toISOString();
     const insertOrderQuery = `
       INSERT INTO "Order" (
         "id", "orderNumber", "builderId", "quoteId", "subtotal", "taxAmount",
         "total", "paymentTerm", "paymentStatus", "status", "deliveryDate",
-        "deliveryNotes", "createdAt", "updatedAt"
+        "deliveryNotes", "orderDate", "createdAt", "updatedAt"
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7,
+        $8::"PaymentTerm", $9::"PaymentStatus", $10::"OrderStatus",
+        $11, $12, $13, $14, $15
+      )
     `;
     await prisma.$executeRawUnsafe(
       insertOrderQuery,
@@ -363,6 +371,7 @@ export async function POST(request: NextRequest) {
       'RECEIVED',
       deliveryDate ? new Date(deliveryDate).toISOString() : null,
       deliveryNotes || null,
+      resolvedOrderDate,
       new Date().toISOString(),
       new Date().toISOString()
     );
