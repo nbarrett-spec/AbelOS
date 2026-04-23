@@ -157,7 +157,6 @@ async function main() {
           name: 'Bloomfield Homes DFW',
           city: 'DFW',
           state: 'TX',
-          status: 'ACTIVE',
         },
         select: { id: true, name: true },
       })
@@ -178,12 +177,7 @@ async function main() {
         }
       } else {
         await prisma.communityFloorPlan.create({
-          data: {
-            communityId: community.id,
-            name,
-            sqFootage: sqft,
-            status: 'ACTIVE',
-          },
+          data: { communityId: community.id, name, sqFootage: sqft },
         })
         plansCreated++
       }
