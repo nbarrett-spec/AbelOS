@@ -92,6 +92,7 @@ const TYPE_LABELS: Record<string, string> = {
   CREDIT_ALERT: 'Credit Alert',
   SYSTEM: 'System',
   SYSTEM_AUDIT_FINDING: 'Audit Finding',
+  DATA_QUALITY: 'Data Quality',
   IMPROVEMENT_REVENUE: 'Revenue Ideas',
   IMPROVEMENT_COST: 'Cost Ideas',
   IMPROVEMENT_CASHFLOW: 'Cash Flow',

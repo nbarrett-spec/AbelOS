@@ -20,6 +20,7 @@ import Badge from '@/components/ui/Badge'
 
 export default function InboxPage() {
   const [pendingCount, setPendingCount] = useState<number | null>(null)
+  const [dataQualityCount, setDataQualityCount] = useState<number>(0)
 
   return (
     <div className="space-y-4">
@@ -32,6 +33,11 @@ export default function InboxPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {dataQualityCount > 0 && (
+            <Badge variant="danger" size="md">
+              {dataQualityCount} data quality
+            </Badge>
+          )}
           <Badge variant="neutral" size="md">
             {pendingCount === null ? '…' : `${pendingCount} pending`}
           </Badge>
@@ -43,7 +49,10 @@ export default function InboxPage() {
         variant="full"
         limit={100}
         initialStatus="PENDING"
-        onCountsChange={(total) => setPendingCount(total)}
+        onCountsChange={(total, countsByType) => {
+          setPendingCount(total)
+          setDataQualityCount(countsByType?.DATA_QUALITY ?? 0)
+        }}
       />
     </div>
   )

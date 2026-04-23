@@ -174,6 +174,7 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'material-watch', schedule: '*/30 * * * *', description: 'Check material watch status and notify when available' },
   { name: 'collections-cycle', schedule: '0 13 * * 1-5', description: 'Daily collections: tone-aware notices, payment plan offers, approval gates' },
   { name: 'data-quality', schedule: '0 2 * * *', description: 'Nightly data quality watchdog: detect violations, auto-fix resolved issues' },
+  { name: 'data-quality-watchdog', schedule: '0 12 * * *', description: 'Phase 4.5 integrity watchdog: FK orphans, math drift, impossible states → InboxItem type=DATA_QUALITY' },
   // Drift fix 2026-04-22: routes exist and fire, so register them so /admin/crons stops flagging "missing"
   { name: 'nuc-alerts', schedule: '*/5 * * * *', description: 'Poll NUC engine for new alerts and funnel to inbox' },
   { name: 'morning-briefing', schedule: '0 6 * * 1-5', description: 'Daily ops/exec morning briefing email' },

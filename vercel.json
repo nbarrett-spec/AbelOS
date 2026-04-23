@@ -143,6 +143,10 @@
     {
       "path": "/api/cron/aegis-brain-sync",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/data-quality-watchdog",
+      "schedule": "0 12 * * *"
     }
   ]
 }
