@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { generateCollectionCall, isElevenLabsConfigured } from '@/lib/elevenlabs'
 
 /**
  * POST /api/ops/collections/run-cycle
@@ -246,12 +247,33 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Generate voice messages for 30+ day overdue invoices (non-blocking)
+    let voiceMessagesQueued = 0
+    if (isElevenLabsConfigured()) {
+      for (const invoice of overdueInvoices) {
+        const daysOver = Math.floor(
+          (new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+        )
+        if (daysOver >= 30) {
+          generateCollectionCall({
+            companyName: invoice.builderName || 'valued customer',
+            invoiceNumber: invoice.invoiceNumber,
+            amount: invoice.balanceDue,
+            dueDate: new Date(invoice.dueDate).toLocaleDateString('en-US'),
+            daysOverdue: daysOver,
+          }).catch(err => console.warn(`[Collections TTS] Failed for ${invoice.invoiceNumber}:`, err))
+          voiceMessagesQueued++
+        }
+      }
+    }
+
     return NextResponse.json({
       message: 'Smart collection cycle completed',
       invoicesProcessed: overdueInvoices.length,
       actionsCreated,
       escalationsCreated,
       paymentPlansOffered,
+      voiceMessagesQueued,
       actions: actionsLog,
     })
   } catch (error) {

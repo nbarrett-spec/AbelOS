@@ -22,6 +22,7 @@
     "audit-products.ts",
     "prisma/seed.ts",
     "prisma/seed-real-data.ts",
+    "prisma/seeds/**/*.ts",
     "vitest.config.ts",
     "src/**/__tests__/**/*.test.ts",
     "src/**/__tests__/**/*.test.tsx",

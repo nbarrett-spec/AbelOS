@@ -66,6 +66,12 @@ interface SyncStats {
   orgsUpdated: number
   jobsEnriched: number
   scoresUpdated: number
+  productsCreated: number
+  productsUpdated: number
+  inventoryCreated: number
+  inventoryUpdated: number
+  vendorsCreated: number
+  vendorsUpdated: number
   errors: string[]
 }
 
@@ -314,6 +320,218 @@ async function enrichJobAddresses(entities: any[], stats: SyncStats) {
   }
 }
 
+async function syncProductEntities(entities: any[], stats: SyncStats) {
+  const productEntities = entities.filter(
+    (e: any) => e.type && (e.type.toLowerCase().includes('product') || e.type.toLowerCase().includes('sku'))
+  )
+
+  for (const entity of productEntities) {
+    try {
+      const sku = entity.sku || entity.code || entity.id
+      const name = entity.name || entity.label || entity.title
+      if (!sku || !name) continue
+
+      const category = entity.category || entity.categoryName || 'General'
+      const cost = Number(entity.cost || entity.unitCost || 0) || 0
+      const basePrice = Number(entity.basePrice || entity.price || entity.listPrice || 0) || 0
+      const active = entity.active !== false // Default true unless explicitly false
+
+      // Check if product already exists by SKU
+      const existing: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "Product" WHERE "sku" = $1 LIMIT 1`,
+        sku
+      )
+
+      if (existing.length > 0) {
+        // Update existing product
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Product" SET
+            "name" = COALESCE($1, "name"),
+            "category" = COALESCE($2, "category"),
+            "cost" = CASE WHEN $3 > 0 THEN $3 ELSE "cost" END,
+            "basePrice" = CASE WHEN $4 > 0 THEN $4 ELSE "basePrice" END,
+            "active" = COALESCE($5, "active"),
+            "description" = COALESCE($6, "description"),
+            "updatedAt" = NOW()
+          WHERE "sku" = $7`,
+          name,
+          category,
+          cost,
+          basePrice,
+          active,
+          entity.description || entity.summary || null,
+          sku
+        )
+        stats.productsUpdated++
+      } else {
+        // Create new product
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "Product" (
+            "id", "sku", "name", "category", "cost", "basePrice", "active",
+            "description", "createdAt", "updatedAt"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+          generateId('prod'),
+          sku,
+          name,
+          category,
+          cost,
+          basePrice,
+          active,
+          entity.description || entity.summary || null
+        )
+        stats.productsCreated++
+      }
+    } catch (err: any) {
+      stats.errors.push(`Product "${entity.sku || entity.id}": ${err.message}`)
+    }
+  }
+}
+
+async function syncInventoryEntities(entities: any[], stats: SyncStats) {
+  // Filter entities with inventory/stock data
+  const inventoryEntities = entities.filter(
+    (e: any) => (e.event_type === 'products' || e.type === 'inventory' || e.type === 'stock') &&
+                (e.stock !== undefined || e.inventory !== undefined || e.onHand !== undefined)
+  )
+
+  for (const entity of inventoryEntities) {
+    try {
+      const sku = entity.sku || entity.productSku || entity.code || entity.id
+      if (!sku) continue
+
+      // Find product by SKU to get productId
+      const product: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "Product" WHERE "sku" = $1 LIMIT 1`,
+        sku
+      )
+      if (product.length === 0) continue // Skip if product not found
+
+      const productId = product[0].id
+      const onHand = Number(entity.onHand || entity.stock || entity.inventory || 0) || 0
+      const location = entity.location || entity.warehouseLocation || entity.warehouse || 'MAIN_WAREHOUSE'
+      const status = onHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK'
+
+      // Check if inventory record exists
+      const existing: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "InventoryItem" WHERE "productId" = $1 LIMIT 1`,
+        productId
+      )
+
+      if (existing.length > 0) {
+        // Update existing inventory
+        await prisma.$executeRawUnsafe(
+          `UPDATE "InventoryItem" SET
+            "onHand" = $1,
+            "location" = $2,
+            "status" = $3,
+            "sku" = COALESCE($4, "sku"),
+            "lastReceivedAt" = NOW(),
+            "updatedAt" = NOW()
+          WHERE "productId" = $5`,
+          onHand,
+          location,
+          status,
+          sku,
+          productId
+        )
+        stats.inventoryUpdated++
+      } else {
+        // Create new inventory record
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "InventoryItem" (
+            "id", "productId", "sku", "onHand", "location", "status",
+            "updatedAt"
+          ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+          generateId('inv'),
+          productId,
+          sku,
+          onHand,
+          location,
+          status
+        )
+        stats.inventoryCreated++
+      }
+    } catch (err: any) {
+      stats.errors.push(`Inventory "${entity.sku || entity.id}": ${err.message}`)
+    }
+  }
+}
+
+async function syncVendorEntities(entities: any[], stats: SyncStats) {
+  const vendorEntities = entities.filter(
+    (e: any) => e.type === 'vendor' || e.type === 'supplier'
+  )
+
+  for (const entity of vendorEntities) {
+    try {
+      const name = entity.name || entity.label || entity.title
+      if (!name) continue
+
+      // Generate vendor code from name initials or use provided code
+      let vendorCode = entity.code || entity.vendorCode
+      if (!vendorCode) {
+        // Generate from name: "Boise Cascade" → "BC", "DW Distribution" → "DW"
+        const initials = name
+          .split(/\s+/)
+          .map((word: string) => word.charAt(0).toUpperCase())
+          .join('')
+          .substring(0, 10)
+        vendorCode = initials || 'V' + Date.now().toString(36).substring(0, 4)
+      }
+
+      const contactName = entity.contactName || entity.contact || null
+      const email = entity.email || null
+      const phone = entity.phone || entity.phoneNumber || null
+      const active = entity.active !== false
+
+      // Check if vendor already exists by code
+      const existing: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "Vendor" WHERE "code" = $1 LIMIT 1`,
+        vendorCode
+      )
+
+      if (existing.length > 0) {
+        // Update existing vendor
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Vendor" SET
+            "name" = COALESCE($1, "name"),
+            "contactName" = COALESCE($2, "contactName"),
+            "email" = COALESCE($3, "email"),
+            "phone" = COALESCE($4, "phone"),
+            "active" = $5,
+            "updatedAt" = NOW()
+          WHERE "code" = $6`,
+          name,
+          contactName,
+          email,
+          phone,
+          active,
+          vendorCode
+        )
+        stats.vendorsUpdated++
+      } else {
+        // Create new vendor
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "Vendor" (
+            "id", "name", "code", "contactName", "email", "phone", "active",
+            "createdAt", "updatedAt"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+          generateId('vend'),
+          name,
+          vendorCode,
+          contactName,
+          email,
+          phone,
+          active
+        )
+        stats.vendorsCreated++
+      }
+    } catch (err: any) {
+      stats.errors.push(`Vendor "${entity.name || entity.code}": ${err.message}`)
+    }
+  }
+}
+
 async function syncScores(stats: SyncStats) {
   try {
     const scoresData = await brainFetch('scores')
@@ -323,7 +541,7 @@ async function syncScores(stats: SyncStats) {
 
     // Store latest scores in AgentConfig
     const existing: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "AgentConfig" WHERE "key" = 'brain_entity_scores' LIMIT 1`
+      `SELECT "id" FROM "AgentConfig" WHERE "agentRole" = 'brain' AND "configKey" = 'entity_scores' LIMIT 1`
     )
 
     const scorePayload = JSON.stringify({
@@ -334,13 +552,13 @@ async function syncScores(stats: SyncStats) {
 
     if (existing.length > 0) {
       await prisma.$executeRawUnsafe(
-        `UPDATE "AgentConfig" SET "value" = $1, "updatedAt" = NOW() WHERE "key" = 'brain_entity_scores'`,
+        `UPDATE "AgentConfig" SET "configValue" = $1::jsonb, "updatedAt" = NOW() WHERE "agentRole" = 'brain' AND "configKey" = 'entity_scores'`,
         scorePayload
       )
     } else {
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "AgentConfig" ("id", "key", "value", "createdAt", "updatedAt")
-         VALUES ($1, 'brain_entity_scores', $2, NOW(), NOW())`,
+        `INSERT INTO "AgentConfig" ("id", "agentRole", "configKey", "configValue", "description", "updatedBy", "createdAt", "updatedAt")
+         VALUES ($1, 'brain', 'entity_scores', $2::jsonb, 'Brain entity scores from sync', 'brain-sync', NOW(), NOW())`,
         generateId('ac'),
         scorePayload
       )
@@ -364,10 +582,10 @@ async function syncScores(stats: SyncStats) {
         if (recentAlert.length === 0) {
           await prisma.$executeRawUnsafe(
             `INSERT INTO "InboxItem" (
-              "id", "type", "title", "body", "priority", "status",
+              "id", "type", "title", "description", "priority", "status",
               "entityType", "entityId", "source",
               "createdAt", "updatedAt"
-            ) VALUES ($1, 'ALERT', $2, $3, $4, 'UNREAD', $5, $6, 'brain-sync', NOW(), NOW())`,
+            ) VALUES ($1, 'ALERT', $2, $3, $4, 'PENDING', $5, $6, 'brain-sync', NOW(), NOW())`,
             generateId('inb'),
             alertTitle,
             alertBody,
@@ -404,6 +622,12 @@ export async function GET(request: NextRequest) {
     orgsUpdated: 0,
     jobsEnriched: 0,
     scoresUpdated: 0,
+    productsCreated: 0,
+    productsUpdated: 0,
+    inventoryCreated: 0,
+    inventoryUpdated: 0,
+    vendorsCreated: 0,
+    vendorsUpdated: 0,
     errors: [],
   }
 
@@ -444,6 +668,9 @@ export async function GET(request: NextRequest) {
       await syncCommunityEntities(allEntities, stats)
       await syncBuilderOrgEntities(allEntities, stats)
       await enrichJobAddresses(allEntities, stats)
+      await syncProductEntities(allEntities, stats)
+      await syncInventoryEntities(allEntities, stats)
+      await syncVendorEntities(allEntities, stats)
     }
 
     // 4. Pull and sync scores
@@ -480,6 +707,12 @@ export async function GET(request: NextRequest) {
         orgsUpdated: stats.orgsUpdated,
         jobsEnriched: stats.jobsEnriched,
         scoresUpdated: stats.scoresUpdated,
+        productsCreated: stats.productsCreated,
+        productsUpdated: stats.productsUpdated,
+        inventoryCreated: stats.inventoryCreated,
+        inventoryUpdated: stats.inventoryUpdated,
+        vendorsCreated: stats.vendorsCreated,
+        vendorsUpdated: stats.vendorsUpdated,
       },
       errors: stats.errors.length > 0 ? stats.errors.slice(0, 20) : undefined,
     }

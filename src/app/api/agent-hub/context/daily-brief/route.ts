@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { generateBriefingAudio, isElevenLabsConfigured } from '@/lib/elevenlabs'
 
 /**
  * GET /api/agent-hub/context/daily-brief
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
     return rows
   }, [] as any[])
 
-  return NextResponse.json({
+  const briefData: any = {
     generatedAt: now.toISOString(),
     revenue: {
       paymentsToday: Number(revenueToday.paymentsToday || 0),
@@ -180,5 +181,39 @@ export async function GET(request: NextRequest) {
     agentStatus,
     pendingApprovals,
     pendingApprovalCount: pendingApprovals.length,
-  })
+  }
+
+  // If ?audio=true, generate a spoken briefing and return MP3
+  const wantAudio = request.nextUrl.searchParams.get('audio') === 'true'
+  if (wantAudio && isElevenLabsConfigured()) {
+    const staffName = request.headers.get('x-staff-firstname') || 'team'
+    const rev = briefData.revenue
+    const coll = briefData.collections
+    const ops = briefData.operations
+
+    const lines = [
+      `Revenue: ${rev.paymentsToday > 0 ? `$${rev.paymentsToday.toLocaleString()} received today` : 'No payments yet today'}, $${rev.paymentsThisMonth.toLocaleString()} this month.`,
+      rev.newOrdersToday > 0 ? `${rev.newOrdersToday} new orders today worth $${rev.newOrderValueToday.toLocaleString()}.` : '',
+      coll.totalOverdue > 0 ? `Collections: ${coll.totalOverdue} overdue invoices totaling $${coll.totalOverdueAmount.toLocaleString()}.${coll.critical60Plus > 0 ? ` ${coll.critical60Plus} are over 60 days.` : ''}` : 'Collections are clear.',
+      ops.deliveriesToday?.length > 0 ? `${ops.deliveriesToday.length} deliveries scheduled today.` : 'No deliveries today.',
+      ops.inventoryAlerts?.length > 0 ? `${ops.inventoryAlerts.length} inventory alerts need attention.` : '',
+      briefData.sales.stalledDealCount > 0 ? `${briefData.sales.stalledDealCount} stalled deals worth $${briefData.sales.stalledDealValue.toLocaleString()}.` : '',
+      briefData.pendingApprovalCount > 0 ? `${briefData.pendingApprovalCount} items awaiting approval.` : '',
+    ].filter(Boolean).join(' ')
+
+    const audioResult = await generateBriefingAudio({ staffName, briefingText: lines })
+    if ('audio' in audioResult) {
+      return new Response(audioResult.audio, {
+        status: 200,
+        headers: {
+          'Content-Type': audioResult.contentType,
+          'Content-Length': audioResult.byteLength.toString(),
+          'Content-Disposition': `inline; filename="daily-brief-${now.toISOString().slice(0,10)}.mp3"`,
+        },
+      })
+    }
+    // Fall through to JSON if TTS fails
+  }
+
+  return NextResponse.json(briefData)
 }
