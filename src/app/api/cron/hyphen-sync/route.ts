@@ -20,20 +20,22 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Check if Hyphen is configured before burning a CronRun entry
+  // Check if Hyphen is configured. Record the CronRun either way so the
+  // /ops/crons observability page doesn't flag the job as stale/dead when
+  // it's intentionally short-circuiting on missing credentials.
   const hyphenConfig: any[] = await (await import('@/lib/prisma')).prisma.$queryRawUnsafe(
     `SELECT id FROM "IntegrationConfig" WHERE provider::text = 'HYPHEN' AND status::text = 'CONNECTED' LIMIT 1`
   )
-  if (hyphenConfig.length === 0) {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      message: 'Hyphen not configured — skipping sync. Add IntegrationConfig with provider=HYPHEN to enable.',
-    })
-  }
-
   const runId = await startCronRun('hyphen-sync', 'schedule')
   const started = Date.now()
+
+  if (hyphenConfig.length === 0) {
+    const msg = 'Hyphen not configured — skipping sync. Add IntegrationConfig with provider=HYPHEN to enable.'
+    await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
+      result: { skipped: true, reason: 'NO_HYPHEN_CONFIG', message: msg },
+    })
+    return NextResponse.json({ success: true, skipped: true, message: msg })
+  }
 
   try {
     // Execute all three sync operations
