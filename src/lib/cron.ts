@@ -158,7 +158,8 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'quote-followups', schedule: '0 9 * * 1-5', description: 'Send follow-up emails on stale quotes' },
   { name: 'agent-opportunities', schedule: '0 14 * * 1-5', description: 'AI agent opportunity scoring' },
   { name: 'inflow-sync', schedule: '0 * * * *', description: 'Hourly InFlow inventory sync' },
-  { name: 'bolt-sync', schedule: '30 * * * *', description: 'Hourly Bolt inventory sync' },
+  // bolt-sync: DISABLED 2026-04-23 — Abel migrating off ECI Bolt, no IntegrationConfig. InboxItem cmobj8d8000006bldzouh2hu3.
+  // { name: 'bolt-sync', schedule: '30 * * * *', description: 'Hourly Bolt inventory sync' },
   { name: 'hyphen-sync', schedule: '15 * * * *', description: 'Hourly Hyphen BuildPro/SupplyPro sync' },
   { name: 'bpw-sync', schedule: '45 * * * *', description: 'Hourly BPW sync' },
   { name: 'buildertrend-sync', schedule: '15 */2 * * *', description: 'BuilderTrend schedule items + material selections (2h cadence)' },

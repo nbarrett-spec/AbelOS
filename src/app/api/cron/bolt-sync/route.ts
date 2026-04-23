@@ -1,7 +1,15 @@
 /**
- * Cron: ECI Bolt Sync
+ * Cron: ECI Bolt Sync — DISABLED 2026-04-23
  *
- * Runs every hour during business hours
+ * Disabled in vercel.json after 100% failure rate since 2026-04-21 02:30 UTC.
+ * Root cause: no ECI_BOLT IntegrationConfig row (Abel is migrating off Bolt).
+ * Decision tracked in InboxItem cmobj8d8000006bldzouh2hu3.
+ *
+ * Route kept intact in case Nate decides to re-enable — restore the vercel.json
+ * entry and insert an IntegrationConfig row (provider=ECI_BOLT, status=CONNECTED,
+ * apiKey, baseUrl, companyId) to turn back on.
+ *
+ * Runs every hour during business hours (when enabled)
  * - Syncs customers → Builder/BuilderOrganization
  * - Syncs orders → Order table
  * - Syncs work orders → Job table
