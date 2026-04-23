@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DocumentPanel from '@/components/DocumentPanel'
 import PresenceAvatars from '@/components/ui/PresenceAvatars'
+import HyphenDocumentsTab from './HyphenDocumentsTab'
 
 const STATUS_COLORS: Record<string, string> = {
   CREATED: '#95A5A6',
@@ -118,6 +119,8 @@ export default function JobDetailPage() {
     passing: boolean
     openPunchItems: number
   } | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents'>('overview')
+  const [hyphenDocCount, setHyphenDocCount] = useState<number>(0)
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -138,6 +141,23 @@ export default function JobDetailPage() {
       }
     }
     if (jobId) fetchJob()
+  }, [jobId])
+
+  // Lightweight count of HyphenDocuments for the tab badge.
+  useEffect(() => {
+    if (!jobId) return
+    let cancel = false
+    ;(async () => {
+      try {
+        const r = await fetch(`/api/ops/jobs/${jobId}/documents`, { cache: 'no-store' })
+        if (!r.ok || cancel) return
+        const j = await r.json()
+        if (!cancel) setHyphenDocCount(j.total || 0)
+      } catch {
+        /* ignore */
+      }
+    })()
+    return () => { cancel = true }
   }, [jobId])
 
   // Fetch QC status for the banner — failing inspections + open punch items.
@@ -394,7 +414,43 @@ export default function JobDetailPage() {
         </div>
       </div>
 
+      {/* Tab Bar */}
+      <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            activeTab === 'overview'
+              ? 'border-[#0f2a3e] text-[#0f2a3e]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('documents')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px inline-flex items-center gap-2 ${
+            activeTab === 'documents'
+              ? 'border-[#0f2a3e] text-[#0f2a3e]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Documents
+          {hyphenDocCount > 0 && (
+            <span className="text-[10px] font-mono tabular-nums text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+              {hyphenDocCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'documents' && (
+        <div className="mb-6">
+          <HyphenDocumentsTab jobId={jobId} />
+        </div>
+      )}
+
       {/* Main Content Grid */}
+      {activeTab === 'overview' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
@@ -787,6 +843,7 @@ export default function JobDetailPage() {
           <DocumentPanel jobId={job.id} orderId={job.order?.id || undefined} />
         </div>
       </div>
+      )}
     </div>
   )
 }

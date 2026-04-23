@@ -164,9 +164,17 @@ function severityVariant(s: Severity): 'danger' | 'warning' | 'info' {
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 
+interface HyphenReviewCounts {
+  total: number
+  unmatched: number
+  low: number
+  medium: number
+}
+
 export default function SystemHealthPage() {
   const [data, setData] = useState<HealthMetrics | null>(null)
   const [freshness, setFreshness] = useState<FreshnessPayload | null>(null)
+  const [hyphenCounts, setHyphenCounts] = useState<HyphenReviewCounts | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
@@ -176,9 +184,10 @@ export default function SystemHealthPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [metricsRes, freshnessRes] = await Promise.all([
+      const [metricsRes, freshnessRes, hyphenRes] = await Promise.all([
         fetch('/api/ops/admin/health-metrics', { cache: 'no-store' }),
         fetch('/api/ops/admin/integrations-freshness', { cache: 'no-store' }),
+        fetch('/api/ops/hyphen/unmatched?limit=1', { cache: 'no-store' }),
       ])
       if (!metricsRes.ok) throw new Error(`Failed: ${metricsRes.status}`)
       const json = (await metricsRes.json()) as HealthMetrics
@@ -186,6 +195,10 @@ export default function SystemHealthPage() {
       if (freshnessRes.ok) {
         const f = (await freshnessRes.json()) as FreshnessPayload
         setFreshness(f)
+      }
+      if (hyphenRes.ok) {
+        const h = await hyphenRes.json()
+        setHyphenCounts(h.counts as HyphenReviewCounts)
       }
       setLastRefresh(new Date())
       setError(null)
@@ -358,6 +371,52 @@ export default function SystemHealthPage() {
               icon={<Activity className="w-4 h-4" />}
             />
           </div>
+
+          {/* ── Hyphen unmatched review ─────────────────────────── */}
+          <Card>
+            <CardBody>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-fg">Hyphen Documents — Unmatched</h2>
+                  <p className="text-xs text-fg-subtle mt-0.5">
+                    Scraped docs from the Hyphen portal that couldn't be confidently tied to a Job.
+                  </p>
+                </div>
+                <Link
+                  href="/ops/admin/hyphen-unmatched"
+                  className="text-[11px] font-semibold text-accent-fg hover:underline"
+                >
+                  Review queue →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <KPICard
+                  title="Needs review"
+                  value={hyphenCounts?.total ?? 0}
+                  accent={(hyphenCounts?.total || 0) > 0 ? 'danger' : 'neutral'}
+                  icon={<AlertTriangle className="w-4 h-4" />}
+                />
+                <KPICard
+                  title="Unmatched (no Job)"
+                  value={hyphenCounts?.unmatched ?? 0}
+                  accent={(hyphenCounts?.unmatched || 0) > 0 ? 'danger' : 'neutral'}
+                  icon={<InboxIcon className="w-4 h-4" />}
+                />
+                <KPICard
+                  title="Low confidence"
+                  value={hyphenCounts?.low ?? 0}
+                  accent="forecast"
+                  icon={<InboxIcon className="w-4 h-4" />}
+                />
+                <KPICard
+                  title="Medium confidence"
+                  value={hyphenCounts?.medium ?? 0}
+                  accent="accent"
+                  icon={<InboxIcon className="w-4 h-4" />}
+                />
+              </div>
+            </CardBody>
+          </Card>
 
           {/* ── DB integrity + Inbox backlog side-by-side ─────── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

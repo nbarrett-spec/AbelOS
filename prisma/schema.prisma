@@ -26,10 +26,10 @@ model Builder {
   // Two-tier builder classification
   // PRODUCTION = national/regional (Toll, DR Horton) — has communities underneath
   // CUSTOM     = custom home builders — all features centered on builder profile
-  builderType   BuilderType @default(CUSTOM)
-  territory     String?   // Geographic territory / market
-  annualVolume  Int?      // Estimated annual door units
-  website       String?
+  builderType  BuilderType @default(CUSTOM)
+  territory    String? // Geographic territory / market
+  annualVolume Int? // Estimated annual door units
+  website      String?
 
   // Payment & pricing
   paymentTerm    PaymentTerm @default(NET_15)
@@ -49,53 +49,56 @@ model Builder {
 
   // Drifted columns promoted from live DB (2026-04-22)
   organizationId        String?
-  role                  BuilderRole  @default(PRIMARY)
+  role                  BuilderRole @default(PRIMARY)
   source                LeadSource?
   sourceDetail          String?
-  approvalStatus        String?      @default("ACTIVE")
+  approvalStatus        String?     @default("ACTIVE")
   qbListId              String?
   qbSyncedAt            DateTime?
-  segmentTag            String?      @default("STANDARD")
-  lifetimeValue         Float?       @default(0)
-  churnRisk             String?      @default("LOW")
+  segmentTag            String?     @default("STANDARD")
+  lifetimeValue         Float?      @default(0)
+  churnRisk             String?     @default("LOW")
   lastAnalyzedAt        DateTime?
   divisionId            String?
-  pricingTier           String?      @default("STANDARD")
-  notifyEmail           Boolean?     @default(true)
-  notifySms             Boolean?     @default(false)
-  notifyDeliveryUpdates Boolean?     @default(true)
-  notifyInvoiceReady    Boolean?     @default(true)
-  notifyPaymentReceived Boolean?     @default(true)
+  pricingTier           String?     @default("STANDARD")
+  notifyEmail           Boolean?    @default(true)
+  notifySms             Boolean?    @default(false)
+  notifyDeliveryUpdates Boolean?    @default(true)
+  notifyInvoiceReady    Boolean?    @default(true)
+  notifyPaymentReceived Boolean?    @default(true)
 
   // Auto-invoice on delivery — when true, onOrderDelivered cascade creates a
   // DRAFT Invoice automatically. Set false for COD/prepay builders who invoice
   // manually.
-  autoInvoiceOnDelivery Boolean      @default(true)
+  autoInvoiceOnDelivery Boolean @default(true)
 
   // Relationships
-  projects           Project[]
-  orders             Order[]
-  templates          OrderTemplate[]
-  customPricing      BuilderPricing[]
-  homeowners         HomeownerAccess[]
-  btProjectMappings  BTProjectMapping[]
-  referralsSent      BuilderReferral[] @relation("ReferrerReferrals")
-  referralsReceived  BuilderReferral[] @relation("ReferredBuilder")
+  projects          Project[]
+  orders            Order[]
+  templates         OrderTemplate[]
+  customPricing     BuilderPricing[]
+  homeowners        HomeownerAccess[]
+  btProjectMappings BTProjectMapping[]
+  referralsSent     BuilderReferral[]  @relation("ReferrerReferrals")
+  referralsReceived BuilderReferral[]  @relation("ReferredBuilder")
 
   // Account margin & review
-  categoryMargins    AccountCategoryMargin[]
-  marginTarget       AccountMarginTarget?
+  categoryMargins AccountCategoryMargin[]
+  marginTarget    AccountMarginTarget?
 
   // Community structure (production builders)
-  communities        Community[]
-  contacts           BuilderContact[]
+  communities Community[]
+  contacts    BuilderContact[]
 
   // Job phase configuration
-  phaseConfigs       BuilderPhaseConfig[]
+  phaseConfigs BuilderPhaseConfig[]
 
   // Unified messaging
-  chatConversations  Conversation[]  @relation("BuilderConversations")
-  chatMessagesSent   Message[]       @relation("BuilderMessagesSent")
+  chatConversations Conversation[] @relation("BuilderConversations")
+  chatMessagesSent  Message[]      @relation("BuilderMessagesSent")
+
+  // Hyphen portal docs (plans, redlines, COs, schedules) — matched to builder
+  hyphenDocuments HyphenDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -107,7 +110,7 @@ model Builder {
 
 enum BuilderType {
   PRODUCTION // National/regional builder with communities (Toll, DR Horton, Lennar)
-  CUSTOM     // Custom home builder — no community structure
+  CUSTOM // Custom home builder — no community structure
 }
 
 enum PaymentTerm {
@@ -135,37 +138,37 @@ model Community {
   builderId String
   builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
 
-  name       String   // "Canyon Ridge Estates", "Sunset Mesa Phase 2"
-  code       String?  // Short code: "CRE", "SMP2"
-  address    String?
-  city       String?
-  state      String?
-  zip        String?
-  county     String?
+  name    String // "Canyon Ridge Estates", "Sunset Mesa Phase 2"
+  code    String? // Short code: "CRE", "SMP2"
+  address String?
+  city    String?
+  state   String?
+  zip     String?
+  county  String?
 
   // Scope
-  totalLots   Int      @default(0)
-  activeLots  Int      @default(0)
-  phase       String?  // "Phase 1", "Phase 2A"
-  status      CommunityStatus @default(ACTIVE)
+  totalLots  Int             @default(0)
+  activeLots Int             @default(0)
+  phase      String? // "Phase 1", "Phase 2A"
+  status     CommunityStatus @default(ACTIVE)
 
   // Division (some builders organize by division → community)
-  division    String?  // "Dallas Division", "Houston Metro"
+  division String? // "Dallas Division", "Houston Metro"
 
   // Performance
-  avgOrderValue Float?  // Rolling avg order $
-  totalRevenue  Float?  @default(0)
-  totalOrders   Int?    @default(0)
+  avgOrderValue Float? // Rolling avg order $
+  totalRevenue  Float? @default(0)
+  totalOrders   Int?   @default(0)
 
   // Notes
-  notes       String?
+  notes String?
 
   // Bolt integration
-  boltId      String?  // Cross-ref to ECI Bolt community
+  boltId String? // Cross-ref to ECI Bolt community
 
   // Relationships
-  contacts    BuilderContact[]
-  floorPlans  CommunityFloorPlan[]
+  contacts   BuilderContact[]
+  floorPlans CommunityFloorPlan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -178,10 +181,10 @@ model Community {
 }
 
 enum CommunityStatus {
-  PLANNING    // Pre-development
-  ACTIVE      // Lots being built / orders flowing
+  PLANNING // Pre-development
+  ACTIVE // Lots being built / orders flowing
   WINDING_DOWN // Last lots being completed
-  CLOSED      // All lots complete, no more orders
+  CLOSED // All lots complete, no more orders
 }
 
 // ─── BUILDER CONTACTS (people at the builder org) ───────────────────────
@@ -196,20 +199,20 @@ model BuilderContact {
   communityId String?
   community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
-  firstName    String
-  lastName     String
-  email        String?
-  phone        String?
-  mobile       String?
-  title        String?  // "Purchasing Manager", "Super", "Division VP"
-  role         ContactRole @default(OTHER)
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  mobile    String?
+  title     String? // "Purchasing Manager", "Super", "Division VP"
+  role      ContactRole @default(OTHER)
 
-  isPrimary    Boolean @default(false) // Primary contact for this builder or community
-  receivesPO   Boolean @default(false) // Gets PO/order notifications
+  isPrimary       Boolean @default(false) // Primary contact for this builder or community
+  receivesPO      Boolean @default(false) // Gets PO/order notifications
   receivesInvoice Boolean @default(false) // Gets invoice copies
 
-  notes        String?
-  active       Boolean @default(true)
+  notes  String?
+  active Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -221,12 +224,12 @@ model BuilderContact {
 }
 
 enum ContactRole {
-  OWNER           // Builder company owner
-  DIVISION_VP     // Division VP (production builders)
-  PURCHASING      // Purchasing / procurement
-  SUPERINTENDENT  // Field superintendent
+  OWNER // Builder company owner
+  DIVISION_VP // Division VP (production builders)
+  PURCHASING // Purchasing / procurement
+  SUPERINTENDENT // Field superintendent
   PROJECT_MANAGER // PM on the builder side
-  ESTIMATOR       // Builder's estimator
+  ESTIMATOR // Builder's estimator
   ACCOUNTS_PAYABLE // AP contact
   OTHER
 }
@@ -235,26 +238,26 @@ enum ContactRole {
 // Production builders have standard floor plans per community
 
 model CommunityFloorPlan {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   communityId String
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
-  name         String   // "The Aspen", "Plan 2450"
-  planNumber   String?  // Builder's plan number
-  sqFootage    Int?
-  bedrooms     Int?
-  bathrooms    Float?   // 2.5 etc
-  stories      Int?     @default(1)
-  garageType   String?  // "2-car attached", "3-car"
+  name       String // "The Aspen", "Plan 2450"
+  planNumber String? // Builder's plan number
+  sqFootage  Int?
+  bedrooms   Int?
+  bathrooms  Float? // 2.5 etc
+  stories    Int?    @default(1)
+  garageType String? // "2-car attached", "3-car"
 
   // Door package
   interiorDoorCount Int?
   exteriorDoorCount Int?
-  basePackagePrice  Float?  // Standard door package price
+  basePackagePrice  Float? // Standard door package price
 
   // Takeoff reference
-  blueprintUrl  String?  // Link to stored blueprint
-  takeoffNotes  String?
+  blueprintUrl String? // Link to stored blueprint
+  takeoffNotes String?
 
   active Boolean @default(true)
 
@@ -269,13 +272,13 @@ model CommunityFloorPlan {
 // Linked notes for community-level context (delivery preferences, site rules, etc.)
 
 model CommunityNote {
-  id          String  @id @default(cuid())
+  id          String @id @default(cuid())
   communityId String
 
-  authorId    String  // Staff who wrote it
-  category    String  @default("GENERAL") // GENERAL, DELIVERY, SITE_ACCESS, QUALITY, PRICING
-  content     String
-  pinned      Boolean @default(false)
+  authorId String // Staff who wrote it
+  category String  @default("GENERAL") // GENERAL, DELIVERY, SITE_ACCESS, QUALITY, PRICING
+  content  String
+  pinned   Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -287,31 +290,31 @@ model CommunityNote {
 // ─── BUILDER REFERRALS ──────────────────────────────────────────────────
 
 model BuilderReferral {
-  id                String     @id @default(cuid())
-  referrerId        String
-  referrer          Builder    @relation("ReferrerReferrals", fields: [referrerId], references: [id], onDelete: Cascade)
+  id         String  @id @default(cuid())
+  referrerId String
+  referrer   Builder @relation("ReferrerReferrals", fields: [referrerId], references: [id], onDelete: Cascade)
 
   // Referred builder info
-  referredCompany   String
-  referredContact   String
-  referredEmail     String
-  referredPhone     String
-  referralCode      String     @unique // ABEL-{lastName}-{random4}
-  notes             String?
+  referredCompany String
+  referredContact String
+  referredEmail   String
+  referredPhone   String
+  referralCode    String  @unique // ABEL-{lastName}-{random4}
+  notes           String?
 
   // Status tracking
   status            ReferralStatus @default(PENDING)
   referredBuilderId String?
-  referredBuilder   Builder?   @relation("ReferredBuilder", fields: [referredBuilderId], references: [id], onDelete: SetNull)
+  referredBuilder   Builder?       @relation("ReferredBuilder", fields: [referredBuilderId], references: [id], onDelete: SetNull)
 
   // Credits
-  creditAmount      Float      @default(250)
-  referrerCredited  Boolean    @default(false)
-  referreeCredited  Boolean    @default(false)
-  creditedAt        DateTime?
+  creditAmount     Float     @default(250)
+  referrerCredited Boolean   @default(false)
+  referreeCredited Boolean   @default(false)
+  creditedAt       DateTime?
 
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([referredEmail]) // 1 active referral per email address
   @@index([referrerId])
@@ -320,11 +323,11 @@ model BuilderReferral {
 }
 
 enum ReferralStatus {
-  PENDING        // Referral submitted, awaiting contact
-  CONTACTED      // Referred company has been contacted
-  SIGNED_UP      // Referred builder created an account
-  FIRST_ORDER    // Referred builder placed first order
-  CREDITED       // Both referrer and referee credited
+  PENDING // Referral submitted, awaiting contact
+  CONTACTED // Referred company has been contacted
+  SIGNED_UP // Referred builder created an account
+  FIRST_ORDER // Referred builder placed first order
+  CREDITED // Both referrer and referee credited
 }
 
 // ─── PROJECTS & BLUEPRINTS ───────────────────────────────────────────
@@ -533,7 +536,7 @@ model QuoteItem {
   quoteId String
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
-  productId String?  // Nullable for custom line items (delivery fees, misc charges, etc.)
+  productId String? // Nullable for custom line items (delivery fees, misc charges, etc.)
   product   Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   description String
@@ -609,9 +612,9 @@ enum OrderStatus {
   RECEIVED
   CONFIRMED
   IN_PRODUCTION
-  AWAITING_MATERIAL   // Some items not in stock — watching for arrival
+  AWAITING_MATERIAL // Some items not in stock — watching for arrival
   READY_TO_SHIP
-  PARTIAL_SHIPPED     // Shipped with missing items on backorder
+  PARTIAL_SHIPPED // Shipped with missing items on backorder
   SHIPPED
   DELIVERED
   COMPLETE
@@ -646,9 +649,9 @@ model OrderItem {
 // ─── ORDER TEMPLATES ─────────────────────────────────────────────────
 
 model OrderTemplate {
-  id            String  @id @default(cuid())
-  builderId     String
-  builder       Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  builderId String
+  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
 
   name          String
   description   String?
@@ -664,7 +667,7 @@ model OrderTemplate {
 }
 
 model OrderTemplateItem {
-  id         String  @id @default(cuid())
+  id         String        @id @default(cuid())
   templateId String
   template   OrderTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
@@ -727,24 +730,24 @@ model Product {
   lastSyncedAt   DateTime?
 
   // Catalog classification / sourcing (multi-location, supplier catalog)
-  locationId   String? @default("loc_abel_dfw") // FK-like ref to Location
-  categoryId   String? @default("cat_doors")    // FK-like ref to ProductCategory
-  supplierId   String? // FK-like ref to primary Supplier
-  supplierSku  String? // Supplier's own SKU for this product
-  weight       Float?  // Unit weight (lbs)
-  dimensions   Json?   @default("{}") // { length, width, height, unit }
-  minOrderQty  Int?    @default(1) // Minimum order quantity
+  locationId  String? @default("loc_abel_dfw") // FK-like ref to Location
+  categoryId  String? @default("cat_doors") // FK-like ref to ProductCategory
+  supplierId  String? // FK-like ref to primary Supplier
+  supplierSku String? // Supplier's own SKU for this product
+  weight      Float? // Unit weight (lbs)
+  dimensions  Json?   @default("{}") // { length, width, height, unit }
+  minOrderQty Int?    @default(1) // Minimum order quantity
 
   // Relationships
-  takeoffItems     TakeoffItem[]
-  quoteItems       QuoteItem[]
-  orderItems       OrderItem[]
-  templateItems    OrderTemplateItem[]
-  bomParent        BomEntry[]       @relation("BomParent")
-  bomComponent     BomEntry[]       @relation("BomComponent")
-  builderPrices    BuilderPricing[]
-  upgradeFrom      UpgradePath[]    @relation("UpgradeFrom")
-  upgradeTo        UpgradePath[]    @relation("UpgradeTo")
+  takeoffItems  TakeoffItem[]
+  quoteItems    QuoteItem[]
+  orderItems    OrderItem[]
+  templateItems OrderTemplateItem[]
+  bomParent     BomEntry[]          @relation("BomParent")
+  bomComponent  BomEntry[]          @relation("BomComponent")
+  builderPrices BuilderPricing[]
+  upgradeFrom   UpgradePath[]       @relation("UpgradeFrom")
+  upgradeTo     UpgradePath[]       @relation("UpgradeTo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -881,8 +884,8 @@ model Staff {
   email        String     @unique
   passwordHash String
   phone        String?
-  role         StaffRole  // Primary role (backward compat)
-  roles        String?    // Comma-separated list of ALL roles (multi-role support): "ADMIN,MANAGER,PROJECT_MANAGER"
+  role         StaffRole // Primary role (backward compat)
+  roles        String? // Comma-separated list of ALL roles (multi-role support): "ADMIN,MANAGER,PROJECT_MANAGER"
   department   Department
   title        String? // "Project Manager", "Manufacturing Lead", etc.
   avatar       String? // Profile image URL
@@ -890,19 +893,19 @@ model Staff {
   hireDate     DateTime?
 
   // Reporting hierarchy (self-referential)
-  managerId    String?
-  manager      Staff?     @relation("StaffManager", fields: [managerId], references: [id])
-  directReports Staff[]   @relation("StaffManager")
+  managerId     String?
+  manager       Staff?  @relation("StaffManager", fields: [managerId], references: [id])
+  directReports Staff[] @relation("StaffManager")
 
   // Compensation
-  salary         Float?          // Annual salary (null if hourly)
-  payType        PayType?        // SALARY or HOURLY
+  salary         Float? // Annual salary (null if hourly)
+  payType        PayType? // SALARY or HOURLY
   employmentType EmploymentType? // FULL_TIME_EXEMPT, FULL_TIME_NON_EXEMPT, etc.
-  employeeId     String?         // Internal ID (AL-001, etc.)
+  employeeId     String? // Internal ID (AL-001, etc.)
 
   // Auth — password reset flow
-  resetToken        String?   @unique
-  resetTokenExpiry  DateTime?
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
 
   // Auth — invite / onboarding flow
   inviteToken        String?   @unique
@@ -911,22 +914,22 @@ model Staff {
   mustChangePassword Boolean   @default(false)
 
   // Onboarding — handbook acknowledgment
-  handbookSignedAt  DateTime?
-  handbookVersion   String?
+  handbookSignedAt DateTime?
+  handbookVersion  String?
 
   // Location assignment (FK to Location)
-  locationId  String?
+  locationId String?
 
   // Portal access overrides (JSON format): { "/ops/jobs": true, "/ops/finance": false }
   // true = explicitly GRANT access (even if role doesn't have it)
   // false = explicitly DENY access (even if role has it)
   // missing = use role-based default
-  portalOverrides Json?    @default("{}")
+  portalOverrides Json? @default("{}")
 
   // Per-user Aegis preferences (density, feature flags, first-view trackers).
   // Shape: { density, featureFlags: { AEGIS_V2_DRAFTING_ROOM: boolean }, hasSeen: {...} }
   // Migration: prisma/migrations/pending_staff_preferences.sql (not yet applied).
-  preferences     Json?
+  preferences Json?
 
   // Relationships
   assignedJobs         Job[]                     @relation("AssignedPM")
@@ -945,21 +948,21 @@ model Staff {
   conversationsCreated Conversation[]            @relation("ConversationCreator")
 
   // Sales
-  ownedDeals           Deal[]                    @relation("DealOwner")
-  dealActivities       DealActivity[]            @relation("DealActivities")
-  contractsCreated     Contract[]                @relation("ContractCreator")
-  documentRequests     DocumentRequest[]         @relation("DocRequester")
+  ownedDeals       Deal[]            @relation("DealOwner")
+  dealActivities   DealActivity[]    @relation("DealActivities")
+  contractsCreated Contract[]        @relation("ContractCreator")
+  documentRequests DocumentRequest[] @relation("DocRequester")
 
   // Compensation
   hourlyRate Float?
 
   // Fully-loaded cost model (Phase 2 payroll seed)
-  annualSalary      Float?    // Annualized base comp (salary or hourly * 2080)
-  burdenRate        Float?    // Benefits + tax multiplier (e.g. 1.28)
-  fullyLoadedHourly Float?    // hourlyRate * burdenRate
-  monthlyCost       Float?    // annualSalary / 12 (or hourly equivalent)
-  costCenter        String?   // GL cost center / department bucket
-  payrollTitle      String?   // Title as it appears in QB/payroll
+  annualSalary      Float? // Annualized base comp (salary or hourly * 2080)
+  burdenRate        Float? // Benefits + tax multiplier (e.g. 1.28)
+  fullyLoadedHourly Float? // hourlyRate * burdenRate
+  monthlyCost       Float? // annualSalary / 12 (or hourly equivalent)
+  costCenter        String? // GL cost center / department bucket
+  payrollTitle      String? // Title as it appears in QB/payroll
   payrollUpdatedAt  DateTime? @db.Timestamptz // Last payroll sync time (tz-aware)
 
   createdAt DateTime @default(now())
@@ -975,9 +978,9 @@ model Staff {
 model StaffPreferences {
   id               String   @id @default(cuid())
   staffId          String   @unique
-  theme            String   @default("system")    // "light" | "dark" | "system"
+  theme            String   @default("system") // "light" | "dark" | "system"
   accentColor      String   @default("#C6A24E")
-  fontSize         String   @default("medium")    // "small" | "medium" | "large"
+  fontSize         String   @default("medium") // "small" | "medium" | "large"
   sidebarCollapsed Boolean  @default(false)
   compactMode      Boolean  @default(false)
   dashboardLayout  Json?    @default("{}")
@@ -1091,16 +1094,17 @@ model Job {
   completedAt           DateTime?
 
   // Relationships
-  decisionNotes      DecisionNote[]
-  scheduleEntries    ScheduleEntry[]
-  materialPicks      MaterialPick[]
-  qualityChecks      QualityCheck[]
-  deliveries         Delivery[]
-  installations      Installation[]
-  tasks              Task[]
-  activities         Activity[]
-  btProjectMappings  BTProjectMapping[]
-  phases             JobPhase[]
+  decisionNotes     DecisionNote[]
+  scheduleEntries   ScheduleEntry[]
+  materialPicks     MaterialPick[]
+  qualityChecks     QualityCheck[]
+  deliveries        Delivery[]
+  installations     Installation[]
+  tasks             Task[]
+  activities        Activity[]
+  btProjectMappings BTProjectMapping[]
+  phases            JobPhase[]
+  hyphenDocuments   HyphenDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1459,17 +1463,17 @@ enum DeliveryStatus {
 // ─── DELIVERY TRACKING (Real-time delivery status updates) ────────────
 
 model DeliveryTracking {
-  id          String   @id @default(cuid())
-  deliveryId  String
-  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  deliveryId String
+  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
 
-  status      String   // PICKING, LOADED, DEPARTED, EN_ROUTE, NEARBY, ARRIVED, UNLOADING, COMPLETE
-  location    String?  // Current location/address
-  notes       String?  // Additional notes
-  eta         DateTime? // Estimated time of arrival
-  updatedBy   String   // Staff ID of who made the update
+  status    String // PICKING, LOADED, DEPARTED, EN_ROUTE, NEARBY, ARRIVED, UNLOADING, COMPLETE
+  location  String? // Current location/address
+  notes     String? // Additional notes
+  eta       DateTime? // Estimated time of arrival
+  updatedBy String // Staff ID of who made the update
 
-  timestamp   DateTime @default(now())
+  timestamp DateTime @default(now())
 
   @@index([deliveryId])
   @@index([timestamp])
@@ -1583,15 +1587,15 @@ model Vendor {
   // Payment terms / pricing structure
   paymentTerms          String? // Free-text (e.g. "Net 30", "2/10 Net 30")
   paymentTermDays       Int?    @default(30) // Numeric net days
-  earlyPayDiscount      Float?  @default(0)  // Discount % for early pay
-  earlyPayDays          Int?    @default(0)  // Days for early-pay discount window
-  minOrderValue         Float?  @default(0)  // Minimum PO $ value
-  bulkDiscountThreshold Float?  // $ threshold for bulk discount
-  bulkDiscountPercent   Float?  // % discount above threshold
+  earlyPayDiscount      Float?  @default(0) // Discount % for early pay
+  earlyPayDays          Int?    @default(0) // Days for early-pay discount window
+  minOrderValue         Float?  @default(0) // Minimum PO $ value
+  bulkDiscountThreshold Float? // $ threshold for bulk discount
+  bulkDiscountPercent   Float? // % discount above threshold
 
   // Credit exposure
-  creditLimit Float?  @default(0) // Credit line granted
-  creditUsed  Float?  @default(0) // Current outstanding AP balance
+  creditLimit Float?   @default(0) // Credit line granted
+  creditUsed  Float?   @default(0) // Current outstanding AP balance
   creditHold  Boolean? @default(false) // If true, block new POs
 
   // Identifiers / misc
@@ -1763,9 +1767,9 @@ model InventoryItem {
   maxStock     Int @default(200)
 
   // Cost & usage tracking
-  unitCost      Float   @default(0)
-  avgDailyUsage Float   @default(0)
-  daysOfSupply  Float   @default(0)
+  unitCost      Float @default(0)
+  avgDailyUsage Float @default(0)
+  daysOfSupply  Float @default(0)
 
   // Location
   warehouseZone String? // "A1", "B3", "Staging"
@@ -1832,9 +1836,9 @@ model Invoice {
   paymentPlanOffered Boolean @default(false)
   paymentPlanDetails Json?
 
-  items              InvoiceItem[]
-  payments           Payment[]
-  collectionActions  CollectionAction[]
+  items             InvoiceItem[]
+  payments          Payment[]
+  collectionActions CollectionAction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1943,7 +1947,7 @@ enum ConversationType {
   GROUP
   CHANNEL
   DEPARTMENT
-  BUILDER_SUPPORT  // Builder-to-staff conversations
+  BUILDER_SUPPORT // Builder-to-staff conversations
 }
 
 enum NotificationType {
@@ -1955,9 +1959,9 @@ enum NotificationType {
   QC_ALERT
   INVOICE_OVERDUE
   SCHEDULE_CHANGE
-  MATERIAL_ARRIVAL    // Watched material has arrived at warehouse
-  BACKORDER_UPDATE    // Backorder status change
-  OUTREACH_REVIEW     // Outreach step ready for review
+  MATERIAL_ARRIVAL // Watched material has arrived at warehouse
+  BACKORDER_UPDATE // Backorder status change
+  OUTREACH_REVIEW // Outreach step ready for review
   SYSTEM
 }
 
@@ -1971,18 +1975,18 @@ model Message {
   // Staff sender (DB NOT NULL — drift reconciled 2026-04-22).
   // For builder-originated messages, service layer stamps senderId with the
   // on-call staff; builderSenderId identifies the actual builder author.
-  senderId       String
-  sender         Staff        @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
+  senderId String
+  sender   Staff  @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
 
   // Builder sender (null if staff sent the message)
   builderSenderId String?
-  builderSender   Builder?    @relation("BuilderMessagesSent", fields: [builderSenderId], references: [id], onDelete: Restrict)
+  builderSender   Builder? @relation("BuilderMessagesSent", fields: [builderSenderId], references: [id], onDelete: Restrict)
 
-  senderType  String   @default("STAFF") // "STAFF" or "BUILDER"
+  senderType String @default("STAFF") // "STAFF" or "BUILDER"
 
-  body   String
-  readBy String[] // Array of staff IDs who read it
-  readByBuilder Boolean @default(false)
+  body          String
+  readBy        String[] // Array of staff IDs who read it
+  readByBuilder Boolean  @default(false)
 
   createdAt DateTime @default(now())
 
@@ -2001,17 +2005,17 @@ model Conversation {
   // DB NOT NULL — drift reconciled 2026-04-22. Every conversation has a creator;
   // for builder-support threads the on-call staff is stamped server-side.
   createdById String
-  createdBy   Staff   @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy   Staff  @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
   // Builder support thread link (BUILDER_SUPPORT type only)
-  builderId   String?
-  builder     Builder? @relation("BuilderConversations", fields: [builderId], references: [id], onDelete: Cascade)
-  subject     String?  // Thread subject for builder support
+  builderId String?
+  builder   Builder? @relation("BuilderConversations", fields: [builderId], references: [id], onDelete: Cascade)
+  subject   String? // Thread subject for builder support
 
   participants ConversationParticipant[]
   messages     Message[]
 
-  lastMessageAt DateTime?
+  lastMessageAt      DateTime?
   lastMessagePreview String? // Short preview of last message
 
   createdAt DateTime @default(now())
@@ -2075,10 +2079,10 @@ model Deal {
   zip          String?
 
   // Pipeline
-  stage       DealStage    @default(PROSPECT)
-  probability Int          @default(10) // 0-100% win probability
-  dealValue   Float        @default(0) // Estimated annual revenue
-  source      DealSource   @default(OUTBOUND)
+  stage       DealStage  @default(PROSPECT)
+  probability Int        @default(10) // 0-100% win probability
+  dealValue   Float      @default(0) // Estimated annual revenue
+  source      DealSource @default(OUTBOUND)
 
   // Dates
   expectedCloseDate DateTime?
@@ -2098,8 +2102,8 @@ model Deal {
   notes       String?
 
   // Relationships
-  activities     DealActivity[]
-  contracts      Contract[]
+  activities       DealActivity[]
+  contracts        Contract[]
   documentRequests DocumentRequest[]
 
   createdAt DateTime @default(now())
@@ -2115,22 +2119,22 @@ model Deal {
 }
 
 enum DealStage {
-  PROSPECT        // Initial lead — not yet contacted
-  DISCOVERY       // First contact made, gathering info
-  WALKTHROUGH     // Site walkthrough or showroom visit scheduled/done
-  BID_SUBMITTED   // Formal bid/proposal sent
-  BID_REVIEW      // Builder reviewing bid
-  NEGOTIATION     // Active negotiation on terms/pricing
-  WON             // Deal closed — moving to onboarding
-  LOST            // Deal lost to competitor or abandoned
-  ONBOARDED       // Builder fully set up on platform
+  PROSPECT // Initial lead — not yet contacted
+  DISCOVERY // First contact made, gathering info
+  WALKTHROUGH // Site walkthrough or showroom visit scheduled/done
+  BID_SUBMITTED // Formal bid/proposal sent
+  BID_REVIEW // Builder reviewing bid
+  NEGOTIATION // Active negotiation on terms/pricing
+  WON // Deal closed — moving to onboarding
+  LOST // Deal lost to competitor or abandoned
+  ONBOARDED // Builder fully set up on platform
 }
 
 enum DealSource {
-  OUTBOUND     // Rep cold outreach
-  REFERRAL     // Referred by existing builder
-  INBOUND      // Builder inquired via website/phone
-  TRADE_SHOW   // Met at trade show / event
+  OUTBOUND // Rep cold outreach
+  REFERRAL // Referred by existing builder
+  INBOUND // Builder inquired via website/phone
+  TRADE_SHOW // Met at trade show / event
   REACTIVATION // Previous customer re-engagement
 }
 
@@ -2191,49 +2195,49 @@ model Contract {
   builderId String?
 
   // Contract details
-  title           String
-  type            ContractType     @default(SUPPLY_AGREEMENT)
-  status          ContractStatus   @default(DRAFT)
+  title  String
+  type   ContractType   @default(SUPPLY_AGREEMENT)
+  status ContractStatus @default(DRAFT)
 
   // Financial terms
-  paymentTerm     PaymentTerm      @default(NET_30)
+  paymentTerm     PaymentTerm @default(NET_30)
   creditLimit     Float?
-  estimatedAnnual Float?           // Estimated annual volume
-  discountPercent Float            @default(0)  // Negotiated discount
+  estimatedAnnual Float? // Estimated annual volume
+  discountPercent Float       @default(0) // Negotiated discount
 
   // Content
-  terms           String?          // Contract terms text
-  specialClauses  String?          // Special conditions
+  terms          String? // Contract terms text
+  specialClauses String? // Special conditions
 
   // Dates
-  startDate       DateTime?
-  endDate         DateTime?
-  sentDate        DateTime?
-  signedDate      DateTime?
-  expiresDate     DateTime?
+  startDate   DateTime?
+  endDate     DateTime?
+  sentDate    DateTime?
+  signedDate  DateTime?
+  expiresDate DateTime?
 
   // People
   createdById String?
   createdBy   Staff?  @relation("ContractCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
   // File
-  documentUrl     String?          // Uploaded signed contract PDF
-  templateUsed    String?          // Which template was used
+  documentUrl  String? // Uploaded signed contract PDF
+  templateUsed String? // Which template was used
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Drifted columns promoted from live DB (2026-04-22)
-  organizationId  String           // FK -> BuilderOrganization.id (NOT NULL in DB)
-  description     String?
-  rebatePercent   Float            @default(0)
-  effectiveDate   DateTime?
-  expirationDate  DateTime?
-  signedAt        DateTime?
-  signedBy        String?
-  autoRenew       Boolean          @default(false)
-  notes           String?
-  divisionId      String?          // FK -> Division.id
+  organizationId String // FK -> BuilderOrganization.id (NOT NULL in DB)
+  description    String?
+  rebatePercent  Float     @default(0)
+  effectiveDate  DateTime?
+  expirationDate DateTime?
+  signedAt       DateTime?
+  signedBy       String?
+  autoRenew      Boolean   @default(false)
+  notes          String?
+  divisionId     String? // FK -> Division.id
 
   @@index([dealId])
   @@index([builderId])
@@ -2244,59 +2248,59 @@ model Contract {
 }
 
 enum ContractType {
-  SUPPLY_AGREEMENT    // Standard supply agreement
-  MASTER_SERVICE      // Master service agreement
-  PRICING_AGREEMENT   // Custom pricing terms
-  NDA                 // Non-disclosure agreement
-  CREDIT_APPLICATION  // Credit application
+  SUPPLY_AGREEMENT // Standard supply agreement
+  MASTER_SERVICE // Master service agreement
+  PRICING_AGREEMENT // Custom pricing terms
+  NDA // Non-disclosure agreement
+  CREDIT_APPLICATION // Credit application
 }
 
 enum ContractStatus {
-  DRAFT               // Being prepared
-  INTERNAL_REVIEW     // Internal review before sending
-  SENT                // Sent to builder for review
-  BUILDER_REVIEW      // Builder reviewing
-  REVISION_REQUESTED  // Builder requested changes
-  SIGNED              // Both parties signed
-  ACTIVE              // Currently active
-  EXPIRED             // Past end date
-  TERMINATED          // Early termination
+  DRAFT // Being prepared
+  INTERNAL_REVIEW // Internal review before sending
+  SENT // Sent to builder for review
+  BUILDER_REVIEW // Builder reviewing
+  REVISION_REQUESTED // Builder requested changes
+  SIGNED // Both parties signed
+  ACTIVE // Currently active
+  EXPIRED // Past end date
+  TERMINATED // Early termination
 }
 
 // ─── DOCUMENT REQUESTS (COI, W-9, Credit Apps, etc.) ────────────────
 
 model DocumentRequest {
-  id        String @id @default(cuid())
+  id String @id @default(cuid())
 
   dealId    String?
   deal      Deal?   @relation(fields: [dealId], references: [id], onDelete: SetNull)
   builderId String?
 
   // What's needed
-  documentType  DocumentType
-  title         String
-  description   String?
+  documentType DocumentType
+  title        String
+  description  String?
 
   // Status tracking
-  status        DocumentRequestStatus @default(PENDING)
+  status DocumentRequestStatus @default(PENDING)
 
   // Who's involved
   requestedById String
   requestedBy   Staff  @relation("DocRequester", fields: [requestedById], references: [id], onDelete: Restrict)
 
   // File tracking
-  fileUrl       String?     // Uploaded document URL
-  fileName      String?
+  fileUrl  String? // Uploaded document URL
+  fileName String?
 
   // Dates
-  dueDate       DateTime?
-  receivedDate  DateTime?
-  expiresDate   DateTime?   // For COIs and other expiring docs
+  dueDate      DateTime?
+  receivedDate DateTime?
+  expiresDate  DateTime? // For COIs and other expiring docs
 
   // Follow-up
-  reminderSent  Boolean @default(false)
-  reminderDate  DateTime?
-  notes         String?
+  reminderSent Boolean   @default(false)
+  reminderDate DateTime?
+  notes        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2312,43 +2316,43 @@ model DocumentRequest {
 }
 
 enum DocumentType {
-  COI                  // Certificate of Insurance
-  W9                   // W-9 Tax Form
-  CREDIT_APPLICATION   // Credit application
-  BUSINESS_LICENSE     // Business license
-  TAX_EXEMPT_CERT      // Tax exemption certificate
-  BOND                 // Surety bond
-  REFERENCES           // Trade/credit references
-  FINANCIAL_STATEMENT  // Financial statement
-  OTHER                // Custom document
+  COI // Certificate of Insurance
+  W9 // W-9 Tax Form
+  CREDIT_APPLICATION // Credit application
+  BUSINESS_LICENSE // Business license
+  TAX_EXEMPT_CERT // Tax exemption certificate
+  BOND // Surety bond
+  REFERENCES // Trade/credit references
+  FINANCIAL_STATEMENT // Financial statement
+  OTHER // Custom document
 }
 
 enum DocumentRequestStatus {
-  PENDING     // Requested, not yet sent to builder
-  SENT        // Request sent to builder
-  RECEIVED    // Document received
-  APPROVED    // Document reviewed and approved
-  REJECTED    // Document rejected (needs resubmission)
-  EXPIRED     // Document has expired
+  PENDING // Requested, not yet sent to builder
+  SENT // Request sent to builder
+  RECEIVED // Document received
+  APPROVED // Document reviewed and approved
+  REJECTED // Document rejected (needs resubmission)
+  EXPIRED // Document has expired
 }
 
 // ─── SYNC & INTEGRATION LOGGING ─────────────────────────────────────────
 
 model SyncLog {
-  id              String    @id @default(cuid())
-  provider        String    // INFLOW, ECI_BOLT, BUILDERTREND, etc.
-  syncType        String    // CUSTOMER_ADD, INVOICE_ADD, etc. or 'full'
-  direction       String    @default("PUSH") // PUSH, PULL, BIDIRECTIONAL
-  status          String    // SUCCESS, PARTIAL, FAILED
+  id               String   @id @default(cuid())
+  provider         String // INFLOW, ECI_BOLT, BUILDERTREND, etc.
+  syncType         String // CUSTOMER_ADD, INVOICE_ADD, etc. or 'full'
+  direction        String   @default("PUSH") // PUSH, PULL, BIDIRECTIONAL
+  status           String // SUCCESS, PARTIAL, FAILED
   recordsProcessed Int      @default(0)
-  recordsCreated  Int       @default(0)
-  recordsUpdated  Int       @default(0)
-  recordsSkipped  Int       @default(0)
-  recordsFailed   Int       @default(0)
-  errorMessage    String?
-  startedAt       DateTime
-  completedAt     DateTime
-  durationMs      Int
+  recordsCreated   Int      @default(0)
+  recordsUpdated   Int      @default(0)
+  recordsSkipped   Int      @default(0)
+  recordsFailed    Int      @default(0)
+  errorMessage     String?
+  startedAt        DateTime
+  completedAt      DateTime
+  durationMs       Int
 
   createdAt DateTime @default(now())
 
@@ -2371,35 +2375,35 @@ enum IntegrationProvider {
 }
 
 enum IntegrationStatus {
-  PENDING        // Not yet configured
-  CONFIGURING    // Config being tested
-  CONNECTED      // Successfully authenticated
-  DISCONNECTED   // Explicitly disconnected
-  ERROR          // Connection failed
+  PENDING // Not yet configured
+  CONFIGURING // Config being tested
+  CONNECTED // Successfully authenticated
+  DISCONNECTED // Explicitly disconnected
+  ERROR // Connection failed
 }
 
 model IntegrationConfig {
-  id                String                @id @default(cuid())
-  provider          IntegrationProvider
+  id             String              @id @default(cuid())
+  provider       IntegrationProvider
   // DB NOT NULL — drift reconciled 2026-04-22. All insert paths fall back to a
   // human-readable provider label (see providerName() in ops/integrations).
-  name              String
-  apiKey            String?               // OAuth2 client_id, API key, etc.
-  apiSecret         String?               // OAuth2 client_secret, API secret, etc.
-  accessToken       String?               // OAuth2 access token
-  refreshToken      String?               // OAuth2 refresh token
-  tokenExpiresAt    DateTime?             // Access token expiration
-  baseUrl           String?               // API base URL
-  companyId         String?               // Company/tenant ID in the external system
-  webhookSecret     String?               // Secret for webhook signature verification
-  syncEnabled       Boolean               @default(true)
-  syncInterval      Int                   @default(3600) // Seconds between auto-syncs
-  status            IntegrationStatus     @default(PENDING)
-  lastSyncAt        DateTime?
-  lastSyncStatus    String?               // SUCCESS, PARTIAL, FAILED
-  metadata          Json?                 // Provider-specific metadata
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
+  name           String
+  apiKey         String? // OAuth2 client_id, API key, etc.
+  apiSecret      String? // OAuth2 client_secret, API secret, etc.
+  accessToken    String? // OAuth2 access token
+  refreshToken   String? // OAuth2 refresh token
+  tokenExpiresAt DateTime? // Access token expiration
+  baseUrl        String? // API base URL
+  companyId      String? // Company/tenant ID in the external system
+  webhookSecret  String? // Secret for webhook signature verification
+  syncEnabled    Boolean             @default(true)
+  syncInterval   Int                 @default(3600) // Seconds between auto-syncs
+  status         IntegrationStatus   @default(PENDING)
+  lastSyncAt     DateTime?
+  lastSyncStatus String? // SUCCESS, PARTIAL, FAILED
+  metadata       Json? // Provider-specific metadata
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   @@unique([provider])
   @@index([status])
@@ -2411,31 +2415,31 @@ model IntegrationConfig {
 // ─── BUILDERTREND PROJECT MAPPING ────────────────────────────────────────
 
 model BTProjectMapping {
-  id                String     @id @default(cuid())
+  id String @id @default(cuid())
 
   // BuilderTrend project info
-  btProjectId       String     @unique
-  btProjectName     String
-  btBuilderName     String?
-  btCommunity       String?
-  btLot             String?
-  btBlock           String?
-  btStatus          String     // ACTIVE, COMPLETED, ARCHIVED, etc.
-  btScheduleData    Json?      // Cached schedule data from BT
+  btProjectId    String  @unique
+  btProjectName  String
+  btBuilderName  String?
+  btCommunity    String?
+  btLot          String?
+  btBlock        String?
+  btStatus       String // ACTIVE, COMPLETED, ARCHIVED, etc.
+  btScheduleData Json? // Cached schedule data from BT
 
   // Abel mapping
-  builderId         String?
-  builder           Builder?   @relation(fields: [builderId], references: [id], onDelete: SetNull)
-  projectId         String?
+  builderId String?
+  builder   Builder? @relation(fields: [builderId], references: [id], onDelete: SetNull)
+  projectId String?
   // Note: No direct Project relation to avoid circular dependencies; use through Order/Quote
-  jobId             String?
-  job               Job?       @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobId     String?
+  job       Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   // Sync tracking
-  lastSyncedAt      DateTime?
+  lastSyncedAt DateTime?
 
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([builderId])
   @@index([jobId])
@@ -2447,13 +2451,13 @@ model BTProjectMapping {
 // ─── COLLECTIONS WORKFLOW ───────────────────────────────────────
 
 model CollectionRule {
-  id            String   @id @default(cuid())
-  name          String
-  daysOverdue   Int      // Trigger this rule when invoice is X days overdue
-  actionType    String   // REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, PHONE_CALL, PAYMENT_PLAN
-  channel       String   // EMAIL, SMS, PHONE, LETTER
-  templateBody  String?  // Email template body
-  isActive      Boolean  @default(true)
+  id           String  @id @default(cuid())
+  name         String
+  daysOverdue  Int // Trigger this rule when invoice is X days overdue
+  actionType   String // REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, PHONE_CALL, PAYMENT_PLAN
+  channel      String // EMAIL, SMS, PHONE, LETTER
+  templateBody String? // Email template body
+  isActive     Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -2464,16 +2468,16 @@ model CollectionRule {
 }
 
 model CollectionAction {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   invoiceId String
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  actionType String   // REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, PHONE_CALL, PAYMENT_PLAN
-  channel    String   // EMAIL, SMS, PHONE, LETTER
-  sentAt     DateTime @default(now())
-  sentBy     String?  // Staff member ID who sent it
-  notes      String?  // Additional notes on the action taken
-  response   String?  // Builder's response if applicable
+  actionType  String // REMINDER, PAST_DUE, FINAL_NOTICE, ACCOUNT_HOLD, PHONE_CALL, PAYMENT_PLAN
+  channel     String // EMAIL, SMS, PHONE, LETTER
+  sentAt      DateTime  @default(now())
+  sentBy      String? // Staff member ID who sent it
+  notes       String? // Additional notes on the action taken
+  response    String? // Builder's response if applicable
   respondedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -2577,32 +2581,32 @@ model AccountTouchpoint {
 // ─── BUILDER APPLICATIONS (Self-registration flow) ──────────────────
 
 model BuilderApplication {
-  id              String @id @default(cuid())
-  builderId       String?
-  referenceNumber String @unique // "APP1A2B3C4D"
-  companyName     String
-  contactName     String
-  contactEmail    String
-  contactPhone    String?
-  address         String?
-  city            String?
-  state           String?
-  zip             String?
-  businessLicense String?
-  taxId           String?
+  id                    String  @id @default(cuid())
+  builderId             String?
+  referenceNumber       String  @unique // "APP1A2B3C4D"
+  companyName           String
+  contactName           String
+  contactEmail          String
+  contactPhone          String?
+  address               String?
+  city                  String?
+  state                 String?
+  zip                   String?
+  businessLicense       String?
+  taxId                 String?
   estimatedAnnualVolume String?
-  referralSource  String?
-  notes           String?
+  referralSource        String?
+  notes                 String?
 
-  status          String @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED
+  status String @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED
 
   // Review
-  reviewedById    String?
-  reviewedAt      DateTime?
-  reviewNotes     String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNotes  String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([contactEmail])
@@ -2613,19 +2617,19 @@ model BuilderApplication {
 // ─── VEHICLE GPS TRACKING ────────────────────────────────────────────
 
 model VehicleLocation {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   crewId    String
   vehicleId String? // License plate or fleet ID
 
   // GPS position
   latitude  Float
   longitude Float
-  heading   Float?   // Compass bearing 0-360
-  speed     Float?   // MPH
+  heading   Float? // Compass bearing 0-360
+  speed     Float? // MPH
 
   // Context
-  status    String   @default("IDLE") // IDLE, EN_ROUTE, AT_STOP, RETURNING
-  address   String?  // Reverse-geocoded address (optional)
+  status  String  @default("IDLE") // IDLE, EN_ROUTE, AT_STOP, RETURNING
+  address String? // Reverse-geocoded address (optional)
 
   // Link to active delivery (if any)
   activeDeliveryId String?
@@ -2641,28 +2645,28 @@ model VehicleLocation {
 // ─── MATERIAL WATCH (Tracks items awaiting stock for orders) ────────
 
 model MaterialWatch {
-  id        String @id @default(cuid())
-  orderId   String
+  id          String  @id @default(cuid())
+  orderId     String
   orderItemId String?
-  productId String
-  jobId     String?
+  productId   String
+  jobId       String?
 
   // What we're waiting for
-  sku         String
-  productName String
-  qtyNeeded   Int
-  qtyAvailable Int @default(0)
+  sku          String
+  productName  String
+  qtyNeeded    Int
+  qtyAvailable Int    @default(0)
 
   // Status
-  status    String @default("AWAITING") // AWAITING, PARTIAL, ARRIVED, CANCELLED
+  status String @default("AWAITING") // AWAITING, PARTIAL, ARRIVED, CANCELLED
 
   // Notification tracking
-  notifiedSalesRep Boolean @default(false)
-  notifiedOps      Boolean @default(false)
+  notifiedSalesRep Boolean   @default(false)
+  notifiedOps      Boolean   @default(false)
   arrivedAt        DateTime?
 
   // Who to notify
-  salesRepId String?
+  salesRepId  String?
   createdById String?
 
   // PO link (which PO is bringing this material)
@@ -2684,24 +2688,24 @@ model MaterialWatch {
 // ─── BACKORDER TRACKER (Partial shipments + follow-up delivery) ─────
 
 model BackorderItem {
-  id        String @id @default(cuid())
-  orderId   String
+  id          String  @id @default(cuid())
+  orderId     String
   orderItemId String?
-  deliveryId  String?  // Original delivery that went out partial
-  productId String
+  deliveryId  String? // Original delivery that went out partial
+  productId   String
 
   // Item details
-  sku         String
-  productName String
-  qtyOrdered  Int
-  qtyShipped  Int    @default(0)
-  qtyBackordered Int @default(0)
+  sku            String
+  productName    String
+  qtyOrdered     Int
+  qtyShipped     Int    @default(0)
+  qtyBackordered Int    @default(0)
 
   // Tracking
-  status    String @default("BACKORDERED") // BACKORDERED, MATERIAL_ARRIVED, SCHEDULED, DELIVERED, CANCELLED
+  status String @default("BACKORDERED") // BACKORDERED, MATERIAL_ARRIVED, SCHEDULED, DELIVERED, CANCELLED
 
   // Follow-up delivery
-  followUpDeliveryId String?  // New delivery created when material arrives
+  followUpDeliveryId    String? // New delivery created when material arrives
   scheduledDeliveryDate DateTime?
 
   // Material arrival
@@ -2709,7 +2713,7 @@ model BackorderItem {
   purchaseOrderId   String?
 
   // Builder visibility
-  builderNotified Boolean @default(false)
+  builderNotified   Boolean   @default(false)
   builderNotifiedAt DateTime?
 
   notes String?
@@ -2746,39 +2750,39 @@ model AgentConfig {
 
 enum PhaseAmountType {
   PERCENTAGE // Phase = X% of total job value
-  FIXED      // Phase = specific dollar amount
-  MILESTONE  // No dollar amount — just a status checkpoint
+  FIXED // Phase = specific dollar amount
+  MILESTONE // No dollar amount — just a status checkpoint
 }
 
 enum PhaseStatus {
-  PENDING      // Not yet started
-  ACTIVE       // Currently in progress
-  READY        // Work complete, awaiting invoice
-  INVOICED     // Invoice generated for this phase
-  PAID         // Phase invoice fully paid
-  SKIPPED      // Phase was skipped for this job
+  PENDING // Not yet started
+  ACTIVE // Currently in progress
+  READY // Work complete, awaiting invoice
+  INVOICED // Invoice generated for this phase
+  PAID // Phase invoice fully paid
+  SKIPPED // Phase was skipped for this job
 }
 
 // Default phase templates — ops defines these per builder type
 model JobPhaseTemplate {
-  id          String   @id @default(cuid())
-  name        String   // "Exterior", "Interior Trim 1", "Final Front"
+  id          String  @id @default(cuid())
+  name        String // "Exterior", "Interior Trim 1", "Final Front"
   description String?
 
   // Who this template applies to by default
   builderType BuilderType // PRODUCTION or CUSTOM
 
   // Ordering
-  sortOrder   Int      @default(0) // Display and workflow order
+  sortOrder Int @default(0) // Display and workflow order
 
   // Amount defaults
   amountType  PhaseAmountType @default(MILESTONE)
-  percentage  Float?   // If PERCENTAGE: e.g., 30.0 = 30%
-  fixedAmount Float?   // If FIXED: dollar amount
+  percentage  Float? // If PERCENTAGE: e.g., 30.0 = 30%
+  fixedAmount Float? // If FIXED: dollar amount
 
   // Flags
-  isDefault   Boolean  @default(true) // Included by default for new jobs
-  isRequired  Boolean  @default(false) // Can't be skipped/removed
+  isDefault  Boolean @default(true) // Included by default for new jobs
+  isRequired Boolean @default(false) // Can't be skipped/removed
 
   createdById String?
   createdAt   DateTime @default(now())
@@ -2795,7 +2799,7 @@ model JobPhaseTemplate {
 
 // Per-builder phase customization — overrides template defaults
 model BuilderPhaseConfig {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   builderId String
   builder   Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
 
@@ -2806,19 +2810,19 @@ model BuilderPhaseConfig {
   // Phase definition (overrides template if set)
   name        String
   description String?
-  sortOrder   Int      @default(0)
+  sortOrder   Int             @default(0)
   amountType  PhaseAmountType @default(MILESTONE)
   percentage  Float?
   fixedAmount Float?
 
-  isActive    Boolean  @default(true) // Builder can deactivate phases they don't use
-  isRequired  Boolean  @default(false)
+  isActive   Boolean @default(true) // Builder can deactivate phases they don't use
+  isRequired Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  jobPhases   JobPhase[]
+  jobPhases JobPhase[]
 
   @@unique([builderId, name])
   @@index([builderId])
@@ -2833,34 +2837,34 @@ model JobPhase {
 
   // Origin — which template/config created this phase
   templateId String?
-  template   JobPhaseTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template   JobPhaseTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
   configId   String?
   config     BuilderPhaseConfig? @relation(fields: [configId], references: [id], onDelete: SetNull)
 
   // Phase details
-  name        String   // "Exterior", "Interior Trim 1", etc.
-  sortOrder   Int      @default(0)
-  status      PhaseStatus @default(PENDING)
+  name      String // "Exterior", "Interior Trim 1", etc.
+  sortOrder Int         @default(0)
+  status    PhaseStatus @default(PENDING)
 
   // Amount tracking (resolved at job creation from template/config)
-  amountType    PhaseAmountType @default(MILESTONE)
-  percentage    Float?   // Original percentage
-  expectedAmount Float?  // Resolved dollar amount (% * job total, or fixed)
-  actualAmount   Float?  // What was actually invoiced
+  amountType     PhaseAmountType @default(MILESTONE)
+  percentage     Float? // Original percentage
+  expectedAmount Float? // Resolved dollar amount (% * job total, or fixed)
+  actualAmount   Float? // What was actually invoiced
 
   // Invoice link
-  invoiceId   String?  // Invoice generated for this phase
+  invoiceId String? // Invoice generated for this phase
 
   // Timestamps
   startedAt   DateTime?
   completedAt DateTime?
   invoicedAt  DateTime?
   skippedAt   DateTime?
-  skippedBy   String?  // Staff who skipped it
+  skippedBy   String? // Staff who skipped it
   notes       String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([jobId, name])
   @@index([jobId])
@@ -2876,7 +2880,7 @@ model OutreachSequence {
   id        String   @id @default(cuid())
   name      String
   type      String
-  mode      String   // AUTO | SEMI_AUTO
+  mode      String // AUTO | SEMI_AUTO
   stepCount Int      @default(0)
   active    Boolean  @default(true)
   createdBy String
@@ -2891,15 +2895,15 @@ model OutreachSequence {
 }
 
 model OutreachStep {
-  id           String   @id @default(cuid())
+  id           String           @id @default(cuid())
   sequenceId   String
   sequence     OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   stepNumber   Int
   delayDays    Int
-  channel      String   // EMAIL | CALL_TASK | SMS
+  channel      String // EMAIL | CALL_TASK | SMS
   subject      String?
   bodyTemplate String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime         @default(now())
 
   enrollmentSteps OutreachEnrollmentStep[]
 
@@ -2907,18 +2911,18 @@ model OutreachStep {
 }
 
 model OutreachEnrollment {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   sequenceId  String
   sequence    OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   prospectId  String?
   email       String
   companyName String
   contactName String
-  currentStep Int       @default(0)
-  status      String    @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | REPLIED | CONVERTED
-  enrolledAt  DateTime  @default(now())
+  currentStep Int              @default(0)
+  status      String           @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | REPLIED | CONVERTED
+  enrolledAt  DateTime         @default(now())
   completedAt DateTime?
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime         @updatedAt
 
   steps OutreachEnrollmentStep[]
 
@@ -2928,19 +2932,19 @@ model OutreachEnrollment {
 }
 
 model OutreachEnrollmentStep {
-  id            String    @id @default(cuid())
+  id            String             @id @default(cuid())
   enrollmentId  String
   enrollment    OutreachEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   stepId        String
-  step          OutreachStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
-  status        String    @default("PENDING") // PENDING | AWAITING_REVIEW | SENT | SKIPPED
+  step          OutreachStep       @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  status        String             @default("PENDING") // PENDING | AWAITING_REVIEW | SENT | SKIPPED
   scheduledAt   DateTime
   sentAt        DateTime?
   openedAt      DateTime?
   repliedAt     DateTime?
   editedSubject String?
   editedBody    String?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime           @default(now())
 
   @@index([enrollmentId])
   @@index([status])
@@ -2962,43 +2966,43 @@ model OutreachTemplate {
 // ─── Financial Command Center ───────────────────────────────────────────
 
 model FinancialSnapshot {
-  id          String   @id @default(cuid())
+  id           String   @id @default(cuid())
   snapshotDate DateTime @default(now())
 
   // Cash position
-  cashOnHand     Float @default(0)
-  arTotal        Float @default(0)
-  apTotal        Float @default(0)
+  cashOnHand      Float @default(0)
+  arTotal         Float @default(0)
+  apTotal         Float @default(0)
   netCashPosition Float @default(0)
 
   // AR aging buckets
-  arCurrent      Float @default(0)
-  ar30           Float @default(0)
-  ar60           Float @default(0)
-  ar90Plus       Float @default(0)
+  arCurrent Float @default(0)
+  ar30      Float @default(0)
+  ar60      Float @default(0)
+  ar90Plus  Float @default(0)
 
   // Key metrics
-  dso            Float @default(0) // Days Sales Outstanding
-  dpo            Float @default(0) // Days Payable Outstanding
-  currentRatio   Float @default(0)
+  dso          Float @default(0) // Days Sales Outstanding
+  dpo          Float @default(0) // Days Payable Outstanding
+  currentRatio Float @default(0)
 
   // Revenue
-  revenueMonth   Float @default(0)
-  revenuePrior   Float @default(0)
-  revenueYTD     Float @default(0)
+  revenueMonth Float @default(0)
+  revenuePrior Float @default(0)
+  revenueYTD   Float @default(0)
 
   // Commitments
-  openPOTotal    Float @default(0)
+  openPOTotal     Float @default(0)
   pendingInvoices Float @default(0)
 
   // Risk indicators
-  overdueARPct   Float @default(0) // % of AR that's overdue
-  topExposure    Json?  // Top 5 builder exposures
+  overdueARPct Float @default(0) // % of AR that's overdue
+  topExposure  Json? // Top 5 builder exposures
 
   createdAt DateTime @default(now())
 
-  @@index([snapshotDate(sort: Desc)])
   @@unique([snapshotDate])
+  @@index([snapshotDate(sort: Desc)])
 }
 
 // ─── Webhook Infrastructure (previously raw SQL — schema drift fix) ───────
@@ -3027,15 +3031,15 @@ model WebhookEvent {
 // ─── Cron Observability ──────────────────────────────────────────────────
 
 model CronRun {
-  id        String    @id @default(cuid())
-  name      String
-  status    String    @default("RUNNING") // RUNNING | SUCCESS | FAILED
-  startedAt DateTime  @default(now())
-  finishedAt DateTime?
-  durationMs Int?
-  result    Json?     // Summary payload (rows processed, errors, etc.)
-  error     String?
-  triggeredBy String  @default("SCHEDULE") // SCHEDULE | MANUAL
+  id          String    @id @default(cuid())
+  name        String
+  status      String    @default("RUNNING") // RUNNING | SUCCESS | FAILED
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  durationMs  Int?
+  result      Json? // Summary payload (rows processed, errors, etc.)
+  error       String?
+  triggeredBy String    @default("SCHEDULE") // SCHEDULE | MANUAL
 
   @@index([name, startedAt(sort: Desc)])
   @@index([status])
@@ -3044,37 +3048,37 @@ model CronRun {
 // ─── DATA QUALITY WATCHDOG ──────────────────────────────────────────────────
 
 model DataQualityRule {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
-  entity      String   // Job, Product, Builder, Invoice, PurchaseOrder, etc.
-  severity    String   @default("WARNING") // CRITICAL | WARNING | INFO
-  query       String   // SQL query that returns violating rows
-  fixUrl      String?  // URL pattern to fix the issue (e.g. /ops/jobs/{id})
-  isActive    Boolean  @default(true)
+  entity      String // Job, Product, Builder, Invoice, PurchaseOrder, etc.
+  severity    String  @default("WARNING") // CRITICAL | WARNING | INFO
+  query       String // SQL query that returns violating rows
+  fixUrl      String? // URL pattern to fix the issue (e.g. /ops/jobs/{id})
+  isActive    Boolean @default(true)
 
-  issues      DataQualityIssue[]
+  issues DataQualityIssue[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([entity])
   @@index([isActive])
 }
 
 model DataQualityIssue {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   ruleId      String
   rule        DataQualityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
   entityType  String
   entityId    String
-  entityLabel String?  // Human-readable label (job number, product name, etc.)
-  status      String   @default("OPEN") // OPEN | ACKNOWLEDGED | FIXED | IGNORED
+  entityLabel String? // Human-readable label (job number, product name, etc.)
+  status      String          @default("OPEN") // OPEN | ACKNOWLEDGED | FIXED | IGNORED
   fixedAt     DateTime?
   fixedBy     String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([ruleId, entityId])
   @@index([status])
@@ -3085,36 +3089,36 @@ model DataQualityIssue {
 // ─── Unified Inbox ──────────────────────────────────────────────────────
 
 model InboxItem {
-  id          String   @id @default(cuid())
-  type        String   // MRP_RECOMMENDATION | COLLECTION_ACTION | DEAL_FOLLOWUP | AGENT_TASK | PO_APPROVAL | QC_ALERT | MATERIAL_ARRIVAL | OUTREACH_REVIEW | SCHEDULE_CHANGE | SYSTEM
-  source      String   // Which system generated it (mrp, collections, sales, agent-hub, etc.)
+  id          String  @id @default(cuid())
+  type        String // MRP_RECOMMENDATION | COLLECTION_ACTION | DEAL_FOLLOWUP | AGENT_TASK | PO_APPROVAL | QC_ALERT | MATERIAL_ARRIVAL | OUTREACH_REVIEW | SCHEDULE_CHANGE | SYSTEM
+  source      String // Which system generated it (mrp, collections, sales, agent-hub, etc.)
   title       String
   description String?
-  priority    String   @default("MEDIUM") // CRITICAL | HIGH | MEDIUM | LOW
-  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED | SNOOZED | EXPIRED | COMPLETED
+  priority    String  @default("MEDIUM") // CRITICAL | HIGH | MEDIUM | LOW
+  status      String  @default("PENDING") // PENDING | APPROVED | REJECTED | SNOOZED | EXPIRED | COMPLETED
 
   // Link to source entity
-  entityType  String?  // PurchaseOrder, CollectionAction, Deal, Task, etc.
-  entityId    String?
+  entityType String? // PurchaseOrder, CollectionAction, Deal, Task, etc.
+  entityId   String?
 
   // Financial impact (for prioritization)
   financialImpact Float? // Dollar impact of this action
 
   // Assignment
-  assignedTo  String?  // Staff ID
+  assignedTo String? // Staff ID
 
   // Action metadata
-  actionData  Json?    // Payload needed to execute the action
-  result      Json?    // What happened after approve/reject
+  actionData Json? // Payload needed to execute the action
+  result     Json? // What happened after approve/reject
 
   // Timing
-  dueBy       DateTime? // SLA deadline
+  dueBy        DateTime? // SLA deadline
   snoozedUntil DateTime?
-  resolvedAt  DateTime?
-  resolvedBy  String?
+  resolvedAt   DateTime?
+  resolvedBy   String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // NUC brain write-back ack: timestamp set when the NUC engine POSTs to
   // /api/v1/engine/inbox/[id]/ack confirming it retrieved the resolution
@@ -3142,18 +3146,18 @@ model InboxItem {
 // auto-created at runtime inside the helper so local/dev works without a
 // migration. A migration will be generated at the next `prisma migrate dev`.
 model AIInvocation {
-  id                String   @id @default(cuid())
-  endpoint          String
-  inputHash         String
-  model             String?
-  promptTokens      Int      @default(0)
-  completionTokens  Int      @default(0)
-  cacheReadTokens   Int      @default(0)
-  cacheWriteTokens  Int      @default(0)
-  costEstimate      Float    @default(0)
-  durationMs        Int      @default(0)
-  staffId           String?
-  createdAt         DateTime @default(now())
+  id               String   @id @default(cuid())
+  endpoint         String
+  inputHash        String
+  model            String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  costEstimate     Float    @default(0)
+  durationMs       Int      @default(0)
+  staffId          String?
+  createdAt        DateTime @default(now())
 
   @@index([endpoint])
   @@index([staffId])
@@ -3193,6 +3197,7 @@ model StockTransferItem {
   @@index([transferId])
   @@index([productId])
 }
+
 // ════════════════════════════════════════════════════════════════
 // SCHEMA RECONCILIATION 2026-04-22 — Issue #23 follow-up
 // The 135 models below were added from introspection of the live Neon DB
@@ -3269,18 +3274,18 @@ enum PriceType {
 // ─── Reconciled models ───────────────────────────────────────────
 
 model AgentConversation {
-  id                    String                  @id @default(dbgenerated("(gen_random_uuid())::text"))
-  builderId             String
-  channel               String                  @default("PORTAL")
-  status                String                  @default("ACTIVE")
-  subject               String?
-  lastMessageAt         DateTime?               @default(now()) @db.Timestamptz(6)
-  escalatedTo           String?
-  escalatedAt           DateTime?               @db.Timestamptz(6)
-  resolvedAt            DateTime?               @db.Timestamptz(6)
-  metadata              Json?                   @default("{}")
-  createdAt             DateTime?               @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime?               @default(now()) @db.Timestamptz(6)
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId     String
+  channel       String    @default("PORTAL")
+  status        String    @default("ACTIVE")
+  subject       String?
+  lastMessageAt DateTime? @default(now()) @db.Timestamptz(6)
+  escalatedTo   String?
+  escalatedAt   DateTime? @db.Timestamptz(6)
+  resolvedAt    DateTime? @db.Timestamptz(6)
+  metadata      Json?     @default("{}")
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([builderId], map: "idx_agent_conv_builder")
   @@index([channel], map: "idx_agent_conv_channel")
@@ -3288,33 +3293,33 @@ model AgentConversation {
 }
 
 model AgentEmailLog {
-  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
-  conversationId    String?
-  builderId         String?
-  fromEmail         String
-  toEmail           String
-  subject           String?
-  body              String
-  direction         String             @default("INBOUND")
-  externalId        String?
-  status            String?            @default("RECEIVED")
-  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId String?
+  builderId      String?
+  fromEmail      String
+  toEmail        String
+  subject        String?
+  body           String
+  direction      String    @default("INBOUND")
+  externalId     String?
+  status         String?   @default("RECEIVED")
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([conversationId], map: "idx_email_log_conv")
 }
 
 model AgentMessage {
-  id            String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   fromAgent     String
   toAgent       String
-  messageType   String     @default("INFO")
+  messageType   String    @default("INFO")
   subject       String
   body          Json?
-  priority      String     @default("NORMAL")
+  priority      String    @default("NORMAL")
   relatedTaskId String?
   readAt        DateTime?
   respondedAt   DateTime?
-  createdAt     DateTime   @default(now())
+  createdAt     DateTime  @default(now())
 
   @@index([fromAgent, createdAt], map: "idx_agentmsg_from")
   @@index([toAgent, readAt], map: "idx_agentmsg_to")
@@ -3322,40 +3327,40 @@ model AgentMessage {
 }
 
 model AgentSession {
-  id                  String     @id @default(dbgenerated("(gen_random_uuid())::text"))
-  agentRole           String     @unique
-  status              String     @default("OFFLINE")
+  id                  String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  agentRole           String    @unique
+  status              String    @default("OFFLINE")
   currentTaskId       String?
   lastHeartbeat       DateTime?
-  tasksCompletedToday Int        @default(0)
-  tasksFailedToday    Int        @default(0)
-  errorsToday         Int        @default(0)
+  tasksCompletedToday Int       @default(0)
+  tasksFailedToday    Int       @default(0)
+  errorsToday         Int       @default(0)
   startedAt           DateTime?
   metadata            Json?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @default(now())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now())
 }
 
 model AgentSmsLog {
-  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
-  conversationId    String?
-  builderId         String?
-  phoneNumber       String
-  direction         String             @default("INBOUND")
-  body              String
-  externalId        String?
-  status            String?            @default("SENT")
-  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId String?
+  builderId      String?
+  phoneNumber    String
+  direction      String    @default("INBOUND")
+  body           String
+  externalId     String?
+  status         String?   @default("SENT")
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([conversationId], map: "idx_sms_log_conv")
 }
 
 model AgentTask {
-  id               String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   agentRole        String
   taskType         String
-  priority         String         @default("NORMAL")
-  status           String         @default("PENDING")
+  priority         String    @default("NORMAL")
+  status           String    @default("PENDING")
   title            String
   description      String?
   payload          Json?
@@ -3363,7 +3368,7 @@ model AgentTask {
   createdBy        String
   assignedTo       String?
   parentTaskId     String?
-  requiresApproval Boolean        @default(false)
+  requiresApproval Boolean   @default(false)
   approvedBy       String?
   approvedAt       DateTime?
   claimedAt        DateTime?
@@ -3371,8 +3376,8 @@ model AgentTask {
   failedAt         DateTime?
   failReason       String?
   dueBy            DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now())
 
   @@index([assignedTo, status], map: "idx_agenttask_assignedto")
   @@index([parentTaskId], map: "idx_agenttask_parent")
@@ -3452,47 +3457,47 @@ model AutoPurchaseOrder {
 }
 
 model AutomationLog {
-  id             String          @id @default(dbgenerated("(gen_random_uuid())::text"))
-  ruleId         String?
-  ruleName       String?
-  trigger        String?
-  status         String?         @default("SUCCESS")
-  actionsRun     Int?            @default(0)
-  details        Json?           @default("{}")
-  error          String?
-  executedAt     DateTime?       @default(now()) @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  ruleId     String?
+  ruleName   String?
+  trigger    String?
+  status     String?   @default("SUCCESS")
+  actionsRun Int?      @default(0)
+  details    Json?     @default("{}")
+  error      String?
+  executedAt DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([ruleId], map: "idx_automation_log_rule")
 }
 
 model AutomationRule {
-  id            String          @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name          String
-  description   String?
-  trigger       String
-  conditions    Json?           @default("{}")
-  actions       Json?           @default("[]")
-  roles         String[]        @default([])
-  frequency     String?         @default("ON_TRIGGER")
-  enabled       Boolean?        @default(true)
-  lastRunAt     DateTime?       @db.Timestamptz(6)
-  runCount      Int?            @default(0)
-  createdById   String?
-  createdAt     DateTime?       @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime?       @default(now()) @db.Timestamptz(6)
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  description String?
+  trigger     String
+  conditions  Json?     @default("{}")
+  actions     Json?     @default("[]")
+  roles       String[]  @default([])
+  frequency   String?   @default("ON_TRIGGER")
+  enabled     Boolean?  @default(true)
+  lastRunAt   DateTime? @db.Timestamptz(6)
+  runCount    Int?      @default(0)
+  createdById String?
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([trigger], map: "idx_automation_rule_trigger")
 }
 
 model BayMovement {
-  id                                               String        @id
-  doorId                                           String
-  fromBayId                                        String?
-  toBayId                                          String
-  movedBy                                          String?
-  movedByName                                      String?
-  reason                                           String?
-  createdAt                                        DateTime?     @default(now()) @db.Timestamp(6)
+  id          String    @id
+  doorId      String
+  fromBayId   String?
+  toBayId     String
+  movedBy     String?
+  movedByName String?
+  reason      String?
+  createdAt   DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([doorId], map: "idx_bay_movement_doorId")
   @@index([toBayId], map: "idx_bay_movement_toBayId")
@@ -3786,10 +3791,10 @@ model BuilderNotificationPrefs {
 }
 
 model BuilderOrganization {
-  id                 String             @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name               String             @unique
-  code               String             @unique
-  type               OrgType            @default(NATIONAL)
+  id                 String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name               String      @unique
+  code               String      @unique
+  type               OrgType     @default(NATIONAL)
   contactName        String?
   email              String?
   phone              String?
@@ -3801,14 +3806,14 @@ model BuilderOrganization {
   boltCustomerId     String?
   inflowCustomerId   String?
   hyphenSupplierId   String?
-  defaultPaymentTerm PaymentTerm        @default(NET_30)
+  defaultPaymentTerm PaymentTerm @default(NET_30)
   creditLimit        Float?
-  taxExempt          Boolean            @default(false)
+  taxExempt          Boolean     @default(false)
   taxId              String?
-  active             Boolean            @default(true)
+  active             Boolean     @default(true)
   notes              String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @default(now())
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now())
 }
 
 model BuilderScheduleShare {
@@ -3966,15 +3971,15 @@ model BwpInvoice {
 }
 
 model CampaignRecipient {
-  id                String            @id
-  campaignId        String
-  builderId         String
-  status            String            @default("QUEUED")
-  sentAt            DateTime?         @db.Timestamptz(6)
-  openedAt          DateTime?         @db.Timestamptz(6)
-  clickedAt         DateTime?         @db.Timestamptz(6)
-  convertedAt       DateTime?         @db.Timestamptz(6)
-  createdAt         DateTime?         @default(now()) @db.Timestamptz(6)
+  id          String    @id
+  campaignId  String
+  builderId   String
+  status      String    @default("QUEUED")
+  sentAt      DateTime? @db.Timestamptz(6)
+  openedAt    DateTime? @db.Timestamptz(6)
+  clickedAt   DateTime? @db.Timestamptz(6)
+  convertedAt DateTime? @db.Timestamptz(6)
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([builderId], map: "idx_campaign_recipient_builder")
   @@index([campaignId], map: "idx_campaign_recipient_campaign")
@@ -4062,47 +4067,47 @@ model ClientError {
 }
 
 model CommAttachment {
-  id                 String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id                 String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   communicationLogId String
   fileName           String
   fileType           String
   fileSize           Int?
   fileUrl            String?
   gmailAttachmentId  String?
-  createdAt          DateTime         @default(now())
+  createdAt          DateTime @default(now())
 
   @@index([communicationLogId])
 }
 
 model CommunicationLog {
-  id                  String               @id @default(dbgenerated("(gen_random_uuid())::text"))
-  builderId           String?
-  organizationId      String?
-  staffId             String?
-  jobId               String?
-  channel             CommChannel
-  direction           CommDirection
-  subject             String?
-  body                String?
-  bodyHtml            String?
-  fromAddress         String?
-  toAddresses         String[]             @default([])
-  ccAddresses         String[]             @default([])
-  gmailMessageId      String?              @unique
-  gmailThreadId       String?
-  hyphenEventId       String?
-  sentAt              DateTime?
-  duration            Int?
-  hasAttachments      Boolean              @default(false)
-  attachmentCount     Int                  @default(0)
-  aiSummary           String?
-  aiSentiment         String?
-  aiActionItems       String[]             @default([])
-  status              CommLogStatus        @default(LOGGED)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @default(now())
-  communityId         String?
-  syncAccount         String?
+  id              String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  builderId       String?
+  organizationId  String?
+  staffId         String?
+  jobId           String?
+  channel         CommChannel
+  direction       CommDirection
+  subject         String?
+  body            String?
+  bodyHtml        String?
+  fromAddress     String?
+  toAddresses     String[]      @default([])
+  ccAddresses     String[]      @default([])
+  gmailMessageId  String?       @unique
+  gmailThreadId   String?
+  hyphenEventId   String?
+  sentAt          DateTime?
+  duration        Int?
+  hasAttachments  Boolean       @default(false)
+  attachmentCount Int           @default(0)
+  aiSummary       String?
+  aiSentiment     String?
+  aiActionItems   String[]      @default([])
+  status          CommLogStatus @default(LOGGED)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
+  communityId     String?
+  syncAccount     String?
 
   @@index([builderId])
   @@index([channel])
@@ -4113,23 +4118,23 @@ model CommunicationLog {
 }
 
 model Community_legacy {
-  id                  String              @id(map: "Community_legacy_pkey") @default(dbgenerated("(gen_random_uuid())::text"))
-  organizationId      String
-  name                String
-  code                String?
-  city                String?
-  state               String?
-  zip                 String?
-  address             String?
-  hyphenProjectId     String?
-  totalLots           Int?
-  activeLots          Int                 @default(0)
-  completedLots       Int                 @default(0)
-  active              Boolean             @default(true)
-  notes               String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @default(now())
-  divisionId          String?
+  id              String   @id(map: "Community_legacy_pkey") @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId  String
+  name            String
+  code            String?
+  city            String?
+  state           String?
+  zip             String?
+  address         String?
+  hyphenProjectId String?
+  totalLots       Int?
+  activeLots      Int      @default(0)
+  completedLots   Int      @default(0)
+  active          Boolean  @default(true)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  divisionId      String?
 
   @@unique([organizationId, name], map: "Community_organizationId_name_key")
   @@index([divisionId], map: "Community_divisionId_idx")
@@ -4258,26 +4263,26 @@ model DemandForecast {
 }
 
 model Division {
-  id                  String              @id @default(dbgenerated("(gen_random_uuid())::text"))
-  organizationId      String
-  name                String
-  code                String?
-  region              String?
-  contactName         String?
-  email               String?
-  phone               String?
-  address             String?
-  city                String?
-  state               String?
-  zip                 String?
-  defaultPaymentTerm  PaymentTerm?
-  creditLimit         Float?
-  taxExempt           Boolean?
-  taxId               String?
-  active              Boolean             @default(true)
-  notes               String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @default(now())
+  id                 String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId     String
+  name               String
+  code               String?
+  region             String?
+  contactName        String?
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  zip                String?
+  defaultPaymentTerm PaymentTerm?
+  creditLimit        Float?
+  taxExempt          Boolean?
+  taxId              String?
+  active             Boolean      @default(true)
+  notes              String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @default(now())
 
   @@unique([organizationId, name], map: "Division_orgId_name_key")
   @@index([organizationId])
@@ -4351,7 +4356,7 @@ model DocumentVaultActivity {
 }
 
 model DoorEvent {
-  id              String       @id
+  id              String    @id
   doorId          String
   eventType       String
   previousStatus  String?
@@ -4361,7 +4366,7 @@ model DoorEvent {
   bayId           String?
   notes           String?
   metadata        Json?
-  createdAt       DateTime?    @default(now()) @db.Timestamp(6)
+  createdAt       DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([doorId], map: "idx_door_event_door")
   @@index([doorId], map: "idx_door_event_doorId")
@@ -4369,11 +4374,11 @@ model DoorEvent {
 }
 
 model DoorIdentity {
-  id                String           @id
-  serialNumber      String           @unique
-  nfcTagId          String?          @unique
+  id                String    @id
+  serialNumber      String    @unique
+  nfcTagId          String?   @unique
   nfcUrl            String?
-  status            String           @default("PRODUCTION")
+  status            String    @default("PRODUCTION")
   productId         String?
   orderId           String?
   orderItemId       String?
@@ -4382,31 +4387,31 @@ model DoorIdentity {
   warrantyPolicyId  String?
   builderId         String?
   builderName       String?
-  manufacturedAt    DateTime?        @db.Timestamp(6)
+  manufacturedAt    DateTime? @db.Timestamp(6)
   manufacturedBy    String?
-  qcPassedAt        DateTime?        @db.Timestamp(6)
+  qcPassedAt        DateTime? @db.Timestamp(6)
   qcPassedBy        String?
   qcNotes           String?
-  stagedAt          DateTime?        @db.Timestamp(6)
+  stagedAt          DateTime? @db.Timestamp(6)
   stagedBy          String?
-  deliveredAt       DateTime?        @db.Timestamp(6)
+  deliveredAt       DateTime? @db.Timestamp(6)
   deliveredBy       String?
   deliveryNotes     String?
-  installedAt       DateTime?        @db.Timestamp(6)
+  installedAt       DateTime? @db.Timestamp(6)
   installedBy       String?
   installAddress    String?
   installCity       String?
-  installState      String?          @default("TX")
+  installState      String?   @default("TX")
   installZip        String?
   installNotes      String?
   homeownerName     String?
   homeownerEmail    String?
   homeownerPhone    String?
-  warrantyStartDate DateTime?        @db.Timestamp(6)
-  warrantyEndDate   DateTime?        @db.Timestamp(6)
+  warrantyStartDate DateTime? @db.Timestamp(6)
+  warrantyEndDate   DateTime? @db.Timestamp(6)
   bomSnapshot       Json?
-  createdAt         DateTime?        @default(now()) @db.Timestamp(6)
-  updatedAt         DateTime?        @default(now()) @db.Timestamp(6)
+  createdAt         DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([bayId], map: "idx_door_identity_bay")
   @@index([bayId], map: "idx_door_identity_bayId")
@@ -4480,20 +4485,20 @@ model EngineSnapshot {
 }
 
 model FloorPlan {
-  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id           String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   projectId    String
-  label        String    @default("Floor Plan")
+  label        String   @default("Floor Plan")
   fileName     String
   fileUrl      String
   fileSize     Int
   fileType     String
   pageCount    Int?
-  version      Int       @default(1)
+  version      Int      @default(1)
   notes        String?
   uploadedById String?
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now())
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
 
   @@index([active])
   @@index([projectId])
@@ -4629,20 +4634,20 @@ model HyphenProductAlias {
 }
 
 model Inspection {
-  id                 String              @id @default(dbgenerated("(gen_random_uuid())::text"))
-  templateId         String?
-  jobId              String?
-  inspectorId        String?
-  status             String              @default("PENDING")
-  scheduledDate      DateTime?           @db.Timestamptz(6)
-  completedDate      DateTime?           @db.Timestamptz(6)
-  results            Json?               @default("{}")
-  passRate           Float?
-  notes              String?
-  photos             Json?               @default("[]")
-  signatureData      String?
-  createdAt          DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime            @default(now()) @db.Timestamptz(6)
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  templateId    String?
+  jobId         String?
+  inspectorId   String?
+  status        String    @default("PENDING")
+  scheduledDate DateTime? @db.Timestamptz(6)
+  completedDate DateTime? @db.Timestamptz(6)
+  results       Json?     @default("{}")
+  passRate      Float?
+  notes         String?
+  photos        Json?     @default("[]")
+  signatureData String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([jobId])
   @@index([status])
@@ -4650,15 +4655,15 @@ model Inspection {
 }
 
 model InspectionTemplate {
-  id          String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   name        String
-  code        String       @unique
+  code        String   @unique
   description String?
-  category    String       @default("GENERAL")
-  items       Json         @default("[]")
-  active      Boolean      @default(true)
-  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime     @default(now()) @db.Timestamptz(6)
+  category    String   @default("GENERAL")
+  items       Json     @default("[]")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @db.Timestamptz(6)
 }
 
 model InstantQuoteRequest {
@@ -4751,44 +4756,44 @@ model LienRelease {
 }
 
 model Location {
-  id                               String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name                             String
-  code                             String   @unique
-  type                             String   @default("WAREHOUSE")
-  address                          String?
-  city                             String?
-  state                            String?
-  zip                              String?
-  phone                            String?
-  managerId                        String?
-  active                           Boolean  @default(true)
-  isPrimary                        Boolean  @default(false)
-  timezone                         String?  @default("America/Chicago")
-  createdAt                        DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt                        DateTime @default(now()) @db.Timestamptz(6)
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name      String
+  code      String   @unique
+  type      String   @default("WAREHOUSE")
+  address   String?
+  city      String?
+  state     String?
+  zip       String?
+  phone     String?
+  managerId String?
+  active    Boolean  @default(true)
+  isPrimary Boolean  @default(false)
+  timezone  String?  @default("America/Chicago")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([active], map: "idx_location_active")
 }
 
 model MarketingCampaign {
-  id                String              @id
-  name              String
-  type              String              @default("EMAIL")
-  status            String              @default("DRAFT")
-  subject           String?
-  body              String?
-  targetSegment     String?
-  targetQuery       String?
-  recipientCount    Int?                @default(0)
-  sentCount         Int?                @default(0)
-  openCount         Int?                @default(0)
-  clickCount        Int?                @default(0)
-  convertCount      Int?                @default(0)
-  scheduledAt       DateTime?           @db.Timestamptz(6)
-  sentAt            DateTime?           @db.Timestamptz(6)
-  createdBy         String?
-  createdAt         DateTime?           @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime?           @default(now()) @db.Timestamptz(6)
+  id             String    @id
+  name           String
+  type           String    @default("EMAIL")
+  status         String    @default("DRAFT")
+  subject        String?
+  body           String?
+  targetSegment  String?
+  targetQuery    String?
+  recipientCount Int?      @default(0)
+  sentCount      Int?      @default(0)
+  openCount      Int?      @default(0)
+  clickCount     Int?      @default(0)
+  convertCount   Int?      @default(0)
+  scheduledAt    DateTime? @db.Timestamptz(6)
+  sentAt         DateTime? @db.Timestamptz(6)
+  createdBy      String?
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 model MaterialLeadTime {
@@ -4984,18 +4989,18 @@ model ProcurementAlert {
 }
 
 model ProductCategory {
-  id                    String            @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name                  String
-  slug                  String            @unique
-  parentId              String?
-  description           String?
-  icon                  String?
-  sortOrder             Int?              @default(0)
-  active                Boolean?          @default(true)
-  productCount          Int?              @default(0)
-  marginTarget          Float?            @default(0.35)
-  createdAt             DateTime          @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime          @default(now()) @db.Timestamptz(6)
+  id           String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name         String
+  slug         String   @unique
+  parentId     String?
+  description  String?
+  icon         String?
+  sortOrder    Int?     @default(0)
+  active       Boolean? @default(true)
+  productCount Int?     @default(0)
+  marginTarget Float?   @default(0.35)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([parentId], map: "idx_product_category_parent")
   @@index([slug], map: "idx_product_category_slug")
@@ -5023,7 +5028,7 @@ model ProfitOptimizationLog {
 }
 
 model Prospect {
-  id                    String             @id
+  id                    String    @id
   companyName           String
   contactName           String?
   email                 String?
@@ -5031,16 +5036,16 @@ model Prospect {
   address               String?
   city                  String?
   state                 String?
-  source                String?            @default("MANUAL")
+  source                String?   @default("MANUAL")
   licenseNumber         String?
-  estimatedAnnualVolume Decimal?           @db.Decimal(12, 2)
-  status                String             @default("NEW")
+  estimatedAnnualVolume Decimal?  @db.Decimal(12, 2)
+  status                String    @default("NEW")
   assignedTo            String?
   notes                 String?
   convertedBuilderId    String?
-  convertedAt           DateTime?          @db.Timestamptz(6)
-  createdAt             DateTime?          @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime?          @default(now()) @db.Timestamptz(6)
+  convertedAt           DateTime? @db.Timestamptz(6)
+  createdAt             DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([status], map: "idx_prospect_status")
 }
@@ -5282,25 +5287,25 @@ model SavedCart {
 }
 
 model ScheduleChangeRequest {
-  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
-  requestNumber     String             @unique
-  builderId         String
-  conversationId    String?
-  jobId             String?
-  deliveryId        String?
-  scheduleEntryId   String?
-  requestType       String             @default("RESCHEDULE")
-  currentDate       DateTime?          @db.Date
-  requestedDate     DateTime?          @db.Date
-  requestedTime     String?
-  reason            String?
-  autoApproved      Boolean?           @default(false)
-  status            String             @default("PENDING")
-  reviewedById      String?
-  reviewedAt        DateTime?          @db.Timestamptz(6)
-  reviewNotes       String?
-  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  requestNumber   String    @unique
+  builderId       String
+  conversationId  String?
+  jobId           String?
+  deliveryId      String?
+  scheduleEntryId String?
+  requestType     String    @default("RESCHEDULE")
+  currentDate     DateTime? @db.Date
+  requestedDate   DateTime? @db.Date
+  requestedTime   String?
+  reason          String?
+  autoApproved    Boolean?  @default(false)
+  status          String    @default("PENDING")
+  reviewedById    String?
+  reviewedAt      DateTime? @db.Timestamptz(6)
+  reviewNotes     String?
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([builderId], map: "idx_schedule_change_builder")
   @@index([status], map: "idx_schedule_change_status")
@@ -5357,23 +5362,23 @@ model ServerError {
 }
 
 model ServiceRequest {
-  id               String       @id
+  id               String    @id
   doorId           String
   requestedBy      String?
   requestedByName  String?
   requestedByEmail String?
   requestedByPhone String?
-  issueType        String       @default("GENERAL")
+  issueType        String    @default("GENERAL")
   description      String
   photoUrls        Json?
-  status           String       @default("NEW")
+  status           String    @default("NEW")
   assignedTo       String?
   resolution       String?
-  resolvedAt       DateTime?    @db.Timestamp(6)
-  isWarrantyClaim  Boolean?     @default(false)
+  resolvedAt       DateTime? @db.Timestamp(6)
+  isWarrantyClaim  Boolean?  @default(false)
   warrantyApproved Boolean?
-  createdAt        DateTime?    @default(now()) @db.Timestamp(6)
-  updatedAt        DateTime?    @default(now()) @db.Timestamp(6)
+  createdAt        DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([doorId], map: "idx_service_request_doorId")
   @@index([status], map: "idx_service_request_status")
@@ -5477,11 +5482,11 @@ model SubcontractorPricing {
 }
 
 model Supplier {
-  id                String            @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   name              String
-  code              String?           @unique
-  type              String            @default("DOMESTIC")
-  country           String?           @default("US")
+  code              String?   @unique
+  type              String    @default("DOMESTIC")
+  country           String?   @default("US")
   region            String?
   contactName       String?
   contactEmail      String?
@@ -5491,20 +5496,20 @@ model Supplier {
   city              String?
   state             String?
   zip               String?
-  paymentTerms      String?           @default("NET_30")
-  currency          String?           @default("USD")
-  minOrderValue     Float?            @default(0)
-  avgLeadTimeDays   Int?              @default(7)
+  paymentTerms      String?   @default("NET_30")
+  currency          String?   @default("USD")
+  minOrderValue     Float?    @default(0)
+  avgLeadTimeDays   Int?      @default(7)
   shippingMethod    String?
-  dutyRate          Float?            @default(0)
-  freightCostPct    Float?            @default(0)
-  qualityRating     Float?            @default(3.0)
-  reliabilityScore  Float?            @default(3.0)
-  onTimeDeliveryPct Float?            @default(90)
+  dutyRate          Float?    @default(0)
+  freightCostPct    Float?    @default(0)
+  qualityRating     Float?    @default(3.0)
+  reliabilityScore  Float?    @default(3.0)
+  onTimeDeliveryPct Float?    @default(90)
   notes             String?
-  status            String?           @default("ACTIVE")
-  createdAt         DateTime?         @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime?         @default(now()) @db.Timestamptz(6)
+  status            String?   @default("ACTIVE")
+  createdAt         DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([status], map: "idx_supplier_status")
   @@index([type], map: "idx_supplier_type")
@@ -5597,7 +5602,7 @@ model TakeoffInquiry {
 }
 
 model Trade {
-  id              String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   companyName     String
   tradeType       String
   contactName     String?
@@ -5608,18 +5613,18 @@ model Trade {
   city            String?
   state           String?
   zip             String?
-  serviceArea     String[]      @default([])
+  serviceArea     String[]  @default([])
   description     String?
-  licenses        Json?         @default("[]")
-  insurance       Json?         @default("{}")
-  insuranceExpiry DateTime?     @db.Date
-  rating          Float?        @default(0)
-  reviewCount     Int?          @default(0)
-  verified        Boolean?      @default(false)
-  active          Boolean?      @default(true)
+  licenses        Json?     @default("[]")
+  insurance       Json?     @default("{}")
+  insuranceExpiry DateTime? @db.Date
+  rating          Float?    @default(0)
+  reviewCount     Int?      @default(0)
+  verified        Boolean?  @default(false)
+  active          Boolean?  @default(true)
   addedById       String?
-  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime      @default(now()) @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([tradeType], map: "idx_trade_type")
 }
@@ -5714,24 +5719,24 @@ model VendorPerformanceLog {
 }
 
 model VendorReturn {
-  id               String             @id @default(dbgenerated("(gen_random_uuid())::text"))
-  returnNumber     String             @unique
-  purchaseOrderId  String
-  vendorId         String
-  status           String             @default("PENDING")
-  reason           String
-  returnType       String             @default("DEFECTIVE")
-  totalAmount      Float?             @default(0)
-  creditReceived   Float?             @default(0)
-  trackingNumber   String?
-  rmaNumber        String?
-  createdById      String?
-  approvedById     String?
-  shippedAt        DateTime?          @db.Timestamptz(6)
-  resolvedAt       DateTime?          @db.Timestamptz(6)
-  notes            String?
-  createdAt        DateTime?          @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime?          @default(now()) @db.Timestamptz(6)
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  returnNumber    String    @unique
+  purchaseOrderId String
+  vendorId        String
+  status          String    @default("PENDING")
+  reason          String
+  returnType      String    @default("DEFECTIVE")
+  totalAmount     Float?    @default(0)
+  creditReceived  Float?    @default(0)
+  trackingNumber  String?
+  rmaNumber       String?
+  createdById     String?
+  approvedById    String?
+  shippedAt       DateTime? @db.Timestamptz(6)
+  resolvedAt      DateTime? @db.Timestamptz(6)
+  notes           String?
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([purchaseOrderId], map: "idx_vendor_return_po")
   @@index([status], map: "idx_vendor_return_status")
@@ -5739,16 +5744,16 @@ model VendorReturn {
 }
 
 model VendorReturnItem {
-  id                  String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  id                  String  @id @default(dbgenerated("(gen_random_uuid())::text"))
   vendorReturnId      String
   purchaseOrderItemId String?
   productId           String?
   description         String
   quantity            Int
-  unitCost            Float        @default(0)
-  lineTotal           Float        @default(0)
-  reason              String       @default("DEFECTIVE")
-  condition           String?      @default("DAMAGED")
+  unitCost            Float   @default(0)
+  lineTotal           Float   @default(0)
+  reason              String  @default("DEFECTIVE")
+  condition           String? @default("DAMAGED")
 }
 
 model VendorScorecard {
@@ -5779,18 +5784,18 @@ model VendorScorecard {
 }
 
 model WarehouseBay {
-  id                                              String         @id
-  bayNumber                                       String         @unique
-  zone                                            String         @default("MAIN")
-  aisle                                           String?
-  position                                        String?
-  nfcTagId                                        String?        @unique
-  capacity                                        Int?           @default(20)
-  currentCount                                    Int?           @default(0)
-  description                                     String?
-  active                                          Boolean?       @default(true)
-  createdAt                                       DateTime?      @default(now()) @db.Timestamp(6)
-  updatedAt                                       DateTime?      @default(now()) @db.Timestamp(6)
+  id           String    @id
+  bayNumber    String    @unique
+  zone         String    @default("MAIN")
+  aisle        String?
+  position     String?
+  nfcTagId     String?   @unique
+  capacity     Int?      @default(20)
+  currentCount Int?      @default(0)
+  description  String?
+  active       Boolean?  @default(true)
+  createdAt    DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([nfcTagId], map: "idx_warehouse_bay_nfcTagId")
   @@index([bayNumber], map: "idx_warehouse_bay_number")
@@ -5868,20 +5873,20 @@ model WarrantyInspection {
 }
 
 model WarrantyPolicy {
-  id                String         @id
+  id                String   @id
   name              String
-  type              String         @default("PRODUCT")
+  type              String   @default("PRODUCT")
   category          String?
   description       String?
-  durationMonths    Int            @default(12)
+  durationMonths    Int      @default(12)
   coverageDetails   String?
   exclusions        String?
   claimProcess      String?
-  isActive          Boolean        @default(true)
-  appliesToProducts Json?          @default("[]")
+  isActive          Boolean  @default(true)
+  appliesToProducts Json?    @default("[]")
   createdById       String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
   appliesToCategory String?
 
   @@index([appliesToCategory], map: "idx_warranty_policy_category")
@@ -5928,18 +5933,18 @@ model WorkingCapitalSnapshot {
 }
 
 model WorkloadDelegation {
-  id                                          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  delegatorId                                 String
-  delegateId                                  String
-  startDate                                   DateTime
-  endDate                                     DateTime
-  reason                                      String   @default("VACATION")
-  scope                                       String   @default("ALL")
-  notes                                       String?
-  status                                      String   @default("SCHEDULED")
-  createdById                                 String
-  createdAt                                   DateTime @default(now())
-  updatedAt                                   DateTime @default(now())
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  delegatorId String
+  delegateId  String
+  startDate   DateTime
+  endDate     DateTime
+  reason      String   @default("VACATION")
+  scope       String   @default("ALL")
+  notes       String?
+  status      String   @default("SCHEDULED")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
 
   @@index([startDate, endDate], map: "WorkloadDelegation_dates_idx")
   @@index([delegateId])
@@ -5947,3 +5952,75 @@ model WorkloadDelegation {
   @@index([status])
 }
 
+// ─── HYPHEN DOCUMENT PIPELINE ────────────────────────────────────────
+// Incoming artifacts scraped from the Hyphen builder portal by the NUC
+// scraper. Covers five distinct event shapes (plans, redlines, COs,
+// schedule detail, closing dates) unified under one table. Correlation
+// to a Job row happens at ingest time; unmatched rows surface in the
+// admin review UI.
+model HyphenDocument {
+  id        String  @id @default(cuid())
+  sourceId  String  @unique // idempotency key from NUC: "hyphen_<event_type>_<hash>"
+  eventType String // "job_schedule_detail" | "red_line" | "plan_document" | "change_order_detail" | "closing_date"
+  jobId     String? // resolved via correlation; NULL if unmatched
+  builderId String? // resolved from builder_name match
+
+  // Source metadata (from Hyphen)
+  poNumber     String?
+  builderName  String?
+  subdivision  String?
+  lotBlock     String?
+  planElvSwing String?
+  jobAddress   String?
+  groupName    String? // Group 1 / Group 2
+  phase        String?
+  docCategory  String? // "Plans" | "Red Lines" | "Change Orders" | "Schedules"
+
+  // PDF/file events
+  fileName      String?
+  fileUrl       String? // Vercel Blob URL or NUC-hosted fallback
+  fileSha256    String?
+  fileSizeBytes Int?
+  contentType   String?
+
+  // Schedule events
+  closingDate       DateTime?
+  requestedStart    DateTime?
+  requestedEnd      DateTime?
+  acknowledgedStart DateTime?
+  acknowledgedEnd   DateTime?
+  actualStart       DateTime?
+  actualEnd         DateTime?
+  permitNumber      String?
+  isLate            Boolean?
+
+  // Change orders
+  coNumber         String?
+  originalPo       String?
+  coReason         String?
+  coNetValueChange Decimal? @db.Decimal(12, 2)
+  coBuilderStatus  String?
+
+  // Match confidence
+  matchConfidence String? // "HIGH" | "MEDIUM" | "LOW" | "UNMATCHED"
+  matchMethod     String? // "po_exact" | "address_lot_builder" | "address_builder" | "unmatched"
+
+  // Raw payload for audit
+  rawPayload Json?
+
+  scrapedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job     Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  builder Builder? @relation(fields: [builderId], references: [id], onDelete: SetNull)
+
+  @@index([jobId])
+  @@index([builderId])
+  @@index([poNumber])
+  @@index([eventType])
+  @@index([docCategory])
+  @@index([fileSha256])
+  @@index([matchConfidence])
+  @@index([scrapedAt(sort: Desc)])
+}

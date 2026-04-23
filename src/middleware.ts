@@ -254,7 +254,8 @@ export async function middleware(request: NextRequest) {
     // Skip CSRF for Gmail sync API key auth (Google Apps Script, no browser origin)
     const gmailSyncApiKey = request.headers.get('x-api-key')
     if ((pathname.startsWith('/api/agent-hub') && authHeader?.startsWith('Bearer ')) ||
-        (pathname === '/api/ops/communication-logs/gmail-sync' && gmailSyncApiKey)) {
+        (pathname === '/api/ops/communication-logs/gmail-sync' && gmailSyncApiKey) ||
+        (pathname === '/api/ops/hyphen/ingest' && authHeader?.startsWith('Bearer '))) {
       // CSRF not applicable for API key auth — validated in route handler
     } else {
     const origin = request.headers.get('origin')
@@ -307,6 +308,18 @@ export async function middleware(request: NextRequest) {
     if (pathname === '/api/ops/communication-logs/gmail-sync') {
       const apiKey = request.headers.get('x-api-key')
       if (apiKey) {
+        return withRequestId(
+          NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
+          requestId
+        )
+      }
+    }
+
+    // Hyphen ingest endpoint uses shared Bearer token (NUC coordinator → Aegis).
+    // The route handler validates AEGIS_API_KEY itself, so skip staff-session.
+    if (pathname === '/api/ops/hyphen/ingest') {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) {
         return withRequestId(
           NextResponse.next({ request: { headers: forwardWithRequestId(request, requestId) } }),
           requestId
