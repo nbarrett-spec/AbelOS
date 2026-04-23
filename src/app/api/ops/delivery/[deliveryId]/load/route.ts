@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 /**
  * POST /api/ops/delivery/[deliveryId]/load
@@ -42,14 +43,13 @@ export async function POST(
     }
     const d = rows[0]
 
-    // Only SCHEDULED deliveries can transition to LOADING.
-    if (d.status !== 'SCHEDULED') {
-      return NextResponse.json(
-        {
-          error: `Cannot load delivery in status ${d.status}. Expected SCHEDULED.`,
-        },
-        { status: 409 }
-      )
+    // Guard: enforce DeliveryStatus state machine (SCHEDULED → LOADING).
+    try {
+      requireValidTransition('delivery', d.status, 'LOADING')
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // Dispatch should have assigned a crew before the truck starts loading.

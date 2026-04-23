@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAudit, audit } from '@/lib/audit'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 const PIPELINE_STAGES = [
   'PROSPECT',
@@ -116,6 +117,15 @@ export async function PATCH(request: NextRequest) {
 
     const deal = currentDeal[0]
     const previousStage = deal.stage
+
+    // Guard: enforce DealStage state machine before writing the stage change.
+    try {
+      requireValidTransition('deal', previousStage, newStage)
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
+    }
 
     // Update deal stage
     const updated: any[] = await prisma.$queryRawUnsafe(

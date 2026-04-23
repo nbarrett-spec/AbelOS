@@ -12,6 +12,12 @@ interface AdminLink {
 
 const ADMIN_LINKS: AdminLink[] = [
   {
+    href: '/ops/admin/system-health',
+    label: 'System Health',
+    description: 'One-glance view of cascades, orphans, inbox, integrations, crons.',
+    icon: 'SH',
+  },
+  {
     href: '/ops/admin/ai-usage',
     label: 'AI Usage',
     description: 'Anthropic API spend, endpoint breakdown, and recent invocations.',
@@ -34,6 +40,12 @@ const ADMIN_LINKS: AdminLink[] = [
     label: 'Trends',
     description: 'System-level usage and growth signals over time.',
     icon: 'TR',
+  },
+  {
+    href: '/ops/admin/data-repair',
+    label: 'Data Repair',
+    description: 'Drift review queue. Approve / reject header rebuilds per order (Dawn + Nate).',
+    icon: 'DR',
   },
 ]
 

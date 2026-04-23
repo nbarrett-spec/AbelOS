@@ -56,12 +56,14 @@ export default function JobPipelinePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [listPage, setListPage] = useState(1)
+  const LIST_PAGE_SIZE = 50
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/ops/jobs')
+        const response = await fetch('/api/ops/jobs?limit=1000')
         if (!response.ok) {
           throw new Error('Failed to fetch jobs')
         }
@@ -100,7 +102,7 @@ export default function JobPipelinePage() {
     const fetchJobs = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/ops/jobs')
+        const response = await fetch('/api/ops/jobs?limit=1000')
         if (!response.ok) {
           throw new Error('Failed to fetch jobs')
         }
@@ -340,7 +342,7 @@ export default function JobPipelinePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredJobs.map((job) => {
+                  {filteredJobs.slice((listPage - 1) * LIST_PAGE_SIZE, listPage * LIST_PAGE_SIZE).map((job) => {
                     const statusConfig = JOB_STATUSES.find(
                       (s) => s.key === job.status
                     )
@@ -389,6 +391,15 @@ export default function JobPipelinePage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+          {filteredJobs.length > LIST_PAGE_SIZE && (
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-500">
+              <span>Showing {Math.min((listPage - 1) * LIST_PAGE_SIZE + 1, filteredJobs.length)}–{Math.min(listPage * LIST_PAGE_SIZE, filteredJobs.length)} of {filteredJobs.length}</span>
+              <div className="flex gap-2">
+                <button onClick={() => setListPage(p => Math.max(1, p - 1))} disabled={listPage <= 1} className="px-3 py-1 border rounded text-xs disabled:opacity-40">Previous</button>
+                <button onClick={() => setListPage(p => p + 1)} disabled={listPage * LIST_PAGE_SIZE >= filteredJobs.length} className="px-3 py-1 border rounded text-xs disabled:opacity-40">Next</button>
+              </div>
             </div>
           )}
         </div>

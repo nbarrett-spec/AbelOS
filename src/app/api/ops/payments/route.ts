@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { onInvoicePaid } from '@/lib/cascades/invoice-lifecycle'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 interface PaymentRecord {
   id: string
@@ -204,7 +205,7 @@ export async function POST(request: NextRequest) {
     // know and return 500 so the caller can retry/reconcile. Previously we
     // silently swallowed errors (commented console.log) which hid breakage.
     const invoiceResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id", "amountPaid", "total" FROM "Invoice" WHERE "id" = $1`,
+      `SELECT "id", "amountPaid", "total", "status"::text AS "status" FROM "Invoice" WHERE "id" = $1`,
       invoiceId
     ) as any[]
 
@@ -221,6 +222,17 @@ export async function POST(request: NextRequest) {
 
     // Status transitions: PAID when balance 0, otherwise PARTIALLY_PAID
     const newStatus = newBalanceDue === 0 ? 'PAID' : 'PARTIALLY_PAID'
+
+    // Guard: if status is actually changing, enforce InvoiceStatus state machine.
+    if (newStatus !== invoice.status) {
+      try {
+        requireValidTransition('invoice', invoice.status, newStatus)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
 
     try {
       await prisma.$executeRawUnsafe(

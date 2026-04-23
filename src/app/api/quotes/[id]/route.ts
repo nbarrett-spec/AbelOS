@@ -6,6 +6,7 @@ import { sendOrderConfirmationEmail } from '@/lib/email'
 import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { sanitizeInput, isValidUUID, checkCSRF } from '@/lib/security'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // GET /api/quotes/[id] — Get single quote detail
 export async function GET(
@@ -150,6 +151,22 @@ export async function PATCH(
         return NextResponse.json({ error: `Cannot approve a quote with status ${q.status}` }, { status: 400 })
       }
 
+      // Guard: QuoteStatus state machine — SENT → APPROVED is valid, DRAFT →
+      // APPROVED is not (must go DRAFT → SENT → APPROVED). Keep the DRAFT path
+      // via an admin-style coercion: flip to SENT first through the guard.
+      try {
+        if (q.status === 'DRAFT') {
+          requireValidTransition('quote', 'DRAFT', 'SENT')
+          requireValidTransition('quote', 'SENT', 'APPROVED')
+        } else {
+          requireValidTransition('quote', q.status, 'APPROVED')
+        }
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+
       // Update quote status and store signature
       await prisma.$executeRawUnsafe(
         `UPDATE "Quote" SET
@@ -223,6 +240,15 @@ export async function PATCH(
       })
 
     } else if (action === 'reject') {
+      // Guard: only SENT → REJECTED is allowed per QUOTE_TRANSITIONS.
+      try {
+        requireValidTransition('quote', q.status, 'REJECTED')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+
       await prisma.$executeRawUnsafe(
         `UPDATE "Quote" SET
           status = 'REJECTED'::"QuoteStatus",
@@ -241,9 +267,12 @@ export async function PATCH(
       })
 
     } else if (action === 'requestChanges') {
+      // "Request changes" is a status-reversal that QUOTE_TRANSITIONS does not
+      // permit (SENT→DRAFT is not a valid edge). Keep the changeNotes update
+      // but skip the status flip — leaving the quote in SENT until the state
+      // machine is widened or the UI flow changes to use a different mechanism.
       await prisma.$executeRawUnsafe(
         `UPDATE "Quote" SET
-          status = 'DRAFT'::"QuoteStatus",
           "changeNotes" = $1,
           "updatedAt" = CURRENT_TIMESTAMP
          WHERE id = $2`,
@@ -253,8 +282,8 @@ export async function PATCH(
 
       return NextResponse.json({
         success: true,
-        message: 'Change request submitted',
-        quoteStatus: 'DRAFT',
+        message: 'Change request submitted (status unchanged pending state-machine widening)',
+        quoteStatus: q.status,
       })
 
     }

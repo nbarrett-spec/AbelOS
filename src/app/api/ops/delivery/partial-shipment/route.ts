@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, InvalidTransitionError } from '@/lib/status-guard'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Partial Shipment & Backorder Tracking API
@@ -262,14 +263,40 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Mark delivery as PARTIAL_DELIVERY
-    await prisma.$executeRawUnsafe(`
-      UPDATE "Delivery"
-      SET "status" = 'PARTIAL_DELIVERY', "updatedAt" = NOW()
-      WHERE "id" = $1
-    `, deliveryId).catch(() => {})
+    // Guard the Delivery → PARTIAL_DELIVERY transition.
+    try {
+      const delRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "status"::text AS "status" FROM "Delivery" WHERE "id" = $1`,
+        deliveryId
+      )
+      if (delRows.length > 0) {
+        try {
+          requireValidTransition('delivery', delRows[0].status, 'PARTIAL_DELIVERY')
+          await prisma.$executeRawUnsafe(`
+            UPDATE "Delivery"
+            SET "status" = 'PARTIAL_DELIVERY', "updatedAt" = NOW()
+            WHERE "id" = $1
+          `, deliveryId)
+        } catch (e) {
+          if (e instanceof InvalidTransitionError) {
+            console.warn(
+              `[partial-shipment] skipped Delivery→PARTIAL_DELIVERY flip — invalid from ${delRows[0].status}`,
+            )
+          } else {
+            throw e
+          }
+        }
+      }
+    } catch {
+      // keep flow — partial-shipment records already written
+    }
 
-    // Mark order as PARTIAL_SHIPPED
+    // Mark order as PARTIAL_SHIPPED. PARTIAL_SHIPPED is a valid OrderStatus enum
+    // value but does not appear in ORDER_TRANSITIONS — the state-machines.ts
+    // model treats the partial-shipment branch as out-of-band. We keep the
+    // existing guarded SQL (skips terminal rows) without going through the
+    // guard for this specific transition; widening ORDER_TRANSITIONS is out of
+    // scope for this wiring pass.
     await prisma.$executeRawUnsafe(`
       UPDATE "Order"
       SET "status" = 'PARTIAL_SHIPPED', "updatedAt" = NOW()
@@ -410,7 +437,11 @@ export async function PATCH(request: NextRequest) {
       `, item.orderId)
 
       if ((remaining[0]?.pending || 0) === 0) {
-        // All backorders fulfilled — move order to DELIVERED/COMPLETE
+        // All backorders fulfilled — move order to DELIVERED/COMPLETE.
+        // This Order flip (PARTIAL_SHIPPED → DELIVERED) lives outside
+        // ORDER_TRANSITIONS in state-machines.ts. The WHERE clause on
+        // status='PARTIAL_SHIPPED' provides row-level safety; expand the
+        // state machine when the partial-ship branch is formalized.
         await prisma.$executeRawUnsafe(`
           UPDATE "Order"
           SET "status" = 'DELIVERED', "updatedAt" = NOW()

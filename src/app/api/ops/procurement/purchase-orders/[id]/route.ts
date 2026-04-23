@@ -4,6 +4,15 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+
+async function loadPOStatus(id: string): Promise<string | null> {
+  const rows: any[] = await prisma.$queryRawUnsafe(
+    `SELECT "status"::text AS "status" FROM "PurchaseOrder" WHERE "id" = $1`,
+    id,
+  )
+  return rows.length === 0 ? null : rows[0].status
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET  /api/ops/procurement/purchase-orders/[id] — PO detail with items
@@ -54,6 +63,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // ── Approve PO ──────────────────────────────────────────────────────
     if (action === 'approve') {
+      const cur = await loadPOStatus(id)
+      if (cur === null) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      try {
+        requireValidTransition('po', cur, 'APPROVED')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
         SET "status" = 'APPROVED', "approvedById" = $1, "approvedAt" = NOW(), "updatedAt" = NOW()
@@ -67,6 +85,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // ── Send to Supplier ────────────────────────────────────────────────
     if (action === 'send') {
+      const cur = await loadPOStatus(id)
+      if (cur === null) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      try {
+        requireValidTransition('po', cur, 'SENT_TO_VENDOR')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
         SET "status" = 'SENT_TO_VENDOR', "orderedAt" = COALESCE("orderedAt", NOW()), "updatedAt" = NOW()
@@ -78,6 +105,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // ── Mark In Transit ─────────────────────────────────────────────────
     if (action === 'in_transit') {
+      const cur = await loadPOStatus(id)
+      if (cur === null) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      // in_transit maps to SENT_TO_VENDOR — idempotent if already there.
+      try {
+        requireValidTransition('po', cur, 'SENT_TO_VENDOR')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
         SET "status" = 'SENT_TO_VENDOR', "trackingNumber" = $1, "updatedAt" = NOW()
@@ -140,6 +177,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       const fullyReceived = check[0].totalReceived >= check[0].totalOrdered
       const newStatus = fullyReceived ? 'RECEIVED' : 'PARTIALLY_RECEIVED'
 
+      // Guard: only advance the PO status if the transition is valid.
+      const cur = await loadPOStatus(id)
+      if (cur === null) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      try {
+        requireValidTransition('po', cur, newStatus)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
         SET "status" = $1,
@@ -184,6 +232,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       // If PO was already RECEIVED, keep RECEIVED. Otherwise mark RECEIVED now.
       const newStatus = ['RECEIVED', 'CANCELLED'].includes(currentPO[0].status) ? currentPO[0].status : 'RECEIVED'
 
+      // Guard: if we're actually changing status, enforce the PO state machine.
+      if (newStatus !== currentPO[0].status) {
+        try {
+          requireValidTransition('po', currentPO[0].status, newStatus)
+        } catch (e) {
+          const res = transitionErrorResponse(e)
+          if (res) return res
+          throw e
+        }
+      }
+
       await prisma.$executeRawUnsafe(`
         UPDATE "PurchaseOrder"
         SET "status" = $1::"POStatus",
@@ -206,6 +265,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // ── Cancel PO ───────────────────────────────────────────────────────
     if (action === 'cancel') {
+      const cur = await loadPOStatus(id)
+      if (cur === null) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      try {
+        requireValidTransition('po', cur, 'CANCELLED')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
         SET "status" = 'CANCELLED', "updatedAt" = NOW(), "notes" = COALESCE("notes", '') || E'\nCancelled: ' || $1
@@ -217,6 +285,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // ── Generic field update ────────────────────────────────────────────
     const { status, expectedDate, notes, trackingNumber, shippingMethod } = body
+
+    // Guard: enforce POStatus state machine on generic status writes.
+    if (status) {
+      const cur = await loadPOStatus(id)
+      if (cur === null) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
+      try {
+        requireValidTransition('po', cur, status)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
+
     const fields: string[] = []
     const values: any[] = []
     let idx = 1

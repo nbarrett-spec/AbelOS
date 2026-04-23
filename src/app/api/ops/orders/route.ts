@@ -6,6 +6,7 @@ import { audit } from '@/lib/audit'
 import { runOrderStatusCascades, onOrderConfirmed } from '@/lib/cascades/order-lifecycle'
 import { checkBuilderCreditStatus } from '@/lib/credit-hold'
 import { createTaskForOrderReceived } from '@/lib/events/task'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -405,7 +406,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update quote status to ORDERED
+    // Update quote status to ORDERED — guard the transition against QuoteStatus state machine.
+    try {
+      requireValidTransition('quote', quote.status, 'ORDERED');
+    } catch (e) {
+      const res = transitionErrorResponse(e);
+      if (res) return res;
+      throw e;
+    }
     const updateQuoteQuery = `
       UPDATE "Quote" SET "status" = 'ORDERED'::"QuoteStatus", "updatedAt" = $1::timestamp WHERE "id" = $2
     `;

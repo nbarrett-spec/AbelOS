@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -33,6 +34,13 @@ export async function GET(request: NextRequest) {
         params.push(status)
         idx++
       }
+    }
+    const category = searchParams.get('category');
+    const validCategories = ['EXTERIOR', 'TRIM_1', 'TRIM_1_LABOR', 'TRIM_2', 'TRIM_2_LABOR', 'FINAL_FRONT', 'PUNCH', 'GENERAL'];
+    if (category && validCategories.includes(category)) {
+      conditions.push(`po."category" = $${idx}::"POCategory"`)
+      params.push(category)
+      idx++
     }
     if (vendorId) {
       conditions.push(`po."vendorId" = $${idx}`)
@@ -73,6 +81,7 @@ export async function GET(request: NextRequest) {
         po."createdById",
         po."approvedById",
         po."status",
+        po."category",
         po."subtotal",
         po."shippingCost",
         po."total",
@@ -189,7 +198,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { vendorId, createdById, items, notes, expectedDate } = body;
+    const { vendorId, createdById, items, notes, expectedDate, category } = body;
 
     if (!vendorId || !createdById || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -197,6 +206,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate category, default to GENERAL if omitted/invalid
+    const validCategories = ['EXTERIOR', 'TRIM_1', 'TRIM_1_LABOR', 'TRIM_2', 'TRIM_2_LABOR', 'FINAL_FRONT', 'PUNCH', 'GENERAL'];
+    const finalCategory = category && validCategories.includes(category) ? category : 'GENERAL';
 
     // Generate PO number using MAX query
     const now = new Date();
@@ -222,9 +235,9 @@ export async function POST(request: NextRequest) {
 
     // Insert PO using parameterized SQL
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "PurchaseOrder" ("id", "poNumber", "vendorId", "createdById", "status", "subtotal", "shippingCost", "total", "notes", "expectedDate", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, 'DRAFT'::"POStatus", $5, 0, $6, $7, $8::timestamptz, NOW(), NOW())`,
-      poId, poNumber, vendorId, createdById, subtotal, total, notes || null, expectedDate || null
+      `INSERT INTO "PurchaseOrder" ("id", "poNumber", "vendorId", "createdById", "status", "category", "subtotal", "shippingCost", "total", "notes", "expectedDate", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, 'DRAFT'::"POStatus", $5::"POCategory", $6, 0, $7, $8, $9::timestamptz, NOW(), NOW())`,
+      poId, poNumber, vendorId, createdById, finalCategory, subtotal, total, notes || null, expectedDate || null
     );
 
     // Insert items + bump InventoryItem.onOrder for linked products so MRP sees
@@ -279,7 +292,7 @@ export async function POST(request: NextRequest) {
        FROM "PurchaseOrderItem" WHERE "purchaseOrderId" = $1`, poId
     );
 
-    await audit(request, 'CREATE', 'PurchaseOrder', poId, { vendorId, total })
+    await audit(request, 'CREATE', 'PurchaseOrder', poId, { vendorId, total, category: finalCategory })
 
     return NextResponse.json(
       {
@@ -303,36 +316,78 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, status } = body;
+    const { id, status, category } = body;
 
-    if (!id || !status) {
+    if (!id || (!status && !category)) {
       return NextResponse.json(
-        { error: 'Missing required fields: id, status' },
+        { error: 'Missing required fields: id and at least one of status or category' },
         { status: 400 }
       );
     }
 
-    // Validate status
+    // Validate status if provided
     const validStatuses = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED']
-    if (!validStatuses.includes(status)) {
+    if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
       );
     }
 
-    // Update the purchase order status
+    // Guard: enforce POStatus state machine before writing.
+    if (status) {
+      const currentRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "status"::text AS "status" FROM "PurchaseOrder" WHERE "id" = $1`,
+        id
+      )
+      if (currentRows.length === 0) {
+        return NextResponse.json({ error: 'Purchase order not found' }, { status: 404 })
+      }
+      try {
+        requireValidTransition('po', currentRows[0].status, status)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
+
+    // Validate category if provided
+    const validCategories = ['EXTERIOR', 'TRIM_1', 'TRIM_1_LABOR', 'TRIM_2', 'TRIM_2_LABOR', 'FINAL_FRONT', 'PUNCH', 'GENERAL']
+    if (category && !validCategories.includes(category)) {
+      return NextResponse.json(
+        { error: `Invalid category. Must be one of: ${validCategories.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Build dynamic SET clause — status, category, or both
+    const sets: string[] = []
+    const patchParams: any[] = []
+    let pIdx = 1
+    if (status) {
+      sets.push(`"status" = $${pIdx}::"POStatus"`)
+      patchParams.push(status)
+      pIdx++
+    }
+    if (category) {
+      sets.push(`"category" = $${pIdx}::"POCategory"`)
+      patchParams.push(category)
+      pIdx++
+    }
+    sets.push(`"updatedAt" = NOW()`)
+    patchParams.push(id)
+
     const updateQuery = `
       UPDATE "PurchaseOrder"
-      SET "status" = $1::"POStatus", "updatedAt" = NOW()
-      WHERE "id" = $2
+      SET ${sets.join(', ')}
+      WHERE "id" = $${pIdx}
       RETURNING *
     `;
 
     const updatedRows = await prisma.$queryRawUnsafe<any[]>(
       updateQuery,
-      status,
-      id
+      ...patchParams
     );
 
     if (!updatedRows || updatedRows.length === 0) {
@@ -360,7 +415,7 @@ export async function PATCH(request: NextRequest) {
     `;
     const items = await prisma.$queryRawUnsafe(itemsQuery, id);
 
-    await audit(request, 'UPDATE', 'PurchaseOrder', id, { status })
+    await audit(request, 'UPDATE', 'PurchaseOrder', id, { status, category })
 
     return NextResponse.json(
       {

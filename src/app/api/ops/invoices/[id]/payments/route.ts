@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 interface RouteParams {
   params: { id: string }
@@ -49,6 +50,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       newStatus = 'PAID'
     } else if (newAmountPaid > 0) {
       newStatus = 'PARTIALLY_PAID'
+    }
+
+    // Guard: if we're changing status, enforce the InvoiceStatus state machine.
+    if (newStatus !== invoice.status) {
+      try {
+        requireValidTransition('invoice', invoice.status, newStatus)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
     }
 
     const paidAtClause = newStatus === 'PAID' ? ', "paidAt" = NOW()' : ''

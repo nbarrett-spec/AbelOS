@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // POST /api/quotes/[id]/convert — Convert an approved/sent quote to an order
 export async function POST(
@@ -46,6 +47,16 @@ export async function POST(
 
     if (!['SENT', 'APPROVED'].includes(quote.status)) {
       return NextResponse.json({ error: `Cannot convert a ${quote.status} quote. Only SENT or APPROVED quotes can be converted.` }, { status: 400 })
+    }
+
+    // Guard: the convert flow always leaves Quote in APPROVED. SENT → APPROVED
+    // is valid; APPROVED → APPROVED is a silent no-op in the guard.
+    try {
+      requireValidTransition('quote', quote.status, 'APPROVED')
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // ── Credit hold enforcement ──────────────────────────────────

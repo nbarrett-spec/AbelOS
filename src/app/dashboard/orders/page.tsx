@@ -338,8 +338,9 @@ export default function BuilderOrdersPage() {
 
                 <div className="flex gap-3">
                   <button
-                    onClick={addToCart}
-                    className="flex-1 px-4 py-2 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-lg transition"
+                    disabled
+                    title="Cart integration coming soon"
+                    className="flex-1 px-4 py-2 bg-[#C6A24E] text-white font-semibold rounded-lg opacity-50 cursor-not-allowed"
                   >
                     Add Available Items to Cart
                   </button>

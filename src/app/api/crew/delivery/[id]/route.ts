@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { notifyDeliveryStatusChange } from '@/lib/notifications';
 import { checkStaffAuth } from '@/lib/api-auth';
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard';
 
 export async function GET(
   request: NextRequest,
@@ -126,6 +127,17 @@ export async function PATCH(
     );
 
     const currentDelivery = currentDeliveryResult?.[0];
+
+    // Guard: enforce DeliveryStatus state machine before writing status.
+    if (status && currentDelivery && status !== currentDelivery.status) {
+      try {
+        requireValidTransition('delivery', currentDelivery.status, status);
+      } catch (e) {
+        const res = transitionErrorResponse(e);
+        if (res) return res;
+        throw e;
+      }
+    }
 
     // Build update query dynamically
     const updates: string[] = [];

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 export async function GET(
   request: NextRequest,
@@ -173,6 +174,15 @@ export async function PATCH(
 
     // Handle status transition side effects
     if (newStatus && newStatus !== currentJob.status) {
+      // Guard: enforce JobStatus state machine before writing.
+      try {
+        requireValidTransition('job', currentJob.status, newStatus)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+
       setClauses.push(`"status" = '${newStatus}'::"JobStatus"`)
 
       if (newStatus === 'READINESS_CHECK') setClauses.push(`"readinessCheck" = true`)
@@ -218,7 +228,9 @@ export async function PATCH(
           const deliveryId = `del${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
           const address = jobInfo[0]?.jobAddress || 'TBD'
 
-          const delStatus = newStatus === 'IN_TRANSIT' ? 'EN_ROUTE' : 'SCHEDULED'
+          // Fix: 'EN_ROUTE' is not a valid DeliveryStatus enum value. Use 'IN_TRANSIT'
+          // when the Job is IN_TRANSIT, else 'SCHEDULED'. See state-machines.ts DELIVERY_TRANSITIONS.
+          const delStatus = newStatus === 'IN_TRANSIT' ? 'IN_TRANSIT' : 'SCHEDULED'
 
           await prisma.$executeRawUnsafe(`
             INSERT INTO "Delivery" ("id", "jobId", "deliveryNumber", "address", "status", "routeOrder", "loadPhotos", "sitePhotos", "createdAt", "updatedAt")
@@ -230,8 +242,11 @@ export async function PATCH(
       }
     }
 
-    // ── Auto-trigger dunnage→final front when job reaches FINAL_FRONT / FINISHING / TRIM_COMPLETE ──
-    if (newStatus && ['FINAL_FRONT', 'FINISHING', 'TRIM_COMPLETE'].includes(newStatus)) {
+    // ── Auto-trigger dunnage→final front when install phase begins ──
+    // Prior versions checked ['FINAL_FRONT', 'FINISHING', 'TRIM_COMPLETE'] — none of which
+    // are valid JobStatus values (they belong to PO-category, not JobStatus). Corrected to
+    // fire on the install lifecycle (INSTALLING or PUNCH_LIST) per state-machines.ts.
+    if (newStatus && ['INSTALLING', 'PUNCH_LIST'].includes(newStatus)) {
       try {
         // Check for dunnage doors on this job
         const dunnageItems: any[] = await prisma.$queryRawUnsafe(`
@@ -316,11 +331,20 @@ export async function DELETE(
     const { id } = params
 
     const rows: any[] = await prisma.$queryRawUnsafe(`
-      SELECT "id" FROM "Job" WHERE "id" = $1
+      SELECT "id", "status"::text AS "status" FROM "Job" WHERE "id" = $1
     `, id)
 
     if (rows.length === 0) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    }
+
+    // Guard: CLOSED is only reachable from INVOICED per JOB_TRANSITIONS.
+    try {
+      requireValidTransition('job', rows[0].status, 'CLOSED')
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // Soft delete by setting status to CLOSED

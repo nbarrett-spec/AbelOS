@@ -8,6 +8,7 @@ import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { checkCSRF } from '@/lib/security'
 import { logger, getRequestId } from '@/lib/logger'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // GET /api/orders — List builder's orders
 export async function GET(request: NextRequest) {
@@ -86,6 +87,15 @@ export async function POST(request: NextRequest) {
     // Validate quote status is not already APPROVED
     if (quoteRecord.status === 'APPROVED') {
       return NextResponse.json({ error: 'Quote is already approved' }, { status: 400 })
+    }
+
+    // Guard Quote → APPROVED against QuoteStatus state machine before we open the tx.
+    try {
+      requireValidTransition('quote', quoteRecord.status, 'APPROVED')
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // Generate order number and ID

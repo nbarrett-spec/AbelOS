@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/portal/installer/jobs/[jobId]/start
@@ -33,6 +34,13 @@ export async function POST(
 
     // Idempotent: if already INSTALLING, return current state.
     if (current.status !== 'INSTALLING') {
+      try {
+        requireValidTransition('job', current.status, 'INSTALLING')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
       await prisma.$executeRawUnsafe(
         `UPDATE "Job"
          SET "status" = 'INSTALLING'::"JobStatus",

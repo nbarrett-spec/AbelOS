@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { notifyInvoiceCreated } from '@/lib/notifications'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 interface RouteParams {
   params: { id: string }
@@ -74,6 +75,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { id } = params
     const body = await request.json()
     const { status, notes, issuedAt, dueDate } = body
+
+    // Guard: enforce InvoiceStatus state machine before writing.
+    if (status !== undefined) {
+      const currentRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "status"::text AS "status" FROM "Invoice" WHERE "id" = $1`,
+        id
+      )
+      if (currentRows.length === 0) {
+        return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+      }
+      try {
+        requireValidTransition('invoice', currentRows[0].status, status)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
 
     const setClauses: string[] = ['"updatedAt" = NOW()']
 

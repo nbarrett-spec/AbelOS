@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse, InvalidTransitionError } from '@/lib/status-guard'
 
 // ───────────────────────────────────────────────────────────────────────────
 // GET /api/ops/receiving — List POs awaiting receiving
@@ -241,6 +242,15 @@ export async function POST(request: NextRequest) {
     // Determine new PO status
     const newStatus = isFullyReceived ? 'RECEIVED' : 'PARTIALLY_RECEIVED'
 
+    // Guard: enforce POStatus state machine before advancing.
+    try {
+      requireValidTransition('po', purchaseOrder.status, newStatus)
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
+    }
+
     // Update PO status and receivedAt if fully received
     if (isFullyReceived) {
       await prisma.$executeRawUnsafe(`
@@ -345,14 +355,28 @@ export async function POST(request: NextRequest) {
               WHERE id = $1
             `, sp.jobId)
 
-            // Auto-advance job status if in early stage
+            // Auto-advance job status if in early stage — guard the transition.
+            // CREATED → MATERIALS_LOCKED is NOT a valid direct edge in
+            // JOB_TRANSITIONS (must pass through READINESS_CHECK); skip with a
+            // warning when it would fail rather than bypass the state machine.
             if (sp.jobStatus === 'CREATED' || sp.jobStatus === 'READINESS_CHECK') {
-              await prisma.$executeRawUnsafe(`
-                UPDATE "Job"
-                SET status = 'MATERIALS_LOCKED'::"JobStatus", "materialsLocked" = true, "updatedAt" = NOW()
-                WHERE id = $1
-              `, sp.jobId)
-              jobsAdvanced.push(sp.jobNumber)
+              try {
+                requireValidTransition('job', sp.jobStatus, 'MATERIALS_LOCKED')
+                await prisma.$executeRawUnsafe(`
+                  UPDATE "Job"
+                  SET status = 'MATERIALS_LOCKED'::"JobStatus", "materialsLocked" = true, "updatedAt" = NOW()
+                  WHERE id = $1
+                `, sp.jobId)
+                jobsAdvanced.push(sp.jobNumber)
+              } catch (jobGuardErr) {
+                if (jobGuardErr instanceof InvalidTransitionError) {
+                  console.warn(
+                    `[receiving] skipped Job→MATERIALS_LOCKED auto-advance for ${sp.jobNumber} — invalid from ${sp.jobStatus}`,
+                  )
+                } else {
+                  throw jobGuardErr
+                }
+              }
             }
 
             // Notify PM

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { auditBuilder } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 type DeliveryWindow = 'EARLY_AM' | 'LATE_AM' | 'EARLY_PM' | 'LATE_PM' | 'ANYTIME'
 
@@ -164,14 +165,26 @@ export async function POST(
 
     const currentDelivery = delivery[0]
 
-    // Check delivery status - only allow reschedule if SCHEDULED or CONFIRMED
-    if (!['SCHEDULED', 'CONFIRMED'].includes(currentDelivery.status)) {
+    // Check delivery status - only allow reschedule if SCHEDULED
+    // (CONFIRMED is not a DeliveryStatus enum value — legacy string).
+    if (currentDelivery.status !== 'SCHEDULED') {
       return NextResponse.json(
         {
           error: `Cannot reschedule delivery with status ${currentDelivery.status}`,
         },
         { status: 400 }
       )
+    }
+
+    // Guard: SCHEDULED → SCHEDULED is a silent no-op in the state-machine
+    // helper, which is what a reschedule actually is at the status level —
+    // the meaningful state change is the notes/schedule entry update.
+    try {
+      requireValidTransition('delivery', currentDelivery.status, 'SCHEDULED')
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // Update delivery with reschedule request

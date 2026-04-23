@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, InvalidTransitionError } from '@/lib/status-guard'
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,9 +64,22 @@ export async function POST(request: NextRequest) {
 
     let totalAmount = 0
     let paidCount = 0
+    const skipped: { invoiceId: string; reason: string }[] = []
 
     // Create payment records and update invoice status for each invoice
     for (const invoice of unpaidInvoices) {
+      // Guard: batch-pay pushes each to PAID; skip rows whose current status
+      // can't legally transition (e.g. DRAFT) and surface them to the caller.
+      try {
+        requireValidTransition('invoice', invoice.status, 'PAID')
+      } catch (e) {
+        if (e instanceof InvalidTransitionError) {
+          skipped.push({ invoiceId: invoice.id, reason: e.message })
+          continue
+        }
+        throw e
+      }
+
       const amount = invoice.balanceDue > 0 ? invoice.balanceDue : invoice.total - invoice.amountPaid
 
       // Create Payment record
@@ -97,6 +111,7 @@ export async function POST(request: NextRequest) {
       success: true,
       paid: paidCount,
       totalAmount,
+      skipped,
     })
   } catch (error) {
     console.error('Failed to process batch payment:', error)

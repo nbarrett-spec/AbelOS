@@ -6,6 +6,7 @@ import { logAudit, audit } from '@/lib/audit'
 import { executeWorkflows } from '@/lib/workflows'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { recordDealActivity } from '@/lib/events/activity'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // GET /api/ops/sales/deals/[id] — Single deal with activities, contracts, documents
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -119,6 +120,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const previousStage = existingDeal[0].stage
     const newStage = stage || previousStage
+
+    // Guard: enforce DealStage state machine before any stage change.
+    if (stage !== undefined && stage !== previousStage) {
+      try {
+        requireValidTransition('deal', previousStage, stage)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
 
     // Build update query
     const updates: string[] = []
@@ -319,9 +331,21 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     audit(request, 'DELETE', 'Deal', dealId, { method: 'DELETE' }).catch(() => {})
 
     // Check if deal exists
-    const existingDeal: any[] = await prisma.$queryRawUnsafe(`SELECT "id" FROM "Deal" WHERE "id" = $1`, dealId)
+    const existingDeal: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id", "stage"::text AS "stage" FROM "Deal" WHERE "id" = $1`,
+      dealId,
+    )
     if (!existingDeal.length) {
       return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+    }
+
+    // Guard: LOST is terminal; only reachable from pre-WON stages per DEAL_TRANSITIONS.
+    try {
+      requireValidTransition('deal', existingDeal[0].stage, 'LOST')
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // Soft delete by clearing associations and archiving

@@ -5,6 +5,7 @@ import { sendQuoteReadyEmail } from '@/lib/email'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { recordQuoteActivity } from '@/lib/events/activity'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // GET /api/ops/quotes — List all quotes (ops-side, no builder auth required)
 export async function GET(request: NextRequest) {
@@ -413,6 +414,20 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    // Guard: enforce QuoteStatus state machine before building UPDATE.
+    if (status) {
+      const validStatuses = ['DRAFT', 'SENT', 'APPROVED', 'REJECTED', 'EXPIRED', 'ORDERED']
+      if (validStatuses.includes(status)) {
+        try {
+          requireValidTransition('quote', quote.status, status)
+        } catch (e) {
+          const res = transitionErrorResponse(e)
+          if (res) return res
+          throw e
+        }
+      }
+    }
+
     // Build UPDATE query with parameterized values
     const updateParts: string[] = []
     const updateParams: any[] = []
@@ -582,11 +597,20 @@ export async function DELETE(request: NextRequest) {
       await prisma.$executeRawUnsafe(`DELETE FROM "QuoteItem" WHERE "quoteId" = $1`, id)
       await prisma.$executeRawUnsafe(`DELETE FROM "Quote" WHERE "id" = $1`, id)
     } else {
-      // For approved or other statuses, soft-delete by setting status to EXPIRED
-      await prisma.$executeRawUnsafe(
-        `UPDATE "Quote" SET "status" = 'EXPIRED'::"QuoteStatus", "updatedAt" = $1::timestamptz WHERE "id" = $2`,
-        new Date().toISOString(), id
-      )
+      // For approved or other statuses, soft-delete by setting status to EXPIRED.
+      // Only SENT → EXPIRED is valid per QUOTE_TRANSITIONS; skip the write if
+      // the quote is already in a terminal state (APPROVED, REJECTED, ORDERED).
+      try {
+        requireValidTransition('quote', quote.status, 'EXPIRED')
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Quote" SET "status" = 'EXPIRED'::"QuoteStatus", "updatedAt" = $1::timestamptz WHERE "id" = $2`,
+          new Date().toISOString(), id
+        )
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
     }
 
     await audit(request, 'DELETE', 'Quote', id, {})

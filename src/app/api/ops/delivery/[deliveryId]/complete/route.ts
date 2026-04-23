@@ -5,6 +5,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
 import { onDeliveryComplete } from '@/lib/cascades/delivery-lifecycle'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 /**
  * POST /api/ops/delivery/[deliveryId]/complete
@@ -60,9 +61,20 @@ export async function POST(
 
     const delivery = await prisma.delivery.findUnique({
       where: { id: params.deliveryId },
-      select: { id: true, jobId: true, notes: true, sitePhotos: true, damageNotes: true },
+      select: { id: true, jobId: true, status: true, notes: true, sitePhotos: true, damageNotes: true },
     })
     if (!delivery) return NextResponse.json({ error: 'delivery not found' }, { status: 404 })
+
+    const targetDeliveryStatus = partialComplete ? 'PARTIAL_DELIVERY' : 'COMPLETE'
+
+    // Guard: enforce DeliveryStatus state machine.
+    try {
+      requireValidTransition('delivery', String(delivery.status), targetDeliveryStatus)
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
+    }
 
     // Build a structured proof blob embedded in notes (until blob storage lands).
     // The blob is ~base64 heavy — we keep it last so humans can still read
@@ -108,15 +120,38 @@ export async function POST(
       },
     })
 
-    // Update Job status if this was its delivery (only advance on full complete)
+    // Update Job status if this was its delivery (only advance on full complete).
+    // Guard: skip the Job flip if it's not a valid transition from the current Job status.
     if (delivery.jobId && !partialComplete) {
-      await prisma.job.update({
-        where: { id: delivery.jobId },
-        data: {
-          status: 'DELIVERED',
-          actualDate: now,
-        },
-      })
+      try {
+        const job = await prisma.job.findUnique({
+          where: { id: delivery.jobId },
+          select: { status: true },
+        })
+        if (job) {
+          try {
+            requireValidTransition('job', String(job.status), 'DELIVERED')
+            await prisma.job.update({
+              where: { id: delivery.jobId },
+              data: {
+                status: 'DELIVERED',
+                actualDate: now,
+              },
+            })
+          } catch {
+            console.warn(
+              `[delivery complete] skipped Job→DELIVERED flip — invalid from ${job.status} for job ${delivery.jobId}`,
+            )
+            // Still stamp actualDate without status flip
+            await prisma.job.update({
+              where: { id: delivery.jobId },
+              data: { actualDate: now },
+            })
+          }
+        }
+      } catch (e: any) {
+        console.warn('[delivery complete] job update failed:', e?.message)
+      }
     }
 
     // Log a tracking event

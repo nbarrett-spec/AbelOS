@@ -61,6 +61,10 @@ export default function StaffProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
 
+  // Digest opt-out
+  const [digestOptOut, setDigestOptOut] = useState(false)
+  const [savingDigest, setSavingDigest] = useState(false)
+
   useEffect(() => {
     fetch('/api/ops/auth/me')
       .then(r => r.json())
@@ -75,6 +79,12 @@ export default function StaffProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    // Load digest prefs in parallel — doesn't block initial render
+    fetch('/api/ops/staff/preferences/digest')
+      .then(r => r.json())
+      .then(data => setDigestOptOut(data?.digestOptOut === true))
+      .catch(() => {})
   }, [])
 
   const showToast = (msg: string) => {
@@ -139,6 +149,34 @@ export default function StaffProfilePage() {
     phone !== (profile.phone || '') ||
     title !== (profile.title || '')
   )
+
+  const toggleDigestOptOut = async (next: boolean) => {
+    setSavingDigest(true)
+    // Optimistic — the endpoint degrades gracefully if migration is missing
+    setDigestOptOut(next)
+    try {
+      const res = await fetch('/api/ops/staff/preferences/digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ digestOptOut: next }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        // Revert on hard error
+        setDigestOptOut(!next)
+        showToast(data?.error || 'Failed to update digest settings')
+      } else if (data?.persisted === false) {
+        showToast('Saved locally — preferences column not migrated yet')
+      } else {
+        showToast(next ? 'Digest emails paused' : 'Digest emails on')
+      }
+    } catch {
+      setDigestOptOut(!next)
+      showToast('Failed to update digest settings')
+    } finally {
+      setSavingDigest(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -249,6 +287,32 @@ export default function StaffProfilePage() {
               placeholder="e.g. Senior Estimator"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Digest Settings */}
+      <div id="digest" className="bg-white rounded-lg border p-6 mb-6">
+        <h2 className="text-lg font-semibold text-[#1B2A4A] mb-4">Digest Settings</h2>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <p className="text-sm text-gray-700">
+              Daily digest email (6 AM CT)
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              One email per day with everything on your plate — inbox, tasks, deliveries, invoices —
+              scoped to your role. Skipped automatically when there's nothing to act on.
+            </p>
+          </div>
+          <label className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!digestOptOut}
+              disabled={savingDigest}
+              onChange={e => toggleDigestOptOut(!e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-[#C6A24E]/30 peer-checked:bg-[#C6A24E] after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition peer-checked:after:translate-x-5" />
+          </label>
         </div>
       </div>
 

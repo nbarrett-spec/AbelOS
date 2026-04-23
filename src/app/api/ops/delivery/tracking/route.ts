@@ -5,6 +5,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { audit } from '@/lib/audit'
 import { checkStaffWriteLimit } from '@/lib/rate-limit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 /**
  * GET /api/ops/delivery/tracking
@@ -192,8 +193,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // If status is COMPLETE, update delivery status to DELIVERED
+    // If status is COMPLETE, update delivery status to COMPLETE — guard first.
     if (status === 'COMPLETE') {
+      try {
+        requireValidTransition('delivery', String(delivery.status), 'COMPLETE')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
       await prisma.delivery.update({
         where: { id: deliveryId },
         data: {

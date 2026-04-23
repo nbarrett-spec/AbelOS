@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, InvalidTransitionError } from '@/lib/status-guard'
 
 // PATCH /api/ops/orders/bulk — Bulk update order statuses
 export async function PATCH(request: NextRequest) {
@@ -44,6 +45,22 @@ export async function PATCH(request: NextRequest) {
         }
 
         const order = current[0]
+
+        // Status guard — per-row transition check before the UPDATE.
+        try {
+          requireValidTransition('order', order.status, status)
+        } catch (e) {
+          if (e instanceof InvalidTransitionError) {
+            results.push({
+              id: orderId,
+              orderNumber: order.orderNumber,
+              success: false,
+              error: e.message,
+            })
+            continue
+          }
+          throw e
+        }
 
         // Update status
         await prisma.$queryRawUnsafe(

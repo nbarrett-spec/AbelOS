@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 /**
  * POST /api/ops/manufacturing/advance-job
@@ -60,28 +61,14 @@ export async function POST(request: NextRequest) {
     const job = jobs[0]
     const currentStatus = job.status
 
-    // Define valid transitions
-    const validTransitions: Record<string, string[]> = {
-      'CREATED': ['READINESS_CHECK'],
-      'READINESS_CHECK': ['MATERIALS_LOCKED'],
-      'MATERIALS_LOCKED': ['IN_PRODUCTION'],
-      'IN_PRODUCTION': ['STAGED'],
-      'STAGED': ['LOADED'],
-      'LOADED': ['IN_TRANSIT'],
-      'IN_TRANSIT': ['DELIVERED'],
-      'DELIVERED': ['INSTALLING', 'COMPLETE'],
-      'INSTALLING': ['PUNCH_LIST', 'COMPLETE'],
-      'PUNCH_LIST': ['COMPLETE'],
-      'COMPLETE': ['INVOICED'],
-      'INVOICED': ['CLOSED'],
-    }
-
-    const allowed = validTransitions[currentStatus] || []
-    if (!allowed.includes(targetStatus)) {
-      return NextResponse.json({
-        error: `Invalid transition: ${currentStatus} → ${targetStatus}`,
-        allowedTransitions: allowed,
-      }, { status: 400 })
+    // Transition validity is enforced by the canonical status guard
+    // (src/lib/state-machines.ts is the single source of truth).
+    try {
+      requireValidTransition('job', currentStatus, targetStatus)
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
     }
 
     // ── Validation Gates ───────────────────────────────────────────────

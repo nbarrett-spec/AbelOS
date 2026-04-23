@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { defaultExpectedDateForPO } from '@/lib/mrp'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 interface RouteParams {
   params: {
@@ -122,6 +123,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const currentStatus = currentPOResult[0].status;
+
+    // Guard: enforce POStatus state machine before writing.
+    if (status !== undefined) {
+      try {
+        requireValidTransition('po', currentStatus, status)
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+    }
 
     // Build dynamic SET clause
     const setClauses: string[] = [];

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useToast } from '@/contexts/ToastContext'
+import QRScanner from '@/components/ui/QRScanner'
+import { decodeTag } from '@/lib/qr-tags'
 
 const PICK_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
@@ -61,7 +63,11 @@ export default function PickScannerPage() {
   const [lastScanMessage, setLastScanMessage] = useState<string | null>(null)
   const [verifying, setVerifying] = useState(false)
 
+  // Camera vs. HID-barcode/text fallback. Default to camera for phone use.
+  const [scanMode, setScanMode] = useState<'camera' | 'text'>('camera')
+
   const scanInputRef = useRef<HTMLInputElement>(null)
+  const verifyingRef = useRef(false)
 
   // ── Load ready-to-pick jobs ────────────────────────────────────────────
   const fetchJobs = useCallback(async () => {
@@ -106,7 +112,9 @@ export default function PickScannerPage() {
     setError(null)
     setLastScanMessage(null)
     await fetchPicks(job.id)
-    setTimeout(() => scanInputRef.current?.focus(), 100)
+    if (scanMode === 'text') {
+      setTimeout(() => scanInputRef.current?.focus(), 100)
+    }
   }
 
   const backToJobList = () => {
@@ -144,12 +152,34 @@ export default function PickScannerPage() {
   }
 
   // ── Scan flow ──────────────────────────────────────────────────────────
-  const handleScan = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!scanInput.trim() || !selectedJob || verifying) return
+  // Takes a raw scanned string. Decodes Abel QR URIs (abel://product/<sku>)
+  // and falls back to treating the input as a bare SKU.
+  const runScan = useCallback(
+  async (raw: string) => {
+    if (!raw || !selectedJob || verifyingRef.current) return
+    verifyingRef.current = true
     setVerifying(true)
     setError(null)
-    const scannedSku = scanInput.trim()
+
+    const decoded = decodeTag(raw)
+    // Accept product tags and raw SKUs. Bay/pallet tags aren't part of the
+    // pick-verification flow — show a clear error instead of a bogus
+    // mismatch.
+    if (decoded.kind !== 'product' && decoded.kind !== 'raw') {
+      setFlashFeedback('error')
+      playSound('error')
+      setError(`Scanned a ${decoded.kind} tag — scan a product QR or SKU instead.`)
+      setTimeout(() => setFlashFeedback(null), 600)
+      verifyingRef.current = false
+      setVerifying(false)
+      return
+    }
+    const scannedSku = decoded.id.trim()
+    if (!scannedSku) {
+      verifyingRef.current = false
+      setVerifying(false)
+      return
+    }
 
     try {
       // Find the first pick that still needs action, preferring one that
@@ -174,6 +204,7 @@ export default function PickScannerPage() {
         setTimeout(() => setFlashFeedback(null), 600)
         setScanInput('')
         setVerifying(false)
+        verifyingRef.current = false
         return
       }
 
@@ -223,11 +254,21 @@ export default function PickScannerPage() {
       setScanInput('')
       setTimeout(() => {
         setFlashFeedback(null)
-        scanInputRef.current?.focus()
+        if (scanMode === 'text') scanInputRef.current?.focus()
       }, 500)
       setVerifying(false)
+      verifyingRef.current = false
     }
-  }
+  }, [selectedJob, picks, addToast, scanMode])
+
+  // Wraps the runScan for the text-input form submit path.
+  const handleScan = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      await runScan(scanInput.trim())
+    },
+    [runScan, scanInput]
+  )
 
   // ── Short-pick action ──────────────────────────────────────────────────
   const markShort = async (pick: MaterialPick) => {
@@ -583,45 +624,108 @@ export default function PickScannerPage() {
         </button>
       </div>
 
-      {/* Big scan input — always-on focus, autofocus for barcode HID */}
-      <form onSubmit={handleScan} style={{ marginBottom: '1rem' }}>
-        <label
+      {/* Scan mode toggle: phone camera (default) vs. text/HID-barcode */}
+      <div style={{ marginBottom: '0.75rem' }}>
+        <div
           style={{
-            display: 'block',
-            color: '#ccc',
-            fontSize: '0.875rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '0.5rem',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
           }}
         >
-          Scan SKU
-        </label>
-        <input
-          ref={scanInputRef}
-          type="text"
-          autoFocus
-          value={scanInput}
-          onChange={e => setScanInput(e.target.value)}
-          placeholder="SCAN OR TYPE SKU"
-          style={{
-            width: '100%',
-            minHeight: '64px',
-            padding: '1.25rem',
-            fontSize: '1.5rem',
-            backgroundColor: '#2a2a3e',
-            border: '3px solid #C6A24E',
-            borderRadius: '0.5rem',
-            color: '#fff',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-          disabled={verifying}
-          autoComplete="off"
-        />
-      </form>
+          <label
+            style={{
+              color: '#ccc',
+              fontSize: '0.875rem',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+            }}
+          >
+            Scan SKU
+          </label>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button
+              type="button"
+              onClick={() => setScanMode('camera')}
+              style={{
+                minHeight: 36,
+                padding: '0.4rem 0.8rem',
+                backgroundColor: scanMode === 'camera' ? '#C6A24E' : 'transparent',
+                color: scanMode === 'camera' ? '#1a1a2e' : '#ccc',
+                border: '1px solid #C6A24E',
+                borderRadius: '0.4rem 0 0 0.4rem',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              Camera
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setScanMode('text')
+                setTimeout(() => scanInputRef.current?.focus(), 50)
+              }}
+              style={{
+                minHeight: 36,
+                padding: '0.4rem 0.8rem',
+                backgroundColor: scanMode === 'text' ? '#C6A24E' : 'transparent',
+                color: scanMode === 'text' ? '#1a1a2e' : '#ccc',
+                border: '1px solid #C6A24E',
+                borderLeft: 'none',
+                borderRadius: '0 0.4rem 0.4rem 0',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              Keyboard
+            </button>
+          </div>
+        </div>
+
+        {scanMode === 'camera' ? (
+          <div style={{ marginBottom: '0.25rem' }}>
+            <QRScanner
+              active={!!selectedJob && !verifying}
+              onScan={code => {
+                void runScan(code)
+              }}
+              onError={err => console.error('[QRScanner]', err)}
+              prompt="Scan product QR or barcode"
+            />
+          </div>
+        ) : (
+          <form onSubmit={handleScan}>
+            <input
+              ref={scanInputRef}
+              type="text"
+              autoFocus
+              value={scanInput}
+              onChange={e => setScanInput(e.target.value)}
+              placeholder="SCAN OR TYPE SKU"
+              style={{
+                width: '100%',
+                minHeight: '64px',
+                padding: '1.25rem',
+                fontSize: '1.5rem',
+                backgroundColor: '#2a2a3e',
+                border: '3px solid #C6A24E',
+                borderRadius: '0.5rem',
+                color: '#fff',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+              disabled={verifying}
+              autoComplete="off"
+            />
+          </form>
+        )}
+      </div>
 
       {/* SKU search filter — separate from scan input so pickers can lookup */}
       <div style={{ marginBottom: '1rem' }}>

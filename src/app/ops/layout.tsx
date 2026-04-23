@@ -43,6 +43,8 @@ interface NavItem {
   href: string
   label: string
   icon: string
+  /** If set, shows a live counter badge on this nav item */
+  badgeKey?: 'inbox'
 }
 
 interface NavSection {
@@ -77,6 +79,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/ops', label: 'Dashboard', icon: '📊' },
       { href: '/ops/my-day', label: 'My Day', icon: '☀️' },
+      { href: '/ops/inbox', label: 'Inbox', icon: '📨', badgeKey: 'inbox' },
     ],
   },
   {
@@ -306,6 +309,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'ADMIN', id: 'admin',
     items: [
+      { href: '/ops/admin/system-health', label: 'System Health', icon: '❤️' },
       { href: '/ops/staff', label: 'Staff Management', icon: '👥' },
       { href: '/ops/locations', label: 'Locations', icon: '🏢' },
       { href: '/ops/delegations', label: 'Workload Delegation', icon: '🔄' },
@@ -345,11 +349,13 @@ function SidebarSection({
   pathname,
   collapsed,
   onNavigate,
+  badgeCounts,
 }: {
   section: NavSection
   pathname: string
   collapsed: boolean
   onNavigate: () => void
+  badgeCounts: Partial<Record<'inbox', number>>
 }) {
   const hasActive = section.items.some((item) =>
     item.href === '/ops' ? pathname === '/ops' : pathname.startsWith(item.href)
@@ -378,6 +384,9 @@ function SidebarSection({
                 : pathname.startsWith(item.href)
             const IconComponent = ICON_MAP[item.icon] || BarChart3
 
+            const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : undefined
+            const showBadge = typeof badgeCount === 'number' && badgeCount > 0
+
             const linkContent = (
               <Link
                 key={item.href}
@@ -395,6 +404,17 @@ function SidebarSection({
                   }`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && showBadge && (
+                  <Badge variant="danger" size="xs" className="ml-auto">
+                    {badgeCount > 99 ? '99+' : String(badgeCount)}
+                  </Badge>
+                )}
+                {collapsed && showBadge && (
+                  <span
+                    className="ml-auto w-1.5 h-1.5 rounded-full bg-data-negative"
+                    aria-hidden
+                  />
+                )}
               </Link>
             )
 
@@ -421,6 +441,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const [staff, setStaff] = useState<StaffUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [inboxCount, setInboxCount] = useState<number | null>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const cmdMenu = useCommandMenu()
 
@@ -476,6 +497,30 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchSession()
   }, [fetchSession])
+
+  // Poll the inbox count for the sidebar badge — cheap call, refresh every 60s
+  useEffect(() => {
+    if (isAuthPage || !staff) return
+    let cancelled = false
+    async function loadInboxCount() {
+      try {
+        const res = await fetch('/api/ops/inbox/scoped?status=PENDING&limit=1', {
+          credentials: 'include',
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setInboxCount(data?.totalPending ?? 0)
+      } catch {
+        // ignore — badge simply won't show
+      }
+    }
+    loadInboxCount()
+    const t = setInterval(loadInboxCount, 60_000)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
+  }, [isAuthPage, staff])
 
   if (isAuthPage) return <>{children}</>
 
@@ -590,6 +635,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
                   pathname={pathname}
                   collapsed={collapsed}
                   onNavigate={() => setMobileOpen(false)}
+                  badgeCounts={{ inbox: inboxCount ?? undefined }}
                 />
               ))
             )}

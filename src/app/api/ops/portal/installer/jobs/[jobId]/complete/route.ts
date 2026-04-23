@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/portal/installer/jobs/[jobId]/complete
@@ -101,6 +102,16 @@ export async function POST(
 
     const nextStatus = openPunchCount > 0 ? 'PUNCH_LIST' : 'COMPLETE'
 
+    // Guard: enforce JobStatus state machine before writing.
+    const currentJobStatus: string = rows[0].status
+    try {
+      requireValidTransition('job', currentJobStatus, nextStatus)
+    } catch (e) {
+      const res = transitionErrorResponse(e)
+      if (res) return res
+      throw e
+    }
+
     // 4. Update Job status
     if (nextStatus === 'COMPLETE') {
       await prisma.$executeRawUnsafe(
@@ -172,24 +183,50 @@ export async function POST(
     if (signature) {
       try {
         const dels: any[] = await prisma.$queryRawUnsafe(
-          `SELECT "id" FROM "Delivery" WHERE "jobId" = $1
+          `SELECT "id", "status"::text AS "status" FROM "Delivery" WHERE "jobId" = $1
            ORDER BY "createdAt" DESC LIMIT 1`,
           jobId,
         )
         if (dels.length > 0) {
-          await prisma.$executeRawUnsafe(
-            `UPDATE "Delivery"
-             SET "signedBy" = COALESCE("signedBy",'customer'),
-                 "sitePhotos" = COALESCE("sitePhotos",'{}') || $2::text[],
-                 "notes" = CASE WHEN "notes" IS NULL THEN $3::text ELSE "notes" || E'\\n' || $3::text END,
-                 "completedAt" = COALESCE("completedAt", NOW()),
-                 "status" = 'COMPLETE'::"DeliveryStatus",
-                 "updatedAt" = NOW()
-             WHERE "id" = $1`,
-            dels[0].id,
-            photos,
-            `[INSTALL SIGNATURE] ${signature.substring(0, 160)}...`,
-          )
+          // Guard: Delivery → COMPLETE must be a valid transition. Skip the
+          // status flip (but still persist signature/photos) if disallowed.
+          let flipStatus = true
+          try {
+            requireValidTransition('delivery', dels[0].status, 'COMPLETE')
+          } catch {
+            flipStatus = false
+            console.warn(
+              `[installer/complete] skipping Delivery→COMPLETE flip — invalid transition from ${dels[0].status}`,
+            )
+          }
+          if (flipStatus) {
+            await prisma.$executeRawUnsafe(
+              `UPDATE "Delivery"
+               SET "signedBy" = COALESCE("signedBy",'customer'),
+                   "sitePhotos" = COALESCE("sitePhotos",'{}') || $2::text[],
+                   "notes" = CASE WHEN "notes" IS NULL THEN $3::text ELSE "notes" || E'\\n' || $3::text END,
+                   "completedAt" = COALESCE("completedAt", NOW()),
+                   "status" = 'COMPLETE'::"DeliveryStatus",
+                   "updatedAt" = NOW()
+               WHERE "id" = $1`,
+              dels[0].id,
+              photos,
+              `[INSTALL SIGNATURE] ${signature.substring(0, 160)}...`,
+            )
+          } else {
+            // No status flip — still persist signature, photos, notes.
+            await prisma.$executeRawUnsafe(
+              `UPDATE "Delivery"
+               SET "signedBy" = COALESCE("signedBy",'customer'),
+                   "sitePhotos" = COALESCE("sitePhotos",'{}') || $2::text[],
+                   "notes" = CASE WHEN "notes" IS NULL THEN $3::text ELSE "notes" || E'\\n' || $3::text END,
+                   "updatedAt" = NOW()
+               WHERE "id" = $1`,
+              dels[0].id,
+              photos,
+              `[INSTALL SIGNATURE] ${signature.substring(0, 160)}...`,
+            )
+          }
         }
       } catch (e: any) {
         console.warn('[installer/complete] signature persist failed:', e?.message)

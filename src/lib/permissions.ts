@@ -96,6 +96,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/messages': ALL_ROLES,
   '/ops/notifications': ALL_ROLES,
 
+  // Inbox — triage queue, everyone (scoped server-side by role)
+  '/ops/inbox': ALL_ROLES,
+
   // Department Portals — restricted by role
   '/ops/portal': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP',
     'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'DRIVER', 'INSTALLER',
@@ -126,6 +129,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
 
   // Settings — admin only
   '/ops/settings': ['ADMIN'],
+
+  // System Health dashboard — admin only
+  '/ops/admin/system-health': ['ADMIN'],
 
   // Email queue — admin, managers, sales, PMs
   '/ops/email': ['ADMIN', 'MANAGER', 'SALES_REP', 'PROJECT_MANAGER'],
@@ -231,6 +237,11 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
 
   // Locations — admin, managers
   '/ops/locations': ['ADMIN', 'MANAGER'],
+
+  // Data Repair — drift review queue (ADMIN + ACCOUNTING only; Dawn reviews,
+  // Nate admins). Human-in-the-loop approval of Order header rebuilds flagged
+  // by scripts/drift-deep-dive.mjs.
+  '/ops/admin/data-repair': ['ADMIN', 'ACCOUNTING'],
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -454,6 +465,13 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Migration endpoint — admin only
   '/api/ops/run-migration': ['ADMIN'],
+
+  // Data Repair APIs — ADMIN + ACCOUNTING only. Endpoints mutate Order
+  // headers per reviewer approval; no other role needs access.
+  '/api/ops/admin/data-repair': ['ADMIN', 'ACCOUNTING'],
+
+  // System Health metrics — ADMIN only.
+  '/api/ops/admin/health-metrics': ['ADMIN'],
 }
 
 export function canAccessAPI(role: StaffRole | StaffRole[], pathname: string): boolean {

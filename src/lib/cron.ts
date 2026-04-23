@@ -182,6 +182,7 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'financial-snapshot', schedule: '0 6 * * *', description: 'Daily financial snapshot (cash, AR, DSO, aging)' },
   { name: 'brain-sync', schedule: '0 */4 * * *', description: 'Push Aegis deltas to NUC brain (non-staff tables)' },
   { name: 'brain-sync-staff', schedule: '30 */4 * * *', description: 'Push Aegis Staff deltas to NUC brain' },
+  { name: 'daily-digest', schedule: '0 11 * * *', description: 'Per-staff daily digest email (6 AM CT) — inbox, tasks, deliveries, invoices by role' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

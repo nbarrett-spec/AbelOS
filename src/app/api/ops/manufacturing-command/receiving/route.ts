@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
+import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 interface AuthHeaders {
   staffId?: string
@@ -209,7 +210,26 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
+    // Load current PO status once for both branches.
+    const poRows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "status"::text AS "status" FROM "PurchaseOrder" WHERE "id" = $1`,
+      poId,
+    )
+    if (poRows.length === 0) {
+      return NextResponse.json({ error: 'Purchase order not found' }, { status: 404 })
+    }
+    const currentPOStatus: string = poRows[0].status
+
     if (action === 'mark_received') {
+      // Guard: enforce POStatus state machine.
+      try {
+        requireValidTransition('po', currentPOStatus, 'RECEIVED')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+
       // Get all items for this PO
       const items: any[] = await prisma.$queryRawUnsafe(`
         SELECT "id", "quantity" FROM "PurchaseOrderItem" WHERE "purchaseOrderId" = $1
@@ -238,6 +258,15 @@ export async function PATCH(request: NextRequest) {
         message: 'Purchase order marked as received and inventory updated',
       })
     } else if (action === 'mark_partial') {
+      // Guard: enforce POStatus state machine.
+      try {
+        requireValidTransition('po', currentPOStatus, 'PARTIALLY_RECEIVED')
+      } catch (e) {
+        const res = transitionErrorResponse(e)
+        if (res) return res
+        throw e
+      }
+
       // Update PO status to PARTIALLY_RECEIVED
       await prisma.$queryRawUnsafe(`
         UPDATE "PurchaseOrder"
