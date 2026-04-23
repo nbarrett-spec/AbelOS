@@ -284,15 +284,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     `)
     const cogs: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        to_char(date_trunc('quarter', ii."createdAt"), 'YYYY-Q') as period,
+        to_char(date_trunc('quarter', i."createdAt"), 'YYYY-Q') as period,
         COALESCE(SUM(ii."unitPrice" * ii.quantity)::numeric, 0) as cogs_quarter
       FROM "InvoiceItem" ii
       JOIN "Invoice" i ON ii."invoiceId" = i.id
       WHERE
         i."status" IN ('ISSUED', 'SENT', 'PARTIALLY_PAID', 'PAID', 'OVERDUE')
-        AND ii."createdAt" >= NOW() - INTERVAL '12 months'
-      GROUP BY date_trunc('quarter', ii."createdAt")
-      ORDER BY date_trunc('quarter', ii."createdAt") ASC
+        AND i."createdAt" >= NOW() - INTERVAL '12 months'
+      GROUP BY date_trunc('quarter', i."createdAt")
+      ORDER BY date_trunc('quarter', i."createdAt") ASC
     `)
     const invTurnSeries = cogs.map((c) => {
       const invItem = inventoryData.find((i) => i.period === c.period)

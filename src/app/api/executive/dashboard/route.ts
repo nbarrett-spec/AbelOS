@@ -291,10 +291,19 @@ export async function GET(request: NextRequest) {
       })),
       alerts: alertCounts,
     })
-  } catch (error) {
-    console.error('Executive dashboard error:', error)
+  } catch (error: any) {
+    console.error('Executive dashboard error:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack?.split('\n').slice(0, 8).join('\n'),
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard data' },
+      {
+        error: 'Failed to fetch dashboard data',
+        detail: error?.message?.slice(0, 400) || null,
+        code: error?.code || null,
+      },
       { status: 500 }
     )
   }
