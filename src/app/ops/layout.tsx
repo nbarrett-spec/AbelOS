@@ -286,6 +286,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/portal/purchasing', label: 'Purchasing', icon: '🛒' },
       { href: '/ops/portal/purchasing/briefing', label: 'Purchasing Briefing', icon: '📋' },
       { href: '/ops/portal/warehouse', label: 'Warehouse', icon: '🏭' },
+      { href: '/ops/portal/warehouse/picks', label: "Today's Picks", icon: '📋' },
       { href: '/ops/portal/warehouse/briefing', label: 'Shift Briefing', icon: '☀️' },
       { href: '/ops/portal/delivery', label: 'Delivery & Logistics', icon: '🚚' },
       { href: '/ops/portal/driver', label: 'Driver Portal (Mobile)', icon: '📱' },

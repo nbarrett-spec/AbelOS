@@ -231,6 +231,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   // Warehouse operations — restricted to warehouse roles
   '/ops/warehouse': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
 
+  // Today's Pick Queue — Gunner's warehouse team runs the floor from here
+  '/ops/portal/warehouse/picks': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
+
   // Fleet management — logistics roles
   '/ops/fleet': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'DRIVER', 'WAREHOUSE_LEAD'],
 
@@ -464,6 +467,10 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Preferences API — all roles can manage their own preferences
   '/api/ops/preferences': ALL_ROLES,
+
+  // Today's Pick Queue — list + mark-picked
+  '/api/ops/warehouse/picks/today': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
+  '/api/ops/warehouse/picks': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
 
   // Receiving & Returns
   '/api/ops/receiving': ['ADMIN', 'MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'PROJECT_MANAGER'],
