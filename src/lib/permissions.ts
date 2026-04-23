@@ -440,6 +440,7 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Material ETA & Crew Conflicts
   '/api/ops/material-eta': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  '/api/ops/material-calendar': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
   '/api/ops/crew-conflicts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
   '/api/ops/readiness-check': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
 
