@@ -33,11 +33,14 @@ let tableEnsured = false
 async function ensureTable() {
   if (tableEnsured) return
   try {
+    // NOTE: The canonical schema for AuditLog lives in prisma/schema.prisma.
+    // This CREATE is only a safety net for fresh environments. In production
+    // the table already exists without a "staffName" column, and staffId is
+    // nullable (no FK) — do not drift this shape.
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "AuditLog" (
         "id" TEXT PRIMARY KEY,
-        "staffId" TEXT NOT NULL,
-        "staffName" TEXT,
+        "staffId" TEXT,
         "action" TEXT NOT NULL,
         "entity" TEXT NOT NULL,
         "entityId" TEXT,
@@ -90,16 +93,30 @@ export async function logAudit(params: {
   try {
     await ensureTable()
     const id = 'aud' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+
+    // staffId is nullable in the canonical schema and has no FK. Normalize
+    // empty/"unknown" sentinels to NULL so cron/webhook contexts don't blow
+    // up future FK constraints or pollute analytics. Preserve "builder:*"
+    // and real staff ids untouched.
+    const rawStaffId = (params.staffId ?? '').trim()
+    const staffIdForDb =
+      !rawStaffId || rawStaffId === 'unknown' ? null : rawStaffId
+
+    // staffName is NOT a column in the canonical AuditLog schema. If callers
+    // want the human name, stash it in details so we don't lose it.
+    const mergedDetails = params.staffName
+      ? { ...(params.details || {}), staffName: params.staffName }
+      : params.details || {}
+
     await prisma.$queryRawUnsafe(
-      `INSERT INTO "AuditLog" ("id", "staffId", "staffName", "action", "entity", "entityId", "details", "ipAddress", "userAgent", "severity", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, NOW())`,
+      `INSERT INTO "AuditLog" ("id", "staffId", "action", "entity", "entityId", "details", "ipAddress", "userAgent", "severity", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, NOW())`,
       id,
-      params.staffId,
-      params.staffName || null,
+      staffIdForDb,
       params.action,
       params.entity,
       params.entityId || null,
-      params.details ? JSON.stringify(params.details) : '{}',
+      JSON.stringify(mergedDetails),
       params.ipAddress || null,
       params.userAgent || null,
       params.severity || 'INFO'
@@ -116,7 +133,21 @@ export async function logAudit(params: {
     }).catch(() => {})
     return id
   } catch (e) {
-    logger.error('audit_log_write_failed', e, { action: params.action, entity: params.entity })
+    // IMPORTANT: log before swallow. Call sites use `.catch(() => {})` so
+    // their swallow can't see failures — this inner log is the ONLY place a
+    // future regression (schema drift, enum change, FK addition) will surface.
+    // Use console.warn in addition to logger.error so it's visible in every
+    // runtime (Next.js server, cron, webhook) regardless of log transport.
+    const msg = e instanceof Error ? e.message : String(e)
+    // eslint-disable-next-line no-console
+    console.warn('[audit] insert failed:', msg, {
+      action: params.action,
+      entity: params.entity,
+      entityId: params.entityId,
+    })
+    try {
+      logger.error('audit_log_write_failed', e, { action: params.action, entity: params.entity })
+    } catch {}
     return ''
   }
 }
@@ -229,7 +260,11 @@ export async function getAuditLogs(opts: {
       idx++
     }
     if (opts.search) {
-      conditions.push(`("staffName" ILIKE $${idx} OR "action" ILIKE $${idx} OR "entity" ILIKE $${idx} OR "entityId" ILIKE $${idx})`)
+      // "staffName" is not a real column — look inside details->>'staffName'
+      // (populated by logAudit) as a fallback so name searches still work.
+      conditions.push(
+        `("action" ILIKE $${idx} OR "entity" ILIKE $${idx} OR "entityId" ILIKE $${idx} OR "staffId" ILIKE $${idx} OR ("details"->>'staffName') ILIKE $${idx})`
+      )
       params.push(`%${opts.search}%`)
       idx++
     }

@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
       try {
         const actions = await prisma.$queryRawUnsafe<any[]>(
           `SELECT
-             "entityId", "action", "details", "staffId", "staffName", "createdAt"
+             "entityId", "action", "details", "staffId", "createdAt"
            FROM "AuditLog"
            WHERE "entity" = 'InboxItem'
              AND "entityId" = ANY($1::text[])
@@ -126,7 +126,8 @@ export async function GET(req: NextRequest) {
             action: a.action,
             details: a.details,
             staffId: a.staffId || null,
-            staffName: a.staffName || null,
+            // staffName is not a column on AuditLog; logAudit stashes it in details.
+            staffName: (a.details && a.details.staffName) || null,
             at: a.createdAt,
           })
           actionsByItem[a.entityId] = list

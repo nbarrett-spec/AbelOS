@@ -326,18 +326,27 @@ export async function PATCH(
       console.warn('[Staff PATCH] Failed to fetch final StaffRoles:', e?.message || e)
     }
 
-    // Audit logging (non-blocking)
+    // Audit logging (non-blocking). staffName is not a column on AuditLog —
+    // stash it inside details so the name is preserved without breaking the insert.
     try {
+      const rawStaffId = request.headers.get('x-staff-id') || ''
+      const staffIdForDb = !rawStaffId || rawStaffId === 'unknown' ? null : rawStaffId
+      const staffName = (
+        (request.headers.get('x-staff-firstname') || '') +
+        ' ' +
+        (request.headers.get('x-staff-lastname') || '')
+      ).trim() || null
+      const auditDetails = staffName ? { ...updateData, staffName } : updateData
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "AuditLog" ("id", "staffId", "staffName", "action", "entity", "entityId", "details", "severity", "createdAt")
-         VALUES (gen_random_uuid()::text, $1, $2, 'UPDATE', 'Staff', $3, $4::jsonb, 'INFO', NOW())`,
-        request.headers.get('x-staff-id') || 'unknown',
-        (request.headers.get('x-staff-firstname') || '') + ' ' + (request.headers.get('x-staff-lastname') || ''),
+        `INSERT INTO "AuditLog" ("id", "staffId", "action", "entity", "entityId", "details", "severity", "createdAt")
+         VALUES (gen_random_uuid()::text, $1, 'UPDATE', 'Staff', $2, $3::jsonb, 'INFO', NOW())`,
+        staffIdForDb,
         id,
-        JSON.stringify(updateData)
+        JSON.stringify(auditDetails)
       )
     } catch (e) {
       // Audit failure is non-blocking
+      console.warn('[Staff PATCH] AuditLog insert failed:', (e as any)?.message || e)
     }
 
     return NextResponse.json({
