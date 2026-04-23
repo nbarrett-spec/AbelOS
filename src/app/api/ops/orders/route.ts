@@ -341,7 +341,10 @@ export async function POST(request: NextRequest) {
     // Generate order ID
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-    // Insert order — cast enum strings, always populate orderDate
+    // Insert order — cast enum strings, always populate orderDate.
+    // Raw SQL via $executeRawUnsafe requires explicit ::timestamp casts on
+    // text-serialized dates (Prisma raw doesn't coerce ISO strings like the
+    // Prisma client does — hit bug 42804 "type text vs timestamp" without it).
     const resolvedOrderDate = orderDate
       ? new Date(orderDate).toISOString()
       : new Date().toISOString();
@@ -354,7 +357,7 @@ export async function POST(request: NextRequest) {
       VALUES (
         $1, $2, $3, $4, $5, $6, $7,
         $8::"PaymentTerm", $9::"PaymentStatus", $10::"OrderStatus",
-        $11, $12, $13, $14, $15
+        $11::timestamp, $12, $13::timestamptz, $14::timestamp, $15::timestamp
       )
     `;
     await prisma.$executeRawUnsafe(
@@ -381,7 +384,7 @@ export async function POST(request: NextRequest) {
       const itemId = `oi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
       const insertItemQuery = `
         INSERT INTO "OrderItem" ("id", "orderId", "productId", "description", "quantity", "unitPrice", "lineTotal", "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::timestamp, $9::timestamp)
       `;
       await prisma.$executeRawUnsafe(
         insertItemQuery,
@@ -399,7 +402,7 @@ export async function POST(request: NextRequest) {
 
     // Update quote status to ORDERED
     const updateQuoteQuery = `
-      UPDATE "Quote" SET "status" = 'ORDERED'::"QuoteStatus", "updatedAt" = $1 WHERE "id" = $2
+      UPDATE "Quote" SET "status" = 'ORDERED'::"QuoteStatus", "updatedAt" = $1::timestamp WHERE "id" = $2
     `;
     await prisma.$executeRawUnsafe(updateQuoteQuery, new Date().toISOString(), quoteId);
 
@@ -411,7 +414,7 @@ export async function POST(request: NextRequest) {
     // Update project status to ORDERED if it exists
     if (quote.project_id) {
       const updateProjectQuery = `
-        UPDATE "Project" SET "status" = 'ORDERED'::"ProjectStatus", "updatedAt" = $1 WHERE "id" = $2
+        UPDATE "Project" SET "status" = 'ORDERED'::"ProjectStatus", "updatedAt" = $1::timestamp WHERE "id" = $2
       `;
       await prisma.$executeRawUnsafe(updateProjectQuery, new Date().toISOString(), quote.project_id);
     }
