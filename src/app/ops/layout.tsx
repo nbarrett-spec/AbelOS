@@ -32,7 +32,7 @@ import {
   File, ClipboardList, DollarSign, Brain, Mail, Megaphone, Phone, Building2, Inbox, Building,
   Home, CircleDollarSign, ShoppingCart, RefreshCw, Search, Ruler, Package, Shield, ScrollText,
   Factory, Cog, CheckCircle, Banknote, Printer, Smartphone, Scale, Bot, Download, Map,
-  Heart, Sparkles, Zap, Handshake, Link2, TreePine, Archive, FolderOpen, Users, User,
+  Heart, Sparkles, Zap, Handshake, Link2, TreePine, Archive, FolderOpen, Users, User, Trophy,
   MessageSquare, MailOpen, Bell, Wallet, Landmark, Sun, ChevronLeft, ChevronRight,
   PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown,
 } from 'lucide-react'
@@ -67,7 +67,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '❤️': Heart, '🔮': Sparkles, '⚡': Zap, '🤝': Handshake, '🔗': Link2,
   '🌲': TreePine, '🗄️': Archive, '📁': FolderOpen, '👥': Users, '👤': User,
   '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark,
-  '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck, '💡': Sparkles, '🔬': Sparkles,
+  '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck, '💡': Sparkles, '🔬': Sparkles, '🏆': Trophy,
   '⚔️': Sparkles, '💹': TrendingUp, '🚀': TrendingUp, '🏛️': Building, '📉': TrendingUp, '🎓': FileText,
 }
 
@@ -196,6 +196,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/procurement-intelligence', label: 'AI Procurement Brain', icon: '🤖' },
       { href: '/ops/mrp', label: 'MRP — Forward Demand', icon: '🎯' },
       { href: '/ops/vendors', label: 'Vendors', icon: '🏢' },
+      { href: '/ops/vendors/scorecard', label: 'Vendor Scorecard', icon: '🏆' },
       { href: '/ops/receiving', label: 'Receiving', icon: '📥' },
       { href: '/ops/returns', label: 'Returns', icon: '🔄' },
       { href: '/ops/delivery', label: 'Delivery Center', icon: '🚚' },

@@ -125,6 +125,10 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/vendor-scorecard-daily",
+      "schedule": "15 6 * * *"
+    },
+    {
       "path": "/api/cron/inbox-feed",
       "schedule": "*/15 * * * *"
     },
@@ -159,6 +163,10 @@
     {
       "path": "/api/cron/allocation-health",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/collections-ladder",
+      "schedule": "0 13 * * *"
     }
   ]
 }

@@ -77,6 +77,7 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/supply-chain': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
   '/ops/inventory': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
   '/ops/vendors': ['ADMIN', 'MANAGER', 'PURCHASING', 'PROJECT_MANAGER'],
+  '/ops/vendors/scorecard': ['ADMIN', 'MANAGER', 'PURCHASING'],
 
   // Finance — open to all office roles (they need visibility to keep company healthy)
   '/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'PURCHASING', 'SALES_REP', 'ESTIMATOR'],
@@ -464,6 +465,7 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Vendor APIs — PM added for visibility
   '/api/ops/vendors': ['ADMIN', 'MANAGER', 'PURCHASING', 'PROJECT_MANAGER'],
+  '/api/ops/vendors/scorecard': ['ADMIN', 'MANAGER', 'PURCHASING'],
 
   // Preferences API — all roles can manage their own preferences
   '/api/ops/preferences': ALL_ROLES,

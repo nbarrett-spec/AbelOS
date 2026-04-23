@@ -250,11 +250,13 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'weekly-report', schedule: '0 8 * * 1', description: 'Weekly KPI + health report for Nate' },
   { name: 'pm-daily-tasks', schedule: '0 7 * * 1-5', description: 'PM daily task generator (jobs needing attention)' },
   { name: 'financial-snapshot', schedule: '0 6 * * *', description: 'Daily financial snapshot (cash, AR, DSO, aging)' },
+  { name: 'vendor-scorecard-daily', schedule: '15 6 * * *', description: 'Daily vendor reliability scorecard snapshots (rolling 90d on-time/slip, grade A-D, MRP safety-stock multiplier)' },
   { name: 'brain-sync', schedule: '0 */4 * * *', description: 'Push Aegis deltas to NUC brain (non-staff tables)' },
   { name: 'brain-sync-staff', schedule: '30 */4 * * *', description: 'Push Aegis Staff deltas to NUC brain' },
   { name: 'daily-digest', schedule: '0 11 * * *', description: 'Per-staff daily digest email (6 AM CT) — inbox, tasks, deliveries, invoices by role' },
   { name: 'shortage-forecast', schedule: '0 */4 * * *', description: 'ATP shortage forecast: scan active jobs, upsert SmartPO recommendations + InboxItems for RED lines' },
   { name: 'material-confirm-checkpoint', schedule: '0 13 * * *', description: 'T-7 Material Confirm Checkpoint: PM sign-off gate for jobs delivering within 7 days; auto-escalates to Clint at T-3' },
+  { name: 'collections-ladder', schedule: '0 13 * * *', description: 'Daily collections ladder (Day 15/30/45/60): friendly reminder → past-due email → final notice → account hold; writes CollectionAction + InboxItem per trigger' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

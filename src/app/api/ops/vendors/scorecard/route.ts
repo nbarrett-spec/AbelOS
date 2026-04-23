@@ -3,210 +3,191 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 
-interface VendorScorecard {
+// ─────────────────────────────────────────────────────────────────────────────
+// Vendor Reliability Scorecard
+// ─────────────────────────────────────────────────────────────────────────────
+// Clint looks at this to know who's slipping. Feeds MRP safety-stock math.
+//
+// GET /api/ops/vendors/scorecard?days=90
+//
+// Per-vendor metrics (rolling window, default 90 days):
+//   • totalPOs            — # of POs ordered in window
+//   • totalSpend          — $ of PO.total in window
+//   • onTimeRate          — % of received POs where receivedAt <= expectedDate
+//   • avgLeadDays         — actual days from orderedAt → receivedAt
+//   • promisedLeadDays    — avg days from orderedAt → expectedDate
+//   • leadTimeSlipDays    — avg(actual - promised), negative = faster than promised
+//   • fillRate            — % of POs fully RECEIVED vs PARTIALLY_RECEIVED
+//   • reliabilityGrade    — A (>=95% on-time) / B (>=85%) / C (>=70%) / D (<70%)
+//
+// A single CTE does all the math in one round-trip.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface VendorScorecardRow {
   vendorId: string
   vendorName: string
   vendorCode: string
   totalPOs: number
-  onTimeRate: number // 0-100 percentage
-  avgLeadDays: number
-  spend30Days: number
-  spend90Days: number
-  spend365Days: number
-  qualityIssues: number
-  topProducts: Array<{
-    sku: string
-    productName: string
-    orderCount: number
-    totalQty: number
-  }>
-  trend: {
-    previousMonth: number
-    currentMonth: number
-    percentChange: number
-  }
+  totalSpend: number
+  onTimeRate: number | null          // 0-100, null if no received-with-expected samples
+  avgLeadDays: number | null
+  promisedLeadDays: number | null
+  leadTimeSlipDays: number | null    // avg(actual - promised); null if no overlap
+  fillRate: number | null            // 0-100, null if no terminal POs
+  reliabilityGrade: 'A' | 'B' | 'C' | 'D' | null
+  lastPoAt: string | null
+  // Denominators, so the UI can show "24 of 28 on time"
+  receivedWithExpected: number
+  onTimeCount: number
+  fullyReceived: number
+  partiallyReceived: number
 }
 
-/**
- * GET /api/ops/vendors/scorecard
- *
- * Returns vendor scorecards. Optional query param ?vendorId= for single vendor.
- * If no vendorId, returns summary scorecards for all active vendors.
- */
+function gradeFor(onTimeRate: number | null): 'A' | 'B' | 'C' | 'D' | null {
+  if (onTimeRate === null || onTimeRate === undefined) return null
+  if (onTimeRate >= 95) return 'A'
+  if (onTimeRate >= 85) return 'B'
+  if (onTimeRate >= 70) return 'C'
+  return 'D'
+}
+
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
   try {
     const searchParams = request.nextUrl.searchParams
-    const vendorId = searchParams.get('vendorId')
+    const daysParam = parseInt(searchParams.get('days') || '90', 10)
+    const days = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= 730 ? daysParam : 90
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
 
-    // Determine time windows
-    const now = new Date()
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-
-    if (vendorId) {
-      // Single vendor scorecard
-      const query = `
-        SELECT
-          v."id",
-          v."name",
-          v."code",
-          COUNT(DISTINCT po."id")::int as "totalPOs",
-          COALESCE(v."onTimeRate", 0)::float as "onTimeRate",
-          COALESCE(v."avgLeadDays", 0)::float as "avgLeadDays",
-          COALESCE(SUM(CASE WHEN po."createdAt" >= $2 THEN po."total" ELSE 0 END), 0)::float as "spend30Days",
-          COALESCE(SUM(CASE WHEN po."createdAt" >= $3 THEN po."total" ELSE 0 END), 0)::float as "spend90Days",
-          COALESCE(SUM(CASE WHEN po."createdAt" >= $4 THEN po."total" ELSE 0 END), 0)::float as "spend365Days"
-        FROM "Vendor" v
-        LEFT JOIN "PurchaseOrder" po ON po."vendorId" = v."id"
-        WHERE v."id" = $1
-        GROUP BY v."id", v."name", v."code", v."onTimeRate", v."avgLeadDays"
+    const rows = await prisma.$queryRawUnsafe<Array<{
+      vendorId: string
+      vendorName: string
+      vendorCode: string
+      totalPOs: number
+      totalSpend: number
+      onTimeRate: number | null
+      avgLeadDays: number | null
+      promisedLeadDays: number | null
+      leadTimeSlipDays: number | null
+      fillRate: number | null
+      lastPoAt: Date | null
+      receivedWithExpected: number
+      onTimeCount: number
+      fullyReceived: number
+      partiallyReceived: number
+    }>>(
       `
-
-      const vendorResult = await prisma.$queryRawUnsafe<any[]>(
-        query,
-        vendorId,
-        thirtyDaysAgo.toISOString(),
-        ninetyDaysAgo.toISOString(),
-        oneYearAgo.toISOString()
-      )
-
-      if (!vendorResult || vendorResult.length === 0) {
-        return NextResponse.json(
-          { error: 'Vendor not found' },
-          { status: 404 }
-        )
-      }
-
-      const vendor = vendorResult[0]
-
-      // Top products for this vendor
-      const topProductsQuery = `
+      WITH window_pos AS (
         SELECT
-          p."sku",
-          p."name" as "productName",
-          COUNT(DISTINCT poi."purchaseOrderId")::int as "orderCount",
-          SUM(poi."quantity")::int as "totalQty"
-        FROM "PurchaseOrderItem" poi
-        LEFT JOIN "PurchaseOrder" po ON poi."purchaseOrderId" = po."id"
-        LEFT JOIN "Product" p ON poi."vendorSku" = p."sku"
-        WHERE po."vendorId" = $1
-        GROUP BY p."sku", p."name"
-        ORDER BY "orderCount" DESC
-        LIMIT 5
-      `
-
-      const topProducts = await prisma.$queryRawUnsafe<any[]>(
-        topProductsQuery,
-        vendorId
-      )
-
-      // Calculate trend (previous month vs current month)
-      const trendQuery = `
-        SELECT
-          SUM(CASE WHEN po."createdAt" >= $2 AND po."createdAt" < $3 THEN po."total" ELSE 0 END)::float as "previousMonth",
-          SUM(CASE WHEN po."createdAt" >= $4 THEN po."total" ELSE 0 END)::float as "currentMonth"
+          po."id",
+          po."vendorId",
+          po."total",
+          po."status",
+          po."orderedAt",
+          po."expectedDate",
+          po."receivedAt",
+          po."createdAt"
         FROM "PurchaseOrder" po
-        WHERE po."vendorId" = $1
-      `
-
-      const trendResult = await prisma.$queryRawUnsafe<any[]>(
-        trendQuery,
-        vendorId,
-        previousMonthStart.toISOString(),
-        previousMonthEnd.toISOString(),
-        currentMonthStart.toISOString()
-      )
-
-      const trend = trendResult[0] || { previousMonth: 0, currentMonth: 0 }
-      const percentChange = trend.previousMonth > 0
-        ? ((trend.currentMonth - trend.previousMonth) / trend.previousMonth) * 100
-        : 0
-
-      const scorecard: VendorScorecard = {
-        vendorId: vendor.id,
-        vendorName: vendor.name,
-        vendorCode: vendor.code,
-        totalPOs: vendor.totalPOs || 0,
-        onTimeRate: Math.min(100, Math.max(0, vendor.onTimeRate || 85)),
-        avgLeadDays: Math.round(vendor.avgLeadDays || 14),
-        spend30Days: vendor.spend30Days || 0,
-        spend90Days: vendor.spend90Days || 0,
-        spend365Days: vendor.spend365Days || 0,
-        qualityIssues: 0, // TODO: Query from quality issues table if it exists
-        topProducts: topProducts.map(p => ({
-          sku: p.sku || 'N/A',
-          productName: p.productName || 'Unknown',
-          orderCount: p.orderCount || 0,
-          totalQty: p.totalQty || 0,
-        })),
-        trend: {
-          previousMonth: Math.round(trend.previousMonth || 0),
-          currentMonth: Math.round(trend.currentMonth || 0),
-          percentChange: Math.round(percentChange * 10) / 10,
-        },
-      }
-
-      return NextResponse.json(scorecard, { status: 200 })
-    } else {
-      // Summary scorecards for all active vendors
-      const query = `
+        WHERE po."orderedAt" >= $1 OR (po."orderedAt" IS NULL AND po."createdAt" >= $1)
+      ),
+      metrics AS (
         SELECT
-          v."id",
-          v."name",
-          v."code",
-          COUNT(DISTINCT po."id")::int as "totalPOs",
-          COALESCE(v."onTimeRate", 0)::float as "onTimeRate",
-          COALESCE(v."avgLeadDays", 0)::float as "avgLeadDays",
-          COALESCE(SUM(CASE WHEN po."createdAt" >= $1 THEN po."total" ELSE 0 END), 0)::float as "spend30Days",
-          COALESCE(SUM(CASE WHEN po."createdAt" >= $2 THEN po."total" ELSE 0 END), 0)::float as "spend90Days",
-          COALESCE(SUM(CASE WHEN po."createdAt" >= $3 THEN po."total" ELSE 0 END), 0)::float as "spend365Days"
-        FROM "Vendor" v
-        LEFT JOIN "PurchaseOrder" po ON po."vendorId" = v."id"
-        WHERE v."active" = true
-        GROUP BY v."id", v."name", v."code", v."onTimeRate", v."avgLeadDays"
-        ORDER BY "spend90Days" DESC
-      `
-
-      const vendors = await prisma.$queryRawUnsafe<any[]>(
-        query,
-        thirtyDaysAgo.toISOString(),
-        ninetyDaysAgo.toISOString(),
-        oneYearAgo.toISOString()
+          wp."vendorId",
+          COUNT(*)::int AS total_pos,
+          COALESCE(SUM(wp."total"), 0)::float AS total_spend,
+          -- Received & promised-dated denominator (for on-time rate)
+          COUNT(*) FILTER (
+            WHERE wp."receivedAt" IS NOT NULL AND wp."expectedDate" IS NOT NULL
+          )::int AS received_w_expected,
+          COUNT(*) FILTER (
+            WHERE wp."receivedAt" IS NOT NULL AND wp."expectedDate" IS NOT NULL
+              AND wp."receivedAt" <= wp."expectedDate"
+          )::int AS on_time_count,
+          -- Actual lead (order → receive)
+          AVG(EXTRACT(EPOCH FROM (wp."receivedAt" - wp."orderedAt")) / 86400.0)
+            FILTER (WHERE wp."receivedAt" IS NOT NULL AND wp."orderedAt" IS NOT NULL) AS avg_lead_days,
+          -- Promised lead (order → expected)
+          AVG(EXTRACT(EPOCH FROM (wp."expectedDate" - wp."orderedAt")) / 86400.0)
+            FILTER (WHERE wp."expectedDate" IS NOT NULL AND wp."orderedAt" IS NOT NULL) AS avg_promised_days,
+          -- Slip: average of (actual - promised) per-PO, only where both dates exist
+          AVG(
+            EXTRACT(EPOCH FROM (wp."receivedAt" - wp."expectedDate")) / 86400.0
+          ) FILTER (
+            WHERE wp."receivedAt" IS NOT NULL AND wp."expectedDate" IS NOT NULL
+          ) AS avg_slip_days,
+          -- Fill rate
+          COUNT(*) FILTER (WHERE wp."status" = 'RECEIVED')::int AS fully_received,
+          COUNT(*) FILTER (WHERE wp."status" = 'PARTIALLY_RECEIVED')::int AS partially_received,
+          MAX(COALESCE(wp."orderedAt", wp."createdAt")) AS last_po_at
+        FROM window_pos wp
+        GROUP BY wp."vendorId"
       )
+      SELECT
+        v."id"   AS "vendorId",
+        v."name" AS "vendorName",
+        v."code" AS "vendorCode",
+        m.total_pos            AS "totalPOs",
+        m.total_spend          AS "totalSpend",
+        CASE WHEN m.received_w_expected > 0
+             THEN ROUND((m.on_time_count::numeric / m.received_w_expected::numeric) * 100, 2)::float
+             ELSE NULL END     AS "onTimeRate",
+        CASE WHEN m.avg_lead_days IS NOT NULL
+             THEN ROUND(m.avg_lead_days::numeric, 1)::float
+             ELSE NULL END     AS "avgLeadDays",
+        CASE WHEN m.avg_promised_days IS NOT NULL
+             THEN ROUND(m.avg_promised_days::numeric, 1)::float
+             ELSE NULL END     AS "promisedLeadDays",
+        CASE WHEN m.avg_slip_days IS NOT NULL
+             THEN ROUND(m.avg_slip_days::numeric, 1)::float
+             ELSE NULL END     AS "leadTimeSlipDays",
+        CASE WHEN (m.fully_received + m.partially_received) > 0
+             THEN ROUND(
+               (m.fully_received::numeric / (m.fully_received + m.partially_received)::numeric) * 100,
+               1
+             )::float
+             ELSE NULL END     AS "fillRate",
+        m.last_po_at           AS "lastPoAt",
+        m.received_w_expected  AS "receivedWithExpected",
+        m.on_time_count        AS "onTimeCount",
+        m.fully_received       AS "fullyReceived",
+        m.partially_received   AS "partiallyReceived"
+      FROM metrics m
+      JOIN "Vendor" v ON v."id" = m."vendorId"
+      WHERE m.total_pos > 0
+      ORDER BY m.total_spend DESC
+      `,
+      since,
+    )
 
-      const scorecards: VendorScorecard[] = vendors.map(v => ({
-        vendorId: v.id,
-        vendorName: v.name,
-        vendorCode: v.code,
-        totalPOs: v.totalPOs || 0,
-        onTimeRate: Math.min(100, Math.max(0, v.onTimeRate || 85)),
-        avgLeadDays: Math.round(v.avgLeadDays || 14),
-        spend30Days: v.spend30Days || 0,
-        spend90Days: v.spend90Days || 0,
-        spend365Days: v.spend365Days || 0,
-        qualityIssues: 0,
-        topProducts: [],
-        trend: {
-          previousMonth: 0,
-          currentMonth: 0,
-          percentChange: 0,
-        },
-      }))
+    const scorecards: VendorScorecardRow[] = rows.map((r) => ({
+      vendorId: r.vendorId,
+      vendorName: r.vendorName,
+      vendorCode: r.vendorCode,
+      totalPOs: Number(r.totalPOs || 0),
+      totalSpend: Number(r.totalSpend || 0),
+      onTimeRate: r.onTimeRate === null || r.onTimeRate === undefined ? null : Number(r.onTimeRate),
+      avgLeadDays: r.avgLeadDays === null || r.avgLeadDays === undefined ? null : Number(r.avgLeadDays),
+      promisedLeadDays: r.promisedLeadDays === null || r.promisedLeadDays === undefined ? null : Number(r.promisedLeadDays),
+      leadTimeSlipDays: r.leadTimeSlipDays === null || r.leadTimeSlipDays === undefined ? null : Number(r.leadTimeSlipDays),
+      fillRate: r.fillRate === null || r.fillRate === undefined ? null : Number(r.fillRate),
+      reliabilityGrade: gradeFor(
+        r.onTimeRate === null || r.onTimeRate === undefined ? null : Number(r.onTimeRate),
+      ),
+      lastPoAt: r.lastPoAt ? new Date(r.lastPoAt).toISOString() : null,
+      receivedWithExpected: Number(r.receivedWithExpected || 0),
+      onTimeCount: Number(r.onTimeCount || 0),
+      fullyReceived: Number(r.fullyReceived || 0),
+      partiallyReceived: Number(r.partiallyReceived || 0),
+    }))
 
-      return NextResponse.json(scorecards, { status: 200 })
-    }
+    return NextResponse.json({ windowDays: days, since: since.toISOString(), scorecards }, { status: 200 })
   } catch (error) {
     console.error('GET /api/ops/vendors/scorecard error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch vendor scorecard' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
