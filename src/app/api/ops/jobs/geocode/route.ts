@@ -41,17 +41,12 @@ export async function POST(request: NextRequest) {
   try {
     audit(request, 'GEOCODE', 'Job', undefined, {}).catch(() => {})
 
-    // Ensure lat/lng columns exist on Job
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Job" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION;
-      ALTER TABLE "Job" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION;
-    `)
-
-    // Ensure lat/lng columns exist on Community
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Community" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION;
-      ALTER TABLE "Community" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION;
-    `)
+    // Ensure lat/lng columns exist on Job (prepared-statement protocol
+    // rejects multi-statement strings, so issue each ALTER separately).
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Job" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Job" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Community" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Community" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION`)
 
     // ── Geocode Jobs ────────────────────────────────────────────────────
     const jobs = await prisma.$queryRawUnsafe(`
