@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma'
 import type { InflowProduct, InflowPurchaseOrder, SyncResult } from './types'
 
 const INFLOW_BASE = 'https://cloudapi.inflowinventory.com'
-const RATE_LIMIT_DELAY = 200 // Light delay between pages; 429-retry in inflowFetch handles actual rate limits
+const RATE_LIMIT_DELAY = 400 // Inter-page sleep. InFlow quota is 60 req/min; 400ms = ~2.5 req/sec, safe headroom.
 
 interface InflowConfig {
   apiKey: string
@@ -48,8 +48,11 @@ async function inflowFetch(path: string, config: InflowConfig, options?: Request
     'Accept': 'application/json;version=2026-02-24',
   }
 
-  // Retry up to 3 times on 429 (rate limited)
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // Retry up to 6 times on 429 with exponential backoff.
+  // InFlow quota: 60 req/min per company. Honor Retry-After header when present.
+  // Bumped from 3 to 6 attempts so a burst doesn't kill a whole 60+ page walk.
+  const MAX_ATTEMPTS = 6
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -59,9 +62,15 @@ async function inflowFetch(path: string, config: InflowConfig, options?: Request
     })
 
     if (response.status === 429) {
-      const retryAfter = parseInt(response.headers.get('Retry-After') || '2', 10)
-      const backoff = Math.max(retryAfter * 1000, 2000) * (attempt + 1)
-      console.warn(`[InFlow] 429 rate limited on ${path}, backing off ${backoff}ms (attempt ${attempt + 1})`)
+      // Honor Retry-After if present; otherwise exponential backoff capped at 32s.
+      // 1s, 2s, 4s, 8s, 16s, 32s — total ~63s budget before giving up.
+      const retryAfterHeader = response.headers.get('Retry-After')
+      const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN
+      const expBackoffMs = Math.min(1000 * Math.pow(2, attempt), 32000)
+      const backoff = Number.isFinite(retryAfterSec) && retryAfterSec > 0
+        ? Math.max(retryAfterSec * 1000, 1000)
+        : expBackoffMs
+      console.warn(`[InFlow] 429 on ${path}, sleeping ${backoff}ms (attempt ${attempt + 1}/${MAX_ATTEMPTS}, retry-after=${retryAfterHeader || 'none'})`)
       await new Promise(r => setTimeout(r, backoff))
       continue
     }
@@ -74,7 +83,7 @@ async function inflowFetch(path: string, config: InflowConfig, options?: Request
     return response.json()
   }
 
-  throw new Error(`InFlow API 429: rate limited after 3 retries on ${path}`)
+  throw new Error(`InFlow API 429: rate limited after ${MAX_ATTEMPTS} retries on ${path}`)
 }
 
 // ─── Shared: write SyncLog via raw SQL (never use Prisma client for this) ──
@@ -125,11 +134,16 @@ export async function syncProducts(): Promise<SyncResult> {
 
   let created = 0, updated = 0, skipped = 0, failed = 0
   let page = 1
-  const MAX_PAGES = 300 // safety cap: 300 * 100 = 30,000 products max
+  // Safety cap: 300 * 100 = 30,000 products max. InFlow currently has ~6,800.
+  // Previous implementation died at page 61 with 429s because `inflowFetch` only
+  // retried 3 times. Fixed by: (a) 6-retry exponential backoff in inflowFetch,
+  // (b) 400ms inter-page sleep (was 200ms), (c) honor Retry-After header.
+  const MAX_PAGES = 300
+  const PAGE_SIZE = 100
 
   try {
     while (page <= MAX_PAGES) {
-      const data = await inflowFetch(`/products?page=${page}&pageSize=100&includeInactive=false`, config)
+      const data = await inflowFetch(`/products?page=${page}&pageSize=${PAGE_SIZE}&includeInactive=false`, config)
       const products: InflowProduct[] = data.data || data
 
       if (!products.length) break
@@ -326,9 +340,11 @@ export async function syncInventory(): Promise<SyncResult> {
             )
             updated++
           } else {
+            // InventoryItem has no "createdAt" column — only "updatedAt".
+            // Writing "createdAt" triggers Postgres 42703 and fails the upsert for every new row.
             await prisma.$executeRawUnsafe(
-              `INSERT INTO "InventoryItem" ("id", "productId", "onHand", "onOrder", "committed", "available", "createdAt", "updatedAt")
-               VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+              `INSERT INTO "InventoryItem" ("id", "productId", "onHand", "onOrder", "committed", "available", "updatedAt")
+               VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
               productId, onHand, onOrder, committed, available
             )
             created++
