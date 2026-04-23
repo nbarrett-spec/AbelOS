@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { runOrderStatusCascades, onOrderConfirmed } from '@/lib/cascades/order-lifecycle'
+import { checkBuilderCreditStatus } from '@/lib/credit-hold'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -288,23 +290,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate orderNumber: "ORD-YYYY-NNNN"
+    // Generate orderNumber: "ORD-YYYY-NNNN". Regex-anchor the WHERE so malformed
+    // or non-numeric legacy orderNumbers (e.g. "SO-..." or addresses) can't poison
+    // the max-lookup. Extract the numeric suffix in SQL so we don't rely on parseInt
+    // of a string that could contain letters.
     const year = new Date().getFullYear();
     const lastOrderQuery = `
-      SELECT "orderNumber"
+      SELECT CAST(SUBSTRING("orderNumber" FROM $2) AS INTEGER) AS seq
       FROM "Order"
-      WHERE "orderNumber" LIKE $1
-      ORDER BY "orderNumber" DESC
+      WHERE "orderNumber" ~ $1
+      ORDER BY seq DESC
       LIMIT 1
     `;
-    const lastOrderResult = await prisma.$queryRawUnsafe(lastOrderQuery, `ORD-${year}-%`);
+    const pattern = `^ORD-${year}-\\d+$`;
+    const captureStart = `ORD-${year}-`.length + 1; // SQL SUBSTRING is 1-indexed
+    const lastOrderResult = await prisma.$queryRawUnsafe(lastOrderQuery, pattern, captureStart);
     const lastOrder = (lastOrderResult as any[])[0];
 
-    let nextNumber = 1;
-    if (lastOrder) {
-      const lastNumber = parseInt(lastOrder.orderNumber.split('-')[2]);
-      nextNumber = lastNumber + 1;
-    }
+    const lastSeq = lastOrder && Number.isFinite(Number(lastOrder.seq)) ? Number(lastOrder.seq) : 0;
+    const nextNumber = lastSeq + 1;
 
     const orderNumber = `ORD-${year}-${String(nextNumber).padStart(4, '0')}`;
 
