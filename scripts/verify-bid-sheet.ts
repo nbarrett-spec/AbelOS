@@ -28,9 +28,9 @@
 //      using a simple normalized-token Jaccard score.
 //   3. Reports top discrepancies (absolute $ and pct) between bid-sheet cost
 //      and Aegis Product.cost. Never writes to Product.
-//   4. With --apply, writes one InboxItem per materially-different match
-//      (>= $5 AND >= 10% drift) tagged source="ADT_MFG_PRICING_REFERENCE" so
-//      Nate sees them in the inbox. Default is DRY-RUN — no writes.
+//   4. With --apply, writes up to 10 InboxItems covering the BIGGEST material
+//      cost discrepancies (>5% drift on meaningful $ items, cap 10). Source
+//      tag: BID_SHEET_DISCREPANCY_APR2026. Default is DRY-RUN — no writes.
 //
 // Usage:
 //   pnpm tsx scripts/verify-bid-sheet.ts            # dry-run
@@ -57,8 +57,12 @@ type BidRow = {
   priceWaterfall: Record<string, number>; // margin label -> price
 };
 
-const MATERIAL_DIFF_ABS = 5.0; // $5
-const MATERIAL_DIFF_PCT = 10.0; // 10%
+// Spec: ">5% on meaningful $ items" — require both a meaningful $ floor and a
+// >5% pct drift, then cap at top 10 biggest $ gaps.
+const MATERIAL_DIFF_ABS = 5.0; // $5 floor — filters out penny rounding on cheap items
+const MATERIAL_DIFF_PCT = 5.0; // 5% per spec
+const MAX_INBOX_ITEMS = 10;
+const SOURCE_TAG = 'BID_SHEET_DISCREPANCY_APR2026';
 
 function num(v: unknown): number {
   if (v == null || v === '') return 0;
@@ -220,42 +224,56 @@ async function main() {
     );
   }
 
-  // Apply: write one InboxItem per material discrepancy as reference only.
-  // These are NOT auto-applied to Product — Nate reviews.
+  // Apply: write up to 10 InboxItems covering biggest $ discrepancies. These
+  // are surfaced for Nate; Product.cost/basePrice is never mutated here.
+  const topMaterial = material.slice(0, MAX_INBOX_ITEMS);
   if (APPLY) {
-    console.log('\n--- Writing InboxItems (type=SYSTEM, source=ADT_MFG_PRICING_REFERENCE) ---');
+    console.log(
+      `\n--- Writing up to ${MAX_INBOX_ITEMS} InboxItems (type=SYSTEM, source=${SOURCE_TAG}) ---`,
+    );
     let written = 0;
-    for (const m of material) {
-      // Skip if an identical inbox item already exists (idempotent re-run).
-      const existing = await prisma.inboxItem.findFirst({
-        where: {
-          source: 'ADT_MFG_PRICING_REFERENCE',
-          entityType: 'Product',
-          entityId: m.product.id,
-          status: { in: ['PENDING', 'SNOOZED'] },
-        },
-      });
-      if (existing) continue;
+    for (const m of topMaterial) {
+      // Idempotency: dedupe on actionData.sourceTag + actionData.sku via raw
+      // query against the jsonb column so reruns don't stack duplicates.
+      const dupes: Array<{ id: string }> = await prisma.$queryRawUnsafe(
+        `SELECT id FROM "InboxItem"
+           WHERE "actionData"->>'sourceTag' = $1
+             AND "actionData"->>'sku' = $2
+           LIMIT 1`,
+        SOURCE_TAG,
+        m.product.sku,
+      );
+      if (dupes.length > 0) {
+        console.log(`  skip (duplicate): ${m.product.sku}`);
+        continue;
+      }
+      const title =
+        `Bid Sheet reveals cost discrepancy on ${m.product.sku}: ` +
+        `catalog $${m.product.cost.toFixed(2)}, bid sheet $${m.bid.cost.toFixed(2)} — reconcile`;
       await prisma.inboxItem.create({
         data: {
           type: 'SYSTEM',
-          source: 'ADT_MFG_PRICING_REFERENCE',
-          title: `ADT bid-sheet cost drift: ${m.product.sku}`,
+          source: 'catalog-verify',
+          title,
           description:
             `Bid sheet cost $${m.bid.cost.toFixed(2)} vs Aegis Product.cost $${m.product.cost.toFixed(2)} ` +
             `(diff $${m.costDiffAbs.toFixed(2)}, ${m.costDiffPct.toFixed(1)}%). ` +
             `Bid row: "${m.bid.description}" on sheet "${m.bid.sheet}". ` +
-            `NO write was made to Product. Review and decide.`,
+            `Product.cost is authoritative from the LIVE catalog ETL. Reconcile the bid sheet ` +
+            `before using its waterfall. NO write was made to Product.`,
           priority: m.costDiffPct >= 25 ? 'HIGH' : 'MEDIUM',
           status: 'PENDING',
           entityType: 'Product',
           entityId: m.product.id,
           financialImpact: m.costDiffAbs,
           actionData: {
+            sourceTag: SOURCE_TAG,
             sku: m.product.sku,
             productName: m.product.name,
             aegisCost: m.product.cost,
             bidSheetCost: m.bid.cost,
+            costDiffAbs: m.costDiffAbs,
+            costDiffPct: m.costDiffPct,
             bidSheetDescription: m.bid.description,
             bidSheetSheet: m.bid.sheet,
             priceWaterfall: m.bid.priceWaterfall,
@@ -265,10 +283,11 @@ async function main() {
       });
       written++;
     }
-    console.log(`  Wrote ${written} InboxItem(s).`);
+    console.log(`  Wrote ${written} InboxItem(s) (capped at ${MAX_INBOX_ITEMS}).`);
   } else {
     console.log(
-      '\n(DRY-RUN — no InboxItems written. Re-run with --apply to persist as reference.)',
+      `\n(DRY-RUN — no InboxItems written. Top ${topMaterial.length} candidate(s) would be ` +
+        `tagged ${SOURCE_TAG}. Re-run with --apply to persist.)`,
     );
   }
 
@@ -276,8 +295,8 @@ async function main() {
   console.log(
     'ADT bid sheet is Abel internal manufacturing pricing with a margin waterfall. ' +
       'Product.cost was loaded authoritatively by the prior catalog ETL, so we do NOT ' +
-      'overwrite it. Discrepancies are surfaced as InboxItems tagged ' +
-      'ADT_MFG_PRICING_REFERENCE for manual review.',
+      `overwrite it. Top ${MAX_INBOX_ITEMS} discrepancies are surfaced as InboxItems tagged ` +
+      `${SOURCE_TAG} for manual review.`,
   );
 }
 
