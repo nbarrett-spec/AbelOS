@@ -48,6 +48,9 @@ export async function GET(request: NextRequest) {
         failed: result.recordsFailed,
         durationMs: result.durationMs,
       },
+      // Surface errorMessage from syncAllAccounts so CronRun.error is populated
+      // (previously null for FAILED runs — hid the real root cause)
+      error: result.errorMessage || undefined,
     })
 
     return NextResponse.json({
