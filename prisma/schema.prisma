@@ -47,6 +47,26 @@ model Builder {
   resetToken       String?
   resetTokenExpiry DateTime?
 
+  // Drifted columns promoted from live DB (2026-04-22)
+  organizationId        String?
+  role                  BuilderRole  @default(PRIMARY)
+  source                LeadSource?
+  sourceDetail          String?
+  approvalStatus        String?      @default("ACTIVE")
+  qbListId              String?
+  qbSyncedAt            DateTime?
+  segmentTag            String?      @default("STANDARD")
+  lifetimeValue         Float?       @default(0)
+  churnRisk             String?      @default("LOW")
+  lastAnalyzedAt        DateTime?
+  divisionId            String?
+  pricingTier           String?      @default("STANDARD")
+  notifyEmail           Boolean?     @default(true)
+  notifySms             Boolean?     @default(false)
+  notifyDeliveryUpdates Boolean?     @default(true)
+  notifyInvoiceReady    Boolean?     @default(true)
+  notifyPaymentReceived Boolean?     @default(true)
+
   // Relationships
   projects           Project[]
   orders             Order[]
@@ -478,6 +498,18 @@ model Quote {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Drifted columns promoted from live DB (2026-04-22)
+  signatureData     String?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  changeNotes       String?
+  aiOptimized       Boolean?  @default(false)
+  originalTotal     Float?
+  marginPercent     Float?
+  aiRecommendations Json?
+  floorPlanId       String?
+  notes             String?
+
   @@index([projectId])
   @@index([quoteNumber])
 }
@@ -657,9 +689,11 @@ model Product {
   subcategory String? // Pre-Hung, Slab, Bifold, etc.
 
   // Pricing
-  cost      Float // Abel's cost
-  basePrice Float // Standard retail/builder price
-  minMargin Float @default(0.25) // 25% floor
+  cost         Float // Abel's cost
+  basePrice    Float // Standard retail/builder price
+  minMargin    Float  @default(0.25) // 25% floor
+  laborCost    Float? @default(0) // Labor cost component (per unit)
+  overheadCost Float? @default(0) // Overhead allocation (per unit)
 
   // Attributes (parsed from name)
   doorSize       String? // "2068", "2868"
@@ -686,6 +720,15 @@ model Product {
   inflowId       String?
   inflowCategory String?
   lastSyncedAt   DateTime?
+
+  // Catalog classification / sourcing (multi-location, supplier catalog)
+  locationId   String? @default("loc_abel_dfw") // FK-like ref to Location
+  categoryId   String? @default("cat_doors")    // FK-like ref to ProductCategory
+  supplierId   String? // FK-like ref to primary Supplier
+  supplierSku  String? // Supplier's own SKU for this product
+  weight       Float?  // Unit weight (lbs)
+  dimensions   Json?   @default("{}") // { length, width, height, unit }
+  minOrderQty  Int?    @default(1) // Minimum order quantity
 
   // Relationships
   takeoffItems     TakeoffItem[]
@@ -905,6 +948,15 @@ model Staff {
   // Compensation
   hourlyRate Float?
 
+  // Fully-loaded cost model (Phase 2 payroll seed)
+  annualSalary      Float?    // Annualized base comp (salary or hourly * 2080)
+  burdenRate        Float?    // Benefits + tax multiplier (e.g. 1.28)
+  fullyLoadedHourly Float?    // hourlyRate * burdenRate
+  monthlyCost       Float?    // annualSalary / 12 (or hourly equivalent)
+  costCenter        String?   // GL cost center / department bucket
+  payrollTitle      String?   // Title as it appears in QB/payroll
+  payrollUpdatedAt  DateTime? @db.Timestamptz // Last payroll sync time (tz-aware)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1004,6 +1056,14 @@ model Job {
   longitude      Float?
   bwpPoNumber    String? // Builder's PO number
 
+  // Hyphen (Brookfield PM portal) cross-refs
+  hyphenJobId      String?
+  hyphenScheduleId String?
+
+  // Division & location (multi-site readiness)
+  divisionId String?
+  locationId String? @default("loc_abel_dfw")
+
   // Scope
   scopeType ScopeType
   dropPlan  String? // "Single Drop", "Staged", "Multi-Drop"
@@ -1013,13 +1073,17 @@ model Job {
   assignedPM   Staff?  @relation("AssignedPM", fields: [assignedPMId], references: [id], onDelete: SetNull)
 
   // Status tracking (from Module 2 T-72/T-48/T-24 workflow)
-  status          JobStatus @default(CREATED)
-  readinessCheck  Boolean   @default(false) // T-72 readiness confirmed
-  materialsLocked Boolean   @default(false) // T-48 materials locked
-  loadConfirmed   Boolean   @default(false) // T-24 truck loaded
-  scheduledDate   DateTime? // Target delivery/install date
-  actualDate      DateTime?
-  completedAt     DateTime?
+  status                JobStatus @default(CREATED)
+  readinessCheck        Boolean   @default(false) // T-72 readiness confirmed
+  materialsLocked       Boolean   @default(false) // T-48 materials locked
+  loadConfirmed         Boolean   @default(false) // T-24 truck loaded
+  qcRequired            Boolean?  @default(true)
+  allMaterialsAllocated Boolean?  @default(false)
+  pickListGenerated     Boolean?  @default(false)
+  buildSheetNotes       String?
+  scheduledDate         DateTime? // Target delivery/install date
+  actualDate            DateTime?
+  completedAt           DateTime?
 
   // Relationships
   decisionNotes      DecisionNote[]
@@ -1507,8 +1571,27 @@ model Vendor {
   // Performance
   avgLeadDays Int?
   onTimeRate  Float? // 0-1
+  riskScore   Float? @default(0) // 0-1 vendor risk composite
 
   active Boolean @default(true)
+
+  // Payment terms / pricing structure
+  paymentTerms          String? // Free-text (e.g. "Net 30", "2/10 Net 30")
+  paymentTermDays       Int?    @default(30) // Numeric net days
+  earlyPayDiscount      Float?  @default(0)  // Discount % for early pay
+  earlyPayDays          Int?    @default(0)  // Days for early-pay discount window
+  minOrderValue         Float?  @default(0)  // Minimum PO $ value
+  bulkDiscountThreshold Float?  // $ threshold for bulk discount
+  bulkDiscountPercent   Float?  // % discount above threshold
+
+  // Credit exposure
+  creditLimit Float?  @default(0) // Credit line granted
+  creditUsed  Float?  @default(0) // Current outstanding AP balance
+  creditHold  Boolean? @default(false) // If true, block new POs
+
+  // Identifiers / misc
+  taxId String?
+  notes String?
 
   // InFlow sync
   inflowVendorId String? @unique
@@ -1575,6 +1658,18 @@ model PurchaseOrder {
   // InFlow sync
   inflowId       String? @unique
   inflowVendorId String?
+
+  // QuickBooks sync
+  qbTxnId    String?
+  qbSyncedAt DateTime?
+
+  // AI auto-reorder metadata
+  aiGenerated          Boolean? @default(false)
+  recommendationId     String?
+  consolidationGroupId String?
+  projectedLeadDays    Int?
+  actualLeadDays       Int?
+  savingsVsLastOrder   Float?   @default(0)
 
   // Provenance — 'INFLOW' for real data, 'LEGACY_SEED' for pre-import bulk records
   source String?
@@ -1717,6 +1812,20 @@ model Invoice {
   paidAt      DateTime?
 
   notes String?
+
+  // QuickBooks sync
+  qbTxnId      String?
+  qbSyncedAt   DateTime?
+  qbSyncStatus String?   @default("PENDING")
+
+  // Stripe payment-link fields
+  stripeSessionId  String?
+  stripePaymentUrl String?
+  stripeCustomerId String?
+
+  // Collections — offered payment plan metadata
+  paymentPlanOffered Boolean @default(false)
+  paymentPlanDetails Json?
 
   items              InvoiceItem[]
   payments           Payment[]
@@ -2078,10 +2187,10 @@ model Contract {
   status          ContractStatus   @default(DRAFT)
 
   // Financial terms
-  paymentTerm     PaymentTerm?
+  paymentTerm     PaymentTerm      @default(NET_30)
   creditLimit     Float?
   estimatedAnnual Float?           // Estimated annual volume
-  discountPercent Float?           // Negotiated discount
+  discountPercent Float            @default(0)  // Negotiated discount
 
   // Content
   terms           String?          // Contract terms text
@@ -2104,6 +2213,18 @@ model Contract {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Drifted columns promoted from live DB (2026-04-22)
+  organizationId  String           // FK -> BuilderOrganization.id (NOT NULL in DB)
+  description     String?
+  rebatePercent   Float            @default(0)
+  effectiveDate   DateTime?
+  expirationDate  DateTime?
+  signedAt        DateTime?
+  signedBy        String?
+  autoRenew       Boolean          @default(false)
+  notes           String?
+  divisionId      String?          // FK -> Division.id
 
   @@index([dealId])
   @@index([builderId])
@@ -3975,7 +4096,7 @@ model CommunicationLog {
 }
 
 model Community_legacy {
-  id                  String              @id(map: "Community_pkey") @default(dbgenerated("(gen_random_uuid())::text"))
+  id                  String              @id(map: "Community_legacy_pkey") @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId      String
   name                String
   code                String?
