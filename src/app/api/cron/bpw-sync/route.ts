@@ -1,84 +1,30 @@
 /**
- * Cron: BPW Pulte Sync
+ * Cron: BPW Pulte Sync — DISABLED 2026-04-23
  *
- * Syncs jobs, communities, and schedules from BPW Pulte
- * - Syncs communities → Community table
- * - Syncs jobs → Job table, matching on address/lot/community
- * - Syncs schedules → updates Job scheduledDate field
+ * BPW = "Builder Portal Web" — Pulte's builder API. The Pulte account
+ * was lost 2026-04-20 (Doug Gough confirmed Treeline → 84 Lumber;
+ * Mobberly Farms moved March). This sync is therefore obsolete.
  *
- * Each sync type logs to SyncLog
- * Requires CRON_SECRET for auth
+ * History: 100% failure since 2026-04-21 02:30 UTC because
+ * IntegrationProvider enum never contained BPW_PULTE, so every
+ * findUnique({ provider: 'BPW_PULTE' }) threw validator errors.
+ *
+ * The schedule entry in vercel.json has been removed in the same
+ * commit. The route is retained as a 410 stub so any stale external
+ * caller gets a clear signal instead of a 500.
  */
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
-import { syncCommunities, syncJobs, syncSchedules } from '@/lib/integrations/bpw'
-import { startCronRun, finishCronRun } from '@/lib/cron'
 
-export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Check if BPW Pulte is configured before burning a CronRun entry
-  // BPW uses IntegrationConfig with provider 'BPW_PULTE'
-  const { prisma } = await import('@/lib/prisma')
-  const bpwConfig: any[] = await prisma.$queryRawUnsafe(
-    `SELECT id FROM "IntegrationConfig" WHERE name ILIKE '%bpw%' OR name ILIKE '%pulte%' AND status::text = 'CONNECTED' LIMIT 1`
+export async function GET(_request: NextRequest) {
+  return NextResponse.json(
+    {
+      success: false,
+      disabled: true,
+      reason: 'Pulte account lost 2026-04-20; BPW sync retired 2026-04-23.',
+    },
+    { status: 410 },
   )
-  if (bpwConfig.length === 0) {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      message: 'BPW Pulte not configured — skipping sync. Add IntegrationConfig for BPW Pulte to enable.',
-    })
-  }
-
-  const runId = await startCronRun('bpw-sync', 'schedule')
-  const results: any[] = []
-  const startedAt = Date.now()
-
-  // 1. Sync communities first (needed for job matching)
-  try {
-    const comResult = await syncCommunities()
-    results.push({ type: 'communities', ...comResult })
-  } catch (e: any) {
-    results.push({ type: 'communities', status: 'FAILED', error: e?.message })
-  }
-
-  // 2. Sync jobs
-  try {
-    const jobResult = await syncJobs()
-    results.push({ type: 'jobs', ...jobResult })
-  } catch (e: any) {
-    results.push({ type: 'jobs', status: 'FAILED', error: e?.message })
-  }
-
-  // 3. Sync schedules
-  try {
-    const schedResult = await syncSchedules()
-    results.push({ type: 'schedules', ...schedResult })
-  } catch (e: any) {
-    results.push({ type: 'schedules', status: 'FAILED', error: e?.message })
-  }
-
-  const totalDuration = Date.now() - startedAt
-  const hasErrors = results.some(r => r.status === 'FAILED')
-
-  const payload = {
-    success: !hasErrors,
-    durationMs: totalDuration,
-    results,
-  }
-  await finishCronRun(runId, hasErrors ? 'FAILURE' : 'SUCCESS', totalDuration, {
-    result: payload,
-    error: hasErrors ? results.filter(r => r.status === 'FAILED').map(r => `${r.type}: ${r.error}`).join('; ') : undefined,
-  })
-  return NextResponse.json(payload)
 }

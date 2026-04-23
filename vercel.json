@@ -53,16 +53,8 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron/bolt-sync",
-      "schedule": "30 * * * *"
-    },
-    {
       "path": "/api/cron/hyphen-sync",
       "schedule": "15 * * * *"
-    },
-    {
-      "path": "/api/cron/bpw-sync",
-      "schedule": "45 * * * *"
     },
     {
       "path": "/api/cron/buildertrend-sync",
