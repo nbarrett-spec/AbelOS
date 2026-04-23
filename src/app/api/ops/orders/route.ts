@@ -509,10 +509,15 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response, { status: 201 });
-  } catch (error) {
-    console.error('POST /api/ops/orders error:', error);
+  } catch (err: any) {
+    console.error('POST /api/ops/orders error:', JSON.stringify({
+      msg: err?.message,
+      code: err?.code,
+      meta: err?.meta,
+      stack: err?.stack?.split('\n').slice(0, 10).join('\n'),
+    }, null, 2))
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      { error: 'Failed to create order', detail: err?.message?.slice(0, 500), code: err?.code },
       { status: 500 }
     );
   }
