@@ -91,13 +91,12 @@ async function seedDefaultRules() {
   if ((countResult[0]?.count || 0) > 0) return
 
   logger.info('data_quality_seeding_rules', { count: DEFAULT_RULES.length })
-  const now = new Date().toISOString()
   for (const rule of DEFAULT_RULES) {
     const id = `dqr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     await prisma.$executeRawUnsafe(
       `INSERT INTO "DataQualityRule" (id, name, description, entity, severity, query, "fixUrl", "isActive", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8, $8)`,
-      id, rule.name, rule.description, rule.entity, rule.severity, rule.query, rule.fixUrl, now
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())`,
+      id, rule.name, rule.description, rule.entity, rule.severity, rule.query, rule.fixUrl
     )
   }
 }
@@ -116,7 +115,6 @@ async function evaluateRule(rule: any) {
 
     let newIssuesCount = 0
     let fixedIssuesCount = 0
-    const now = new Date().toISOString()
 
     // Create issues for new violations
     for (const row of violatingRows) {
@@ -124,9 +122,9 @@ async function evaluateRule(rule: any) {
         const label = row.jobNumber || row.name || row.companyName || row.invoiceNumber || row.poNumber || null
         const issueId = `dqi_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
         await prisma.$executeRawUnsafe(
-          `INSERT INTO "DataQualityIssue" (id, "ruleId", "entityType", "entityId", "entityLabel", status, "createdAt")
-           VALUES ($1, $2, $3, $4, $5, 'OPEN', $6)`,
-          issueId, rule.id, rule.entity, row.id, label, now
+          `INSERT INTO "DataQualityIssue" (id, "ruleId", "entityType", "entityId", "entityLabel", status, "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, 'OPEN', NOW(), NOW())`,
+          issueId, rule.id, rule.entity, row.id, label
         )
         newIssuesCount++
       }
@@ -136,8 +134,8 @@ async function evaluateRule(rule: any) {
     for (const issue of existingIssues) {
       if (!currentEntityIds.has(issue.entityId)) {
         await prisma.$executeRawUnsafe(
-          `UPDATE "DataQualityIssue" SET status = 'FIXED', "fixedAt" = $1 WHERE id = $2`,
-          now, issue.id
+          `UPDATE "DataQualityIssue" SET status = 'FIXED', "fixedAt" = NOW(), "updatedAt" = NOW() WHERE id = $1`,
+          issue.id
         )
         fixedIssuesCount++
       }
