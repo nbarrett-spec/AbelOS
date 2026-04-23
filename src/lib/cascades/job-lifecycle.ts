@@ -13,6 +13,7 @@
  */
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { allocateForJob, releaseForJob } from '@/lib/allocation'
 
 type TransitionResult = {
   ok: boolean
@@ -105,6 +106,18 @@ export async function advanceJobWithGuards(
       `UPDATE "Job" SET "status" = $1::"JobStatus",${extra.length ? ' ' + extra.join(', ') + ',' : ''} "updatedAt" = NOW() WHERE "id" = $2`,
       toStatus, jobId
     )
+
+    // Allocation-ledger hooks — fire-and-forget so scripts/tests that use
+    // advanceJobWithGuards get the same side-effects as the PATCH route.
+    if (['READINESS_CHECK', 'MATERIALS_LOCKED'].includes(toStatus)) {
+      allocateForJob(jobId).catch((e) =>
+        logger.warn('cascade_allocate_failed', { jobId, toStatus, err: e?.message })
+      )
+    } else if (['DELIVERED', 'COMPLETE', 'CLOSED'].includes(toStatus)) {
+      releaseForJob(jobId, `cascade:${toStatus}`).catch((e) =>
+        logger.warn('cascade_release_failed', { jobId, toStatus, err: e?.message })
+      )
+    }
 
     return { ok: true, previousStatus: fromStatus, newStatus: toStatus }
   } catch (e: any) {

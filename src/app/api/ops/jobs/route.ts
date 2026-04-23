@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { audit } from '@/lib/audit'
+import { allocateForJob } from '@/lib/allocation'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -462,6 +463,16 @@ export async function POST(request: NextRequest) {
 
     // Fire automation event (non-blocking)
     fireAutomationEvent('JOB_STATUS_CHANGED', jobId).catch(e => console.warn('[Automation] event fire failed:', e))
+
+    // Allocation ledger: write rows at creation time when the Job has an
+    // Order attached, so material is immediately reserved and not double-
+    // promised to a later job. Fire-and-forget — don't block job creation
+    // on a ledger error.
+    if (orderId) {
+      allocateForJob(jobId).catch((e: any) => {
+        console.warn('[Job POST] allocateForJob failed:', e?.message)
+      })
+    }
 
     return NextResponse.json(responseJob, { status: 201 });
   } catch (error) {

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
+import { allocateForJob, releaseForJob } from '@/lib/allocation'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 
 export async function GET(
@@ -203,18 +204,48 @@ export async function PATCH(
       UPDATE "Job" SET ${setClauses.join(', ')} WHERE "id" = $1
     `, id)
 
-    // ── MRP: allocate / release inventory commitments based on lifecycle ──
+    // ── Allocation ledger: reserve / release on lifecycle transitions ──
+    // The ledger (InventoryAllocation) is the source of truth for double-
+    // allocation prevention. Allocate as soon as a job enters the MRP
+    // window (READINESS_CHECK) so material isn't double-promised to a later
+    // job, and release on terminal transitions. The legacy `allocateJobMaterials`
+    // / `releaseJobMaterials` path is kept as a belt-and-suspenders backstop
+    // for InventoryItem.committed in envs where the SQL function isn't
+    // installed yet, but ledger is authoritative going forward.
     if (newStatus && newStatus !== currentJob.status) {
       try {
-        if (newStatus === 'MATERIALS_LOCKED') {
-          await allocateJobMaterials(id)
+        if (['READINESS_CHECK', 'MATERIALS_LOCKED'].includes(newStatus)) {
+          const alloc = await allocateForJob(id)
+          if (alloc.shortfall.length > 0) {
+            // Surface short items so a PM notices. Non-blocking.
+            try {
+              await prisma.$executeRawUnsafe(
+                `INSERT INTO "InboxItem"
+                  ("id", "type", "source", "title", "description",
+                   "priority", "status", "entityType", "entityId",
+                   "actionData", "createdAt", "updatedAt")
+                 VALUES (
+                   gen_random_uuid()::text, 'MRP_RECOMMENDATION', 'allocation',
+                   'Job allocation short: ' || $1,
+                   $2, 'HIGH', 'PENDING', 'Job', $3, $4::jsonb, NOW(), NOW())`,
+                id,
+                `${alloc.shortfall.length} line(s) backordered; ${alloc.backordered.length} row(s) flagged`,
+                id,
+                JSON.stringify({ shortfall: alloc.shortfall, backordered: alloc.backordered })
+              )
+            } catch {}
+          }
+          // Legacy mirror — keep InventoryItem.committed in sync for readers
+          // that haven't migrated yet.
+          try { await allocateJobMaterials(id) } catch {}
         } else if (
           ['DELIVERED', 'COMPLETE', 'CLOSED'].includes(newStatus)
         ) {
-          await releaseJobMaterials(id)
+          await releaseForJob(id, `status:${newStatus}`)
+          try { await releaseJobMaterials(id) } catch {}
         }
       } catch (mrpErr: any) {
-        console.warn('[Job PATCH] MRP allocation hook failed:', mrpErr?.message)
+        console.warn('[Job PATCH] allocation hook failed:', mrpErr?.message)
       }
     }
 
