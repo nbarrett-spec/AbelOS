@@ -208,6 +208,20 @@ function validateEnv(): Env {
         'For production, consider using a connection pooler (Neon pooler, PgBouncer, etc.) ' +
         'and set DIRECT_URL for migrations.')
     }
+
+    // CRON_SECRET is optional in schema (dev doesn't need it), but in production
+    // an unset value means Vercel cron requests can't be authenticated. Warn loudly
+    // at startup so ops sees it in logs on deploy.
+    if (!env.CRON_SECRET) {
+      console.warn(
+        '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+        '[env] WARNING: CRON_SECRET is not set in production.\n' +
+        '      Vercel cron authentication is disabled — every /api/cron/* route\n' +
+        '      is publicly callable. Set CRON_SECRET in the Vercel dashboard\n' +
+        '      (generate with: openssl rand -base64 32).\n' +
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+      )
+    }
   }
 
   return env

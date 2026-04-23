@@ -668,7 +668,7 @@ export default function DeliveryCommandCenter() {
             >
               Reorder
             </button>
-            <Link href="/ops/route-optimizer" style={{ textDecoration: 'none' }}>
+            <Link href="/ops/delivery/route-optimizer" style={{ textDecoration: 'none' }}>
               <button
                 style={{
                   padding: '6px 12px',

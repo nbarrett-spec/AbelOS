@@ -80,11 +80,11 @@ export default function EstimatorPortalPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { icon: '📋', label: 'Morning Briefing', href: '/ops/portal/estimator/briefing', color: '#16A085' },
-          { icon: '📐', label: 'Review Takeoffs', href: '/ops/takeoffs', color: '#3498DB' },
+          { icon: '📐', label: 'Review Takeoffs', href: '/ops/takeoff-inquiries', color: '#3498DB' },
           { icon: '📄', label: 'Create Quote', href: '/ops/quotes', color: '#27AE60' },
           { icon: '💰', label: 'Pricing Engine', href: '/ops/pricing', color: '#D4B96A' },
-          { icon: '📊', label: 'Floor Plans', href: '/ops/plans', color: '#9B59B6' },
-          { icon: '📸', label: 'Blueprint Analysis', href: '/ops/blueprints', color: '#E74C3C' },
+          { icon: '📊', label: 'Floor Plans', href: '/ops/floor-plans', color: '#9B59B6' },
+          { icon: '📸', label: 'Blueprint Analysis', href: '/ops/blueprints/analyze', color: '#E74C3C' },
         ].map(action => (
           <Link
             key={action.label}

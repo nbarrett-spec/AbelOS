@@ -80,10 +80,13 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
 
   // Finance — open to all office roles (they need visibility to keep company healthy)
   '/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'PURCHASING', 'SALES_REP', 'ESTIMATOR'],
+  '/ops/finance/patterns': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/ops/finance/ap-forecast': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
   '/ops/invoices': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
   '/ops/payments': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER'],
   '/ops/ar-aging': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
   '/ops/financial-reports': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER'],
+  '/ops/sync-health': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
 
   // Warranty — admin, managers, QC, sales, PMs
   '/ops/warranty': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'QC_INSPECTOR'],
@@ -101,7 +104,10 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/portal/purchasing': ['ADMIN', 'MANAGER', 'PURCHASING'],
   '/ops/portal/warehouse': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'QC_INSPECTOR'],
   '/ops/portal/delivery': ['ADMIN', 'MANAGER', 'DRIVER', 'INSTALLER', 'WAREHOUSE_LEAD', 'PROJECT_MANAGER'],
+  '/ops/portal/installer': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'INSTALLER'],
   '/ops/portal/accounting': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/ops/portal/accounting/close': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/ops/portal/accounting/integrations': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
 
   // Resources — everyone
   '/ops/documents': ALL_ROLES,
@@ -162,6 +168,8 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/quote-requests': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
   '/ops/takeoff-inquiries': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
   '/ops/takeoff-review': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
+  // AI Takeoff Tool — in-house blueprint → BOM scaffold
+  '/ops/takeoff-tool': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
 
   // Organizations & Communities
   '/ops/organizations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],
@@ -296,6 +304,12 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Financial APIs — open to office roles for operational visibility
   '/api/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'PURCHASING', 'SALES_REP', 'ESTIMATOR'],
+  '/api/ops/finance/monthly-close': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/finance/payment-patterns': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/finance/ap-forecast': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
+  '/api/ops/finance/ar-predict': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
+  '/api/ops/finance/ap-waterfall': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
+  '/api/ops/sync-health': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/invoices': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
   '/api/ops/payments': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER'],
 
@@ -318,6 +332,7 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/portal': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP',
     'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'DRIVER', 'INSTALLER',
     'QC_INSPECTOR', 'ACCOUNTING'],
+  '/api/ops/portal/installer': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'INSTALLER'],
 
   // Messaging — everyone
   '/api/ops/messages': ALL_ROLES,
@@ -500,12 +515,15 @@ export type Permission =
   | 'integrations:view' | 'integrations:manage'
   | 'schedule:view' | 'schedule:create' | 'schedule:edit'
   | 'delivery:view' | 'delivery:create' | 'delivery:edit'
+  | 'install:view' | 'install:create' | 'install:edit'
+  | 'punch_item:view' | 'punch_item:edit'
   | 'manufacturing:view'
   | 'inventory:view'
   | 'purchasing:view'
   | 'executive:view'
   | 'operational_financial:view'
   | 'sensitive_financial:view'
+  | 'takeoff:create' | 'takeoff:edit' | 'takeoff:ai_extract'
 
 const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
   ADMIN: [
@@ -524,8 +542,11 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     'integrations:view', 'integrations:manage',
     'schedule:view', 'schedule:create', 'schedule:edit',
     'delivery:view', 'delivery:create', 'delivery:edit',
+    'install:view', 'install:create', 'install:edit',
+    'punch_item:view', 'punch_item:edit',
     'manufacturing:view', 'inventory:view', 'purchasing:view',
     'executive:view', 'operational_financial:view', 'sensitive_financial:view',
+    'takeoff:create', 'takeoff:edit', 'takeoff:ai_extract',
   ],
   MANAGER: [
     'deals:view', 'deals:create', 'deals:edit', 'deals:assign', 'deals:change_stage',
@@ -543,8 +564,11 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     'integrations:view',
     'schedule:view', 'schedule:create', 'schedule:edit',
     'delivery:view', 'delivery:create', 'delivery:edit',
+    'install:view', 'install:create', 'install:edit',
+    'punch_item:view', 'punch_item:edit',
     'manufacturing:view', 'inventory:view', 'purchasing:view',
     'executive:view', 'operational_financial:view',
+    'takeoff:create', 'takeoff:edit', 'takeoff:ai_extract',
   ],
   PROJECT_MANAGER: [
     // PM is a POWER role — needs almost everything to run jobs effectively
@@ -559,16 +583,20 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     'email:view', 'email:send',
     'schedule:view', 'schedule:create', 'schedule:edit',  // PMs ARE the schedulers
     'delivery:view', 'delivery:create', 'delivery:edit',  // PMs track deliveries
+    'install:view', 'install:create', 'install:edit',      // PMs oversee installs
+    'punch_item:view', 'punch_item:edit',                  // PMs resolve punch items
     'manufacturing:view',    // PMs need to see production status
     'inventory:view',        // PMs need to see what's in stock
     'purchasing:view',       // PMs need visibility into POs
     'executive:view',        // PMs can see dashboards
     'operational_financial:view', // PMs need revenue, margin, AR/AP visibility
+    'takeoff:create', 'takeoff:edit', 'takeoff:ai_extract',
   ],
   ESTIMATOR: [
     'deals:view', 'quotes:view', 'quotes:create', 'quotes:edit', 'quotes:send',
     'builders:view', 'vendors:view', 'reports:view',
     'executive:view', 'operational_financial:view',
+    'takeoff:create', 'takeoff:edit', 'takeoff:ai_extract',
   ],
   SALES_REP: [
     'deals:view', 'deals:create', 'deals:edit', 'deals:change_stage',
@@ -604,6 +632,8 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
   ],
   INSTALLER: [
     'crews:view',
+    'install:view', 'install:create', 'install:edit',
+    'punch_item:view', 'punch_item:edit',
     'executive:view',
   ],
   QC_INSPECTOR: [
@@ -618,8 +648,9 @@ const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     'executive:view', 'operational_financial:view', 'sensitive_financial:view',
   ],
   VIEWER: [
-    'deals:view', 'quotes:view', 'contracts:view', 'builders:view',
-    'invoices:view', 'vendors:view', 'crews:view', 'reports:view',
+    // VIEWER: intentionally narrow. Must stay in sync with ROUTE_ACCESS — only
+    // include permissions for routes VIEWER can actually reach (see ALL_ROLES).
+    'reports:view',
     'executive:view',
   ],
 }

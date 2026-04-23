@@ -65,6 +65,19 @@ function client(): Anthropic {
   return _client
 }
 
+/**
+ * Return true when an Anthropic API key is configured in the current runtime.
+ *
+ * Callers can use this at the top of an API route to return 503 `{error: 'AI
+ * not configured'}` instead of letting the SDK throw a generic 500 at call
+ * time. The Anthropic SDK lazy-reads ANTHROPIC_API_KEY at construction, so we
+ * mirror the same env var here.
+ */
+export function isAIConfigured(): boolean {
+  const key = process.env.ANTHROPIC_API_KEY
+  return typeof key === 'string' && key.trim().length > 0
+}
+
 // ── Core ────────────────────────────────────────────────────────────────
 export async function generate(opts: GenerateOpts): Promise<GenerateResult> {
   const started = Date.now()

@@ -166,7 +166,7 @@ export default function SalesBriefingPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Deals Closing This Week</h2>
-            <Link href="/ops/pipeline" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
+            <Link href="/ops/sales/pipeline" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
               View Pipeline →
             </Link>
           </div>

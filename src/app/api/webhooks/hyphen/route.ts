@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
     authenticated = verifyBearerToken(sharedSecretHeader, webhookSecret)
   }
   if (!authenticated) {
-    if (!webhookSecret && process.env.NODE_ENV !== 'production') {
+    // Dev fallback: only when NODE_ENV is explicitly 'development' AND no secret configured.
+    // Tightened from `!== 'production'` so Vercel preview deployments cannot leak open access.
+    if (!webhookSecret && process.env.NODE_ENV === 'development') {
       authenticated = true
     }
   }

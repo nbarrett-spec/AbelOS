@@ -4,78 +4,83 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ShoppingCart, Package, CheckCircle2, Clock, RefreshCw, Filter, Eye,
-  DollarSign, AlertTriangle, Building,
+  DollarSign, AlertTriangle, Building, Calendar,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Badge, StatusBadge, DataTable, EmptyState,
   Card, CardHeader, CardTitle, CardDescription, CardBody,
-  AnimatedNumber, LiveDataIndicator, InfoTip,
+  AnimatedNumber, LiveDataIndicator, InfoTip, Dialog,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-interface PurchaseOrder {
+interface WaterfallPO {
   id: string
   poNumber: string
   vendorId: string
   vendorName: string
-  amount: number
   status: string
-  expectedDate: string
-  items: number
+  amount: number
+  expectedDate: string | null
+  daysPastExpected: number | null
+  orderedAt: string | null
+  paymentHint: string | null
+  bucket: 'current' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90_plus'
+  window: 'overdue' | 'this_week' | 'next_week' | 'later' | 'no_date'
 }
 
-interface APData {
-  openPOSummary: {
-    draft: number
-    pendingApproval: number
-    approved: number
-    sent: number
-    received: number
+interface APWaterfallData {
+  asOf: string
+  waterfall: {
+    current:  { count: number; amount: number }
+    d1_30:    { count: number; amount: number }
+    d31_60:   { count: number; amount: number }
+    d61_90:   { count: number; amount: number }
+    d90_plus: { count: number; amount: number }
   }
-  vendorSpend: Array<{
-    vendorId: string
-    vendorName: string
-    totalPOs: number
-    paidAmount: number
-    outstandingAmount: number
-    status: string
-  }>
-  purchaseOrders: PurchaseOrder[]
-  billPayQueue: Array<{
-    poNumber: string
-    vendorName: string
-    amount: number
-    expectedDate: string
-  }>
+  windows: {
+    this_week: { count: number; amount: number }
+    next_week: { count: number; amount: number }
+    later:     { count: number; amount: number }
+    overdue:   { count: number; amount: number }
+    no_date:   { count: number; amount: number }
+  }
+  vendors: Array<{ vendorId: string; vendorName: string; amount: number; count: number }>
+  purchaseOrders: WaterfallPO[]
 }
-
-// ── Formatters ───────────────────────────────────────────────────────────
 
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
 const fmtMoneyCompact = (n: number) => {
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
-  if (Math.abs(n) >= 10_000)    return `$${Math.round(n / 1000)}K`
-  if (Math.abs(n) >= 1_000)     return `$${(n / 1000).toFixed(1)}K`
+  if (Math.abs(n) >= 10_000) return `$${Math.round(n / 1000)}K`
+  if (Math.abs(n) >= 1_000)  return `$${(n / 1000).toFixed(1)}K`
   return fmtMoney(n)
 }
 
-const fmtDate = (s: string) => s ? new Date(s).toLocaleDateString('en-US') : '—'
+const fmtDate = (s: string | null) => s ? new Date(s).toLocaleDateString('en-US') : '—'
+const fmtShort = (s: string | null) => !s ? '—' : new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-// ── Page ─────────────────────────────────────────────────────────────────
+const WINDOW_LABELS = {
+  overdue:   'Overdue',
+  this_week: 'This week',
+  next_week: 'Next week',
+  later:     'Later',
+  no_date:   'No date',
+}
 
 export default function AccountsPayablePage() {
   const router = useRouter()
-  const [data, setData] = useState<APData | null>(null)
+  const [data, setData] = useState<APWaterfallData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [bucketFilter, setBucketFilter] = useState<string>('all')
+  const [windowFilter, setWindowFilter] = useState<string>('all')
   const [tick, setTick] = useState<number | null>(null)
 
-  // Payment modal state
+  // Pay-modal state
   const [payModal, setPayModal] = useState<{ poId: string; poNumber: string; amount: number } | null>(null)
   const [payAmount, setPayAmount] = useState('')
   const [payMethod, setPayMethod] = useState('CHECK')
@@ -83,42 +88,13 @@ export default function AccountsPayablePage() {
   const [paySubmitting, setPaySubmitting] = useState(false)
   const [payResult, setPayResult] = useState('')
 
-  async function recordPayment() {
-    if (!payModal) return
-    setPaySubmitting(true)
-    setPayResult('')
-    try {
-      const res = await fetch(`/api/ops/procurement/purchase-orders/${payModal.poId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_paid',
-          paymentAmount: parseFloat(payAmount) || payModal.amount,
-          paymentMethod: payMethod,
-          paymentReference: payRef,
-        }),
-      })
-      const result = await res.json()
-      if (res.ok) {
-        setPayResult(`Payment recorded: ${result.message}`)
-        setTimeout(() => { setPayModal(null); setPayResult(''); fetchData() }, 1500)
-      } else {
-        setPayResult(result.error || 'Payment failed')
-      }
-    } catch {
-      setPayResult('Network error — try again')
-    } finally {
-      setPaySubmitting(false)
-    }
-  }
-
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
     setRefreshing(true)
     try {
-      const res = await fetch('/api/ops/finance/ap')
-      if (!res.ok) throw new Error('Failed to fetch AP data')
+      const res = await fetch('/api/ops/finance/ap-waterfall')
+      if (!res.ok) throw new Error('Failed to fetch AP waterfall')
       setData(await res.json())
       setTick(Date.now())
     } catch (err) {
@@ -129,36 +105,65 @@ export default function AccountsPayablePage() {
     }
   }
 
+  async function markPaid() {
+    if (!payModal) return
+    setPaySubmitting(true)
+    setPayResult('')
+    try {
+      const res = await fetch('/api/ops/finance/ap-waterfall', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          poId: payModal.poId,
+          amount: parseFloat(payAmount) || payModal.amount,
+          method: payMethod,
+          reference: payRef,
+        }),
+      })
+      const j = await res.json()
+      if (res.ok) {
+        setPayResult(`Payment recorded on PO ${j.poNumber}`)
+        setTimeout(() => { setPayModal(null); setPayResult(''); fetchData() }, 1200)
+      } else {
+        setPayResult(j.error || 'Failed')
+      }
+    } catch {
+      setPayResult('Network error')
+    } finally {
+      setPaySubmitting(false)
+    }
+  }
+
   const filteredPOs = useMemo(() => {
     if (!data) return []
-    if (statusFilter === 'all') return data.purchaseOrders
-    return data.purchaseOrders.filter(p => p.status.toLowerCase() === statusFilter.toLowerCase())
-  }, [data, statusFilter])
-
-  const billPayTotal = useMemo(() => {
-    if (!data) return 0
-    return data.billPayQueue.reduce((sum, p) => sum + p.amount, 0)
-  }, [data])
-
-  const totalOutstanding = useMemo(() => {
-    if (!data) return 0
-    return data.vendorSpend.reduce((s, v) => s + v.outstandingAmount, 0)
-  }, [data])
+    return data.purchaseOrders.filter(po => {
+      if (bucketFilter !== 'all' && po.bucket !== bucketFilter) return false
+      if (windowFilter !== 'all' && po.window !== windowFilter) return false
+      return true
+    })
+  }, [data, bucketFilter, windowFilter])
 
   if (loading || !data) {
     return (
       <div className="space-y-5">
-        <PageHeader eyebrow="Finance" title="Accounts Payable" description="Vendor payments · PO pipeline · bill pay queue." />
+        <PageHeader eyebrow="Finance" title="Accounts Payable" description="AP aging waterfall · pay windows · vendor exposure." />
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[0,1,2,3,4].map(i => <KPICard key={i} title="" value="" loading />)}
         </div>
-        <div className="h-64 skeleton rounded-lg" />
       </div>
     )
   }
 
-  const sum = data.openPOSummary
-  const totalPipeline = sum.draft + sum.pendingApproval + sum.approved + sum.sent + sum.received
+  const buckets: Array<{ key: keyof APWaterfallData['waterfall']; label: string; tone: 'positive' | 'accent' | 'negative'; explainer: string }> = [
+    { key: 'current',  label: 'Current', tone: 'positive', explainer: 'Not yet due — healthy.' },
+    { key: 'd1_30',    label: '1–30 days late', tone: 'accent', explainer: 'Slightly past expected — check with vendor.' },
+    { key: 'd31_60',   label: '31–60 days late', tone: 'negative', explainer: 'Starting to risk credit-standing.' },
+    { key: 'd61_90',   label: '61–90 days late', tone: 'negative', explainer: 'Expect vendor to pause shipments.' },
+    { key: 'd90_plus', label: '90+ days late', tone: 'negative', explainer: 'Credit hold risk — call the vendor today.' },
+  ]
+
+  const grandTotal = Object.values(data.waterfall).reduce((s, b) => s + b.amount, 0)
+  const maxAmount = Math.max(...buckets.map(b => data.waterfall[b.key].amount), 1)
 
   return (
     <div className="space-y-5 animate-enter">
@@ -167,7 +172,7 @@ export default function AccountsPayablePage() {
       <PageHeader
         eyebrow="Finance"
         title="Accounts Payable"
-        description="Vendor payments · PO pipeline · bill pay queue."
+        description="Aging waterfall · pay windows · vendor exposure · one-click mark paid."
         actions={
           <button onClick={fetchData} className="btn btn-secondary btn-sm" disabled={refreshing}>
             <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
@@ -176,136 +181,129 @@ export default function AccountsPayablePage() {
         }
       />
 
-      {/* PO status pipeline as KPI strip */}
+      {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          { label: 'Draft',            count: sum.draft,            tone: 'neutral' as const },
-          { label: 'Pending',          count: sum.pendingApproval,  tone: 'accent'  as const },
-          { label: 'Approved',         count: sum.approved,         tone: 'forecast' as const },
-          { label: 'Sent',             count: sum.sent,             tone: 'brand'   as const },
-          { label: 'Received',         count: sum.received,         tone: 'positive' as const },
-        ].map((b, i) => {
-          const pct = totalPipeline > 0 ? (b.count / totalPipeline) * 100 : 0
-          return (
-            <KPICard
-              key={b.label}
-              title={b.label}
-              value={<AnimatedNumber value={b.count} />}
-              subtitle={`${pct.toFixed(0)}% of pipeline`}
-              accent={b.tone}
-            />
-          )
-        })}
-      </div>
-
-      {/* Key financial KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <KPICard
-          title="Total Outstanding"
-          value={<AnimatedNumber value={totalOutstanding} format={fmtMoneyCompact} />}
-          subtitle={`${data.vendorSpend.length} vendors`}
+          title="Total Open"
+          value={fmtMoneyCompact(grandTotal)}
+          subtitle={`${data.purchaseOrders.length} POs`}
           icon={<DollarSign className="w-3.5 h-3.5" />}
-          accent="negative"
+          accent="brand"
         />
         <KPICard
-          title="Ready to Pay"
-          value={<AnimatedNumber value={billPayTotal} format={fmtMoneyCompact} />}
-          subtitle={`${data.billPayQueue.length} bills queued`}
-          icon={<CheckCircle2 className="w-3.5 h-3.5" />}
-          accent="positive"
-          badge={data.billPayQueue.length > 0 ? <Badge variant="success" size="xs" dot>Action</Badge> : undefined}
+          title="Overdue"
+          value={fmtMoneyCompact(data.windows.overdue.amount)}
+          subtitle={`${data.windows.overdue.count} POs`}
+          icon={<AlertTriangle className="w-3.5 h-3.5" />}
+          accent={data.windows.overdue.amount > 0 ? 'negative' : 'positive'}
         />
         <KPICard
-          title="Awaiting Approval"
-          value={<AnimatedNumber value={sum.pendingApproval} />}
-          subtitle="POs blocking spend"
+          title="Pay this week"
+          value={fmtMoneyCompact(data.windows.this_week.amount)}
+          subtitle={`${data.windows.this_week.count} POs`}
+          icon={<Calendar className="w-3.5 h-3.5" />}
+          accent="accent"
+        />
+        <KPICard
+          title="Pay next week"
+          value={fmtMoneyCompact(data.windows.next_week.amount)}
+          subtitle={`${data.windows.next_week.count} POs`}
+          icon={<Calendar className="w-3.5 h-3.5" />}
+          accent="forecast"
+        />
+        <KPICard
+          title="Later"
+          value={fmtMoneyCompact(data.windows.later.amount)}
+          subtitle={`${data.windows.later.count} POs`}
           icon={<Clock className="w-3.5 h-3.5" />}
-          accent={sum.pendingApproval > 5 ? 'negative' : 'accent'}
+          accent="neutral"
         />
       </div>
 
-      {/* Bill-pay queue + vendor exposure */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Bill pay queue */}
-        <Card variant="default" padding="none" className="lg:col-span-1">
-          <CardHeader>
-            <div>
-              <CardTitle>Bill Pay Queue</CardTitle>
-              <CardDescription>Ready for payment</CardDescription>
-            </div>
-            <Badge variant="brand" size="sm">{data.billPayQueue.length}</Badge>
-          </CardHeader>
-          <CardBody className="pt-3">
-            {data.billPayQueue.length === 0 ? (
-              <EmptyState
-                icon="sparkles"
-                size="compact"
-                title="Caught up"
-                description="No POs ready for payment."
-              />
-            ) : (
-              <div className="space-y-2">
-                {data.billPayQueue.slice(0, 8).map((po, idx) => (
-                  <button
-                    key={`${po.poNumber}-${idx}`}
-                    onClick={() => router.push(`/ops/purchasing?po=${po.poNumber}`)}
-                    className="w-full text-left px-3 py-2 rounded-md hover:bg-surface-muted transition-colors border border-border"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-mono text-[12px] font-semibold text-fg">{po.poNumber}</div>
-                        <div className="text-[11px] text-fg-muted truncate">{po.vendorName}</div>
-                      </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <div className="text-[13px] font-semibold tabular-nums text-fg">{fmtMoneyCompact(po.amount)}</div>
-                        <div className="text-[10px] text-fg-subtle">{fmtDate(po.expectedDate)}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Vendor spend */}
-        <Card variant="default" padding="none" className="lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <CardTitle>Vendor Spend</CardTitle>
-              <InfoTip label="Vendor Spend">
-                Paid vs outstanding by vendor. Heatmap shades outstanding balances — darker red = higher exposure.
-              </InfoTip>
-            </div>
-            <CardDescription>Top 15</CardDescription>
-          </CardHeader>
-          <div className="overflow-x-auto">
-            <DataTable
-              density="compact"
-              data={data.vendorSpend.slice(0, 15)}
-              rowKey={(r) => r.vendorId}
-              onRowClick={(r) => router.push(`/ops/vendors/${r.vendorId}`)}
-              className="!border-0"
-              columns={[
-                { key: 'vendorName', header: 'Vendor',
-                  cell: (r) => <span className="truncate max-w-[220px] block font-medium text-fg">{r.vendorName}</span> },
-                { key: 'totalPOs', header: 'POs', numeric: true, width: '60px',
-                  cell: (r) => <span className="text-fg-muted tabular-nums">{r.totalPOs}</span> },
-                { key: 'paidAmount', header: 'Paid', numeric: true,
-                  cell: (r) => <span className="text-data-positive font-medium">{fmtMoneyCompact(r.paidAmount)}</span> },
-                { key: 'outstandingAmount', header: 'Outstanding', numeric: true, heatmap: true,
-                  heatmapValue: (r) => r.outstandingAmount,
-                  cell: (r) => <span className="font-semibold text-fg">{fmtMoneyCompact(r.outstandingAmount)}</span> },
-                { key: 'status', header: 'Status', width: '110px',
-                  cell: (r) => <Badge variant={r.status === 'active' ? 'success' : 'neutral'} size="xs" dot>{r.status}</Badge> },
-              ]}
-              empty={<EmptyState icon="users" size="compact" title="No vendor activity" description="No PO spend recorded yet." />}
-            />
+      {/* Aging waterfall */}
+      <Card variant="default" padding="none">
+        <CardHeader>
+          <div>
+            <CardTitle>AP Aging Waterfall</CardTitle>
+            <CardDescription>Click a bar to filter the table below.</CardDescription>
           </div>
-        </Card>
-      </div>
+          {bucketFilter !== 'all' && (
+            <button onClick={() => setBucketFilter('all')} className="btn btn-ghost btn-xs">Clear</button>
+          )}
+        </CardHeader>
+        <CardBody>
+          <div className="grid grid-cols-5 gap-3" style={{ height: 220 }}>
+            {buckets.map(b => {
+              const bucket = data.waterfall[b.key]
+              const heightPct = (bucket.amount / maxAmount) * 100
+              const selected = bucketFilter === b.key
+              return (
+                <button
+                  key={b.key}
+                  onClick={() => setBucketFilter(prev => prev === b.key ? 'all' : b.key)}
+                  className={cn(
+                    'relative flex flex-col items-center justify-end rounded-md transition-all',
+                    'border-2 hover:border-brand/60',
+                    selected ? 'border-brand' : 'border-transparent',
+                    'bg-surface-muted/30 group',
+                  )}
+                >
+                  <div className="absolute top-2 left-2 right-2 flex flex-col items-start">
+                    <span className="text-[10px] eyebrow text-fg-muted">{b.label}</span>
+                    <span className={cn('text-[13px] font-bold tabular-nums',
+                      b.tone === 'positive' && 'text-data-positive',
+                      b.tone === 'accent' && 'text-accent',
+                      b.tone === 'negative' && 'text-data-negative',
+                    )}>
+                      {fmtMoneyCompact(bucket.amount)}
+                    </span>
+                    <span className="text-[10px] text-fg-subtle">{bucket.count} PO{bucket.count === 1 ? '' : 's'}</span>
+                  </div>
+                  <div
+                    className={cn('w-[70%] rounded-t-md transition-all duration-300',
+                      b.tone === 'positive' && 'bg-data-positive/70 group-hover:bg-data-positive',
+                      b.tone === 'accent' && 'bg-accent/70 group-hover:bg-accent',
+                      b.tone === 'negative' && 'bg-data-negative/70 group-hover:bg-data-negative',
+                    )}
+                    style={{ height: `${Math.max(heightPct, 4)}%` }}
+                  />
+                </button>
+              )
+            })}
+          </div>
+        </CardBody>
+      </Card>
 
-      {/* Purchase orders table */}
+      {/* Top vendor exposure cards */}
+      <Card variant="default" padding="none">
+        <CardHeader>
+          <div>
+            <CardTitle>Vendor Exposure</CardTitle>
+            <CardDescription>Open AP by vendor, largest first.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {data.vendors.length === 0 ? (
+            <EmptyState icon="users" size="compact" title="No vendor exposure" description="All POs are closed." />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {data.vendors.slice(0, 8).map(v => (
+                <button
+                  key={v.vendorId}
+                  onClick={() => router.push(`/ops/vendors/${v.vendorId}`)}
+                  className="panel panel-interactive p-3 flex flex-col gap-1 text-left hover:border-brand/40"
+                >
+                  <span className="text-[11px] font-semibold text-fg-muted truncate">{v.vendorName}</span>
+                  <span className="text-[16px] font-bold tabular-nums text-fg">{fmtMoneyCompact(v.amount)}</span>
+                  <span className="text-[10px] text-fg-subtle">{v.count} PO{v.count === 1 ? '' : 's'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* PO table */}
       <DataTable
         density="compact"
         data={filteredPOs}
@@ -314,120 +312,117 @@ export default function AccountsPayablePage() {
         keyboardNav
         hint
         toolbar={
-          <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-3 w-full flex-wrap">
             <div className="flex items-center gap-2">
               <Filter className="w-3.5 h-3.5 text-fg-muted" />
               <span className="text-[11px] font-medium text-fg-muted">Filter</span>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="input h-7 w-48 text-[12px]"
-            >
-              <option value="all">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="pending_approval">Pending approval</option>
-              <option value="approved">Approved</option>
-              <option value="sent_to_vendor">Sent to vendor</option>
-              <option value="partially_received">Partially received</option>
-              <option value="received">Received</option>
+            <select value={bucketFilter} onChange={e => setBucketFilter(e.target.value)} className="input h-7 w-36 text-[12px]">
+              <option value="all">All buckets</option>
+              <option value="current">Current</option>
+              <option value="d1_30">1–30 late</option>
+              <option value="d31_60">31–60 late</option>
+              <option value="d61_90">61–90 late</option>
+              <option value="d90_plus">90+ late</option>
             </select>
-            <div className="ml-auto text-[11px] text-fg-subtle">
-              {filteredPOs.length} of {data.purchaseOrders.length}
-            </div>
+            <select value={windowFilter} onChange={e => setWindowFilter(e.target.value)} className="input h-7 w-32 text-[12px]">
+              <option value="all">All windows</option>
+              <option value="overdue">Overdue</option>
+              <option value="this_week">This week</option>
+              <option value="next_week">Next week</option>
+              <option value="later">Later</option>
+              <option value="no_date">No date</option>
+            </select>
+            <div className="ml-auto text-[11px] text-fg-subtle">{filteredPOs.length} of {data.purchaseOrders.length}</div>
           </div>
         }
         columns={[
           { key: 'poNumber', header: 'PO', width: '110px', sortable: true,
-            cell: (r) => <span className="font-mono text-[12px] font-semibold text-fg">{r.poNumber}</span> },
+            cell: r => <span className="font-mono text-[12px] font-semibold text-fg">{r.poNumber}</span> },
           { key: 'vendorName', header: 'Vendor', sortable: true,
-            cell: (r) => <span className="truncate max-w-[200px] block">{r.vendorName}</span> },
+            cell: r => <span className="truncate max-w-[200px] block">{r.vendorName}</span> },
           { key: 'amount', header: 'Amount', numeric: true, sortable: true, heatmap: true,
-            heatmapValue: (r) => r.amount,
-            cell: (r) => <span className="font-semibold">{fmtMoney(r.amount)}</span> },
-          { key: 'items', header: 'Items', numeric: true, width: '70px',
-            cell: (r) => <span className="text-fg-muted">{r.items}</span> },
+            heatmapValue: r => r.amount,
+            cell: r => <span className="font-semibold">{fmtMoney(r.amount)}</span> },
+          { key: 'expectedDate', header: 'Expected', numeric: true, sortable: true, width: '100px',
+            cell: r => <span className="text-fg-muted text-[12px]">{fmtShort(r.expectedDate)}</span> },
+          { key: 'window', header: 'When', width: '100px',
+            cell: r => (
+              <Badge
+                variant={r.window === 'overdue' ? 'danger' : r.window === 'this_week' ? 'warning' : r.window === 'next_week' ? 'info' : 'neutral'}
+                size="xs"
+              >
+                {WINDOW_LABELS[r.window]}
+              </Badge>
+            ) },
           { key: 'status', header: 'Status', width: '130px',
-            cell: (r) => <StatusBadge status={r.status} size="sm" /> },
-          { key: 'expectedDate', header: 'Expected', numeric: true, sortable: true,
-            cell: (r) => <span className="text-fg-muted text-[12px]">{fmtDate(r.expectedDate)}</span> },
+            cell: r => <StatusBadge status={r.status} size="sm" /> },
         ]}
         rowActions={[
           { id: 'view', icon: <Eye className="w-3.5 h-3.5" />, label: 'View PO', shortcut: '↵',
-            onClick: (r) => router.push(`/ops/purchasing?po=${r.poNumber}`) },
-          { id: 'approve', icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: 'Approve',
-            onClick: (r) => router.push(`/ops/purchasing?po=${r.poNumber}&action=approve`),
-            show: (r) => r.status === 'PENDING_APPROVAL' },
+            onClick: r => router.push(`/ops/purchasing?po=${r.poNumber}`) },
+          { id: 'pay', icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Mark paid',
+            onClick: r => { setPayModal({ poId: r.id, poNumber: r.poNumber, amount: r.amount }); setPayAmount(String(r.amount)); setPayMethod('CHECK'); setPayRef(''); setPayResult('') } },
           { id: 'vendor', icon: <Building className="w-3.5 h-3.5" />, label: 'Open vendor',
-            onClick: (r) => router.push(`/ops/vendors/${r.vendorId}`) },
-          { id: 'pay', icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Record payment',
-            onClick: (r) => { setPayModal({ poId: r.id, poNumber: r.poNumber, amount: r.amount }); setPayAmount(String(r.amount)); setPayMethod('CHECK'); setPayRef(''); setPayResult('') },
-            show: (r) => ['APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED', 'RECEIVED'].includes(r.status) },
+            onClick: r => router.push(`/ops/vendors/${r.vendorId}`) },
         ]}
         empty={
           <EmptyState
             icon="package"
             size="compact"
-            title="No purchase orders"
-            description={statusFilter === 'all' ? 'Create your first PO from the Purchasing page.' : `Nothing in status "${statusFilter}".`}
-            action={statusFilter === 'all' ? { label: 'Open purchasing', href: '/ops/purchasing' } : undefined}
-            secondaryAction={statusFilter !== 'all' ? { label: 'Clear filter', onClick: () => setStatusFilter('all') } : undefined}
+            title="No POs match"
+            description={bucketFilter !== 'all' || windowFilter !== 'all' ? 'Try a different filter.' : 'No open purchase orders.'}
+            secondaryAction={bucketFilter !== 'all' || windowFilter !== 'all' ? { label: 'Clear filters', onClick: () => { setBucketFilter('all'); setWindowFilter('all') } } : undefined}
           />
         }
       />
 
-      {/* Payment modal */}
-      {payModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setPayModal(null)}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}
-            onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600 }}>Record Payment</h3>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B7280' }}>PO {payModal.poNumber}</p>
-
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Amount</label>
-            <input type="number" step="0.01" value={payAmount}
-              onChange={(e) => setPayAmount(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, marginBottom: 12 }}
-              placeholder="0.00" />
-
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Method</label>
-            <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, marginBottom: 12 }}>
+      {/* Pay modal */}
+      <Dialog
+        open={!!payModal}
+        onClose={() => setPayModal(null)}
+        title="Record Payment"
+        description={payModal ? `PO ${payModal.poNumber}` : undefined}
+        size="md"
+        footer={
+          <>
+            <button onClick={() => setPayModal(null)} className="btn btn-secondary btn-sm">Cancel</button>
+            <button onClick={markPaid} disabled={paySubmitting || !payAmount} className="btn btn-primary btn-sm">
+              {paySubmitting ? 'Recording…' : 'Record Payment'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="text-[11px] font-semibold text-fg-muted">Amount</label>
+            <input type="number" step="0.01" value={payAmount} onChange={e => setPayAmount(e.target.value)}
+              className="input w-full text-sm" placeholder="0.00" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-fg-muted">Method</label>
+            <select value={payMethod} onChange={e => setPayMethod(e.target.value)} className="input w-full text-sm">
               <option value="CHECK">Check</option>
               <option value="ACH">ACH</option>
               <option value="WIRE">Wire</option>
               <option value="CREDIT_CARD">Credit Card</option>
               <option value="CASH">Cash</option>
             </select>
-
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Reference # (optional)</label>
-            <input type="text" value={payRef}
-              onChange={(e) => setPayRef(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 14, marginBottom: 16 }}
-              placeholder="Check #, ACH ref, etc." />
-
-            {payResult && (
-              <div style={{ padding: 10, borderRadius: 6, marginBottom: 12, fontSize: 13,
-                background: payResult.includes('recorded') ? '#D1FAE5' : '#FEE2E2',
-                color: payResult.includes('recorded') ? '#065F46' : '#991B1B' }}>
-                {payResult}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setPayModal(null)}
-                style={{ padding: '8px 16px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'white' }}>
-                Cancel
-              </button>
-              <button onClick={recordPayment} disabled={paySubmitting || !payAmount}
-                style={{ padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: paySubmitting ? 'not-allowed' : 'pointer', opacity: paySubmitting ? 0.7 : 1 }}>
-                {paySubmitting ? 'Recording...' : 'Record Payment'}
-              </button>
-            </div>
           </div>
+          <div>
+            <label className="text-[11px] font-semibold text-fg-muted">Reference (optional)</label>
+            <input type="text" value={payRef} onChange={e => setPayRef(e.target.value)}
+              className="input w-full text-sm" placeholder="Check #, ACH ref, etc." />
+          </div>
+          {payResult && (
+            <div className={cn('p-2 rounded-md text-xs',
+              payResult.includes('recorded') ? 'bg-data-positive/10 text-data-positive' : 'bg-data-negative/10 text-data-negative',
+            )}>
+              {payResult}
+            </div>
+          )}
         </div>
-      )}
+      </Dialog>
     </div>
   )
 }

@@ -288,6 +288,7 @@ model BuilderReferral {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
+  @@unique([referredEmail]) // 1 active referral per email address
   @@index([referrerId])
   @@index([status])
   @@index([referredBuilderId])
@@ -316,6 +317,11 @@ model Project {
   subdivision String?
   planName    String?
   sqFootage   Int?
+
+  // Geo — optional, filled by geocoding jobAddress. Enables route optimization
+  // and delivery map pins without re-geocoding on every pageview.
+  latitude  Float?
+  longitude Float?
 
   status ProjectStatus @default(DRAFT)
 
@@ -377,11 +383,13 @@ enum ProcessingStatus {
 // ─── AI TAKEOFF ──────────────────────────────────────────────────────
 
 model Takeoff {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   projectId   String
-  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  blueprintId String
-  blueprint   Blueprint @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // Nullable: a takeoff can originate from a raw inquiry (no uploaded blueprint
+  // yet) — blueprint-less takeoff entries back the /ops/takeoff-inquiries flow.
+  blueprintId String?
+  blueprint   Blueprint? @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
 
   status     TakeoffStatus @default(PROCESSING)
   confidence Float? // 0-1 overall confidence score
@@ -1543,10 +1551,11 @@ model PurchaseOrder {
   approvedById String?
   approvedBy   Staff?  @relation("POApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
-  status       POStatus @default(DRAFT)
-  subtotal     Float    @default(0)
-  shippingCost Float    @default(0)
-  total        Float    @default(0)
+  status       POStatus   @default(DRAFT)
+  category     POCategory @default(GENERAL)
+  subtotal     Float      @default(0)
+  shippingCost Float      @default(0)
+  total        Float      @default(0)
 
   // Dates
   orderedAt    DateTime?
@@ -1583,6 +1592,19 @@ enum POStatus {
   PARTIALLY_RECEIVED
   RECEIVED
   CANCELLED
+}
+
+// Abel-specific PO classification. Used by purchasing dashboards and
+// margin-by-category rollups. Keep in sync with POCategory enum in DB.
+enum POCategory {
+  EXTERIOR
+  TRIM_1
+  TRIM_1_LABOR
+  TRIM_2
+  TRIM_2_LABOR
+  FINAL_FRONT
+  PUNCH
+  GENERAL
 }
 
 model PurchaseOrderItem {
@@ -2954,12 +2976,18 @@ model InboxItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // NUC brain write-back ack: timestamp set when the NUC engine POSTs to
+  // /api/v1/engine/inbox/[id]/ack confirming it retrieved the resolution
+  // payload. Lets the engine know the loop closed on both sides.
+  brainAcknowledgedAt DateTime?
+
   @@index([status, priority])
   @@index([assignedTo, status])
   @@index([type, status])
   @@index([dueBy])
   @@index([entityType, entityId])
   @@index([createdAt(sort: Desc)])
+  @@index([brainAcknowledgedAt])
 }
 
 // ─── AI INVOCATION LEDGER ────────────────────────────────────────────

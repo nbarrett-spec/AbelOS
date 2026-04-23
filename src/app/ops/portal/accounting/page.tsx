@@ -220,6 +220,30 @@ export default function AccountingCommandCenter() {
                 Invoices
               </Link>
               <Link
+                href="/ops/portal/accounting/close"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Monthly Close
+              </Link>
+              <Link
+                href="/ops/portal/accounting/integrations"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Integrations
+              </Link>
+              <Link
+                href="/ops/finance/patterns"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Payment Patterns
+              </Link>
+              <Link
+                href="/ops/finance/ap-forecast"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                AP Forecast
+              </Link>
+              <Link
                 href="/ops/portal/accounting/briefing"
                 className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
               >

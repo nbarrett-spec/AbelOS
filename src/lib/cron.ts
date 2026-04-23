@@ -161,6 +161,7 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'bolt-sync', schedule: '30 * * * *', description: 'Hourly Bolt inventory sync' },
   { name: 'hyphen-sync', schedule: '15 * * * *', description: 'Hourly Hyphen BuildPro/SupplyPro sync' },
   { name: 'bpw-sync', schedule: '45 * * * *', description: 'Hourly BPW sync' },
+  { name: 'buildertrend-sync', schedule: '15 */2 * * *', description: 'BuilderTrend schedule items + material selections (2h cadence)' },
   { name: 'run-automations', schedule: '0 8,13,17 * * 1-5', description: 'Run scheduled business automations' },
   { name: 'mrp-nightly', schedule: '0 4 * * *', description: 'Nightly MRP projection + PO recommendations' },
   { name: 'webhook-retry', schedule: '*/5 * * * *', description: 'Retry dead-lettered outbound webhooks' },

@@ -11,6 +11,7 @@ interface StaffUser {
   lastName: string
   email: string
   role: StaffRole
+  roles?: StaffRole[]
   department: string
   title: string | null
 }
@@ -56,8 +57,11 @@ export function useStaffAuth(options?: { requiredRole?: StaffRole; redirectOnFai
           error: null,
         })
 
-        // Check if user can access current route
-        if (pathname && !canAccessRoute(data.staff.role as StaffRole, pathname)) {
+        // Check if user can access current route (multi-role aware)
+        const rolesForCheck: StaffRole[] = Array.isArray(data.staff?.roles) && data.staff.roles.length > 0
+          ? data.staff.roles
+          : [data.staff.role as StaffRole]
+        if (pathname && !canAccessRoute(rolesForCheck, pathname)) {
           setState(prev => ({
             ...prev,
             error: 'You do not have permission to access this page.',

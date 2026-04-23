@@ -45,6 +45,10 @@
       "schedule": "45 * * * *"
     },
     {
+      "path": "/api/cron/buildertrend-sync",
+      "schedule": "15 */2 * * *"
+    },
+    {
       "path": "/api/cron/run-automations",
       "schedule": "0 8,13,17 * * 1-5"
     },

@@ -320,7 +320,7 @@ export async function POST(request: NextRequest) {
                   "createdAt", "updatedAt"
                 ) VALUES (
                   gen_random_uuid()::text, $1, $2, $3, $4, '', 'TX',
-                  'SCHEDULED'::"JobStatus", 'TRIM'::"JobScope", $5, $6,
+                  'CREATED'::"JobStatus", 'TRIM_ONLY'::"ScopeType", $5, $6,
                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT DO NOTHING`,

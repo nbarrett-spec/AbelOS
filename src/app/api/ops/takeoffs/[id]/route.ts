@@ -35,10 +35,10 @@ export async function GET(
       params.id
     )
 
-    // Fetch blueprint if exists
+    // Fetch blueprint via the takeoff's blueprintId (not a stale "takeoffId" FK)
     const blueprintData: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "fileName", "fileUrl", "fileType" FROM "Blueprint" WHERE "takeoffId" = $1 LIMIT 1`,
-      params.id
+      `SELECT "fileName", "fileUrl", "fileType" FROM "Blueprint" WHERE "id" = $1 LIMIT 1`,
+      takeoff.blueprintId
     )
     takeoff.blueprint = blueprintData[0] || null
 
@@ -71,6 +71,12 @@ export async function GET(
       quantity: item.quantity,
       confidence: item.confidence,
       productId: item.productId,
+      itemType: item.itemType ?? null,
+      widthInches: item.widthInches ?? null,
+      heightInches: item.heightInches ?? null,
+      linearFeet: item.linearFeet ?? null,
+      hardware: item.hardware ?? null,
+      notes: item.notes ?? null,
       product: item.productId ? {
         id: item.productId,
         sku: item.sku,
@@ -112,7 +118,10 @@ export async function PATCH(
 
     // Action: update a single item (quantity, product swap, etc.)
     if (action === 'updateItem') {
-      const { itemId, quantity, productId, description, category, location } = body
+      const {
+        itemId, quantity, productId, description, category, location,
+        itemType, widthInches, heightInches, linearFeet, hardware, notes,
+      } = body
       const setClauses: string[] = []
       const params_update: any[] = [itemId]
       let idx = 2
@@ -141,6 +150,40 @@ export async function PATCH(
         setClauses.push(`"location" = $${idx}`)
         params_update.push(location)
         idx++
+      }
+      if (itemType !== undefined) {
+        setClauses.push(`"itemType" = $${idx}`)
+        params_update.push(itemType || null)
+        idx++
+      }
+      if (widthInches !== undefined) {
+        setClauses.push(`"widthInches" = $${idx}`)
+        params_update.push(widthInches == null ? null : Number(widthInches))
+        idx++
+      }
+      if (heightInches !== undefined) {
+        setClauses.push(`"heightInches" = $${idx}`)
+        params_update.push(heightInches == null ? null : Number(heightInches))
+        idx++
+      }
+      if (linearFeet !== undefined) {
+        setClauses.push(`"linearFeet" = $${idx}`)
+        params_update.push(linearFeet == null ? null : Number(linearFeet))
+        idx++
+      }
+      if (hardware !== undefined) {
+        setClauses.push(`"hardware" = $${idx}`)
+        params_update.push(hardware || null)
+        idx++
+      }
+      if (notes !== undefined) {
+        setClauses.push(`"notes" = $${idx}`)
+        params_update.push(notes || null)
+        idx++
+      }
+
+      if (setClauses.length === 0) {
+        return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
       }
 
       const result: any[] = await prisma.$queryRawUnsafe(
@@ -176,12 +219,30 @@ export async function PATCH(
 
     // Action: add a new item
     if (action === 'addItem') {
-      const { category, description, location, quantity, productId } = body
+      const {
+        category, description, location, quantity, productId,
+        itemType, widthInches, heightInches, linearFeet, hardware, notes,
+      } = body
+      const newId = 'tki_' + Math.random().toString(36).slice(2, 14)
       const result: any[] = await prisma.$queryRawUnsafe(
-        `INSERT INTO "TakeoffItem" ("takeoffId", "category", "description", "location", "quantity", "confidence", "productId")
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        params.id, category || 'Miscellaneous', description || 'New item', location || null,
-        quantity || 1, 1.0, productId || null
+        `INSERT INTO "TakeoffItem"
+           ("id","takeoffId","category","description","location","quantity","confidence","productId",
+            "itemType","widthInches","heightInches","linearFeet","hardware","notes","createdAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW()) RETURNING *`,
+        newId,
+        params.id,
+        category || 'Miscellaneous',
+        description || 'New item',
+        location || null,
+        quantity || 1,
+        1.0,
+        productId || null,
+        itemType || null,
+        widthInches == null ? null : Number(widthInches),
+        heightInches == null ? null : Number(heightInches),
+        linearFeet == null ? null : Number(linearFeet),
+        hardware || null,
+        notes || null,
       )
       const item = result[0]
 

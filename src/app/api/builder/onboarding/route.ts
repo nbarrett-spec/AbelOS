@@ -91,19 +91,29 @@ export async function GET(request: NextRequest) {
     )
     const orderCompleted = orders.length > 0
 
-    // 5. Payment method set up (check for payment preferences or history)
+    // 5. Payment method set up (check for payment history on any of this builder's invoices)
+    // Payment has no builderId — it's linked via Invoice.builderId.
     const payments = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      `SELECT id FROM "Payment" WHERE "builderId" = $1 LIMIT 1`,
+      `SELECT p.id FROM "Payment" p
+       JOIN "Invoice" i ON p."invoiceId" = i.id
+       WHERE i."builderId" = $1 LIMIT 1`,
       builderId
     )
     const paymentCompleted = payments.length > 0
 
     // 6. Team members invited (future feature - always show as optional)
-    const teamMembers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      `SELECT id FROM "BuilderTeamMember" WHERE "builderId" = $1 AND "invitedAt" IS NOT NULL LIMIT 1`,
-      builderId
-    )
-    const teamCompleted = teamMembers.length > 0
+    // BuilderTeamMember is a future-planned table not yet in schema.prisma.
+    // Tolerate its absence so the endpoint doesn't 500 before launch.
+    let teamCompleted = false
+    try {
+      const teamMembers = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `SELECT id FROM "BuilderTeamMember" WHERE "builderId" = $1 AND "invitedAt" IS NOT NULL LIMIT 1`,
+        builderId
+      )
+      teamCompleted = teamMembers.length > 0
+    } catch {
+      // Table doesn't exist yet — step remains incomplete (and is marked optional).
+    }
 
     // 7. Blueprint uploaded
     const blueprints = await prisma.$queryRawUnsafe<Array<{ id: string }>>(

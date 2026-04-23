@@ -81,7 +81,7 @@ async function getAdminManagerTasks(): Promise<Task[]> {
       label: `${pendingQuotesCount} quote request${pendingQuotesCount !== 1 ? 's' : ''} awaiting approval`,
       count: pendingQuotesCount,
       priority: 'HIGH',
-      href: '/ops/sales/quotes',
+      href: '/ops/quotes',
       category: 'Sales',
     })
   }
@@ -111,7 +111,7 @@ async function getAdminManagerTasks(): Promise<Task[]> {
       label: `${highPriorityTasksCount} high-priority action item${highPriorityTasksCount !== 1 ? 's' : ''}`,
       count: highPriorityTasksCount,
       priority: 'HIGH',
-      href: '/ops/tasks',
+      href: '/ops/agent',
       category: 'Operations',
     })
   }
@@ -179,7 +179,7 @@ async function getSalesRepTasks(staffId: string): Promise<Task[]> {
       label: `${myQuotesCount} quote${myQuotesCount !== 1 ? 's' : ''} awaiting response`,
       count: myQuotesCount,
       priority: 'MEDIUM',
-      href: '/ops/sales/quotes',
+      href: '/ops/quotes',
       category: 'Sales',
     })
   }
@@ -266,7 +266,7 @@ async function getProjectManagerTasks(): Promise<Task[]> {
       label: `${materialETAsCount} material${materialETAsCount !== 1 ? 's' : ''} arriving today`,
       count: materialETAsCount,
       priority: 'HIGH',
-      href: '/ops/purchasing/pos',
+      href: '/ops/purchasing',
       category: 'Purchasing',
     })
   }
@@ -287,7 +287,7 @@ async function getPurchasingTasks(): Promise<Task[]> {
       label: `${draftPOsCount} PO${draftPOsCount !== 1 ? 's' : ''} ready to approve`,
       count: draftPOsCount,
       priority: 'HIGH',
-      href: '/ops/purchasing/pos',
+      href: '/ops/purchasing',
       category: 'Purchasing',
     })
   }
@@ -332,7 +332,7 @@ async function getPurchasingTasks(): Promise<Task[]> {
       label: `${receivingTodayCount} shipment${receivingTodayCount !== 1 ? 's' : ''} arriving today`,
       count: receivingTodayCount,
       priority: 'MEDIUM',
-      href: '/ops/purchasing/receiving',
+      href: '/ops/receiving',
       category: 'Purchasing',
     })
   }
@@ -353,7 +353,7 @@ async function getWarehouseTasks(): Promise<Task[]> {
       label: `${pickListsCount} pick list${pickListsCount !== 1 ? 's' : ''} to process`,
       count: pickListsCount,
       priority: 'HIGH',
-      href: '/ops/warehouse/picking',
+      href: '/ops/warehouse/pick-scanner',
       category: 'Warehouse',
     })
   }
@@ -368,7 +368,7 @@ async function getWarehouseTasks(): Promise<Task[]> {
       label: `${deliveriesTodayCount} delivery${deliveriesTodayCount !== 1 ? 's' : ''} going out today`,
       count: deliveriesTodayCount,
       priority: 'HIGH',
-      href: '/ops/warehouse/shipping',
+      href: '/ops/delivery',
       category: 'Warehouse',
     })
   }
@@ -383,7 +383,7 @@ async function getWarehouseTasks(): Promise<Task[]> {
       label: `${receivingExpectedCount} shipment${receivingExpectedCount !== 1 ? 's' : ''} to receive today`,
       count: receivingExpectedCount,
       priority: 'MEDIUM',
-      href: '/ops/warehouse/receiving',
+      href: '/ops/receiving',
       category: 'Warehouse',
     })
   }

@@ -172,7 +172,7 @@ export default function SalesPortal() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => router.push('/ops/quotes/new')}
+            onClick={() => router.push('/ops/quotes?create=1')}
             className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors text-sm font-medium"
           >
             + New Deal

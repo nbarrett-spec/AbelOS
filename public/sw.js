@@ -18,6 +18,9 @@ const CACHEABLE_API_PATTERNS = [
   '/api/agent-hub/context/daily-brief',
   '/api/agent-hub/tasks',
   '/api/ops/builders',
+  // Driver portal — offline-first for the truck cab
+  '/api/ops/delivery/today',
+  '/api/ops/delivery/', // individual delivery detail (prefix match)
 ]
 
 // Install — pre-cache static assets

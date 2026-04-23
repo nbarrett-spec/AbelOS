@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { BarChart, Briefcase, TrendingUp, ShoppingCart, Users, Package, AlertCircle, Building2, FileText, DollarSign } from 'lucide-react'
 import { WorkflowAlerts } from './components/WorkflowAlerts'
 import { ActionQueue } from './components/ActionQueue'
@@ -10,6 +11,7 @@ import { DonutChart, HBarChart, Sparkline, ProgressRing } from './components/Cha
 import { AlertRail } from './components/AlertRail'
 import { ActivityFeed } from './components/ActivityFeed'
 import { KPICard, PageHeader } from '@/components/ui'
+import { useStaffAuth } from '@/hooks/useStaffAuth'
 
 interface DashboardData {
   builders: { total: number }
@@ -57,10 +59,31 @@ interface SystemAlert {
 }
 
 export default function OpsDashboard() {
+  const router = useRouter()
+  const { staff, loading: authLoading } = useStaffAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [productCategories, setProductCategories] = useState<ProductCategoryStat[]>([])
   const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([])
   const [loading, setLoading] = useState(true)
+
+  // DRIVER-only staff land here by default — redirect them straight to the
+  // mobile driver portal. Multi-role users (e.g. Driver + Warehouse Lead)
+  // keep the full dashboard so they can still access managerial views.
+  useEffect(() => {
+    if (authLoading || !staff) return
+    const rolesValue = (staff as any).roles as string | string[] | undefined
+    const staffRoles: string[] = Array.isArray(rolesValue)
+      ? rolesValue.map((r: string) => String(r).trim())
+      : typeof rolesValue === 'string'
+        ? rolesValue.split(',').map((r: string) => r.trim())
+        : [staff.role]
+    const isDriverOnly =
+      staffRoles.length > 0 &&
+      staffRoles.every((r) => r === 'DRIVER')
+    if (isDriverOnly) {
+      router.replace('/ops/portal/driver')
+    }
+  }, [authLoading, staff, router])
 
   useEffect(() => {
     async function loadAll() {

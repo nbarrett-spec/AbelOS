@@ -42,18 +42,18 @@ describe('requireIntegration', () => {
     expect(response).toBeNull()
   })
 
-  it('checks multiple env vars for twilio', () => {
-    vi.stubEnv('TWILIO_ACCOUNT_SID', 'AC123')
-    vi.stubEnv('TWILIO_AUTH_TOKEN', '') // missing
-    const response = requireIntegration('twilio')
+  it('checks multiple env vars for bolt', () => {
+    vi.stubEnv('BOLT_API_URL', 'https://bolt.example')
+    vi.stubEnv('BOLT_API_KEY', '') // missing
+    const response = requireIntegration('bolt')
     expect(response).not.toBeNull()
     expect(response!.status).toBe(503)
   })
 
-  it('returns null for twilio when both vars are set', () => {
-    vi.stubEnv('TWILIO_ACCOUNT_SID', 'AC123')
-    vi.stubEnv('TWILIO_AUTH_TOKEN', 'tok_abc')
-    expect(requireIntegration('twilio')).toBeNull()
+  it('returns null for bolt when both vars are set', () => {
+    vi.stubEnv('BOLT_API_URL', 'https://bolt.example')
+    vi.stubEnv('BOLT_API_KEY', 'key_abc')
+    expect(requireIntegration('bolt')).toBeNull()
   })
 })
 
@@ -78,7 +78,6 @@ describe('getAllIntegrationStatus', () => {
     const status = getAllIntegrationStatus()
     expect(Object.keys(status)).toContain('stripe')
     expect(Object.keys(status)).toContain('resend')
-    expect(Object.keys(status)).toContain('curri')
     expect(Object.keys(status)).toContain('bolt')
 
     // Each entry has the right shape

@@ -4,7 +4,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
-import { generate, getOrGenerate, checkAIRateLimit } from '@/lib/ai/insights'
+import { generate, getOrGenerate, checkAIRateLimit, isAIConfigured } from '@/lib/ai/insights'
 import { audit, getStaffFromHeaders } from '@/lib/audit'
 
 /**
@@ -18,6 +18,10 @@ import { audit, getStaffFromHeaders } from '@/lib/audit'
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
+
+  if (!isAIConfigured()) {
+    return NextResponse.json({ error: 'AI not configured' }, { status: 503 })
+  }
 
   try {
     const { builderId, force } = (await request.json().catch(() => ({}))) as {

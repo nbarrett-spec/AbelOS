@@ -33,19 +33,18 @@ const INTEGRATIONS: Record<string, IntegrationConfig> = {
     envVars: ['ANTHROPIC_API_KEY'],
     docsUrl: 'https://console.anthropic.com/',
   },
-  curri: {
-    name: 'Curri Delivery',
-    envVars: ['CURRI_API_KEY'],
-    docsUrl: 'https://docs.curri.com/',
-  },
+  // curri: REMOVED 2026-04-22 — integration deferred; see
+  // memory/projects/delivery-partners.md. In-house drivers handle all
+  // deliveries. Callers that still invoke requireIntegration('curri')
+  // will fall through to the null-return "unknown integration" branch
+  // and continue (safer than locking out a feature that was never live).
   gmail: {
     name: 'Gmail Sync',
     envVars: ['GOOGLE_SERVICE_ACCOUNT_KEY'],
   },
-  twilio: {
-    name: 'Twilio SMS',
-    envVars: ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN'],
-  },
+  // twilio: REMOVED 2026-04-22 — Twilio placeholder removed from .env.example.
+  // /api/agent/sms now returns 501 Not Implemented until Twilio is wired for
+  // real. Bring this entry back when SMS is a real feature.
   inflow: {
     name: 'InFlow Inventory',
     envVars: ['INFLOW_API_KEY'],

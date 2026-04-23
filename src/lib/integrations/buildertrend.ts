@@ -567,7 +567,7 @@ export async function syncMaterialSelections(): Promise<SyncResult> {
               `INSERT INTO "DecisionNote"
                ("jobId", "authorId", "noteType", "subject", "body", "priority")
                SELECT $1, (SELECT "id" FROM "Staff" WHERE "role" = 'ADMIN' LIMIT 1),
-                      'MATERIAL_SELECTION'::"DecisionNoteType", $2, $3, 'NORMAL'::"NotePriority"
+                      'GENERAL'::"DecisionNoteType", $2, $3, 'NORMAL'::"NotePriority"
                WHERE (SELECT "id" FROM "Staff" WHERE "role" = 'ADMIN' LIMIT 1) IS NOT NULL`,
               mapping.jobId,
               selection.productName,
@@ -700,7 +700,7 @@ export async function processWebhookPayload(payload: BTWebhookPayload): Promise<
           await prisma.$executeRawUnsafe(
             `INSERT INTO "Task"
              ("jobId", "assignedToId", "title", "description", "priority", "dueDate", "status")
-             VALUES ($1, $2, $3, $4, 'HIGH'::"TaskPriority", $5, 'PENDING'::"TaskStatus")`,
+             VALUES ($1, $2, $3, $4, 'HIGH'::"TaskPriority", $5, 'TODO'::"TaskStatus")`,
             mapping.jobId,
             job[0].assignedPMId,
             `BuilderTrend Schedule Update: ${scheduleData.title}`,

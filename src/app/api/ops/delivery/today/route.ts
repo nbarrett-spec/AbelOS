@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
     interface DriverBucket {
       driverId: string | null
       driverName: string
+      crewId: string | null
       crewName: string | null
       deliveries: any[]
     }
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest) {
         bucket = {
           driverId: driver?.id || null,
           driverName,
+          crewId: d.crew?.id || null,
           crewName: d.crew?.name || null,
           deliveries: [],
         }
@@ -118,6 +120,7 @@ export async function GET(request: NextRequest) {
         orderNumber: d.job?.order?.orderNumber,
         orderTotal: d.job?.order?.total,
         jobNumber: d.job?.jobNumber,
+        crewId: d.crew?.id || null,
         window: d.job?.scheduledDate,
         notes: [d.notes, d.job?.order?.deliveryNotes].filter(Boolean).join(' · '),
         signedBy: d.signedBy,

@@ -4,45 +4,55 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Wallet, AlertTriangle, RefreshCw, Mail, Eye, Phone, DollarSign,
-  Building2, Clock, Filter,
+  Building2, Clock, Filter, TrendingDown, Calendar, Send,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Badge, StatusBadge, DataTable, EmptyState,
   Card, CardHeader, CardTitle, CardDescription, CardBody,
-  NumberFlow, AnimatedNumber, LiveDataIndicator, InfoTip,
+  NumberFlow, AnimatedNumber, LiveDataIndicator, InfoTip, Sparkline,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-interface Invoice {
+interface PredictInvoice {
   id: string
   invoiceNumber: string
   builderId: string
   builderName: string
-  amount: number
-  status: string
-  dueDate: string
-  issuedAt: string
-  daysOutstanding: number
-  amountPaid: number
+  paymentTerm: string | null
   balanceDue: number
+  total: number
+  amountPaid: number
+  status: string
+  issuedAt: string
+  dueDate: string | null
+  daysOutstanding: number
+  daysPastDue: number
+  predictedPaymentDate: string | null
+  builderAvgLag: number
+  bucket: 'current' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90_plus'
 }
 
-interface ARData {
-  agingBuckets: {
-    current:     { count: number; amount: number }
-    days1to30:   { count: number; amount: number }
-    days31to60:  { count: number; amount: number }
-    days60plus:  { count: number; amount: number }
+interface PredictData {
+  asOf: string
+  waterfall: {
+    current:  { count: number; amount: number }
+    d1_30:    { count: number; amount: number }
+    d31_60:   { count: number; amount: number }
+    d61_90:   { count: number; amount: number }
+    d90_plus: { count: number; amount: number }
   }
-  invoices: Invoice[]
-  builderSummary: Array<{
+  invoices: PredictInvoice[]
+  reminderHistory: Record<string, number>
+  dsoTrend: Array<{ date: string; dso: number }>
+  builderPatterns: Array<{
     builderId: string
     builderName: string
-    totalOutstanding: number
-    invoiceCount: number
+    avgDaysLate: number
+    sampleSize: number
   }>
+  globalAvgLag: number
 }
 
 // ── Formatters ───────────────────────────────────────────────────────────
@@ -57,25 +67,41 @@ const fmtMoneyCompact = (n: number) => {
   return fmtMoney(n)
 }
 
-const fmtDate = (s: string) => s ? new Date(s).toLocaleDateString('en-US') : '—'
+const fmtDate = (s: string | null) => s ? new Date(s).toLocaleDateString('en-US') : '—'
+
+const fmtShortDate = (s: string | null) => {
+  if (!s) return '—'
+  const d = new Date(s)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const BUCKET_LABELS: Record<PredictInvoice['bucket'], string> = {
+  current:  'Current',
+  d1_30:    '1–30 days',
+  d31_60:   '31–60 days',
+  d61_90:   '61–90 days',
+  d90_plus: '90+ days',
+}
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default function AccountsReceivablePage() {
   const router = useRouter()
-  const [data, setData] = useState<ARData | null>(null)
+  const [data, setData] = useState<PredictData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [bucketFilter, setBucketFilter] = useState<string>('all')
   const [refreshTick, setRefreshTick] = useState<number | null>(null)
+  const [reminderSent, setReminderSent] = useState<Record<string, boolean>>({})
 
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
     setRefreshing(true)
     try {
-      const res = await fetch('/api/ops/finance/ar')
-      if (!res.ok) throw new Error('Failed to fetch AR data')
+      const res = await fetch('/api/ops/finance/ar-predict')
+      if (!res.ok) throw new Error('Failed to fetch AR predict data')
       const result = await res.json()
       setData(result)
       setRefreshTick(Date.now())
@@ -89,34 +115,51 @@ export default function AccountsReceivablePage() {
 
   const totalOutstanding = useMemo(() => {
     if (!data) return 0
-    return data.agingBuckets.current.amount
-      + data.agingBuckets.days1to30.amount
-      + data.agingBuckets.days31to60.amount
-      + data.agingBuckets.days60plus.amount
+    const w = data.waterfall
+    return w.current.amount + w.d1_30.amount + w.d31_60.amount + w.d61_90.amount + w.d90_plus.amount
   }, [data])
 
   const filteredInvoices = useMemo(() => {
     if (!data) return []
-    if (statusFilter === 'all') return data.invoices
-    return data.invoices.filter(i => i.status.toLowerCase() === statusFilter.toLowerCase())
-  }, [data, statusFilter])
+    return data.invoices.filter(i => {
+      if (bucketFilter !== 'all' && i.bucket !== bucketFilter) return false
+      if (statusFilter !== 'all' && i.status.toLowerCase() !== statusFilter.toLowerCase()) return false
+      return true
+    })
+  }, [data, statusFilter, bucketFilter])
 
-  async function sendReminder(invoice: Invoice) {
-    // Fire-and-forget — route already exists in ops/invoices. Fallback to mailto.
+  const builderSummary = useMemo(() => {
+    if (!data) return []
+    const map: Record<string, { builderId: string; builderName: string; totalOutstanding: number; invoiceCount: number }> = {}
+    for (const inv of data.invoices) {
+      if (!map[inv.builderId]) {
+        map[inv.builderId] = { builderId: inv.builderId, builderName: inv.builderName, totalOutstanding: 0, invoiceCount: 0 }
+      }
+      map[inv.builderId].totalOutstanding += inv.balanceDue
+      map[inv.builderId].invoiceCount++
+    }
+    return Object.values(map).sort((a, b) => b.totalOutstanding - a.totalOutstanding)
+  }, [data])
+
+  async function sendReminder(invoice: PredictInvoice) {
     try {
       const res = await fetch(`/api/ops/invoices/${invoice.id}/remind`, { method: 'POST' })
-      if (!res.ok) throw new Error('fallback')
+      if (res.ok) {
+        setReminderSent(prev => ({ ...prev, [invoice.id]: true }))
+      } else {
+        window.location.href = `mailto:?subject=Reminder: Invoice ${invoice.invoiceNumber}&body=Hi%20${encodeURIComponent(invoice.builderName)},%0A%0AFriendly reminder — invoice ${invoice.invoiceNumber} for ${fmtMoney(invoice.balanceDue)} is outstanding.`
+      }
     } catch {
-      window.location.href = `mailto:?subject=Reminder: Invoice ${invoice.invoiceNumber}&body=Hi%20${encodeURIComponent(invoice.builderName)},%0A%0AFriendly reminder — invoice ${invoice.invoiceNumber} for ${fmtMoney(invoice.balanceDue)} is outstanding.`
+      window.location.href = `mailto:?subject=Reminder: Invoice ${invoice.invoiceNumber}`
     }
   }
 
   if (loading || !data) {
     return (
       <div className="space-y-5">
-        <PageHeader eyebrow="Finance" title="Accounts Receivable" description="AR aging · collection actions · builder exposure." />
+        <PageHeader eyebrow="Finance" title="Accounts Receivable" description="Aging waterfall · payment prediction · collection actions." />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[0,1,2,3].map(i => <KPICard key={i} title="" value="" loading />)}
+          {[0, 1, 2, 3].map(i => <KPICard key={i} title="" value="" loading />)}
         </div>
         <div className="h-64 skeleton rounded-lg" />
       </div>
@@ -124,19 +167,31 @@ export default function AccountsReceivablePage() {
   }
 
   // ── Derived ────────────────────────────────────────────────────────────
-  const overdue = data.agingBuckets.days1to30.amount + data.agingBuckets.days31to60.amount + data.agingBuckets.days60plus.amount
+  const overdue = data.waterfall.d1_30.amount + data.waterfall.d31_60.amount + data.waterfall.d61_90.amount + data.waterfall.d90_plus.amount
   const overduePct = totalOutstanding > 0 ? (overdue / totalOutstanding) * 100 : 0
 
-  const buckets = [
-    { key: 'current',    label: 'Current',       amount: data.agingBuckets.current.amount,    count: data.agingBuckets.current.count,    tone: 'positive' as const,
-      explainer: 'Invoices issued but not yet overdue. Healthy AR sits here.' },
-    { key: 'days1to30',  label: '1–30 Days',     amount: data.agingBuckets.days1to30.amount,  count: data.agingBuckets.days1to30.count,  tone: 'accent' as const,
-      explainer: 'Just slipped — a friendly reminder usually closes these.' },
-    { key: 'days31to60', label: '31–60 Days',    amount: data.agingBuckets.days31to60.amount, count: data.agingBuckets.days31to60.count, tone: 'negative' as const,
-      explainer: 'Escalate: phone the PM or controller, confirm receipt of invoice.' },
-    { key: 'days60plus', label: '60+ Days',      amount: data.agingBuckets.days60plus.amount, count: data.agingBuckets.days60plus.count, tone: 'negative' as const,
-      explainer: '60-day+ bucket. Consider credit hold, demand letter, or collections.' },
+  const buckets: Array<{
+    key: PredictInvoice['bucket']
+    label: string
+    amount: number
+    count: number
+    tone: 'positive' | 'accent' | 'negative'
+    explainer: string
+  }> = [
+    { key: 'current',  label: 'Current',   amount: data.waterfall.current.amount,  count: data.waterfall.current.count,  tone: 'positive',
+      explainer: 'Invoices issued but not yet past due. Healthy AR sits here.' },
+    { key: 'd1_30',    label: '1–30 Days', amount: data.waterfall.d1_30.amount,    count: data.waterfall.d1_30.count,    tone: 'accent',
+      explainer: 'Just slipped — a reminder usually closes these.' },
+    { key: 'd31_60',   label: '31–60 Days',amount: data.waterfall.d31_60.amount,   count: data.waterfall.d31_60.count,   tone: 'negative',
+      explainer: 'Escalate: call the PM or controller, confirm invoice receipt.' },
+    { key: 'd61_90',   label: '61–90 Days',amount: data.waterfall.d61_90.amount,   count: data.waterfall.d61_90.count,   tone: 'negative',
+      explainer: 'Very late — consider a credit hold and formal demand.' },
+    { key: 'd90_plus', label: '90+ Days',  amount: data.waterfall.d90_plus.amount, count: data.waterfall.d90_plus.count, tone: 'negative',
+      explainer: 'Collections territory. Time for a demand letter or write-off discussion.' },
   ]
+
+  const maxBucketAmount = Math.max(...buckets.map(b => b.amount), 1)
+  const currentDso = data.dsoTrend[data.dsoTrend.length - 1]?.dso ?? 0
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
@@ -146,7 +201,7 @@ export default function AccountsReceivablePage() {
       <PageHeader
         eyebrow="Finance"
         title="Accounts Receivable"
-        description="AR aging heatmap · one-click collection actions · builder exposure."
+        description="Aging waterfall · payment prediction · builder exposure · one-click collections."
         actions={
           <button onClick={fetchData} className="btn btn-secondary btn-sm" disabled={refreshing}>
             <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
@@ -174,79 +229,83 @@ export default function AccountsReceivablePage() {
           accent={overduePct > 20 ? 'negative' : overduePct > 10 ? 'accent' : 'positive'}
         />
         <KPICard
-          title="60+ Day Exposure"
-          value={fmtMoneyCompact(data.agingBuckets.days60plus.amount)}
-          subtitle={`${data.agingBuckets.days60plus.count} invoices`}
+          title="90+ Day Exposure"
+          value={fmtMoneyCompact(data.waterfall.d90_plus.amount)}
+          subtitle={`${data.waterfall.d90_plus.count} invoices`}
           icon={<Clock className="w-3.5 h-3.5" />}
-          accent={data.agingBuckets.days60plus.amount > 0 ? 'negative' : 'positive'}
-          badge={data.agingBuckets.days60plus.count > 0 ? <Badge variant="danger" size="xs" dot>Escalate</Badge> : undefined}
+          accent={data.waterfall.d90_plus.amount > 0 ? 'negative' : 'positive'}
+          badge={data.waterfall.d90_plus.count > 0 ? <Badge variant="danger" size="xs" dot>Escalate</Badge> : undefined}
         />
         <KPICard
-          title="Top Debtor"
-          value={data.builderSummary[0]?.builderName?.slice(0, 18) ?? '—'}
-          subtitle={data.builderSummary[0] ? fmtMoneyCompact(data.builderSummary[0].totalOutstanding) : 'No AR'}
-          icon={<Building2 className="w-3.5 h-3.5" />}
+          title="Current DSO"
+          value={`${currentDso} days`}
+          subtitle={data.dsoTrend.length > 1 ? '12-month trend' : 'Computed in-query'}
+          icon={<TrendingDown className="w-3.5 h-3.5" />}
           accent="neutral"
-          onClick={data.builderSummary[0] ? () => router.push(`/ops/accounts/${data.builderSummary[0].builderId}`) : undefined}
+          sparkline={data.dsoTrend.map(d => d.dso)}
         />
       </div>
 
-      {/* Aging buckets — heatmap-style cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {buckets.map((b, i) => {
-          const pct = totalOutstanding > 0 ? (b.amount / totalOutstanding) * 100 : 0
-          return (
-            <button
-              key={b.key}
-              onClick={() => router.push(`/ops/finance/ar?bucket=${b.key}`)}
-              className={cn(
-                'panel panel-interactive text-left px-4 py-3.5 flex flex-col gap-2 relative overflow-hidden',
-                'animate-enter',
-                `animate-enter-delay-${i + 1}`,
-              )}
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  'absolute left-0 top-0 bottom-0 w-[3px]',
-                  b.tone === 'positive' ? 'bg-data-positive'
-                  : b.tone === 'negative' ? 'bg-data-negative'
-                  : 'bg-accent'
-                )}
-              />
-              <div className="flex items-center justify-between">
-                <span className="eyebrow">{b.label}</span>
-                <InfoTip label={b.label}>{b.explainer}</InfoTip>
-              </div>
-              <div className={cn(
-                'metric metric-md tabular-nums',
-                b.tone === 'positive' ? 'text-data-positive'
-                : b.tone === 'negative' ? 'text-data-negative'
-                : 'text-accent'
-              )}>
-                <NumberFlow value={b.amount} format="currency" formatOptions={{ style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }} />
-              </div>
-              <div className="text-[11px] text-fg-subtle flex items-center justify-between">
-                <span>{b.count} invoices</span>
-                <span className="tabular-nums">{pct.toFixed(1)}%</span>
-              </div>
-              <div className="relative h-1 w-full bg-surface-muted rounded-full overflow-hidden mt-0.5">
-                <div
-                  className={cn(
-                    'absolute inset-y-0 left-0 rounded-full transition-all duration-slow',
-                    b.tone === 'positive' ? 'bg-data-positive'
-                    : b.tone === 'negative' ? 'bg-data-negative'
-                    : 'bg-accent'
-                  )}
-                  style={{ width: `${Math.min(100, pct)}%` }}
-                />
-              </div>
+      {/* Aging waterfall chart */}
+      <Card variant="default" padding="none">
+        <CardHeader>
+          <div>
+            <CardTitle>Aging Waterfall</CardTitle>
+            <CardDescription>Click a bar to drill into invoices in that bucket.</CardDescription>
+          </div>
+          {bucketFilter !== 'all' && (
+            <button onClick={() => setBucketFilter('all')} className="btn btn-ghost btn-xs">
+              Clear filter
             </button>
-          )
-        })}
-      </div>
+          )}
+        </CardHeader>
+        <CardBody>
+          <div className="grid grid-cols-5 gap-3" style={{ height: 220 }}>
+            {buckets.map((b) => {
+              const heightPct = (b.amount / maxBucketAmount) * 100
+              const selected = bucketFilter === b.key
+              return (
+                <button
+                  key={b.key}
+                  onClick={() => setBucketFilter(prev => prev === b.key ? 'all' : b.key)}
+                  className={cn(
+                    'relative flex flex-col items-center justify-end rounded-md transition-all',
+                    'border-2 hover:border-brand/60',
+                    selected ? 'border-brand' : 'border-transparent',
+                    'bg-surface-muted/30 group',
+                  )}
+                >
+                  {/* Value label */}
+                  <div className="absolute top-2 left-2 right-2 flex flex-col items-start">
+                    <span className="text-[10px] eyebrow text-fg-muted">{b.label}</span>
+                    <span className={cn(
+                      'text-[13px] font-bold tabular-nums',
+                      b.tone === 'positive' && 'text-data-positive',
+                      b.tone === 'accent' && 'text-accent',
+                      b.tone === 'negative' && 'text-data-negative',
+                    )}>
+                      {fmtMoneyCompact(b.amount)}
+                    </span>
+                    <span className="text-[10px] text-fg-subtle">{b.count} inv</span>
+                  </div>
+                  {/* The bar itself, grows from bottom */}
+                  <div
+                    className={cn(
+                      'w-[70%] rounded-t-md transition-all duration-300',
+                      b.tone === 'positive' && 'bg-data-positive/70 group-hover:bg-data-positive',
+                      b.tone === 'accent' && 'bg-accent/70 group-hover:bg-accent',
+                      b.tone === 'negative' && 'bg-data-negative/70 group-hover:bg-data-negative',
+                    )}
+                    style={{ height: `${Math.max(heightPct, 4)}%` }}
+                  />
+                </button>
+              )
+            })}
+          </div>
+        </CardBody>
+      </Card>
 
-      {/* Builder summary + invoice table */}
+      {/* Builder exposure + DSO trend */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Builder exposure */}
         <Card variant="default" padding="none" className="lg:col-span-1">
@@ -257,17 +316,12 @@ export default function AccountsReceivablePage() {
             </div>
           </CardHeader>
           <CardBody className="pt-4">
-            {data.builderSummary.length === 0 ? (
-              <EmptyState
-                icon="users"
-                size="compact"
-                title="No outstanding balances"
-                description="Every builder is current. Nice."
-              />
+            {builderSummary.length === 0 ? (
+              <EmptyState icon="users" size="compact" title="No balances" description="Every builder is current." />
             ) : (
               <div className="space-y-2">
-                {data.builderSummary.slice(0, 8).map(b => {
-                  const max = data.builderSummary[0]?.totalOutstanding || 1
+                {builderSummary.slice(0, 8).map(b => {
+                  const max = builderSummary[0]?.totalOutstanding || 1
                   const pct = (b.totalOutstanding / max) * 100
                   return (
                     <button
@@ -293,119 +347,150 @@ export default function AccountsReceivablePage() {
           </CardBody>
         </Card>
 
-        {/* Invoice table */}
-        <div className="lg:col-span-2">
-          <DataTable
-            density="compact"
-            data={filteredInvoices}
-            rowKey={(r) => r.id}
-            onRowClick={(r) => router.push(`/ops/invoices/${r.id}`)}
-            keyboardNav
-            hint
-            toolbar={
-              <div className="flex items-center gap-3 w-full">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-3.5 h-3.5 text-fg-muted" />
-                  <span className="text-[11px] font-medium text-fg-muted">Filter</span>
-                </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="input h-7 w-40 text-[12px]"
-                >
-                  <option value="all">All statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="issued">Issued</option>
-                  <option value="sent">Sent</option>
-                  <option value="partially_paid">Partially paid</option>
-                  <option value="paid">Paid</option>
-                  <option value="overdue">Overdue</option>
-                </select>
-                <div className="ml-auto text-[11px] text-fg-subtle">
-                  {filteredInvoices.length} of {data.invoices.length}
+        {/* DSO trend */}
+        <Card variant="default" padding="none" className="lg:col-span-2">
+          <CardHeader>
+            <div>
+              <CardTitle>DSO Trend</CardTitle>
+              <CardDescription>
+                {data.dsoTrend.length > 1
+                  ? 'Days Sales Outstanding — last 12 months'
+                  : 'Days Sales Outstanding — snapshot table empty, computed in-query'}
+              </CardDescription>
+            </div>
+            <div className="text-right">
+              <div className="text-[20px] font-bold tabular-nums text-fg">{currentDso}</div>
+              <div className="text-[11px] text-fg-subtle">days</div>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {data.dsoTrend.length === 0 ? (
+              <EmptyState icon="chart" size="compact" title="No data yet" description="DSO history will appear as snapshots accumulate." />
+            ) : (
+              <div className="space-y-2">
+                <Sparkline data={data.dsoTrend.map(d => d.dso)} height={80} width={600} showArea showDot />
+                <div className="grid grid-cols-12 gap-1 mt-2">
+                  {data.dsoTrend.map((d, i) => (
+                    <div key={i} className="text-[9px] text-fg-subtle text-center tabular-nums">
+                      {d.date.slice(5)}
+                    </div>
+                  ))}
                 </div>
               </div>
-            }
-            columns={[
-              {
-                key: 'invoiceNumber',
-                header: 'Invoice',
-                width: '110px',
-                cell: (r) => <span className="font-medium text-fg font-mono text-[12px]">{r.invoiceNumber}</span>,
-                sortable: true,
-              },
-              {
-                key: 'builderName',
-                header: 'Builder',
-                cell: (r) => <span className="truncate max-w-[180px] block">{r.builderName}</span>,
-                sortable: true,
-              },
-              {
-                key: 'balanceDue',
-                header: 'Balance',
-                numeric: true,
-                sortable: true,
-                heatmap: true,
-                heatmapValue: (r) => r.balanceDue,
-                cell: (r) => (
-                  <span className={cn('font-semibold', r.balanceDue > 0 ? 'text-fg' : 'text-data-positive')}>
-                    {fmtMoney(r.balanceDue)}
-                  </span>
-                ),
-              },
-              {
-                key: 'status',
-                header: 'Status',
-                width: '120px',
-                cell: (r) => <StatusBadge status={r.status} size="sm" />,
-              },
-              {
-                key: 'dueDate',
-                header: 'Due',
-                numeric: true,
-                sortable: true,
-                cell: (r) => <span className="text-fg-muted text-[12px]">{fmtDate(r.dueDate)}</span>,
-              },
-              {
-                key: 'daysOutstanding',
-                header: 'DSO',
-                numeric: true,
-                sortable: true,
-                width: '70px',
-                cell: (r) => (
-                  <span className={cn(
-                    'font-semibold tabular-nums',
-                    r.daysOutstanding > 60 ? 'text-data-negative'
-                    : r.daysOutstanding > 30 ? 'text-accent'
-                    : 'text-fg-muted'
-                  )}>
-                    {r.daysOutstanding}d
-                  </span>
-                ),
-              },
-            ]}
-            rowActions={[
-              { id: 'view', icon: <Eye className="w-3.5 h-3.5" />, label: 'View detail', shortcut: '↵',
-                onClick: (r) => router.push(`/ops/invoices/${r.id}`) },
-              { id: 'email', icon: <Mail className="w-3.5 h-3.5" />, label: 'Send reminder', shortcut: 'M',
-                onClick: (r) => sendReminder(r),
-                show: (r) => r.balanceDue > 0 },
-              { id: 'call',  icon: <Phone className="w-3.5 h-3.5" />, label: 'Log call',
-                onClick: (r) => router.push(`/ops/communication-log?invoice=${r.id}`),
-                show: (r) => r.daysOutstanding > 30 },
-            ]}
-            empty={
-              <EmptyState
-                icon="document"
-                size="compact"
-                title="No invoices match"
-                description={statusFilter === 'all' ? 'No invoices yet.' : `Nothing in status "${statusFilter}".`}
-                secondaryAction={statusFilter !== 'all' ? { label: 'Clear filter', onClick: () => setStatusFilter('all') } : undefined}
-              />
-            }
-          />
-        </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
+
+      {/* Predicted payments table */}
+      <DataTable
+        density="compact"
+        data={filteredInvoices}
+        rowKey={(r) => r.id}
+        onRowClick={(r) => router.push(`/ops/invoices/${r.id}`)}
+        keyboardNav
+        hint
+        toolbar={
+          <div className="flex items-center gap-3 w-full flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-fg-muted" />
+              <span className="text-[11px] font-medium text-fg-muted">Filter</span>
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input h-7 w-40 text-[12px]"
+            >
+              <option value="all">All statuses</option>
+              <option value="issued">Issued</option>
+              <option value="sent">Sent</option>
+              <option value="partially_paid">Partially paid</option>
+              <option value="overdue">Overdue</option>
+            </select>
+            <select
+              value={bucketFilter}
+              onChange={(e) => setBucketFilter(e.target.value)}
+              className="input h-7 w-40 text-[12px]"
+            >
+              <option value="all">All buckets</option>
+              <option value="current">Current</option>
+              <option value="d1_30">1–30 days</option>
+              <option value="d31_60">31–60 days</option>
+              <option value="d61_90">61–90 days</option>
+              <option value="d90_plus">90+ days</option>
+            </select>
+            <div className="ml-auto text-[11px] text-fg-subtle">
+              Sorted by predicted payment date · {filteredInvoices.length} of {data.invoices.length}
+            </div>
+          </div>
+        }
+        columns={[
+          {
+            key: 'invoiceNumber', header: 'Invoice', width: '110px', sortable: true,
+            cell: (r) => <span className="font-medium text-fg font-mono text-[12px]">{r.invoiceNumber}</span>,
+          },
+          {
+            key: 'builderName', header: 'Builder', sortable: true,
+            cell: (r) => <span className="truncate max-w-[180px] block">{r.builderName}</span>,
+          },
+          {
+            key: 'balanceDue', header: 'Balance', numeric: true, sortable: true, heatmap: true,
+            heatmapValue: (r) => r.balanceDue,
+            cell: (r) => <span className="font-semibold">{fmtMoney(r.balanceDue)}</span>,
+          },
+          {
+            key: 'dueDate', header: 'Due', numeric: true, sortable: true, width: '90px',
+            cell: (r) => <span className="text-fg-muted text-[12px]">{fmtShortDate(r.dueDate)}</span>,
+          },
+          {
+            key: 'predictedPaymentDate', header: 'Predicted pay', numeric: true, sortable: true, width: '120px',
+            cell: (r) => (
+              <div className="flex flex-col items-end">
+                <span className={cn('text-[12px] font-medium tabular-nums',
+                  r.builderAvgLag > 15 ? 'text-data-negative' : r.builderAvgLag > 5 ? 'text-accent' : 'text-fg'
+                )}>
+                  {fmtShortDate(r.predictedPaymentDate)}
+                </span>
+                <span className="text-[9px] text-fg-subtle">
+                  {r.builderAvgLag >= 0 ? `+${r.builderAvgLag}` : r.builderAvgLag}d vs due
+                </span>
+              </div>
+            ),
+          },
+          {
+            key: 'status', header: 'Status', width: '110px',
+            cell: (r) => <StatusBadge status={r.status} size="sm" />,
+          },
+          {
+            key: 'reminders', header: 'Reminders', numeric: true, width: '80px',
+            cell: (r) => {
+              const count = (data.reminderHistory[r.id] ?? 0) + (reminderSent[r.id] ? 1 : 0)
+              return count > 0
+                ? <Badge variant="neutral" size="xs">{count} sent</Badge>
+                : <span className="text-fg-subtle text-[11px]">—</span>
+            },
+          },
+        ]}
+        rowActions={[
+          { id: 'view', icon: <Eye className="w-3.5 h-3.5" />, label: 'View detail', shortcut: '↵',
+            onClick: (r) => router.push(`/ops/invoices/${r.id}`) },
+          { id: 'email', icon: <Send className="w-3.5 h-3.5" />, label: 'Send reminder', shortcut: 'M',
+            onClick: (r) => sendReminder(r),
+            show: (r) => r.balanceDue > 0 },
+          { id: 'call', icon: <Phone className="w-3.5 h-3.5" />, label: 'Log call',
+            onClick: (r) => router.push(`/ops/communication-log?invoice=${r.id}`),
+            show: (r) => r.daysPastDue > 30 },
+        ]}
+        empty={
+          <EmptyState
+            icon="document"
+            size="compact"
+            title={bucketFilter !== 'all' || statusFilter !== 'all' ? 'No invoices match' : 'No outstanding invoices'}
+            description={bucketFilter !== 'all' ? `Nothing in the ${BUCKET_LABELS[bucketFilter as PredictInvoice['bucket']]} bucket.` : 'Everyone is paid up.'}
+            secondaryAction={bucketFilter !== 'all' || statusFilter !== 'all' ? { label: 'Clear filters', onClick: () => { setBucketFilter('all'); setStatusFilter('all') } } : undefined}
+          />
+        }
+      />
     </div>
   )
 }

@@ -159,3 +159,7 @@ export { default as SyncChip } from './SyncChip'
 export type { SyncChipProps, SyncState, SyncSourceInfo } from './SyncChip'
 
 export { default as DensityToggle } from './DensityToggle'
+
+// ── Signature capture ────────────────────────────────────────────────────
+export { default as SignaturePad } from './SignaturePad'
+export type { SignaturePadProps } from './SignaturePad'
