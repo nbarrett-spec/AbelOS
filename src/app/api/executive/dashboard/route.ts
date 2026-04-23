@@ -209,7 +209,7 @@ export async function GET(request: NextRequest) {
     // ────────────────────────────────────────────────────────────────────────
     const headcount: any[] = await prisma.$queryRawUnsafe(`
       SELECT
-        COALESCE(s."department", 'Other')::text AS "department",
+        COALESCE(s."department"::text, 'Other') AS "department",
         COUNT(*)::int AS "count"
       FROM "Staff" s
       WHERE s."active" = true
