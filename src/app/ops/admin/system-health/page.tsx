@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { PageHeader, Card, CardBody, Badge, KPICard } from '@/components/ui'
+import { PageHeader, Card, CardBody, Badge, KPICard, StatusDot } from '@/components/ui'
 import { useLiveTopic } from '@/hooks/useLiveTopic'
 import {
   Activity, AlertTriangle, CheckCircle2, Clock, Database,
@@ -74,6 +74,31 @@ interface HealthMetrics {
   alerts: Array<{ severity: Severity; message: string; linkTo?: string }>
 }
 
+// ─── Integration freshness matrix (from /api/ops/admin/integrations-freshness)
+type FreshnessStatus = 'green' | 'amber' | 'red' | 'not-wired'
+
+interface IntegrationFreshness {
+  key: string
+  label: string
+  description: string
+  status: FreshnessStatus
+  lastSyncAt: string | null
+  lastSuccessAt: string | null
+  secondarySignalAt: string | null
+  signalSource: string
+  cadenceMinutes: number | null
+  nextExpectedAt: string | null
+  minutesSinceLast: number | null
+  cronName: string | null
+  notes: string | null
+}
+
+interface FreshnessPayload {
+  atdateTime: string
+  summary: { green: number; amber: number; red: number; notWired: number }
+  integrations: IntegrationFreshness[]
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 function fmtAgo(iso: string | null): string {
@@ -94,6 +119,39 @@ function fmtDuration(ms: number | null): string {
   return `${(ms / 60_000).toFixed(1)}m`
 }
 
+function fmtUntil(iso: string | null): string {
+  if (!iso) return '—'
+  const diff = new Date(iso).getTime() - Date.now()
+  if (diff <= 0) return 'now'
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return '<1m'
+  if (mins < 60) return `${mins}m`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ${mins % 60}m`
+  return `${Math.floor(hrs / 24)}d`
+}
+
+function freshnessTone(s: FreshnessStatus): 'success' | 'active' | 'alert' | 'offline' {
+  if (s === 'green') return 'success'
+  if (s === 'amber') return 'active'
+  if (s === 'red') return 'alert'
+  return 'offline'
+}
+
+function freshnessBadge(s: FreshnessStatus): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (s === 'green') return 'success'
+  if (s === 'amber') return 'warning'
+  if (s === 'red') return 'danger'
+  return 'neutral'
+}
+
+function freshnessLabel(s: FreshnessStatus): string {
+  if (s === 'green') return 'FRESH'
+  if (s === 'amber') return 'STALE'
+  if (s === 'red') return 'DEAD'
+  return 'NOT WIRED'
+}
+
 function signalClasses(s: SignalColor): { bg: string; text: string; dot: string; ring: string } {
   if (s === 'RED') return { bg: 'bg-data-negative-bg', text: 'text-data-negative-fg', dot: 'bg-data-negative', ring: 'ring-data-negative/40' }
   if (s === 'AMBER') return { bg: 'bg-data-warning-bg', text: 'text-data-warning-fg', dot: 'bg-signal', ring: 'ring-signal/40' }
@@ -108,6 +166,7 @@ function severityVariant(s: Severity): 'danger' | 'warning' | 'info' {
 
 export default function SystemHealthPage() {
   const [data, setData] = useState<HealthMetrics | null>(null)
+  const [freshness, setFreshness] = useState<FreshnessPayload | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
@@ -117,10 +176,17 @@ export default function SystemHealthPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch('/api/ops/admin/health-metrics', { cache: 'no-store' })
-      if (!res.ok) throw new Error(`Failed: ${res.status}`)
-      const json = (await res.json()) as HealthMetrics
+      const [metricsRes, freshnessRes] = await Promise.all([
+        fetch('/api/ops/admin/health-metrics', { cache: 'no-store' }),
+        fetch('/api/ops/admin/integrations-freshness', { cache: 'no-store' }),
+      ])
+      if (!metricsRes.ok) throw new Error(`Failed: ${metricsRes.status}`)
+      const json = (await metricsRes.json()) as HealthMetrics
       setData(json)
+      if (freshnessRes.ok) {
+        const f = (await freshnessRes.json()) as FreshnessPayload
+        setFreshness(f)
+      }
       setLastRefresh(new Date())
       setError(null)
     } catch (e: any) {
@@ -506,17 +572,26 @@ export default function SystemHealthPage() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h2 className="text-sm font-semibold text-fg">Integration Freshness</h2>
-                  <p className="text-xs text-fg-subtle mt-0.5">Last successful sync per provider</p>
+                  <p className="text-xs text-fg-subtle mt-0.5">
+                    {freshness
+                      ? `${freshness.summary.green} fresh · ${freshness.summary.amber} stale · ${freshness.summary.red} dead · ${freshness.summary.notWired} not wired`
+                      : 'Last successful sync per provider'}
+                  </p>
                 </div>
                 <Link href="/ops/sync-health" className="text-[11px] font-semibold text-accent-fg hover:underline">
                   Open sync health →
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {Object.entries(data.integrations).map(([key, intg]) => (
-                  <IntegrationTile key={key} name={key} intg={intg} />
-                ))}
-              </div>
+
+              {freshness ? (
+                <FreshnessMatrix rows={freshness.integrations} />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {Object.entries(data.integrations).map(([key, intg]) => (
+                    <IntegrationTile key={key} name={key} intg={intg} />
+                  ))}
+                </div>
+              )}
             </CardBody>
           </Card>
         </div>
@@ -736,6 +811,82 @@ function IntegrationTile({
       </div>
     </div>
   )
+}
+
+function FreshnessMatrix({ rows }: { rows: IntegrationFreshness[] }) {
+  // Order: red → amber → not-wired → green. Surface the worst first.
+  const order: FreshnessStatus[] = ['red', 'amber', 'not-wired', 'green']
+  const sorted = [...rows].sort(
+    (a, b) => order.indexOf(a.status) - order.indexOf(b.status),
+  )
+
+  return (
+    <div className="divide-y divide-border rounded-md border border-border bg-surface">
+      {sorted.map((r) => (
+        <FreshnessRow key={r.key} row={r} />
+      ))}
+    </div>
+  )
+}
+
+function FreshnessRow({ row }: { row: IntegrationFreshness }) {
+  const tone = freshnessTone(row.status)
+  const badgeVariant = freshnessBadge(row.status)
+  const badgeLabel = freshnessLabel(row.status)
+  const lastSyncLabel = row.lastSyncAt ? fmtAgo(row.lastSyncAt) : 'never'
+  const showNext = row.status !== 'not-wired' && row.nextExpectedAt
+  const cronHref = row.cronName ? `/ops/admin/crons?name=${row.cronName}` : undefined
+
+  const content = (
+    <div className="flex items-start gap-3 px-3 py-2.5 hover:bg-surface-muted transition-colors">
+      <StatusDot tone={tone} size={8} className="mt-1.5" label={`${row.label} ${badgeLabel}`} />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[13px] font-semibold text-fg">{row.label}</span>
+          <Badge variant={badgeVariant} size="xs">
+            {badgeLabel}
+          </Badge>
+          {row.cronName && (
+            <span className="text-[10px] text-fg-subtle font-mono">{row.cronName}</span>
+          )}
+        </div>
+        <div className="text-[11px] text-fg-subtle mt-0.5">{row.description}</div>
+        {row.notes && (
+          <div className="text-[11px] text-data-warning-fg mt-1">{row.notes}</div>
+        )}
+      </div>
+
+      <div className="flex flex-col items-end gap-0.5 shrink-0 min-w-[120px]">
+        <div className="flex items-center gap-1.5 text-[12px] text-fg">
+          <Clock className="w-3 h-3 text-fg-subtle" />
+          <span className="font-mono tabular-nums">{lastSyncLabel}</span>
+        </div>
+        {showNext ? (
+          <div className="text-[10px] text-fg-subtle font-mono tabular-nums">
+            next in {fmtUntil(row.nextExpectedAt)}
+          </div>
+        ) : (
+          <div className="text-[10px] text-fg-subtle font-mono tabular-nums">
+            {row.cadenceMinutes
+              ? `cadence ${row.cadenceMinutes}m`
+              : row.status === 'not-wired'
+                ? '—'
+                : 'event-driven'}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  if (cronHref) {
+    return (
+      <Link href={cronHref} className="block focus:outline-none focus:ring-2 focus:ring-brand/40 rounded-sm">
+        {content}
+      </Link>
+    )
+  }
+  return content
 }
 
 function AlertItem({ alert }: { alert: { severity: Severity; message: string; linkTo?: string } }) {
