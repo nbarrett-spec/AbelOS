@@ -17,7 +17,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    if (body.seedKey !== 'abel-lumber-seed-2024') {
+    // Require ADMIN_SEED_KEY env — no hardcoded fallback. If the operator
+    // has not configured the key, the endpoint refuses to run even for admins.
+    const configuredKey = process.env.ADMIN_SEED_KEY
+    if (!configuredKey || configuredKey.length < 16) {
+      return NextResponse.json(
+        { error: 'ADMIN_SEED_KEY not configured' },
+        { status: 500 }
+      )
+    }
+    if (typeof body.seedKey !== 'string' || body.seedKey !== configuredKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
