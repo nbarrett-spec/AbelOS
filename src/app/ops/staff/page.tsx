@@ -413,6 +413,21 @@ export default function StaffManagementPage() {
     } catch { showMessage('Network error') }
   }
 
+  const [bulkInviting, setBulkInviting] = useState(false)
+  const handleBulkInvite = async () => {
+    if (!confirm(`This will send invitation emails to all ${counts.setup} staff members who haven't set up their account yet. Continue?`)) return
+    setBulkInviting(true)
+    try {
+      const res = await fetch('/api/ops/staff/bulk-invite', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        showMessage(`${data.sent} invitation${data.sent !== 1 ? 's' : ''} sent. ${data.failed > 0 ? `${data.failed} failed.` : ''}`)
+        fetchStaff()
+      } else showMessage('Error: ' + (data.error || 'Bulk invite failed'))
+    } catch { showMessage('Error: Network error') }
+    finally { setBulkInviting(false) }
+  }
+
   const handleResetPassword = async (member: StaffMember) => {
     try {
       const res = await fetch(`/api/ops/staff/${member.id}`, {
@@ -493,12 +508,23 @@ export default function StaffManagementPage() {
             {staff.length} employees &middot; {counts.active} active &middot; {counts.setup} need setup
           </p>
         </div>
-        <button onClick={() => setShowAddForm(true)} style={{
-          padding: '10px 24px', backgroundColor: '#f59e0b', color: '#000', border: 'none',
-          borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-        }}>
-          + Add Employee
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {counts.setup > 0 && (
+            <button onClick={handleBulkInvite} disabled={bulkInviting} style={{
+              padding: '10px 24px', backgroundColor: bulkInviting ? '#374151' : '#059669', color: '#fff', border: 'none',
+              borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: bulkInviting ? 'wait' : 'pointer',
+              opacity: bulkInviting ? 0.7 : 1,
+            }}>
+              {bulkInviting ? 'Sending...' : `Send All Invites (${counts.setup})`}
+            </button>
+          )}
+          <button onClick={() => setShowAddForm(true)} style={{
+            padding: '10px 24px', backgroundColor: '#f59e0b', color: '#000', border: 'none',
+            borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+          }}>
+            + Add Employee
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

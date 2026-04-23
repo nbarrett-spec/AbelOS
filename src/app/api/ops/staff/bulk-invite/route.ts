@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         )
 
         // Build invite URL
-        const inviteUrl = `${APP_URL}/ops/auth/setup?token=${token}`
+        const inviteUrl = `${APP_URL}/ops/setup-account?token=${token}`
 
         // Send email
         const emailResult = await sendInviteEmail({
