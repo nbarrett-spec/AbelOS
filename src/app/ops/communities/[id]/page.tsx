@@ -325,7 +325,7 @@ export default function CommunityDetailPage() {
       {tab === 'jobs' && <JobsTab jobs={jobs} stats={stats} />}
       {tab === 'tasks' && <TasksTab tasks={tasks} />}
       {tab === 'comms' && <CommsTab commLogs={commLogs} />}
-      {tab === 'floorplans' && <FloorPlansTab floorPlans={floorPlans} />}
+      {tab === 'floorplans' && <FloorPlansTab floorPlans={floorPlans} communityId={id} />}
       {tab === 'notes' && <NotesTab notes={notes} />}
     </div>
   )
@@ -648,40 +648,169 @@ function CommsTab({ commLogs }: { commLogs: CommLog[] }) {
 
 // ─── Floor Plans Tab ────────────────────────────────────────────────────
 
-function FloorPlansTab({ floorPlans }: { floorPlans: FloorPlan[] }) {
+interface BomLine {
+  id: string
+  section: string | null
+  lineOrder: number
+  itemName: string
+  quantity: number | null
+  unit: string | null
+  unitPrice: number | null
+  extended: number | null
+  wall: string | null
+  location: string | null
+}
+
+interface BomPayload {
+  plan: {
+    id: string
+    name: string
+    planNumber: string | null
+    sqFootage: number | null
+    basePackagePrice: number | null
+    builderName: string
+    communityName: string
+  }
+  lineCount: number
+  sections: Record<string, BomLine[]>
+  revisionTag: string | null
+}
+
+function FloorPlansTab({ floorPlans, communityId }: { floorPlans: FloorPlan[]; communityId: string }) {
+  const [openPlanId, setOpenPlanId] = useState<string | null>(null)
+  const [bom, setBom] = useState<BomPayload | null>(null)
+  const [bomLoading, setBomLoading] = useState(false)
+  const [bomError, setBomError] = useState<string | null>(null)
+
+  function openBom(planId: string) {
+    setOpenPlanId(planId)
+    setBom(null)
+    setBomError(null)
+    setBomLoading(true)
+    fetch(`/api/ops/communities/${communityId}/floor-plans/${planId}/bom`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error)
+        setBom(data)
+      })
+      .catch(e => setBomError(e.message))
+      .finally(() => setBomLoading(false))
+  }
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      {floorPlans.length === 0 ? (
-        <p className="text-gray-400 text-center py-8">No floor plans added yet</p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600">Plan Name</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Plan #</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Sq Ft</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Bed/Bath</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Int Doors</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Ext Doors</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Package Price</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {floorPlans.map(fp => (
-              <tr key={fp.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{fp.name}</td>
-                <td className="px-4 py-3 text-gray-600 font-mono text-xs">{fp.planNumber || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{fp.sqFootage?.toLocaleString() || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{fp.bedrooms || '—'} / {fp.bathrooms || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{fp.interiorDoorCount || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{fp.exteriorDoorCount || '—'}</td>
-                <td className="px-4 py-3 text-gray-900 font-medium">{fp.basePackagePrice ? fmt$(fp.basePackagePrice) : '—'}</td>
+    <>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        {floorPlans.length === 0 ? (
+          <p className="text-gray-400 text-center py-8">No floor plans added yet</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left">
+              <tr>
+                <th className="px-4 py-3 font-medium text-gray-600">Plan Name</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Plan #</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Sq Ft</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Bed/Bath</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Int Doors</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Ext Doors</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Package Price</th>
+                <th className="px-4 py-3 font-medium text-gray-600 text-right">BoM</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {floorPlans.map(fp => (
+                <tr key={fp.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{fp.name}</td>
+                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">{fp.planNumber || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{fp.sqFootage?.toLocaleString() || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{fp.bedrooms || '—'} / {fp.bathrooms || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{fp.interiorDoorCount || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{fp.exteriorDoorCount || '—'}</td>
+                  <td className="px-4 py-3 text-gray-900 font-medium">{fp.basePackagePrice ? fmt$(fp.basePackagePrice) : '—'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => openBom(fp.id)}
+                      className="text-xs px-2.5 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
+                    >
+                      View BoM
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {openPlanId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenPlanId(null)}>
+          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-200 flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {bom?.plan?.name || 'Plan BoM'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {bom?.plan?.builderName} · {bom?.plan?.communityName}
+                  {bom?.plan?.sqFootage ? ` · ${bom.plan.sqFootage.toLocaleString()} sqft` : ''}
+                  {bom?.revisionTag ? ` · ${bom.revisionTag}` : ''}
+                  {bom?.lineCount ? ` · ${bom.lineCount} lines` : ''}
+                </p>
+              </div>
+              <button onClick={() => setOpenPlanId(null)} className="text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="flex-1 overflow-auto px-6 py-4">
+              {bomLoading && <p className="text-sm text-gray-500 py-8 text-center">Loading BoM…</p>}
+              {bomError && <p className="text-sm text-red-600 py-8 text-center">Error: {bomError}</p>}
+              {bom && bom.lineCount === 0 && (
+                <p className="text-sm text-gray-500 py-8 text-center">No BoM lines on file for this plan yet.</p>
+              )}
+              {bom && bom.lineCount > 0 && (
+                <div className="space-y-5">
+                  {Object.entries(bom.sections).map(([section, lines]) => (
+                    <div key={section}>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{section}</h4>
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-50 text-left">
+                          <tr>
+                            <th className="px-2 py-1.5 font-medium text-gray-600">Item</th>
+                            <th className="px-2 py-1.5 font-medium text-gray-600">Qty</th>
+                            <th className="px-2 py-1.5 font-medium text-gray-600">Wall/UOM</th>
+                            <th className="px-2 py-1.5 font-medium text-gray-600">Location</th>
+                            <th className="px-2 py-1.5 font-medium text-gray-600 text-right">Unit Price</th>
+                            <th className="px-2 py-1.5 font-medium text-gray-600 text-right">Extended</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {lines.map(l => (
+                            <tr key={l.id}>
+                              <td className="px-2 py-1.5 text-gray-900">{l.itemName}</td>
+                              <td className="px-2 py-1.5 text-gray-700 tabular-nums">{l.quantity ?? '—'}</td>
+                              <td className="px-2 py-1.5 text-gray-600">{l.wall || l.unit || '—'}</td>
+                              <td className="px-2 py-1.5 text-gray-600">{l.location || '—'}</td>
+                              <td className="px-2 py-1.5 text-gray-900 tabular-nums text-right">
+                                {l.unitPrice != null ? `$${l.unitPrice.toFixed(2)}` : '—'}
+                              </td>
+                              <td className="px-2 py-1.5 text-gray-900 tabular-nums text-right">
+                                {l.extended != null
+                                  ? `$${l.extended.toFixed(2)}`
+                                  : (l.quantity != null && l.unitPrice != null
+                                      ? `$${(l.quantity * l.unitPrice).toFixed(2)}`
+                                      : '—')}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   )
 }
 

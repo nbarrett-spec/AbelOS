@@ -8,6 +8,7 @@ import PresenceAvatars from '@/components/ui/PresenceAvatars'
 import HyphenDocumentsTab from './HyphenDocumentsTab'
 import AllocationPanel from './AllocationPanel'
 import MaterialConfirmBanner from './MaterialConfirmBanner'
+import CoPreviewSheet from './CoPreviewSheet'
 
 const STATUS_COLORS: Record<string, string> = {
   CREATED: '#95A5A6',
@@ -123,6 +124,8 @@ export default function JobDetailPage() {
   } | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'allocation'>('overview')
   const [hyphenDocCount, setHyphenDocCount] = useState<number>(0)
+  // CO impact preview sheet — opens from the Change Orders card header.
+  const [showCoPreview, setShowCoPreview] = useState(false)
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -655,6 +658,13 @@ export default function JobDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Change Orders</h2>
               <div className="flex gap-2">
+                <button
+                  onClick={() => setShowCoPreview(true)}
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#0f2a3e] hover:bg-[#143549]"
+                  title="Preview material impact before committing a CO"
+                >
+                  Preview Change Order
+                </button>
                 <button onClick={() => setShowCOForm(!showCOForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#C6A24E] hover:bg-[#A8882A]">+ New</button>
                 <button onClick={loadChangeOrders} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#0f2a3e] border border-[#0f2a3e] hover:bg-blue-50">
                   {showCO ? 'Hide' : 'Load'}
@@ -869,6 +879,13 @@ export default function JobDetailPage() {
         </div>
       </div>
       )}
+
+      {/* CO Impact Preview Sheet — mounted at root so it overlays the whole page */}
+      <CoPreviewSheet
+        jobId={jobId}
+        open={showCoPreview}
+        onClose={() => setShowCoPreview(false)}
+      />
     </div>
   )
 }

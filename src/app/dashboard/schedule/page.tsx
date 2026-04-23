@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import BuilderCoPreviewModal from './BuilderCoPreviewModal'
 
 // ── Types ─────────────────────────────────────────────────────────
 interface Milestone {
@@ -146,6 +147,8 @@ export default function SchedulePage() {
   const [viewMode, setViewMode] = useState<ViewMode>('timeline')
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
+  // Change-order preview modal — targets a specific job + order.
+  const [coPreviewFor, setCoPreviewFor] = useState<{ jobId: string; orderId: string | null } | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('active')
 
   const fetchSchedule = useCallback(async () => {
@@ -400,7 +403,7 @@ export default function SchedulePage() {
                     </div>
 
                     {/* Readiness indicators */}
-                    <div style={{ display: 'flex', gap: 16, marginBottom: 16, fontSize: 13 }}>
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 16, fontSize: 13, alignItems: 'center' }}>
                       <span style={{ color: job.readinessCheck ? '#10b981' : '#d1d5db' }}>
                         {job.readinessCheck ? '✅' : '⬜'} Readiness (T-72)
                       </span>
@@ -410,6 +413,26 @@ export default function SchedulePage() {
                       <span style={{ color: job.loadConfirmed ? '#10b981' : '#d1d5db' }}>
                         {job.loadConfirmed ? '✅' : '⬜'} Load (T-24)
                       </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCoPreviewFor({ jobId: job.id, orderId: job.orderId })
+                        }}
+                        style={{
+                          marginLeft: 'auto',
+                          fontSize: 12,
+                          padding: '4px 10px',
+                          background: 'white',
+                          color: '#0f2a3e',
+                          border: '1px solid #0f2a3e',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                        }}
+                        title="See how a change affects your delivery date"
+                      >
+                        Request a change
+                      </button>
                     </div>
 
                     {/* Schedule entries */}
@@ -484,6 +507,13 @@ export default function SchedulePage() {
           })
         )}
       </div>
+
+      <BuilderCoPreviewModal
+        jobId={coPreviewFor?.jobId || ''}
+        orderId={coPreviewFor?.orderId || null}
+        open={coPreviewFor !== null}
+        onClose={() => setCoPreviewFor(null)}
+      />
     </div>
   )
 }
