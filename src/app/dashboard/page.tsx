@@ -24,6 +24,7 @@ import OrdersPreview from './components/OrdersPreview'
 import AccountHealthPanel from './components/AccountHealthPanel'
 import QuickActionsDock from './components/QuickActionsDock'
 import AccountSidebar from './components/AccountSidebar'
+import JobStatusGrid from '@/components/builder-portal/JobStatusGrid'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -303,6 +304,9 @@ export default function DashboardPage() {
 
       {/* Onboarding Checklist */}
       <OnboardingChecklist />
+
+      {/* Schedule confidence — on-schedule / at-risk / delayed per job */}
+      <JobStatusGrid builderId={builder.id} />
 
       {/* KPI Grid */}
       <KPIGrid kpis={kpiData} loading={loading} />
