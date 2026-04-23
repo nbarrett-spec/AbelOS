@@ -45,6 +45,39 @@ export async function processStripeEvent(event: any): Promise<void> {
         WHERE id = $2
       `, amountPaid, invoiceId)
 
+      // INSERT a Payment row so the AR ledger stays truthful. Idempotent on
+      // the Stripe session id — replay-safe if a webhook retries.
+      try {
+        await prisma.$queryRawUnsafe(`
+          INSERT INTO "Payment" (
+            id, "invoiceId", amount, method, reference, "referenceNumber",
+            "receivedAt", "builderId", status, notes, "createdAt"
+          )
+          SELECT
+            gen_random_uuid()::text,
+            $1,
+            $2,
+            'CREDIT_CARD'::"PaymentMethod",
+            $3,
+            $3,
+            NOW(),
+            $4,
+            'RECEIVED',
+            $5,
+            NOW()
+          WHERE NOT EXISTS (
+            SELECT 1 FROM "Payment"
+            WHERE reference = $3 OR "referenceNumber" = $3
+          )
+        `,
+          invoiceId,
+          amountPaid,
+          session.payment_intent || session.id,
+          builderId || null,
+          `Stripe checkout.session.completed — ${invoiceNumber || invoiceId}`
+        )
+      } catch { /* Payment INSERT is best-effort; invoice cache is source of truth */ }
+
       // Update the related order payment status if exists
       try {
         await prisma.$queryRawUnsafe(`
@@ -82,10 +115,10 @@ export async function processStripeEvent(event: any): Promise<void> {
       // Log the payment in audit trail
       try {
         await prisma.$queryRawUnsafe(`
-          INSERT INTO "AuditLog" (id, "staffName", action, entity, "entityId", details, severity, "createdAt")
+          INSERT INTO "AuditLog" (id, "staffId", action, entity, "entityId", details, severity, "createdAt")
           VALUES (
             gen_random_uuid()::text,
-            'Stripe Webhook',
+            NULL,
             'PAYMENT_RECEIVED',
             'Invoice',
             $1,
@@ -128,10 +161,10 @@ export async function processStripeEvent(event: any): Promise<void> {
 
       try {
         await prisma.$queryRawUnsafe(`
-          INSERT INTO "AuditLog" (id, "staffName", action, entity, "entityId", details, severity, "createdAt")
+          INSERT INTO "AuditLog" (id, "staffId", action, entity, "entityId", details, severity, "createdAt")
           VALUES (
             gen_random_uuid()::text,
-            'Stripe Webhook',
+            NULL,
             'PAYMENT_FAILED',
             'Invoice',
             $1,
