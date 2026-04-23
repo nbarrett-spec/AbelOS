@@ -34,6 +34,7 @@ interface Job {
   jobNumber: string
   scopeType: string
   dropPlan: string | null
+  buildSheetNotes?: string | null
   _count?: { decisionNotes: number; tasks: number; deliveries: number; installations: number }
 }
 
@@ -47,6 +48,11 @@ interface ApiResponse {
   statusCounts: Record<string, number>
 }
 
+// Synthetic filter for jobs whose scheduledDate was auto-defaulted to
+// createdAt + 14d by scripts/backfill-scheduled-dates.mjs. The marker
+// [NEEDS_REVIEW | DEFAULT_LEAD_TIME] is carried in buildSheetNotes.
+const NEEDS_REVIEW_FILTER = 'NEEDS_REVIEW'
+
 export default function JobPipelinePage() {
   const [activeFilter, setActiveFilter] = useState('ALL')
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
@@ -58,6 +64,29 @@ export default function JobPipelinePage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [listPage, setListPage] = useState(1)
   const LIST_PAGE_SIZE = 50
+
+  // Jobs whose scheduledDate was auto-backfilled to createdAt + 14d. Loaded
+  // from the dedicated endpoint because the main /api/ops/jobs query does not
+  // return buildSheetNotes. Keyed by job.id for quick lookup in the main list.
+  const [needsReviewJobs, setNeedsReviewJobs] = useState<Job[]>([])
+  const [needsReviewCount, setNeedsReviewCount] = useState<number>(0)
+  // Per-row state for inline date editing on the NEEDS_REVIEW view.
+  const [editingDates, setEditingDates] = useState<Record<string, string>>({})
+  const [savingRow, setSavingRow] = useState<string | null>(null)
+
+  const fetchNeedsReview = async () => {
+    try {
+      const response = await fetch('/api/ops/jobs/needs-review')
+      if (!response.ok) return
+      const data = await response.json()
+      const list: Job[] = data.data || []
+      setNeedsReviewJobs(list)
+      setNeedsReviewCount(data.count || list.length)
+    } catch (err) {
+      // Silent — this is an augmentation, not the primary data source.
+      console.warn('needs-review fetch failed', err)
+    }
+  }
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -80,16 +109,68 @@ export default function JobPipelinePage() {
     }
 
     fetchJobs()
+    fetchNeedsReview()
   }, [])
 
-  // Filter jobs based on search and active filter
+  const handleConfirmScheduledDate = async (jobId: string, newDate?: string) => {
+    setSavingRow(jobId)
+    try {
+      const res = await fetch(`/api/ops/jobs/${jobId}/confirm-scheduled-date`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newDate ? { scheduledDate: newDate } : {}),
+      })
+      if (!res.ok) throw new Error('Failed to confirm scheduled date')
+      // Remove this row locally
+      setNeedsReviewJobs((prev) => prev.filter((j) => j.id !== jobId))
+      setNeedsReviewCount((c) => Math.max(0, c - 1))
+      setEditingDates((prev) => {
+        const next = { ...prev }
+        delete next[jobId]
+        return next
+      })
+      // Also update the corresponding row in the main jobs list so the
+      // main list view reflects the new date without a full refetch.
+      if (newDate) {
+        setJobs((prev) =>
+          prev.map((j) =>
+            j.id === jobId ? { ...j, scheduledDate: newDate, buildSheetNotes: null } : j
+          )
+        )
+      } else {
+        setJobs((prev) =>
+          prev.map((j) => (j.id === jobId ? { ...j, buildSheetNotes: null } : j))
+        )
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to confirm scheduled date')
+    } finally {
+      setSavingRow(null)
+    }
+  }
+
+  // Filter jobs based on search and active filter. The NEEDS_REVIEW pseudo-
+  // filter drops us into a dedicated table; everything else filters the
+  // primary /api/ops/jobs result set.
   const filteredJobs = jobs.filter((job) => {
+    if (activeFilter === NEEDS_REVIEW_FILTER) return false // handled separately
     const matchesFilter = activeFilter === 'ALL' || job.status === activeFilter
     const matchesSearch =
       search === '' ||
       (job.builderName || '').toLowerCase().includes(search.toLowerCase()) ||
       (job.community || '').toLowerCase().includes(search.toLowerCase())
     return matchesFilter && matchesSearch
+  })
+
+  const filteredNeedsReview = needsReviewJobs.filter((job) => {
+    if (search === '') return true
+    const needle = search.toLowerCase()
+    return (
+      (job.builderName || '').toLowerCase().includes(needle) ||
+      (job.community || '').toLowerCase().includes(needle) ||
+      (job.jobAddress || '').toLowerCase().includes(needle) ||
+      (job.jobNumber || '').toLowerCase().includes(needle)
+    )
   })
 
   // Get jobs for a specific status (for board view)
@@ -118,6 +199,7 @@ export default function JobPipelinePage() {
       }
     }
     fetchJobs()
+    fetchNeedsReview()
   }
 
   if (loading) {
@@ -155,6 +237,30 @@ export default function JobPipelinePage() {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
           Error loading jobs: {error}
+        </div>
+      )}
+
+      {/* Needs-Date-Review banner — surfaces the auto-defaulted scheduledDate queue */}
+      {needsReviewCount > 0 && activeFilter !== NEEDS_REVIEW_FILTER && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="text-lg leading-none mt-0.5" aria-hidden>⚠</span>
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                {needsReviewCount} {needsReviewCount === 1 ? 'job needs' : 'jobs need'} date review
+              </p>
+              <p className="text-xs text-amber-800 mt-0.5">
+                These rows were auto-backfilled to <span className="font-mono">createdAt + 14d</span>.
+                Confirm or correct each one so the default lead time isn't treated as truth.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveFilter(NEEDS_REVIEW_FILTER)}
+            className="px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors whitespace-nowrap"
+          >
+            Review Queue →
+          </button>
         </div>
       )}
 
@@ -203,6 +309,19 @@ export default function JobPipelinePage() {
         >
           All Jobs
         </button>
+        {needsReviewCount > 0 && (
+          <button
+            onClick={() => setActiveFilter(NEEDS_REVIEW_FILTER)}
+            className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+              activeFilter === NEEDS_REVIEW_FILTER
+                ? 'bg-amber-600 text-white border-transparent'
+                : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+            }`}
+            title="Jobs whose scheduledDate was auto-defaulted to createdAt + 14d"
+          >
+            ⚠ Needs Date Review ({needsReviewCount})
+          </button>
+        )}
         {JOB_STATUSES.map((status) => (
           <button
             key={status.key}
@@ -223,8 +342,135 @@ export default function JobPipelinePage() {
         ))}
       </div>
 
-      {/* Board View */}
-      {viewMode === 'board' ? (
+      {/* Needs-Date-Review dedicated view — inline confirm/edit per row */}
+      {activeFilter === NEEDS_REVIEW_FILTER ? (
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-amber-900">
+                ⚠ Jobs with auto-defaulted scheduled date
+              </h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Showing {filteredNeedsReview.length} of {needsReviewCount}. Confirm the 14-day default,
+                or pick the real date and save.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveFilter('ALL')}
+              className="text-xs text-amber-900 underline hover:no-underline"
+            >
+              ← Back to all jobs
+            </button>
+          </div>
+          {filteredNeedsReview.length === 0 ? (
+            <div className="text-center text-gray-500 text-sm py-16">
+              <p className="text-4xl mb-3">✓</p>
+              <p className="font-medium">No jobs need date review</p>
+              <p className="text-xs mt-2 max-w-md mx-auto">
+                {needsReviewCount === 0
+                  ? 'All scheduled dates have been confirmed.'
+                  : 'No matches for the current search.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Job #</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Builder</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Address</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Community</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">PM</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                      Default (createdAt+14d)
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Edit Date</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredNeedsReview.map((job) => {
+                    const currentIso = job.scheduledDate
+                      ? new Date(job.scheduledDate).toISOString().slice(0, 10)
+                      : ''
+                    const editVal = editingDates[job.id] ?? currentIso
+                    const edited = editVal !== currentIso
+                    const saving = savingRow === job.id
+                    return (
+                      <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm">
+                          <Link
+                            href={`/ops/jobs/${job.id}`}
+                            className="font-mono text-[#0f2a3e] hover:underline"
+                          >
+                            {job.jobNumber}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {job.builderName || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={job.jobAddress || ''}>
+                          {job.jobAddress || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {job.community || '—'}
+                          {job.lotBlock && (
+                            <span className="text-gray-400"> / {job.lotBlock}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {job.assignedPM
+                            ? `${job.assignedPM.firstName} ${job.assignedPM.lastName}`
+                            : <span className="text-gray-400">Unassigned</span>}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-mono text-xs">
+                            {job.scheduledDate
+                              ? new Date(job.scheduledDate).toLocaleDateString()
+                              : '—'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <input
+                            type="date"
+                            value={editVal}
+                            onChange={(e) =>
+                              setEditingDates((prev) => ({
+                                ...prev,
+                                [job.id]: e.target.value,
+                              }))
+                            }
+                            className="px-2 py-1 border rounded text-xs focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            disabled={saving}
+                            onClick={() =>
+                              handleConfirmScheduledDate(
+                                job.id,
+                                edited ? new Date(editVal).toISOString() : undefined
+                              )
+                            }
+                            className={`px-3 py-1.5 text-xs rounded-lg text-white transition-colors disabled:opacity-50 ${
+                              edited
+                                ? 'bg-[#0f2a3e] hover:bg-[#0a1a28]'
+                                : 'bg-emerald-600 hover:bg-emerald-700'
+                            }`}
+                          >
+                            {saving ? 'Saving…' : edited ? 'Save Date' : 'Confirm'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : viewMode === 'board' ? (
         <div className="overflow-x-auto">
           <div className="flex gap-4 min-w-max pb-4">
             {JOB_STATUSES.map((status) => {
