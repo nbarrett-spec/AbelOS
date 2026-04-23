@@ -71,7 +71,15 @@ export default function AnalyticsDashboard() {
   const fetchData = async (report: string) => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/ops/sales/analytics?report=${report}`)
+      // API accepts hyphenated report names — map from our tab names.
+      const reportMap: Record<string, string> = {
+        forecast: 'forecast',
+        win_loss: 'win-loss',
+        rep_scorecard: 'rep-performance',
+        velocity: 'velocity',
+      }
+      const apiReport = reportMap[report] || report
+      const res = await fetch(`/api/ops/sales/analytics?report=${apiReport}`)
       const data = await res.json()
 
       if (report === 'forecast') {
@@ -79,7 +87,7 @@ export default function AnalyticsDashboard() {
       } else if (report === 'win_loss') {
         setWinLossData(data)
       } else if (report === 'rep_scorecard') {
-        setScorecards(data.scorecards || [])
+        setScorecards(data.scorecards || data || [])
       } else if (report === 'velocity') {
         setVelocityData(data)
       }

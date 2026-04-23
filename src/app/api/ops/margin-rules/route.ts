@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         q."subtotal"::float AS subtotal,
         q."createdAt",
         b."companyName" AS "builderName",
-        s."firstName" || ' ' || COALESCE(s."lastName", '') AS "repName",
+        COALESCE(s."firstName" || ' ' || COALESCE(s."lastName", ''), '—') AS "repName",
         CASE
           WHEN q."subtotal" > 0 THEN ((q."total" - q."subtotal") / q."subtotal" * 100)::float
           ELSE NULL
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       FROM "Quote" q
       JOIN "Project" p ON p."id" = q."projectId"
       JOIN "Builder" b ON b."id" = p."builderId"
-      LEFT JOIN "Staff" s ON s."id" = q."createdBy"
+      LEFT JOIN "Staff" s ON s."id" = q."approvedBy"
       WHERE q."createdAt" >= NOW() - INTERVAL '30 days'
       ORDER BY q."createdAt" DESC
       LIMIT 50
