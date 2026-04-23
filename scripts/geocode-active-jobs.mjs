@@ -35,8 +35,9 @@ async function geocode(addr) {
 
 async function main() {
   const statusList = ACTIVE_STATUSES.map(s => `'${s}'`).join(',')
+  // Job has only jobAddress (single field), no separate city/state cols
   const jobs = await sql.query(`
-    SELECT id, "jobAddress", city, state
+    SELECT id, "jobAddress"
     FROM "Job"
     WHERE "jobAddress" IS NOT NULL AND "jobAddress" != ''
       AND (latitude IS NULL OR longitude IS NULL)
@@ -50,8 +51,7 @@ async function main() {
   for (let i = 0; i < jobs.length; i++) {
     const j = jobs[i]
     let addr = j.jobAddress
-    if (j.city && !addr.toLowerCase().includes(j.city.toLowerCase())) addr += `, ${j.city}`
-    if (j.state && !addr.toLowerCase().includes(j.state.toLowerCase())) addr += `, ${j.state}`
+    // DFW-biased default — Abel's market is Texas
     if (!/tx|texas/i.test(addr)) addr += ', TX'
 
     const coords = await geocode(addr)

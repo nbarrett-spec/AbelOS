@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // ── Geocode Jobs ────────────────────────────────────────────────────
     const jobs = await prisma.$queryRawUnsafe(`
-      SELECT id, "jobAddress", city, state
+      SELECT id, "jobAddress"
       FROM "Job"
       WHERE "jobAddress" IS NOT NULL
         AND "jobAddress" != ''
@@ -63,16 +63,10 @@ export async function POST(request: NextRequest) {
     let jobsFailed = 0
 
     for (const job of jobs) {
-      // Build full address string
+      // Job has only a single jobAddress field, not separate city/state.
+      // Default to Texas since Abel's market is DFW.
       let addr = job.jobAddress
-      if (job.city && !addr.toLowerCase().includes(job.city.toLowerCase())) {
-        addr += `, ${job.city}`
-      }
-      if (job.state && !addr.toLowerCase().includes(job.state.toLowerCase())) {
-        addr += `, ${job.state}`
-      }
-      // Default to Texas/DFW if no state
-      if (!addr.toLowerCase().includes('tx') && !addr.toLowerCase().includes('texas')) {
+      if (!/tx|texas/i.test(addr)) {
         addr += ', TX'
       }
 
