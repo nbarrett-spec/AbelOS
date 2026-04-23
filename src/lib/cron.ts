@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { notifyCronFailure } from '@/lib/cron-alerting'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Cron run tracking.
@@ -57,6 +58,43 @@ export async function startCronRun(
 ): Promise<string> {
   try {
     await ensureTable()
+    // Watchdog sweep: mark any stale RUNNING row of this cron name as FAILURE.
+    // Vercel hard-kills functions at their maxDuration (300s for us) without
+    // letting userland run a finally block, so finishCronRun() never fires and
+    // rows sit in RUNNING forever. Sweeping at the top of the next run keeps
+    // CronRun honest. 15-minute threshold is comfortably past our 5-minute
+    // longest cron, so anything older is definitely dead.
+    //
+    // We use UPDATE ... RETURNING so we can fire cron-failure alerts for each
+    // swept row (same path as an explicit FAILURE in finishCronRun). That way
+    // Vercel hard-kills are just as visible as thrown errors — the whole point
+    // of the alerting hook.
+    const swept: any[] = await prisma.$queryRawUnsafe(
+      `UPDATE "CronRun"
+         SET "status" = 'FAILURE',
+             "finishedAt" = NOW(),
+             "durationMs" = EXTRACT(EPOCH FROM (NOW() - "startedAt")) * 1000,
+             "error" = 'TIMEOUT: run never completed (swept by next run). Likely Vercel 300s kill.'
+       WHERE "name" = $1
+         AND "status" = 'RUNNING'
+         AND "startedAt" < NOW() - INTERVAL '15 minutes'
+       RETURNING "id", "name", "durationMs", "error"`,
+      name
+    )
+    if (Array.isArray(swept) && swept.length > 0) {
+      for (const row of swept) {
+        // Fire-and-forget alert — rate-limited upstream so mass sweeps don't
+        // spam Nate.
+        notifyCronFailure({
+          cronName: String(row.name),
+          error: String(row.error || 'TIMEOUT'),
+          durationMs: Number(row.durationMs) || 0,
+          runId: String(row.id),
+        }).catch((e) => {
+          logger.error('cron_sweep_alert_failed', e, { id: row.id, name: row.name })
+        })
+      }
+    }
     const id = 'cr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
     await prisma.$executeRawUnsafe(
       `INSERT INTO "CronRun" ("id", "name", "status", "startedAt", "triggeredBy")
@@ -79,6 +117,7 @@ export async function finishCronRun(
   payload: { result?: any; error?: string }
 ) {
   if (!id) return
+  const errorStr = (payload.error || null)?.toString().slice(0, 4000) ?? null
   try {
     const resultJson = payload.result ? JSON.stringify(payload.result).slice(0, 20000) : null
     await prisma.$executeRawUnsafe(
@@ -93,10 +132,39 @@ export async function finishCronRun(
       status,
       Math.round(durationMs),
       resultJson,
-      (payload.error || null)?.toString().slice(0, 4000) ?? null
+      errorStr
     )
   } catch (e: any) {
     logger.error('cron_run_finish_failed', e, { id, status })
+  }
+
+  // Fire alert on FAILURE. Fire-and-forget — rate limit + email send must
+  // not block the calling cron's response. Wrapped in its own try/catch
+  // inside notifyCronFailure so nothing can bubble back here.
+  if (status === 'FAILURE') {
+    try {
+      // Look up the cron name back from the row. The runId alone doesn't
+      // tell the alerting code which cron failed; we'd rather make one
+      // extra round-trip than thread the name through every call site.
+      const rows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "name" FROM "CronRun" WHERE "id" = $1 LIMIT 1`,
+        id
+      )
+      const cronName = rows[0]?.name
+      if (cronName) {
+        // Deliberately not awaited — alerting fires in the background.
+        notifyCronFailure({
+          cronName: String(cronName),
+          error: errorStr || 'Unknown error (empty error field)',
+          durationMs,
+          runId: id,
+        }).catch((e) => {
+          logger.error('cron_alert_notify_failed', e, { id, cronName })
+        })
+      }
+    } catch (e: any) {
+      logger.error('cron_alert_lookup_failed', e, { id })
+    }
   }
 }
 

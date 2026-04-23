@@ -35,21 +35,43 @@ const tokenCache = new Map<string, { token: string; expiresAt: number }>()
  * Load the service account key from env var.
  * Set GOOGLE_SERVICE_ACCOUNT_KEY to the full JSON string,
  * or GOOGLE_SERVICE_ACCOUNT_KEY_PATH to the file path.
+ *
+ * Returns the key, or an object with an `error` string on failure so the
+ * caller can surface the real reason (previously both failure modes returned
+ * null indistinguishably, which hid "key pasted with bad newline escaping").
  */
 function getServiceAccountKey(): ServiceAccountKey | null {
+  const res = loadServiceAccountKey()
+  return 'error' in res ? null : res
+}
+
+export function loadServiceAccountKey(): ServiceAccountKey | { error: string } {
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
   if (keyJson) {
-    try { return JSON.parse(keyJson) } catch { return null }
+    try {
+      const parsed = JSON.parse(keyJson) as ServiceAccountKey
+      if (!parsed.client_email || !parsed.private_key || !parsed.token_uri) {
+        return { error: `GOOGLE_SERVICE_ACCOUNT_KEY JSON is missing required fields (client_email/private_key/token_uri). Got keys: ${Object.keys(parsed).join(',')}` }
+      }
+      return parsed
+    } catch (e: any) {
+      return { error: `GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON: ${e?.message?.slice(0, 200) || 'parse error'}. Common cause: private_key newlines were stripped when pasted into Vercel — re-paste as a single-line JSON with \\n escapes intact.` }
+    }
   }
-  // Fallback: read from file path (for NUC / Docker deployments)
   const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH
   if (keyPath) {
     try {
       const fs = require('fs')
-      return JSON.parse(fs.readFileSync(keyPath, 'utf8'))
-    } catch { return null }
+      const parsed = JSON.parse(fs.readFileSync(keyPath, 'utf8')) as ServiceAccountKey
+      if (!parsed.client_email || !parsed.private_key) {
+        return { error: `Key file at ${keyPath} is missing required fields` }
+      }
+      return parsed
+    } catch (e: any) {
+      return { error: `Could not read GOOGLE_SERVICE_ACCOUNT_KEY_PATH (${keyPath}): ${e?.message?.slice(0, 200) || 'io error'}` }
+    }
   }
-  return null
+  return { error: 'Neither GOOGLE_SERVICE_ACCOUNT_KEY nor GOOGLE_SERVICE_ACCOUNT_KEY_PATH is set' }
 }
 
 /**
@@ -169,18 +191,24 @@ export async function listDomainUsers(
  */
 export async function syncAllAccounts(
   maxPerAccount: number = 50,
-  query: string = 'newer_than:1d'
+  query: string = 'newer_than:1d',
+  opts: { deadlineAt?: number } = {}
 ): Promise<SyncResult> {
   const startedAt = new Date()
   let totalCreated = 0, totalSkipped = 0, totalFailed = 0
+  let firstError: string | null = null
+  // Default deadline: 220s after start — leaves budget for the route to finish
+  // writing CronRun even if we abort mid-loop.
+  const deadlineAt = opts.deadlineAt ?? (Date.now() + 220_000)
+  const outOfTime = () => Date.now() > deadlineAt
 
-  const key = getServiceAccountKey()
-  if (!key) {
+  const keyResult = loadServiceAccountKey()
+  if ('error' in keyResult) {
     return {
       provider: 'GMAIL', syncType: 'multi-account', direction: 'PULL',
       status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
       recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
-      errorMessage: 'Service account key not configured (set GOOGLE_SERVICE_ACCOUNT_KEY)',
+      errorMessage: keyResult.error,
       startedAt, completedAt: new Date(),
       durationMs: Date.now() - startedAt.getTime(),
     }
@@ -193,7 +221,7 @@ export async function syncAllAccounts(
       provider: 'GMAIL', syncType: 'multi-account', direction: 'PULL',
       status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
       recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
-      errorMessage: 'No domain users found — check Admin SDK scope and admin email',
+      errorMessage: 'listDomainUsers() returned 0 — check (a) service account has admin.directory.user.readonly scope via domain-wide delegation, (b) admin email n.barrett@abellumber.com is a Workspace admin, (c) Admin SDK API is enabled in the GCP project',
       startedAt, completedAt: new Date(),
       durationMs: Date.now() - startedAt.getTime(),
     }
@@ -202,9 +230,14 @@ export async function syncAllAccounts(
   // console.log(`[Gmail Sync] Found ${users.length} domain users: ${users.join(', ')}`)
 
   for (const userEmail of users) {
+    if (outOfTime()) {
+      firstError = firstError || `Aborted before ${userEmail} — time budget reached after ${totalCreated} created across prior accounts`
+      break
+    }
     try {
       const token = await getServiceAccountToken(userEmail)
       if (!token) {
+        firstError = firstError || `Could not get Gmail access token for ${userEmail} — check domain-wide delegation is authorized for scope gmail.readonly`
         console.warn(`[Gmail Sync] Could not get token for ${userEmail}, skipping`)
         totalFailed++
         continue
@@ -217,6 +250,8 @@ export async function syncAllAccounts(
       })
 
       if (!listResponse.ok) {
+        const bodyText = await listResponse.text().catch(() => '')
+        firstError = firstError || `Gmail messages.list for ${userEmail} → ${listResponse.status} ${bodyText.slice(0, 200)}`
         console.warn(`[Gmail Sync] List failed for ${userEmail}: ${listResponse.status}`)
         totalFailed++
         continue
@@ -226,6 +261,10 @@ export async function syncAllAccounts(
       const messageIds: string[] = (listData.messages || []).map((m: any) => m.id)
 
       for (const msgId of messageIds) {
+        if (outOfTime()) {
+          firstError = firstError || `Aborted mid-account ${userEmail} — time budget reached after ${totalCreated} created`
+          break
+        }
         try {
           // Check for duplicate
           const existing = await prisma.$queryRawUnsafe<any[]>(
@@ -276,13 +315,15 @@ export async function syncAllAccounts(
             userEmail
           )
           totalCreated++
-        } catch (err) {
+        } catch (err: any) {
           totalFailed++
+          firstError = firstError || `Message ${msgId} (${userEmail}) insert failed: ${err?.message?.slice(0, 200) || String(err).slice(0, 200)}`
           console.error(`[Gmail Sync] Message ${msgId} error for ${userEmail}:`, err)
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       totalFailed++
+      firstError = firstError || `Account ${userEmail} top-level error: ${err?.message?.slice(0, 200) || String(err).slice(0, 200)}`
       console.error(`[Gmail Sync] Account ${userEmail} error:`, err)
     }
   }
@@ -294,6 +335,7 @@ export async function syncAllAccounts(
     recordsProcessed: totalCreated + totalSkipped + totalFailed,
     recordsCreated: totalCreated, recordsUpdated: 0,
     recordsSkipped: totalSkipped, recordsFailed: totalFailed,
+    errorMessage: firstError || undefined,
     startedAt, completedAt,
     durationMs: completedAt.getTime() - startedAt.getTime(),
   }
