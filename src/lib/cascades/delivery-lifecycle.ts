@@ -12,6 +12,7 @@
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { onOrderDelivered } from './order-lifecycle'
+import { sendDeliveryConfirmation } from '@/lib/email/delivery-confirmation'
 
 type CascadeResult = { ok: boolean; action: string; detail?: string }
 
@@ -127,6 +128,14 @@ export async function onDeliveryComplete(deliveryId: string): Promise<CascadeRes
         assignedTo: d.assignedPMId,
       })
     }
+
+    // Delivery-confirmation email to the builder — cheapest retention signal
+    // we have. Fire-and-forget so a Resend hiccup doesn't fail the cascade;
+    // sendDeliveryConfirmation is idempotent (checks Delivery.confirmationSentAt)
+    // so this is safe to call from multiple entry points.
+    sendDeliveryConfirmation(deliveryId).catch((err: any) => {
+      logger.error('delivery_confirmation_auto_send_failed', err, { deliveryId })
+    })
 
     return { ok: true, action: 'onDeliveryComplete', detail: 'cascaded' }
   } catch (e: any) {
