@@ -39,8 +39,13 @@ function planNamesFromBids(): Set<string> {
   const names = new Set<string>()
   for (const f of fs.readdirSync(LISA_BIDS_DIR)) {
     if (!f.toLowerCase().endsWith('.xlsx')) continue
-    const m = f.match(/BLOOMFIELD\s+([A-Za-z]+)/i)
-    if (m) names.add(titleCase(m[1]))
+    // Extract plan name portion: "BLOOMFIELD SPRING CRESS.xlsx" → "Spring Cress"
+    const m = f.match(/BLOOMFIELD\s+(.+?)\.xlsx$/i)
+    if (!m) continue
+    let n = titleCase(m[1])
+    // Normalize near-duplicates: "Bellflowere" is a typo of "Bellflower"
+    if (/^Bellflowere?$/i.test(n)) n = 'Bellflower'
+    names.add(n)
   }
   return names
 }
@@ -168,7 +173,7 @@ async function main() {
       })
       if (existing) {
         if (sqft !== null) {
-          await prisma.communityFloorPlan.update({ where: { id: existing.id }, data: { squareFootage: sqft } })
+          await prisma.communityFloorPlan.update({ where: { id: existing.id }, data: { sqFootage: sqft } })
           plansUpdated++
         }
       } else {
@@ -176,7 +181,7 @@ async function main() {
           data: {
             communityId: community.id,
             name,
-            squareFootage: sqft,
+            sqFootage: sqft,
             status: 'ACTIVE',
           },
         })
