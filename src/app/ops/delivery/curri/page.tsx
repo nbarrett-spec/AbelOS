@@ -1,58 +1,168 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-// ──────────────────────────────────────────────────────────────────────────
-// Curri — Deferred (2026-04-22)
-// ──────────────────────────────────────────────────────────────────────────
-// The Curri integration was never wired up. In-house drivers handle all
-// deliveries today (Austin Collett, Aaron Treadaway, Jack Zenker, Noah
-// Ridge under Jordyn Steider). We kept the route present so old links
-// don't 404, but it's a dead stop — no booking, no tracking, no comparison.
-// See memory/projects/delivery-partners.md.
-// ──────────────────────────────────────────────────────────────────────────
+interface CurriResponse {
+  integrated: boolean
+  deliveries: Array<{
+    id: string
+    deliveryNumber: string
+    status: string
+    curriBookingId: string
+    curriTrackingUrl: string
+    curriCost: number
+    completedAt: string | null
+    createdAt: string
+    jobNumber?: string
+  }>
+  comparison: {
+    inHouse: { count: number; avgCost: number; delivered: number; active: number }
+    curri: { count: number; avgCost: number; delivered: number; active: number }
+  }
+  curriConfigured: boolean
+  windowDays: number
+}
 
-export const dynamic = 'force-dynamic'
+export default function CurriDeliveriesPage() {
+  const [data, setData] = useState<CurriResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
-export default function CurriDeferredPage() {
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/ops/delivery/curri?windowDays=30')
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const json = await res.json()
+        if (!cancelled) setData(json)
+      } catch (e: any) {
+        if (!cancelled) setErr(e?.message || 'Failed to load')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-[#1e3a5f] text-white px-8 py-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Curri — Not Integrated</h1>
-            <p className="text-blue-200 mt-2">
-              Third-party delivery partner evaluation deferred.
+            <div className="text-xs tracking-[0.22em] uppercase text-slate-500 mb-2">Delivery · Third-Party Overflow</div>
+            <h1 className="text-3xl font-bold text-slate-900">Curri Deliveries</h1>
+            <p className="text-slate-600 mt-1">
+              On-demand courier for out-of-area or overflow loads when in-house fleet is fully booked.
             </p>
           </div>
           <Link
             href="/ops/delivery"
-            className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm"
+            className="px-4 py-2 rounded border border-slate-300 text-slate-600 hover:bg-white hover:text-slate-900 text-sm"
           >
-            Delivery Center
+            ← Delivery Center
           </Link>
         </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto px-8 py-12">
-        <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-4">
-          <h2 className="text-xl font-bold text-[#1e3a5f]">Curri not integrated</h2>
-          <p className="text-gray-700">
-            The Curri third-party delivery integration has been deferred. Abel
-            runs deliveries in-house under Jordyn Steider and the four-driver
-            team. Re-evaluate if in-house capacity ever becomes the bottleneck.
-          </p>
-          <p className="text-sm text-gray-500">
-            See <code>memory/projects/delivery-partners.md</code> for the
-            history and re-evaluation criteria.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/ops/delivery"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[#0f2a3e] hover:underline"
-            >
-              Back to Delivery Center
-            </Link>
+        {data && !data.curriConfigured && (
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-5 mb-6 rounded-lg">
+            <div className="text-amber-900 font-medium mb-1">Curri API key not set</div>
+            <div className="text-amber-700 text-sm">
+              Set <code className="bg-white px-1 py-0.5 rounded">CURRI_API_KEY</code> in Vercel env to enable
+              quoting + booking. Historical Curri deliveries will still display below.
+            </div>
           </div>
-        </div>
+        )}
+
+        {loading && <div className="bg-white rounded-lg p-6 text-center text-slate-500">Loading…</div>}
+
+        {err && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-lg text-red-900">
+            Error loading Curri data: {err}
+          </div>
+        )}
+
+        {data && !loading && !err && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">In-House · 30d</div>
+                <div className="text-3xl font-mono tabular-nums text-slate-900">{data.comparison.inHouse.count}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {data.comparison.inHouse.delivered} delivered · {data.comparison.inHouse.active} active
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Curri · 30d</div>
+                <div className="text-3xl font-mono tabular-nums text-slate-900">{data.comparison.curri.count}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {data.comparison.curri.delivered} delivered · {data.comparison.curri.active} active
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Curri Avg Cost</div>
+                <div className="text-3xl font-mono tabular-nums text-slate-900">
+                  ${data.comparison.curri.avgCost.toFixed(0)}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">per delivery</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Total Curri Spend</div>
+                <div className="text-3xl font-mono tabular-nums text-slate-900">
+                  ${(data.comparison.curri.avgCost * data.comparison.curri.count).toFixed(0)}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">last {data.windowDays}d</div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-4 border-b border-slate-200">
+                <h2 className="font-semibold text-slate-900">Recent Curri Deliveries</h2>
+              </div>
+              {data.deliveries.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">
+                  No Curri deliveries in the last {data.windowDays} days.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                    <tr>
+                      <th className="text-left p-3">Delivery #</th>
+                      <th className="text-left p-3">Job</th>
+                      <th className="text-left p-3">Status</th>
+                      <th className="text-right p-3">Cost</th>
+                      <th className="text-left p-3">Tracking</th>
+                      <th className="text-left p-3">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.deliveries.map((d) => (
+                      <tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50">
+                        <td className="p-3 font-mono text-xs">{d.deliveryNumber}</td>
+                        <td className="p-3">{d.jobNumber || '—'}</td>
+                        <td className="p-3 text-xs">{d.status}</td>
+                        <td className="p-3 text-right font-mono tabular-nums">${(d.curriCost || 0).toFixed(2)}</td>
+                        <td className="p-3">
+                          {d.curriTrackingUrl ? (
+                            <a href={d.curriTrackingUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs">
+                              Track ↗
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-xs text-slate-500">{new Date(d.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

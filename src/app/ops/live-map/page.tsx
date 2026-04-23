@@ -182,7 +182,13 @@ export default function LiveMapPage() {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const resp = await fetch('/api/ops/jobs?pageSize=500')
+      // Only pull active jobs that should appear on the map — reduces
+      // geocoding work dramatically (from 3,999 all-time jobs to ~300 active).
+      const activeStatuses = [
+        'CREATED','READINESS_CHECK','MATERIALS_LOCKED','IN_PRODUCTION',
+        'STAGED','LOADED','IN_TRANSIT','DELIVERED','INSTALLING','PUNCH_LIST'
+      ].join(',')
+      const resp = await fetch(`/api/ops/jobs?limit=500&status=${encodeURIComponent(activeStatuses)}`)
       if (resp.ok) {
         const data = await resp.json()
         setJobs(data.data || data.jobs || [])
