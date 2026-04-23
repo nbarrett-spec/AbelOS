@@ -20,10 +20,10 @@ const ACTIVE_STATUSES = ['CREATED','READINESS_CHECK','MATERIALS_LOCKED','IN_PROD
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
-async function geocode(addr) {
+async function geocodeOnce(q) {
   try {
     const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1&countrycodes=us`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=us`,
       { headers: { 'User-Agent': 'Aegis-Geocoder/1.0 (n.barrett@abellumber.com)' } }
     )
     if (!r.ok) return null
@@ -31,6 +31,36 @@ async function geocode(addr) {
     if (j.length > 0) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) }
     return null
   } catch { return null }
+}
+
+// Build a fallback chain for new-construction addresses that aren't in OSM yet.
+// Many Abel jobs are brand-new subdivisions (Roxburgh Rd Fort Worth, Marigot St Princeton, etc.)
+// that Nominatim can't resolve at the street level — ZIP-centroid fallback is acceptable
+// for the jobsite map: a pin in the right subdivision beats no pin at all.
+function buildFallbacks(addr) {
+  const chain = [addr]
+  // Extract ZIP (5-digit) and city,state — try progressively looser queries.
+  const zipMatch = addr.match(/\b(\d{5})(?:-\d{4})?\b/)
+  const cityStateMatch = addr.match(/([A-Za-z][A-Za-z\s]+?),\s*TX\b/i)
+  if (cityStateMatch && zipMatch) {
+    // City, TX ZIP (drop street)
+    chain.push(`${cityStateMatch[1].trim()}, TX ${zipMatch[1]}`)
+  }
+  if (zipMatch) {
+    chain.push(zipMatch[1])
+  }
+  // De-dup
+  return [...new Set(chain)]
+}
+
+async function geocode(addr) {
+  const queries = buildFallbacks(addr)
+  for (let i = 0; i < queries.length; i++) {
+    const coords = await geocodeOnce(queries[i])
+    if (coords) return { ...coords, query: queries[i], fallbackLevel: i }
+    if (i < queries.length - 1) await sleep(1050) // rate-limit between fallback attempts
+  }
+  return null
 }
 
 async function main() {
@@ -46,7 +76,8 @@ async function main() {
   `)
   console.log(`📍 Geocoding ${jobs.length} active jobs (Nominatim, 1 req/sec)...`)
   const start = Date.now()
-  let ok = 0, fail = 0
+  let ok = 0, fail = 0, fallbackHits = 0
+  const failures = []
 
   for (let i = 0; i < jobs.length; i++) {
     const j = jobs[i]
@@ -58,8 +89,10 @@ async function main() {
     if (coords) {
       await sql.query(`UPDATE "Job" SET latitude=$1, longitude=$2 WHERE id=$3`, [coords.lat, coords.lng, j.id])
       ok++
+      if (coords.fallbackLevel > 0) fallbackHits++
     } else {
       fail++
+      failures.push({ id: j.id, address: j.jobAddress })
     }
 
     if ((i+1) % 25 === 0) {
@@ -69,7 +102,11 @@ async function main() {
     await sleep(1050) // 1 req/sec + buffer
   }
 
-  console.log(`\n✅ Done. ${ok} geocoded, ${fail} failed, ${((Date.now()-start)/1000).toFixed(0)}s total.`)
+  console.log(`\n✅ Done. ${ok} geocoded (${fallbackHits} via ZIP fallback), ${fail} failed, ${((Date.now()-start)/1000).toFixed(0)}s total.`)
+  if (failures.length) {
+    console.log(`\n⚠️  Unresolved addresses (review for typos/bad data):`)
+    for (const f of failures) console.log(`   ${f.id}: ${f.address}`)
+  }
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
