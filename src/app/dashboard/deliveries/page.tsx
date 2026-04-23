@@ -50,15 +50,15 @@ const STATUS_CONFIG: Record<
   string,
   { bg: string; text: string; label: string; dot: string }
 > = {
-  SCHEDULED: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Scheduled', dot: 'bg-blue-500' },
-  LOADING: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Loading', dot: 'bg-blue-500' },
-  IN_TRANSIT: { bg: 'bg-orange-50', text: 'text-orange-700', label: 'In Transit', dot: 'bg-orange-500 animate-pulse' },
-  ARRIVED: { bg: 'bg-orange-50', text: 'text-orange-700', label: 'Arrived', dot: 'bg-orange-500' },
-  UNLOADING: { bg: 'bg-orange-50', text: 'text-orange-700', label: 'Unloading', dot: 'bg-orange-500' },
-  COMPLETE: { bg: 'bg-green-50', text: 'text-green-700', label: 'Delivered', dot: 'bg-green-500' },
-  PARTIAL_DELIVERY: { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Partial', dot: 'bg-yellow-500' },
-  REFUSED: { bg: 'bg-red-50', text: 'text-red-700', label: 'Refused', dot: 'bg-red-500' },
-  RESCHEDULED: { bg: 'bg-purple-50', text: 'text-purple-700', label: 'Rescheduled', dot: 'bg-purple-500' },
+  SCHEDULED:        { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Scheduled',   dot: 'bg-data-info' },
+  LOADING:          { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Loading',     dot: 'bg-data-info' },
+  IN_TRANSIT:       { bg: 'bg-accent-subtle',    text: 'text-accent-fg',        label: 'In Transit',  dot: 'bg-accent animate-pulse' },
+  ARRIVED:          { bg: 'bg-accent-subtle',    text: 'text-accent-fg',        label: 'Arrived',     dot: 'bg-accent' },
+  UNLOADING:        { bg: 'bg-accent-subtle',    text: 'text-accent-fg',        label: 'Unloading',   dot: 'bg-accent' },
+  COMPLETE:         { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Delivered',   dot: 'bg-data-positive' },
+  PARTIAL_DELIVERY: { bg: 'bg-data-warning-bg',  text: 'text-data-warning-fg',  label: 'Partial',     dot: 'bg-data-warning' },
+  REFUSED:          { bg: 'bg-data-negative-bg', text: 'text-data-negative-fg', label: 'Refused',     dot: 'bg-data-negative' },
+  RESCHEDULED:      { bg: 'bg-forecast-bg',      text: 'text-forecast-fg',      label: 'Rescheduled', dot: 'bg-forecast' },
 }
 
 function getDaysUntil(dateStr: string): string {
@@ -178,10 +178,10 @@ export default function DeliveriesPage() {
             color: '#1f2937',
             marginBottom: '8px',
           }}>
-            Deliveries
+            Your deliveries
           </h1>
           <p style={{ color: '#666', fontSize: '14px' }}>
-            Track your lumber and materials deliveries in real-time
+            Track shipments in real time. Reschedule directly from here.
           </p>
         </div>
       </div>

@@ -430,9 +430,8 @@ export default function ProductProfitabilityPage() {
                   <th className="px-3 py-3 text-left font-semibold text-gray-700">Flags</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filtered.map((product, idx) => (
-                  <tbody key={product.productId}>
+              {filtered.map((product, idx) => (
+                <tbody key={product.productId} className="divide-y divide-gray-200">
                     <tr
                       onClick={() => setExpandedProduct(expandedProduct === product.productId ? null : product.productId)}
                       className="hover:bg-gray-50 cursor-pointer divide-x divide-gray-200"
@@ -513,7 +512,7 @@ export default function ProductProfitabilityPage() {
                     {/* Expanded Row — Score Breakdown */}
                     {expandedProduct === product.productId && (
                       <tr className="bg-gray-50">
-                        <td colSpan={13} className="px-4 py-6">
+                        <td colSpan={14} className="px-4 py-6">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Left: Score Breakdown */}
                             <div>
@@ -631,9 +630,8 @@ export default function ProductProfitabilityPage() {
                         </td>
                       </tr>
                     )}
-                  </tbody>
-                ))}
-              </tbody>
+                </tbody>
+              ))}
             </table>
           </div>
 

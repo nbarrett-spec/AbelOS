@@ -289,7 +289,7 @@ export default function QCPortal() {
         <div className="lg:col-span-2 bg-white rounded-xl border p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">Inspection Queue</h2>
-            <Link href="/ops/portal/qc/queue" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[44px] flex items-center">
+            <Link href="/ops/portal/qc/queue" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[48px] flex items-center">
               View All →
             </Link>
           </div>
@@ -325,7 +325,7 @@ export default function QCPortal() {
                             {new Date(job.scheduledDate).toLocaleDateString()}
                           </p>
                         )}
-                        <button className="px-4 py-2 min-h-[44px] text-sm font-medium bg-[#C0392B] text-white rounded hover:bg-[#A93226] transition-colors">
+                        <button className="px-4 py-3 min-h-[48px] text-sm font-medium bg-[#C0392B] text-white rounded hover:bg-[#A93226] transition-colors">
                           Inspect →
                         </button>
                       </div>
@@ -341,7 +341,7 @@ export default function QCPortal() {
         <div className="bg-white rounded-xl border p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">Rework Needed</h2>
-            <Link href="/ops/portal/qc/rework" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[44px] flex items-center">
+            <Link href="/ops/portal/qc/rework" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[48px] flex items-center">
               View All →
             </Link>
           </div>
@@ -376,7 +376,7 @@ export default function QCPortal() {
       <div className="bg-white rounded-xl border p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <h2 className="text-base sm:text-lg font-bold text-gray-900">Recent Inspection Results</h2>
-          <button className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[44px] flex items-center">View All →</button>
+          <button className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[48px] flex items-center">View All →</button>
         </div>
 
         {briefing.recentResults.length === 0 ? (
@@ -483,7 +483,7 @@ export default function QCPortal() {
           <form onSubmit={handleLogInspection} className="bg-white rounded-t-xl sm:rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col">
             <div className="border-b p-4 sm:p-6 flex justify-between items-center flex-shrink-0">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">Log QC Inspection</h2>
-              <button type="button" onClick={() => setShowLogModal(false)} aria-label="Close" className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg">✕</button>
+              <button type="button" onClick={() => setShowLogModal(false)} aria-label="Close" className="w-12 h-12 min-w-[48px] min-h-[48px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg">✕</button>
             </div>
 
             <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
@@ -532,7 +532,7 @@ export default function QCPortal() {
                         key={code}
                         type="button"
                         onClick={() => toggleDefect(code)}
-                        className={`px-3 py-2 min-h-[44px] rounded-full text-xs font-medium border transition-colors ${
+                        className={`px-3 py-3 min-h-[48px] rounded-full text-xs font-medium border transition-colors ${
                           logForm.defectCodes.includes(code)
                             ? 'bg-red-100 border-red-300 text-red-800'
                             : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'

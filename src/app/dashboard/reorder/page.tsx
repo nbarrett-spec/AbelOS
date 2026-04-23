@@ -221,13 +221,13 @@ export default function ReorderPage() {
   if (success) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
+        <div className="bg-data-positive-bg border border-data-positive rounded-lg p-8 text-center">
           <div className="text-5xl mb-4">✓</div>
-          <h1 className="text-2xl font-semibold text-green-900 mb-2">Reorder Submitted</h1>
-          <p className="text-green-800 mb-4">
-            Order <span className="font-mono font-semibold">{success.orderNumber}</span> has been placed!
+          <h1 className="text-2xl font-semibold text-data-positive-fg mb-2">Reorder submitted</h1>
+          <p className="text-data-positive-fg mb-4">
+            Order <span className="font-mono font-semibold">{success.orderNumber}</span> is placed.
           </p>
-          <p className="text-sm text-green-700">We'll review and confirm shortly. Redirecting...</p>
+          <p className="text-sm text-data-positive-fg">We&apos;ll review and confirm shortly.</p>
         </div>
       </div>
     )
@@ -237,12 +237,12 @@ export default function ReorderPage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-fg mb-2">Quick Reorder</h1>
-        <p className="text-fg-muted">Reorder from your previous orders in seconds</p>
+        <h1 className="text-3xl font-bold text-fg mb-2">Quick reorder</h1>
+        <p className="text-fg-muted">Reorder recent items in a few clicks.</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-800">
+        <div className="bg-data-negative-bg border border-data-negative rounded-lg p-4 mb-6 text-data-negative-fg">
           {error}
         </div>
       )}
@@ -281,11 +281,11 @@ export default function ReorderPage() {
                             <p className="text-xs text-fg-muted mt-1">SKU: {product.sku}</p>
                           </div>
                           {product.inStock ? (
-                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                              In Stock
+                            <span className="bg-data-positive-bg text-data-positive-fg text-xs px-2 py-1 rounded">
+                              In stock
                             </span>
                           ) : (
-                            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                            <span className="bg-data-negative-bg text-data-negative-fg text-xs px-2 py-1 rounded">
                               Out
                             </span>
                           )}
@@ -324,7 +324,7 @@ export default function ReorderPage() {
                           <button
                             onClick={() => addFrequentItemToCart(product)}
                             disabled={!product.inStock}
-                            className="flex-1 bg-signal hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium py-1 rounded transition"
+                            className="flex-1 bg-signal hover:bg-signal-hover disabled:opacity-50 disabled:cursor-not-allowed text-fg-on-accent text-sm font-medium py-1 rounded transition"
                           >
                             Add to Cart
                           </button>
@@ -380,7 +380,7 @@ export default function ReorderPage() {
                                 </div>
                                 <button
                                   onClick={() => addOrderLineToCart(line)}
-                                  className="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-medium rounded transition whitespace-nowrap"
+                                  className="px-3 py-1 bg-data-info-bg text-data-info-fg hover:opacity-80 text-xs font-medium rounded transition whitespace-nowrap"
                                 >
                                   Reorder
                                 </button>
@@ -427,7 +427,7 @@ export default function ReorderPage() {
                           </div>
                           <button
                             onClick={() => removeFromCart(item.productId)}
-                            className="text-fg-subtle hover:text-red-600 text-lg leading-none"
+                            className="text-fg-subtle hover:text-data-negative-fg text-lg leading-none"
                           >
                             ×
                           </button>
@@ -481,7 +481,7 @@ export default function ReorderPage() {
                     <button
                       onClick={submitReorder}
                       disabled={submitting || cart.length === 0}
-                      className="w-full bg-signal hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded transition"
+                      className="w-full bg-signal hover:bg-signal-hover disabled:opacity-50 disabled:cursor-not-allowed text-fg-on-accent font-semibold py-3 rounded transition"
                     >
                       {submitting ? 'Submitting...' : 'Place Reorder'}
                     </button>

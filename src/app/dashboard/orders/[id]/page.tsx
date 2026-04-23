@@ -35,20 +35,20 @@ interface Order {
 }
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
-  RECEIVED:       { bg: 'bg-blue-50',    text: 'text-blue-700',    label: 'Received' },
-  CONFIRMED:      { bg: 'bg-indigo-50',  text: 'text-indigo-700',  label: 'Confirmed' },
-  IN_PRODUCTION:  { bg: 'bg-amber-50',   text: 'text-amber-700',   label: 'In Production' },
-  READY_TO_SHIP:  { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Ready to Ship' },
-  SHIPPED:        { bg: 'bg-cyan-50',    text: 'text-cyan-700',    label: 'Shipped' },
-  DELIVERED:      { bg: 'bg-violet-50',  text: 'text-violet-700',  label: 'Delivered' },
-  COMPLETE:       { bg: 'bg-green-50',   text: 'text-green-700',   label: 'Complete' },
+  RECEIVED:       { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Received' },
+  CONFIRMED:      { bg: 'bg-brand-subtle',     text: 'text-accent-fg',        label: 'Confirmed' },
+  IN_PRODUCTION:  { bg: 'bg-data-warning-bg',  text: 'text-data-warning-fg',  label: 'In Production' },
+  READY_TO_SHIP:  { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Ready to Ship' },
+  SHIPPED:        { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Shipped' },
+  DELIVERED:      { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Delivered' },
+  COMPLETE:       { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Complete' },
 }
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  PARTIAL: 'bg-orange-100 text-orange-700',
-  PAID: 'bg-green-100 text-green-700',
-  OVERDUE: 'bg-red-100 text-red-700',
+  PENDING: 'bg-data-warning-bg text-data-warning-fg',
+  PARTIAL: 'bg-data-warning-bg text-data-warning-fg',
+  PAID:    'bg-data-positive-bg text-data-positive-fg',
+  OVERDUE: 'bg-data-negative-bg text-data-negative-fg',
 }
 
 function fmt(n: number) {
@@ -92,11 +92,10 @@ export default function BuilderOrderDetailPage() {
   if (error || !order) {
     return (
       <div className="max-w-3xl mx-auto py-12 text-center">
-        <div className="text-5xl mb-4">📦</div>
-        <h2 className="text-xl font-bold text-fg mb-2">Order Not Found</h2>
-        <p className="text-fg-muted mb-6">{error || 'This order could not be loaded.'}</p>
+        <h2 className="text-xl font-bold text-fg mb-2">Order not found</h2>
+        <p className="text-fg-muted mb-6">{error || 'We couldn&apos;t load this order.'}</p>
         <Link href="/dashboard/orders" className="text-brand font-semibold hover:underline">
-          &larr; Back to Orders
+          &larr; Back to your orders
         </Link>
       </div>
     )
@@ -111,7 +110,7 @@ export default function BuilderOrderDetailPage() {
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
       <Link href="/dashboard/orders" className="text-sm text-brand hover:underline mb-4 inline-block">
-        &larr; Back to Orders
+        &larr; Back to your orders
       </Link>
 
       {/* Header */}
@@ -135,7 +134,7 @@ export default function BuilderOrderDetailPage() {
 
       {/* Progress Tracker */}
       <div className="bg-surface rounded-xl border border-border p-6 mb-6">
-        <h3 className="text-sm font-semibold text-fg-muted mb-4">Order Progress</h3>
+        <h3 className="text-sm font-semibold text-fg-muted mb-4">Order progress</h3>
         <div className="flex items-center justify-between relative">
           {/* Progress line */}
           <div className="absolute top-4 left-0 right-0 h-0.5 bg-surface-muted" />
@@ -151,9 +150,9 @@ export default function BuilderOrderDetailPage() {
               <div key={step} className="flex flex-col items-center relative z-10">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                   isComplete
-                    ? 'bg-accent border-accent text-white'
-                    : 'bg-surface border-border-strong text-fg-subtle'
-                } ${isCurrent ? 'ring-4 ring-[#C6A24E]/20' : ''}`}>
+                    ? 'bg-accent border-accent text-fg-on-accent'
+                    : 'bg-surface border-border text-fg-subtle'
+                } ${isCurrent ? 'ring-4 ring-accent-subtle' : ''}`}>
                   {isComplete ? '✓' : idx + 1}
                 </div>
                 <span className={`text-[10px] mt-2 font-medium text-center max-w-[70px] ${
@@ -171,11 +170,11 @@ export default function BuilderOrderDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Delivery Info */}
         <div className="bg-surface rounded-xl border border-border p-5">
-          <h3 className="text-sm font-semibold text-fg-muted mb-3">Delivery Information</h3>
+          <h3 className="text-sm font-semibold text-fg-muted mb-3">Delivery</h3>
           <div className="space-y-3">
             {order.deliveryDate && (
               <div>
-                <p className="text-xs text-fg-muted">Scheduled Delivery</p>
+                <p className="text-xs text-fg-muted">Scheduled</p>
                 <p className="text-sm font-semibold text-fg">
                   {new Date(order.deliveryDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
@@ -184,14 +183,14 @@ export default function BuilderOrderDetailPage() {
             {order.deliveryConfirmedAt && (
               <div>
                 <p className="text-xs text-fg-muted">Delivered</p>
-                <p className="text-sm font-semibold text-green-700">
+                <p className="text-sm font-semibold text-data-positive-fg">
                   {new Date(order.deliveryConfirmedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
             )}
             {order.quote?.project?.jobAddress && (
               <div>
-                <p className="text-xs text-fg-muted">Delivery Address</p>
+                <p className="text-xs text-fg-muted">Address</p>
                 <p className="text-sm text-fg">
                   {order.quote.project.jobAddress}
                   {order.quote.project.city && `, ${order.quote.project.city}`}
@@ -201,7 +200,7 @@ export default function BuilderOrderDetailPage() {
             )}
             {order.deliveryNotes && (
               <div>
-                <p className="text-xs text-fg-muted">Delivery Notes</p>
+                <p className="text-xs text-fg-muted">Notes</p>
                 <p className="text-sm text-fg-muted">{order.deliveryNotes}</p>
               </div>
             )}
@@ -213,7 +212,7 @@ export default function BuilderOrderDetailPage() {
 
         {/* Payment Info */}
         <div className="bg-surface rounded-xl border border-border p-5">
-          <h3 className="text-sm font-semibold text-fg-muted mb-3">Payment Summary</h3>
+          <h3 className="text-sm font-semibold text-fg-muted mb-3">Payment summary</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-fg-muted">Subtotal</span>
@@ -225,13 +224,13 @@ export default function BuilderOrderDetailPage() {
                 <span className="text-sm font-medium text-fg">{fmt(Number(order.taxAmount))}</span>
               </div>
             )}
-            <div className="flex justify-between items-center border-t pt-2">
+            <div className="flex justify-between items-center border-t border-border pt-2">
               <span className="text-sm font-bold text-fg">Total</span>
               <span className="text-lg font-bold text-brand">{fmt(Number(order.total))}</span>
             </div>
             {order.paymentTerm && (
-              <div className="pt-2 border-t">
-                <p className="text-xs text-fg-muted">Payment Terms</p>
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs text-fg-muted">Payment terms</p>
                 <p className="text-sm font-medium text-fg">
                   {order.paymentTerm === 'NET_30' ? 'Net 30' :
                    order.paymentTerm === 'NET_15' ? 'Net 15' :
@@ -244,7 +243,7 @@ export default function BuilderOrderDetailPage() {
             )}
             {order.poNumber && (
               <div>
-                <p className="text-xs text-fg-muted">PO Number</p>
+                <p className="text-xs text-fg-muted">PO number</p>
                 <p className="text-sm font-mono font-medium text-fg">{order.poNumber}</p>
               </div>
             )}
@@ -255,7 +254,7 @@ export default function BuilderOrderDetailPage() {
       {/* Line Items */}
       <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-border">
-          <h3 className="text-sm font-semibold text-fg-muted">Order Items ({order.items?.length || 0})</h3>
+          <h3 className="text-sm font-semibold text-fg-muted">Items ({order.items?.length || 0})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -263,7 +262,7 @@ export default function BuilderOrderDetailPage() {
               <tr className="text-xs text-fg-muted uppercase tracking-wider">
                 <th className="px-5 py-3 text-left font-semibold">Item</th>
                 <th className="px-5 py-3 text-right font-semibold">Qty</th>
-                <th className="px-5 py-3 text-right font-semibold">Unit Price</th>
+                <th className="px-5 py-3 text-right font-semibold">Unit price</th>
                 <th className="px-5 py-3 text-right font-semibold">Total</th>
               </tr>
             </thead>
@@ -288,9 +287,9 @@ export default function BuilderOrderDetailPage() {
 
       {/* Reference Info */}
       {order.quote?.quoteNumber && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-          <p className="text-sm text-blue-700">
-            This order was created from quote <span className="font-semibold font-mono">{order.quote.quoteNumber}</span>
+        <div className="bg-data-info-bg border border-data-info rounded-xl p-4 mb-6">
+          <p className="text-sm text-data-info-fg">
+            Created from quote <span className="font-semibold font-mono">{order.quote.quoteNumber}</span>.
           </p>
         </div>
       )}
@@ -298,7 +297,7 @@ export default function BuilderOrderDetailPage() {
       {/* Help */}
       <div className="bg-surface-muted border border-border rounded-xl p-4">
         <p className="text-sm text-fg-muted">
-          <strong>Need help?</strong> If you have questions about this order, delivery schedule, or need to make changes, please contact our sales team.
+          <strong>Need help?</strong> Questions on this order, the delivery schedule, or a change? Your account rep can handle it.
         </p>
       </div>
     </div>

@@ -33,20 +33,20 @@ const NOTIF_ICONS: Record<string, string> = {
 }
 
 const NOTIF_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  order_status: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-l-4 border-blue-400' },
-  order_confirmed: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-l-4 border-green-400' },
-  order_shipped: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-l-4 border-cyan-400' },
-  order_delivered: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-l-4 border-violet-400' },
-  quote_ready: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-l-4 border-amber-400' },
-  delivery_update: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-l-4 border-orange-400' },
-  delivery_scheduled: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-l-4 border-indigo-400' },
-  delivery_in_transit: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-l-4 border-orange-400' },
-  delivery_complete: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-l-4 border-green-400' },
-  delivery_rescheduled: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-l-4 border-purple-400' },
-  invoice_created: { bg: 'bg-slate-50', text: 'text-fg-muted', border: 'border-l-4 border-slate-400' },
-  invoice_overdue: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-l-4 border-red-400' },
-  payment_received: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-l-4 border-emerald-400' },
-  general: { bg: 'bg-surface-muted', text: 'text-fg-muted', border: 'border-l-4 border-gray-400' },
+  order_status:         { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     border: 'border-l-4 border-data-info' },
+  order_confirmed:      { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', border: 'border-l-4 border-data-positive' },
+  order_shipped:        { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     border: 'border-l-4 border-data-info' },
+  order_delivered:      { bg: 'bg-forecast-bg',      text: 'text-forecast-fg',      border: 'border-l-4 border-forecast' },
+  quote_ready:          { bg: 'bg-data-warning-bg',  text: 'text-data-warning-fg',  border: 'border-l-4 border-data-warning' },
+  delivery_update:      { bg: 'bg-accent-subtle',    text: 'text-accent-fg',        border: 'border-l-4 border-accent' },
+  delivery_scheduled:   { bg: 'bg-brand-subtle',     text: 'text-accent-fg',        border: 'border-l-4 border-brand' },
+  delivery_in_transit:  { bg: 'bg-accent-subtle',    text: 'text-accent-fg',        border: 'border-l-4 border-accent' },
+  delivery_complete:    { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', border: 'border-l-4 border-data-positive' },
+  delivery_rescheduled: { bg: 'bg-forecast-bg',      text: 'text-forecast-fg',      border: 'border-l-4 border-forecast' },
+  invoice_created:      { bg: 'bg-surface-muted',    text: 'text-fg-muted',         border: 'border-l-4 border-border-strong' },
+  invoice_overdue:      { bg: 'bg-data-negative-bg', text: 'text-data-negative-fg', border: 'border-l-4 border-data-negative' },
+  payment_received:     { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', border: 'border-l-4 border-data-positive' },
+  general:              { bg: 'bg-surface-muted',    text: 'text-fg-muted',         border: 'border-l-4 border-border-strong' },
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -194,17 +194,17 @@ export default function NotificationsPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-fg">Notifications</h1>
+              <h1 className="text-3xl font-bold text-fg">Your notifications</h1>
               <p className="text-fg-muted mt-1">
-                {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}` : 'All caught up!'}
+                {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}` : 'All caught up.'}
               </p>
             </div>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-signal text-white rounded-lg hover:bg-signal/90 transition font-medium"
+                className="px-4 py-2 bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover transition font-medium"
               >
-                Mark All as Read
+                Mark all as read
               </button>
             )}
           </div>
@@ -217,7 +217,7 @@ export default function NotificationsPage() {
             onClick={() => { setFilter('all'); setSelectedNotifs(new Set()) }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'all'
-                ? 'bg-brand text-white'
+                ? 'bg-brand text-fg-on-accent'
                 : 'bg-surface text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
@@ -227,7 +227,7 @@ export default function NotificationsPage() {
             onClick={() => { setFilter('unread'); setSelectedNotifs(new Set()) }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'unread'
-                ? 'bg-brand text-white'
+                ? 'bg-brand text-fg-on-accent'
                 : 'bg-surface text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
@@ -256,15 +256,15 @@ export default function NotificationsPage() {
         ) : (
           <div className="space-y-3">
             {selectedNotifs.size > 0 && (
-              <div className="bg-brand/10 border border-brand/20 rounded-lg p-4 flex items-center justify-between">
+              <div className="bg-brand-subtle border border-brand rounded-lg p-4 flex items-center justify-between">
                 <span className="text-sm font-medium text-brand">
                   {selectedNotifs.size} selected
                 </span>
                 <button
                   onClick={markSelectedAsRead}
-                  className="text-sm px-3 py-1.5 bg-brand text-white rounded hover:bg-brand/90 transition font-medium"
+                  className="text-sm px-3 py-1.5 bg-brand text-fg-on-accent rounded hover:bg-brand-hover transition font-medium"
                 >
-                  Mark as Read
+                  Mark as read
                 </button>
               </div>
             )}

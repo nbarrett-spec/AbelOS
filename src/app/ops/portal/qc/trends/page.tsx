@@ -120,17 +120,17 @@ export default function QCTrendsPage() {
   const overallPassRate = totalInspections > 0 ? Math.round((totalPassed / totalInspections) * 100) : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quality Trends & Analytics</h1>
-          <p className="text-gray-600 mt-1">Historical quality metrics and defect analysis</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quality Trends & Analytics</h1>
+          <p className="text-gray-600 mt-1 text-sm">Historical quality metrics and defect analysis</p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/ops/portal/qc"
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            className="px-4 py-3 min-h-[48px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center"
           >
             ← Back to Dashboard
           </Link>
@@ -138,14 +138,14 @@ export default function QCTrendsPage() {
       </div>
 
       {/* Period Selector */}
-      <div className="bg-white rounded-xl border p-6">
+      <div className="bg-white rounded-xl border p-4 sm:p-6">
         <p className="text-sm font-medium text-gray-700 mb-3">Period:</p>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           {(['30', '90', '180', '365'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3 sm:px-4 py-3 min-h-[48px] rounded-lg text-sm font-medium transition-all ${
                 period === p
                   ? 'bg-[#C0392B] text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -159,15 +159,15 @@ export default function QCTrendsPage() {
 
       {/* Unified QC metrics (7/30/90d) — from /api/ops/qc/metrics */}
       {metrics && (
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Rolling Pass Rate</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Rolling Pass Rate</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {(['d7', 'd30', 'd90'] as const).map((k) => (
-              <div key={k} className="p-4 rounded-lg bg-gray-50 border">
-                <p className="text-xs font-medium text-gray-600 uppercase">
+              <div key={k} className="p-3 sm:p-4 rounded-lg bg-gray-50 border">
+                <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">
                   Last {k === 'd7' ? '7' : k === 'd30' ? '30' : '90'} days
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
                   {metrics.passRate[k]}%
                 </p>
                 <p className="text-xs text-gray-600 mt-1">
@@ -198,7 +198,24 @@ export default function QCTrendsPage() {
               <h3 className="text-sm font-semibold text-gray-900 mb-2">
                 Pass rate by inspector (90d)
               </h3>
-              <div className="overflow-x-auto">
+              {/* Mobile card list */}
+              <div className="flex flex-col gap-2 md:hidden">
+                {metrics.perOperator.map((op) => (
+                  <div key={op.inspectorId} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-gray-900 text-sm">{op.name}</p>
+                      <span className="font-semibold text-sm">{op.passRate}%</span>
+                    </div>
+                    <div className="flex gap-4 text-xs text-gray-600 mt-2">
+                      <span className="text-green-600">✓ {op.passed}</span>
+                      <span className="text-red-600">✗ {op.failed}</span>
+                      <span>{op.total} total</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200">
@@ -228,28 +245,28 @@ export default function QCTrendsPage() {
       )}
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Total Inspections</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{totalInspections}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Total Inspections</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">{totalInspections}</p>
         </div>
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Overall Pass Rate</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{overallPassRate}%</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Overall Pass Rate</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-1 sm:mt-2">{overallPassRate}%</p>
         </div>
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Passed</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{totalPassed}</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Passed</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-1 sm:mt-2">{totalPassed}</p>
         </div>
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Failed</p>
-          <p className="text-3xl font-bold text-[#C0392B] mt-2">{totalFailed}</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Failed</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#C0392B] mt-1 sm:mt-2">{totalFailed}</p>
         </div>
       </div>
 
       {/* Pass Rate Trend */}
-      <div className="bg-white rounded-xl border p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Pass Rate Trend (Weekly)</h2>
+      <div className="bg-white rounded-xl border p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Pass Rate Trend (Weekly)</h2>
         {trends.passRateByWeek.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>No data available for this period</p>
@@ -258,11 +275,11 @@ export default function QCTrendsPage() {
           <div className="space-y-4">
             {trends.passRateByWeek.reverse().map((week) => (
               <div key={week.weekStart}>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900">
                     Week of {new Date(week.weekStart).toLocaleDateString()}
                   </p>
-                  <div className="flex gap-4">
+                  <div className="flex gap-3 sm:gap-4">
                     <span className="text-sm font-semibold text-gray-700">{week.passRate}%</span>
                     <span className="text-xs text-gray-500">{week.total} checks</span>
                   </div>
@@ -295,9 +312,9 @@ export default function QCTrendsPage() {
       </div>
 
       {/* Defects by Type */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Defect Breakdown by Type</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Defect Breakdown by Type</h2>
           {trends.defectsByType.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No defect data available</p>
@@ -334,8 +351,8 @@ export default function QCTrendsPage() {
         </div>
 
         {/* Result Breakdown Pie */}
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Overall Result Distribution</h2>
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Overall Result Distribution</h2>
           {trends.resultBreakdown.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No data available</p>
@@ -378,8 +395,8 @@ export default function QCTrendsPage() {
 
       {/* Top Failure Reasons */}
       {trends.topFailureReasons.length > 0 && (
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Top Failure Reasons</h2>
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Top Failure Reasons</h2>
           <div className="space-y-3">
             {trends.topFailureReasons.map((reason, idx) => {
               const maxCount = Math.max(...trends.topFailureReasons.map((r) => r.count))
@@ -405,9 +422,36 @@ export default function QCTrendsPage() {
 
       {/* Defects by Crew */}
       {trends.defectsByCrew.length > 0 && (
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Quality by Crew/Team</h2>
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Quality by Crew/Team</h2>
+          {/* Mobile card list */}
+          <div className="flex flex-col gap-2 md:hidden">
+            {trends.defectsByCrew.map((crew) => (
+              <div key={crew.crewName} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-gray-900 text-sm">{crew.crewName || 'Unassigned'}</p>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      crew.passRate >= 90
+                        ? 'bg-green-100 text-green-700'
+                        : crew.passRate >= 75
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {crew.passRate}%
+                  </span>
+                </div>
+                <div className="flex gap-4 text-xs text-gray-600 mt-2">
+                  <span className="text-green-600">✓ {crew.passed}</span>
+                  <span className="text-red-600">✗ {crew.failed}</span>
+                  <span>{crew.total} total</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -448,8 +492,8 @@ export default function QCTrendsPage() {
 
       {/* Daily Trend Chart */}
       {trends.dailyTrend.length > 0 && (
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Daily Inspection Trend</h2>
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Daily Inspection Trend</h2>
           <div className="space-y-2">
             {trends.dailyTrend
               .reverse()
@@ -459,11 +503,11 @@ export default function QCTrendsPage() {
                 const barWidth = (day.total / maxDaily) * 100
                 return (
                   <div key={day.date}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-gray-900 w-24">
+                    <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 flex-shrink-0">
                         {new Date(day.date).toLocaleDateString()}
                       </p>
-                      <div className="flex gap-2 text-xs flex-1 ml-4">
+                      <div className="flex gap-2 text-xs flex-wrap">
                         <span className="text-green-600 font-semibold">{day.passed}</span>
                         <span className="text-red-600 font-semibold">{day.failed}</span>
                         <span className="text-gray-500">({day.total} total)</span>

@@ -166,15 +166,15 @@ export default function CartPage() {
       <div className="max-w-2xl mx-auto py-12">
         <div className="bg-surface rounded-xl border border-border p-8 text-center">
           <div className="text-5xl mb-4">🛒</div>
-          <h2 className="text-2xl font-bold text-fg mb-2">Your Cart is Empty</h2>
+          <h2 className="text-2xl font-bold text-fg mb-2">Your cart is empty</h2>
           <p className="text-fg-muted mb-6">
-            Browse our product catalog and add items to get started.
+            Browse the catalog and add items to get started.
           </p>
           <Link
             href="/catalog"
-            className="inline-block bg-brand hover:bg-brand/90 text-white font-bold py-3 px-6 rounded-lg transition"
+            className="inline-block bg-brand hover:bg-brand-hover text-fg-on-accent font-bold py-3 px-6 rounded-lg transition"
           >
-            Continue Shopping
+            Continue shopping
           </Link>
         </div>
       </div>
@@ -185,15 +185,15 @@ export default function CartPage() {
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
       <Link href="/catalog" className="text-sm text-brand hover:underline mb-4 inline-block">
-        &larr; Continue Shopping
+        &larr; Continue shopping
       </Link>
 
       {/* Header */}
-      <h1 className="text-3xl font-bold text-fg mb-6">Review Cart</h1>
+      <h1 className="text-3xl font-bold text-fg mb-6">Review your cart</h1>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-data-negative-bg border border-data-negative rounded-lg p-4 mb-6">
+          <p className="text-sm text-data-negative-fg">{error}</p>
         </div>
       )}
 
@@ -208,7 +208,7 @@ export default function CartPage() {
               <tr className="text-xs text-fg-muted uppercase tracking-wider">
                 <th className="px-5 py-3 text-left font-semibold">Product</th>
                 <th className="px-5 py-3 text-center font-semibold">Quantity</th>
-                <th className="px-5 py-3 text-right font-semibold">Unit Price</th>
+                <th className="px-5 py-3 text-right font-semibold">Unit price</th>
                 <th className="px-5 py-3 text-right font-semibold">Total</th>
                 <th className="px-5 py-3 text-center font-semibold">Action</th>
               </tr>
@@ -224,7 +224,7 @@ export default function CartPage() {
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded border border-border-strong hover:bg-surface-muted transition"
+                        className="w-8 h-8 flex items-center justify-center rounded border border-border hover:bg-surface-muted transition"
                       >
                         −
                       </button>
@@ -235,11 +235,11 @@ export default function CartPage() {
                           const val = parseInt(e.target.value)
                           if (!isNaN(val) && val > 0) handleUpdateQuantity(item.productId, val)
                         }}
-                        className="w-12 text-center px-2 py-1 border border-border-strong rounded text-sm"
+                        className="w-12 text-center px-2 py-1 border border-border rounded text-sm bg-surface text-fg"
                       />
                       <button
                         onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded border border-border-strong hover:bg-surface-muted transition"
+                        className="w-8 h-8 flex items-center justify-center rounded border border-border hover:bg-surface-muted transition"
                       >
                         +
                       </button>
@@ -252,7 +252,7 @@ export default function CartPage() {
                   <td className="px-5 py-4 text-center">
                     <button
                       onClick={() => handleRemoveItem(item.productId)}
-                      className="text-red-600 hover:text-red-700 font-semibold text-sm transition"
+                      className="text-data-negative-fg hover:opacity-80 font-semibold text-sm transition"
                     >
                       Remove
                     </button>
@@ -271,12 +271,12 @@ export default function CartPage() {
             <span className="text-sm font-medium text-fg-muted">Items ({cart.items.length})</span>
             <span className="text-sm font-semibold text-fg">{fmt(subtotal)}</span>
           </div>
-          <div className="flex justify-between items-center border-t pt-3">
+          <div className="flex justify-between items-center border-t border-border pt-3">
             <span className="text-base font-bold text-fg">Subtotal</span>
             <span className="text-base font-bold text-brand">{fmt(subtotal)}</span>
           </div>
           <p className="text-xs text-fg-muted pt-2">
-            Tax will be calculated and final pricing shown after generating a quote based on your project details.
+            Tax and final pricing lock in after we build your quote.
           </p>
         </div>
       </div>
@@ -285,15 +285,15 @@ export default function CartPage() {
       <div className="flex gap-3">
         <button
           onClick={() => setShowQuoteModal(true)}
-          className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold py-4 px-6 rounded-lg transition"
+          className="flex-1 bg-accent hover:bg-accent-hover text-fg-on-accent font-bold py-4 px-6 rounded-lg transition"
         >
-          Generate Quote
+          Generate quote
         </button>
         <Link
           href="/catalog"
-          className="flex-1 bg-surface-muted hover:bg-gray-300 text-fg font-bold py-4 px-6 rounded-lg transition text-center"
+          className="flex-1 bg-surface-muted hover:bg-border text-fg font-bold py-4 px-6 rounded-lg transition text-center"
         >
-          Continue Shopping
+          Continue shopping
         </Link>
       </div>
 
@@ -308,40 +308,40 @@ export default function CartPage() {
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-fg-muted mb-2">
-                Project Name <span className="text-red-600">*</span>
+                Project name <span className="text-data-negative-fg">*</span>
               </label>
               <input
                 type="text"
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="e.g., Kitchen Renovation, Deck Project..."
-                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-signal"
                 autoFocus
               />
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-fg-muted mb-2">
-                Delivery Notes (Optional)
+                Delivery notes (optional)
               </label>
               <textarea
                 value={deliveryNotes}
                 onChange={e => setDeliveryNotes(e.target.value)}
-                placeholder="e.g., Preferred delivery dates, special instructions..."
-                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
+                placeholder="e.g., Preferred dates, gate codes, unload instructions..."
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-signal"
                 rows={3}
               />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-700">
+            <div className="bg-data-info-bg border border-data-info rounded-lg p-3 mb-4">
+              <p className="text-sm text-data-info-fg">
                 Cart subtotal: <span className="font-semibold">{fmt(subtotal)}</span>
               </p>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="bg-data-negative-bg border border-data-negative rounded-lg p-3 mb-4">
+                <p className="text-sm text-data-negative-fg">{error}</p>
               </div>
             )}
 
@@ -349,17 +349,17 @@ export default function CartPage() {
               <button
                 onClick={() => setShowQuoteModal(false)}
                 disabled={generating}
-                className="flex-1 px-4 py-2 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-border rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleGenerateQuote}
                 disabled={generating || !projectName.trim()}
-                className="flex-1 px-4 py-2 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-accent hover:bg-accent-hover text-fg-on-accent font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {generating && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                {generating ? 'Generating...' : 'Generate Quote'}
+                {generating ? 'Generating...' : 'Generate quote'}
               </button>
             </div>
           </div>

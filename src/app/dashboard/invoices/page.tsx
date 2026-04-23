@@ -39,14 +39,14 @@ interface Summary {
 }
 
 const STATUS_COLORS: Record<string, { label: string; color: string; icon: string }> = {
-  DRAFT:          { label: 'Draft',          color: 'bg-surface-muted text-fg-muted',   icon: '✏️' },
-  ISSUED:         { label: 'Issued',         color: 'bg-blue-100 text-blue-700',   icon: '📄' },
-  SENT:           { label: 'Sent',           color: 'bg-blue-100 text-blue-700',   icon: '📨' },
-  PARTIALLY_PAID: { label: 'Partial',        color: 'bg-yellow-100 text-yellow-700', icon: '💰' },
-  PAID:           { label: 'Paid',           color: 'bg-green-100 text-green-700', icon: '✅' },
-  OVERDUE:        { label: 'Overdue',        color: 'bg-red-100 text-red-700',     icon: '⚠️' },
-  VOID:           { label: 'Void',           color: 'bg-surface-muted text-fg-muted',   icon: '🚫' },
-  WRITE_OFF:      { label: 'Written Off',    color: 'bg-surface-muted text-fg-muted',   icon: '📝' },
+  DRAFT:          { label: 'Draft',          color: 'bg-surface-muted text-fg-muted',         icon: '✏️' },
+  ISSUED:         { label: 'Issued',         color: 'bg-data-info-bg text-data-info-fg',      icon: '📄' },
+  SENT:           { label: 'Sent',           color: 'bg-data-info-bg text-data-info-fg',      icon: '📨' },
+  PARTIALLY_PAID: { label: 'Partial',        color: 'bg-data-warning-bg text-data-warning-fg',icon: '💰' },
+  PAID:           { label: 'Paid',           color: 'bg-data-positive-bg text-data-positive-fg', icon: '✅' },
+  OVERDUE:        { label: 'Overdue',        color: 'bg-data-negative-bg text-data-negative-fg', icon: '⚠️' },
+  VOID:           { label: 'Void',           color: 'bg-surface-muted text-fg-muted',         icon: '🚫' },
+  WRITE_OFF:      { label: 'Written Off',    color: 'bg-surface-muted text-fg-muted',         icon: '📝' },
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -140,40 +140,40 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Invoices & Payments</h1>
-          <p className="text-fg-muted text-sm">View invoices, track payments, and manage your account</p>
+          <h1 className="text-2xl font-bold text-fg">Your invoices</h1>
+          <p className="text-fg-muted text-sm">Review balances, track payments, and download PDFs.</p>
         </div>
         <Link
           href="/dashboard"
           className="text-sm text-brand hover:underline font-medium"
         >
-          ← Back to Dashboard
+          ← Back to dashboard
         </Link>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-surface rounded-xl border border-border p-5">
-          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Total Outstanding</p>
+          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Total outstanding</p>
           <p className="text-2xl font-bold text-fg">{fmt(summary?.totalOutstanding || 0)}</p>
           <p className="text-xs text-fg-subtle mt-1">{summary?.openCount || 0} open invoice{(summary?.openCount || 0) !== 1 ? 's' : ''}</p>
         </div>
-        <div className={`bg-surface rounded-xl border p-5 ${(summary?.overdueAmount || 0) > 0 ? 'border-red-300 bg-red-50/30' : 'border-border'}`}>
+        <div className={`bg-surface rounded-xl border p-5 ${(summary?.overdueAmount || 0) > 0 ? 'border-data-negative bg-data-negative-bg/40' : 'border-border'}`}>
           <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Overdue</p>
-          <p className={`text-2xl font-bold ${(summary?.overdueAmount || 0) > 0 ? 'text-red-600' : 'text-fg-subtle'}`}>
+          <p className={`text-2xl font-bold ${(summary?.overdueAmount || 0) > 0 ? 'text-data-negative-fg' : 'text-fg-subtle'}`}>
             {fmt(summary?.overdueAmount || 0)}
           </p>
           <p className="text-xs text-fg-subtle mt-1">
-            {(summary?.overdueCount || 0) > 0 ? `${summary?.overdueCount} invoice${(summary?.overdueCount || 0) !== 1 ? 's' : ''} past due` : 'No overdue invoices'}
+            {(summary?.overdueCount || 0) > 0 ? `${summary?.overdueCount} invoice${(summary?.overdueCount || 0) !== 1 ? 's' : ''} past due` : 'Nothing overdue'}
           </p>
         </div>
         <div className="bg-surface rounded-xl border border-border p-5">
-          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Paid This Month</p>
-          <p className="text-2xl font-bold text-green-600">{fmt(summary?.paidThisMonth || 0)}</p>
+          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Paid this month</p>
+          <p className="text-2xl font-bold text-data-positive-fg">{fmt(summary?.paidThisMonth || 0)}</p>
           <p className="text-xs text-fg-subtle mt-1">Current month</p>
         </div>
         <div className="bg-surface rounded-xl border border-border p-5">
-          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Total Invoices</p>
+          <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Total invoices</p>
           <p className="text-2xl font-bold text-fg">{summary?.totalInvoices || 0}</p>
           <p className="text-xs text-fg-subtle mt-1">{paidCount} paid</p>
         </div>
@@ -181,21 +181,21 @@ export default function InvoicesPage() {
 
       {/* Overdue Alert */}
       {(summary?.overdueCount || 0) > 0 && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between">
+        <div className="mb-6 p-4 bg-data-negative-bg border border-data-negative rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚠️</span>
             <div>
-              <p className="text-sm font-semibold text-red-800">
-                You have {summary?.overdueCount} overdue invoice{(summary?.overdueCount || 0) !== 1 ? 's' : ''} totaling {fmt(summary?.overdueAmount || 0)}
+              <p className="text-sm font-semibold text-data-negative-fg">
+                {summary?.overdueCount} overdue invoice{(summary?.overdueCount || 0) !== 1 ? 's' : ''} — {fmt(summary?.overdueAmount || 0)} total
               </p>
-              <p className="text-xs text-red-600 mt-0.5">Please arrange payment to keep your account in good standing.</p>
+              <p className="text-xs text-data-negative-fg mt-0.5">Arrange payment to keep terms in place.</p>
             </div>
           </div>
           <button
             onClick={() => setTab('overdue')}
-            className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition"
+            className="px-4 py-2 bg-data-negative text-fg-on-accent text-xs font-semibold rounded-lg hover:opacity-90 transition"
           >
-            View Overdue
+            View overdue
           </button>
         </div>
       )}
@@ -221,7 +221,7 @@ export default function InvoicesPage() {
             {t.count > 0 && (
               <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                 tab === t.key
-                  ? t.key === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-brand/10 text-brand'
+                  ? t.key === 'overdue' ? 'bg-data-negative-bg text-data-negative-fg' : 'bg-brand-subtle text-accent-fg'
                   : 'bg-surface-muted text-fg-muted'
               }`}>
                 {t.count}
@@ -233,9 +233,9 @@ export default function InvoicesPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
-          <p className="text-red-700 text-sm">{error}</p>
-          <button onClick={fetchInvoices} className="text-xs font-semibold text-red-700 underline">Retry</button>
+        <div className="mb-4 p-4 bg-data-negative-bg border border-data-negative rounded-lg flex items-center justify-between">
+          <p className="text-data-negative-fg text-sm">{error}</p>
+          <button onClick={fetchInvoices} className="text-xs font-semibold text-data-negative-fg underline">Retry</button>
         </div>
       )}
 
@@ -251,12 +251,12 @@ export default function InvoicesPage() {
               {tab === 'overdue' ? '✅' : tab === 'paid' ? '📄' : '📋'}
             </div>
             <h3 className="text-lg font-medium text-fg mb-1">
-              {tab === 'overdue' ? 'No overdue invoices' : tab === 'paid' ? 'No paid invoices yet' : tab === 'open' ? 'No open invoices' : 'No invoices yet'}
+              {tab === 'overdue' ? 'Nothing overdue' : tab === 'paid' ? 'No paid invoices yet' : tab === 'open' ? 'No open invoices' : 'No invoices yet'}
             </h3>
             <p className="text-fg-muted text-sm">
               {tab === 'overdue'
-                ? 'Great — your account is up to date!'
-                : 'Invoices will appear here when they are issued.'}
+                ? 'Account is current.'
+                : 'Invoices appear here when they&apos;re issued.'}
             </p>
           </div>
         ) : (
@@ -285,7 +285,7 @@ export default function InvoicesPage() {
                   return (
                     <Fragment key={invoice.id}>
                       <tr
-                        className={`hover:bg-surface-muted transition cursor-pointer ${isOverdue ? 'bg-red-50/30' : ''}`}
+                        className={`hover:bg-surface-muted transition cursor-pointer ${isOverdue ? 'bg-data-negative-bg/40' : ''}`}
                         onClick={() => setExpandedId(isExpanded ? null : invoice.id)}
                       >
                         <td className="px-5 py-3.5">
@@ -305,12 +305,12 @@ export default function InvoicesPage() {
                         <td className="px-5 py-3.5">
                           <div className="text-sm text-fg-muted">{fmtDate(invoice.dueDate)}</div>
                           {isOverdue && overdueDays > 0 && (
-                            <div className="text-xs text-red-600 font-medium">{overdueDays}d overdue</div>
+                            <div className="text-xs text-data-negative-fg font-medium">{overdueDays}d overdue</div>
                           )}
                         </td>
                         <td className="px-5 py-3.5 text-sm font-semibold text-fg text-right">{fmt(invoice.total)}</td>
                         <td className={`px-5 py-3.5 text-sm font-semibold text-right ${
-                          balance <= 0 ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-accent'
+                          balance <= 0 ? 'text-data-positive-fg' : isOverdue ? 'text-data-negative-fg' : 'text-accent'
                         }`}>
                           {balance <= 0 ? 'Paid' : fmt(balance)}
                         </td>
@@ -329,12 +329,12 @@ export default function InvoicesPage() {
                               {/* Payment progress */}
                               <div className="mb-4">
                                 <div className="flex justify-between text-xs text-fg-muted mb-1">
-                                  <span>Payment Progress</span>
+                                  <span>Payment progress</span>
                                   <span>{invoice.total > 0 ? Math.round((invoice.amountPaid / invoice.total) * 100) : 0}%</span>
                                 </div>
                                 <div className="w-full bg-surface-muted rounded-full h-2">
                                   <div
-                                    className={`h-2 rounded-full transition-all ${balance <= 0 ? 'bg-green-500' : isOverdue ? 'bg-red-500' : 'bg-accent'}`}
+                                    className={`h-2 rounded-full transition-all ${balance <= 0 ? 'bg-data-positive' : isOverdue ? 'bg-data-negative' : 'bg-accent'}`}
                                     style={{ width: `${Math.min(100, invoice.total > 0 ? (invoice.amountPaid / invoice.total) * 100 : 0)}%` }}
                                   />
                                 </div>
@@ -342,35 +342,35 @@ export default function InvoicesPage() {
 
                               {/* Detail grid */}
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                                <div className="bg-surface rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border border-border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Total</p>
                                   <p className="text-sm font-semibold text-fg">{fmt(invoice.total)}</p>
                                 </div>
-                                <div className="bg-surface rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border border-border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Paid</p>
-                                  <p className="text-sm font-semibold text-green-600">{fmt(invoice.amountPaid)}</p>
+                                  <p className="text-sm font-semibold text-data-positive-fg">{fmt(invoice.amountPaid)}</p>
                                 </div>
-                                <div className="bg-surface rounded-lg border px-3 py-2">
-                                  <p className="text-xs text-fg-subtle">Balance Due</p>
-                                  <p className={`text-sm font-semibold ${balance > 0 ? 'text-accent' : 'text-green-600'}`}>
-                                    {balance > 0 ? fmt(balance) : 'Paid in Full'}
+                                <div className="bg-surface rounded-lg border border-border px-3 py-2">
+                                  <p className="text-xs text-fg-subtle">Balance due</p>
+                                  <p className={`text-sm font-semibold ${balance > 0 ? 'text-accent' : 'text-data-positive-fg'}`}>
+                                    {balance > 0 ? fmt(balance) : 'Paid in full'}
                                   </p>
                                 </div>
-                                <div className="bg-surface rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border border-border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Terms</p>
                                   <p className="text-sm font-semibold text-fg-muted">{invoice.paymentTerm || '—'}</p>
                                 </div>
                               </div>
 
                               {/* Payment history */}
-                              <h4 className="text-sm font-semibold text-fg mb-2">Payment History</h4>
+                              <h4 className="text-sm font-semibold text-fg mb-2">Payment history</h4>
                               {hasPayments ? (
                                 <div className="space-y-2 mb-4">
                                   {invoice.payments!.map(payment => (
-                                    <div key={payment.id} className="flex items-center justify-between bg-surface rounded-lg border px-4 py-2.5">
+                                    <div key={payment.id} className="flex items-center justify-between bg-surface rounded-lg border border-border px-4 py-2.5">
                                       <div className="flex items-center gap-3">
-                                        <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
-                                          <span className="text-green-600 text-xs">✓</span>
+                                        <div className="w-7 h-7 rounded-full bg-data-positive-bg flex items-center justify-center">
+                                          <span className="text-data-positive-fg text-xs">✓</span>
                                         </div>
                                         <div>
                                           <p className="text-sm font-medium text-fg">{fmt(payment.amount)}</p>
@@ -385,26 +385,26 @@ export default function InvoicesPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-sm text-fg-subtle italic mb-4">No payments recorded yet</p>
+                                <p className="text-sm text-fg-subtle italic mb-4">No payments recorded yet.</p>
                               )}
 
                               {/* Balance due notice */}
                               {balance > 0 && (
-                                <div className={`p-3 rounded-lg ${isOverdue ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-200'}`}>
-                                  <p className={`text-xs ${isOverdue ? 'text-red-700' : 'text-blue-700'}`}>
+                                <div className={`p-3 rounded-lg ${isOverdue ? 'bg-data-negative-bg border border-data-negative' : 'bg-data-info-bg border border-data-info'}`}>
+                                  <p className={`text-xs ${isOverdue ? 'text-data-negative-fg' : 'text-data-info-fg'}`}>
                                     <strong>Balance due: {fmt(balance)}</strong>
                                     {isOverdue
-                                      ? ` — This invoice is ${overdueDays} days past due. Please arrange payment immediately.`
-                                      : ` — Due by ${fmtDate(invoice.dueDate)}. Contact our sales team for questions.`}
+                                      ? ` — ${overdueDays} days past due. Arrange payment to clear the flag.`
+                                      : ` — Due by ${fmtDate(invoice.dueDate)}. Reach out with any questions.`}
                                   </p>
                                 </div>
                               )}
 
                               {/* Actions */}
-                              <div className="mt-4 pt-3 border-t flex gap-3">
+                              <div className="mt-4 pt-3 border-t border-border flex gap-3">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); window.open(`/api/invoices/${invoice.id}/pdf`, '_blank') }}
-                                  className="px-4 py-1.5 bg-brand text-white text-xs font-medium rounded-lg hover:bg-[#163d59] transition"
+                                  className="px-4 py-1.5 bg-brand text-fg-on-accent text-xs font-medium rounded-lg hover:bg-brand-hover transition"
                                 >
                                   Download PDF
                                 </button>
@@ -412,9 +412,9 @@ export default function InvoicesPage() {
                                   <Link
                                     href={`/dashboard/orders/${invoice.orderId}`}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="px-4 py-1.5 bg-surface text-brand border border-brand/30 text-xs font-medium rounded-lg hover:bg-brand/5 transition"
+                                    className="px-4 py-1.5 bg-surface text-brand border border-border text-xs font-medium rounded-lg hover:bg-surface-muted transition"
                                   >
-                                    View Order
+                                    View order
                                   </Link>
                                 )}
                               </div>
@@ -434,14 +434,14 @@ export default function InvoicesPage() {
       {/* Help footer */}
       <div className="mt-6 p-4 bg-surface-muted border border-border rounded-xl flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-fg-muted">Need help with an invoice?</p>
-          <p className="text-xs text-fg-muted">Contact your Abel Lumber account representative for payment questions or disputes.</p>
+          <p className="text-sm font-medium text-fg-muted">Question on an invoice?</p>
+          <p className="text-xs text-fg-muted">Your Abel rep can handle payment questions or disputes directly.</p>
         </div>
         <Link
           href="/dashboard/messages"
-          className="px-4 py-2 bg-accent text-white text-xs font-semibold rounded-lg hover:bg-accent-hover transition whitespace-nowrap"
+          className="px-4 py-2 bg-accent text-fg-on-accent text-xs font-semibold rounded-lg hover:bg-accent-hover transition whitespace-nowrap"
         >
-          Send a Message
+          Send a message
         </Link>
       </div>
     </div>

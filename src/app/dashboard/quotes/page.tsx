@@ -63,22 +63,22 @@ function fmt(n: number) {
 }
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
-  NEW: 'bg-blue-100 text-blue-700',
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  IN_PROGRESS: 'bg-amber-100 text-amber-700',
-  QUOTED: 'bg-green-100 text-green-700',
-  ACCEPTED: 'bg-emerald-100 text-emerald-700',
-  REJECTED: 'bg-red-100 text-red-700',
+  NEW: 'bg-data-info-bg text-data-info-fg',
+  PENDING: 'bg-data-warning-bg text-data-warning-fg',
+  IN_PROGRESS: 'bg-data-warning-bg text-data-warning-fg',
+  QUOTED: 'bg-data-positive-bg text-data-positive-fg',
+  ACCEPTED: 'bg-data-positive-bg text-data-positive-fg',
+  REJECTED: 'bg-data-negative-bg text-data-negative-fg',
   EXPIRED: 'bg-surface-muted text-fg-muted',
 }
 
 const QUOTE_STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   DRAFT: { color: 'bg-surface-muted text-fg-muted', label: 'Draft' },
-  SENT: { color: 'bg-blue-100 text-blue-700', label: 'Ready for Review' },
-  APPROVED: { color: 'bg-green-100 text-green-700', label: 'Approved' },
-  REJECTED: { color: 'bg-red-100 text-red-700', label: 'Rejected' },
+  SENT: { color: 'bg-data-info-bg text-data-info-fg', label: 'Ready for Review' },
+  APPROVED: { color: 'bg-data-positive-bg text-data-positive-fg', label: 'Approved' },
+  REJECTED: { color: 'bg-data-negative-bg text-data-negative-fg', label: 'Rejected' },
   EXPIRED: { color: 'bg-surface-muted text-fg-muted', label: 'Expired' },
-  ORDERED: { color: 'bg-emerald-100 text-emerald-700', label: 'Ordered' },
+  ORDERED: { color: 'bg-data-positive-bg text-data-positive-fg', label: 'Ordered' },
 }
 
 // ─── Page Component ─────────────────────────────────────────────────
@@ -252,36 +252,36 @@ export default function QuotesPage() {
     <div>
       {/* Convert Success Banner */}
       {convertSuccess && (
-        <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-          <span className="text-green-600">✅</span>
-          <p className="text-sm text-green-700 font-medium">{convertSuccess}</p>
-          <Link href="/dashboard/orders" className="ml-auto text-xs font-semibold text-green-700 underline">View Orders</Link>
+        <div className="mb-4 px-4 py-3 bg-data-positive-bg border border-data-positive rounded-lg flex items-center gap-2">
+          <span className="text-data-positive-fg">✓</span>
+          <p className="text-sm text-data-positive-fg font-medium">{convertSuccess}</p>
+          <Link href="/dashboard/orders" className="ml-auto text-xs font-semibold text-data-positive-fg underline">View orders</Link>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-fg">Quotes</h1>
-          <p className="text-fg-muted text-sm mt-1">View quotes and submit new requests</p>
+          <h1 className="text-3xl font-bold text-fg">Your quotes</h1>
+          <p className="text-fg-muted text-sm mt-1">Review pricing, approve quotes, and request new ones.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors"
+          className="px-4 py-2 bg-accent text-fg-on-accent rounded-lg font-semibold hover:bg-accent-hover transition-colors"
         >
-          Request a Quote
+          Request a quote
         </button>
       </div>
 
       {/* Success / Error */}
       {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-700 text-sm font-medium">{success}</p>
+        <div className="mb-4 p-4 bg-data-positive-bg border border-data-positive rounded-lg">
+          <p className="text-data-positive-fg text-sm font-medium">{success}</p>
         </div>
       )}
       {error && !showModal && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm font-medium">{error}</p>
+        <div className="mb-4 p-4 bg-data-negative-bg border border-data-negative rounded-lg">
+          <p className="text-data-negative-fg text-sm font-medium">{error}</p>
         </div>
       )}
 
@@ -295,9 +295,9 @@ export default function QuotesPage() {
               : 'text-fg-muted hover:text-fg-muted'
           }`}
         >
-          Formal Quotes
+          Quotes
           {actionableQuotes > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-accent text-white text-[10px] rounded-full font-bold">
+            <span className="ml-2 px-2 py-0.5 bg-accent text-fg-on-accent text-[10px] rounded-full font-bold">
               {actionableQuotes}
             </span>
           )}
@@ -310,9 +310,9 @@ export default function QuotesPage() {
               : 'text-fg-muted hover:text-fg-muted'
           }`}
         >
-          Quote Requests
+          Requests
           {pendingRequests > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] rounded-full font-bold">
+            <span className="ml-2 px-2 py-0.5 bg-data-info text-fg-on-accent text-[10px] rounded-full font-bold">
               {pendingRequests}
             </span>
           )}
@@ -332,12 +332,12 @@ export default function QuotesPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <h3 className="text-lg font-medium text-fg mb-2">No quotes yet</h3>
-              <p className="text-fg-muted mb-6">Once Abel Lumber prepares a quote for you, it will appear here for review and approval.</p>
+              <p className="text-fg-muted mb-6">Quotes prepared for you will land here for review and approval.</p>
               <button
                 onClick={() => { setActiveTab('requests'); setShowModal(true) }}
-                className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors"
+                className="px-4 py-2 bg-accent text-fg-on-accent rounded-lg font-semibold hover:bg-accent-hover transition-colors"
               >
-                Request a Quote
+                Request a quote
               </button>
             </div>
           ) : (
@@ -350,7 +350,7 @@ export default function QuotesPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Items</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Total</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Valid Until</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Valid until</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Action</th>
                   </tr>
                 </thead>
@@ -361,7 +361,7 @@ export default function QuotesPage() {
                     const needsAction = q.status === 'SENT' || q.status === 'DRAFT'
 
                     return (
-                      <tr key={q.id} className={`hover:bg-surface-muted transition-colors ${needsAction ? 'bg-blue-50/30' : ''}`}>
+                      <tr key={q.id} className={`hover:bg-surface-muted transition-colors ${needsAction ? 'bg-data-info-bg/40' : ''}`}>
                         <td className="px-6 py-4">
                           <Link href={`/dashboard/quotes/${q.id}`} className="text-sm font-mono font-semibold text-brand hover:underline">
                             {q.quoteNumber}
@@ -391,7 +391,7 @@ export default function QuotesPage() {
                               <button
                                 onClick={() => convertToOrder(q.id)}
                                 disabled={convertingId === q.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg hover:bg-[#163d59] transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand text-fg-on-accent text-xs font-semibold rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
                               >
                                 {convertingId === q.id ? (
                                   <>
@@ -399,14 +399,14 @@ export default function QuotesPage() {
                                     Converting...
                                   </>
                                 ) : (
-                                  <>📦 Place Order</>
+                                  <>Place order</>
                                 )}
                               </button>
                             )}
                             {needsAction && !isExpired ? (
                               <Link
                                 href={`/dashboard/quotes/${q.id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-xs font-semibold rounded-lg hover:bg-accent-hover transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-fg-on-accent text-xs font-semibold rounded-lg hover:bg-accent-hover transition-colors"
                               >
                                 Review
                               </Link>
@@ -442,13 +442,13 @@ export default function QuotesPage() {
               <svg className="w-16 h-16 mx-auto text-fg-subtle mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="text-lg font-medium text-fg mb-2">No quote requests yet</h3>
-              <p className="text-fg-muted mb-6">Submit a new quote request for your project.</p>
+              <h3 className="text-lg font-medium text-fg mb-2">No requests yet</h3>
+              <p className="text-fg-muted mb-6">Submit a request and we&apos;ll build a quote for your project.</p>
               <button
                 onClick={() => setShowModal(true)}
-                className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors"
+                className="px-4 py-2 bg-accent text-fg-on-accent rounded-lg font-semibold hover:bg-accent-hover transition-colors"
               >
-                Request a Quote
+                Request a quote
               </button>
             </div>
           ) : (
@@ -538,9 +538,9 @@ export default function QuotesPage() {
                                   <p className="text-sm text-fg-muted mt-1 whitespace-pre-wrap">{req.description}</p>
                                 </div>
                                 {req.notes && (
-                                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                    <p className="text-xs text-yellow-700 font-semibold mb-1">Notes</p>
-                                    <p className="text-sm text-yellow-800">{req.notes}</p>
+                                  <div className="p-3 bg-data-warning-bg border border-data-warning rounded-lg">
+                                    <p className="text-xs text-data-warning-fg font-semibold mb-1">Notes</p>
+                                    <p className="text-sm text-data-warning-fg">{req.notes}</p>
                                   </div>
                                 )}
                               </div>
@@ -562,7 +562,7 @@ export default function QuotesPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-fg">Request a Quote</h2>
+              <h2 className="text-xl font-bold text-fg">Request a quote</h2>
               <button
                 onClick={() => { setShowModal(false); setError('') }}
                 className="text-fg-subtle hover:text-fg-muted transition-colors"
@@ -575,8 +575,8 @@ export default function QuotesPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm font-medium">{error}</p>
+                <div className="p-3 bg-data-negative-bg border border-data-negative rounded-lg">
+                  <p className="text-data-negative-fg text-sm font-medium">{error}</p>
                 </div>
               )}
 

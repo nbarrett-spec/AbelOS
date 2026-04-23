@@ -16,33 +16,33 @@ interface Activity {
 }
 
 const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  ORDER: { icon: '📦', color: 'text-blue-700', bg: 'bg-blue-50' },
-  QUOTE: { icon: '📋', color: 'text-indigo-700', bg: 'bg-indigo-50' },
-  WARRANTY: { icon: '🛡️', color: 'text-amber-700', bg: 'bg-amber-50' },
-  INVOICE: { icon: '💳', color: 'text-green-700', bg: 'bg-green-50' },
+  ORDER:    { icon: '📦', color: 'text-data-info-fg',     bg: 'bg-data-info-bg' },
+  QUOTE:    { icon: '📋', color: 'text-accent-fg',        bg: 'bg-brand-subtle' },
+  WARRANTY: { icon: '🛡️', color: 'text-data-warning-fg',  bg: 'bg-data-warning-bg' },
+  INVOICE:  { icon: '💳', color: 'text-data-positive-fg', bg: 'bg-data-positive-bg' },
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  RECEIVED: 'bg-blue-100 text-blue-700',
-  CONFIRMED: 'bg-indigo-100 text-indigo-700',
-  IN_PRODUCTION: 'bg-yellow-100 text-yellow-700',
-  READY_TO_SHIP: 'bg-purple-100 text-purple-700',
-  SHIPPED: 'bg-orange-100 text-orange-700',
-  DELIVERED: 'bg-green-100 text-green-700',
-  COMPLETE: 'bg-green-100 text-green-700',
-  DRAFT: 'bg-surface-muted text-fg-muted',
-  SENT: 'bg-blue-100 text-blue-700',
-  APPROVED: 'bg-green-100 text-green-700',
-  REJECTED: 'bg-red-100 text-red-700',
-  EXPIRED: 'bg-surface-muted text-fg-muted',
-  ORDERED: 'bg-green-100 text-green-700',
-  OPEN: 'bg-blue-100 text-blue-700',
-  IN_PROGRESS: 'bg-yellow-100 text-yellow-700',
-  RESOLVED: 'bg-green-100 text-green-700',
-  CLOSED: 'bg-surface-muted text-fg-muted',
-  PAID: 'bg-green-100 text-green-700',
-  OVERDUE: 'bg-red-100 text-red-700',
-  CANCELLED: 'bg-surface-muted text-fg-muted',
+  RECEIVED:       'bg-data-info-bg text-data-info-fg',
+  CONFIRMED:      'bg-brand-subtle text-accent-fg',
+  IN_PRODUCTION:  'bg-data-warning-bg text-data-warning-fg',
+  READY_TO_SHIP:  'bg-forecast-bg text-forecast-fg',
+  SHIPPED:        'bg-accent-subtle text-accent-fg',
+  DELIVERED:      'bg-data-positive-bg text-data-positive-fg',
+  COMPLETE:       'bg-data-positive-bg text-data-positive-fg',
+  DRAFT:          'bg-surface-muted text-fg-muted',
+  SENT:           'bg-data-info-bg text-data-info-fg',
+  APPROVED:       'bg-data-positive-bg text-data-positive-fg',
+  REJECTED:       'bg-data-negative-bg text-data-negative-fg',
+  EXPIRED:        'bg-surface-muted text-fg-muted',
+  ORDERED:        'bg-data-positive-bg text-data-positive-fg',
+  OPEN:           'bg-data-info-bg text-data-info-fg',
+  IN_PROGRESS:    'bg-data-warning-bg text-data-warning-fg',
+  RESOLVED:       'bg-data-positive-bg text-data-positive-fg',
+  CLOSED:         'bg-surface-muted text-fg-muted',
+  PAID:           'bg-data-positive-bg text-data-positive-fg',
+  OVERDUE:        'bg-data-negative-bg text-data-negative-fg',
+  CANCELLED:      'bg-surface-muted text-fg-muted',
 }
 
 function timeAgo(dateStr: string): string {
@@ -108,11 +108,11 @@ export default function ActivityPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Activity Log</h1>
-          <p className="text-fg-muted text-sm mt-1">Recent activity across your account</p>
+          <h1 className="text-2xl font-bold text-fg">Your activity</h1>
+          <p className="text-fg-muted text-sm mt-1">Recent orders, quotes, and invoices.</p>
         </div>
         <Link href="/dashboard" className="text-sm text-brand hover:underline">
-          ← Back to Dashboard
+          ← Back to dashboard
         </Link>
       </div>
 
@@ -130,7 +130,7 @@ export default function ActivityPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
               filter === f.key
-                ? 'bg-brand text-white'
+                ? 'bg-brand text-fg-on-accent'
                 : 'bg-surface border border-border text-fg-muted hover:bg-surface-muted'
             }`}
           >

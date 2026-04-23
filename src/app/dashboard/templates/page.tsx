@@ -207,36 +207,35 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-fg">Order Templates</h1>
-          <p className="text-fg-muted text-sm mt-1">Save and reuse your common orders</p>
+          <h1 className="text-3xl font-bold text-fg">Your templates</h1>
+          <p className="text-fg-muted text-sm mt-1">Reusable order sets for repeat jobs.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-brand hover:bg-brand/90 text-white font-bold py-3 px-6 rounded-lg transition"
+          className="bg-brand hover:bg-brand-hover text-fg-on-accent font-bold py-3 px-6 rounded-lg transition"
         >
-          + Create Template
+          + Create template
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-data-negative-bg border border-data-negative rounded-lg p-4 mb-6">
+          <p className="text-sm text-data-negative-fg">{error}</p>
         </div>
       )}
 
       {/* Empty State */}
       {templates.length === 0 ? (
         <div className="bg-surface rounded-xl border border-border p-12 text-center">
-          <div className="text-5xl mb-4">📋</div>
-          <h2 className="text-2xl font-bold text-fg mb-2">No Templates Yet</h2>
+          <h2 className="text-2xl font-bold text-fg mb-2">No templates yet</h2>
           <p className="text-fg-muted mb-6">
-            Create templates from your orders to quickly reorder common products.
+            Save an order as a template to reuse it on the next job.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-block bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-lg transition"
+            className="inline-block bg-accent hover:bg-accent-hover text-fg-on-accent font-bold py-3 px-6 rounded-lg transition"
           >
-            Create Your First Template
+            Create your first template
           </button>
         </div>
       ) : (
@@ -265,9 +264,9 @@ export default function TemplatesPage() {
                 </div>
 
                 {template.sourceOrderId && (
-                  <div className="bg-blue-50 rounded-lg p-2.5">
-                    <p className="text-xs text-blue-700">
-                      <span className="font-semibold">From Order</span>
+                  <div className="bg-data-info-bg rounded-lg p-2.5">
+                    <p className="text-xs text-data-info-fg">
+                      <span className="font-semibold">From order</span>
                       <br />
                       {template.sourceOrderId}
                     </p>
@@ -308,22 +307,22 @@ export default function TemplatesPage() {
                 <button
                   onClick={() => handleLoadToCart(template.id)}
                   disabled={loadingToCartId === template.id}
-                  className="flex-1 bg-accent hover:bg-accent/90 disabled:bg-accent/50 text-white font-semibold text-sm py-2 rounded transition flex items-center justify-center gap-2"
+                  className="flex-1 bg-accent hover:bg-accent-hover disabled:opacity-60 text-fg-on-accent font-semibold text-sm py-2 rounded transition flex items-center justify-center gap-2"
                 >
                   {loadingToCartId === template.id && (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   )}
-                  {loadingToCartId === template.id ? 'Loading...' : 'Load to Cart'}
+                  {loadingToCartId === template.id ? 'Loading...' : 'Load to cart'}
                 </button>
                 <button
                   onClick={() => handleExpandTemplate(template.id)}
-                  className="flex-1 bg-surface hover:bg-surface-muted text-fg-muted font-semibold text-sm py-2 rounded border border-border-strong transition"
+                  className="flex-1 bg-surface hover:bg-surface-muted text-fg-muted font-semibold text-sm py-2 rounded border border-border transition"
                 >
-                  {expandedTemplateId === template.id ? 'Hide' : 'View'} Items
+                  {expandedTemplateId === template.id ? 'Hide' : 'View'} items
                 </button>
                 <button
                   onClick={() => handleDeleteTemplate(template.id)}
-                  className="px-3 bg-surface hover:bg-red-50 text-red-600 font-semibold text-sm py-2 rounded border border-border-strong transition"
+                  className="px-3 bg-surface hover:bg-data-negative-bg text-data-negative-fg font-semibold text-sm py-2 rounded border border-border transition"
                   title="Delete template"
                 >
                   ×
@@ -342,7 +341,7 @@ export default function TemplatesPage() {
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-fg-muted mb-2">
-                Template Name <span className="text-red-600">*</span>
+                Template Name <span className="text-data-negative-fg">*</span>
               </label>
               <input
                 type="text"
@@ -406,7 +405,7 @@ export default function TemplatesPage() {
             {formMode === 'fromOrder' && (
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-fg-muted mb-2">
-                  Select Order <span className="text-red-600">*</span>
+                  Select Order <span className="text-data-negative-fg">*</span>
                 </label>
                 <select
                   value={formSourceOrderId}
@@ -427,8 +426,8 @@ export default function TemplatesPage() {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="bg-data-negative-bg border border-data-negative rounded-lg p-3 mb-4">
+                <p className="text-sm text-data-negative-fg">{error}</p>
               </div>
             )}
 

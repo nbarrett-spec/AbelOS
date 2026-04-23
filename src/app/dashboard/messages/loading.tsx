@@ -33,8 +33,8 @@ export default function Loading() {
             {[...Array(4)].map((_, i) => (
               <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
                 <div className={`${i % 2 === 0 ? 'bg-surface-muted w-3/4' : 'bg-surface-muted w-2/3'} rounded-lg p-4`}>
-                  <div className="h-3 bg-gray-300 rounded w-full mb-2" />
-                  <div className="h-3 bg-gray-300 rounded w-5/6" />
+                  <div className="h-3 bg-border rounded w-full mb-2" />
+                  <div className="h-3 bg-border rounded w-5/6" />
                 </div>
               </div>
             ))}

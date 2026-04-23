@@ -154,15 +154,37 @@ export async function POST(
 
     const conversation = convCheck[0]
 
+    // senderId is NOT NULL FK → Staff. For builder-originated messages, stamp
+    // the on-call staff (drift reconciled 2026-04-22). If the conversation
+    // already has a creator, reuse that; otherwise fall back to any active
+    // SALES/EXECUTIVE/OPERATIONS staff.
+    const creatorLookup: any[] = await prisma.$queryRawUnsafe(`
+      SELECT "createdById" FROM "Conversation" WHERE "id" = $1
+    `, conversationId)
+    let onCallStaffId: string | null = creatorLookup[0]?.createdById ?? null
+    if (!onCallStaffId) {
+      const rows: any[] = await prisma.$queryRawUnsafe(`
+        SELECT "id" FROM "Staff"
+        WHERE "active" = true
+          AND "department"::text IN ('SALES', 'EXECUTIVE', 'OPERATIONS')
+        ORDER BY "createdAt" ASC
+        LIMIT 1
+      `)
+      onCallStaffId = rows[0]?.id ?? null
+    }
+    if (!onCallStaffId) {
+      return NextResponse.json({ error: 'No on-call staff available' }, { status: 503 })
+    }
+
     // Create message
     const messageId = `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
     const now = new Date()
 
     await prisma.$executeRawUnsafe(`
       INSERT INTO "Message" (
-        "id", "conversationId", "builderSenderId", "senderType", "body", "readByBuilder", "createdAt"
-      ) VALUES ($1, $2, $3, $4, $5, true, $6)
-    `, messageId, conversationId, builderId, 'BUILDER', message, now)
+        "id", "conversationId", "senderId", "builderSenderId", "senderType", "body", "readBy", "readByBuilder", "createdAt"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7::text[], true, $8)
+    `, messageId, conversationId, onCallStaffId, builderId, 'BUILDER', message, [], now)
 
     // Update conversation with last message info
     const preview = message.length > 100 ? message.substring(0, 100) + '...' : message

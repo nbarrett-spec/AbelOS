@@ -70,21 +70,21 @@ function daysUntil(dateStr: string) {
 }
 
 const ORDER_STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-  RECEIVED: { label: 'Received', color: 'bg-blue-100 text-blue-700', icon: '📋' },
-  CONFIRMED: { label: 'Confirmed', color: 'bg-indigo-100 text-indigo-700', icon: '✅' },
-  IN_PRODUCTION: { label: 'In Production', color: 'bg-amber-100 text-amber-700', icon: '🔨' },
-  READY_TO_SHIP: { label: 'Ready to Ship', color: 'bg-emerald-100 text-emerald-700', icon: '📦' },
-  SHIPPED: { label: 'Shipped', color: 'bg-cyan-100 text-cyan-700', icon: '🚚' },
-  DELIVERED: { label: 'Delivered', color: 'bg-violet-100 text-violet-700', icon: '✓' },
-  COMPLETE: { label: 'Complete', color: 'bg-green-100 text-green-700', icon: '🏁' },
+  RECEIVED:       { label: 'Received',      color: 'bg-data-info-bg text-data-info-fg',         icon: '📋' },
+  CONFIRMED:      { label: 'Confirmed',     color: 'bg-brand-subtle text-accent-fg',            icon: '✅' },
+  IN_PRODUCTION:  { label: 'In Production', color: 'bg-data-warning-bg text-data-warning-fg',   icon: '🔨' },
+  READY_TO_SHIP:  { label: 'Ready to Ship', color: 'bg-data-positive-bg text-data-positive-fg', icon: '📦' },
+  SHIPPED:        { label: 'Shipped',       color: 'bg-data-info-bg text-data-info-fg',         icon: '🚚' },
+  DELIVERED:      { label: 'Delivered',     color: 'bg-forecast-bg text-forecast-fg',           icon: '✓' },
+  COMPLETE:       { label: 'Complete',      color: 'bg-data-positive-bg text-data-positive-fg', icon: '🏁' },
 }
 
 const INVOICE_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: 'Draft', color: 'bg-surface-muted text-fg-muted' },
-  SENT: { label: 'Sent', color: 'bg-blue-100 text-blue-700' },
-  PAID: { label: 'Paid', color: 'bg-green-100 text-green-700' },
-  OVERDUE: { label: 'Overdue', color: 'bg-red-100 text-red-700' },
-  PARTIALLY_PAID: { label: 'Partial', color: 'bg-amber-100 text-amber-700' },
+  DRAFT:          { label: 'Draft',   color: 'bg-surface-muted text-fg-muted' },
+  SENT:           { label: 'Sent',    color: 'bg-data-info-bg text-data-info-fg' },
+  PAID:           { label: 'Paid',    color: 'bg-data-positive-bg text-data-positive-fg' },
+  OVERDUE:        { label: 'Overdue', color: 'bg-data-negative-bg text-data-negative-fg' },
+  PARTIALLY_PAID: { label: 'Partial', color: 'bg-data-warning-bg text-data-warning-fg' },
 }
 
 export default function ProjectDetailPage() {
@@ -225,7 +225,7 @@ export default function ProjectDetailPage() {
             </svg>
             Share with Homeowner
           </button>
-          <span className="px-3 py-1 rounded-lg font-semibold text-sm bg-green-100 text-green-700">
+          <span className="px-3 py-1 rounded-lg font-semibold text-sm bg-data-positive-bg text-data-positive-fg">
             {project.status}
           </span>
         </div>
@@ -391,12 +391,12 @@ export default function ProjectDetailPage() {
                     >
                       <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${
                         isPast
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-data-positive-bg text-data-positive-fg'
                           : days <= 1
-                          ? 'bg-red-100 text-red-700'
+                          ? 'bg-data-negative-bg text-data-negative-fg'
                           : days <= 3
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-blue-100 text-blue-700'
+                          ? 'bg-data-warning-bg text-data-warning-fg'
+                          : 'bg-data-info-bg text-data-info-fg'
                       }`}>
                         <span className="text-lg font-bold leading-none">{Math.abs(days)}</span>
                         <span className="text-[9px] uppercase font-medium">{isPast ? 'ago' : 'days'}</span>
@@ -412,7 +412,7 @@ export default function ProjectDetailPage() {
                           <p className="text-xs text-fg-muted mt-1 italic">{delivery.notes}</p>
                         )}
                       </div>
-                      <span className="px-2 py-1 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 whitespace-nowrap">
+                      <span className="px-2 py-1 rounded-full text-[10px] font-semibold bg-data-info-bg text-data-info-fg whitespace-nowrap">
                         {delivery.status}
                       </span>
                     </div>
@@ -542,12 +542,12 @@ export default function ProjectDetailPage() {
             ) : (
               <>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-data-positive-bg rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-data-positive-fg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-fg">Access Code Generated</h3>
+                  <h3 className="text-lg font-bold text-fg">Access code generated</h3>
                 </div>
 
                 <p className="text-sm text-fg-muted mb-4">
@@ -560,26 +560,26 @@ export default function ProjectDetailPage() {
                       type="text"
                       value={accessUrl}
                       readOnly
-                      className="flex-1 bg-surface px-3 py-2 border border-border-strong rounded text-xs font-mono text-fg-muted"
+                      className="flex-1 bg-surface px-3 py-2 border border-border rounded text-xs font-mono text-fg-muted"
                     />
                     <button
                       onClick={handleCopyUrl}
-                      className="px-3 py-2 bg-brand text-white rounded text-sm font-medium hover:bg-[#0d2c47] transition"
+                      className="px-3 py-2 bg-brand text-fg-on-accent rounded text-sm font-medium hover:bg-brand-hover transition"
                     >
                       Copy
                     </button>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-blue-700">
-                    <strong>Next step:</strong> Send this link to the homeowner via email. They can use it to view selections and select upgrades.
+                <div className="bg-data-info-bg border border-data-info rounded-lg p-3 mb-4">
+                  <p className="text-xs text-data-info-fg">
+                    <strong>Next step:</strong> Email this link to the homeowner. They&apos;ll use it to review selections and pick upgrades.
                   </p>
                 </div>
 
                 <button
                   onClick={handleResetModal}
-                  className="w-full px-4 py-2.5 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent-hover transition"
+                  className="w-full px-4 py-2.5 bg-accent text-fg-on-accent rounded-lg text-sm font-semibold hover:bg-accent-hover transition"
                 >
                   Done
                 </button>

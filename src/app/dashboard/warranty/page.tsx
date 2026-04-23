@@ -236,21 +236,21 @@ export default function WarrantyPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-fg">Warranty Claims</h1>
-            <p className="text-fg-muted mt-2">Manage your warranty policies and file new claims</p>
+            <h1 className="text-4xl font-bold text-fg">Your warranty claims</h1>
+            <p className="text-fg-muted mt-2">File a new claim or track an open one.</p>
           </div>
           <button
             onClick={() => setShowNewClaimForm(true)}
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-fg-on-accent px-6 py-3 rounded-lg font-semibold transition-colors"
           >
             <Plus size={20} />
-            File New Claim
+            File new claim
           </button>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-data-negative-bg border border-data-negative text-data-negative-fg px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
@@ -258,15 +258,15 @@ export default function WarrantyPage() {
         {/* Stats Bar */}
         {!loading && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-              <p className="text-fg-muted text-sm font-semibold uppercase">Total Claims</p>
+            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-data-info">
+              <p className="text-fg-muted text-sm font-semibold uppercase">Total claims</p>
               <p className="text-4xl font-bold text-fg mt-2">{claims.length}</p>
             </div>
-            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-orange-500">
-              <p className="text-fg-muted text-sm font-semibold uppercase">Open Claims</p>
+            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-accent">
+              <p className="text-fg-muted text-sm font-semibold uppercase">Open claims</p>
               <p className="text-4xl font-bold text-fg mt-2">{openCount}</p>
             </div>
-            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-emerald-500">
+            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-data-positive">
               <p className="text-fg-muted text-sm font-semibold uppercase">Resolved</p>
               <p className="text-4xl font-bold text-fg mt-2">{resolvedCount}</p>
             </div>
@@ -280,7 +280,7 @@ export default function WarrantyPage() {
             className="flex items-center justify-between w-full text-left"
           >
             <div>
-              <h2 className="text-2xl font-bold text-fg">Warranty Policies</h2>
+              <h2 className="text-2xl font-bold text-fg">Warranty policies</h2>
               <p className="text-fg-muted text-sm mt-1">{activePolicies.length} active policies</p>
             </div>
             {showPolicies ? <ChevronUp size={24} className="text-fg-muted" /> : <ChevronDown size={24} className="text-fg-muted" />}
@@ -294,7 +294,7 @@ export default function WarrantyPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="font-semibold text-fg">{policy.name}</h3>
-                        <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full mt-2">
+                        <span className="inline-block bg-data-info-bg text-data-info-fg text-xs font-semibold px-3 py-1 rounded-full mt-2">
                           {policy.type}
                         </span>
                       </div>
@@ -313,20 +313,19 @@ export default function WarrantyPage() {
         {/* Claims List or Empty State */}
         {loading ? (
           <div className="bg-surface rounded-lg shadow-md p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-r-transparent"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-accent border-r-transparent"></div>
             <p className="text-fg-muted mt-4">Loading warranty data...</p>
           </div>
         ) : claims.length === 0 ? (
           <div className="bg-surface rounded-lg shadow-md p-12 text-center">
-            <div className="text-6xl mb-4">📋</div>
-            <h3 className="text-2xl font-bold text-fg mb-2">No Warranty Claims Yet</h3>
-            <p className="text-fg-muted mb-6">Start by filing a new claim for any warranty-related issues.</p>
+            <h3 className="text-2xl font-bold text-fg mb-2">No warranty claims yet</h3>
+            <p className="text-fg-muted mb-6">File a claim for any warranty-related issue.</p>
             <button
               onClick={() => setShowNewClaimForm(true)}
-              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-fg-on-accent px-6 py-3 rounded-lg font-semibold transition-colors"
             >
               <Plus size={20} />
-              File New Claim
+              File new claim
             </button>
           </div>
         ) : (

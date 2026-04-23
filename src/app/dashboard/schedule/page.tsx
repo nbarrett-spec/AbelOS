@@ -246,8 +246,8 @@ export default function SchedulePage() {
       <div style={S.header}>
         <div style={S.headerRow}>
           <div>
-            <h1 style={S.title}>Job Schedule</h1>
-            <p style={S.subtitle}>Visual command center for all your active jobs, deliveries, and milestones</p>
+            <h1 style={S.title}>Your schedule</h1>
+            <p style={S.subtitle}>Active jobs, upcoming deliveries, and milestones in one view.</p>
           </div>
           <div style={S.controls}>
             <button onClick={() => setViewMode('timeline')} style={S.viewBtn(viewMode === 'timeline')}>Timeline</button>

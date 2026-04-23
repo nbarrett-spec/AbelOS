@@ -3028,16 +3028,16 @@ model WebhookEvent {
 
 model CronRun {
   id        String    @id @default(cuid())
-  cronName  String
+  name      String
   status    String    @default("RUNNING") // RUNNING | SUCCESS | FAILED
   startedAt DateTime  @default(now())
-  endedAt   DateTime?
+  finishedAt DateTime?
   durationMs Int?
   result    Json?     // Summary payload (rows processed, errors, etc.)
   error     String?
   triggeredBy String  @default("SCHEDULE") // SCHEDULE | MANUAL
 
-  @@index([cronName, startedAt(sort: Desc)])
+  @@index([name, startedAt(sort: Desc)])
   @@index([status])
 }
 

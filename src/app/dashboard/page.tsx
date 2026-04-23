@@ -248,10 +248,10 @@ export default function DashboardPage() {
           <Package className="w-8 h-8 text-fg-subtle" />
         </div>
         <p className="text-base font-semibold text-fg mb-1">Sign in required</p>
-        <p className="text-sm text-fg-muted mb-6">Access your projects and orders</p>
+        <p className="text-sm text-fg-muted mb-6">Access your projects and orders.</p>
         <Link href="/login">
           <Button variant="accent" iconRight={<ArrowRight className="w-4 h-4" />}>
-            Sign In
+            Sign in
           </Button>
         </Link>
       </div>
@@ -347,8 +347,8 @@ export default function DashboardPage() {
             <Card variant="default" padding="none" rounded="2xl" className="overflow-hidden animate-enter">
               <CardHeader className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-fg flex items-center gap-2">
-                  <Truck className="w-4.5 h-4.5 text-cyan-600 dark:text-cyan-400" />
-                  Upcoming Deliveries
+                  <Truck className="w-4.5 h-4.5 text-data-info-fg" />
+                  Upcoming deliveries
                 </h3>
                 <Link
                   href="/dashboard/deliveries"
@@ -369,11 +369,11 @@ export default function DashboardPage() {
                       className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-muted transition-colors"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-xl bg-cyan-50 dark:bg-cyan-900/20 flex flex-col items-center justify-center">
-                          <span className="text-base font-bold text-cyan-700 dark:text-cyan-300 leading-none">
+                        <div className="w-11 h-11 rounded-xl bg-data-info-bg flex flex-col items-center justify-center">
+                          <span className="text-base font-bold text-data-info-fg leading-none">
                             {daysLeft}
                           </span>
-                          <span className="text-[9px] font-semibold text-cyan-500 dark:text-cyan-400 uppercase">
+                          <span className="text-[9px] font-semibold text-data-info-fg uppercase">
                             {daysLeft === 1 ? 'day' : 'days'}
                           </span>
                         </div>

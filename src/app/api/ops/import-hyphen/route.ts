@@ -93,6 +93,25 @@ function normalizeBuilderName(account: string): string {
   return account?.split(' - ')[0]?.trim() || account || 'Unknown Builder'
 }
 
+/**
+ * Normalize a street address to "<number> <first-street-word>" form so both sides
+ * match regardless of suffix ("Drive", "Dr", "Mews", etc.) or trailing modifiers
+ * ("- Trim 1", ", Frisco,TX"). See scripts/reconcile-hyphen-brookfield.mjs for
+ * full rationale: Hyphen addresses carry ", City,ST" and Job addresses carry
+ * " - <phase>" tails, so exact comparison always fails without this.
+ */
+function normalizeStreetKey(s: string | null | undefined): string {
+  if (!s) return ''
+  const head = String(s).toLowerCase().split(/,|\s-\s/)[0].trim()
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+  const m = head.match(/^(\d+)\s+([a-z]+(?:\s+[a-z]+){0,3})/)
+  if (!m) return head
+  const suffix = /\s(drive|dr|lane|ln|street|st|road|rd|court|ct|mews|trail|tr|way|circle|cir|place|pl)$/
+  let s2 = `${m[1]} ${m[2]}`
+  while (suffix.test(s2)) s2 = s2.replace(suffix, '')
+  return s2.trim()
+}
+
 async function ensureTables() {
   // HyphenOrder — stores all Hyphen SupplyPro order data
   await prisma.$executeRawUnsafe(`
@@ -160,6 +179,26 @@ async function ensureTables() {
   `)
   await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS "idx_hyphen_payment_builder" ON "HyphenPayment" ("builderName")
+  `)
+
+  // HyphenCommunityMapping — canonical bridge from Hyphen subdivision labels
+  // (which carry plan-tier variants like "The Grove Frisco 55s") to Aegis
+  // Community rows. Populated by scripts/reconcile-hyphen-brookfield.mjs and
+  // consumed below to backfill Job.communityId on import.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "HyphenCommunityMapping" (
+      "id"                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      "hyphenSubdivision" TEXT UNIQUE NOT NULL,
+      "communityId"       TEXT NOT NULL,
+      "builderId"         TEXT,
+      "matchMethod"       TEXT,
+      "matchScore"        DOUBLE PRECISION,
+      "createdAt"         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt"         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "idx_hyphen_map_community" ON "HyphenCommunityMapping" ("communityId")
   `)
 }
 
@@ -291,16 +330,48 @@ export async function POST(request: NextRequest) {
           const streetAddress = addressParts ? addressParts[1].trim() : address
           const jobName = `${order.subdivision || 'Hyphen'} - ${order.lotBlockPlan || hyphId}`
 
-          // Check if job exists by address or hyphen job ID
-          const existingJob: any[] = await prisma.$queryRawUnsafe(
-            `SELECT id FROM "Job" WHERE
-              ("address" = $1 AND $1 != '') OR
-              ("boltJobId" = $2)
-            LIMIT 1`,
-            streetAddress, `HYP-${hyphId}`
-          )
+          // Check if job exists by address or hyphen job ID.
+          // We match on normalized street key (digits + first street word,
+          // suffix-stripped) because raw address equality never hits — the
+          // Hyphen side carries ", Frisco,TX" and the Aegis side carries
+          // " - Trim 1". Previously this block only incremented `jobs.updated`
+          // without actually linking; that's the 0/72 bug.
+          const streetKey = normalizeStreetKey(streetAddress)
+          const existingJob: any[] = streetKey
+            ? await prisma.$queryRawUnsafe(
+                `SELECT "id", "hyphenJobId", "communityId" FROM "Job"
+                  WHERE LOWER("builderName") = LOWER($1)
+                    AND "jobAddress" IS NOT NULL
+                    AND regexp_replace(
+                          regexp_replace(LOWER(split_part(split_part("jobAddress", ',', 1), ' - ', 1)), '[^a-z0-9 ]', ' ', 'g'),
+                          '\\s+(drive|dr|lane|ln|street|st|road|rd|court|ct|mews|trail|tr|way|circle|cir|place|pl)\\s*$', ''
+                        ) = $2
+                  LIMIT 1`,
+                builderName, streetKey,
+              )
+            : await prisma.$queryRawUnsafe(
+                `SELECT "id", "hyphenJobId", "communityId" FROM "Job" WHERE "boltJobId" = $1 LIMIT 1`,
+                `HYP-${hyphId}`,
+              )
 
           if (existingJob.length > 0) {
+            // Resolve community via HyphenCommunityMapping (populated by the
+            // reconcile script). No mapping → leave communityId untouched.
+            const mapRow: any[] = order.subdivision
+              ? await prisma.$queryRawUnsafe(
+                  `SELECT "communityId" FROM "HyphenCommunityMapping" WHERE "hyphenSubdivision" = $1 LIMIT 1`,
+                  order.subdivision,
+                )
+              : []
+            const communityId = mapRow[0]?.communityId || null
+            await prisma.$executeRawUnsafe(
+              `UPDATE "Job"
+                  SET "hyphenJobId" = COALESCE("hyphenJobId", $1),
+                      "communityId" = COALESCE("communityId", $2),
+                      "updatedAt"   = CURRENT_TIMESTAMP
+                WHERE "id" = $3`,
+              hyphId, communityId, existingJob[0].id,
+            )
             results.jobs.updated++
           } else if (streetAddress) {
             try {

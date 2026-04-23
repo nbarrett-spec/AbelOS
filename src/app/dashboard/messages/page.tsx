@@ -26,9 +26,9 @@ const CATEGORY_OPTIONS = [
 ]
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
-  OPEN: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Open' },
-  REPLIED: { bg: 'bg-green-50', text: 'text-green-700', label: 'Replied' },
-  CLOSED: { bg: 'bg-surface-muted', text: 'text-fg-muted', label: 'Closed' },
+  OPEN:    { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Open' },
+  REPLIED: { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Replied' },
+  CLOSED:  { bg: 'bg-surface-muted',    text: 'text-fg-muted',         label: 'Closed' },
 }
 
 export default function BuilderMessagesPage() {
@@ -124,14 +124,14 @@ export default function BuilderMessagesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Messages</h1>
-          <p className="text-fg-muted text-sm">Communicate with Abel Lumber</p>
+          <h1 className="text-2xl font-bold text-fg">Your messages</h1>
+          <p className="text-fg-muted text-sm">Direct line to your Abel team.</p>
         </div>
         <button
           onClick={() => { setShowCompose(true); setSelected(null) }}
-          className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition flex items-center gap-2"
+          className="bg-accent text-fg-on-accent px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition flex items-center gap-2"
         >
-          <span>+</span> New Message
+          <span>+</span> New message
         </button>
       </div>
 
@@ -242,7 +242,7 @@ export default function BuilderMessagesPage() {
                         {CATEGORY_OPTIONS.find(c => c.value === msg.category)?.label || msg.category}
                       </span>
                       {msg.staffReply && (
-                        <span className="text-xs text-green-600">Has reply</span>
+                        <span className="text-xs text-data-positive-fg">Has reply</span>
                       )}
                     </div>
                   </div>
@@ -271,10 +271,10 @@ export default function BuilderMessagesPage() {
               </div>
 
               {/* Your message */}
-              <div className="bg-blue-50 rounded-lg p-3">
+              <div className="bg-data-info-bg rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-blue-700">You</span>
-                  <span className="text-xs text-blue-400">
+                  <span className="text-xs font-medium text-data-info-fg">You</span>
+                  <span className="text-xs text-data-info-fg/70">
                     {new Date(selected.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
@@ -283,13 +283,13 @@ export default function BuilderMessagesPage() {
 
               {/* Staff reply */}
               {selected.staffReply ? (
-                <div className="bg-green-50 rounded-lg p-3">
+                <div className="bg-data-positive-bg rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-green-700">
+                    <span className="text-xs font-medium text-data-positive-fg">
                       {selected.repliedByName || 'Abel Lumber'}
                     </span>
                     {selected.staffReplyAt && (
-                      <span className="text-xs text-green-400">
+                      <span className="text-xs text-data-positive-fg/70">
                         {new Date(selected.staffReplyAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     )}

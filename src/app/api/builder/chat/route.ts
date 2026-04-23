@@ -5,6 +5,27 @@ import { getSession } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
 import { auditBuilder } from '@/lib/audit'
 
+/**
+ * Pick an on-call staff id used to satisfy NOT NULL `senderId` on Message and
+ * `createdById` on Conversation for builder-originated threads (drift
+ * reconciled 2026-04-22). Prefers active SALES/EXECUTIVE/OPERATIONS; falls
+ * back to any active staff.
+ */
+async function pickOnCallStaffId(): Promise<string | null> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    SELECT "id" FROM "Staff"
+    WHERE "active" = true
+      AND "department"::text IN ('SALES', 'EXECUTIVE', 'OPERATIONS')
+    ORDER BY "createdAt" ASC
+    LIMIT 1
+  `)
+  if (rows.length > 0) return rows[0].id
+  const fb = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+    SELECT "id" FROM "Staff" WHERE "active" = true ORDER BY "createdAt" ASC LIMIT 1
+  `)
+  return fb[0]?.id ?? null
+}
+
 // GET /api/builder/chat — List builder's conversations
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -90,15 +111,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
       }
 
+      const onCallStaffId = await pickOnCallStaffId()
+      if (!onCallStaffId) {
+        return NextResponse.json({ error: 'No on-call staff available' }, { status: 503 })
+      }
+
       // Create message
       const messageId = `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
       const now = new Date()
 
       await prisma.$executeRawUnsafe(`
         INSERT INTO "Message" (
-          "id", "conversationId", "builderSenderId", "senderType", "body", "readByBuilder", "createdAt"
-        ) VALUES ($1, $2, $3, $4, $5, true, $6)
-      `, messageId, conversationId, builderId, 'BUILDER', message, now)
+          "id", "conversationId", "senderId", "builderSenderId", "senderType", "body", "readBy", "readByBuilder", "createdAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7::text[], true, $8)
+      `, messageId, conversationId, onCallStaffId, builderId, 'BUILDER', message, [], now)
 
       // Update conversation with last message info
       const preview = message.length > 100 ? message.substring(0, 100) + '...' : message
@@ -143,20 +169,25 @@ export async function POST(request: NextRequest) {
       const messageId = `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
       const now = new Date()
 
-      // Create conversation
+      const onCallStaffId = await pickOnCallStaffId()
+      if (!onCallStaffId) {
+        return NextResponse.json({ error: 'No on-call staff available' }, { status: 503 })
+      }
+
+      // Create conversation (createdById is NOT NULL → stamp on-call staff)
       const preview = message.length > 100 ? message.substring(0, 100) + '...' : message
       await prisma.$executeRawUnsafe(`
         INSERT INTO "Conversation" (
-          "id", "type", "subject", "builderId", "lastMessageAt", "lastMessagePreview", "createdAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, conversationId, 'BUILDER_SUPPORT', subject, builderId, now, preview, now)
+          "id", "type", "subject", "builderId", "createdById", "lastMessageAt", "lastMessagePreview", "createdAt", "updatedAt"
+        ) VALUES ($1, $2::"ConversationType", $3, $4, $5, $6, $7, $8, $9)
+      `, conversationId, 'BUILDER_SUPPORT', subject, builderId, onCallStaffId, now, preview, now, now)
 
-      // Create first message
+      // Create first message (senderId is NOT NULL → stamp on-call staff)
       await prisma.$executeRawUnsafe(`
         INSERT INTO "Message" (
-          "id", "conversationId", "builderSenderId", "senderType", "body", "readByBuilder", "createdAt"
-        ) VALUES ($1, $2, $3, $4, $5, true, $6)
-      `, messageId, conversationId, builderId, 'BUILDER', message, now)
+          "id", "conversationId", "senderId", "builderSenderId", "senderType", "body", "readBy", "readByBuilder", "createdAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7::text[], true, $8)
+      `, messageId, conversationId, onCallStaffId, builderId, 'BUILDER', message, [], now)
 
       // Auto-assign staff participants from SALES, EXECUTIVE, OPERATIONS
       const staffToAdd: any[] = await prisma.$queryRawUnsafe(`

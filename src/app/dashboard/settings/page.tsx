@@ -264,10 +264,10 @@ export default function SettingsPage() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-fg">
-                Account Settings
+                Your settings
               </h1>
               <p className="text-fg-muted mt-1">
-                Manage your profile, security, and preferences
+                Profile, security, and notification preferences.
               </p>
             </div>
           </div>
@@ -533,7 +533,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('orderUpdates')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.orderUpdates ? 'bg-accent' : 'bg-gray-300'
+                      preferences.orderUpdates ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span
@@ -557,7 +557,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('quoteReady')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.quoteReady ? 'bg-accent' : 'bg-gray-300'
+                      preferences.quoteReady ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span
@@ -581,7 +581,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('deliveryAlerts')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.deliveryAlerts ? 'bg-accent' : 'bg-gray-300'
+                      preferences.deliveryAlerts ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span
@@ -605,7 +605,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('warrantyUpdates')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.warrantyUpdates ? 'bg-accent' : 'bg-gray-300'
+                      preferences.warrantyUpdates ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span
@@ -629,7 +629,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('invoiceAlerts')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.invoiceAlerts ? 'bg-accent' : 'bg-gray-300'
+                      preferences.invoiceAlerts ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span
@@ -653,7 +653,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('promotions')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.promotions ? 'bg-accent' : 'bg-gray-300'
+                      preferences.promotions ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span
@@ -677,7 +677,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('weeklyDigest')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.weeklyDigest ? 'bg-accent' : 'bg-gray-300'
+                      preferences.weeklyDigest ? 'bg-accent' : 'bg-surface-muted'
                     }`}
                   >
                     <span

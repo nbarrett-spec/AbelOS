@@ -35,14 +35,14 @@ interface SearchResponse {
 }
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
-  RECEIVED:       { bg: 'bg-blue-50',    text: 'text-blue-700',    label: 'Pending' },
-  CONFIRMED:      { bg: 'bg-indigo-50',  text: 'text-indigo-700',  label: 'Confirmed' },
-  IN_PRODUCTION:  { bg: 'bg-amber-50',   text: 'text-amber-700',   label: 'In Production' },
-  READY_TO_SHIP:  { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Ready to Ship' },
-  SHIPPED:        { bg: 'bg-cyan-50',    text: 'text-cyan-700',    label: 'Shipped' },
-  DELIVERED:      { bg: 'bg-violet-50',  text: 'text-violet-700',  label: 'Delivered' },
-  COMPLETE:       { bg: 'bg-green-50',   text: 'text-green-700',   label: 'Complete' },
-  CANCELLED:      { bg: 'bg-red-50',     text: 'text-red-700',     label: 'Cancelled' },
+  RECEIVED:       { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Pending' },
+  CONFIRMED:      { bg: 'bg-brand-subtle',     text: 'text-accent-fg',        label: 'Confirmed' },
+  IN_PRODUCTION:  { bg: 'bg-data-warning-bg',  text: 'text-data-warning-fg',  label: 'In Production' },
+  READY_TO_SHIP:  { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Ready to Ship' },
+  SHIPPED:        { bg: 'bg-data-info-bg',     text: 'text-data-info-fg',     label: 'Shipped' },
+  DELIVERED:      { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Delivered' },
+  COMPLETE:       { bg: 'bg-data-positive-bg', text: 'text-data-positive-fg', label: 'Complete' },
+  CANCELLED:      { bg: 'bg-data-negative-bg', text: 'text-data-negative-fg', label: 'Cancelled' },
 }
 
 function fmt(n: number) {
@@ -159,15 +159,15 @@ export default function BuilderOrdersPage() {
   return (
     <div className="max-w-5xl mx-auto">
       {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
-          <p className="text-sm text-red-700">Failed to load orders. Please check your connection.</p>
-          <button onClick={() => searchOrders(searchQuery, statusFilter, 1)} className="text-xs font-semibold text-red-700 hover:text-red-900 underline">Retry</button>
+        <div className="mb-4 px-4 py-3 bg-data-negative-bg border border-data-negative rounded-lg flex items-center justify-between">
+          <p className="text-sm text-data-negative-fg">Couldn&apos;t load your orders. Check your connection and try again.</p>
+          <button onClick={() => searchOrders(searchQuery, statusFilter, 1)} className="text-xs font-semibold text-data-negative-fg hover:underline">Retry</button>
         </div>
       )}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Order History</h1>
-          <p className="text-fg-muted text-sm">Search and reorder past purchases</p>
+          <h1 className="text-2xl font-bold text-fg">Your orders</h1>
+          <p className="text-fg-muted text-sm">Track in-flight orders and reorder from history.</p>
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function BuilderOrdersPage() {
           placeholder="Search by order #, product name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 min-w-[200px] px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
+          className="flex-1 min-w-[200px] px-4 py-2 border border-border rounded-lg text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-signal"
         />
       </div>
 
@@ -188,11 +188,11 @@ export default function BuilderOrdersPage() {
           onClick={() => setStatusFilter('')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             statusFilter === ''
-              ? 'bg-brand text-white'
-              : 'bg-surface border border-border-strong text-fg-muted hover:bg-surface-muted'
+              ? 'bg-brand text-fg-on-accent'
+              : 'bg-surface border border-border text-fg-muted hover:bg-surface-muted'
           }`}
         >
-          All Orders
+          All orders
         </button>
         {['CONFIRMED', 'IN_PRODUCTION', 'READY_TO_SHIP', 'SHIPPED'].map(status => (
           <button
@@ -200,8 +200,8 @@ export default function BuilderOrdersPage() {
             onClick={() => setStatusFilter(status)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               statusFilter === status
-                ? 'bg-brand text-white'
-                : 'bg-surface border border-border-strong text-fg-muted hover:bg-surface-muted'
+                ? 'bg-brand text-fg-on-accent'
+                : 'bg-surface border border-border text-fg-muted hover:bg-surface-muted'
             }`}
           >
             {STATUS_CONFIG[status]?.label || status}
@@ -211,8 +211,8 @@ export default function BuilderOrdersPage() {
           onClick={() => setStatusFilter('COMPLETE')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             statusFilter === 'COMPLETE'
-              ? 'bg-brand text-white'
-              : 'bg-surface border border-border-strong text-fg-muted hover:bg-surface-muted'
+              ? 'bg-brand text-fg-on-accent'
+              : 'bg-surface border border-border text-fg-muted hover:bg-surface-muted'
           }`}
         >
           Completed
@@ -224,10 +224,9 @@ export default function BuilderOrdersPage() {
           <div className="w-6 h-6 border-3 border-brand border-t-transparent rounded-full animate-spin" />
         </div>
       ) : orders.length === 0 ? (
-        <div className="bg-surface rounded-lg border p-16 text-center">
-          <div className="text-5xl mb-3">📦</div>
-          <h3 className="font-semibold text-fg mb-1">No orders found</h3>
-          <p className="text-fg-muted text-sm mb-4">Try adjusting your search or filters.</p>
+        <div className="bg-surface rounded-lg border border-border p-16 text-center">
+          <h3 className="font-semibold text-fg mb-1">No orders yet</h3>
+          <p className="text-fg-muted text-sm mb-4">Adjust your search, or place your first order.</p>
         </div>
       ) : (
         <>
@@ -256,8 +255,8 @@ export default function BuilderOrdersPage() {
                   onClick={() => searchOrders(searchQuery, statusFilter, p)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
                     p === page
-                      ? 'bg-brand text-white'
-                      : 'bg-surface border border-border-strong text-fg-muted hover:bg-surface-muted'
+                      ? 'bg-brand text-fg-on-accent'
+                      : 'bg-surface border border-border text-fg-muted hover:bg-surface-muted'
                   }`}
                 >
                   {p}
@@ -287,10 +286,10 @@ export default function BuilderOrdersPage() {
             ) : (
               <>
                 {reorderModal.warnings.length > 0 && (
-                  <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <p className="text-sm font-semibold text-amber-900 mb-2">⚠ Items Not Available</p>
+                  <div className="mb-4 bg-data-warning-bg border border-data-warning rounded-lg p-4">
+                    <p className="text-sm font-semibold text-data-warning-fg mb-2">Items not available</p>
                     {reorderModal.warnings.map((w, i) => (
-                      <p key={i} className="text-sm text-amber-800">• {w}</p>
+                      <p key={i} className="text-sm text-data-warning-fg">{w}</p>
                     ))}
                   </div>
                 )}
@@ -311,12 +310,12 @@ export default function BuilderOrdersPage() {
                           key={item.productId}
                           className={`border-b border-border ${
                             item.discontinued || !item.inStock ? 'opacity-60' : ''
-                          } ${item.priceChanged ? 'bg-yellow-50' : ''}`}
+                          } ${item.priceChanged ? 'bg-data-warning-bg' : ''}`}
                         >
                           <td className="px-3 py-3">
                             <div className="font-medium text-fg">{item.productName}</div>
                             <div className="text-xs text-fg-muted">SKU: {item.sku}</div>
-                            {item.discontinued && <div className="text-xs text-red-600">Discontinued</div>}
+                            {item.discontinued && <div className="text-xs text-data-negative">Discontinued</div>}
                             {!item.inStock && !item.discontinued && <div className="text-xs text-signal">Out of stock</div>}
                           </td>
                           <td className="px-3 py-3 text-center text-fg">{item.quantity}</td>
@@ -340,13 +339,13 @@ export default function BuilderOrdersPage() {
                   <button
                     disabled
                     title="Cart integration coming soon"
-                    className="flex-1 px-4 py-2 bg-accent text-white font-semibold rounded-lg opacity-50 cursor-not-allowed"
+                    className="flex-1 px-4 py-2 bg-accent text-fg-on-accent font-semibold rounded-lg opacity-50 cursor-not-allowed"
                   >
-                    Add Available Items to Cart
+                    Add available items to cart
                   </button>
                   <button
                     onClick={closeReorderModal}
-                    className="flex-1 px-4 py-2 bg-surface border border-border-strong text-fg-muted font-semibold rounded-lg hover:bg-surface-muted transition"
+                    className="flex-1 px-4 py-2 bg-surface border border-border text-fg-muted font-semibold rounded-lg hover:bg-surface-muted transition"
                   >
                     Cancel
                   </button>
@@ -416,7 +415,7 @@ function OrderCard({
 
   return (
     <>
-      <div className={`bg-surface rounded-lg border p-4 hover:shadow-md transition cursor-pointer ${isExpanded ? 'shadow-md' : ''}`}>
+      <div className={`bg-surface rounded-lg border border-border p-4 hover:shadow-md transition cursor-pointer ${isExpanded ? 'shadow-md' : ''}`}>
         <div onClick={onToggleExpand}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -461,7 +460,7 @@ function OrderCard({
                       e.stopPropagation()
                       onReorder()
                     }}
-                    className="flex-1 bg-accent hover:bg-accent-hover text-white font-semibold text-sm py-2 rounded transition"
+                    className="flex-1 bg-accent hover:bg-accent-hover text-fg-on-accent font-semibold text-sm py-2 rounded transition"
                   >
                     Reorder
                   </button>
@@ -470,9 +469,9 @@ function OrderCard({
                       e.stopPropagation()
                       setShowSaveTemplate(true)
                     }}
-                    className="flex-1 bg-brand hover:bg-brand/90 text-white font-semibold text-sm py-2 rounded transition"
+                    className="flex-1 bg-brand hover:bg-brand-hover text-fg-on-accent font-semibold text-sm py-2 rounded transition"
                   >
-                    Save as Template
+                    Save as template
                   </button>
                 </>
               )}
@@ -485,44 +484,44 @@ function OrderCard({
       {showSaveTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl border border-border max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-fg mb-4">Save Order as Template</h3>
+            <h3 className="text-lg font-bold text-fg mb-4">Save order as template</h3>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-fg-muted mb-2">
-                Template Name <span className="text-red-600">*</span>
+                Template name <span className="text-data-negative">*</span>
               </label>
               <input
                 type="text"
                 value={templateName}
                 onChange={e => setTemplateName(e.target.value)}
                 placeholder={`${order.orderNumber} Template`}
-                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-signal"
                 autoFocus
               />
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-fg-muted mb-2">
-                Description (Optional)
+                Description (optional)
               </label>
               <textarea
                 value={templateDesc}
                 onChange={e => setTemplateDesc(e.target.value)}
                 placeholder="e.g., Standard items for this project type..."
-                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-signal"
                 rows={3}
               />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-700">
-                This will create a template with all {order.itemCount} items from this order.
+            <div className="bg-data-info-bg border border-data-info rounded-lg p-3 mb-4">
+              <p className="text-sm text-data-info-fg">
+                Creates a reusable template with all {order.itemCount} items from this order.
               </p>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="bg-data-negative-bg border border-data-negative rounded-lg p-3 mb-4">
+                <p className="text-sm text-data-negative-fg">{error}</p>
               </div>
             )}
 
@@ -535,17 +534,17 @@ function OrderCard({
                   setError('')
                 }}
                 disabled={savingTemplate}
-                className="flex-1 px-4 py-2 border border-border-strong rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-border rounded-lg text-fg-muted font-semibold hover:bg-surface-muted transition disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveTemplate}
                 disabled={savingTemplate || !templateName.trim()}
-                className="flex-1 px-4 py-2 bg-brand hover:bg-brand/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-brand hover:bg-brand-hover text-fg-on-accent font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {savingTemplate && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                {savingTemplate ? 'Saving...' : 'Save Template'}
+                {savingTemplate ? 'Saving...' : 'Save template'}
               </button>
             </div>
           </div>

@@ -188,8 +188,9 @@ async function scenarioStandardPath() {
 
   // Simulate what the driver portal does inline before calling the cascade:
   // mark the Delivery complete in-DB, then call onDeliveryComplete.
+  // Note: DeliveryStatus enum terminal value is COMPLETE (not DELIVERED).
   await prisma.$executeRawUnsafe(
-    `UPDATE "Delivery" SET "status"='DELIVERED'::"DeliveryStatus", "completedAt"=NOW(), "updatedAt"=NOW() WHERE "id"=$1`,
+    `UPDATE "Delivery" SET "status"='COMPLETE'::"DeliveryStatus", "completedAt"=NOW(), "updatedAt"=NOW() WHERE "id"=$1`,
     deliveryId
   )
 
@@ -255,7 +256,7 @@ async function scenarioOptOut() {
   const deliveryId = await makeDelivery(jobId)
 
   await prisma.$executeRawUnsafe(
-    `UPDATE "Delivery" SET "status"='DELIVERED'::"DeliveryStatus", "completedAt"=NOW(), "updatedAt"=NOW() WHERE "id"=$1`,
+    `UPDATE "Delivery" SET "status"='COMPLETE'::"DeliveryStatus", "completedAt"=NOW(), "updatedAt"=NOW() WHERE "id"=$1`,
     deliveryId
   )
 

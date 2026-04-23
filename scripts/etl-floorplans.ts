@@ -4,7 +4,7 @@
  * Populate CommunityFloorPlan across the 4 target builders:
  *   - Brookfield     (folder: Brookfield/)             -> already populated by etl-brookfield.ts; re-enrich sqFt/stories/blueprintUrl where empty
  *   - Bloomfield Homes (folder: Bloomfield Homes/Plans/) -> backfill planNumber + blueprintUrl + sqFt for existing rows, add missing
- *   - Shaddock Homes  (folder: Downlods/Downloads/SHADDOCK PLAN 5410.pdf) -> create community + 1 plan
+ *   - Shaddock Homes  (folder: Downlods/SHADDOCK PLAN 5410.pdf) -> create community + 1 plan
  *   - Toll Brothers   (folder: Toll Brothers/)         -> extract CHAMBORD / VIANDEN from xlsx, attach to Creek Meadows
  *
  * Matches Community by fuzzy name against Builder.
@@ -315,7 +315,7 @@ async function stageBloomfield() {
 
 async function stageShaddock() {
   bar('STAGE 3: SHADDOCK HOMES — 1 plan from Downloads');
-  const pdfPath = path.join(ABEL_ROOT, 'Downlods', 'Downloads', 'SHADDOCK PLAN 5410.pdf');
+  const pdfPath = path.join(ABEL_ROOT, 'Downlods', 'SHADDOCK PLAN 5410.pdf');
   if (!fs.existsSync(pdfPath)) { console.log('  FILE MISSING:', pdfPath); return { created: 0, updated: 0, unchanged: 0, scanned: 0 }; }
 
   const builder = await findBuilder({ contains: ['shaddock'] });

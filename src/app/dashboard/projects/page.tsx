@@ -37,11 +37,11 @@ function daysUntil(dateStr: string) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: 'bg-green-100 text-green-700',
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  ON_HOLD: 'bg-amber-100 text-amber-700',
-  COMPLETED: 'bg-blue-100 text-blue-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+  ACTIVE:    'bg-data-positive-bg text-data-positive-fg',
+  PENDING:   'bg-data-warning-bg text-data-warning-fg',
+  ON_HOLD:   'bg-data-warning-bg text-data-warning-fg',
+  COMPLETED: 'bg-data-info-bg text-data-info-fg',
+  CANCELLED: 'bg-data-negative-bg text-data-negative-fg',
 }
 
 export default function ProjectsPage() {
@@ -86,36 +86,35 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-fg">Projects</h1>
-          <p className="text-fg-muted text-sm mt-1">Manage your construction and renovation projects</p>
+          <h1 className="text-3xl font-bold text-fg">Your projects</h1>
+          <p className="text-fg-muted text-sm mt-1">Organize orders and deliveries by job.</p>
         </div>
         <Link
           href="/projects/new"
-          className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
+          className="px-4 py-2 bg-accent hover:bg-accent-hover text-fg-on-accent font-semibold rounded-lg transition-colors"
         >
-          + New Project
+          + New project
         </Link>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-data-negative-bg border border-data-negative rounded-lg p-4 mb-6">
+          <p className="text-sm text-data-negative-fg">{error}</p>
         </div>
       )}
 
       {/* Empty State */}
       {projects.length === 0 ? (
         <div className="bg-surface rounded-xl border border-border p-12 text-center">
-          <div className="text-5xl mb-4">🏗️</div>
-          <h2 className="text-2xl font-bold text-fg mb-2">No Projects Yet</h2>
+          <h2 className="text-2xl font-bold text-fg mb-2">No projects yet</h2>
           <p className="text-fg-muted mb-6">
-            Start by creating your first project to organize your orders and deliveries.
+            Create a project to group orders and deliveries for one job.
           </p>
           <Link
             href="/projects/new"
-            className="inline-block bg-brand hover:bg-brand/90 text-white font-bold py-3 px-6 rounded-lg transition"
+            className="inline-block bg-brand hover:bg-brand-hover text-fg-on-accent font-bold py-3 px-6 rounded-lg transition"
           >
-            Create Your First Project
+            Create your first project
           </Link>
         </div>
       ) : (
@@ -127,7 +126,7 @@ export default function ProjectsPage() {
               className="bg-surface rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-accent transition-all group cursor-pointer"
             >
               {/* Card Header */}
-              <div className="p-5 border-b border-border bg-gradient-to-r from-gray-50 to-white group-hover:from-accent/5 group-hover:to-white transition-colors">
+              <div className="p-5 border-b border-border bg-gradient-to-r from-surface-muted to-surface group-hover:from-accent-subtle group-hover:to-surface transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-fg line-clamp-2 group-hover:text-brand transition-colors">{project.name}</h3>
@@ -150,15 +149,15 @@ export default function ProjectsPage() {
                     <p className="text-lg font-bold text-brand">{project.orderCount}</p>
                   </div>
                   <div className="bg-surface-muted rounded-lg p-3">
-                    <p className="text-xs text-fg-muted uppercase font-semibold">Total Spend</p>
+                    <p className="text-xs text-fg-muted uppercase font-semibold">Total spend</p>
                     <p className="text-lg font-bold text-fg">{formatCurrency(project.totalSpend)}</p>
                   </div>
                 </div>
 
                 {/* Community */}
                 {project.community && (
-                  <div className="bg-blue-50 rounded-lg p-2.5">
-                    <p className="text-xs text-blue-700">
+                  <div className="bg-data-info-bg rounded-lg p-2.5">
+                    <p className="text-xs text-data-info-fg">
                       <span className="font-semibold">Community:</span> {project.community}
                     </p>
                   </div>
@@ -166,9 +165,9 @@ export default function ProjectsPage() {
 
                 {/* Next Delivery */}
                 {project.nextDeliveryDate ? (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-xs text-amber-700 font-semibold">Next Delivery</p>
-                    <p className="text-sm text-amber-900 mt-0.5">
+                  <div className="bg-accent-subtle border border-accent rounded-lg p-3">
+                    <p className="text-xs text-accent-fg font-semibold">Next delivery</p>
+                    <p className="text-sm text-accent-fg mt-0.5">
                       {daysUntil(project.nextDeliveryDate)} days • {formatDate(project.nextDeliveryDate)}
                     </p>
                   </div>
@@ -185,9 +184,9 @@ export default function ProjectsPage() {
               </div>
 
               {/* Card Footer - Hover Effect */}
-              <div className="p-4 border-t border-border bg-surface-muted flex items-center justify-between group-hover:bg-accent/5 transition-colors">
+              <div className="p-4 border-t border-border bg-surface-muted flex items-center justify-between group-hover:bg-accent-subtle transition-colors">
                 <span className="text-xs font-medium text-fg-muted group-hover:text-brand">
-                  View Details
+                  View details
                 </span>
                 <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
               </div>

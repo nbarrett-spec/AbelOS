@@ -14,9 +14,9 @@ function fmtDate(d: string | null) {
 }
 
 const TX_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
-  order:   { icon: '📦', label: 'Order',   color: 'text-blue-700 bg-blue-50' },
-  invoice: { icon: '💳', label: 'Invoice', color: 'text-orange-700 bg-orange-50' },
-  payment: { icon: '💰', label: 'Payment', color: 'text-green-700 bg-green-50' },
+  order:   { icon: '📦', label: 'Order',   color: 'text-data-info-fg bg-data-info-bg' },
+  invoice: { icon: '💳', label: 'Invoice', color: 'text-accent-fg bg-accent-subtle' },
+  payment: { icon: '💰', label: 'Payment', color: 'text-data-positive-fg bg-data-positive-bg' },
 }
 
 export default function AccountStatementPage() {
@@ -52,14 +52,14 @@ export default function AccountStatementPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Account Statement</h1>
+          <h1 className="text-2xl font-bold text-fg">Your statement</h1>
           <p className="text-sm text-fg-muted mt-1">{s.companyName} &middot; {s.contactName}</p>
         </div>
         <div className="flex items-center gap-2">
           {[3, 6, 12].map(m => (
             <button key={m} onClick={() => setMonths(m)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                months === m ? 'bg-brand text-white' : 'bg-surface dark:bg-surface-muted text-fg-muted border border-border-strong'
+                months === m ? 'bg-brand text-fg-on-accent' : 'bg-surface text-fg-muted border border-border'
               }`}>
               {m}mo
             </button>
@@ -70,25 +70,25 @@ export default function AccountStatementPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-surface rounded-xl p-4 border border-border">
-          <p className="text-xs text-fg-muted uppercase tracking-wider">Total Ordered</p>
+          <p className="text-xs text-fg-muted uppercase tracking-wider">Total ordered</p>
           <p className="text-xl font-bold text-brand mt-1">{fmt(s.totalOrdered)}</p>
           <p className="text-xs text-fg-subtle mt-1">{s.orderCount} orders</p>
         </div>
         <div className="bg-surface rounded-xl p-4 border border-border">
-          <p className="text-xs text-fg-muted uppercase tracking-wider">Total Invoiced</p>
+          <p className="text-xs text-fg-muted uppercase tracking-wider">Total invoiced</p>
           <p className="text-xl font-bold text-accent mt-1">{fmt(s.totalInvoiced)}</p>
         </div>
         <div className="bg-surface rounded-xl p-4 border border-border">
-          <p className="text-xs text-fg-muted uppercase tracking-wider">Total Paid</p>
-          <p className="text-xl font-bold text-green-600 mt-1">{fmt(s.totalPaid)}</p>
+          <p className="text-xs text-fg-muted uppercase tracking-wider">Total paid</p>
+          <p className="text-xl font-bold text-data-positive-fg mt-1">{fmt(s.totalPaid)}</p>
         </div>
         <div className="bg-surface rounded-xl p-4 border border-border">
           <p className="text-xs text-fg-muted uppercase tracking-wider">Outstanding</p>
-          <p className={`text-xl font-bold mt-1 ${Number(s.outstandingBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+          <p className={`text-xl font-bold mt-1 ${Number(s.outstandingBalance) > 0 ? 'text-data-negative-fg' : 'text-data-positive-fg'}`}>
             {fmt(s.outstandingBalance)}
           </p>
           {Number(s.overdueCount) > 0 && (
-            <p className="text-xs text-red-500 mt-1">{s.overdueCount} overdue</p>
+            <p className="text-xs text-data-negative-fg mt-1">{s.overdueCount} overdue</p>
           )}
         </div>
       </div>
@@ -102,10 +102,10 @@ export default function AccountStatementPage() {
               {fmt(creditUsed)} of {fmt(creditLimit)} ({creditPct.toFixed(0)}%)
             </p>
           </div>
-          <div className="w-full bg-surface-muted dark:bg-gray-600 rounded-full h-3">
+          <div className="w-full bg-surface-muted rounded-full h-3">
             <div
               className={`h-3 rounded-full transition-all ${
-                creditPct > 80 ? 'bg-red-500' : creditPct > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                creditPct > 80 ? 'bg-data-negative' : creditPct > 50 ? 'bg-data-warning' : 'bg-data-positive'
               }`}
               style={{ width: `${creditPct}%` }}
             />
@@ -142,17 +142,17 @@ export default function AccountStatementPage() {
 
       {/* Transaction History */}
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
-        <div className="px-5 py-3 border-b border-border dark:border-gray-600">
-          <h3 className="text-sm font-semibold text-fg-muted">Transaction History</h3>
+        <div className="px-5 py-3 border-b border-border">
+          <h3 className="text-sm font-semibold text-fg-muted">Transaction history</h3>
         </div>
         {transactions.length === 0 ? (
           <div className="py-12 text-center text-fg-subtle">No transactions in this period</div>
         ) : (
-          <div className="divide-y divide-border dark:divide-border">
+          <div className="divide-y divide-border">
             {transactions.map((tx: any, i: number) => {
               const config = TX_CONFIG[tx.txType] || { icon: '📄', label: tx.txType, color: 'text-fg-muted bg-surface-muted' }
               return (
-                <div key={`${tx.txType}-${tx.id}-${i}`} className="px-5 py-3 flex items-center gap-4 hover:bg-surface-muted dark:hover:bg-gray-700/50 transition">
+                <div key={`${tx.txType}-${tx.id}-${i}`} className="px-5 py-3 flex items-center gap-4 hover:bg-surface-muted transition">
                   <span className="text-xl flex-shrink-0">{config.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -169,12 +169,12 @@ export default function AccountStatementPage() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className={`text-sm font-semibold ${
-                      tx.txType === 'payment' ? 'text-green-600' : 'text-fg'
+                      tx.txType === 'payment' ? 'text-data-positive-fg' : 'text-fg'
                     }`}>
                       {tx.txType === 'payment' ? '-' : ''}{fmt(tx.amount)}
                     </p>
                     {tx.balanceDue !== undefined && Number(tx.balanceDue) > 0 && (
-                      <p className="text-xs text-red-500">Due: {fmt(tx.balanceDue)}</p>
+                      <p className="text-xs text-data-negative-fg">Due: {fmt(tx.balanceDue)}</p>
                     )}
                   </div>
                 </div>

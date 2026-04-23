@@ -84,7 +84,7 @@ const ACTIONS: QuickAction[] = [
     icon: <Settings className="w-5 h-5" />,
     label: 'Settings',
     color: 'text-fg-muted',
-    hoverBg: 'group-hover:bg-surface-muted dark:group-hover:bg-gray-800',
+    hoverBg: 'group-hover:bg-surface-muted',
   },
 ]
 
@@ -95,7 +95,7 @@ export default function QuickActionsDock() {
         <Tooltip key={action.href} content={action.label} side="bottom" delay={300}>
           <Link
             href={action.href}
-            className="group flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl bg-surface border border-border transition-all duration-200 hover:border-border-strong dark:hover:border-gray-700 hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none animate-enter"
+            className="group flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl bg-surface border border-border transition-all duration-200 hover:border-border-strong hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none animate-enter"
             style={{ animationDelay: `${idx * 30}ms` }}
             aria-label={action.label}
           >

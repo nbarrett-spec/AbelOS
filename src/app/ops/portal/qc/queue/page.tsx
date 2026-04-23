@@ -152,7 +152,7 @@ export default function QCQueuePage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white rounded-xl border p-3 sm:p-4">
           <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Total in Queue</p>
           <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">{briefing.inspectionQueue.length}</p>
@@ -183,7 +183,7 @@ export default function QCQueuePage() {
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
-                className={`px-3 sm:px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 sm:px-4 py-3 min-h-[48px] rounded-lg text-sm font-medium transition-all ${
                   selectedTab === tab
                     ? 'bg-[#C0392B] text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -199,7 +199,7 @@ export default function QCQueuePage() {
               <button
                 key={dateOpt}
                 onClick={() => setDateFilter(dateOpt)}
-                className={`px-3 py-2 min-h-[44px] rounded text-xs font-medium transition-all ${
+                className={`px-3 py-3 min-h-[48px] rounded text-xs font-medium transition-all ${
                   dateFilter === dateOpt
                     ? 'bg-[#C0392B] text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -214,7 +214,7 @@ export default function QCQueuePage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="px-3 py-2 min-h-[44px] w-full sm:w-auto rounded border border-gray-300 text-sm font-medium text-gray-700 hover:border-gray-400 transition-all"
+              className="px-3 py-3 min-h-[48px] w-full sm:w-auto rounded border border-gray-300 text-sm font-medium text-gray-700 hover:border-gray-400 transition-all"
             >
               <option value="priority">Sort by Priority</option>
               <option value="date">Sort by Date</option>
@@ -498,7 +498,7 @@ function GradeModal({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 text-xl leading-none rounded-lg"
+            className="w-12 h-12 min-w-[48px] min-h-[48px] flex items-center justify-center text-gray-400 hover:text-gray-600 text-xl leading-none rounded-lg"
           >
             ✕
           </button>
@@ -513,7 +513,7 @@ function GradeModal({
             <p className="text-sm font-medium text-gray-700 mb-2">Defects</p>
             <div className="space-y-1">
               {COMMON_DEFECTS.map((d) => (
-                <label key={d} className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer py-2 min-h-[44px]">
+                <label key={d} className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer py-3 min-h-[48px]">
                   <input
                     type="checkbox"
                     checked={selectedDefects.includes(d)}
@@ -585,7 +585,7 @@ function GradeModal({
               const files = Array.from(e.target.files || [])
               files.forEach((f) => { onFile(f) })
             }}
-            className="text-sm w-full min-h-[44px]"
+            className="text-sm w-full min-h-[48px]"
           />
           {photos.length > 0 && (
             <div className="flex gap-2 mt-2 flex-wrap">

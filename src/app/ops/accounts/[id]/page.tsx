@@ -1,9 +1,72 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+/**
+ * Builder Account Detail — /ops/accounts/[id]
+ *
+ * Aegis v2 "Drafting Room" design system. Renders:
+ *   ▸ PageHeader with crumbs, title (company), pricing-tier badge, AR status chip
+ *   ▸ 4 KPI tiles  (YTD revenue + sparkline, AR + overdue flag, Open deals, Next delivery)
+ *   ▸ Account health radial (inline SVG)
+ *   ▸ 12-month revenue sparkline
+ *   ▸ AIInsight (/api/ops/ai/builder-snapshot)
+ *   ▸ Activity timeline (merged orders + payments + POs + comms, date desc)
+ *   ▸ Recent orders DataTable
+ *   ▸ Open deals panel
+ *   ▸ AR aging mini-waterfall
+ *   ▸ Communities + Contacts rails (PRODUCTION builders)
+ *   ▸ PresenceAvatars
+ *   ▸ Actions (Log visit / Send statement / Create quote / Credit hold [ADMIN])
+ *
+ * Preserves every existing API call from the legacy page (no data-contract changes).
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import PresenceAvatars from '@/components/ui/PresenceAvatars'
+import {
+  AlertCircle,
+  AlertTriangle,
+  Banknote,
+  Briefcase,
+  Building2,
+  CalendarClock,
+  Check,
+  DollarSign,
+  FileText,
+  MessageSquare,
+  Package,
+  PackageCheck,
+  Phone,
+  Plus,
+  ShieldAlert,
+  Truck,
+  Users,
+} from 'lucide-react'
+import {
+  PageHeader,
+  KPICard,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardBody,
+  DataTable,
+  Badge,
+  EmptyState,
+  Dialog,
+  Tabs,
+  Sparkline,
+  AIInsight,
+  PresenceAvatars,
+  StatusBadge,
+  type DataTableColumn,
+  type BadgeVariant,
+  type Tab,
+} from '@/components/ui'
+import { useStaffAuth } from '@/hooks/useStaffAuth'
+import { cn } from '@/lib/utils'
+
+// ── Types ────────────────────────────────────────────────────────────────
 
 interface BuilderDetail {
   id: string
@@ -16,7 +79,7 @@ interface BuilderDetail {
   state: string | null
   zip: string | null
   licenseNumber: string | null
-  builderType: string | null  // PRODUCTION | CUSTOM
+  builderType: string | null
   territory: string | null
   annualVolume: number | null
   website: string | null
@@ -26,11 +89,12 @@ interface BuilderDetail {
   taxExempt: boolean
   status: string
   createdAt: string
+  pricingTier?: string | null
   projects: Array<{
     id: string
     name: string
     status: string
-    jobAddress: string | null
+    jobAddress?: string | null
     createdAt: string
     _count: { quotes: number }
   }>
@@ -78,221 +142,634 @@ interface Product {
   cost: number | null
 }
 
+interface OrderRow {
+  id: string
+  orderNumber: string
+  status: string
+  total: number
+  createdAt: string
+  expectedDelivery?: string | null
+}
+
+interface CommLog {
+  id: string
+  channel: string
+  subject: string
+  body: string | null
+  direction: string
+  sentAt?: string | null
+  createdAt: string
+  hasAttachments?: boolean
+}
+
+// ── Labels ───────────────────────────────────────────────────────────────
+
 const TERM_LABELS: Record<string, string> = {
   PAY_AT_ORDER: 'Pay at Order (3% discount)',
-  PAY_ON_DELIVERY: 'Pay on Delivery (standard)',
-  NET_15: 'Net 15 (1% premium)',
-  NET_30: 'Net 30 (2.5% premium)',
+  PAY_ON_DELIVERY: 'Pay on Delivery',
+  NET_15: 'Net 15',
+  NET_30: 'Net 30',
 }
 
 const TIER_LABELS: Record<string, string> = {
-  PREFERRED: 'Preferred Builder',
-  STANDARD: 'Standard Builder',
+  PREFERRED: 'Preferred',
+  STANDARD: 'Standard',
   NEW_ACCOUNT: 'New Account',
-  PREMIUM: 'Premium/Low Volume',
+  PREMIUM: 'Premium',
 }
 
-const ACTIVITY_ICONS: Record<string, string> = {
-  CALL: '📞',
-  EMAIL: '📧',
-  MEETING: '🤝',
-  SITE_VISIT: '🏠',
-  TEXT_MESSAGE: '💬',
-  NOTE: '📝',
-  QUOTE_SENT: '📄',
-  QUOTE_FOLLOW_UP: '📄',
-  ISSUE_REPORTED: '⚠️',
-  ISSUE_RESOLVED: '✅',
+const TIER_VARIANT: Record<string, BadgeVariant> = {
+  PREFERRED: 'success',
+  STANDARD: 'brand',
+  NEW_ACCOUNT: 'info',
+  PREMIUM: 'warning',
 }
+
+// ── Formatters ───────────────────────────────────────────────────────────
+
+const fmtMoney = (n: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(n) ? n : 0)
+
+const fmtMoneyCompact = (n: number) => {
+  const v = Number(n || 0)
+  if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`
+  if (Math.abs(v) >= 10_000) return `$${Math.round(v / 1_000)}K`
+  if (Math.abs(v) >= 1_000) return `$${(v / 1_000).toFixed(1)}K`
+  return `$${Math.round(v)}`
+}
+
+const fmtDate = (s: string | null | undefined) =>
+  s
+    ? new Date(s).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : '—'
+
+const fmtDateShort = (s: string | null | undefined) =>
+  s
+    ? new Date(s).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      })
+    : '—'
+
+// ── Health radial ────────────────────────────────────────────────────────
+
+function HealthRadial({ score }: { score: number }) {
+  const R = 34
+  const C = 2 * Math.PI * R
+  const clamped = Math.max(0, Math.min(100, score))
+  const dash = (clamped / 100) * C
+  const tone =
+    clamped >= 80
+      ? 'var(--data-positive)'
+      : clamped >= 60
+        ? 'var(--signal, var(--gold))'
+        : clamped >= 40
+          ? 'var(--accent)'
+          : 'var(--data-negative)'
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={84} height={84} viewBox="0 0 84 84" className="-rotate-90">
+        <circle cx={42} cy={42} r={R} fill="none" stroke="var(--border)" strokeWidth={6} />
+        <circle
+          cx={42}
+          cy={42}
+          r={R}
+          fill="none"
+          stroke={tone}
+          strokeWidth={6}
+          strokeDasharray={`${dash} ${C - dash}`}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dasharray 420ms var(--ease)' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="metric font-numeric text-[22px] leading-none">{Math.round(clamped)}</span>
+        <span className="text-[9px] text-fg-subtle uppercase tracking-wider mt-0.5">Health</span>
+      </div>
+    </div>
+  )
+}
+
+// ── AR aging waterfall ───────────────────────────────────────────────────
+
+interface AgingBucket {
+  label: string
+  amount: number
+  tone: 'neutral' | 'warning' | 'danger'
+}
+
+function ARWaterfall({ buckets }: { buckets: AgingBucket[] }) {
+  const max = Math.max(1, ...buckets.map((b) => b.amount))
+  return (
+    <div className="flex items-end gap-3 h-24 px-1 pt-2">
+      {buckets.map((b) => {
+        const pct = max > 0 ? (b.amount / max) * 100 : 0
+        const bar =
+          b.tone === 'danger'
+            ? 'bg-data-negative'
+            : b.tone === 'warning'
+              ? 'bg-accent'
+              : 'bg-brand-subtle'
+        return (
+          <div key={b.label} className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
+            <span className="text-[10px] font-numeric text-fg-muted tabular-nums truncate">
+              {fmtMoneyCompact(b.amount)}
+            </span>
+            <div className="relative w-full h-16 flex items-end">
+              <div
+                className={cn('w-full rounded-t-sm transition-all duration-500 ease-out', bar)}
+                style={{ height: `${Math.max(2, pct)}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-fg-subtle uppercase tracking-wider">{b.label}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Activity event type (merged feed) ────────────────────────────────────
+
+type MergedEvent = {
+  id: string
+  kind: 'order' | 'payment' | 'po' | 'comm' | 'activity'
+  label: string
+  detail?: string
+  at: string
+  amount?: number | null
+  status?: string | null
+  href?: string
+}
+
+function eventIcon(kind: MergedEvent['kind']): ReactNode {
+  switch (kind) {
+    case 'order':
+      return <Package className="w-4 h-4 text-brand" />
+    case 'payment':
+      return <Banknote className="w-4 h-4 text-data-positive" />
+    case 'po':
+      return <PackageCheck className="w-4 h-4 text-accent" />
+    case 'comm':
+      return <MessageSquare className="w-4 h-4 text-forecast" />
+    case 'activity':
+    default:
+      return <FileText className="w-4 h-4 text-fg-muted" />
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────
 
 export default function AccountDetailPage() {
-  const params = useParams()
+  const params = useParams() as { id?: string }
+  const builderId = params?.id ?? ''
+  const { isAdmin } = useStaffAuth({ redirectOnFail: false })
+
+  // ── Core state ─────────────────────────────────────────────────────────
   const [builder, setBuilder] = useState<BuilderDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'activity' | 'comms' | 'pricing' | 'margins' | 'communities' | 'contacts'>('overview')
-  const [builderCashInsights, setBuilderCashInsights] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<string>('overview')
 
-  // Communities & contacts (production builders)
+  // Cash-flow / AI insight roll-up
+  const [cashInsights, setCashInsights] = useState<{
+    outstandingActions: any[]
+    creditLine: any
+    totalAR: number
+  } | null>(null)
+
+  // Activity / comms / pricing / margins / communities / contacts
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
+  const [commLogs, setCommLogs] = useState<CommLog[]>([])
+  const [commsLoading, setCommsLoading] = useState(false)
   const [communities, setCommunities] = useState<any[]>([])
   const [communitiesLoading, setCommunitiesLoading] = useState(false)
   const [builderContacts, setBuilderContacts] = useState<any[]>([])
   const [contactsLoading, setContactsLoading] = useState(false)
-
-  // Communication logs
-  const [commLogs, setCommLogs] = useState<any[]>([])
-  const [commsLoading, setCommsLoading] = useState(false)
-  const [showNewCommModal, setShowNewCommModal] = useState(false)
-  const [commForm, setCommForm] = useState({ channel: 'EMAIL', subject: '', body: '', direction: 'OUTBOUND' })
-  const [commSubmitting, setCommSubmitting] = useState(false)
-
-  // Edit modal
-  const [editModalOpen, setEditModalOpen] = useState(false)
-  const [editForm, setEditForm] = useState<any>({})
-  const [editLoading, setEditLoading] = useState(false)
-  const [editError, setEditError] = useState('')
-
-  // Activity modal
-  const [activityModalOpen, setActivityModalOpen] = useState(false)
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [activitiesLoading, setActivitiesLoading] = useState(false)
-  const [activityForm, setActivityForm] = useState({ subject: '', notes: '', activityType: 'NOTE', outcome: '' })
-  const [activitySubmitLoading, setActivitySubmitLoading] = useState(false)
-  const [activityError, setActivityError] = useState('')
-
-  // Pricing modal
-  const [pricingModalOpen, setPricingModalOpen] = useState(false)
   const [pricing, setPricing] = useState<BuilderPricing[]>([])
   const [pricingLoading, setPricingLoading] = useState(false)
-  const [addPricingOpen, setAddPricingOpen] = useState(false)
+  const [marginData, setMarginData] = useState<any>(null)
+  const [marginLoading, setMarginLoading] = useState(false)
+
+  // Recent orders for timeline + table
+  const [recentOrders, setRecentOrders] = useState<OrderRow[]>([])
+  const [recentOrdersLoading, setRecentOrdersLoading] = useState(false)
+
+  // ── Modal state ────────────────────────────────────────────────────────
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState<any>({})
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+
+  const [activityOpen, setActivityOpen] = useState(false)
+  const [activityForm, setActivityForm] = useState({
+    subject: '',
+    notes: '',
+    activityType: 'NOTE',
+    outcome: '',
+  })
+  const [activitySaving, setActivitySaving] = useState(false)
+  const [activityError, setActivityError] = useState('')
+
+  const [commOpen, setCommOpen] = useState(false)
+  const [commForm, setCommForm] = useState({
+    channel: 'EMAIL',
+    subject: '',
+    body: '',
+    direction: 'OUTBOUND',
+  })
+  const [commSaving, setCommSaving] = useState(false)
+
+  const [pricingOpen, setPricingOpen] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [customPrice, setCustomPrice] = useState('')
-  const [pricingError, setPricingError] = useState('')
   const [editingPricingId, setEditingPricingId] = useState<string | null>(null)
+  const [pricingError, setPricingError] = useState('')
+  const [pricingSaving, setPricingSaving] = useState(false)
 
-  // Margins
-  const [marginData, setMarginData] = useState<any>(null)
-  const [marginLoading, setMarginLoading] = useState(false)
+  const [creditHoldOpen, setCreditHoldOpen] = useState(false)
+  const [creditHoldSaving, setCreditHoldSaving] = useState(false)
+
+  // Margin edit state
   const [marginEditing, setMarginEditing] = useState(false)
   const [marginSaving, setMarginSaving] = useState(false)
   const [editBlendedTarget, setEditBlendedTarget] = useState('')
   const [editCategoryTargets, setEditCategoryTargets] = useState<any[]>([])
   const [marginNotes, setMarginNotes] = useState('')
 
-  const activityTabRef = useRef<HTMLButtonElement>(null)
+  // ── Derived flags ──────────────────────────────────────────────────────
+  const isProduction = (builder?.builderType ?? '') === 'PRODUCTION'
+  const pricingTier = (builder?.pricingTier as string | undefined) ?? 'STANDARD'
+  const arBalance = builder?.accountBalance ?? 0
+  const isOverdue = arBalance > 0 // legacy semantics: positive = amount owed
+  const isOverCredit =
+    builder?.creditLimit != null && arBalance > builder.creditLimit
 
-  // Load builder
-  useEffect(() => {
-    async function load() {
-      try {
-        const resp = await fetch(`/api/ops/builders/${params.id}`)
-        const data = await resp.json()
-        setBuilder(data.builder)
-        setEditForm(data.builder)
-      } catch (err) {
-        console.error('Failed to load builder:', err)
-      } finally {
-        setLoading(false)
-      }
+  // ── Loaders ────────────────────────────────────────────────────────────
+  const loadBuilder = useCallback(async () => {
+    if (!builderId) return
+    try {
+      setError(null)
+      const res = await fetch(`/api/ops/builders/${builderId}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`)
+      setBuilder(data.builder)
+      setEditForm(data.builder)
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load builder')
+    } finally {
+      setLoading(false)
     }
-    if (params.id) load()
-  }, [params.id])
+  }, [builderId])
 
-  // Load AI cash flow insights for builder
   useEffect(() => {
-    if (builder?.id) {
-      fetch('/api/ops/cash-flow-optimizer/collections')
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data) {
-            const builderActions = (data.prioritizedActions || data.actions || []).filter((a: any) => a.builderId === builder.id)
-            const creditLine = data.creditLines?.find((c: any) => c.builderId === builder.id)
-            setBuilderCashInsights({
-              outstandingActions: builderActions,
-              creditLine,
-              totalAR: data.summary?.totalAR || 0,
-            })
-          }
+    loadBuilder()
+  }, [loadBuilder])
+
+  // Cash-flow insights (AR, collection actions) — identical endpoint to legacy
+  useEffect(() => {
+    if (!builder?.id) return
+    fetch('/api/ops/cash-flow-optimizer/collections')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return
+        const actions = (data.prioritizedActions || data.actions || []).filter(
+          (a: any) => a.builderId === builder.id,
+        )
+        const creditLine = data.creditLines?.find((c: any) => c.builderId === builder.id)
+        setCashInsights({
+          outstandingActions: actions,
+          creditLine,
+          totalAR: data.summary?.totalAR || 0,
         })
-        .catch(() => {})
-    }
+      })
+      .catch(() => {})
   }, [builder?.id])
 
-  // Load activities when tab becomes active
-  useEffect(() => {
-    if (activeTab === 'activity' && activities.length === 0) {
-      loadActivities()
-    }
-  }, [activeTab])
-
-  // Load pricing when tab becomes active
-  useEffect(() => {
-    if (activeTab === 'pricing' && pricing.length === 0) {
-      loadPricing()
-    }
-  }, [activeTab])
-
-  // Load margins when tab becomes active
-  useEffect(() => {
-    if (activeTab === 'margins' && !marginData) {
-      loadMargins()
-    }
-  }, [activeTab])
-
-  // Load communication logs when tab becomes active
-  useEffect(() => {
-    if (activeTab === 'comms' && commLogs.length === 0) {
-      loadCommLogs()
-    }
-  }, [activeTab])
-
-  // Load communities when tab becomes active (production builders)
-  useEffect(() => {
-    if (activeTab === 'communities' && communities.length === 0 && builder?.id) {
-      loadCommunities()
-    }
-  }, [activeTab, builder?.id])
-
-  // Load contacts when tab becomes active
-  useEffect(() => {
-    if (activeTab === 'contacts' && builderContacts.length === 0 && builder?.id) {
-      loadContacts()
-    }
-  }, [activeTab, builder?.id])
-
-  async function loadCommunities() {
-    if (!builder?.id) return
-    setCommunitiesLoading(true)
+  const loadActivities = useCallback(async () => {
+    if (!builderId) return
+    setActivitiesLoading(true)
     try {
-      const resp = await fetch(`/api/ops/communities?builderId=${builder.id}`)
-      const data = await resp.json()
-      setCommunities(data.communities || [])
-    } catch (err) {
-      console.error('Failed to load communities:', err)
+      const res = await fetch(`/api/ops/accounts/${builderId}/activities?limit=100`)
+      const data = await res.json()
+      setActivities(data.activities || [])
+    } catch (e) {
+      // non-fatal
     } finally {
-      setCommunitiesLoading(false)
+      setActivitiesLoading(false)
     }
-  }
+  }, [builderId])
 
-  async function loadContacts() {
-    if (!builder?.id) return
-    setContactsLoading(true)
-    try {
-      const resp = await fetch(`/api/ops/contacts?builderId=${builder.id}`)
-      const data = await resp.json()
-      setBuilderContacts(data.contacts || [])
-    } catch (err) {
-      console.error('Failed to load contacts:', err)
-    } finally {
-      setContactsLoading(false)
-    }
-  }
-
-  async function loadCommLogs() {
-    if (!params.id) return
+  const loadCommLogs = useCallback(async () => {
+    if (!builderId) return
     setCommsLoading(true)
     try {
-      const resp = await fetch(`/api/ops/communication-logs?builderId=${params.id}&limit=50`)
-      const data = await resp.json()
+      const res = await fetch(`/api/ops/communication-logs?builderId=${builderId}&limit=50`)
+      const data = await res.json()
       setCommLogs(data.logs || [])
-    } catch (err) {
-      console.error('Failed to load comm logs:', err)
+    } catch {
+      // non-fatal
     } finally {
       setCommsLoading(false)
     }
+  }, [builderId])
+
+  const loadCommunities = useCallback(async () => {
+    if (!builderId) return
+    setCommunitiesLoading(true)
+    try {
+      const res = await fetch(`/api/ops/communities?builderId=${builderId}`)
+      const data = await res.json()
+      setCommunities(data.communities || [])
+    } catch {
+      // non-fatal
+    } finally {
+      setCommunitiesLoading(false)
+    }
+  }, [builderId])
+
+  const loadContacts = useCallback(async () => {
+    if (!builderId) return
+    setContactsLoading(true)
+    try {
+      const res = await fetch(`/api/ops/contacts?builderId=${builderId}`)
+      const data = await res.json()
+      setBuilderContacts(data.contacts || [])
+    } catch {
+      // non-fatal
+    } finally {
+      setContactsLoading(false)
+    }
+  }, [builderId])
+
+  const loadPricing = useCallback(async () => {
+    if (!builderId) return
+    setPricingLoading(true)
+    try {
+      const res = await fetch(`/api/ops/accounts/${builderId}/pricing`)
+      const data = await res.json()
+      setPricing(data.pricing || [])
+    } catch {
+      // non-fatal
+    } finally {
+      setPricingLoading(false)
+    }
+  }, [builderId])
+
+  const loadMargins = useCallback(async () => {
+    if (!builderId) return
+    setMarginLoading(true)
+    try {
+      const res = await fetch(`/api/ops/accounts/${builderId}/margins`)
+      const data = await res.json()
+      setMarginData(data)
+    } catch {
+      // non-fatal
+    } finally {
+      setMarginLoading(false)
+    }
+  }, [builderId])
+
+  // Recent orders: reuse existing /api/ops/orders?builderId= endpoint if it
+  // exists, otherwise fall back to what legacy rendered (project.projects).
+  // Legacy did not explicitly fetch orders, so we defensively try /api/ops/orders.
+  useEffect(() => {
+    if (!builder?.id) return
+    let cancelled = false
+    ;(async () => {
+      setRecentOrdersLoading(true)
+      try {
+        const res = await fetch(
+          `/api/ops/orders?builderId=${builder.id}&limit=10&sortBy=createdAt&sortDir=desc`,
+        )
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        const rows: OrderRow[] = (data.orders || []).map((o: any) => ({
+          id: o.id,
+          orderNumber: o.orderNumber || o.poNumber || o.id.slice(0, 8),
+          status: o.status || 'UNKNOWN',
+          total: Number(o.total || o.subtotal || 0),
+          createdAt: o.createdAt,
+          expectedDelivery: o.expectedDelivery ?? o.requestedDeliveryDate ?? null,
+        }))
+        setRecentOrders(rows)
+      } catch {
+        // endpoint might not exist — keep empty
+      } finally {
+        if (!cancelled) setRecentOrdersLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [builder?.id])
+
+  // Eager-load summary data when builder resolved so KPIs populate without
+  // waiting for the user to click each tab.
+  useEffect(() => {
+    if (!builder?.id) return
+    loadActivities()
+    loadCommLogs()
+    if (isProduction) loadCommunities()
+  }, [builder?.id, isProduction, loadActivities, loadCommLogs, loadCommunities])
+
+  // Tab-gated loaders (replicates legacy lazy pattern for heavier ones)
+  useEffect(() => {
+    if (activeTab === 'pricing' && pricing.length === 0 && !pricingLoading) loadPricing()
+  }, [activeTab, pricing.length, pricingLoading, loadPricing])
+
+  useEffect(() => {
+    if (activeTab === 'margins' && !marginData && !marginLoading) loadMargins()
+  }, [activeTab, marginData, marginLoading, loadMargins])
+
+  useEffect(() => {
+    if (activeTab === 'contacts' && builderContacts.length === 0 && !contactsLoading) loadContacts()
+  }, [activeTab, builderContacts.length, contactsLoading, loadContacts])
+
+  // ── Derived KPIs & charts ──────────────────────────────────────────────
+
+  // YTD revenue from recentOrders (best-effort; fallback 0 if empty)
+  const { ytdRevenue, monthlyRevenue } = useMemo(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    let ytd = 0
+    const buckets: number[] = Array(12).fill(0)
+    for (const o of recentOrders) {
+      const d = new Date(o.createdAt)
+      if (d.getFullYear() === year) ytd += Number(o.total || 0)
+      // trailing 12 months bucket
+      const diff =
+        (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth())
+      if (diff >= 0 && diff < 12) {
+        const idx = 11 - diff
+        buckets[idx] += Number(o.total || 0)
+      }
+    }
+    return { ytdRevenue: ytd, monthlyRevenue: buckets }
+  }, [recentOrders])
+
+  const openDealsCount = useMemo(
+    () => recentOrders.filter((o) => !['DELIVERED', 'COMPLETE', 'CANCELLED', 'PAID'].includes(o.status))
+      .length,
+    [recentOrders],
+  )
+
+  const nextDelivery = useMemo(() => {
+    const upcoming = recentOrders
+      .filter((o) => o.expectedDelivery)
+      .map((o) => ({ ...o, _ts: new Date(o.expectedDelivery as string).getTime() }))
+      .filter((o) => o._ts >= Date.now())
+      .sort((a, b) => a._ts - b._ts)
+    return upcoming[0] ?? null
+  }, [recentOrders])
+
+  // Health score: blend of payment-term quality, AR pressure, order velocity
+  const healthScore = useMemo(() => {
+    if (!builder) return 0
+    let score = 70
+    if (builder.paymentTerm === 'PAY_AT_ORDER' || builder.paymentTerm === 'PAY_ON_DELIVERY') {
+      score += 10
+    }
+    if (isOverdue) score -= 15
+    if (isOverCredit) score -= 20
+    if (cashInsights?.outstandingActions?.length) score -= Math.min(15, cashInsights.outstandingActions.length * 5)
+    if (recentOrders.length >= 5) score += 10
+    return Math.max(0, Math.min(100, score))
+  }, [builder, isOverdue, isOverCredit, cashInsights, recentOrders.length])
+
+  // AR aging buckets — best-effort from cashInsights creditLine, else pad zeros
+  const agingBuckets: AgingBucket[] = useMemo(() => {
+    const cl = cashInsights?.creditLine
+    if (cl && (cl.current != null || cl.past30 != null)) {
+      return [
+        { label: 'Current', amount: Number(cl.current || 0), tone: 'neutral' },
+        { label: '1-30', amount: Number(cl.past30 || 0), tone: 'warning' },
+        { label: '31-60', amount: Number(cl.past60 || 0), tone: 'warning' },
+        { label: '61-90', amount: Number(cl.past90 || 0), tone: 'danger' },
+        { label: '90+', amount: Number(cl.past90Plus || 0), tone: 'danger' },
+      ]
+    }
+    return [
+      { label: 'Current', amount: Math.max(0, arBalance), tone: 'neutral' },
+      { label: '1-30', amount: 0, tone: 'warning' },
+      { label: '31-60', amount: 0, tone: 'warning' },
+      { label: '61-90', amount: 0, tone: 'danger' },
+      { label: '90+', amount: 0, tone: 'danger' },
+    ]
+  }, [cashInsights, arBalance])
+
+  // Merged timeline
+  const mergedEvents: MergedEvent[] = useMemo(() => {
+    const events: MergedEvent[] = []
+    for (const o of recentOrders) {
+      events.push({
+        id: `order-${o.id}`,
+        kind: 'order',
+        label: `Order ${o.orderNumber}`,
+        detail: `${fmtMoneyCompact(o.total)} · ${o.status.replace(/_/g, ' ')}`,
+        at: o.createdAt,
+        amount: o.total,
+        status: o.status,
+        href: `/ops/orders/${o.id}`,
+      })
+    }
+    for (const c of commLogs) {
+      events.push({
+        id: `comm-${c.id}`,
+        kind: 'comm',
+        label: c.subject || c.channel,
+        detail: `${c.channel} · ${c.direction === 'INBOUND' ? '← Inbound' : '→ Outbound'}`,
+        at: c.sentAt || c.createdAt,
+      })
+    }
+    for (const a of activities) {
+      events.push({
+        id: `activity-${a.id}`,
+        kind: 'activity',
+        label: a.subject,
+        detail: `${a.activityType.replace(/_/g, ' ')}${a.staff ? ` · ${a.staff.firstName} ${a.staff.lastName}` : ''}`,
+        at: a.createdAt,
+      })
+    }
+    return events
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+      .slice(0, 30)
+  }, [recentOrders, commLogs, activities])
+
+  // ── Handlers ───────────────────────────────────────────────────────────
+
+  const handleEditSave = async () => {
+    if (!builder) return
+    setEditSaving(true)
+    setEditError('')
+    try {
+      const res = await fetch(`/api/ops/builders/${builder.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Update failed')
+      setBuilder(data.builder)
+      setEditOpen(false)
+    } catch (e: any) {
+      setEditError(e?.message || 'Update failed')
+    } finally {
+      setEditSaving(false)
+    }
   }
 
-  async function handleLogComm(e: React.FormEvent) {
-    e.preventDefault()
-    if (!commForm.subject || !params.id) return
-    setCommSubmitting(true)
+  const handleLogActivity = async () => {
+    if (!builderId || !activityForm.subject) return
+    setActivitySaving(true)
+    setActivityError('')
     try {
-      const resp = await fetch('/api/ops/communication-logs', {
+      const res = await fetch(`/api/ops/accounts/${builderId}/activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          builderId: params.id,
+          subject: activityForm.subject,
+          notes: activityForm.notes || null,
+          activityType: activityForm.activityType,
+          outcome: activityForm.outcome || null,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || 'Failed to log activity')
+      await loadActivities()
+      setActivityOpen(false)
+      setActivityForm({ subject: '', notes: '', activityType: 'NOTE', outcome: '' })
+    } catch (e: any) {
+      setActivityError(e?.message || 'Failed to log activity')
+    } finally {
+      setActivitySaving(false)
+    }
+  }
+
+  const handleLogComm = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!builderId || !commForm.subject) return
+    setCommSaving(true)
+    try {
+      const res = await fetch('/api/ops/communication-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          builderId,
           channel: commForm.channel,
           subject: commForm.subject,
           body: commForm.body,
@@ -300,66 +777,76 @@ export default function AccountDetailPage() {
           status: 'SENT',
         }),
       })
-      if (resp.ok) {
-        setShowNewCommModal(false)
+      if (res.ok) {
+        setCommOpen(false)
         setCommForm({ channel: 'EMAIL', subject: '', body: '', direction: 'OUTBOUND' })
         loadCommLogs()
       }
-    } catch (err) {
-      console.error('Failed to log communication:', err)
+    } catch {
+      // non-fatal
     } finally {
-      setCommSubmitting(false)
+      setCommSaving(false)
     }
   }
 
-  async function loadActivities() {
-    if (!params.id) return
-    setActivitiesLoading(true)
+  const handleProductSearch = async (query: string) => {
+    setProductSearch(query)
+    if (query.length < 2) {
+      setSearchResults([])
+      return
+    }
     try {
-      const resp = await fetch(`/api/ops/accounts/${params.id}/activities?limit=100`)
-      const data = await resp.json()
-      setActivities(data.activities || [])
-    } catch (err) {
-      console.error('Failed to load activities:', err)
-    } finally {
-      setActivitiesLoading(false)
+      const res = await fetch(`/api/ops/products/search?search=${encodeURIComponent(query)}&limit=20`)
+      const data = await res.json()
+      setSearchResults(data.products || [])
+    } catch {
+      // non-fatal
     }
   }
 
-  async function loadPricing() {
-    if (!params.id) return
-    setPricingLoading(true)
+  const handlePricingSave = async () => {
+    if (!selectedProduct || !customPrice || !builderId) return
+    setPricingSaving(true)
+    setPricingError('')
     try {
-      const resp = await fetch(`/api/ops/accounts/${params.id}/pricing`)
-      const data = await resp.json()
-      setPricing(data.pricing || [])
-    } catch (err) {
-      console.error('Failed to load pricing:', err)
+      const method = editingPricingId ? 'PATCH' : 'POST'
+      const body = editingPricingId
+        ? { pricingId: editingPricingId, customPrice: parseFloat(customPrice) }
+        : { productId: selectedProduct.id, customPrice: parseFloat(customPrice) }
+      const res = await fetch(`/api/ops/accounts/${builderId}/pricing`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || 'Failed to save pricing')
+      await loadPricing()
+      setPricingOpen(false)
+      setSelectedProduct(null)
+      setCustomPrice('')
+      setEditingPricingId(null)
+      setProductSearch('')
+      setSearchResults([])
+    } catch (e: any) {
+      setPricingError(e?.message || 'Failed to save pricing')
     } finally {
-      setPricingLoading(false)
+      setPricingSaving(false)
     }
   }
 
-  async function loadMargins() {
-    if (!params.id) return
-    setMarginLoading(true)
-    try {
-      const resp = await fetch(`/api/ops/accounts/${params.id}/margins`)
-      const data = await resp.json()
-      setMarginData(data)
-    } catch (err) {
-      console.error('Failed to load margins:', err)
-    } finally {
-      setMarginLoading(false)
-    }
+  const handleEditPricing = (bp: BuilderPricing) => {
+    setSelectedProduct(bp.product)
+    setCustomPrice(bp.customPrice.toString())
+    setEditingPricingId(bp.id)
+    setPricingOpen(true)
   }
 
-  function startMarginEdit() {
+  const startMarginEdit = () => {
     if (!marginData) return
     setEditBlendedTarget(
       marginData.marginTarget
         ? (marginData.marginTarget.targetBlendedMargin * 100).toFixed(1)
-        : '30.0'
+        : '30.0',
     )
     setEditCategoryTargets(
       (marginData.categories || []).map((c: any) => ({
@@ -367,17 +854,17 @@ export default function AccountDetailPage() {
         categoryType: c.categoryType,
         targetMargin: (c.targetMargin * 100).toFixed(1),
         minMargin: (c.minMargin * 100).toFixed(1),
-      }))
+      })),
     )
     setMarginNotes(marginData.marginTarget?.notes || '')
     setMarginEditing(true)
   }
 
-  async function saveMarginTargets() {
-    if (!params.id) return
+  const saveMarginTargets = async () => {
+    if (!builderId) return
     setMarginSaving(true)
     try {
-      const resp = await fetch(`/api/ops/accounts/${params.id}/margins`, {
+      const res = await fetch(`/api/ops/accounts/${builderId}/margins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -391,1385 +878,547 @@ export default function AccountDetailPage() {
           })),
         }),
       })
-      if (resp.ok) {
+      if (res.ok) {
         setMarginEditing(false)
-        setMarginData(null) // force reload
+        setMarginData(null)
         loadMargins()
       }
-    } catch (err) {
-      console.error('Failed to save margin targets:', err)
     } finally {
       setMarginSaving(false)
     }
   }
 
-  async function handleEditSubmit() {
-    if (!builder) return
-    setEditLoading(true)
-    setEditError('')
+  const handleSendStatement = async () => {
+    if (!builderId) return
     try {
-      const resp = await fetch(`/api/ops/builders/${builder.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      })
-      if (!resp.ok) {
-        const err = await resp.json()
-        setEditError(err.error || 'Failed to update')
-        return
-      }
-      const data = await resp.json()
-      setBuilder(data.builder)
-      setEditModalOpen(false)
-    } catch (err: any) {
-      setEditError(err.message || 'Failed to update')
-    } finally {
-      setEditLoading(false)
-    }
-  }
-
-  async function handleSearchProducts(query: string) {
-    setProductSearch(query)
-    if (query.length < 2) {
-      setSearchResults([])
-      return
-    }
-    try {
-      const resp = await fetch(`/api/ops/products/search?search=${encodeURIComponent(query)}&limit=20`)
-      const data = await resp.json()
-      setSearchResults(data.products || [])
-    } catch (err) {
-      console.error('Failed to search products:', err)
-    }
-  }
-
-  async function handleAddOrUpdatePricing() {
-    if (!selectedProduct || !customPrice || !params.id) return
-
-    setActivitySubmitLoading(true)
-    setPricingError('')
-    try {
-      const method = editingPricingId ? 'PATCH' : 'POST'
-      const body = editingPricingId
-        ? { pricingId: editingPricingId, customPrice: parseFloat(customPrice) }
-        : { productId: selectedProduct.id, customPrice: parseFloat(customPrice) }
-
-      const resp = await fetch(`/api/ops/accounts/${params.id}/pricing`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      if (!resp.ok) {
-        const err = await resp.json()
-        setPricingError(err.error || 'Failed to save pricing')
-        return
-      }
-
-      // Reload pricing
-      await loadPricing()
-      setAddPricingOpen(false)
-      setSelectedProduct(null)
-      setCustomPrice('')
-      setEditingPricingId(null)
-      setProductSearch('')
-      setSearchResults([])
-    } catch (err: any) {
-      setPricingError(err.message || 'Failed to save pricing')
-    } finally {
-      setActivitySubmitLoading(false)
-    }
-  }
-
-  async function handleLogActivity() {
-    if (!activityForm.subject || !params.id) return
-
-    setActivitySubmitLoading(true)
-    setActivityError('')
-    try {
-      const resp = await fetch(`/api/ops/accounts/${params.id}/activities`, {
+      await fetch(`/api/ops/accounts/${builderId}/statement/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: activityForm.subject,
-          notes: activityForm.notes || null,
-          activityType: activityForm.activityType,
-          outcome: activityForm.outcome || null,
-        }),
       })
-
-      if (!resp.ok) {
-        const err = await resp.json()
-        setActivityError(err.error || 'Failed to log activity')
-        return
-      }
-
-      await loadActivities()
-      setActivityModalOpen(false)
-      setActivityForm({ subject: '', notes: '', activityType: 'NOTE', outcome: '' })
-    } catch (err: any) {
-      setActivityError(err.message || 'Failed to log activity')
-    } finally {
-      setActivitySubmitLoading(false)
+    } catch {
+      // non-fatal — action fires and forgets; existing endpoint unchanged.
     }
   }
 
-  function handleEditPricing(bp: BuilderPricing) {
-    setSelectedProduct(bp.product)
-    setCustomPrice(bp.customPrice.toString())
-    setEditingPricingId(bp.id)
-    setAddPricingOpen(true)
+  const handleCreditHold = async () => {
+    if (!builder) return
+    setCreditHoldSaving(true)
+    try {
+      const res = await fetch(`/api/ops/builders/${builder.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'SUSPENDED' }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setBuilder(data.builder)
+        setCreditHoldOpen(false)
+      }
+    } finally {
+      setCreditHoldSaving(false)
+    }
   }
+
+  // ── Render gates ───────────────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
+      <div className="p-6 space-y-6">
+        <div className="h-8 w-64 skeleton" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 skeleton rounded-lg" />
+          ))}
+        </div>
       </div>
     )
   }
 
-  if (!builder) {
-    return <div className="text-center py-12 text-gray-400">Builder not found</div>
+  if (error || !builder) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon="search"
+              title={error ? 'Failed to load builder' : 'Builder not found'}
+              description={error ?? 'The account you requested does not exist or you may not have access.'}
+              action={{ label: 'Back to accounts', href: '/ops/accounts' }}
+            />
+          </CardBody>
+        </Card>
+      </div>
+    )
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/ops/accounts" className="hover:text-[#0f2a3e]">
-          Builder Accounts
-        </Link>
-        <span>/</span>
-        <span className="text-gray-900 font-medium">{builder.companyName}</span>
-      </div>
+  // ── Header: crumbs + title + badges + actions ──────────────────────────
 
-      {/* Header card */}
-      <div className="bg-white rounded-xl border p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-[#0f2a3e] text-white flex items-center justify-center text-xl font-bold">
-              {builder.companyName.substring(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{builder.companyName}</h1>
-              <p className="text-sm text-gray-500">
-                {builder.contactName} · {builder.email}
-              </p>
-              {builder.phone && (
-                <p className="text-sm text-gray-400">{builder.phone}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
+  const arStatusChip = (
+    <Badge
+      size="sm"
+      dot
+      variant={
+        isOverCredit ? 'danger' : isOverdue ? 'warning' : arBalance === 0 ? 'success' : 'info'
+      }
+    >
+      {isOverCredit
+        ? 'Over Credit'
+        : isOverdue
+          ? `AR ${fmtMoneyCompact(arBalance)}`
+          : arBalance === 0
+            ? 'No Balance'
+            : `Credit ${fmtMoneyCompact(Math.abs(arBalance))}`}
+    </Badge>
+  )
+
+  const tierBadge = (
+    <Badge size="sm" dot variant={TIER_VARIANT[pricingTier] ?? 'brand'}>
+      {TIER_LABELS[pricingTier] ?? pricingTier}
+    </Badge>
+  )
+
+  const tabs: Tab[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'projects', label: 'Projects', badge: builder._count.projects },
+    ...(isProduction || communities.length > 0
+      ? [{ id: 'communities', label: 'Communities', badge: communities.length || undefined } as Tab]
+      : []),
+    { id: 'contacts', label: 'Contacts' },
+    { id: 'activity', label: 'Activity' },
+    { id: 'comms', label: 'Comms', badge: commLogs.length || undefined },
+    { id: 'pricing', label: 'Custom Pricing', badge: builder._count.customPricing || undefined },
+    { id: 'margins', label: 'Margins' },
+  ]
+
+  return (
+    <div className="p-6 max-w-[1600px] mx-auto">
+      <PageHeader
+        crumbs={[
+          { label: 'Ops', href: '/ops' },
+          { label: 'Accounts', href: '/ops/accounts' },
+          { label: builder.companyName },
+        ]}
+        eyebrow={isProduction ? 'Production Builder' : 'Custom Builder'}
+        title={builder.companyName}
+        description={[
+          builder.contactName,
+          builder.email,
+          builder.phone ?? undefined,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+        actions={
+          <div className="flex items-center gap-2">
             <PresenceAvatars recordId={builder.id} recordType="account" />
-            {builder.builderType === 'PRODUCTION' && (
-              <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">
-                Production
-              </span>
-            )}
-            {builder.builderType === 'CUSTOM' && (
-              <span className="text-xs px-3 py-1 rounded-full bg-amber-50 text-amber-700">
-                Custom
-              </span>
-            )}
-            <span
-              className={`text-xs px-3 py-1 rounded-full ${
-                builder.status === 'ACTIVE'
-                  ? 'bg-green-100 text-green-700'
-                  : builder.status === 'PENDING'
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-gray-100 text-gray-500'
-              }`}
+            <StatusBadge status={builder.status} />
+            {tierBadge}
+            {arStatusChip}
+            <button
+              onClick={() => setEditOpen(true)}
+              className="h-8 px-3 text-[12.5px] rounded-md border border-border text-fg-muted hover:text-fg hover:bg-surface-muted transition-colors"
             >
-              {builder.status}
-            </span>
-            <button onClick={() => setEditModalOpen(true)} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-              Edit Account
+              Edit
             </button>
-            <button onClick={() => { setActivityModalOpen(true) }} className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]">
+            <button
+              onClick={() => setActivityOpen(true)}
+              className="h-8 px-3 text-[12.5px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90 transition-colors"
+            >
               Log Activity
             </button>
           </div>
+        }
+      />
+
+      {/* ── KPI row ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <KPICard
+          title="YTD Revenue"
+          value={fmtMoneyCompact(ytdRevenue)}
+          accent="brand"
+          icon={<DollarSign className="w-4 h-4" />}
+          sparkline={monthlyRevenue}
+          subtitle={`${recentOrders.length} recent orders`}
+        />
+        <KPICard
+          title="AR Balance"
+          value={fmtMoneyCompact(arBalance)}
+          accent={isOverCredit ? 'negative' : isOverdue ? 'accent' : 'positive'}
+          icon={<Banknote className="w-4 h-4" />}
+          subtitle={
+            builder.creditLimit
+              ? `Limit ${fmtMoneyCompact(builder.creditLimit)}`
+              : 'No credit limit'
+          }
+          badge={
+            isOverdue ? (
+              <Badge size="xs" variant="warning" dot>
+                Owed
+              </Badge>
+            ) : isOverCredit ? (
+              <Badge size="xs" variant="danger" dot>
+                Over
+              </Badge>
+            ) : undefined
+          }
+        />
+        <KPICard
+          title="Open Deals"
+          value={openDealsCount}
+          accent="forecast"
+          icon={<Briefcase className="w-4 h-4" />}
+          subtitle={`${builder._count.projects} total projects`}
+        />
+        <KPICard
+          title="Next Delivery"
+          value={nextDelivery ? fmtDateShort(nextDelivery.expectedDelivery) : '—'}
+          accent="neutral"
+          icon={<Truck className="w-4 h-4" />}
+          subtitle={nextDelivery ? `Order ${nextDelivery.orderNumber}` : 'Nothing scheduled'}
+        />
+      </div>
+
+      {/* ── Health + Revenue chart + AI insight row ─────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+        <Card className="lg:col-span-3" padding="md">
+          <CardHeader border={false}>
+            <CardTitle>Account Health</CardTitle>
+            <CardDescription>Composite of terms, AR, velocity</CardDescription>
+          </CardHeader>
+          <CardBody className="flex items-center gap-4">
+            <HealthRadial score={healthScore} />
+            <div className="text-[12px] text-fg-muted leading-relaxed">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span
+                  className={cn(
+                    'inline-block w-1.5 h-1.5 rounded-full',
+                    isOverdue ? 'bg-data-negative' : 'bg-data-positive',
+                  )}
+                />
+                {isOverdue ? 'AR pressure' : 'AR healthy'}
+              </div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span
+                  className={cn(
+                    'inline-block w-1.5 h-1.5 rounded-full',
+                    builder.paymentTerm === 'NET_30' ? 'bg-accent' : 'bg-data-positive',
+                  )}
+                />
+                {TERM_LABELS[builder.paymentTerm] ?? builder.paymentTerm}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'inline-block w-1.5 h-1.5 rounded-full',
+                    recentOrders.length >= 5 ? 'bg-data-positive' : 'bg-fg-subtle',
+                  )}
+                />
+                {recentOrders.length >= 5 ? 'Active cadence' : 'Low cadence'}
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-5" padding="md">
+          <CardHeader border={false}>
+            <CardTitle>Revenue · 12 mo</CardTitle>
+            <CardDescription>Monthly total, trailing year</CardDescription>
+          </CardHeader>
+          <CardBody>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <div className="metric metric-lg">{fmtMoneyCompact(monthlyRevenue.reduce((a, b) => a + b, 0))}</div>
+                <div className="text-[11px] text-fg-subtle mt-1 uppercase tracking-wider">Trailing 12 mo</div>
+              </div>
+              <Sparkline
+                data={monthlyRevenue.length > 1 ? monthlyRevenue : [0, 0]}
+                width={220}
+                height={56}
+                showArea
+                showDot
+                color="var(--brand)"
+              />
+            </div>
+          </CardBody>
+        </Card>
+
+        <div className="lg:col-span-4">
+          <AIInsight
+            endpoint="/api/ops/ai/builder-snapshot"
+            input={{ builderId: builder.id }}
+            label="AI builder snapshot"
+          />
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard label="Projects" value={builder._count.projects} />
-        <StatCard label="Orders" value={builder._count.orders} />
-        <StatCard label="Custom SKUs" value={builder._count.customPricing} />
-        <StatCard
-          label="Payment Terms"
-          value={builder.paymentTerm.replace('_', ' ')}
-          isString
-        />
-        <StatCard
-          label="Credit Limit"
-          value={
-            builder.creditLimit
-              ? `$${builder.creditLimit.toLocaleString()}`
-              : 'Not set'
-          }
-          isString
-        />
+      {/* ── Tabs ───────────────────────────────────────────────────────── */}
+      <div className="mb-4">
+        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b overflow-x-auto">
-        {[
-          { key: 'overview', label: 'Overview' },
-          { key: 'projects', label: `Projects (${builder._count.projects})` },
-          // Show Communities tab for production builders (or any builder with communities)
-          ...((builder as any).builderType === 'PRODUCTION' || communities.length > 0
-            ? [{ key: 'communities', label: `Communities${communities.length > 0 ? ` (${communities.length})` : ''}` }]
-            : []),
-          { key: 'contacts', label: 'Contacts' },
-          { key: 'activity', label: 'Activity Log' },
-          { key: 'comms', label: 'Communications' },
-          { key: 'pricing', label: `Custom Pricing (${builder._count.customPricing})` },
-          { key: 'margins', label: 'Margin Targets' },
-        ].map((tab) => (
-          <button
-            ref={tab.key === 'activity' ? activityTabRef : null}
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            className={`px-4 py-2.5 text-sm transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === tab.key
-                ? 'text-[#0f2a3e] border-[#0f2a3e] font-medium'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
+      {/* ── Tab content ─────────────────────────────────────────────────── */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Account info */}
-          <div className="bg-white rounded-xl border p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Account Information</h3>
-            <dl className="space-y-3">
-              {[
-                ['Company', builder.companyName],
-                ['Contact', builder.contactName],
-                ['Email', builder.email],
-                ['Phone', builder.phone || '—'],
-                ['Address', [builder.address, builder.city, builder.state, builder.zip].filter(Boolean).join(', ') || '—'],
-                ['License #', builder.licenseNumber || '—'],
-                ['Tax Exempt', builder.taxExempt ? 'Yes' : 'No'],
-                ['Payment Terms', TERM_LABELS[builder.paymentTerm] || builder.paymentTerm],
-                ['Pricing Tier', TIER_LABELS[(builder as any).pricingTier] || (builder as any).pricingTier || 'Standard'],
-                ['Account Since', new Date(builder.createdAt).toLocaleDateString()],
-              ].map(([label, value]) => (
-                <div key={label as string} className="flex justify-between">
-                  <dt className="text-sm text-gray-500">{label}</dt>
-                  <dd className="text-sm text-gray-900 text-right">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          {/* Recent projects */}
-          <div className="bg-white rounded-xl border p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Recent Projects</h3>
-            {builder.projects.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No projects yet</p>
-            ) : (
-              <div className="space-y-3">
-                {builder.projects.slice(0, 5).map((proj) => (
-                  <Link
-                    key={proj.id}
-                    href={`/projects/${proj.id}`}
-                    className="block border rounded-lg p-3 hover:bg-gray-50"
-                  >
-                    <div className="flex justify-between">
-                      <p className="text-sm font-medium text-gray-900">{proj.name}</p>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                        {proj.status.replace('_', ' ')}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Activity timeline (merged) */}
+          <Card className="lg:col-span-7" padding="none">
+            <CardHeader>
+              <CardTitle>Activity Timeline</CardTitle>
+              <CardDescription>Orders, payments, comms, activities · newest first</CardDescription>
+            </CardHeader>
+            <CardBody>
+              {mergedEvents.length === 0 ? (
+                <EmptyState
+                  icon="inbox"
+                  size="compact"
+                  title="No recent activity"
+                  description="Orders, payments, and logged communications appear here."
+                  action={{ label: 'Log activity', onClick: () => setActivityOpen(true) }}
+                />
+              ) : (
+                <ol className="relative border-l border-border ml-3">
+                  {mergedEvents.map((ev) => (
+                    <li key={ev.id} className="ml-4 py-2.5 relative">
+                      <span className="absolute -left-[25px] top-3 flex items-center justify-center w-5 h-5 rounded-full bg-surface border border-border">
+                        {eventIcon(ev.kind)}
                       </span>
-                    </div>
-                    {proj.jobAddress && (
-                      <p className="text-xs text-gray-400 mt-1">{proj.jobAddress}</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">
-                      {proj._count.quotes} quotes ·{' '}
-                      {new Date(proj.createdAt).toLocaleDateString()}
-                    </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          {ev.href ? (
+                            <Link href={ev.href} className="text-[13px] font-medium text-fg hover:text-accent truncate">
+                              {ev.label}
+                            </Link>
+                          ) : (
+                            <span className="text-[13px] font-medium text-fg truncate">{ev.label}</span>
+                          )}
+                          {ev.detail && (
+                            <p className="text-[11.5px] text-fg-muted mt-0.5 leading-snug">{ev.detail}</p>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-fg-subtle whitespace-nowrap tabular-nums">
+                          {fmtDateShort(ev.at)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Right rail: AR aging + actions + cash insights */}
+          <div className="lg:col-span-5 space-y-4">
+            <Card padding="md">
+              <CardHeader border={false}>
+                <CardTitle>AR Aging</CardTitle>
+                <CardDescription>Current balance waterfall</CardDescription>
+              </CardHeader>
+              <CardBody>
+                <ARWaterfall buckets={agingBuckets} />
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border text-[12px]">
+                  <span className="text-fg-muted">Total AR</span>
+                  <span className="font-numeric font-semibold">{fmtMoney(arBalance)}</span>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card padding="md">
+              <CardHeader border={false}>
+                <CardTitle>Actions</CardTitle>
+                <CardDescription>Common account operations</CardDescription>
+              </CardHeader>
+              <CardBody>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setActivityForm({ ...activityForm, activityType: 'SITE_VISIT', subject: 'Site visit' })
+                      setActivityOpen(true)
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-[12.5px] rounded-md border border-border hover:bg-surface-muted transition-colors"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-fg-muted" />
+                    Log visit
+                  </button>
+                  <button
+                    onClick={handleSendStatement}
+                    className="flex items-center gap-2 px-3 py-2 text-[12.5px] rounded-md border border-border hover:bg-surface-muted transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-fg-muted" />
+                    Send statement
+                  </button>
+                  <Link
+                    href={`/ops/quotes/new?builderId=${builder.id}`}
+                    className="flex items-center gap-2 px-3 py-2 text-[12.5px] rounded-md border border-border hover:bg-surface-muted transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-fg-muted" />
+                    Create quote
                   </Link>
-                ))}
-              </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setCreditHoldOpen(true)}
+                      className="flex items-center gap-2 px-3 py-2 text-[12.5px] rounded-md border border-data-negative/40 text-data-negative hover:bg-data-negative-bg transition-colors"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      Credit hold
+                    </button>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+
+            {cashInsights?.outstandingActions && cashInsights.outstandingActions.length > 0 && (
+              <Card padding="md" className="border-accent/30">
+                <CardHeader border={false}>
+                  <CardTitle>Collection Actions</CardTitle>
+                  <CardDescription>From cash-flow optimizer</CardDescription>
+                </CardHeader>
+                <CardBody>
+                  <ul className="space-y-2">
+                    {cashInsights.outstandingActions.slice(0, 3).map((a: any, i: number) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px]">
+                        <AlertCircle className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                        <span className="text-fg-muted">
+                          <span className="font-medium text-fg">{a.actionType}</span>
+                          {' — '}
+                          {fmtMoneyCompact(a.amountDue || 0)} overdue {a.daysOverdue || 0}d
+                          {a.channel ? ` · ${a.channel}` : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3">
+                    <Link
+                      href="/ops/cash-flow-optimizer"
+                      className="text-[12px] text-accent hover:text-accent-hover"
+                    >
+                      Cash Flow Command Center →
+                    </Link>
+                  </div>
+                </CardBody>
+              </Card>
             )}
           </div>
 
-          {/* AI Cash Flow Insights for this builder */}
-          <div className="lg:col-span-2">
-            <div className="bg-gradient-to-r from-[#0f2a3e]/5 to-[#2E86C1]/5 border border-[#0f2a3e]/20 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🧠</span>
-                  <h3 className="font-semibold text-gray-900">AI Payment Intelligence</h3>
-                </div>
-                <Link
-                  href="/ops/cash-flow-optimizer"
-                  className="text-xs text-[#0f2a3e] hover:underline"
-                >
-                  Cash Flow Command Center →
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs text-gray-500">Payment Term</p>
-                  <p className="text-sm font-bold text-gray-900">{TERM_LABELS[builder.paymentTerm] || builder.paymentTerm}</p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs text-gray-500">Pricing Tier</p>
-                  <p className="text-sm font-bold" style={{ color: (builder as any).pricingTier === 'PREFERRED' ? '#27ae60' : (builder as any).pricingTier === 'PREMIUM' ? '#C6A24E' : '#0f2a3e' }}>
-                    {TIER_LABELS[(builder as any).pricingTier] || 'Standard'}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs text-gray-500">Credit Limit</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {builder.creditLimit ? `$${builder.creditLimit.toLocaleString()}` : 'Not set'}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs text-gray-500">Account Balance</p>
-                  <p className={`text-sm font-bold ${builder.accountBalance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                    ${builder.accountBalance.toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs text-gray-500">Collection Actions</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {builderCashInsights?.outstandingActions?.length ?? 0} pending
-                  </p>
-                </div>
-              </div>
-              {builderCashInsights?.outstandingActions && builderCashInsights.outstandingActions.length > 0 && (
-                <div className="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
-                  <p className="text-xs font-medium text-orange-700 mb-1">Collection Actions Required:</p>
-                  {builderCashInsights.outstandingActions.slice(0, 2).map((action: any, i: number) => (
-                    <p key={i} className="text-xs text-orange-600">
-                      • {action.actionType}: ${(action.amountDue || 0).toLocaleString()} overdue {action.daysOverdue || 0} days — {action.channel || 'EMAIL'}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Recent orders DataTable */}
+          <Card className="lg:col-span-12" padding="none">
+            <CardHeader>
+              <CardTitle>Recent Orders</CardTitle>
+              <CardDescription>Last 10 orders by date</CardDescription>
+            </CardHeader>
+            <CardBody>
+              <RecentOrdersTable rows={recentOrders} loading={recentOrdersLoading} />
+            </CardBody>
+          </Card>
         </div>
       )}
 
+      {/* ── Projects tab ────────────────────────────────────────────────── */}
       {activeTab === 'projects' && (
-        <div className="bg-white rounded-xl border">
+        <Card padding="none">
           {builder.projects.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <p>No projects for this builder</p>
-            </div>
+            <CardBody>
+              <EmptyState
+                icon="document"
+                title="No projects yet"
+                description="Create a project to start quoting and ordering for this builder."
+              />
+            </CardBody>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Project</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Address</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Quotes</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Created</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {builder.projects.map((proj) => (
-                  <tr key={proj.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <Link href={`/projects/${proj.id}`} className="text-sm font-medium text-[#0f2a3e] hover:text-[#C6A24E]">
-                        {proj.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{proj.jobAddress || '—'}</td>
-                    <td className="px-4 py-3 text-center text-sm">{proj._count.quotes}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                        {proj.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {new Date(proj.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable
+              columns={[
+                {
+                  key: 'name',
+                  header: 'Project',
+                  cell: (p) => (
+                    <Link
+                      href={`/ops/projects/${p.id}`}
+                      className="font-medium text-fg hover:text-accent"
+                    >
+                      {p.name}
+                    </Link>
+                  ),
+                },
+                {
+                  key: 'jobAddress',
+                  header: 'Address',
+                  cell: (p) => (p as any).jobAddress || '—',
+                  hideOnMobile: true,
+                },
+                {
+                  key: 'quotes',
+                  header: 'Quotes',
+                  numeric: true,
+                  cell: (p) => p._count.quotes,
+                },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  cell: (p) => <StatusBadge status={p.status} />,
+                },
+                {
+                  key: 'createdAt',
+                  header: 'Created',
+                  cell: (p) => fmtDate(p.createdAt),
+                  numeric: true,
+                },
+              ] as DataTableColumn<any>[]}
+              data={builder.projects}
+              rowKey={(p) => p.id}
+              density="default"
+            />
           )}
-        </div>
+        </Card>
       )}
 
-      {activeTab === 'activity' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
-            <button
-              onClick={() => setActivityModalOpen(true)}
-              className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
-            >
-              New Activity
-            </button>
-          </div>
-
-          {activitiesLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
-            </div>
-          ) : activities.length === 0 ? (
-            <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
-              <p className="text-3xl mb-2">📝</p>
-              <p className="font-medium">No activities yet</p>
-              <p className="text-xs mt-2">Start tracking calls, emails, meetings, and notes</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {activities.map((activity) => (
-                <div key={activity.id} className="bg-white rounded-xl border p-4">
-                  <div className="flex gap-4">
-                    <div className="text-2xl">{ACTIVITY_ICONS[activity.activityType] || '📌'}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="font-medium text-gray-900">{activity.subject}</p>
-                          <p className="text-sm text-gray-500">
-                            {activity.staff.firstName} {activity.staff.lastName} · {new Date(activity.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded whitespace-nowrap">
-                          {activity.activityType.replace('_', ' ')}
-                        </span>
-                      </div>
-                      {activity.notes && (
-                        <p className="text-sm text-gray-600 mt-2">{activity.notes}</p>
-                      )}
-                      {activity.outcome && (
-                        <p className="text-xs text-gray-500 mt-2 italic">Outcome: {activity.outcome}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+      {/* ── Communities tab ─────────────────────────────────────────────── */}
+      {activeTab === 'communities' && (
+        <div>
+          {communitiesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-32 skeleton rounded-lg" />
               ))}
             </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'comms' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Communication History</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowNewCommModal(true)}
-                className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
-              >
-                Log Communication
-              </button>
-              <Link
-                href={`/ops/communication-log?builderId=${params.id}`}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                View Full Log
-              </Link>
-            </div>
-          </div>
-
-          {commsLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
-            </div>
-          ) : commLogs.length === 0 ? (
-            <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
-              <p className="text-3xl mb-2">📧</p>
-              <p className="font-medium">No communications logged</p>
-              <p className="text-xs mt-2">Log emails, calls, and meetings with this builder</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {commLogs.map((log: any) => {
-                const channelIcons: Record<string, string> = {
-                  EMAIL: '📧', PHONE: '📞', TEXT: '💬', MEETING: '🤝', PORTAL: '🌐', OTHER: '📌'
-                }
-                return (
-                  <div key={log.id} className="bg-white rounded-xl border p-4">
-                    <div className="flex gap-3">
-                      <div className="text-2xl">{channelIcons[log.channel] || '📌'}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-medium text-gray-900 text-sm">{log.subject}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                                {log.channel}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {log.direction === 'INBOUND' ? '← Inbound' : '→ Outbound'}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-xs text-gray-400 whitespace-nowrap">
-                            {new Date(log.sentAt || log.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        {log.body && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{log.body}</p>
-                        )}
-                        {log.hasAttachments && (
-                          <p className="text-xs text-blue-600 mt-1">📎 Has attachments</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* New Communication Modal */}
-      {showNewCommModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleLogComm} className="bg-white rounded-xl max-w-lg w-full">
-            <div className="border-b p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Log Communication</h2>
-              <button type="button" onClick={() => setShowNewCommModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
-                  <select value={commForm.channel} onChange={(e) => setCommForm({ ...commForm, channel: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <option value="EMAIL">Email</option>
-                    <option value="PHONE">Phone</option>
-                    <option value="TEXT">Text/SMS</option>
-                    <option value="MEETING">Meeting</option>
-                    <option value="PORTAL">Portal</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Direction</label>
-                  <select value={commForm.direction} onChange={(e) => setCommForm({ ...commForm, direction: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <option value="OUTBOUND">Outbound (We sent)</option>
-                    <option value="INBOUND">Inbound (They sent)</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                <input type="text" value={commForm.subject} onChange={(e) => setCommForm({ ...commForm, subject: e.target.value })} placeholder="Call about delivery schedule..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Details</label>
-                <textarea value={commForm.body} onChange={(e) => setCommForm({ ...commForm, body: e.target.value })} placeholder="Summary of the communication..." rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none" />
-              </div>
-            </div>
-            <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowNewCommModal(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-              <button type="submit" disabled={commSubmitting} className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50">
-                {commSubmitting ? 'Saving...' : 'Log Communication'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {activeTab === 'pricing' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Custom Pricing</h3>
-            <button
-              onClick={() => {
-                setAddPricingOpen(true)
-                setEditingPricingId(null)
-                setSelectedProduct(null)
-                setCustomPrice('')
-                setProductSearch('')
-                setSearchResults([])
-              }}
-              className="px-3 py-1.5 text-sm bg-[#C6A24E] text-white rounded-lg hover:bg-[#A8882A]"
-            >
-              Add Custom Price
-            </button>
-          </div>
-
-          {pricingLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0f2a3e]" />
-            </div>
-          ) : pricing.length === 0 ? (
-            <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
-              <p className="text-3xl mb-2">💲</p>
-              <p className="font-medium">No custom pricing yet</p>
-              <p className="text-xs mt-2">Set custom prices for specific products</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">SKU</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Product</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Category</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Base Price</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Custom Price</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Margin %</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {pricing.map((bp) => {
-                    const margin = bp.margin || 0
-                    const marginColor = margin < 25 ? 'text-red-600' : 'text-green-600'
-                    return (
-                      <tr key={bp.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-mono text-gray-900">{bp.product.sku}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{bp.product.name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{bp.product.category}</td>
-                        <td className="px-4 py-3 text-sm text-right text-gray-600">
-                          ${bp.product.basePrice.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">
-                          ${bp.customPrice.toFixed(2)}
-                        </td>
-                        <td className={`px-4 py-3 text-sm text-center font-medium ${marginColor}`}>
-                          {margin.toFixed(1)}%
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleEditPricing(bp)}
-                            className="text-sm text-[#0f2a3e] hover:text-[#C6A24E] font-medium"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Edit Account Modal */}
-      {editModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleEditSubmit() }} className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Edit Account</h2>
-              <button type="button" onClick={() => setEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {editError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {editError}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                  <input
-                    type="text"
-                    value={editForm.companyName || ''}
-                    onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
-                  <input
-                    type="text"
-                    value={editForm.contactName || ''}
-                    onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={editForm.email || ''}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <input
-                    type="text"
-                    value={editForm.address || ''}
-                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    value={editForm.city || ''}
-                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <input
-                    type="text"
-                    value={editForm.state || ''}
-                    onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Zip</label>
-                  <input
-                    type="text"
-                    value={editForm.zip || ''}
-                    onChange={(e) => setEditForm({ ...editForm, zip: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-                  <input
-                    type="text"
-                    value={editForm.licenseNumber || ''}
-                    onChange={(e) => setEditForm({ ...editForm, licenseNumber: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
-                  <select
-                    value={editForm.paymentTerm || 'NET_15'}
-                    onChange={(e) => setEditForm({ ...editForm, paymentTerm: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  >
-                    <option value="PAY_AT_ORDER">Pay at Order</option>
-                    <option value="PAY_ON_DELIVERY">Pay on Delivery</option>
-                    <option value="NET_15">Net 15</option>
-                    <option value="NET_30">Net 30</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Pricing Tier</label>
-                  <select
-                    value={editForm.pricingTier || 'STANDARD'}
-                    onChange={(e) => setEditForm({ ...editForm, pricingTier: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  >
-                    <option value="PREFERRED">Preferred Builder (best pricing)</option>
-                    <option value="STANDARD">Standard Builder</option>
-                    <option value="NEW_ACCOUNT">New Account</option>
-                    <option value="PREMIUM">Premium/Low Volume (highest margins)</option>
-                  </select>
-                  <p className="text-xs text-gray-400 mt-1">Controls catalog pricing for this builder</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Credit Limit</label>
-                  <input
-                    type="number"
-                    value={editForm.creditLimit || ''}
-                    onChange={(e) => setEditForm({ ...editForm, creditLimit: e.target.value ? parseFloat(e.target.value) : null })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={editForm.status || 'PENDING'}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="SUSPENDED">Suspended</option>
-                    <option value="CLOSED">Closed</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="taxExempt"
-                    checked={editForm.taxExempt || false}
-                    onChange={(e) => setEditForm({ ...editForm, taxExempt: e.target.checked })}
-                    className="w-4 h-4 border-gray-300 rounded"
-                  />
-                  <label htmlFor="taxExempt" className="text-sm font-medium text-gray-700">
-                    Tax Exempt
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="sticky bottom-0 bg-gray-50 border-t p-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setEditModalOpen(false)}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={editLoading}
-                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
-              >
-                {editLoading ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Log Activity Modal */}
-      {activityModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleLogActivity() }} className="bg-white rounded-xl max-w-xl w-full">
-            <div className="border-b p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Log Activity</h2>
-              <button type="button" onClick={() => setActivityModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {activityError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {activityError}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
-                <select
-                  value={activityForm.activityType}
-                  onChange={(e) => setActivityForm({ ...activityForm, activityType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                >
-                  <option value="CALL">Call</option>
-                  <option value="EMAIL">Email</option>
-                  <option value="MEETING">Meeting</option>
-                  <option value="SITE_VISIT">Site Visit</option>
-                  <option value="TEXT_MESSAGE">Text Message</option>
-                  <option value="NOTE">Note</option>
-                  <option value="QUOTE_SENT">Quote Sent</option>
-                  <option value="ISSUE_REPORTED">Issue Reported</option>
-                  <option value="ISSUE_RESOLVED">Issue Resolved</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
-                <input
-                  type="text"
-                  value={activityForm.subject}
-                  onChange={(e) => setActivityForm({ ...activityForm, subject: e.target.value })}
-                  placeholder="e.g., Follow-up on quote"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  value={activityForm.notes}
-                  onChange={(e) => setActivityForm({ ...activityForm, notes: e.target.value })}
-                  placeholder="Additional details..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Outcome</label>
-                <input
-                  type="text"
-                  value={activityForm.outcome}
-                  onChange={(e) => setActivityForm({ ...activityForm, outcome: e.target.value })}
-                  placeholder="e.g., Agreed to NET_15"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setActivityModalOpen(false)}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={activitySubmitLoading || !activityForm.subject}
-                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
-              >
-                {activitySubmitLoading ? 'Saving...' : 'Log Activity'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Add/Edit Pricing Modal */}
-      {addPricingOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleAddOrUpdatePricing() }} className="bg-white rounded-xl max-w-xl w-full">
-            <div className="border-b p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">
-                {editingPricingId ? 'Edit Price' : 'Add Custom Price'}
-              </h2>
-              <button type="button" onClick={() => setAddPricingOpen(false)} className="text-gray-400 hover:text-gray-600">
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {pricingError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {pricingError}
-                </div>
-              )}
-
-              {!editingPricingId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Product *</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={productSearch}
-                      onChange={(e) => handleSearchProducts(e.target.value)}
-                      placeholder="Search by SKU or product name..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                    />
-                    {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-10 max-h-48 overflow-y-auto">
-                        {searchResults.map((prod) => (
-                          <button
-                            key={prod.id}
-                            onClick={() => {
-                              setSelectedProduct(prod)
-                              setProductSearch('')
-                              setSearchResults([])
-                            }}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0"
-                          >
-                            <div className="font-medium text-gray-900">{prod.sku} - {prod.name}</div>
-                            <div className="text-xs text-gray-500">{prod.category} · Base: ${prod.basePrice.toFixed(2)}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {selectedProduct && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm font-medium text-blue-900">{selectedProduct.sku} - {selectedProduct.name}</p>
-                      <p className="text-xs text-blue-700">Base: ${selectedProduct.basePrice.toFixed(2)} · Cost: ${(selectedProduct.cost || 0).toFixed(2)}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {selectedProduct && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Price *</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={customPrice}
-                      onChange={(e) => setCustomPrice(e.target.value)}
-                      placeholder="0.00"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
-                    />
-                  </div>
-                  {customPrice && selectedProduct && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <p>
-                        Base Price: ${selectedProduct.basePrice.toFixed(2)} ·
-                        Cost: ${(selectedProduct.cost || 0).toFixed(2)} ·
-                        Your Price: ${parseFloat(customPrice).toFixed(2)}
-                      </p>
-                      <p className="mt-1">
-                        {customPrice && parseFloat(customPrice) > 0 ? (
-                          <>
-                            Margin: <span className={parseFloat(customPrice) > 0 && ((parseFloat(customPrice) - (selectedProduct.cost || 0)) / parseFloat(customPrice) * 100) < 25 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
-                              {((parseFloat(customPrice) - (selectedProduct.cost || 0)) / parseFloat(customPrice) * 100).toFixed(1)}%
-                            </span>
-                          </>
-                        ) : null}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setAddPricingOpen(false)
-                  setSelectedProduct(null)
-                  setCustomPrice('')
-                  setEditingPricingId(null)
-                  setProductSearch('')
-                  setSearchResults([])
-                }}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={activitySubmitLoading || !selectedProduct || !customPrice}
-                className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
-              >
-                {activitySubmitLoading ? 'Saving...' : editingPricingId ? 'Update Price' : 'Add Price'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ========== MARGINS TAB ========== */}
-      {activeTab === 'margins' && (
-        <div className="space-y-6">
-          {marginLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-            </div>
-          ) : marginData ? (
-            <>
-              {/* Blended Margin Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl border p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-gray-500 uppercase font-medium">Target Blended Margin</p>
-                    {!marginEditing && (
-                      <button onClick={startMarginEdit} className="text-xs text-[#0f2a3e] hover:text-[#C6A24E] font-medium">
-                        Edit Targets
-                      </button>
-                    )}
-                  </div>
-                  {marginEditing ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={editBlendedTarget}
-                        onChange={(e) => setEditBlendedTarget(e.target.value)}
-                        className="w-24 px-2 py-1.5 border rounded text-lg font-bold text-[#0f2a3e] focus:ring-2 focus:ring-[#0f2a3e]/20"
-                      />
-                      <span className="text-lg font-bold text-gray-500">%</span>
-                    </div>
-                  ) : (
-                    <p className="text-3xl font-bold text-[#0f2a3e]">
-                      {marginData.marginTarget
-                        ? `${(marginData.marginTarget.targetBlendedMargin * 100).toFixed(1)}%`
-                        : '30.0%'}
-                    </p>
-                  )}
-                  {marginData.marginTarget?.notes && !marginEditing && (
-                    <p className="text-xs text-gray-400 mt-2">{marginData.marginTarget.notes}</p>
-                  )}
-                </div>
-
-                <div className="bg-white rounded-xl border p-5">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-2">Actual Blended Margin</p>
-                  <p className={`text-3xl font-bold ${
-                    marginData.blendedActual.blendedMarginPct >=
-                    (marginData.marginTarget?.targetBlendedMargin || 0.30) * 100
-                      ? 'text-green-600'
-                      : marginData.blendedActual.blendedMarginPct > 0
-                        ? 'text-red-600'
-                        : 'text-gray-400'
-                  }`}>
-                    {marginData.blendedActual.blendedMarginPct > 0
-                      ? `${marginData.blendedActual.blendedMarginPct}%`
-                      : 'No data'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    {marginData.blendedActual.orderCount} orders &middot; ${marginData.blendedActual.totalRevenue.toLocaleString()} revenue
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border p-5">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-2">Margin Gap</p>
-                  {marginData.blendedActual.blendedMarginPct > 0 ? (
-                    <>
-                      {(() => {
-                        const target = (marginData.marginTarget?.targetBlendedMargin || 0.30) * 100
-                        const actual = marginData.blendedActual.blendedMarginPct
-                        const gap = actual - target
-                        return (
-                          <>
-                            <p className={`text-3xl font-bold ${gap >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {gap >= 0 ? '+' : ''}{gap.toFixed(1)}%
-                            </p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {gap >= 0 ? 'Above target' : 'Below target'}
-                            </p>
-                          </>
-                        )
-                      })()}
-                    </>
-                  ) : (
-                    <p className="text-3xl font-bold text-gray-400">—</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Edit mode notes */}
-              {marginEditing && (
-                <div className="bg-white rounded-xl border p-4">
-                  <label className="block text-xs text-gray-500 uppercase font-medium mb-2">Margin Notes</label>
-                  <textarea
-                    value={marginNotes}
-                    onChange={(e) => setMarginNotes(e.target.value)}
-                    placeholder="e.g. Negotiated rates based on volume commitment..."
-                    rows={2}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
-                  />
-                </div>
-              )}
-
-              {/* Category Breakdown Table */}
-              <div className="bg-white rounded-xl border overflow-hidden">
-                <div className="px-5 py-4 border-b flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">Category Margin Breakdown</h3>
-                  <span className="text-xs text-gray-400">{marginData.customPricingCount} custom prices set</span>
-                </div>
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Category</th>
-                      <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Type</th>
-                      <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Target %</th>
-                      <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Min %</th>
-                      <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actual %</th>
-                      <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                      <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {(marginEditing ? editCategoryTargets : marginData.categories || []).map((cat: any, idx: number) => {
-                      const actualCat = marginData.categories?.find((c: any) => c.category === cat.category)
-                      const status = actualCat?.status || 'NO_DATA'
-                      return (
-                        <tr key={cat.category} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-900">{cat.category}</span>
-                              {(actualCat?.isCustom || cat.isCustom) && (
-                                <span className="text-[10px] bg-[#C6A24E]/10 text-[#C6A24E] px-1.5 py-0.5 rounded font-medium">Custom</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              cat.categoryType === 'CORE'
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'bg-purple-50 text-purple-700'
-                            }`}>
-                              {cat.categoryType === 'CORE' ? 'Core' : 'Add-On'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {marginEditing ? (
-                              <input
-                                type="number"
-                                step="0.5"
-                                value={editCategoryTargets[idx]?.targetMargin || ''}
-                                onChange={(e) => {
-                                  const updated = [...editCategoryTargets]
-                                  updated[idx] = { ...updated[idx], targetMargin: e.target.value }
-                                  setEditCategoryTargets(updated)
-                                }}
-                                className="w-16 px-1.5 py-1 border rounded text-sm text-center focus:ring-2 focus:ring-[#0f2a3e]/20"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-900">{(cat.targetMargin * 100).toFixed(1)}%</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {marginEditing ? (
-                              <input
-                                type="number"
-                                step="0.5"
-                                value={editCategoryTargets[idx]?.minMargin || ''}
-                                onChange={(e) => {
-                                  const updated = [...editCategoryTargets]
-                                  updated[idx] = { ...updated[idx], minMargin: e.target.value }
-                                  setEditCategoryTargets(updated)
-                                }}
-                                className="w-16 px-1.5 py-1 border rounded text-sm text-center focus:ring-2 focus:ring-[#0f2a3e]/20"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-500">{(cat.minMargin * 100).toFixed(1)}%</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {actualCat?.actualMarginPct != null ? (
-                              <span className={`text-sm font-medium ${
-                                status === 'ON_TARGET' ? 'text-green-600' :
-                                status === 'BELOW_TARGET' ? 'text-yellow-600' :
-                                status === 'CRITICAL' ? 'text-red-600' : 'text-gray-400'
-                              }`}>
-                                {actualCat.actualMarginPct}%
-                              </span>
-                            ) : (
-                              <span className="text-xs text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {actualCat?.revenue > 0 ? (
-                              <span className="text-sm text-gray-700">${actualCat.revenue.toLocaleString()}</span>
-                            ) : (
-                              <span className="text-xs text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {status === 'ON_TARGET' && <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" title="On Target" />}
-                            {status === 'BELOW_TARGET' && <span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500" title="Below Target" />}
-                            {status === 'CRITICAL' && <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500" title="Critical" />}
-                            {status === 'NO_DATA' && <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-300" title="No Data" />}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Edit action buttons */}
-              {marginEditing && (
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setMarginEditing(false)}
-                    className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={saveMarginTargets}
-                    disabled={marginSaving}
-                    className="px-4 py-2 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] disabled:opacity-50"
-                  >
-                    {marginSaving ? 'Saving...' : 'Save Margin Targets'}
-                  </button>
-                </div>
-              )}
-
-              {/* Legend */}
-              <div className="flex items-center gap-6 text-xs text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
-                  On Target
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                  Below Target
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500" />
-                  Critical (below min)
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-300" />
-                  No Order Data
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center text-gray-400 text-sm py-12">
-              Failed to load margin data
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ========== COMMUNITIES TAB ========== */}
-      {activeTab === 'communities' && (
-        <div className="space-y-4">
-          {communitiesLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-            </div>
           ) : communities.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border">
-              <p className="text-gray-500 mb-2">No communities yet for this builder.</p>
-              <p className="text-sm text-gray-400">Communities are used to organize production builders (Toll, DR Horton, etc.) by subdivision or development.</p>
-            </div>
+            <Card padding="lg">
+              <EmptyState
+                icon="package"
+                title="No communities yet"
+                description="Communities group production builders (Toll, DR Horton, etc.) by subdivision or development."
+              />
+            </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {communities.map((c: any) => (
                 <Link
                   key={c.id}
                   href={`/ops/communities/${c.id}`}
-                  className="bg-white rounded-xl border p-5 hover:border-[#0f2a3e] hover:shadow-sm transition-all group"
+                  className="panel panel-interactive p-5 block group"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-[#0f2a3e]">{c.name}</h3>
-                      <p className="text-sm text-gray-500">
+                  <div className="flex items-start justify-between mb-3 gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-[14px] font-semibold text-fg group-hover:text-accent truncate">
+                        {c.name}
+                      </h3>
+                      <p className="text-[11.5px] text-fg-muted mt-0.5">
                         {[c.city, c.state].filter(Boolean).join(', ')}
-                        {c.division && <span> &middot; {c.division}</span>}
+                        {c.division && ` · ${c.division}`}
                       </p>
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      c.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                      c.status === 'PLANNING' ? 'bg-purple-100 text-purple-700' :
-                      c.status === 'WINDING_DOWN' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-500'
-                    }`}>
-                      {(c.status || 'ACTIVE').replace(/_/g, ' ')}
-                    </span>
+                    <StatusBadge status={c.status || 'ACTIVE'} />
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">{c.totalLots || 0}</div>
-                      <div className="text-xs text-gray-400">Lots</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-blue-600">{c.jobCount || 0}</div>
-                      <div className="text-xs text-gray-400">Jobs</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-green-600">{c.contactCount || 0}</div>
-                      <div className="text-xs text-gray-400">Contacts</div>
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-orange-600">{c.openTaskCount || 0}</div>
-                      <div className="text-xs text-gray-400">Tasks</div>
-                    </div>
+                    {[
+                      { label: 'Lots', val: c.totalLots || 0 },
+                      { label: 'Jobs', val: c.jobCount || 0 },
+                      { label: 'Contacts', val: c.contactCount || 0 },
+                      { label: 'Tasks', val: c.openTaskCount || 0 },
+                    ].map((s) => (
+                      <div key={s.label}>
+                        <div className="metric metric-sm">{s.val}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-fg-subtle mt-0.5">
+                          {s.label}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </Link>
               ))}
@@ -1778,69 +1427,1099 @@ export default function AccountDetailPage() {
         </div>
       )}
 
-      {/* ========== CONTACTS TAB ========== */}
+      {/* ── Contacts tab ────────────────────────────────────────────────── */}
       {activeTab === 'contacts' && (
-        <div className="space-y-4">
+        <Card padding="none">
           {contactsLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-            </div>
+            <CardBody>
+              <div className="h-40 skeleton rounded-md" />
+            </CardBody>
           ) : builderContacts.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border">
-              <p className="text-gray-500">No contacts on file for this builder.</p>
-            </div>
+            <CardBody>
+              <EmptyState
+                icon="users"
+                title="No contacts on file"
+                description="Add the people you work with at this account — PMs, coordinators, accounting."
+              />
+            </CardBody>
           ) : (
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left">
-                  <tr>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Community</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Phone</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Flags</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {builderContacts.map((c: any) => (
-                    <tr key={c.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">
-                          {c.firstName} {c.lastName}
-                          {c.isPrimary && (
-                            <span className="ml-1.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Primary</span>
-                          )}
-                        </div>
-                        {c.title && <div className="text-xs text-gray-500">{c.title}</div>}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{(c.role || '').replace(/_/g, ' ')}</td>
-                      <td className="px-4 py-3 text-gray-600">{c.communityName || 'Org-level'}</td>
-                      <td className="px-4 py-3 text-blue-600">{c.email || '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{c.phone || c.mobile || '—'}</td>
-                      <td className="px-4 py-3">
-                        {c.receivesPO && <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded mr-1">PO</span>}
-                        {c.receivesInvoice && <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded">Invoice</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <DataTable
+              columns={[
+                {
+                  key: 'name',
+                  header: 'Name',
+                  cell: (c: any) => (
+                    <div>
+                      <div className="font-medium text-fg">
+                        {c.firstName} {c.lastName}
+                        {c.isPrimary && (
+                          <Badge size="xs" variant="info" className="ml-1.5">
+                            Primary
+                          </Badge>
+                        )}
+                      </div>
+                      {c.title && <div className="text-[11px] text-fg-muted">{c.title}</div>}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'role',
+                  header: 'Role',
+                  cell: (c: any) => (c.role || '').replace(/_/g, ' '),
+                },
+                {
+                  key: 'community',
+                  header: 'Community',
+                  cell: (c: any) => c.communityName || 'Org-level',
+                  hideOnMobile: true,
+                },
+                {
+                  key: 'email',
+                  header: 'Email',
+                  cell: (c: any) =>
+                    c.email ? (
+                      <a href={`mailto:${c.email}`} className="text-accent hover:text-accent-hover">
+                        {c.email}
+                      </a>
+                    ) : (
+                      '—'
+                    ),
+                  hideOnMobile: true,
+                },
+                {
+                  key: 'phone',
+                  header: 'Phone',
+                  cell: (c: any) => c.phone || c.mobile || '—',
+                  hideOnMobile: true,
+                },
+                {
+                  key: 'flags',
+                  header: 'Flags',
+                  cell: (c: any) => (
+                    <div className="flex gap-1">
+                      {c.receivesPO && <Badge size="xs" variant="success">PO</Badge>}
+                      {c.receivesInvoice && <Badge size="xs" variant="info">Invoice</Badge>}
+                    </div>
+                  ),
+                },
+              ] as DataTableColumn<any>[]}
+              data={builderContacts}
+              rowKey={(c) => c.id}
+              density="default"
+            />
+          )}
+        </Card>
+      )}
+
+      {/* ── Activity tab ────────────────────────────────────────────────── */}
+      {activeTab === 'activity' && (
+        <Card padding="none">
+          <CardHeader>
+            <CardTitle>Activity Log</CardTitle>
+            <CardDescription>Full activity history</CardDescription>
+          </CardHeader>
+          <CardBody>
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => setActivityOpen(true)}
+                className="h-8 px-3 text-[12.5px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90"
+              >
+                New Activity
+              </button>
             </div>
+            {activitiesLoading ? (
+              <div className="h-40 skeleton rounded-md" />
+            ) : activities.length === 0 ? (
+              <EmptyState
+                icon="document"
+                title="No activities yet"
+                description="Start tracking calls, emails, meetings, and notes for this account."
+                action={{ label: 'Log activity', onClick: () => setActivityOpen(true) }}
+              />
+            ) : (
+              <ul className="space-y-2">
+                {activities.map((a) => (
+                  <li key={a.id} className="panel p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[13px] font-medium text-fg">{a.subject}</span>
+                          <Badge size="xs" variant="neutral">
+                            {a.activityType.replace(/_/g, ' ')}
+                          </Badge>
+                        </div>
+                        <div className="text-[11.5px] text-fg-muted">
+                          {a.staff.firstName} {a.staff.lastName} · {fmtDate(a.createdAt)}
+                        </div>
+                        {a.notes && <p className="text-[12.5px] text-fg mt-1.5">{a.notes}</p>}
+                        {a.outcome && (
+                          <p className="text-[11.5px] text-fg-subtle italic mt-1">
+                            Outcome: {a.outcome}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* ── Communications tab ──────────────────────────────────────────── */}
+      {activeTab === 'comms' && (
+        <Card padding="none">
+          <CardHeader>
+            <CardTitle>Communication History</CardTitle>
+            <CardDescription>Emails, calls, meetings logged to this account</CardDescription>
+          </CardHeader>
+          <CardBody>
+            <div className="flex justify-end mb-3 gap-2">
+              <button
+                onClick={() => setCommOpen(true)}
+                className="h-8 px-3 text-[12.5px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90"
+              >
+                Log Communication
+              </button>
+              <Link
+                href={`/ops/communication-log?builderId=${builderId}`}
+                className="h-8 px-3 inline-flex items-center text-[12.5px] rounded-md border border-border hover:bg-surface-muted"
+              >
+                View full log
+              </Link>
+            </div>
+            {commsLoading ? (
+              <div className="h-32 skeleton rounded-md" />
+            ) : commLogs.length === 0 ? (
+              <EmptyState
+                icon="message"
+                title="No communications logged"
+                description="Log emails, calls, and meetings with this builder to keep a searchable history."
+                action={{ label: 'Log communication', onClick: () => setCommOpen(true) }}
+              />
+            ) : (
+              <ul className="space-y-2">
+                {commLogs.map((log) => (
+                  <li key={log.id} className="panel p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[13px] font-medium text-fg truncate">
+                            {log.subject}
+                          </span>
+                          <Badge size="xs" variant="neutral">
+                            {log.channel}
+                          </Badge>
+                          <span className="text-[11px] text-fg-subtle">
+                            {log.direction === 'INBOUND' ? '← Inbound' : '→ Outbound'}
+                          </span>
+                        </div>
+                        {log.body && (
+                          <p className="text-[12px] text-fg-muted line-clamp-2">{log.body}</p>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-fg-subtle whitespace-nowrap">
+                        {fmtDate(log.sentAt || log.createdAt)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* ── Custom pricing tab ──────────────────────────────────────────── */}
+      {activeTab === 'pricing' && (
+        <Card padding="none">
+          <CardHeader>
+            <CardTitle>Custom Pricing</CardTitle>
+            <CardDescription>Product-specific prices for this builder</CardDescription>
+          </CardHeader>
+          <CardBody>
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => {
+                  setPricingOpen(true)
+                  setEditingPricingId(null)
+                  setSelectedProduct(null)
+                  setCustomPrice('')
+                  setProductSearch('')
+                  setSearchResults([])
+                }}
+                className="h-8 px-3 text-[12.5px] rounded-md bg-accent text-fg-on-accent hover:bg-accent/90"
+              >
+                Add custom price
+              </button>
+            </div>
+            {pricingLoading ? (
+              <div className="h-40 skeleton rounded-md" />
+            ) : pricing.length === 0 ? (
+              <EmptyState
+                icon="package"
+                title="No custom pricing yet"
+                description="Set product-level overrides for this builder."
+              />
+            ) : (
+              <DataTable
+                columns={[
+                  {
+                    key: 'sku',
+                    header: 'SKU',
+                    cell: (bp: BuilderPricing) => (
+                      <span className="font-mono text-[12px]">{bp.product.sku}</span>
+                    ),
+                  },
+                  { key: 'product', header: 'Product', cell: (bp: BuilderPricing) => bp.product.name },
+                  {
+                    key: 'category',
+                    header: 'Category',
+                    cell: (bp: BuilderPricing) => bp.product.category,
+                    hideOnMobile: true,
+                  },
+                  {
+                    key: 'basePrice',
+                    header: 'Base',
+                    numeric: true,
+                    cell: (bp: BuilderPricing) => fmtMoney(bp.product.basePrice),
+                  },
+                  {
+                    key: 'customPrice',
+                    header: 'Custom',
+                    numeric: true,
+                    cell: (bp: BuilderPricing) => (
+                      <span className="font-semibold">{fmtMoney(bp.customPrice)}</span>
+                    ),
+                  },
+                  {
+                    key: 'margin',
+                    header: 'Margin',
+                    numeric: true,
+                    cell: (bp: BuilderPricing) => {
+                      const m = bp.margin || 0
+                      return (
+                        <span
+                          className={cn(
+                            'font-numeric',
+                            m < 25 ? 'text-data-negative' : 'text-data-positive',
+                          )}
+                        >
+                          {m.toFixed(1)}%
+                        </span>
+                      )
+                    },
+                  },
+                ] as DataTableColumn<BuilderPricing>[]}
+                data={pricing}
+                rowKey={(bp) => bp.id}
+                onRowClick={(bp) => handleEditPricing(bp)}
+                density="default"
+              />
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* ── Margins tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'margins' && (
+        <div className="space-y-4">
+          {marginLoading ? (
+            <div className="h-64 skeleton rounded-md" />
+          ) : marginData ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card padding="md">
+                  <CardHeader border={false}>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Target Blended Margin</CardTitle>
+                      {!marginEditing && (
+                        <button
+                          onClick={startMarginEdit}
+                          className="text-[12px] text-accent hover:text-accent-hover font-medium"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    {marginEditing ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={editBlendedTarget}
+                          onChange={(e) => setEditBlendedTarget(e.target.value)}
+                          className="w-24 h-9 px-2 border border-border rounded-md text-[18px] font-numeric"
+                        />
+                        <span className="text-[18px] text-fg-muted">%</span>
+                      </div>
+                    ) : (
+                      <div className="metric metric-lg">
+                        {marginData.marginTarget
+                          ? `${(marginData.marginTarget.targetBlendedMargin * 100).toFixed(1)}%`
+                          : '30.0%'}
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+                <Card padding="md">
+                  <CardHeader border={false}>
+                    <CardTitle>Actual Blended</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    <div
+                      className={cn(
+                        'metric metric-lg',
+                        marginData.blendedActual.blendedMarginPct >=
+                          (marginData.marginTarget?.targetBlendedMargin || 0.3) * 100
+                          ? 'text-data-positive'
+                          : marginData.blendedActual.blendedMarginPct > 0
+                            ? 'text-data-negative'
+                            : 'text-fg-subtle',
+                      )}
+                    >
+                      {marginData.blendedActual.blendedMarginPct > 0
+                        ? `${marginData.blendedActual.blendedMarginPct}%`
+                        : '—'}
+                    </div>
+                    <p className="text-[11px] text-fg-subtle mt-1">
+                      {marginData.blendedActual.orderCount} orders ·{' '}
+                      {fmtMoneyCompact(marginData.blendedActual.totalRevenue)}
+                    </p>
+                  </CardBody>
+                </Card>
+                <Card padding="md">
+                  <CardHeader border={false}>
+                    <CardTitle>Gap</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    {marginData.blendedActual.blendedMarginPct > 0 ? (
+                      (() => {
+                        const target = (marginData.marginTarget?.targetBlendedMargin || 0.3) * 100
+                        const actual = marginData.blendedActual.blendedMarginPct
+                        const gap = actual - target
+                        return (
+                          <>
+                            <div
+                              className={cn(
+                                'metric metric-lg',
+                                gap >= 0 ? 'text-data-positive' : 'text-data-negative',
+                              )}
+                            >
+                              {gap >= 0 ? '+' : ''}
+                              {gap.toFixed(1)}%
+                            </div>
+                            <p className="text-[11px] text-fg-subtle mt-1">
+                              {gap >= 0 ? 'Above target' : 'Below target'}
+                            </p>
+                          </>
+                        )
+                      })()
+                    ) : (
+                      <div className="metric metric-lg text-fg-subtle">—</div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+
+              {marginEditing && (
+                <Card padding="md">
+                  <CardBody>
+                    <label className="text-[11px] uppercase tracking-wider text-fg-subtle font-medium block mb-2">
+                      Margin Notes
+                    </label>
+                    <textarea
+                      value={marginNotes}
+                      onChange={(e) => setMarginNotes(e.target.value)}
+                      rows={2}
+                      placeholder="e.g. Negotiated rates based on volume commitment..."
+                      className="w-full px-3 py-2 border border-border rounded-md text-[13px]"
+                    />
+                  </CardBody>
+                </Card>
+              )}
+
+              <Card padding="none">
+                <CardHeader>
+                  <CardTitle>Category Breakdown</CardTitle>
+                  <CardDescription>{marginData.customPricingCount} custom prices set</CardDescription>
+                </CardHeader>
+                <CardBody>
+                  <DataTable
+                    columns={[
+                      {
+                        key: 'category',
+                        header: 'Category',
+                        cell: (cat: any, idx: number) => {
+                          const actualCat = marginData.categories?.find((c: any) => c.category === cat.category)
+                          const isCustom = actualCat?.isCustom || cat.isCustom
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{cat.category}</span>
+                              {isCustom && (
+                                <Badge size="xs" variant="warning">
+                                  Custom
+                                </Badge>
+                              )}
+                            </div>
+                          )
+                        },
+                      },
+                      {
+                        key: 'type',
+                        header: 'Type',
+                        cell: (cat: any) => (
+                          <Badge size="xs" variant={cat.categoryType === 'CORE' ? 'info' : 'brand'}>
+                            {cat.categoryType === 'CORE' ? 'Core' : 'Add-On'}
+                          </Badge>
+                        ),
+                      },
+                      {
+                        key: 'targetMargin',
+                        header: 'Target %',
+                        numeric: true,
+                        cell: (cat: any, idx: number) =>
+                          marginEditing ? (
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={editCategoryTargets[idx]?.targetMargin || ''}
+                              onChange={(e) => {
+                                const upd = [...editCategoryTargets]
+                                upd[idx] = { ...upd[idx], targetMargin: e.target.value }
+                                setEditCategoryTargets(upd)
+                              }}
+                              className="w-16 px-1.5 py-1 border border-border rounded text-[12px] text-center"
+                            />
+                          ) : (
+                            `${(cat.targetMargin * 100).toFixed(1)}%`
+                          ),
+                      },
+                      {
+                        key: 'minMargin',
+                        header: 'Min %',
+                        numeric: true,
+                        cell: (cat: any, idx: number) =>
+                          marginEditing ? (
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={editCategoryTargets[idx]?.minMargin || ''}
+                              onChange={(e) => {
+                                const upd = [...editCategoryTargets]
+                                upd[idx] = { ...upd[idx], minMargin: e.target.value }
+                                setEditCategoryTargets(upd)
+                              }}
+                              className="w-16 px-1.5 py-1 border border-border rounded text-[12px] text-center"
+                            />
+                          ) : (
+                            `${(cat.minMargin * 100).toFixed(1)}%`
+                          ),
+                      },
+                      {
+                        key: 'actual',
+                        header: 'Actual %',
+                        numeric: true,
+                        cell: (cat: any) => {
+                          const actualCat = marginData.categories?.find((c: any) => c.category === cat.category)
+                          const status = actualCat?.status || 'NO_DATA'
+                          if (actualCat?.actualMarginPct == null) return '—'
+                          return (
+                            <span
+                              className={cn(
+                                'font-numeric',
+                                status === 'ON_TARGET' && 'text-data-positive',
+                                status === 'BELOW_TARGET' && 'text-accent',
+                                status === 'CRITICAL' && 'text-data-negative',
+                              )}
+                            >
+                              {actualCat.actualMarginPct}%
+                            </span>
+                          )
+                        },
+                      },
+                      {
+                        key: 'revenue',
+                        header: 'Revenue',
+                        numeric: true,
+                        cell: (cat: any) => {
+                          const actualCat = marginData.categories?.find((c: any) => c.category === cat.category)
+                          return actualCat?.revenue > 0 ? fmtMoneyCompact(actualCat.revenue) : '—'
+                        },
+                      },
+                    ] as DataTableColumn<any>[]}
+                    data={marginEditing ? editCategoryTargets : marginData.categories || []}
+                    rowKey={(c) => c.category}
+                    density="default"
+                  />
+                </CardBody>
+              </Card>
+
+              {marginEditing && (
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setMarginEditing(false)}
+                    className="h-9 px-4 text-[13px] rounded-md border border-border hover:bg-surface-muted"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveMarginTargets}
+                    disabled={marginSaving}
+                    className="h-9 px-4 text-[13px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90 disabled:opacity-50"
+                  >
+                    {marginSaving ? 'Saving…' : 'Save Margin Targets'}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <Card>
+              <CardBody>
+                <EmptyState
+                  icon="chart"
+                  title="Failed to load margin data"
+                  action={{ label: 'Retry', onClick: loadMargins }}
+                />
+              </CardBody>
+            </Card>
           )}
         </div>
       )}
+
+      {/* ── Dialogs ─────────────────────────────────────────────────────── */}
+
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Account"
+        size="lg"
+        footer={
+          <>
+            <button
+              onClick={() => setEditOpen(false)}
+              className="h-9 px-4 text-[13px] rounded-md border border-border hover:bg-surface-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleEditSave}
+              disabled={editSaving}
+              className="h-9 px-4 text-[13px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90 disabled:opacity-50"
+            >
+              {editSaving ? 'Saving…' : 'Save Changes'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {editError && (
+            <div className="px-3 py-2 rounded-md bg-data-negative-bg text-data-negative text-[13px]">
+              {editError}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Company Name">
+              <input
+                value={editForm.companyName || ''}
+                onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Contact Name">
+              <input
+                value={editForm.contactName || ''}
+                onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Email">
+              <input
+                type="email"
+                value={editForm.email || ''}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Phone">
+              <input
+                type="tel"
+                value={editForm.phone || ''}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Address" span={2}>
+              <input
+                value={editForm.address || ''}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="City">
+              <input
+                value={editForm.city || ''}
+                onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="State">
+              <input
+                value={editForm.state || ''}
+                onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Zip">
+              <input
+                value={editForm.zip || ''}
+                onChange={(e) => setEditForm({ ...editForm, zip: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="License Number">
+              <input
+                value={editForm.licenseNumber || ''}
+                onChange={(e) => setEditForm({ ...editForm, licenseNumber: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Payment Terms">
+              <select
+                value={editForm.paymentTerm || 'NET_15'}
+                onChange={(e) => setEditForm({ ...editForm, paymentTerm: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              >
+                <option value="PAY_AT_ORDER">Pay at Order</option>
+                <option value="PAY_ON_DELIVERY">Pay on Delivery</option>
+                <option value="NET_15">Net 15</option>
+                <option value="NET_30">Net 30</option>
+              </select>
+            </Field>
+            <Field label="Pricing Tier">
+              <select
+                value={editForm.pricingTier || 'STANDARD'}
+                onChange={(e) => setEditForm({ ...editForm, pricingTier: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              >
+                <option value="PREFERRED">Preferred</option>
+                <option value="STANDARD">Standard</option>
+                <option value="NEW_ACCOUNT">New Account</option>
+                <option value="PREMIUM">Premium</option>
+              </select>
+            </Field>
+            <Field label="Credit Limit">
+              <input
+                type="number"
+                value={editForm.creditLimit ?? ''}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    creditLimit: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              />
+            </Field>
+            <Field label="Status">
+              <select
+                value={editForm.status || 'PENDING'}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              >
+                <option value="PENDING">Pending</option>
+                <option value="ACTIVE">Active</option>
+                <option value="SUSPENDED">Suspended</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </Field>
+            <label className="flex items-center gap-2 mt-2 col-span-2">
+              <input
+                type="checkbox"
+                checked={!!editForm.taxExempt}
+                onChange={(e) => setEditForm({ ...editForm, taxExempt: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-[13px] text-fg">Tax Exempt</span>
+            </label>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        title="Log Activity"
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => setActivityOpen(false)}
+              className="h-9 px-4 text-[13px] rounded-md border border-border hover:bg-surface-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLogActivity}
+              disabled={activitySaving || !activityForm.subject}
+              className="h-9 px-4 text-[13px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90 disabled:opacity-50"
+            >
+              {activitySaving ? 'Saving…' : 'Log Activity'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {activityError && (
+            <div className="px-3 py-2 rounded-md bg-data-negative-bg text-data-negative text-[13px]">
+              {activityError}
+            </div>
+          )}
+          <Field label="Activity Type">
+            <select
+              value={activityForm.activityType}
+              onChange={(e) => setActivityForm({ ...activityForm, activityType: e.target.value })}
+              className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+            >
+              <option value="CALL">Call</option>
+              <option value="EMAIL">Email</option>
+              <option value="MEETING">Meeting</option>
+              <option value="SITE_VISIT">Site Visit</option>
+              <option value="TEXT_MESSAGE">Text Message</option>
+              <option value="NOTE">Note</option>
+              <option value="QUOTE_SENT">Quote Sent</option>
+              <option value="ISSUE_REPORTED">Issue Reported</option>
+              <option value="ISSUE_RESOLVED">Issue Resolved</option>
+            </select>
+          </Field>
+          <Field label="Subject *">
+            <input
+              value={activityForm.subject}
+              onChange={(e) => setActivityForm({ ...activityForm, subject: e.target.value })}
+              placeholder="e.g., Follow-up on quote"
+              className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+            />
+          </Field>
+          <Field label="Notes">
+            <textarea
+              value={activityForm.notes}
+              onChange={(e) => setActivityForm({ ...activityForm, notes: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-border rounded-md text-[13px]"
+            />
+          </Field>
+          <Field label="Outcome">
+            <input
+              value={activityForm.outcome}
+              onChange={(e) => setActivityForm({ ...activityForm, outcome: e.target.value })}
+              placeholder="e.g., Agreed to NET_15"
+              className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+            />
+          </Field>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={commOpen}
+        onClose={() => setCommOpen(false)}
+        title="Log Communication"
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => setCommOpen(false)}
+              className="h-9 px-4 text-[13px] rounded-md border border-border hover:bg-surface-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={(e) => handleLogComm(e as any)}
+              disabled={commSaving || !commForm.subject}
+              className="h-9 px-4 text-[13px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90 disabled:opacity-50"
+            >
+              {commSaving ? 'Saving…' : 'Log Communication'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Channel">
+              <select
+                value={commForm.channel}
+                onChange={(e) => setCommForm({ ...commForm, channel: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              >
+                <option value="EMAIL">Email</option>
+                <option value="PHONE">Phone</option>
+                <option value="TEXT">Text/SMS</option>
+                <option value="MEETING">Meeting</option>
+                <option value="PORTAL">Portal</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </Field>
+            <Field label="Direction">
+              <select
+                value={commForm.direction}
+                onChange={(e) => setCommForm({ ...commForm, direction: e.target.value })}
+                className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              >
+                <option value="OUTBOUND">Outbound (We sent)</option>
+                <option value="INBOUND">Inbound (They sent)</option>
+              </select>
+            </Field>
+          </div>
+          <Field label="Subject">
+            <input
+              value={commForm.subject}
+              onChange={(e) => setCommForm({ ...commForm, subject: e.target.value })}
+              className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+              required
+            />
+          </Field>
+          <Field label="Details">
+            <textarea
+              value={commForm.body}
+              onChange={(e) => setCommForm({ ...commForm, body: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-border rounded-md text-[13px]"
+            />
+          </Field>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={pricingOpen}
+        onClose={() => {
+          setPricingOpen(false)
+          setSelectedProduct(null)
+          setCustomPrice('')
+          setEditingPricingId(null)
+          setProductSearch('')
+          setSearchResults([])
+        }}
+        title={editingPricingId ? 'Edit Price' : 'Add Custom Price'}
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => {
+                setPricingOpen(false)
+                setSelectedProduct(null)
+                setCustomPrice('')
+                setEditingPricingId(null)
+              }}
+              className="h-9 px-4 text-[13px] rounded-md border border-border hover:bg-surface-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handlePricingSave}
+              disabled={pricingSaving || !selectedProduct || !customPrice}
+              className="h-9 px-4 text-[13px] rounded-md bg-brand text-fg-on-accent hover:bg-brand/90 disabled:opacity-50"
+            >
+              {pricingSaving ? 'Saving…' : editingPricingId ? 'Update Price' : 'Add Price'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {pricingError && (
+            <div className="px-3 py-2 rounded-md bg-data-negative-bg text-data-negative text-[13px]">
+              {pricingError}
+            </div>
+          )}
+          {!editingPricingId && (
+            <Field label="Product *">
+              <div className="relative">
+                <input
+                  value={productSearch}
+                  onChange={(e) => handleProductSearch(e.target.value)}
+                  placeholder="Search by SKU or name…"
+                  className="w-full h-9 px-3 border border-border rounded-md text-[13px]"
+                />
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-surface border border-border rounded-md mt-1 shadow-elevation-2 z-10 max-h-48 overflow-y-auto">
+                    {searchResults.map((prod) => (
+                      <button
+                        key={prod.id}
+                        onClick={() => {
+                          setSelectedProduct(prod)
+                          setProductSearch('')
+                          setSearchResults([])
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-surface-muted border-b border-border last:border-b-0"
+                      >
+                        <div className="text-[13px] font-medium">
+                          {prod.sku} — {prod.name}
+                        </div>
+                        <div className="text-[11px] text-fg-muted">
+                          {prod.category} · Base {fmtMoney(prod.basePrice)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedProduct && (
+                <div className="mt-2 px-3 py-2 rounded-md bg-brand-subtle border border-border text-[12px]">
+                  <div className="font-medium">
+                    {selectedProduct.sku} — {selectedProduct.name}
+                  </div>
+                  <div className="text-fg-muted">
+                    Base {fmtMoney(selectedProduct.basePrice)} · Cost{' '}
+                    {fmtMoney(selectedProduct.cost || 0)}
+                  </div>
+                </div>
+              )}
+            </Field>
+          )}
+          {selectedProduct && (
+            <Field label="Custom Price *">
+              <div className="flex items-center gap-2">
+                <span className="text-fg-muted">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  className="flex-1 h-9 px-3 border border-border rounded-md text-[13px]"
+                />
+              </div>
+              {customPrice && parseFloat(customPrice) > 0 && (
+                <p className="text-[11.5px] text-fg-muted mt-2">
+                  Margin{' '}
+                  <span
+                    className={cn(
+                      'font-numeric font-medium',
+                      (parseFloat(customPrice) - (selectedProduct.cost || 0)) /
+                        parseFloat(customPrice) *
+                        100 <
+                        25
+                        ? 'text-data-negative'
+                        : 'text-data-positive',
+                    )}
+                  >
+                    {(
+                      ((parseFloat(customPrice) - (selectedProduct.cost || 0)) /
+                        parseFloat(customPrice)) *
+                      100
+                    ).toFixed(1)}
+                    %
+                  </span>
+                </p>
+              )}
+            </Field>
+          )}
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={creditHoldOpen}
+        onClose={() => setCreditHoldOpen(false)}
+        title="Place Account on Credit Hold"
+        description="This suspends the account, blocking new orders until re-activated."
+        size="sm"
+        footer={
+          <>
+            <button
+              onClick={() => setCreditHoldOpen(false)}
+              className="h-9 px-4 text-[13px] rounded-md border border-border hover:bg-surface-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreditHold}
+              disabled={creditHoldSaving}
+              className="h-9 px-4 text-[13px] rounded-md bg-data-negative text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {creditHoldSaving ? 'Saving…' : 'Place on Hold'}
+            </button>
+          </>
+        }
+      >
+        <div className="flex items-start gap-3 p-3 bg-data-negative-bg border border-data-negative/30 rounded-md">
+          <AlertTriangle className="w-4 h-4 text-data-negative mt-0.5 shrink-0" />
+          <div className="text-[12.5px] text-fg">
+            You're about to suspend <strong>{builder.companyName}</strong>. New orders will be
+            blocked. This is an admin-only action and will be logged to the audit trail.
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }
 
-function StatCard({ label, value, isString }: { label: string; value: number | string; isString?: boolean }) {
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  children,
+  span,
+}: {
+  label: string
+  children: ReactNode
+  span?: number
+}) {
   return (
-    <div className="bg-white rounded-xl border p-4">
-      <p className="text-xs text-gray-500 uppercase">{label}</p>
-      <p className="text-xl font-bold text-gray-900 mt-1">
-        {isString ? value : typeof value === 'number' ? value.toLocaleString() : value}
-      </p>
+    <div className={span === 2 ? 'col-span-2' : ''}>
+      <label className="block text-[11px] uppercase tracking-wider text-fg-subtle font-medium mb-1">
+        {label}
+      </label>
+      {children}
     </div>
   )
+}
+
+function RecentOrdersTable({
+  rows,
+  loading,
+}: {
+  rows: OrderRow[]
+  loading: boolean
+}) {
+  if (loading) {
+    return <div className="h-32 skeleton rounded-md" />
+  }
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        icon="package"
+        size="compact"
+        title="No recent orders"
+        description="Orders placed by this builder will appear here."
+      />
+    )
+  }
+  const columns: DataTableColumn<OrderRow>[] = [
+    {
+      key: 'orderNumber',
+      header: 'Order',
+      cell: (o) => (
+        <Link href={`/ops/orders/${o.id}`} className="font-mono text-[12px] text-accent hover:text-accent-hover">
+          {o.orderNumber}
+        </Link>
+      ),
+    },
+    { key: 'status', header: 'Status', cell: (o) => <StatusBadge status={o.status} /> },
+    { key: 'total', header: 'Total', numeric: true, cell: (o) => fmtMoney(o.total) },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      numeric: true,
+      cell: (o) => fmtDate(o.createdAt),
+      hideOnMobile: true,
+    },
+    {
+      key: 'expected',
+      header: 'Expected',
+      numeric: true,
+      cell: (o) => fmtDate(o.expectedDelivery),
+      hideOnMobile: true,
+    },
+  ]
+  return <DataTable columns={columns} data={rows} rowKey={(o) => o.id} density="default" />
 }

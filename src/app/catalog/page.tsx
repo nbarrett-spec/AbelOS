@@ -101,6 +101,11 @@ export default function CatalogPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [hasPricing, setHasPricing] = useState(false)
+  // Inventory feed is "active" once we see at least one IN_STOCK or LOW_STOCK
+  // product. Until then, we suppress the "Out of Stock" badge because the
+  // InventoryItem feed may not be populated yet — showing 3K red badges on a
+  // new catalog made it look broken.
+  const [inventoryFeedActive, setInventoryFeedActive] = useState(false)
   const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
 
   const categories = PRODUCT_TAXONOMY.map(c => c.name)
@@ -118,10 +123,16 @@ export default function CatalogPage() {
         const res = await fetch('/api/catalog?' + p.toString())
         if (res.ok) {
           const d = await res.json()
-          setProducts(d.products || [])
+          const items: Product[] = d.products || []
+          setProducts(items)
           setTotal(d.total || 0)
           setTotalPages(d.totalPages || 1)
           setHasPricing(!!d.hasPricing)
+          // Treat feed as active as soon as we see any non-zero stock on ANY
+          // page — latched on so it stays stable if a later page is all zeros.
+          if (items.some(it => it.stockStatus !== 'OUT_OF_STOCK')) {
+            setInventoryFeedActive(true)
+          }
         }
       } catch (err) {
         if (process.env.NODE_ENV !== 'production') {
@@ -213,9 +224,13 @@ export default function CatalogPage() {
   const renderCard = (p: Product) => {
     const price = p.builderPrice || p.basePrice
     const color = catColor(p.cleanCategory)
-    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#C6A24E' : '#e74c3c'
-    const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : p.stockStatus === 'LOW_STOCK' ? `Low Stock (${p.stock} left)` : 'Out of Stock'
-    const isOutOfStock = p.stockStatus === 'OUT_OF_STOCK'
+    // Only show stock badges when the inventory feed has real signal.
+    // When the entire batch reports 0 stock, treat as "inventory feed
+    // not wired" rather than blanketing every card with a red "Out of Stock"
+    // badge — which was making the whole catalog look broken.
+    const showStockBadge = inventoryFeedActive && p.stockStatus !== 'OUT_OF_STOCK'
+    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : '#C6A24E'
+    const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : `Low Stock (${p.stock} left)`
 
     return (
       <div key={p.id} style={S.card}
@@ -234,7 +249,9 @@ export default function CatalogPage() {
         </div>
         <div style={S.cardBody}>
           <span style={S.badge(color)}>{p.cleanCategory}</span>
-          <span style={{ ...S.badge(stockBadgeColor), marginLeft: 8 }}>{stockBadgeLabel}</span>
+          {showStockBadge && (
+            <span style={{ ...S.badge(stockBadgeColor), marginLeft: 8 }}>{stockBadgeLabel}</span>
+          )}
           <h3 style={{ fontSize: 14, fontWeight: 600, margin: '8px 0 4px', color: '#1f2937', lineHeight: 1.3 }}>
             {p.displayName || p.name}
           </h3>
@@ -258,8 +275,9 @@ export default function CatalogPage() {
   /* ── render list row ── */
   const renderListRow = (p: Product) => {
     const price = p.builderPrice || p.basePrice
-    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#C6A24E' : '#e74c3c'
-    const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : p.stockStatus === 'LOW_STOCK' ? `Low Stock (${p.stock} left)` : 'Out of Stock'
+    const showStockBadge = inventoryFeedActive && p.stockStatus !== 'OUT_OF_STOCK'
+    const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : '#C6A24E'
+    const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : `Low Stock (${p.stock} left)`
 
     return (
       <div key={p.id} style={S.listRow} onClick={() => setSelectedProduct(p)}
@@ -278,7 +296,9 @@ export default function CatalogPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>{p.displayName || p.name}</div>
           <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>{p.sku} · {p.cleanCategory}</div>
-          <span style={{ ...S.badge(stockBadgeColor), fontSize: 10 }}>{stockBadgeLabel}</span>
+          {showStockBadge && (
+            <span style={{ ...S.badge(stockBadgeColor), fontSize: 10 }}>{stockBadgeLabel}</span>
+          )}
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           {price > 0 ? (
@@ -296,7 +316,9 @@ export default function CatalogPage() {
     if (!selectedProduct) return null
     const p = selectedProduct
     const price = p.builderPrice || p.basePrice
-    const isOutOfStock = p.stockStatus === 'OUT_OF_STOCK'
+    // Only treat as out-of-stock when the inventory feed is actually active.
+    const isOutOfStock = inventoryFeedActive && p.stockStatus === 'OUT_OF_STOCK'
+    const showStockBadge = inventoryFeedActive
     const stockBadgeColor = p.stockStatus === 'IN_STOCK' ? '#27ae60' : p.stockStatus === 'LOW_STOCK' ? '#C6A24E' : '#e74c3c'
     const stockBadgeLabel = p.stockStatus === 'IN_STOCK' ? 'In Stock' : p.stockStatus === 'LOW_STOCK' ? `Low Stock (${p.stock} left)` : 'Out of Stock'
     const specs = [
@@ -330,7 +352,9 @@ export default function CatalogPage() {
           </div>
 
           <span style={S.badge(catColor(p.cleanCategory))}>{p.cleanCategory}</span>
-          <span style={{ ...S.badge(stockBadgeColor), marginLeft: 8 }}>{stockBadgeLabel}</span>
+          {showStockBadge && (
+            <span style={{ ...S.badge(stockBadgeColor), marginLeft: 8 }}>{stockBadgeLabel}</span>
+          )}
           <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1f2937', margin: '10px 0 4px' }}>{p.displayName || p.name}</h3>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 4px' }}>SKU: {p.sku}</p>
           {p.description && <p style={{ fontSize: 13, color: '#4b5563', margin: '8px 0 16px', lineHeight: 1.5 }}>{p.description}</p>}
