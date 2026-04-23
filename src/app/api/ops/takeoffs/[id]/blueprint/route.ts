@@ -19,6 +19,7 @@ export async function GET(
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  try {
   const rows = await prisma.$queryRawUnsafe<
     { fileBase64: string | null; fileType: string; fileName: string }[]
   >(
@@ -46,6 +47,10 @@ export async function GET(
       'Cache-Control': 'private, max-age=300',
     },
   })
+  } catch (error: any) {
+    console.error('[Blueprint] Error:', error)
+    return NextResponse.json({ error: 'Failed to load blueprint' }, { status: 500 })
+  }
 }
 
 function mimeFor(t: string): string {

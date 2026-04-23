@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
     console.error('Catalog sync error:', error)
     return NextResponse.json({
       error: 'Sync failed',
-      message: error.message,
+      message: 'An internal error occurred during catalog sync.',
     }, { status: 500 })
   }
 }
