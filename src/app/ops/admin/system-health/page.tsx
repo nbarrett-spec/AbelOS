@@ -171,10 +171,19 @@ interface HyphenReviewCounts {
   medium: number
 }
 
+interface ShortageSummary {
+  activeRed: number
+  activeAmber: number
+  activeGreen: number
+  totalShortageValue: number
+  jobsAtRisk: number
+}
+
 export default function SystemHealthPage() {
   const [data, setData] = useState<HealthMetrics | null>(null)
   const [freshness, setFreshness] = useState<FreshnessPayload | null>(null)
   const [hyphenCounts, setHyphenCounts] = useState<HyphenReviewCounts | null>(null)
+  const [shortage, setShortage] = useState<ShortageSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
@@ -184,10 +193,11 @@ export default function SystemHealthPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [metricsRes, freshnessRes, hyphenRes] = await Promise.all([
+      const [metricsRes, freshnessRes, hyphenRes, shortageRes] = await Promise.all([
         fetch('/api/ops/admin/health-metrics', { cache: 'no-store' }),
         fetch('/api/ops/admin/integrations-freshness', { cache: 'no-store' }),
         fetch('/api/ops/hyphen/unmatched?limit=1', { cache: 'no-store' }),
+        fetch('/api/ops/mrp/shortage-summary', { cache: 'no-store' }),
       ])
       if (!metricsRes.ok) throw new Error(`Failed: ${metricsRes.status}`)
       const json = (await metricsRes.json()) as HealthMetrics
@@ -199,6 +209,16 @@ export default function SystemHealthPage() {
       if (hyphenRes.ok) {
         const h = await hyphenRes.json()
         setHyphenCounts(h.counts as HyphenReviewCounts)
+      }
+      if (shortageRes.ok) {
+        const s = (await shortageRes.json()) as ShortageSummary & { asOf?: string }
+        setShortage({
+          activeRed: s.activeRed,
+          activeAmber: s.activeAmber,
+          activeGreen: s.activeGreen,
+          totalShortageValue: s.totalShortageValue,
+          jobsAtRisk: s.jobsAtRisk,
+        })
       }
       setLastRefresh(new Date())
       setError(null)
@@ -371,6 +391,64 @@ export default function SystemHealthPage() {
               icon={<Activity className="w-4 h-4" />}
             />
           </div>
+
+          {/* ── ATP Shortage Forecast ───────────────────────────── */}
+          <Card>
+            <CardBody>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-fg">ATP Shortage Forecast</h2>
+                  <p className="text-xs text-fg-subtle mt-0.5">
+                    Live risk to upcoming jobs. RED = true stockout risk, AMBER = covered
+                    by an incoming PO.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/ops/purchasing/smart-po"
+                    className="text-[11px] font-semibold text-accent-fg hover:underline"
+                  >
+                    Open SmartPO Queue →
+                  </Link>
+                  <Link
+                    href="/ops/material-calendar?status=red"
+                    className="text-[11px] font-semibold text-accent-fg hover:underline"
+                  >
+                    Material Calendar →
+                  </Link>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <KPICard
+                  title="RED lines"
+                  value={shortage?.activeRed ?? 0}
+                  accent={(shortage?.activeRed || 0) > 0 ? 'danger' : 'positive'}
+                  icon={<AlertTriangle className="w-4 h-4" />}
+                />
+                <KPICard
+                  title="AMBER lines"
+                  value={shortage?.activeAmber ?? 0}
+                  accent={(shortage?.activeAmber || 0) > 0 ? 'forecast' : 'neutral'}
+                  icon={<Clock className="w-4 h-4" />}
+                />
+                <KPICard
+                  title="Jobs at risk"
+                  value={shortage?.jobsAtRisk ?? 0}
+                  accent={(shortage?.jobsAtRisk || 0) > 0 ? 'danger' : 'positive'}
+                  icon={<AlertTriangle className="w-4 h-4" />}
+                />
+                <KPICard
+                  title="$ at risk"
+                  value={new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 0,
+                  }).format(shortage?.totalShortageValue || 0)}
+                  accent={(shortage?.totalShortageValue || 0) > 0 ? 'negative' : 'positive'}
+                />
+              </div>
+            </CardBody>
+          </Card>
 
           {/* ── Hyphen unmatched review ─────────────────────────── */}
           <Card>
