@@ -38,21 +38,32 @@ existing model so it's out of scope for this pass.
 
 ## Enum drift
 
-### Enums in DB but not in schema (4)
+### Enums in DB but not in schema (4) — LEGACY, DO NOT DROP
 
-All four are **orphan types** — no column uses them. Safe to either add to the
-schema (harmless) or drop from DB in a cleanup migration.
+Classification pass 2026-04-22 (enum-reconcile task): all four verified as
+orphan Postgres enum types — no column in the live DB uses any of them.
+Confirmed against `scripts/db_introspect_2026_04_22.json`:
+`DoorIdentity.status`, `DoorEvent.eventType`, `SyncLog.direction`, and
+`SyncLog.status` are all `data_type=text` / `udt_name=text`.
 
-| Enum | Values |
-|---|---|
-| `DoorEventType` | CREATED, QC_PASS, QC_FAIL, NFC_LINKED, STORED, STAGED, LOADED, DELIVERED, INSTALLED, WARRANTY_CLAIMED, WARRANTY_RESOLVED, RETURNED, NOTE |
-| `DoorStatus` | PRODUCTION, QC_PASSED, QC_FAILED, STORED, STAGED, LOADED, DELIVERED, INSTALLED, WARRANTY_CLAIM, RETURNED |
-| `SyncDirection` | PULL, PUSH, BIDIRECTIONAL |
-| `SyncStatus` | SUCCESS, PARTIAL, FAILED |
+**Decision: LEGACY. Keep the enum types in DB, do not wire into the schema.**
 
-Note: `DoorEvent` and `DoorIdentity` tables exist and model their status as
-plain `String`. If the code is already using string comparisons this is fine;
-consider whether to promote to enum in a later PR.
+Rationale for each:
+
+| Enum | Values | Origin | Why LEGACY |
+|---|---|---|---|
+| `DoorEventType` | CREATED, QC_PASS, QC_FAIL, NFC_LINKED, STORED, STAGED, LOADED, DELIVERED, INSTALLED, WARRANTY_CLAIMED, WARRANTY_RESOLVED, RETURNED, NOTE | Created by `POST /api/ops/migrate/manufacturing-tables` (see `src/app/api/ops/migrate/manufacturing-tables/route.ts` line 49) as part of the door / NFC tag-program feature | Manufacturing migration DDL declared `DoorEvent.eventType` as this enum type, but the column in prod is `text`. Feature is drafted (DoorEvent/DoorIdentity tables exist, routes at `src/app/api/door/[id]/route.ts` and `src/app/api/ops/manufacturing/tag-program/route.ts` read/write using string comparisons) but never completed the enum promotion. Promoting the column now would require coordinated migration + refactor of every raw-SQL writer. Out of scope for this pass. |
+| `DoorStatus` | PRODUCTION, QC_PASSED, QC_FAILED, STORED, STAGED, LOADED, DELIVERED, INSTALLED, WARRANTY_CLAIM, RETURNED | Same origin — `manufacturing-tables` migration route line 37 | Same analysis. `DoorIdentity.status` is `text DEFAULT 'PRODUCTION'`. Active code paths (`tag-program/route.ts`) use `status::text = 'PRODUCTION'` comparisons — they already treat the column as text. |
+| `SyncDirection` | PULL, PUSH, BIDIRECTIONAL | Early sync-logging design; created before `SyncLog` was finalized with `direction String @default("PUSH")` | `SyncLog.direction` is `text`. The only cast-to-enum call site is `src/lib/integrations/gmail.ts` line 307 (`$1::"SyncDirection"`), which serves as a parameter-validation trick — pg validates the value is a valid enum label, then text-coerces into the text column. Functional but not using the type as a column type. |
+| `SyncStatus` | SUCCESS, PARTIAL, FAILED | Same origin as `SyncDirection` | Same analysis. `SyncLog.status` is `text`. Same gmail.ts call site casts to `"SyncStatus"` for validation then text-coerces. |
+
+**Follow-up (deferred):** if Door NFC program is revived, promote
+`DoorIdentity.status` + `DoorEvent.eventType` to typed enum columns in one
+migration and refactor the raw-SQL writers in `src/app/api/door/**` +
+`src/app/api/ops/manufacturing/tag-program/route.ts`. Same for `SyncLog` if
+sync-log analytics ever need type-safe filtering. Until then, the enum types
+stay in the DB as dormant vocabulary registries — they don't cost anything
+and preserve the intended label set for when it matters.
 
 ### Enums in schema but not in DB (1)
 
@@ -167,5 +178,8 @@ See `_rec_tmp/drift_report.json` for the complete list.
    — those are the biggest concentrations).
 5. **Resolve `CronRun.cronName` vs `CronRun.name`** and
    `CronRun.endedAt` vs `CronRun.finishedAt` naming conflicts.
-6. **Drop or adopt the 4 orphan enums** (`DoorEventType`, `DoorStatus`,
-   `SyncDirection`, `SyncStatus`).
+6. ~~**Drop or adopt the 4 orphan enums** (`DoorEventType`, `DoorStatus`,
+   `SyncDirection`, `SyncStatus`).~~ **RESOLVED 2026-04-22** — all four
+   classified as LEGACY (see Enum drift section above). Do not drop, do not
+   wire. Revisit only if the owning feature (door NFC program or type-safe
+   sync-log analytics) is activated.

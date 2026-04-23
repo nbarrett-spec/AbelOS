@@ -81,8 +81,11 @@ export default function ManifestPage() {
     <div className="manifest-wrap">
       <style jsx global>{`
         /* Print-only layout. Letter 8.5×11, 1.25in top (clipboard), 0.5in
-           everywhere else. Mono throughout, black ink, no shaded backgrounds. */
-        @page {
+           everywhere else. Mono throughout, black ink, no shaded backgrounds.
+           Uses @page { margin: 0 } so the clipboard clamp area can live INSIDE
+           the page (as padding on .manifest-page) instead of being eaten by
+           the browser's default margin. */
+        @page manifest {
           size: letter;
           margin: 0;
         }
@@ -92,10 +95,18 @@ export default function ManifestPage() {
             color: #000000 !important;
             margin: 0;
             padding: 0;
+            font-family: 'JetBrains Mono', 'Consolas', ui-monospace, monospace !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
+
+          /* Utility classes — mirrors globals.css but stated locally so the
+             manifest prints cleanly even if a scoped stylesheet overrides
+             them. print-only shows in print, print-hidden shows on screen. */
+          .print-only { display: block !important; }
           .print-hidden { display: none !important; }
+
+          .manifest-wrap { page: manifest; }
           .manifest-page {
             padding: 1.25in 0.5in 0.5in 0.5in !important;
             min-height: auto !important;
@@ -107,12 +118,20 @@ export default function ManifestPage() {
             page-break-after: auto;
             break-after: auto;
           }
+          .manifest-row {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
           .manifest-row, .manifest-title, .route-no, .miles-box,
-          .manifest-seq, .manifest-wrap, .manifest-foot {
+          .manifest-seq, .manifest-wrap, .manifest-foot, .print-footer {
             color: #000 !important;
             background: #ffffff !important;
           }
         }
+
+        /* On-screen: .print-only defaults to hidden so the preview doesn't
+           show the print-only footer. */
+        .print-only { display: none; }
 
         /* On-screen preview uses the same sizing so what you see is what you print. */
         .manifest-wrap {
@@ -359,6 +378,27 @@ export default function ManifestPage() {
                 <div className="meta-label">Driver Signature</div>
                 <div className="miles-box">__________________</div>
               </div>
+            </div>
+
+            {/* Print-only bottom strip — page position + safety reminder. */}
+            <div
+              className="print-only print-footer"
+              style={{
+                marginTop: '14pt',
+                paddingTop: '6pt',
+                borderTop: '1pt solid #000',
+                fontSize: '8pt',
+                display: 'flex',
+                justifyContent: 'space-between',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+              }}
+            >
+              <span>Abel Lumber · Drive safe · Call dispatch for any no-access</span>
+              <span>
+                Page {driverIdx + 1} of {data.drivers.length}
+              </span>
             </div>
           </div>
         )

@@ -177,7 +177,7 @@ export default function OnboardingPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-brand/5 via-white to-signal/5 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-surface rounded-lg shadow-lg p-8 text-center">
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-abel-green/10 flex items-center justify-center">
             <svg
               className="w-6 h-6 text-abel-green"
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-surface rounded-lg shadow-lg p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
               {error}
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
                       className={`py-2 px-3 rounded text-sm font-medium border transition ${
                         data.delivery.preferredDays.includes(day)
                           ? 'bg-brand text-white border-brand'
-                          : 'bg-white text-fg border-border-strong hover:border-brand'
+                          : 'bg-surface text-fg border-border-strong hover:border-brand'
                       }`}
                     >
                       {day.slice(0, 3)}

@@ -108,7 +108,8 @@ export async function onOrderDelivered(orderId: string): Promise<CascadeResult> 
     const orders: any[] = await prisma.$queryRawUnsafe(
       `SELECT o."id", o."orderNumber", o."builderId", o."subtotal", o."taxAmount",
               o."total", o."paymentTerm"::text AS "paymentTerm",
-              b."companyName" AS "builderName"
+              b."companyName" AS "builderName",
+              b."autoInvoiceOnDelivery" AS "autoInvoiceOnDelivery"
        FROM "Order" o
        LEFT JOIN "Builder" b ON b."id" = o."builderId"
        WHERE o."id" = $1`,
@@ -116,6 +117,12 @@ export async function onOrderDelivered(orderId: string): Promise<CascadeResult> 
     )
     if (orders.length === 0) return { ok: false, action: 'onOrderDelivered', detail: 'order_not_found' }
     const order = orders[0]
+
+    // Respect the builder-level toggle. Default true (column has DB default),
+    // but if an op explicitly turned it off we skip invoice creation.
+    if (order.autoInvoiceOnDelivery === false) {
+      return { ok: true, action: 'onOrderDelivered', detail: 'skipped_auto_invoice_disabled' }
+    }
 
     // Any linked job for cross-reference
     const jobs: any[] = await prisma.$queryRawUnsafe(

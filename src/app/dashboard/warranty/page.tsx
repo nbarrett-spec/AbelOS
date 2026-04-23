@@ -227,7 +227,7 @@ export default function WarrantyPage() {
         {/* Toast */}
         {toast && (
           <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-            toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+            toastType === 'error' ? 'bg-red-600' : 'bg-brand'
           }`}>
             {toast}
           </div>
@@ -258,15 +258,15 @@ export default function WarrantyPage() {
         {/* Stats Bar */}
         {!loading && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-blue-500">
               <p className="text-fg-muted text-sm font-semibold uppercase">Total Claims</p>
               <p className="text-4xl font-bold text-fg mt-2">{claims.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-orange-500">
               <p className="text-fg-muted text-sm font-semibold uppercase">Open Claims</p>
               <p className="text-4xl font-bold text-fg mt-2">{openCount}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-emerald-500">
+            <div className="bg-surface rounded-lg shadow-md p-6 border-l-4 border-emerald-500">
               <p className="text-fg-muted text-sm font-semibold uppercase">Resolved</p>
               <p className="text-4xl font-bold text-fg mt-2">{resolvedCount}</p>
             </div>
@@ -274,7 +274,7 @@ export default function WarrantyPage() {
         )}
 
         {/* Active Policies Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-surface rounded-lg shadow-md p-6 mb-8">
           <button
             onClick={() => setShowPolicies(!showPolicies)}
             className="flex items-center justify-between w-full text-left"
@@ -312,12 +312,12 @@ export default function WarrantyPage() {
 
         {/* Claims List or Empty State */}
         {loading ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <div className="bg-surface rounded-lg shadow-md p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-r-transparent"></div>
             <p className="text-fg-muted mt-4">Loading warranty data...</p>
           </div>
         ) : claims.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <div className="bg-surface rounded-lg shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📋</div>
             <h3 className="text-2xl font-bold text-fg mb-2">No Warranty Claims Yet</h3>
             <p className="text-fg-muted mb-6">Start by filing a new claim for any warranty-related issues.</p>
@@ -330,7 +330,7 @@ export default function WarrantyPage() {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-surface rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-surface-muted border-b border-border">
@@ -381,8 +381,8 @@ export default function WarrantyPage() {
       {/* Claim Detail Modal */}
       {selectedClaim && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+          <div className="bg-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-fg">Claim Details</h2>
               <button onClick={() => setSelectedClaim(null)} className="text-fg-muted hover:text-fg-muted">
                 <X size={24} />
@@ -550,8 +550,8 @@ export default function WarrantyPage() {
       {/* New Claim Form Modal */}
       {showNewClaimForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+          <div className="bg-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-fg">File New Warranty Claim</h2>
               <button onClick={() => setShowNewClaimForm(false)} className="text-fg-muted hover:text-fg-muted">
                 <X size={24} />

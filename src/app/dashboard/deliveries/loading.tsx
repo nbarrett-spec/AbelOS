@@ -10,7 +10,7 @@ export default function Loading() {
       {/* Status cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-border p-5">
+          <div key={i} className="bg-surface rounded-xl border border-border p-5">
             <div className="h-3 bg-surface-muted rounded w-24 mb-2" />
             <div className="h-7 bg-surface-muted rounded w-20" />
           </div>
@@ -24,7 +24,7 @@ export default function Loading() {
       </div>
 
       {/* Deliveries list */}
-      <div className="bg-white rounded-xl border border-border p-6">
+      <div className="bg-surface rounded-xl border border-border p-6">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="py-4 border-b border-border last:border-0">
             {/* Delivery header */}

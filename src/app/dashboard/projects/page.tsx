@@ -76,7 +76,7 @@ export default function ProjectsPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -91,7 +91,7 @@ export default function ProjectsPage() {
         </div>
         <Link
           href="/projects/new"
-          className="px-4 py-2 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-lg transition-colors"
+          className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
         >
           + New Project
         </Link>
@@ -105,7 +105,7 @@ export default function ProjectsPage() {
 
       {/* Empty State */}
       {projects.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="bg-surface rounded-xl border border-border p-12 text-center">
           <div className="text-5xl mb-4">🏗️</div>
           <h2 className="text-2xl font-bold text-fg mb-2">No Projects Yet</h2>
           <p className="text-fg-muted mb-6">
@@ -113,7 +113,7 @@ export default function ProjectsPage() {
           </p>
           <Link
             href="/projects/new"
-            className="inline-block bg-[#0f2a3e] hover:bg-[#0f2a3e]/90 text-white font-bold py-3 px-6 rounded-lg transition"
+            className="inline-block bg-brand hover:bg-brand/90 text-white font-bold py-3 px-6 rounded-lg transition"
           >
             Create Your First Project
           </Link>
@@ -124,13 +124,13 @@ export default function ProjectsPage() {
             <Link
               key={project.id}
               href={`/dashboard/projects/${project.id}`}
-              className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-[#C6A24E] transition-all group cursor-pointer"
+              className="bg-surface rounded-xl border border-border overflow-hidden hover:shadow-lg hover:border-accent transition-all group cursor-pointer"
             >
               {/* Card Header */}
-              <div className="p-5 border-b border-border bg-gradient-to-r from-gray-50 to-white group-hover:from-[#C6A24E]/5 group-hover:to-white transition-colors">
+              <div className="p-5 border-b border-border bg-gradient-to-r from-gray-50 to-white group-hover:from-accent/5 group-hover:to-white transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-fg line-clamp-2 group-hover:text-[#0f2a3e] transition-colors">{project.name}</h3>
+                    <h3 className="text-lg font-bold text-fg line-clamp-2 group-hover:text-brand transition-colors">{project.name}</h3>
                     {project.address && (
                       <p className="text-sm text-fg-muted mt-1 line-clamp-1">{project.address}</p>
                     )}
@@ -147,7 +147,7 @@ export default function ProjectsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-surface-muted rounded-lg p-3">
                     <p className="text-xs text-fg-muted uppercase font-semibold">Orders</p>
-                    <p className="text-lg font-bold text-[#0f2a3e]">{project.orderCount}</p>
+                    <p className="text-lg font-bold text-brand">{project.orderCount}</p>
                   </div>
                   <div className="bg-surface-muted rounded-lg p-3">
                     <p className="text-xs text-fg-muted uppercase font-semibold">Total Spend</p>
@@ -185,8 +185,8 @@ export default function ProjectsPage() {
               </div>
 
               {/* Card Footer - Hover Effect */}
-              <div className="p-4 border-t border-border bg-surface-muted flex items-center justify-between group-hover:bg-[#C6A24E]/5 transition-colors">
-                <span className="text-xs font-medium text-fg-muted group-hover:text-[#0f2a3e]">
+              <div className="p-4 border-t border-border bg-surface-muted flex items-center justify-between group-hover:bg-accent/5 transition-colors">
+                <span className="text-xs font-medium text-fg-muted group-hover:text-brand">
                   View Details
                 </span>
                 <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>

@@ -197,7 +197,7 @@ export default function TemplatesPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -212,7 +212,7 @@ export default function TemplatesPage() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-[#0f2a3e] hover:bg-[#0f2a3e]/90 text-white font-bold py-3 px-6 rounded-lg transition"
+          className="bg-brand hover:bg-brand/90 text-white font-bold py-3 px-6 rounded-lg transition"
         >
           + Create Template
         </button>
@@ -226,7 +226,7 @@ export default function TemplatesPage() {
 
       {/* Empty State */}
       {templates.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <div className="bg-surface rounded-xl border border-border p-12 text-center">
           <div className="text-5xl mb-4">📋</div>
           <h2 className="text-2xl font-bold text-fg mb-2">No Templates Yet</h2>
           <p className="text-fg-muted mb-6">
@@ -234,7 +234,7 @@ export default function TemplatesPage() {
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-block bg-[#C6A24E] hover:bg-[#C6A24E]/90 text-white font-bold py-3 px-6 rounded-lg transition"
+            className="inline-block bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-lg transition"
           >
             Create Your First Template
           </button>
@@ -242,7 +242,7 @@ export default function TemplatesPage() {
       ) : (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {templates.map(template => (
-            <div key={template.id} className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-lg transition">
+            <div key={template.id} className="bg-surface rounded-xl border border-border overflow-hidden hover:shadow-lg transition">
               {/* Card Header */}
               <div className="p-5 border-b border-border">
                 <h3 className="text-lg font-bold text-fg line-clamp-2">{template.name}</h3>
@@ -260,7 +260,7 @@ export default function TemplatesPage() {
                   </div>
                   <div>
                     <p className="text-xs text-fg-muted uppercase font-semibold">Est. Total</p>
-                    <p className="text-lg font-bold text-[#0f2a3e]">{fmt(template.estimatedTotal)}</p>
+                    <p className="text-lg font-bold text-brand">{fmt(template.estimatedTotal)}</p>
                   </div>
                 </div>
 
@@ -284,12 +284,12 @@ export default function TemplatesPage() {
                 <div className="border-t border-border bg-surface-muted p-4">
                   {loadingItems ? (
                     <div className="flex justify-center py-4">
-                      <div className="w-5 h-5 border-2 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {templateItems.map(item => (
-                        <div key={item.id} className="text-xs bg-white rounded p-2 border border-border">
+                        <div key={item.id} className="text-xs bg-surface rounded p-2 border border-border">
                           <p className="font-semibold text-fg">{item.productName}</p>
                           <p className="text-fg-muted">SKU: {item.sku}</p>
                           <p className="text-fg-muted">
@@ -308,7 +308,7 @@ export default function TemplatesPage() {
                 <button
                   onClick={() => handleLoadToCart(template.id)}
                   disabled={loadingToCartId === template.id}
-                  className="flex-1 bg-[#C6A24E] hover:bg-[#C6A24E]/90 disabled:bg-[#C6A24E]/50 text-white font-semibold text-sm py-2 rounded transition flex items-center justify-center gap-2"
+                  className="flex-1 bg-accent hover:bg-accent/90 disabled:bg-accent/50 text-white font-semibold text-sm py-2 rounded transition flex items-center justify-center gap-2"
                 >
                   {loadingToCartId === template.id && (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -317,13 +317,13 @@ export default function TemplatesPage() {
                 </button>
                 <button
                   onClick={() => handleExpandTemplate(template.id)}
-                  className="flex-1 bg-white hover:bg-surface-muted text-fg-muted font-semibold text-sm py-2 rounded border border-border-strong transition"
+                  className="flex-1 bg-surface hover:bg-surface-muted text-fg-muted font-semibold text-sm py-2 rounded border border-border-strong transition"
                 >
                   {expandedTemplateId === template.id ? 'Hide' : 'View'} Items
                 </button>
                 <button
                   onClick={() => handleDeleteTemplate(template.id)}
-                  className="px-3 bg-white hover:bg-red-50 text-red-600 font-semibold text-sm py-2 rounded border border-border-strong transition"
+                  className="px-3 bg-surface hover:bg-red-50 text-red-600 font-semibold text-sm py-2 rounded border border-border-strong transition"
                   title="Delete template"
                 >
                   ×
@@ -337,7 +337,7 @@ export default function TemplatesPage() {
       {/* Create Template Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-border max-w-md w-full p-6">
+          <div className="bg-surface rounded-xl border border-border max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-fg mb-4">Create New Template</h3>
 
             <div className="mb-4">
@@ -349,7 +349,7 @@ export default function TemplatesPage() {
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
                 placeholder="e.g., Kitchen Remodel Standard, Deck Setup..."
-                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
                 autoFocus
               />
             </div>
@@ -362,7 +362,7 @@ export default function TemplatesPage() {
                 value={formDescription}
                 onChange={e => setFormDescription(e.target.value)}
                 placeholder="e.g., Our standard package for kitchen renovations..."
-                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
                 rows={3}
               />
             </div>
@@ -411,7 +411,7 @@ export default function TemplatesPage() {
                 <select
                   value={formSourceOrderId}
                   onChange={e => setFormSourceOrderId(e.target.value)}
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f2a3e]"
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
                   disabled={loadingOrders}
                 >
                   <option value="">
@@ -450,7 +450,7 @@ export default function TemplatesPage() {
               <button
                 onClick={handleCreateTemplate}
                 disabled={creatingTemplate || !formName.trim()}
-                className="flex-1 px-4 py-2 bg-[#0f2a3e] hover:bg-[#0f2a3e]/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-brand hover:bg-brand/90 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {creatingTemplate && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

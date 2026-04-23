@@ -21,6 +21,7 @@ interface BuilderDetail {
   taxExempt: boolean
   taxId?: string
   customPricingCount: number
+  autoInvoiceOnDelivery?: boolean
 }
 
 interface Project {
@@ -53,6 +54,8 @@ export default function BuilderDetailPage() {
   const [updating, setUpdating] = useState(false)
   const [editPaymentTerm, setEditPaymentTerm] = useState('')
   const [editStatus, setEditStatus] = useState('')
+  const [autoInvoiceOnDelivery, setAutoInvoiceOnDelivery] = useState(true)
+  const [savingToggle, setSavingToggle] = useState(false)
   const [toast, setToast] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -70,6 +73,19 @@ export default function BuilderDetailPage() {
         setQuotes(data.quotes)
         setEditPaymentTerm(data.builder.paymentTerm)
         setEditStatus(data.builder.status)
+
+        // Settings (autoInvoiceOnDelivery etc.) live on the ops endpoint to
+        // keep the admin core payload stable. Fetch separately; failure is
+        // non-fatal — we fall back to the default (true).
+        try {
+          const settingsRes = await fetch(`/api/ops/builders/${builderId}/settings`)
+          if (settingsRes.ok) {
+            const settingsData = await settingsRes.json()
+            setAutoInvoiceOnDelivery(settingsData.settings?.autoInvoiceOnDelivery ?? true)
+          }
+        } catch {
+          // keep defaults
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error fetching builder')
       } finally {
@@ -79,6 +95,31 @@ export default function BuilderDetailPage() {
 
     fetchBuilder()
   }, [builderId])
+
+  const handleToggleAutoInvoice = async (next: boolean) => {
+    setSavingToggle(true)
+    const prev = autoInvoiceOnDelivery
+    // Optimistic update so the switch feels responsive; revert on failure.
+    setAutoInvoiceOnDelivery(next)
+    try {
+      const res = await fetch(`/api/ops/builders/${builderId}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoInvoiceOnDelivery: next }),
+      })
+      if (!res.ok) throw new Error('Failed to save toggle')
+      showToast(
+        next
+          ? 'Auto-invoice on delivery enabled'
+          : 'Auto-invoice on delivery disabled'
+      )
+    } catch (err) {
+      setAutoInvoiceOnDelivery(prev)
+      showToast('Could not save setting', 'error')
+    } finally {
+      setSavingToggle(false)
+    }
+  }
 
   const handleUpdateBuilder = async () => {
     if (!builder) return
@@ -224,6 +265,28 @@ export default function BuilderDetailPage() {
             >
               {updating ? 'Updating...' : 'Save Changes'}
             </button>
+
+            <div className="pt-4 mt-2 border-t border-gray-200">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoInvoiceOnDelivery}
+                  onChange={(e) => handleToggleAutoInvoice(e.target.checked)}
+                  disabled={savingToggle}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-gray-900 block">
+                    Auto-invoice on delivery
+                  </span>
+                  <span className="text-gray-600 text-xs">
+                    When on, a DRAFT invoice is created automatically the moment
+                    a delivery is marked complete. Turn off for COD / prepay
+                    accounts that invoice manually.
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
         </div>
       </div>

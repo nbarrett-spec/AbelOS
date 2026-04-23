@@ -122,7 +122,7 @@ export default function InvoicesPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -140,12 +140,12 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#1B2A4A]">Invoices & Payments</h1>
+          <h1 className="text-2xl font-bold text-fg">Invoices & Payments</h1>
           <p className="text-fg-muted text-sm">View invoices, track payments, and manage your account</p>
         </div>
         <Link
           href="/dashboard"
-          className="text-sm text-[#0f2a3e] hover:underline font-medium"
+          className="text-sm text-brand hover:underline font-medium"
         >
           ← Back to Dashboard
         </Link>
@@ -153,12 +153,12 @@ export default function InvoicesPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-surface rounded-xl border border-border p-5">
           <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Total Outstanding</p>
-          <p className="text-2xl font-bold text-[#1B2A4A]">{fmt(summary?.totalOutstanding || 0)}</p>
+          <p className="text-2xl font-bold text-fg">{fmt(summary?.totalOutstanding || 0)}</p>
           <p className="text-xs text-fg-subtle mt-1">{summary?.openCount || 0} open invoice{(summary?.openCount || 0) !== 1 ? 's' : ''}</p>
         </div>
-        <div className={`bg-white rounded-xl border p-5 ${(summary?.overdueAmount || 0) > 0 ? 'border-red-300 bg-red-50/30' : 'border-border'}`}>
+        <div className={`bg-surface rounded-xl border p-5 ${(summary?.overdueAmount || 0) > 0 ? 'border-red-300 bg-red-50/30' : 'border-border'}`}>
           <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Overdue</p>
           <p className={`text-2xl font-bold ${(summary?.overdueAmount || 0) > 0 ? 'text-red-600' : 'text-fg-subtle'}`}>
             {fmt(summary?.overdueAmount || 0)}
@@ -167,14 +167,14 @@ export default function InvoicesPage() {
             {(summary?.overdueCount || 0) > 0 ? `${summary?.overdueCount} invoice${(summary?.overdueCount || 0) !== 1 ? 's' : ''} past due` : 'No overdue invoices'}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-surface rounded-xl border border-border p-5">
           <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Paid This Month</p>
           <p className="text-2xl font-bold text-green-600">{fmt(summary?.paidThisMonth || 0)}</p>
           <p className="text-xs text-fg-subtle mt-1">Current month</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-surface rounded-xl border border-border p-5">
           <p className="text-xs text-fg-muted font-medium uppercase tracking-wide mb-1">Total Invoices</p>
-          <p className="text-2xl font-bold text-[#1B2A4A]">{summary?.totalInvoices || 0}</p>
+          <p className="text-2xl font-bold text-fg">{summary?.totalInvoices || 0}</p>
           <p className="text-xs text-fg-subtle mt-1">{paidCount} paid</p>
         </div>
       </div>
@@ -213,7 +213,7 @@ export default function InvoicesPage() {
             onClick={() => setTab(t.key)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
               tab === t.key
-                ? 'bg-white text-[#1B2A4A] shadow-sm'
+                ? 'bg-surface text-fg shadow-sm'
                 : 'text-fg-muted hover:text-fg-muted'
             }`}
           >
@@ -221,7 +221,7 @@ export default function InvoicesPage() {
             {t.count > 0 && (
               <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                 tab === t.key
-                  ? t.key === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-[#0f2a3e]/10 text-[#0f2a3e]'
+                  ? t.key === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-brand/10 text-brand'
                   : 'bg-surface-muted text-fg-muted'
               }`}>
                 {t.count}
@@ -240,10 +240,10 @@ export default function InvoicesPage() {
       )}
 
       {/* Invoice Table */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
+      <div className="bg-surface rounded-xl border border-border overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-6 h-6 mx-auto border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 mx-auto border-3 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
@@ -291,7 +291,7 @@ export default function InvoicesPage() {
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
                             <span className="text-fg-subtle text-xs">{isExpanded ? '▾' : '▸'}</span>
-                            <span className="text-sm font-mono font-semibold text-[#1B2A4A]">{invoice.invoiceNumber}</span>
+                            <span className="text-sm font-mono font-semibold text-fg">{invoice.invoiceNumber}</span>
                           </div>
                         </td>
                         <td className="px-5 py-3.5">
@@ -310,7 +310,7 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-5 py-3.5 text-sm font-semibold text-fg text-right">{fmt(invoice.total)}</td>
                         <td className={`px-5 py-3.5 text-sm font-semibold text-right ${
-                          balance <= 0 ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-[#C6A24E]'
+                          balance <= 0 ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-accent'
                         }`}>
                           {balance <= 0 ? 'Paid' : fmt(balance)}
                         </td>
@@ -334,7 +334,7 @@ export default function InvoicesPage() {
                                 </div>
                                 <div className="w-full bg-surface-muted rounded-full h-2">
                                   <div
-                                    className={`h-2 rounded-full transition-all ${balance <= 0 ? 'bg-green-500' : isOverdue ? 'bg-red-500' : 'bg-[#C6A24E]'}`}
+                                    className={`h-2 rounded-full transition-all ${balance <= 0 ? 'bg-green-500' : isOverdue ? 'bg-red-500' : 'bg-accent'}`}
                                     style={{ width: `${Math.min(100, invoice.total > 0 ? (invoice.amountPaid / invoice.total) * 100 : 0)}%` }}
                                   />
                                 </div>
@@ -342,32 +342,32 @@ export default function InvoicesPage() {
 
                               {/* Detail grid */}
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                                <div className="bg-white rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Total</p>
                                   <p className="text-sm font-semibold text-fg">{fmt(invoice.total)}</p>
                                 </div>
-                                <div className="bg-white rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Paid</p>
                                   <p className="text-sm font-semibold text-green-600">{fmt(invoice.amountPaid)}</p>
                                 </div>
-                                <div className="bg-white rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Balance Due</p>
-                                  <p className={`text-sm font-semibold ${balance > 0 ? 'text-[#C6A24E]' : 'text-green-600'}`}>
+                                  <p className={`text-sm font-semibold ${balance > 0 ? 'text-accent' : 'text-green-600'}`}>
                                     {balance > 0 ? fmt(balance) : 'Paid in Full'}
                                   </p>
                                 </div>
-                                <div className="bg-white rounded-lg border px-3 py-2">
+                                <div className="bg-surface rounded-lg border px-3 py-2">
                                   <p className="text-xs text-fg-subtle">Terms</p>
                                   <p className="text-sm font-semibold text-fg-muted">{invoice.paymentTerm || '—'}</p>
                                 </div>
                               </div>
 
                               {/* Payment history */}
-                              <h4 className="text-sm font-semibold text-[#1B2A4A] mb-2">Payment History</h4>
+                              <h4 className="text-sm font-semibold text-fg mb-2">Payment History</h4>
                               {hasPayments ? (
                                 <div className="space-y-2 mb-4">
                                   {invoice.payments!.map(payment => (
-                                    <div key={payment.id} className="flex items-center justify-between bg-white rounded-lg border px-4 py-2.5">
+                                    <div key={payment.id} className="flex items-center justify-between bg-surface rounded-lg border px-4 py-2.5">
                                       <div className="flex items-center gap-3">
                                         <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
                                           <span className="text-green-600 text-xs">✓</span>
@@ -404,7 +404,7 @@ export default function InvoicesPage() {
                               <div className="mt-4 pt-3 border-t flex gap-3">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); window.open(`/api/invoices/${invoice.id}/pdf`, '_blank') }}
-                                  className="px-4 py-1.5 bg-[#0f2a3e] text-white text-xs font-medium rounded-lg hover:bg-[#163d59] transition"
+                                  className="px-4 py-1.5 bg-brand text-white text-xs font-medium rounded-lg hover:bg-[#163d59] transition"
                                 >
                                   Download PDF
                                 </button>
@@ -412,7 +412,7 @@ export default function InvoicesPage() {
                                   <Link
                                     href={`/dashboard/orders/${invoice.orderId}`}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="px-4 py-1.5 bg-white text-[#0f2a3e] border border-[#0f2a3e]/30 text-xs font-medium rounded-lg hover:bg-[#0f2a3e]/5 transition"
+                                    className="px-4 py-1.5 bg-surface text-brand border border-brand/30 text-xs font-medium rounded-lg hover:bg-brand/5 transition"
                                   >
                                     View Order
                                   </Link>
@@ -439,7 +439,7 @@ export default function InvoicesPage() {
         </div>
         <Link
           href="/dashboard/messages"
-          className="px-4 py-2 bg-[#C6A24E] text-white text-xs font-semibold rounded-lg hover:bg-[#A8882A] transition whitespace-nowrap"
+          className="px-4 py-2 bg-accent text-white text-xs font-semibold rounded-lg hover:bg-accent-hover transition whitespace-nowrap"
         >
           Send a Message
         </Link>

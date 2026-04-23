@@ -4,12 +4,19 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { toCsv, csvFilename } from '@/lib/csv'
 
-// GET /api/ops/kpis/export?section=ar-aging&format=csv
-// Sections: ar-aging, pipeline, revenue, summary, hw-pitch
+// GET /api/ops/kpis/export?section=<section>&format=csv
+//
+// Sections: ar-aging | pipeline | revenue | summary | hw-pitch | builders |
+//           deliveries | lowstock
 //
 // `format=csv` (default) returns text/csv with a download filename.
 // `format=json` returns the raw rows — useful for copy-to-clipboard flows that
 // want to format client-side.
+//
+// `?at=YYYY-MM-DD` pins the export to a historical snapshot. For sections we
+// can recompute cleanly (ar-aging, revenue, summary, hw-pitch) we compute as-of
+// that date. For sections tied to now (pipeline, builders, deliveries,
+// lowstock) the value is the best available live read — the UI labels it.
 export async function GET(request: NextRequest) {
   const authErr = checkStaffAuth(request)
   if (authErr) return authErr
@@ -58,6 +65,9 @@ async function buildSection(
 }> {
   const asOf = opts.at ? new Date(opts.at) : new Date()
   const asOfIso = asOf.toISOString()
+  const periodDays = opts.from && opts.to
+    ? Math.max(1, Math.round((new Date(opts.to).getTime() - new Date(opts.from).getTime()) / 86400000))
+    : 30
 
   switch (section) {
     case 'ar-aging':
@@ -142,6 +152,83 @@ async function buildSection(
           { key: 'monthLabel', label: 'Month' },
           { key: 'orders', label: 'Orders' },
           { key: 'revenue', label: 'Revenue (USD)' },
+        ],
+      }
+    }
+
+    case 'builders': {
+      const rows: any[] = await prisma.$queryRawUnsafe(
+        `
+        SELECT b."companyName" AS "companyName",
+               COUNT(o."id")::int AS "orderCount",
+               COALESCE(SUM(o."total"),0)::float AS "totalRevenue",
+               COALESCE(AVG(o."total"),0)::float AS "avgOrder"
+        FROM "Order" o
+        JOIN "Builder" b ON b."id" = o."builderId"
+        WHERE o."createdAt" >= $1::timestamp - ($2::int * interval '1 day')
+          AND o."createdAt" <= $1::timestamp
+        GROUP BY b."id", b."companyName"
+        ORDER BY "totalRevenue" DESC
+        LIMIT 25
+        `,
+        asOfIso,
+        periodDays,
+      )
+      return {
+        rows,
+        columns: [
+          { key: 'companyName', label: 'Builder' },
+          { key: 'orderCount', label: 'Orders' },
+          { key: 'totalRevenue', label: 'Revenue (USD)' },
+          { key: 'avgOrder', label: 'Avg Order (USD)' },
+        ],
+      }
+    }
+
+    case 'deliveries': {
+      const rows: any[] = await prisma.$queryRawUnsafe(
+        `
+        SELECT status::text AS status,
+               COUNT(*)::int AS count
+        FROM "Delivery"
+        WHERE "createdAt" >= $1::timestamp - ($2::int * interval '1 day')
+          AND "createdAt" <= $1::timestamp
+        GROUP BY status::text
+        ORDER BY count DESC
+        `,
+        asOfIso,
+        periodDays,
+      )
+      return {
+        rows,
+        columns: [
+          { key: 'status', label: 'Status' },
+          { key: 'count', label: 'Count' },
+        ],
+      }
+    }
+
+    case 'lowstock': {
+      // No user input, safe as-is.
+      const rows: any[] = await prisma.$queryRawUnsafe(`
+        SELECT p."sku" AS sku, p."name" AS name, p."category" AS category,
+               i."onHand"::int AS "onHand", i."committed"::int AS committed,
+               i."available"::int AS available
+        FROM "InventoryItem" i
+        JOIN "Product" p ON p."id" = i."productId"
+        WHERE i."available" <= 5 AND p."active" = true
+        ORDER BY i."available" ASC
+        LIMIT 50
+      `)
+      return {
+        rows,
+        columns: [
+          { key: 'sku', label: 'SKU' },
+          { key: 'name', label: 'Name' },
+          { key: 'category', label: 'Category' },
+          { key: 'onHand', label: 'On Hand' },
+          { key: 'committed', label: 'Committed' },
+          { key: 'available', label: 'Available' },
         ],
       }
     }

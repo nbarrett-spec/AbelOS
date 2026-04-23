@@ -130,7 +130,7 @@ function SignaturePad({ onSignature }: { onSignature: (data: string) => void }) 
 
   return (
     <div>
-      <div className="relative border-2 border-dashed border-border-strong rounded-lg bg-white overflow-hidden">
+      <div className="relative border-2 border-dashed border-border-strong rounded-lg bg-surface overflow-hidden">
         <canvas
           ref={canvasRef}
           width={560}
@@ -324,7 +324,7 @@ export default function QuoteDetailPage() {
         <div className="text-5xl mb-4">📋</div>
         <h2 className="text-xl font-bold text-fg mb-2">Quote Not Found</h2>
         <p className="text-fg-muted mb-6">{error || 'This quote could not be loaded.'}</p>
-        <Link href="/dashboard/quotes" className="text-[#0f2a3e] font-semibold hover:underline">
+        <Link href="/dashboard/quotes" className="text-brand font-semibold hover:underline">
           &larr; Back to Quotes
         </Link>
       </div>
@@ -338,7 +338,7 @@ export default function QuoteDetailPage() {
   if (orderSuccess) {
     return (
       <div className="max-w-2xl mx-auto py-12">
-        <div className="bg-white rounded-xl border border-green-200 p-8 text-center">
+        <div className="bg-surface rounded-xl border border-green-200 p-8 text-center">
           <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -350,16 +350,16 @@ export default function QuoteDetailPage() {
           </p>
           <div className="bg-surface-muted rounded-lg p-4 mb-6">
             <p className="text-sm text-fg-muted">Order Number</p>
-            <p className="text-xl font-mono font-bold text-[#0f2a3e]">{orderSuccess.orderNumber}</p>
+            <p className="text-xl font-mono font-bold text-brand">{orderSuccess.orderNumber}</p>
           </div>
           <div className="flex flex-col gap-3">
             <Link
               href={`/dashboard/orders/${orderSuccess.orderId}`}
-              className="bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold py-3 px-6 rounded-lg transition"
+              className="bg-accent hover:bg-accent-hover text-white font-semibold py-3 px-6 rounded-lg transition"
             >
               View Order Details
             </Link>
-            <Link href="/dashboard/quotes" className="text-[#0f2a3e] font-semibold hover:underline py-2">
+            <Link href="/dashboard/quotes" className="text-brand font-semibold hover:underline py-2">
               Back to Quotes
             </Link>
           </div>
@@ -377,7 +377,7 @@ export default function QuoteDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
-      <Link href="/dashboard/quotes" className="text-sm text-[#0f2a3e] hover:underline mb-4 inline-block">
+      <Link href="/dashboard/quotes" className="text-sm text-brand hover:underline mb-4 inline-block">
         &larr; Back to Quotes
       </Link>
 
@@ -461,7 +461,7 @@ export default function QuoteDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Project Info */}
         {quote.project && (
-          <div className="bg-white rounded-xl border border-border p-5">
+          <div className="bg-surface rounded-xl border border-border p-5">
             <h3 className="text-sm font-semibold text-fg-muted mb-3">Project Information</h3>
             <div className="space-y-3">
               <div>
@@ -489,7 +489,7 @@ export default function QuoteDetailPage() {
         )}
 
         {/* Quote Summary */}
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-surface rounded-xl border border-border p-5">
           <h3 className="text-sm font-semibold text-fg-muted mb-3">Quote Summary</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -506,7 +506,7 @@ export default function QuoteDetailPage() {
             )}
             <div className="flex justify-between items-center border-t pt-2">
               <span className="text-sm font-bold text-fg">Total</span>
-              <span className="text-lg font-bold text-[#0f2a3e]">{fmt(quote.total)}</span>
+              <span className="text-lg font-bold text-brand">{fmt(quote.total)}</span>
             </div>
             {quote.validUntil && (
               <div className="pt-2 border-t">
@@ -541,7 +541,7 @@ export default function QuoteDetailPage() {
       )}
 
       {/* Line Items */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden mb-6">
+      <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-border">
           <h3 className="text-sm font-semibold text-fg-muted">Quote Items ({quote.items?.length || 0})</h3>
         </div>
@@ -590,7 +590,7 @@ export default function QuoteDetailPage() {
               <tr>
                 <td colSpan={quote.items.some(i => i.location) ? 3 : 2} />
                 <td className="px-5 py-3 text-sm font-bold text-fg text-right">Total</td>
-                <td className="px-5 py-3 text-lg font-bold text-[#0f2a3e] text-right">{fmt(quote.total)}</td>
+                <td className="px-5 py-3 text-lg font-bold text-brand text-right">{fmt(quote.total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -624,7 +624,7 @@ export default function QuoteDetailPage() {
       {/* ──── Approve Modal (with Signature) ──── */}
       {showApproveModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-bold text-fg">Approve Quote</h2>
               <button onClick={() => { setShowApproveModal(false); setError('') }}
@@ -673,7 +673,7 @@ export default function QuoteDetailPage() {
       {/* ──── Reject Modal ──── */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full">
+          <div className="bg-surface rounded-xl max-w-lg w-full">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-bold text-fg">Decline Quote</h2>
               <button onClick={() => { setShowRejectModal(false); setError('') }}
@@ -725,7 +725,7 @@ export default function QuoteDetailPage() {
       {/* ──── Request Changes Modal ──── */}
       {showChangesModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full">
+          <div className="bg-surface rounded-xl max-w-lg w-full">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-bold text-fg">Request Changes</h2>
               <button onClick={() => { setShowChangesModal(false); setError('') }}
@@ -748,7 +748,7 @@ export default function QuoteDetailPage() {
                   onChange={e => setChangeNotes(e.target.value)}
                   placeholder="e.g., Please swap the 2-panel doors for Shaker style, add hardware for 3 additional interior doors, adjust quantity on exterior door to 2..."
                   rows={4}
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] resize-none"
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                 />
               </div>
 
@@ -764,7 +764,7 @@ export default function QuoteDetailPage() {
                   Cancel
                 </button>
                 <button onClick={handleRequestChanges} disabled={actionInProgress || !changeNotes.trim()}
-                  className="flex-1 px-4 py-2.5 bg-[#C6A24E] text-white font-semibold rounded-lg hover:bg-[#A8882A] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  className="flex-1 px-4 py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   {actionInProgress && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   {actionInProgress ? 'Sending...' : 'Submit Request'}
                 </button>

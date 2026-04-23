@@ -176,31 +176,31 @@ export default function QCPortal() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-20">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quality Control Center</h1>
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Quality Control Center</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:flex sm:gap-2">
           <button
             onClick={() => setShowLogModal(true)}
-            className="px-3 sm:px-4 py-2 min-h-[48px] bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+            className="px-4 py-3 min-h-[48px] bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
           >
             Log Result
           </button>
           <Link
             href="/ops/portal/qc/queue"
-            className="px-3 sm:px-4 py-2 min-h-[48px] bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium flex items-center justify-center text-center"
+            className="px-4 py-3 min-h-[48px] bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium flex items-center justify-center text-center"
           >
             + Start Inspection
           </Link>
           <Link
             href="/ops/manufacturing/qc"
-            className="px-3 sm:px-4 py-2 min-h-[48px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center text-center"
+            className="px-4 py-3 min-h-[48px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center text-center"
           >
             All Checks
           </Link>
@@ -208,88 +208,88 @@ export default function QCPortal() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Inspections Today</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{briefing.summary.inspectionsToday}</p>
-          <p className="text-xs text-gray-500 mt-1">QC checks completed</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Inspections Today</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">{briefing.summary.inspectionsToday}</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">QC checks completed</p>
         </div>
 
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Pending Queue</p>
-          <p className="text-3xl font-bold text-[#C0392B] mt-2">{briefing.summary.pendingInspections}</p>
-          <p className="text-xs text-gray-500 mt-1">Jobs awaiting QC</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Pending Queue</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#C0392B] mt-1 sm:mt-2">{briefing.summary.pendingInspections}</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">Jobs awaiting QC</p>
         </div>
 
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Pass Rate (7d)</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{briefing.summary.passRate7d}%</p>
-          <p className="text-xs text-gray-500 mt-1">Quality metric</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Pass Rate (7d)</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-1 sm:mt-2">{briefing.summary.passRate7d}%</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">Quality metric</p>
         </div>
 
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Failed/Rework</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">{briefing.summary.failedAwaitingRework}</p>
-          <p className="text-xs text-gray-500 mt-1">Re-inspection needed</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Failed/Rework</p>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600 mt-1 sm:mt-2">{briefing.summary.failedAwaitingRework}</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">Re-inspection needed</p>
         </div>
 
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Completed (7d)</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{briefing.summary.totalCompleted7d}</p>
-          <p className="text-xs text-gray-500 mt-1">Total inspections</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Completed (7d)</p>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-1 sm:mt-2">{briefing.summary.totalCompleted7d}</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">Total inspections</p>
         </div>
 
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-medium text-gray-600 uppercase">Critical Defects</p>
-          <p className="text-3xl font-bold text-orange-600 mt-2">{briefing.summary.criticalDefects}</p>
-          <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
+        <div className="bg-white rounded-xl border p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-600 uppercase">Critical Defects</p>
+          <p className="text-2xl sm:text-3xl font-bold text-orange-600 mt-1 sm:mt-2">{briefing.summary.criticalDefects}</p>
+          <p className="text-[11px] sm:text-xs text-gray-500 mt-1">Last 7 days</p>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl border p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="bg-white rounded-xl border p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
           <Link
             href="/ops/portal/qc/queue"
-            className="px-4 py-3 rounded-lg border border-[#C0392B] bg-red-50 hover:bg-red-100 transition-all text-sm font-medium text-gray-900 text-center"
+            className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-[#C0392B] bg-red-50 hover:bg-red-100 transition-all text-sm font-medium text-gray-900 text-center flex items-center justify-center"
           >
-            🔍 Start Inspection
+            Start Inspection
           </Link>
           <Link
             href="/ops/portal/qc/queue"
-            className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#0f2a3e] transition-all text-sm font-medium text-gray-900 text-center"
+            className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#0f2a3e] transition-all text-sm font-medium text-gray-900 text-center flex items-center justify-center"
           >
-            📋 View Queue
+            View Queue
           </Link>
           <Link
             href="/ops/portal/qc/trends"
-            className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all text-sm font-medium text-gray-900 text-center"
+            className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all text-sm font-medium text-gray-900 text-center flex items-center justify-center"
           >
-            📊 Defect Trends
+            Defect Trends
           </Link>
           <Link
             href="/ops/portal/qc/rework"
-            className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-500 transition-all text-sm font-medium text-gray-900 text-center"
+            className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-500 transition-all text-sm font-medium text-gray-900 text-center flex items-center justify-center"
           >
-            🔧 Rework Queue
+            Rework Queue
           </Link>
-          <button className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all text-sm font-medium text-gray-900">
-            📈 QC Reports
+          <button className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all text-sm font-medium text-gray-900">
+            QC Reports
           </button>
-          <button className="px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all text-sm font-medium text-gray-900">
-            📖 Standards
+          <button className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-gray-100 transition-all text-sm font-medium text-gray-900">
+            Standards
           </button>
         </div>
       </div>
 
       {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Inspection Queue - spans 2 columns */}
-        <div className="lg:col-span-2 bg-white rounded-xl border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Inspection Queue</h2>
-            <Link href="/ops/portal/qc/queue" className="text-sm text-[#C0392B] hover:text-[#A93226]">
+        <div className="lg:col-span-2 bg-white rounded-xl border p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Inspection Queue</h2>
+            <Link href="/ops/portal/qc/queue" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[44px] flex items-center">
               View All →
             </Link>
           </div>
@@ -305,27 +305,27 @@ export default function QCPortal() {
                 const colors = priorityColors[job.priority]
                 return (
                   <Link key={job.id} href={`/ops/jobs/${job.id}`}>
-                    <div className={`flex items-center justify-between p-4 rounded-lg border ${colors.border} ${colors.bg} hover:shadow-md transition-all`}>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                    <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border ${colors.border} ${colors.bg} hover:shadow-md transition-all`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-semibold text-gray-900">{job.jobNumber}</p>
                           <span className={`px-2 py-0.5 text-xs font-medium rounded ${colors.badge}`}>
                             {job.priority}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-0.5">{job.builderName}</p>
-                        <div className="flex gap-3 text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-gray-600 mt-0.5 truncate">{job.builderName}</p>
+                        <div className="flex gap-3 text-xs text-gray-500 mt-1 flex-wrap">
                           <span>{job.productCount} products</span>
                           {job.scheduledDate && <span>• {urgencyIndicator(job.scheduledDate)}</span>}
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:gap-1 sm:text-right">
                         {job.scheduledDate && (
-                          <p className="text-xs text-gray-600 mb-2">
-                            📅 {new Date(job.scheduledDate).toLocaleDateString()}
+                          <p className="text-xs text-gray-600">
+                            {new Date(job.scheduledDate).toLocaleDateString()}
                           </p>
                         )}
-                        <button className="px-3 py-1.5 text-xs font-medium bg-[#C0392B] text-white rounded hover:bg-[#A93226] transition-colors">
+                        <button className="px-4 py-2 min-h-[44px] text-sm font-medium bg-[#C0392B] text-white rounded hover:bg-[#A93226] transition-colors">
                           Inspect →
                         </button>
                       </div>
@@ -338,10 +338,10 @@ export default function QCPortal() {
         </div>
 
         {/* Failed/Rework Queue */}
-        <div className="bg-white rounded-xl border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Rework Needed</h2>
-            <Link href="/ops/portal/qc/rework" className="text-sm text-[#C0392B] hover:text-[#A93226]">
+        <div className="bg-white rounded-xl border p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Rework Needed</h2>
+            <Link href="/ops/portal/qc/rework" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[44px] flex items-center">
               View All →
             </Link>
           </div>
@@ -373,10 +373,10 @@ export default function QCPortal() {
       </div>
 
       {/* Recent Results */}
-      <div className="bg-white rounded-xl border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Recent Inspection Results</h2>
-          <button className="text-sm text-[#C0392B] hover:text-[#A93226]">View All →</button>
+      <div className="bg-white rounded-xl border p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900">Recent Inspection Results</h2>
+          <button className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[44px] flex items-center">View All →</button>
         </div>
 
         {briefing.recentResults.length === 0 ? (
@@ -385,42 +385,69 @@ export default function QCPortal() {
             <p>No inspection results yet</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Job #</th>
-                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Check Type</th>
-                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Result</th>
-                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Inspector</th>
-                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {briefing.recentResults.slice(0, 10).map((result) => (
-                  <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-3 font-medium text-gray-900">{result.jobNumber}</td>
-                    <td className="py-3 px-3 text-gray-600">{result.checkType.replace(/_/g, ' ')}</td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          result.passed
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {result.result}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-gray-600 text-xs">{result.checkedByName}</td>
-                    <td className="py-3 px-3 text-gray-500 text-xs">
-                      {new Date(result.checkedAt).toLocaleDateString()}
-                    </td>
+          <>
+            {/* Mobile card list */}
+            <div className="flex flex-col gap-2 md:hidden">
+              {briefing.recentResults.slice(0, 10).map((result) => (
+                <div key={result.id} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-gray-900 text-sm">{result.jobNumber}</p>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.passed
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      {result.result}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{result.checkType.replace(/_/g, ' ')}</p>
+                  <div className="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>{result.checkedByName}</span>
+                    <span>{new Date(result.checkedAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-3 font-semibold text-gray-600">Job #</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-600">Check Type</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-600">Result</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-600">Inspector</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-600">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {briefing.recentResults.slice(0, 10).map((result) => (
+                    <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-3 font-medium text-gray-900">{result.jobNumber}</td>
+                      <td className="py-3 px-3 text-gray-600">{result.checkType.replace(/_/g, ' ')}</td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            result.passed
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {result.result}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-gray-600 text-xs">{result.checkedByName}</td>
+                      <td className="py-3 px-3 text-gray-500 text-xs">
+                        {new Date(result.checkedAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -452,14 +479,14 @@ export default function QCPortal() {
       )}
       {/* Log Inspection Modal */}
       {showLogModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleLogInspection} className="bg-white rounded-xl shadow-xl max-w-lg w-full">
-            <div className="border-b p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Log QC Inspection</h2>
-              <button type="button" onClick={() => setShowLogModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+          <form onSubmit={handleLogInspection} className="bg-white rounded-t-xl sm:rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col">
+            <div className="border-b p-4 sm:p-6 flex justify-between items-center flex-shrink-0">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Log QC Inspection</h2>
+              <button type="button" onClick={() => setShowLogModal(false)} aria-label="Close" className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg">✕</button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Job Number or ID</label>
                 <input
@@ -467,17 +494,17 @@ export default function QCPortal() {
                   value={logForm.jobId}
                   onChange={(e) => setLogForm({ ...logForm, jobId: e.target.value })}
                   placeholder="Enter job number..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]"
+                  className="w-full px-3 py-3 min-h-[48px] border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Check Type</label>
                   <select
                     value={logForm.checkType}
                     onChange={(e) => setLogForm({ ...logForm, checkType: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20"
+                    className="w-full px-3 py-3 min-h-[48px] border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-[#C0392B]/20"
                   >
                     {QC_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                   </select>
@@ -487,11 +514,11 @@ export default function QCPortal() {
                   <select
                     value={logForm.result}
                     onChange={(e) => setLogForm({ ...logForm, result: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20"
+                    className="w-full px-3 py-3 min-h-[48px] border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-[#C0392B]/20"
                   >
-                    <option value="PASS">✅ Pass</option>
-                    <option value="FAIL">❌ Fail</option>
-                    <option value="CONDITIONAL_PASS">⚠️ Conditional Pass</option>
+                    <option value="PASS">Pass</option>
+                    <option value="FAIL">Fail</option>
+                    <option value="CONDITIONAL_PASS">Conditional Pass</option>
                   </select>
                 </div>
               </div>
@@ -505,7 +532,7 @@ export default function QCPortal() {
                         key={code}
                         type="button"
                         onClick={() => toggleDefect(code)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                        className={`px-3 py-2 min-h-[44px] rounded-full text-xs font-medium border transition-colors ${
                           logForm.defectCodes.includes(code)
                             ? 'bg-red-100 border-red-300 text-red-800'
                             : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
@@ -525,19 +552,19 @@ export default function QCPortal() {
                   onChange={(e) => setLogForm({ ...logForm, notes: e.target.value })}
                   placeholder="Inspection notes, observations..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#C0392B]/20 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-[#C0392B]/20 resize-none"
                 />
               </div>
             </div>
 
-            <div className="bg-gray-50 border-t p-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowLogModal(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <div className="bg-gray-50 border-t p-4 sm:p-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
+              <button type="button" onClick={() => setShowLogModal(false)} className="px-4 py-3 min-h-[48px] text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submittingLog}
-                className="px-4 py-2 text-sm bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] disabled:opacity-50 font-medium"
+                className="px-4 py-3 min-h-[48px] text-sm bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] disabled:opacity-50 font-medium"
               >
                 {submittingLog ? 'Logging...' : 'Log Inspection'}
               </button>

@@ -17,6 +17,7 @@ interface ProductProfitScore {
   category: string
   basePrice: number
   cost: number
+  marginDollar: number
   marginPct: number
   compositeScore: number
   grade: 'A' | 'B' | 'C' | 'D' | 'F'
@@ -30,6 +31,9 @@ interface ProductProfitScore {
   trendGrade: 'A' | 'B' | 'C' | 'D' | 'F'
   unitsSold90d: number
   revenue90d: number
+  unitsSold12mo: number
+  revenue12mo: number
+  grossProfit12mo: number
   trendDirection: 'UP' | 'FLAT' | 'DOWN'
   onHand: number
   flags: string[]
@@ -42,8 +46,11 @@ interface ProfitabilityResponse {
     avgMargin: number
     negativeMarginCount: number
     deadStockCount: number
+    zeroCostCount: number
     gradeDistribution: Record<string, number>
     totalRevenue90d: number
+    totalRevenue12mo: number
+    totalGrossProfit12mo: number
   }
 }
 
@@ -75,6 +82,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // 1. Get all active products with base pricing
+    //    NOTE: Product uses boolean `active`, not a `status` enum.
     const products: any[] = await prisma.$queryRawUnsafe(`
       SELECT p.id, p.name, p.sku, p.category, p."basePrice", p.cost,
         CASE WHEN p."basePrice" > 0
@@ -82,18 +90,29 @@ export async function GET(request: NextRequest) {
           ELSE 0
         END as "marginPct"
       FROM "Product" p
-      WHERE p.status = 'ACTIVE'
+      WHERE p.active = true
       ORDER BY p.sku ASC
     `)
 
-    // 2. Get 90-day revenue and volume by product
+    // 2. Get 90-day revenue and volume by product (unit count = SUM(quantity), not row count)
     const revenue90d: any[] = await prisma.$queryRawUnsafe(`
       SELECT oli."productId",
-        COUNT(oli.id)::int as "unitsSold",
+        COALESCE(SUM(oli.quantity), 0)::int as "unitsSold",
         COALESCE(SUM(oli.quantity * oli."unitPrice"), 0)::float as revenue
       FROM "OrderItem" oli
       JOIN "Order" o ON o.id = oli."orderId"
       WHERE o."createdAt" >= NOW() - INTERVAL '90 days'
+      GROUP BY oli."productId"
+    `)
+
+    // 2b. Get 12-month revenue and volume by product (for display columns)
+    const revenue12mo: any[] = await prisma.$queryRawUnsafe(`
+      SELECT oli."productId",
+        COALESCE(SUM(oli.quantity), 0)::int as "unitsSold",
+        COALESCE(SUM(oli.quantity * oli."unitPrice"), 0)::float as revenue
+      FROM "OrderItem" oli
+      JOIN "Order" o ON o.id = oli."orderId"
+      WHERE o."createdAt" >= NOW() - INTERVAL '365 days'
       GROUP BY oli."productId"
     `)
 
@@ -132,6 +151,13 @@ export async function GET(request: NextRequest) {
       ])
     )
 
+    const revenue12moLookup = new Map(
+      revenue12mo.map(r => [
+        r.productId,
+        { unitsSold: r.unitsSold || 0, revenue: Number(r.revenue) || 0 },
+      ])
+    )
+
     const inventoryLookup = new Map(
       inventory.map(i => [
         i.productId,
@@ -150,10 +176,15 @@ export async function GET(request: NextRequest) {
     // Score each product
     const scored: ProductProfitScore[] = products.map(p => {
       const rev = revenueLookup.get(p.id) || { unitsSold: 0, revenue: 0 }
+      const rev12 = revenue12moLookup.get(p.id) || { unitsSold: 0, revenue: 0 }
       const trend = trendLookup.get(p.id) || { recent30: 0, prior30: 0 }
       const inv = inventoryLookup.get(p.id) || { onHand: 0, reorderPoint: 0 }
 
+      const basePrice = Number(p.basePrice) || 0
+      const cost = Number(p.cost) || 0
+      const marginDollar = basePrice - cost
       const marginPct = Number(p.marginPct) || 0
+      const grossProfit12mo = rev12.revenue - rev12.unitsSold * cost
 
       // 1. Margin Score (40%)
       let marginScore = 0
@@ -224,8 +255,9 @@ export async function GET(request: NextRequest) {
         name: p.name,
         sku: p.sku,
         category: p.category,
-        basePrice: Number(p.basePrice) || 0,
-        cost: Number(p.cost) || 0,
+        basePrice,
+        cost,
+        marginDollar,
         marginPct,
         compositeScore,
         grade: scoreToGrade(compositeScore),
@@ -239,6 +271,9 @@ export async function GET(request: NextRequest) {
         trendGrade: scoreToGrade(trendScore),
         unitsSold90d: rev.unitsSold,
         revenue90d: rev.revenue,
+        unitsSold12mo: rev12.unitsSold,
+        revenue12mo: rev12.revenue,
+        grossProfit12mo,
         trendDirection,
         onHand: inv.onHand,
         flags,
@@ -251,6 +286,7 @@ export async function GET(request: NextRequest) {
     // Build summary
     const negativeMarginCount = scored.filter(p => p.marginPct < 0).length
     const deadStockCount = scored.filter(p => p.flags.includes('DEAD_STOCK')).length
+    const zeroCostCount = scored.filter(p => p.cost <= 0).length
     const gradeDistribution: Record<string, number> = {
       A: 0,
       B: 0,
@@ -267,6 +303,9 @@ export async function GET(request: NextRequest) {
         ? Math.round((scored.reduce((sum, p) => sum + p.marginPct, 0) / scored.length) * 10) / 10
         : 0
 
+    const totalRevenue12mo = scored.reduce((sum, p) => sum + p.revenue12mo, 0)
+    const totalGrossProfit12mo = scored.reduce((sum, p) => sum + p.grossProfit12mo, 0)
+
     const response: ProfitabilityResponse = {
       products: scored,
       summary: {
@@ -274,8 +313,11 @@ export async function GET(request: NextRequest) {
         avgMargin,
         negativeMarginCount,
         deadStockCount,
+        zeroCostCount,
         gradeDistribution,
         totalRevenue90d,
+        totalRevenue12mo,
+        totalGrossProfit12mo,
       },
     }
 

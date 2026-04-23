@@ -84,7 +84,7 @@ export default function BuilderOrderDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -95,7 +95,7 @@ export default function BuilderOrderDetailPage() {
         <div className="text-5xl mb-4">📦</div>
         <h2 className="text-xl font-bold text-fg mb-2">Order Not Found</h2>
         <p className="text-fg-muted mb-6">{error || 'This order could not be loaded.'}</p>
-        <Link href="/dashboard/orders" className="text-[#0f2a3e] font-semibold hover:underline">
+        <Link href="/dashboard/orders" className="text-brand font-semibold hover:underline">
           &larr; Back to Orders
         </Link>
       </div>
@@ -110,7 +110,7 @@ export default function BuilderOrderDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back Link */}
-      <Link href="/dashboard/orders" className="text-sm text-[#0f2a3e] hover:underline mb-4 inline-block">
+      <Link href="/dashboard/orders" className="text-sm text-brand hover:underline mb-4 inline-block">
         &larr; Back to Orders
       </Link>
 
@@ -134,13 +134,13 @@ export default function BuilderOrderDetailPage() {
       </div>
 
       {/* Progress Tracker */}
-      <div className="bg-white rounded-xl border border-border p-6 mb-6">
+      <div className="bg-surface rounded-xl border border-border p-6 mb-6">
         <h3 className="text-sm font-semibold text-fg-muted mb-4">Order Progress</h3>
         <div className="flex items-center justify-between relative">
           {/* Progress line */}
           <div className="absolute top-4 left-0 right-0 h-0.5 bg-surface-muted" />
           <div
-            className="absolute top-4 left-0 h-0.5 bg-[#C6A24E] transition-all duration-500"
+            className="absolute top-4 left-0 h-0.5 bg-accent transition-all duration-500"
             style={{ width: `${currentIdx >= 0 ? (currentIdx / (steps.length - 1)) * 100 : 0}%` }}
           />
           {steps.map((step, idx) => {
@@ -151,13 +151,13 @@ export default function BuilderOrderDetailPage() {
               <div key={step} className="flex flex-col items-center relative z-10">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                   isComplete
-                    ? 'bg-[#C6A24E] border-[#C6A24E] text-white'
-                    : 'bg-white border-border-strong text-fg-subtle'
+                    ? 'bg-accent border-accent text-white'
+                    : 'bg-surface border-border-strong text-fg-subtle'
                 } ${isCurrent ? 'ring-4 ring-[#C6A24E]/20' : ''}`}>
                   {isComplete ? '✓' : idx + 1}
                 </div>
                 <span className={`text-[10px] mt-2 font-medium text-center max-w-[70px] ${
-                  isComplete ? 'text-[#C6A24E]' : 'text-fg-subtle'
+                  isComplete ? 'text-accent' : 'text-fg-subtle'
                 }`}>
                   {label}
                 </span>
@@ -170,7 +170,7 @@ export default function BuilderOrderDetailPage() {
       {/* Order Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Delivery Info */}
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-surface rounded-xl border border-border p-5">
           <h3 className="text-sm font-semibold text-fg-muted mb-3">Delivery Information</h3>
           <div className="space-y-3">
             {order.deliveryDate && (
@@ -212,7 +212,7 @@ export default function BuilderOrderDetailPage() {
         </div>
 
         {/* Payment Info */}
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-surface rounded-xl border border-border p-5">
           <h3 className="text-sm font-semibold text-fg-muted mb-3">Payment Summary</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -227,7 +227,7 @@ export default function BuilderOrderDetailPage() {
             )}
             <div className="flex justify-between items-center border-t pt-2">
               <span className="text-sm font-bold text-fg">Total</span>
-              <span className="text-lg font-bold text-[#0f2a3e]">{fmt(Number(order.total))}</span>
+              <span className="text-lg font-bold text-brand">{fmt(Number(order.total))}</span>
             </div>
             {order.paymentTerm && (
               <div className="pt-2 border-t">
@@ -253,7 +253,7 @@ export default function BuilderOrderDetailPage() {
       </div>
 
       {/* Line Items */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden mb-6">
+      <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-border">
           <h3 className="text-sm font-semibold text-fg-muted">Order Items ({order.items?.length || 0})</h3>
         </div>

@@ -67,6 +67,11 @@ model Builder {
   notifyInvoiceReady    Boolean?     @default(true)
   notifyPaymentReceived Boolean?     @default(true)
 
+  // Auto-invoice on delivery — when true, onOrderDelivered cascade creates a
+  // DRAFT Invoice automatically. Set false for COD/prepay builders who invoice
+  // manually.
+  autoInvoiceOnDelivery Boolean      @default(true)
+
   // Relationships
   projects           Project[]
   orders             Order[]
@@ -1963,9 +1968,11 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  // Staff sender (null if builder sent the message)
-  senderId       String?
-  sender         Staff?       @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
+  // Staff sender (DB NOT NULL — drift reconciled 2026-04-22).
+  // For builder-originated messages, service layer stamps senderId with the
+  // on-call staff; builderSenderId identifies the actual builder author.
+  senderId       String
+  sender         Staff        @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Restrict)
 
   // Builder sender (null if staff sent the message)
   builderSenderId String?
@@ -1991,8 +1998,10 @@ model Conversation {
   name            String? // For groups/channels
   departmentScope String? // Department name for department channels (e.g. "EXECUTIVE", "SALES")
 
-  createdById String?
-  createdBy   Staff?  @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  // DB NOT NULL — drift reconciled 2026-04-22. Every conversation has a creator;
+  // for builder-support threads the on-call staff is stamped server-side.
+  createdById String
+  createdBy   Staff   @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
   // Builder support thread link (BUILDER_SUPPORT type only)
   builderId   String?
@@ -2372,7 +2381,9 @@ enum IntegrationStatus {
 model IntegrationConfig {
   id                String                @id @default(cuid())
   provider          IntegrationProvider
-  name              String?
+  // DB NOT NULL — drift reconciled 2026-04-22. All insert paths fall back to a
+  // human-readable provider label (see providerName() in ops/integrations).
+  name              String
   apiKey            String?               // OAuth2 client_id, API key, etc.
   apiSecret         String?               // OAuth2 client_secret, API secret, etc.
   accessToken       String?               // OAuth2 access token
@@ -3109,6 +3120,12 @@ model InboxItem {
   // /api/v1/engine/inbox/[id]/ack confirming it retrieved the resolution
   // payload. Lets the engine know the loop closed on both sides.
   brainAcknowledgedAt DateTime?
+
+  // NUC brain learnings: free-form JSON the engine stamps back on ack.
+  // Shape is owned by the NUC (e.g. { confidence, appliedRules[], modelVersion,
+  // reasoningSummary, nextWatchSignals[] }). Aegis stores as-is and exposes it
+  // via the patterns endpoint so future analyses can aggregate across items.
+  brainLearnings Json?
 
   @@index([status, priority])
   @@index([assignedTo, status])

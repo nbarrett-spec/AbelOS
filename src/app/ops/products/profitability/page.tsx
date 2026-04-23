@@ -9,6 +9,7 @@ interface ProductProfitScore {
   category: string
   basePrice: number
   cost: number
+  marginDollar: number
   marginPct: number
   compositeScore: number
   grade: 'A' | 'B' | 'C' | 'D' | 'F'
@@ -22,6 +23,9 @@ interface ProductProfitScore {
   trendGrade: 'A' | 'B' | 'C' | 'D' | 'F'
   unitsSold90d: number
   revenue90d: number
+  unitsSold12mo: number
+  revenue12mo: number
+  grossProfit12mo: number
   trendDirection: 'UP' | 'FLAT' | 'DOWN'
   onHand: number
   flags: string[]
@@ -32,8 +36,11 @@ interface ProfitabilitySummary {
   avgMargin: number
   negativeMarginCount: number
   deadStockCount: number
+  zeroCostCount: number
   gradeDistribution: Record<string, number>
   totalRevenue90d: number
+  totalRevenue12mo: number
+  totalGrossProfit12mo: number
 }
 
 const GRADE_COLORS: Record<string, string> = {
@@ -65,6 +72,7 @@ export default function ProductProfitabilityPage() {
   const [sortDir, setSortDir] = useState('desc')
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null)
   const [categories, setCategories] = useState<string[]>([])
+  const [hideNoCost, setHideNoCost] = useState(false)
 
   // Load data
   useEffect(() => {
@@ -99,23 +107,31 @@ export default function ProductProfitabilityPage() {
     if (categoryFilter !== 'ALL' && p.category !== categoryFilter) return false
     if (gradeFilter !== 'ALL' && p.grade !== gradeFilter) return false
     if (flagFilter !== 'ALL' && !p.flags.includes(flagFilter)) return false
+    if (hideNoCost && (p.cost ?? 0) <= 0) return false
     return true
   })
 
-  filtered.sort((a, b) => {
-    const aVal = (sortBy === 'compositeScore' ? a.compositeScore :
-                 sortBy === 'marginPct' ? a.marginPct :
-                 sortBy === 'revenue90d' ? a.revenue90d :
-                 sortBy === 'unitsSold90d' ? a.unitsSold90d :
-                 a.compositeScore)
-    const bVal = (sortBy === 'compositeScore' ? b.compositeScore :
-                 sortBy === 'marginPct' ? b.marginPct :
-                 sortBy === 'revenue90d' ? b.revenue90d :
-                 sortBy === 'unitsSold90d' ? b.unitsSold90d :
-                 b.compositeScore)
+  const getSortVal = (p: ProductProfitScore): number => {
+    switch (sortBy) {
+      case 'compositeScore': return p.compositeScore
+      case 'marginPct': return p.marginPct
+      case 'marginDollar': return p.marginDollar
+      case 'revenue90d': return p.revenue90d
+      case 'unitsSold90d': return p.unitsSold90d
+      case 'revenue12mo': return p.revenue12mo
+      case 'unitsSold12mo': return p.unitsSold12mo
+      case 'grossProfit12mo': return p.grossProfit12mo
+      case 'basePrice': return p.basePrice
+      case 'cost': return p.cost
+      default: return p.compositeScore
+    }
+  }
 
-    if (sortDir === 'asc') return (aVal as number) - (bVal as number)
-    return (bVal as number) - (aVal as number)
+  filtered.sort((a, b) => {
+    const aVal = getSortVal(a)
+    const bVal = getSortVal(b)
+    if (sortDir === 'asc') return aVal - bVal
+    return bVal - aVal
   })
 
   const formatCurrency = (val: number) => {
@@ -173,6 +189,27 @@ export default function ProductProfitabilityPage() {
                 : 'products with negative margins'} — reprice immediately
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Info: Zero-cost products */}
+      {summary && summary.zeroCostCount > 0 && (
+        <div className="bg-warning-50 border-l-4 border-warning-500 p-4 mx-6 mt-4 flex items-center justify-between">
+          <div className="text-warning-800 text-sm">
+            <span className="font-semibold">{summary.zeroCostCount}</span> of{' '}
+            <span className="font-semibold">{summary.totalProducts}</span> products have no cost on
+            file ({Math.round((summary.zeroCostCount / summary.totalProducts) * 100)}%). Their
+            margin reads as 0% but may not be accurate. Use the toggle to filter them out.
+          </div>
+          <label className="flex items-center gap-2 text-sm text-warning-800 whitespace-nowrap ml-4">
+            <input
+              type="checkbox"
+              checked={hideNoCost}
+              onChange={e => setHideNoCost(e.target.checked)}
+              className="h-4 w-4"
+            />
+            Hide products with no cost
+          </label>
         </div>
       )}
 
@@ -337,36 +374,60 @@ export default function ProductProfitabilityPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200 sticky top-16">
                 <tr className="divide-x divide-gray-200">
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">SKU</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Category</th>
-                  <th className="px-4 py-3 text-center cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('compositeScore')}>
+                  <th className="px-3 py-3 text-left font-semibold text-gray-700">SKU</th>
+                  <th className="px-3 py-3 text-left font-semibold text-gray-700">Name</th>
+                  <th className="px-3 py-3 text-left font-semibold text-gray-700">Category</th>
+                  <th className="px-3 py-3 text-center cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('compositeScore')}>
                     <div className="font-semibold text-gray-700">Grade</div>
                     {sortBy === 'compositeScore' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-4 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('marginPct')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('basePrice')}>
+                    <div className="font-semibold text-gray-700">Base Price</div>
+                    {sortBy === 'basePrice' && (
+                      <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
+                    )}
+                  </th>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('cost')}>
+                    <div className="font-semibold text-gray-700">Cost</div>
+                    {sortBy === 'cost' && (
+                      <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
+                    )}
+                  </th>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('marginDollar')}>
+                    <div className="font-semibold text-gray-700">Margin $</div>
+                    {sortBy === 'marginDollar' && (
+                      <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
+                    )}
+                  </th>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('marginPct')}>
                     <div className="font-semibold text-gray-700">Margin %</div>
                     {sortBy === 'marginPct' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-4 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('revenue90d')}>
-                    <div className="font-semibold text-gray-700">90d Revenue</div>
-                    {sortBy === 'revenue90d' && (
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('unitsSold12mo')}>
+                    <div className="font-semibold text-gray-700">12mo Units</div>
+                    {sortBy === 'unitsSold12mo' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-4 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('unitsSold90d')}>
-                    <div className="font-semibold text-gray-700">90d Units</div>
-                    {sortBy === 'unitsSold90d' && (
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('revenue12mo')}>
+                    <div className="font-semibold text-gray-700">12mo Revenue</div>
+                    {sortBy === 'revenue12mo' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-gray-700">Trend</th>
-                  <th className="px-4 py-3 text-center font-semibold text-gray-700">On Hand</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Flags</th>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('grossProfit12mo')}>
+                    <div className="font-semibold text-gray-700">Gross Profit</div>
+                    {sortBy === 'grossProfit12mo' && (
+                      <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
+                    )}
+                  </th>
+                  <th className="px-3 py-3 text-center font-semibold text-gray-700">Trend</th>
+                  <th className="px-3 py-3 text-center font-semibold text-gray-700">On Hand</th>
+                  <th className="px-3 py-3 text-left font-semibold text-gray-700">Flags</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -376,15 +437,26 @@ export default function ProductProfitabilityPage() {
                       onClick={() => setExpandedProduct(expandedProduct === product.productId ? null : product.productId)}
                       className="hover:bg-gray-50 cursor-pointer divide-x divide-gray-200"
                     >
-                      <td className="px-4 py-3 font-medium text-gray-900">{product.name}</td>
-                      <td className="px-4 py-3 text-gray-600 font-mono text-xs">{product.sku}</td>
-                      <td className="px-4 py-3 text-gray-600">{product.category}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-3 py-3 text-gray-600 font-mono text-xs">{product.sku}</td>
+                      <td className="px-3 py-3 font-medium text-gray-900">{product.name}</td>
+                      <td className="px-3 py-3 text-gray-600">{product.category}</td>
+                      <td className="px-3 py-3 text-center">
                         <span className={`inline-block px-3 py-1 rounded font-bold ${GRADE_COLORS[product.grade]}`}>
                           {product.grade}
                         </span>
                       </td>
-                      <td className={`px-4 py-3 text-right font-semibold ${
+                      <td className="px-3 py-3 text-right">{formatCurrency(product.basePrice)}</td>
+                      <td className={`px-3 py-3 text-right ${product.cost <= 0 ? 'text-warning-600 italic' : ''}`}>
+                        {product.cost > 0 ? formatCurrency(product.cost) : '—'}
+                      </td>
+                      <td className={`px-3 py-3 text-right font-semibold ${
+                        product.marginDollar < 0 ? 'text-danger-600' :
+                        product.cost <= 0 ? 'text-gray-400' :
+                        'text-gray-900'
+                      }`}>
+                        {formatCurrency(product.marginDollar)}
+                      </td>
+                      <td className={`px-3 py-3 text-right font-semibold ${
                         product.marginPct < 0 ? 'text-danger-600' :
                         product.marginPct < 10 ? 'text-warning-600' :
                         product.marginPct >= 25 ? 'text-success-600' :
@@ -392,9 +464,16 @@ export default function ProductProfitabilityPage() {
                       }`}>
                         {product.marginPct.toFixed(1)}%
                       </td>
-                      <td className="px-4 py-3 text-right">{formatCurrency(product.revenue90d)}</td>
-                      <td className="px-4 py-3 text-right">{product.unitsSold90d}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-3 py-3 text-right">{product.unitsSold12mo.toLocaleString()}</td>
+                      <td className="px-3 py-3 text-right">{formatCurrency(product.revenue12mo)}</td>
+                      <td className={`px-3 py-3 text-right font-semibold ${
+                        product.grossProfit12mo < 0 ? 'text-danger-600' :
+                        product.cost <= 0 ? 'text-gray-400' :
+                        'text-gray-900'
+                      }`}>
+                        {formatCurrency(product.grossProfit12mo)}
+                      </td>
+                      <td className="px-3 py-3 text-center">
                         <span className={`inline-block font-bold ${
                           product.trendDirection === 'UP' ? 'text-success-600' :
                           product.trendDirection === 'DOWN' ? 'text-danger-600' :
@@ -403,10 +482,10 @@ export default function ProductProfitabilityPage() {
                           {product.trendDirection === 'UP' ? '↑' : product.trendDirection === 'DOWN' ? '↓' : '→'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-gray-900 font-semibold">
+                      <td className="px-3 py-3 text-center text-gray-900 font-semibold">
                         {product.onHand}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1">
                           {product.flags.slice(0, 2).map(flag => (
                             <span
@@ -434,7 +513,7 @@ export default function ProductProfitabilityPage() {
                     {/* Expanded Row — Score Breakdown */}
                     {expandedProduct === product.productId && (
                       <tr className="bg-gray-50">
-                        <td colSpan={10} className="px-4 py-6">
+                        <td colSpan={13} className="px-4 py-6">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Left: Score Breakdown */}
                             <div>

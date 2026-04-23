@@ -116,7 +116,7 @@ export default function BuilderMessagesPage() {
     <div className="max-w-5xl mx-auto">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-brand text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
@@ -124,12 +124,12 @@ export default function BuilderMessagesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#1B2A4A]">Messages</h1>
+          <h1 className="text-2xl font-bold text-fg">Messages</h1>
           <p className="text-fg-muted text-sm">Communicate with Abel Lumber</p>
         </div>
         <button
           onClick={() => { setShowCompose(true); setSelected(null) }}
-          className="bg-[#C6A24E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition flex items-center gap-2"
+          className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition flex items-center gap-2"
         >
           <span>+</span> New Message
         </button>
@@ -137,9 +137,9 @@ export default function BuilderMessagesPage() {
 
       {/* Compose Modal */}
       {showCompose && (
-        <div className="bg-white rounded-lg border p-6 mb-6 shadow-sm">
+        <div className="bg-surface rounded-lg border p-6 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#1B2A4A]">New Message</h2>
+            <h2 className="text-lg font-semibold text-fg">New Message</h2>
             <button onClick={() => setShowCompose(false)} className="text-fg-subtle hover:text-fg-muted text-xl">&times;</button>
           </div>
           <div className="space-y-4">
@@ -159,7 +159,7 @@ export default function BuilderMessagesPage() {
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-surface"
                 >
                   {CATEGORY_OPTIONS.map(c => (
                     <option key={c.value} value={c.value}>{c.label}</option>
@@ -187,7 +187,7 @@ export default function BuilderMessagesPage() {
               <button
                 onClick={sendMessage}
                 disabled={sending || !subject.trim() || !body.trim()}
-                className="bg-[#0f2a3e] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-brand text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? 'Sending...' : 'Send Message'}
               </button>
@@ -200,17 +200,17 @@ export default function BuilderMessagesPage() {
       <div className="flex gap-6">
         <div className={`${selected ? 'flex-1' : 'w-full'}`}>
           {loading ? (
-            <div className="bg-white rounded-lg border p-16 flex items-center justify-center">
-              <div className="w-6 h-6 border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+            <div className="bg-surface rounded-lg border p-16 flex items-center justify-center">
+              <div className="w-6 h-6 border-3 border-brand border-t-transparent rounded-full animate-spin" />
             </div>
           ) : messages.length === 0 ? (
-            <div className="bg-white rounded-lg border p-16 text-center">
+            <div className="bg-surface rounded-lg border p-16 text-center">
               <div className="text-5xl mb-3">💬</div>
               <h3 className="font-semibold text-fg mb-1">No messages yet</h3>
               <p className="text-fg-muted text-sm mb-4">Send a message to Abel Lumber about orders, deliveries, billing, or anything else.</p>
               <button
                 onClick={() => setShowCompose(true)}
-                className="bg-[#C6A24E] text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-[#A8882A] transition"
+                className="bg-accent text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-accent-hover transition"
               >
                 Send Your First Message
               </button>
@@ -223,12 +223,12 @@ export default function BuilderMessagesPage() {
                   <div
                     key={msg.id}
                     onClick={() => setSelected(msg)}
-                    className={`bg-white rounded-lg border p-4 cursor-pointer hover:shadow-sm transition ${
+                    className={`bg-surface rounded-lg border p-4 cursor-pointer hover:shadow-sm transition ${
                       selected?.id === msg.id ? 'ring-2 ring-[#0f2a3e]' : ''
                     } ${msg.status === 'REPLIED' && !msg.readByBuilder ? 'border-l-4 border-l-green-500' : ''}`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-medium text-[#1B2A4A] text-sm">{msg.subject}</h3>
+                      <h3 className="font-medium text-fg text-sm">{msg.subject}</h3>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sCfg.bg} ${sCfg.text}`}>
                           {sCfg.label}
@@ -254,9 +254,9 @@ export default function BuilderMessagesPage() {
 
         {/* Detail Panel */}
         {selected && (
-          <div className="w-96 bg-white rounded-lg border p-5 sticky top-4 self-start">
+          <div className="w-96 bg-surface rounded-lg border p-5 sticky top-4 self-start">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#1B2A4A] text-sm">{selected.subject}</h3>
+              <h3 className="font-bold text-fg text-sm">{selected.subject}</h3>
               <button onClick={() => setSelected(null)} className="text-fg-subtle hover:text-fg-muted">&times;</button>
             </div>
 

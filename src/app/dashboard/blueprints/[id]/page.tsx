@@ -173,7 +173,7 @@ export default function BlueprintDetailPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -185,7 +185,7 @@ export default function BlueprintDetailPage() {
         <h2 className="text-xl font-bold text-fg mb-2">{error}</h2>
         <Link
           href="/dashboard/blueprints"
-          className="text-[#0f2a3e] hover:underline"
+          className="text-brand hover:underline"
         >
           ← Back to Blueprints
         </Link>
@@ -282,7 +282,7 @@ export default function BlueprintDetailPage() {
 
       {/* No Takeoff Yet — Show Analyze Button */}
       {!takeoff && blueprint.processingStatus === 'PENDING' && (
-        <div className="bg-white rounded-xl border p-8 text-center">
+        <div className="bg-surface rounded-xl border p-8 text-center">
           <div className="text-5xl mb-4">🤖</div>
           <h2 className="text-xl font-bold text-fg mb-2">
             Ready for AI Analysis
@@ -295,7 +295,7 @@ export default function BlueprintDetailPage() {
           <button
             onClick={handleAnalyze}
             disabled={analyzing || generatingTakeoff}
-            className="px-8 py-3.5 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 text-lg"
+            className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 text-lg"
           >
             {analyzing
               ? '🔍 Analyzing Blueprint...'
@@ -311,7 +311,7 @@ export default function BlueprintDetailPage() {
 
       {/* Analysis Failed */}
       {!takeoff && blueprint.processingStatus === 'FAILED' && (
-        <div className="bg-white rounded-xl border p-8 text-center">
+        <div className="bg-surface rounded-xl border p-8 text-center">
           <div className="text-5xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold text-fg mb-2">
             Analysis Failed
@@ -323,7 +323,7 @@ export default function BlueprintDetailPage() {
           <button
             onClick={handleAnalyze}
             disabled={analyzing}
-            className="px-6 py-3 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-xl transition disabled:opacity-50"
+            className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl transition disabled:opacity-50"
           >
             {analyzing ? 'Retrying...' : 'Retry Analysis'}
           </button>
@@ -332,7 +332,7 @@ export default function BlueprintDetailPage() {
 
       {/* Processing State */}
       {!takeoff && blueprint.processingStatus === 'PROCESSING' && (
-        <div className="bg-white rounded-xl border p-8 text-center">
+        <div className="bg-surface rounded-xl border p-8 text-center">
           <div className="text-5xl mb-4 animate-pulse">🤖</div>
           <h2 className="text-xl font-bold text-fg mb-2">
             AI Analysis in Progress
@@ -341,7 +341,7 @@ export default function BlueprintDetailPage() {
             Reading dimensions, identifying materials, calculating quantities...
           </p>
           <div className="w-48 mx-auto bg-surface-muted rounded-full h-2">
-            <div className="bg-[#C6A24E] h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+            <div className="bg-accent h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
           </div>
         </div>
       )}
@@ -385,11 +385,11 @@ export default function BlueprintDetailPage() {
           />
 
           {/* Additional Action Buttons */}
-          <div className="flex items-center justify-between bg-white rounded-xl border p-4">
+          <div className="flex items-center justify-between bg-surface rounded-xl border p-4">
             <div className="flex gap-3">
               <Link
                 href={`/dashboard/blueprints/new`}
-                className="px-4 py-2 text-sm font-medium text-[#0f2a3e] bg-[#0f2a3e]/10 hover:bg-[#0f2a3e]/20 rounded-lg transition"
+                className="px-4 py-2 text-sm font-medium text-brand bg-brand/10 hover:bg-brand/20 rounded-lg transition"
               >
                 📐 Upload Another Blueprint
               </Link>
@@ -404,7 +404,7 @@ export default function BlueprintDetailPage() {
               <button
                 onClick={handleConvertToQuote}
                 disabled={converting}
-                className="px-6 py-2.5 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-xl shadow transition disabled:opacity-50"
+                className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl shadow transition disabled:opacity-50"
               >
                 {converting ? 'Creating Quote...' : '📋 Convert to Quote'}
               </button>

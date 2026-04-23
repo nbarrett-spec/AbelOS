@@ -12,6 +12,19 @@ interface RouteParams {
   };
 }
 
+// ─── Vendor A-F grade (composite of on-time rate & quality) ───────────────
+function gradeVendor(onTimeRate: number, qualityIssues: number, totalPOs: number): string {
+  if (totalPOs === 0) return 'N/A'
+  // On-time weight 80 %, quality weight 20 % (issues/POs ratio, capped)
+  const qualityScore = Math.max(0, 100 - Math.min(100, (qualityIssues / Math.max(1, totalPOs)) * 100))
+  const composite = onTimeRate * 0.8 + qualityScore * 0.2
+  if (composite >= 93) return 'A'
+  if (composite >= 85) return 'B'
+  if (composite >= 75) return 'C'
+  if (composite >= 65) return 'D'
+  return 'F'
+}
+
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
@@ -19,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = params;
 
-    // Fetch PurchaseOrder with vendor and createdBy info
+    // Fetch PurchaseOrder with vendor, createdBy, approvedBy
     const purchaseOrderResult = await prisma.$queryRawUnsafe<any[]>(`
       SELECT
         po.id,
@@ -28,6 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         po."createdById",
         po."approvedById",
         po.status,
+        po.category,
         po.subtotal,
         po."shippingCost",
         po.total,
@@ -35,6 +49,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         po."expectedDate",
         po."receivedAt",
         po.notes,
+        po."aiGenerated",
+        po.source,
         po."createdAt",
         po."updatedAt",
         json_build_object(
@@ -46,17 +62,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           'phone', v.phone,
           'address', v.address,
           'website', v.website,
-          'accountNumber', v."accountNumber"
+          'accountNumber', v."accountNumber",
+          'avgLeadDays', v."avgLeadDays",
+          'onTimeRate', v."onTimeRate",
+          'paymentTerms', v."paymentTerms"
         ) as vendor,
         json_build_object(
           'id', s.id,
           'firstName', s."firstName",
           'lastName', s."lastName",
           'email', s.email
-        ) as "createdBy"
+        ) as "createdBy",
+        CASE WHEN a.id IS NULL THEN NULL ELSE json_build_object(
+          'id', a.id,
+          'firstName', a."firstName",
+          'lastName', a."lastName",
+          'email', a.email
+        ) END as "approvedBy"
       FROM "PurchaseOrder" po
       LEFT JOIN "Vendor" v ON po."vendorId" = v.id
       LEFT JOIN "Staff" s ON po."createdById" = s.id
+      LEFT JOIN "Staff" a ON po."approvedById" = a.id
       WHERE po.id = $1
     `, id);
 
@@ -69,23 +95,159 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const purchaseOrder = purchaseOrderResult[0];
 
-    // Fetch PurchaseOrderItems
+    // Fetch PurchaseOrderItems (join to Product when possible for SKU/name)
     const items = await prisma.$queryRawUnsafe<any[]>(`
       SELECT
-        id,
-        "purchaseOrderId",
-        "productId",
-        "vendorSku",
-        description,
-        quantity,
-        "unitCost",
-        "lineTotal",
-        "receivedQty"
-      FROM "PurchaseOrderItem"
-      WHERE "purchaseOrderId" = $1
+        poi.id,
+        poi."purchaseOrderId",
+        poi."productId",
+        poi."vendorSku",
+        poi.description,
+        poi.quantity,
+        poi."unitCost",
+        poi."lineTotal",
+        poi."receivedQty",
+        poi."damagedQty",
+        p.sku           as "productSku",
+        p.name          as "productName",
+        p.category      as "productCategory"
+      FROM "PurchaseOrderItem" poi
+      LEFT JOIN "Product" p ON poi."productId" = p.id
+      WHERE poi."purchaseOrderId" = $1
+      ORDER BY poi."createdAt" ASC
     `, id);
 
     purchaseOrder.items = items;
+
+    // Vendor scorecard (on-time, lead days, spend YTD, quality, grade)
+    let scorecard: any = null
+    if (purchaseOrder.vendorId) {
+      const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+      const scoreRows = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT
+          COUNT(DISTINCT po.id)::int           as "totalPOs",
+          COALESCE(v."onTimeRate", 0)::float   as "onTimeRate",
+          COALESCE(v."avgLeadDays", 0)::float  as "avgLeadDays",
+          COALESCE(SUM(CASE WHEN po."createdAt" >= $2 THEN po."total" ELSE 0 END), 0)::float as "spendYTD",
+          0::int                                as "qualityIssues"
+        FROM "Vendor" v
+        LEFT JOIN "PurchaseOrder" po ON po."vendorId" = v.id
+        WHERE v.id = $1
+        GROUP BY v.id, v."onTimeRate", v."avgLeadDays"
+      `, purchaseOrder.vendorId, yearAgo)
+
+      if (scoreRows && scoreRows.length > 0) {
+        const r = scoreRows[0]
+        const onTimePct = (r.onTimeRate || 0) * (r.onTimeRate > 1 ? 1 : 100) // stored 0-1, show 0-100
+        scorecard = {
+          totalPOs: Number(r.totalPOs || 0),
+          onTimeRate: Math.round(onTimePct * 10) / 10,
+          avgLeadDays: Math.round(r.avgLeadDays || 0),
+          spendYTD: Number(r.spendYTD || 0),
+          qualityIssues: Number(r.qualityIssues || 0),
+          grade: gradeVendor(onTimePct, Number(r.qualityIssues || 0), Number(r.totalPOs || 0)),
+        }
+      }
+    }
+    purchaseOrder.scorecard = scorecard
+
+    // Linked orders — via MaterialWatch (which builder orders this PO fills)
+    const linkedOrders = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT DISTINCT
+        o.id           as "orderId",
+        o."orderNumber",
+        o.status       as "orderStatus",
+        o.total        as "orderTotal",
+        b.id           as "builderId",
+        b."companyName" as "builderName"
+      FROM "MaterialWatch" mw
+      LEFT JOIN "Order" o   ON mw."orderId" = o.id
+      LEFT JOIN "Builder" b ON o."builderId" = b.id
+      WHERE mw."purchaseOrderId" = $1
+      ORDER BY o."createdAt" DESC
+      LIMIT 25
+    `, id).catch(() => [])
+
+    purchaseOrder.linkedOrders = linkedOrders || []
+
+    // Audit trail — last 10 entries for this PO
+    const auditTrail = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT
+        a.id,
+        a.action,
+        a."staffId",
+        a.details,
+        a."createdAt",
+        a.severity,
+        s."firstName" as "staffFirstName",
+        s."lastName"  as "staffLastName"
+      FROM "AuditLog" a
+      LEFT JOIN "Staff" s ON a."staffId" = s.id
+      WHERE a.entity = 'PurchaseOrder' AND a."entityId" = $1
+      ORDER BY a."createdAt" DESC
+      LIMIT 10
+    `, id).catch(() => [])
+
+    purchaseOrder.auditTrail = auditTrail || []
+
+    // Status timeline — derived from PO timestamps + audit log for richer actor info
+    const timelineEvents = [
+      {
+        key: 'DRAFT',
+        label: 'Draft',
+        at: purchaseOrder.createdAt,
+        actor: purchaseOrder.createdBy
+          ? `${purchaseOrder.createdBy.firstName ?? ''} ${purchaseOrder.createdBy.lastName ?? ''}`.trim()
+          : null,
+      },
+      {
+        key: 'SENT_TO_VENDOR',
+        label: 'Sent',
+        at: purchaseOrder.orderedAt,
+        actor: purchaseOrder.approvedBy
+          ? `${purchaseOrder.approvedBy.firstName ?? ''} ${purchaseOrder.approvedBy.lastName ?? ''}`.trim()
+          : null,
+      },
+      {
+        key: 'PARTIALLY_RECEIVED',
+        label: 'Partial',
+        at:
+          purchaseOrder.status === 'PARTIALLY_RECEIVED'
+            ? purchaseOrder.updatedAt
+            : null,
+        actor: null,
+      },
+      {
+        key: 'RECEIVED',
+        label: 'Received',
+        at: purchaseOrder.receivedAt,
+        actor: null,
+      },
+    ]
+    purchaseOrder.timeline = timelineEvents
+
+    // Days in current state
+    const nowMs = Date.now()
+    const stateStart = (() => {
+      switch (purchaseOrder.status) {
+        case 'RECEIVED':
+          return purchaseOrder.receivedAt ?? purchaseOrder.updatedAt
+        case 'SENT_TO_VENDOR':
+          return purchaseOrder.orderedAt ?? purchaseOrder.updatedAt
+        default:
+          return purchaseOrder.updatedAt
+      }
+    })()
+    purchaseOrder.daysInState = stateStart
+      ? Math.max(0, Math.round((nowMs - new Date(stateStart).getTime()) / 86400000))
+      : 0
+
+    // Received %
+    const totalQty = items.reduce((s, i) => s + Number(i.quantity || 0), 0)
+    const totalRcv = items.reduce((s, i) => s + Number(i.receivedQty || 0), 0)
+    purchaseOrder.receivedPct = totalQty > 0 ? Math.round((totalRcv / totalQty) * 100) : 0
+    purchaseOrder.totalQty = totalQty
+    purchaseOrder.totalReceived = totalRcv
 
     return NextResponse.json(purchaseOrder, { status: 200 });
   } catch (error) {
@@ -108,7 +270,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { id } = params;
     const body = await request.json();
 
-    const { status, notes, expectedDate } = body;
+    const { status, notes, expectedDate, category, receive, shortShipFlag } = body;
 
     // Get current PO to check status changes
     const currentPOResult = await prisma.$queryRawUnsafe<any[]>(`
@@ -160,6 +322,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       paramIndex++;
     }
 
+    if (category !== undefined) {
+      setClauses.push(`category = $${paramIndex}::"POCategory"`);
+      params_.push(category);
+      paramIndex++;
+    }
+
     if (expectedDate !== undefined) {
       const dateValue = expectedDate ? new Date(expectedDate).toISOString() : null;
       setClauses.push(`"expectedDate" = $${paramIndex}::timestamp`);
@@ -173,6 +341,38 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         `UPDATE "PurchaseOrder" SET ${setClauses.join(', ')}, "updatedAt" = NOW() WHERE id = $1`,
         ...params_
       );
+    }
+
+    // Receive-remaining inline handler — bumps receivedQty to quantity for each
+    // item and optionally flags short-ship. Happens regardless of status field.
+    if (receive && Array.isArray(receive) && receive.length > 0) {
+      for (const r of receive) {
+        if (!r?.itemId) continue
+        const rcvQty = typeof r.receivedQty === 'number' ? r.receivedQty : null
+        if (rcvQty === null) {
+          // Fill remainder
+          await prisma.$executeRawUnsafe(
+            `UPDATE "PurchaseOrderItem" SET "receivedQty" = quantity, "updatedAt" = NOW() WHERE id = $1 AND "purchaseOrderId" = $2`,
+            r.itemId,
+            id,
+          )
+        } else {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "PurchaseOrderItem" SET "receivedQty" = LEAST(quantity, GREATEST(0, $1::int)), "updatedAt" = NOW() WHERE id = $2 AND "purchaseOrderId" = $3`,
+            rcvQty,
+            r.itemId,
+            id,
+          )
+        }
+      }
+
+      if (shortShipFlag) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PurchaseOrder" SET notes = COALESCE(notes || E'\\n', '') || $1, "updatedAt" = NOW() WHERE id = $2`,
+          `[${new Date().toISOString().slice(0, 10)}] Short ship flagged during receive.`,
+          id,
+        )
+      }
     }
 
     // ── MRP: backfill expectedDate from vendor lead time when PO is sent ──
@@ -262,6 +462,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         po."createdById",
         po."approvedById",
         po.status,
+        po.category,
         po.subtotal,
         po."shippingCost",
         po.total,
@@ -314,7 +515,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         quantity,
         "unitCost",
         "lineTotal",
-        "receivedQty"
+        "receivedQty",
+        "damagedQty"
       FROM "PurchaseOrderItem"
       WHERE "purchaseOrderId" = $1
     `, id);

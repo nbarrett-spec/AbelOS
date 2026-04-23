@@ -230,7 +230,7 @@ export default function BlueprintUploadPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -267,7 +267,7 @@ export default function BlueprintUploadPage() {
                   isDone
                     ? 'bg-green-500 text-white'
                     : isActive
-                    ? 'bg-[#0f2a3e] text-white'
+                    ? 'bg-brand text-white'
                     : 'bg-surface-muted text-fg-muted'
                 }`}
               >
@@ -294,7 +294,7 @@ export default function BlueprintUploadPage() {
 
       {/* Step 1: Project Selection */}
       {step === 'select-project' && (
-        <div className="bg-white rounded-xl border p-6">
+        <div className="bg-surface rounded-xl border p-6">
           <h2 className="text-lg font-semibold text-fg mb-4">
             Which project is this blueprint for?
           </h2>
@@ -305,7 +305,7 @@ export default function BlueprintUploadPage() {
               </p>
               <Link
                 href="/projects/new"
-                className="px-5 py-2.5 bg-[#0f2a3e] hover:bg-[#15405e] text-white font-semibold rounded-xl transition"
+                className="px-5 py-2.5 bg-brand hover:bg-[#15405e] text-white font-semibold rounded-xl transition"
               >
                 Create Project First
               </Link>
@@ -321,7 +321,7 @@ export default function BlueprintUploadPage() {
                   }}
                   className={`w-full text-left p-4 rounded-xl border-2 transition ${
                     selectedProject === project.id
-                      ? 'border-[#0f2a3e] bg-[#0f2a3e]/5'
+                      ? 'border-brand bg-brand/5'
                       : 'border-border hover:border-border-strong'
                   }`}
                 >
@@ -338,7 +338,7 @@ export default function BlueprintUploadPage() {
       {step === 'upload' && (
         <div className="space-y-4">
           {/* Selected Project Banner */}
-          <div className="bg-[#0f2a3e]/5 border border-[#0f2a3e]/20 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-brand/5 border border-brand/20 rounded-xl p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-fg-muted uppercase font-medium">Project</p>
               <p className="font-medium text-fg">
@@ -347,7 +347,7 @@ export default function BlueprintUploadPage() {
             </div>
             <button
               onClick={() => setStep('select-project')}
-              className="text-sm text-[#0f2a3e] hover:underline"
+              className="text-sm text-brand hover:underline"
             >
               Change
             </button>
@@ -362,8 +362,8 @@ export default function BlueprintUploadPage() {
             onClick={() => fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition ${
               isDragging
-                ? 'border-[#C6A24E] bg-orange-50'
-                : 'border-border-strong hover:border-[#0f2a3e] hover:bg-surface-muted'
+                ? 'border-accent bg-orange-50'
+                : 'border-border-strong hover:border-brand hover:bg-surface-muted'
             }`}
           >
             <input
@@ -399,7 +399,7 @@ export default function BlueprintUploadPage() {
               {files.map((f, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-4 bg-white rounded-xl border p-4"
+                  className="flex items-center gap-4 bg-surface rounded-xl border p-4"
                 >
                   {/* Preview / Icon */}
                   <div className="w-14 h-14 rounded-lg bg-surface-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -450,7 +450,7 @@ export default function BlueprintUploadPage() {
             <button
               onClick={handleUploadAndAnalyze}
               disabled={uploading}
-              className="w-full py-3.5 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 text-lg"
+              className="w-full py-3.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-xl shadow-lg transition disabled:opacity-50 text-lg"
             >
               Upload & Analyze {files.length > 1 ? `${files.length} Files` : 'Blueprint'}
             </button>
@@ -460,7 +460,7 @@ export default function BlueprintUploadPage() {
 
       {/* Step 3: Processing */}
       {(step === 'processing' || step === 'done') && (
-        <div className="bg-white rounded-xl border p-8">
+        <div className="bg-surface rounded-xl border p-8">
           <div className="text-center mb-8">
             {step === 'done' ? (
               <>
@@ -503,7 +503,7 @@ export default function BlueprintUploadPage() {
                           ? 'bg-red-400'
                           : f.progress === 100
                           ? 'bg-green-500'
-                          : 'bg-[#C6A24E]'
+                          : 'bg-accent'
                       }`}
                       style={{ width: `${f.progress}%` }}
                     />

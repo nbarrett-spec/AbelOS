@@ -1,0 +1,549 @@
+{
+  "scannedAt": "2026-04-23T04:41:01.218Z",
+  "boxRoot": "C:\\Users\\natha\\OneDrive\\Abel Lumber\\Abel Door & Trim_ DFW Box Export\\Abel Door & Trim_ DFW",
+  "scanCompleted": true,
+  "wallClockMs": 2563,
+  "totalFiles": 11120,
+  "totalDirs": 1030,
+  "totalBytes": 14429034949,
+  "skippedOversizeFiles": 7,
+  "extensionHistogram": {
+    ".docx": {
+      "count": 204,
+      "bytes": 66443336
+    },
+    ".xlsx": {
+      "count": 624,
+      "bytes": 467697826
+    },
+    ".dwf": {
+      "count": 2,
+      "bytes": 23458278
+    },
+    ".pdf": {
+      "count": 1020,
+      "bytes": 8549921859
+    },
+    ".webloc": {
+      "count": 6,
+      "bytes": 2496
+    },
+    ".xlsm": {
+      "count": 2,
+      "bytes": 6841551
+    },
+    ".zip": {
+      "count": 22,
+      "bytes": 1909298879
+    },
+    ".jpeg": {
+      "count": 8,
+      "bytes": 531777
+    },
+    ".jpg": {
+      "count": 9131,
+      "bytes": 3280873641
+    },
+    ".ini": {
+      "count": 1,
+      "bytes": 97
+    },
+    ".png": {
+      "count": 59,
+      "bytes": 55539798
+    },
+    ".svg": {
+      "count": 1,
+      "bytes": 1192206
+    },
+    ".msi": {
+      "count": 1,
+      "bytes": 27526489
+    },
+    ".wcx": {
+      "count": 2,
+      "bytes": 574
+    },
+    ".txt": {
+      "count": 3,
+      "bytes": 3146
+    },
+    ".bat": {
+      "count": 1,
+      "bytes": 2690
+    },
+    ".pptx": {
+      "count": 20,
+      "bytes": 38363854
+    },
+    ".heic": {
+      "count": 1,
+      "bytes": 125753
+    },
+    ".csv": {
+      "count": 2,
+      "bytes": 341762
+    },
+    ".lnk": {
+      "count": 1,
+      "bytes": 3271
+    },
+    ".webp": {
+      "count": 8,
+      "bytes": 354044
+    },
+    ".html": {
+      "count": 1,
+      "bytes": 511622
+    }
+  },
+  "topLevelFolders": [
+    {
+      "name": "Abel Door Slab Line Business Plan",
+      "files": 6,
+      "bytes": 238127,
+      "subdirs": 1,
+      "deepest": 0,
+      "flagHighValue": false,
+      "flagPlans": true,
+      "flagLegacy": false
+    },
+    {
+      "name": "Ben Wilson Docs",
+      "files": 2,
+      "bytes": 4064401,
+      "subdirs": 2,
+      "deepest": 1,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Bloomfield Plans Nate",
+      "files": 4,
+      "bytes": 93302532,
+      "subdirs": 2,
+      "deepest": 1,
+      "flagHighValue": false,
+      "flagPlans": true,
+      "flagLegacy": false
+    },
+    {
+      "name": "Customers",
+      "files": 366,
+      "bytes": 2159635320,
+      "subdirs": 216,
+      "deepest": 7,
+      "flagHighValue": false,
+      "flagPlans": true,
+      "flagLegacy": false
+    },
+    {
+      "name": "Delivery & Driver Documents",
+      "files": 2,
+      "bytes": 29715,
+      "subdirs": 55,
+      "deepest": 4,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Facility Improvements",
+      "files": 4,
+      "bytes": 2355002,
+      "subdirs": 4,
+      "deepest": 1,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Financial",
+      "files": 2,
+      "bytes": 30351,
+      "subdirs": 4,
+      "deepest": 2,
+      "flagHighValue": true,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Lisa's Bids",
+      "files": 727,
+      "bytes": 6050679994,
+      "subdirs": 120,
+      "deepest": 5,
+      "flagHighValue": true,
+      "flagPlans": true,
+      "flagLegacy": false
+    },
+    {
+      "name": "Management",
+      "files": 94,
+      "bytes": 81587560,
+      "subdirs": 64,
+      "deepest": 4,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Manufacturing",
+      "files": 16,
+      "bytes": 5129436,
+      "subdirs": 4,
+      "deepest": 1,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Marketing",
+      "files": 3,
+      "bytes": 57682,
+      "subdirs": 3,
+      "deepest": 1,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Operations",
+      "files": 16,
+      "bytes": 7576794,
+      "subdirs": 17,
+      "deepest": 4,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "PRICING",
+      "files": 1,
+      "bytes": 7039713,
+      "subdirs": 3,
+      "deepest": 2,
+      "flagHighValue": true,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Product Research (Future Products & Services)",
+      "files": 1,
+      "bytes": 16229,
+      "subdirs": 2,
+      "deepest": 1,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Project Management",
+      "files": 9491,
+      "bytes": 5605190128,
+      "subdirs": 380,
+      "deepest": 5,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Purchasing",
+      "files": 11,
+      "bytes": 2256208,
+      "subdirs": 30,
+      "deepest": 2,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": true
+    },
+    {
+      "name": "Sales",
+      "files": 10,
+      "bytes": 1212103,
+      "subdirs": 10,
+      "deepest": 2,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Scott Johnson Docs",
+      "files": 302,
+      "bytes": 333469178,
+      "subdirs": 89,
+      "deepest": 4,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Subcontractor",
+      "files": 31,
+      "bytes": 22813025,
+      "subdirs": 7,
+      "deepest": 2,
+      "flagHighValue": true,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Trade Partners Checklist & Scope of Work",
+      "files": 3,
+      "bytes": 6377093,
+      "subdirs": 1,
+      "deepest": 0,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Training",
+      "files": 19,
+      "bytes": 44505119,
+      "subdirs": 7,
+      "deepest": 3,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Warehouse",
+      "files": 6,
+      "bytes": 1378820,
+      "subdirs": 8,
+      "deepest": 2,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    },
+    {
+      "name": "Windows",
+      "files": 3,
+      "bytes": 90419,
+      "subdirs": 1,
+      "deepest": 0,
+      "flagHighValue": false,
+      "flagPlans": false,
+      "flagLegacy": false
+    }
+  ],
+  "biggestFiles": [
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Compressed\\Plans.zip",
+      "bytes": 762852610
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Eden\\OneDrive_1_2-4-2025.zip",
+      "bytes": 522234054
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Sutton Fields - Celina\\Bid Folder - Compressed\\Plans.zip",
+      "bytes": 198465451
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg B2-00- 3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 107960580
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Ranch at Uptown 70's\\BOLSINS - FULL SET.pdf",
+      "bytes": 106798744
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\BOLSINS - FULL SET.pdf",
+      "bytes": 106798744
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg A3-00-3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 105514577
+    },
+    {
+      "relpath": "Lisa's Bids\\BLOOMFIELD HOMES\\BLOOMFIELD PLANS\\PRIMROSE\\OneDrive_2_9-5-2025.zip",
+      "bytes": 101824089
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Ranch at Uptown 70's\\TODD - FULL SET.pdf",
+      "bytes": 96887704
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\TODD - FULL SET.pdf",
+      "bytes": 96887704
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Creek Meadows West & Windsor Springs\\HEIDELBERG - FULL SET.pdf",
+      "bytes": 90995955
+    },
+    {
+      "relpath": "Lisa's Bids\\TOLL BROS 2026\\PLANS\\CREEK MEDOWS & WINDSOR SPRINGS\\HEIDELBERG - FULL SET.pdf",
+      "bytes": 90995955
+    },
+    {
+      "relpath": "Lisa's Bids\\NATE TOLL BROS\\Toll Bros Plans\\HEIDELBERG - FULL SET.pdf",
+      "bytes": 90995955
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\HEIDELBERG - FULL SET.pdf",
+      "bytes": 90995955
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg 1A-1A-A00- 3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 83916806
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg 1-1-A0- 3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 83356377
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Ranch at Uptown 70's\\HILLMAN - FULL SET.pdf",
+      "bytes": 75732085
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\HILLMAN - FULL SET.pdf",
+      "bytes": 75732085
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Adkins Park\\TODD - FULL SET.pdf",
+      "bytes": 73207262
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg 3-A0-3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 71984341
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg 3A-A00-3rdCity Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 71913650
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg 2-A00-3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 71756916
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project Frontier - Celina\\Bid Folder - Files\\Plans\\Submission 3 - Bldg 2A-A00-3rd City Submittal 9.4.2025 REDLINES.pdf",
+      "bytes": 71658596
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Creek Meadows West & Windsor Springs\\CONWY - FULL SET.pdf",
+      "bytes": 68857498
+    },
+    {
+      "relpath": "Lisa's Bids\\TOLL BROS 2026\\PLANS\\CREEK MEDOWS & WINDSOR SPRINGS\\CONWY - FULL SET.pdf",
+      "bytes": 68857498
+    },
+    {
+      "relpath": "Lisa's Bids\\NATE TOLL BROS\\Toll Bros Plans\\CONWY - FULL SET.pdf",
+      "bytes": 68857498
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\CONWY - FULL SET.pdf",
+      "bytes": 68857498
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Creek Meadows West & Windsor Springs\\MIRAMARE - FULL SET.pdf",
+      "bytes": 67115617
+    },
+    {
+      "relpath": "Lisa's Bids\\TOLL BROS 2026\\PLANS\\CREEK MEDOWS & WINDSOR SPRINGS\\MIRAMARE - FULL SET.pdf",
+      "bytes": 67115617
+    },
+    {
+      "relpath": "Lisa's Bids\\NATE TOLL BROS\\Toll Bros Plans\\MIRAMARE - FULL SET.pdf",
+      "bytes": 67115617
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\MIRAMARE - FULL SET.pdf",
+      "bytes": 67115617
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Eden\\EDEN BID INFO\\Plans\\_Bldg B2-3rd City Submittal Set-01142025.pdf",
+      "bytes": 66401961
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Eden\\EDEN BID INFO\\Plans\\_Bldg A3-3rd City Submittal Set-01142025.pdf",
+      "bytes": 66020666
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Adkins Park\\HILLMAN - FULL SET.pdf",
+      "bytes": 64179726
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Creek Meadows West & Windsor Springs\\VIANDEN - FULL SET.pdf",
+      "bytes": 62070821
+    },
+    {
+      "relpath": "Lisa's Bids\\TOLL BROS 2026\\PLANS\\CREEK MEDOWS & WINDSOR SPRINGS\\VIANDEN - FULL SET.pdf",
+      "bytes": 62070821
+    },
+    {
+      "relpath": "Lisa's Bids\\NATE TOLL BROS\\Toll Bros Plans\\VIANDEN - FULL SET.pdf",
+      "bytes": 62070821
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\VIANDEN - FULL SET.pdf",
+      "bytes": 62070821
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Creek Meadows West & Windsor Springs\\KYLEMORE - FULL SET.pdf",
+      "bytes": 60523559
+    },
+    {
+      "relpath": "Lisa's Bids\\TOLL BROS 2026\\PLANS\\CREEK MEDOWS & WINDSOR SPRINGS\\KYLEMORE - FULL SET.pdf",
+      "bytes": 60523559
+    },
+    {
+      "relpath": "Lisa's Bids\\NATE TOLL BROS\\Toll Bros Plans\\KYLEMORE - FULL SET.pdf",
+      "bytes": 60523559
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\KYLEMORE - FULL SET.pdf",
+      "bytes": 60523559
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Eden\\EDEN BID INFO\\Specifications\\2025.01.21_National Library-Renderings_Yardly Eden.pdf",
+      "bytes": 60452641
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Eden\\EDEN BID INFO\\Plans\\Elevations\\2025.01.21_National Library-Renderings_Yardly Eden.pdf",
+      "bytes": 60452641
+    },
+    {
+      "relpath": "Lisa's Bids\\BLOOMFIELD HOMES\\BLOOMFIELD PLANS\\ROSE\\OneDrive_4_9-5-2025.zip",
+      "bytes": 56097089
+    },
+    {
+      "relpath": "Lisa's Bids\\YARDLY\\Project - Eden\\EDEN BID INFO\\Plans\\_Bldg B1-3rd City Submittal Set-01142025.pdf",
+      "bytes": 55418042
+    },
+    {
+      "relpath": "Customers\\Toll Brothers DFW\\Toll Docs\\Plans\\Adkins Park\\METCALF - FULL SET.pdf",
+      "bytes": 53775840
+    },
+    {
+      "relpath": "Project Management\\Builder Accounts\\Toll Brothers\\Plans\\METCALF - FULL SET.pdf",
+      "bytes": 53775840
+    },
+    {
+      "relpath": "Scott Johnson Docs\\N3\\Mansions of North Denton - N3.pdf",
+      "bytes": 49174346
+    },
+    {
+      "relpath": "Scott Johnson Docs\\N3\\Luxe of North Denton - N3.pdf",
+      "bytes": 47892711
+    }
+  ],
+  "highValueFolders": [
+    "Financial",
+    "Lisa's Bids",
+    "PRICING",
+    "Subcontractor"
+  ],
+  "plansFolders": [
+    "Abel Door Slab Line Business Plan",
+    "Bloomfield Plans Nate",
+    "Customers",
+    "Lisa's Bids"
+  ],
+  "legacyOverlapFolders": [
+    "Purchasing"
+  ]
+}

@@ -106,7 +106,7 @@ export default function BlueprintsPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -123,7 +123,7 @@ export default function BlueprintsPage() {
         </div>
         <Link
           href="/dashboard/blueprints/new"
-          className="px-5 py-2.5 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-xl shadow transition flex items-center gap-2"
+          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl shadow transition flex items-center gap-2"
         >
           <span className="text-lg">📐</span>
           Upload Blueprint
@@ -136,7 +136,7 @@ export default function BlueprintsPage() {
           label="Total Blueprints"
           value={counts.all}
           icon="📄"
-          color="bg-white"
+          color="bg-surface"
         />
         <StatCard
           label="Takeoffs Ready"
@@ -172,7 +172,7 @@ export default function BlueprintsPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               filter === f.key
-                ? 'bg-[#0f2a3e] text-white'
+                ? 'bg-brand text-white'
                 : 'bg-surface-muted text-fg-muted hover:bg-surface-muted'
             }`}
           >
@@ -190,7 +190,7 @@ export default function BlueprintsPage() {
 
       {/* Empty State */}
       {filtered.length === 0 && !error && (
-        <div className="bg-white rounded-xl border p-12 text-center">
+        <div className="bg-surface rounded-xl border p-12 text-center">
           <div className="text-5xl mb-4">📐</div>
           <h3 className="text-lg font-semibold text-fg mb-2">
             {filter === 'all'
@@ -203,7 +203,7 @@ export default function BlueprintsPage() {
           </p>
           <Link
             href="/dashboard/blueprints/new"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A24E] hover:bg-[#A8882A] text-white font-semibold rounded-xl shadow transition"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl shadow transition"
           >
             Upload Your First Blueprint
           </Link>
@@ -225,12 +225,12 @@ export default function BlueprintsPage() {
                 onClick={() => {
                   router.push(`/dashboard/blueprints/${bp.id}`)
                 }}
-                className="bg-white rounded-xl border p-5 hover:shadow-md transition cursor-pointer"
+                className="bg-surface rounded-xl border p-5 hover:shadow-md transition cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     {/* File Icon */}
-                    <div className="w-12 h-12 rounded-xl bg-[#0f2a3e]/10 flex items-center justify-center text-xl flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center text-xl flex-shrink-0">
                       {bp.fileType === 'pdf' ? '📋' : '🖼️'}
                     </div>
 
@@ -289,7 +289,7 @@ export default function BlueprintsPage() {
                     {bp.processingStatus === 'COMPLETE' && bp.takeoff && (
                       <Link
                         href={`/dashboard/blueprints/${bp.id}`}
-                        className="px-4 py-2 text-sm font-medium text-[#0f2a3e] bg-[#0f2a3e]/10 hover:bg-[#0f2a3e]/20 rounded-lg transition"
+                        className="px-4 py-2 text-sm font-medium text-brand bg-brand/10 hover:bg-brand/20 rounded-lg transition"
                         onClick={(e) => e.stopPropagation()}
                       >
                         View Takeoff →
@@ -298,7 +298,7 @@ export default function BlueprintsPage() {
                     {bp.processingStatus === 'COMPLETE' && !bp.takeoff && (
                       <Link
                         href={`/dashboard/blueprints/${bp.id}`}
-                        className="px-4 py-2 text-sm font-medium text-white bg-[#C6A24E] hover:bg-[#A8882A] rounded-lg transition"
+                        className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition"
                         onClick={(e) => e.stopPropagation()}
                       >
                         Generate Takeoff →
@@ -352,7 +352,7 @@ function StatCard({
         <span className="text-lg">{icon}</span>
         <span className="text-xs font-medium text-fg-muted uppercase">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-[#0f2a3e]">{value}</p>
+      <p className="text-2xl font-bold text-brand">{value}</p>
     </div>
   )
 }

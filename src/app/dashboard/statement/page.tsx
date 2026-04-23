@@ -59,7 +59,7 @@ export default function AccountStatementPage() {
           {[3, 6, 12].map(m => (
             <button key={m} onClick={() => setMonths(m)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                months === m ? 'bg-[#0f2a3e] text-white' : 'bg-white dark:bg-surface-muted text-fg-muted border border-border-strong'
+                months === m ? 'bg-brand text-white' : 'bg-surface dark:bg-surface-muted text-fg-muted border border-border-strong'
               }`}>
               {m}mo
             </button>
@@ -71,12 +71,12 @@ export default function AccountStatementPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-surface rounded-xl p-4 border border-border">
           <p className="text-xs text-fg-muted uppercase tracking-wider">Total Ordered</p>
-          <p className="text-xl font-bold text-[#0f2a3e] mt-1">{fmt(s.totalOrdered)}</p>
+          <p className="text-xl font-bold text-brand mt-1">{fmt(s.totalOrdered)}</p>
           <p className="text-xs text-fg-subtle mt-1">{s.orderCount} orders</p>
         </div>
         <div className="bg-surface rounded-xl p-4 border border-border">
           <p className="text-xs text-fg-muted uppercase tracking-wider">Total Invoiced</p>
-          <p className="text-xl font-bold text-[#C6A24E] mt-1">{fmt(s.totalInvoiced)}</p>
+          <p className="text-xl font-bold text-accent mt-1">{fmt(s.totalInvoiced)}</p>
         </div>
         <div className="bg-surface rounded-xl p-4 border border-border">
           <p className="text-xs text-fg-muted uppercase tracking-wider">Total Paid</p>
@@ -128,7 +128,7 @@ export default function AccountStatementPage() {
                   <div className="w-full flex flex-col items-center justify-end h-20">
                     <p className="text-[10px] text-fg-muted mb-1">{fmt(m.total)}</p>
                     <div
-                      className="w-full max-w-[40px] bg-[#0f2a3e] rounded-t-md transition-all"
+                      className="w-full max-w-[40px] bg-brand rounded-t-md transition-all"
                       style={{ height: `${Math.max(4, pct)}%` }}
                     />
                   </div>
@@ -186,13 +186,13 @@ export default function AccountStatementPage() {
 
       {/* Quick Links */}
       <div className="mt-6 flex gap-3 flex-wrap">
-        <Link href="/dashboard/invoices" className="px-4 py-2 text-sm font-medium bg-[#0f2a3e] text-white rounded-lg hover:bg-[#163d59] transition">
+        <Link href="/dashboard/invoices" className="px-4 py-2 text-sm font-medium bg-brand text-white rounded-lg hover:bg-[#163d59] transition">
           View Invoices
         </Link>
-        <Link href="/dashboard/payments" className="px-4 py-2 text-sm font-medium bg-[#C6A24E] text-white rounded-lg hover:bg-[#cf6f1e] transition">
+        <Link href="/dashboard/payments" className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:bg-[#cf6f1e] transition">
           Make a Payment
         </Link>
-        <Link href="/dashboard/orders" className="px-4 py-2 text-sm font-medium bg-white dark:bg-surface-muted text-fg-muted border border-border-strong rounded-lg hover:bg-surface-muted transition">
+        <Link href="/dashboard/orders" className="px-4 py-2 text-sm font-medium bg-surface dark:bg-surface-muted text-fg-muted border border-border-strong rounded-lg hover:bg-surface-muted transition">
           Order History
         </Link>
       </div>

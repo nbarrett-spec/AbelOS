@@ -219,25 +219,25 @@ export default function BuilderChatPage() {
     <div className="flex h-[calc(100vh-80px)] -m-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-brand text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
 
       {/* ── Sidebar ── */}
-      <div className="w-80 border-r bg-white flex flex-col">
+      <div className="w-80 border-r bg-surface flex flex-col">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-[#1B2A4A]">Chat</h2>
+            <h2 className="text-lg font-bold text-fg">Chat</h2>
             {totalUnread > 0 && (
-              <span className="bg-[#C6A24E] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full">
                 {totalUnread}
               </span>
             )}
           </div>
           <button
             onClick={() => { setShowNew(true); setSelectedId(null) }}
-            className="w-full bg-[#C6A24E] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition"
+            className="w-full bg-accent text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition"
           >
             + New Conversation
           </button>
@@ -264,11 +264,11 @@ export default function BuilderChatPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-[#1B2A4A] truncate">
+                      <span className="font-medium text-sm text-fg truncate">
                         {conv.subject || 'Support Thread'}
                       </span>
                       {conv.unreadCount > 0 && (
-                        <span className="bg-[#C6A24E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                        <span className="bg-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
@@ -296,8 +296,8 @@ export default function BuilderChatPage() {
         {showNew ? (
           /* ── New Conversation Form ── */
           <div className="flex-1 flex items-start justify-center p-8">
-            <div className="bg-white rounded-xl border shadow-sm p-6 w-full max-w-lg">
-              <h3 className="text-lg font-bold text-[#1B2A4A] mb-4">New Conversation</h3>
+            <div className="bg-surface rounded-xl border shadow-sm p-6 w-full max-w-lg">
+              <h3 className="text-lg font-bold text-fg mb-4">New Conversation</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-fg-muted mb-1">Subject</label>
@@ -305,7 +305,7 @@ export default function BuilderChatPage() {
                     type="text"
                     value={newSubject}
                     onChange={e => setNewSubject(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent outline-none"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-signal focus:border-transparent outline-none"
                     placeholder="What do you need help with?"
                   />
                 </div>
@@ -314,7 +314,7 @@ export default function BuilderChatPage() {
                   <select
                     value={newCategory}
                     onChange={e => setNewCategory(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent outline-none"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-signal focus:border-transparent outline-none"
                   >
                     {CATEGORY_OPTIONS.map(o => (
                       <option key={o.value} value={o.value}>{o.label}</option>
@@ -326,7 +326,7 @@ export default function BuilderChatPage() {
                   <textarea
                     value={newBody}
                     onChange={e => setNewBody(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm h-32 resize-none focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent outline-none"
+                    className="w-full border rounded-lg px-3 py-2 text-sm h-32 resize-none focus:ring-2 focus:ring-signal focus:border-transparent outline-none"
                     placeholder="Describe your question or request..."
                   />
                 </div>
@@ -340,7 +340,7 @@ export default function BuilderChatPage() {
                   <button
                     onClick={createConversation}
                     disabled={sending || !newSubject.trim() || !newBody.trim()}
-                    className="flex-1 bg-[#C6A24E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition disabled:opacity-50"
+                    className="flex-1 bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition disabled:opacity-50"
                   >
                     {sending ? 'Sending...' : 'Start Conversation'}
                   </button>
@@ -352,9 +352,9 @@ export default function BuilderChatPage() {
           /* ── Message Thread ── */
           <>
             {/* Thread Header */}
-            <div className="bg-white border-b px-6 py-3 flex items-center justify-between">
+            <div className="bg-surface border-b px-6 py-3 flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-[#1B2A4A]">
+                <h3 className="font-semibold text-fg">
                   {conversations.find(c => c.id === selectedId)?.subject || 'Support Thread'}
                 </h3>
                 <p className="text-xs text-fg-subtle">Abel Lumber Support</p>
@@ -409,8 +409,8 @@ export default function BuilderChatPage() {
                             <div
                               className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                                 isBuilder
-                                  ? 'bg-[#0f2a3e] text-white rounded-br-sm'
-                                  : 'bg-white border text-fg rounded-bl-sm shadow-sm'
+                                  ? 'bg-brand text-white rounded-br-sm'
+                                  : 'bg-surface border text-fg rounded-bl-sm shadow-sm'
                               }`}
                             >
                               <p className="whitespace-pre-wrap">{msg.body}</p>
@@ -431,7 +431,7 @@ export default function BuilderChatPage() {
             </div>
 
             {/* Input */}
-            <div className="bg-white border-t px-4 py-3">
+            <div className="bg-surface border-t px-4 py-3">
               <div className="flex items-end gap-3">
                 <textarea
                   value={messageBody}
@@ -439,13 +439,13 @@ export default function BuilderChatPage() {
                   onKeyDown={handleKeyDown}
                   placeholder="Type a message..."
                   rows={1}
-                  className="flex-1 border rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent outline-none max-h-32"
+                  className="flex-1 border rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-signal focus:border-transparent outline-none max-h-32"
                   style={{ minHeight: '42px' }}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={sending || !messageBody.trim()}
-                  className="bg-[#C6A24E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#A8882A] transition disabled:opacity-50 shrink-0"
+                  className="bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-accent-hover transition disabled:opacity-50 shrink-0"
                 >
                   {sending ? '...' : 'Send'}
                 </button>
@@ -462,11 +462,11 @@ export default function BuilderChatPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-[#1B2A4A] mb-1">Chat with Abel Lumber</h3>
+              <h3 className="text-lg font-semibold text-fg mb-1">Chat with Abel Lumber</h3>
               <p className="text-sm text-fg-muted mb-4">Select a conversation or start a new one</p>
               <button
                 onClick={() => setShowNew(true)}
-                className="bg-[#C6A24E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition"
+                className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition"
               >
                 Start a Conversation
               </button>

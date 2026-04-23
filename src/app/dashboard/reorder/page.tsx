@@ -405,7 +405,7 @@ export default function ReorderPage() {
 
         {/* Cart Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-4 border border-border rounded-lg bg-white shadow-sm">
+          <div className="sticky top-4 border border-border rounded-lg bg-surface shadow-sm">
             <div className="bg-walnut text-white px-6 py-4 rounded-t-lg">
               <h3 className="font-semibold text-lg">Order Summary</h3>
             </div>

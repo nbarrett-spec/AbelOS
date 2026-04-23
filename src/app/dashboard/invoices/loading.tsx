@@ -10,7 +10,7 @@ export default function Loading() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-border p-5">
+          <div key={i} className="bg-surface rounded-xl border border-border p-5">
             <div className="h-4 bg-surface-muted rounded w-24 mb-2" />
             <div className="h-7 bg-surface-muted rounded w-32" />
           </div>
@@ -24,7 +24,7 @@ export default function Loading() {
       </div>
 
       {/* Invoices table */}
-      <div className="bg-white rounded-xl border border-border p-6">
+      <div className="bg-surface rounded-xl border border-border p-6">
         {/* Table header */}
         <div className="flex gap-4 pb-4 border-b border-border mb-4">
           <div className="h-4 bg-surface-muted rounded w-20" />

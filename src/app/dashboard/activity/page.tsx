@@ -99,7 +99,7 @@ export default function ActivityPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -111,7 +111,7 @@ export default function ActivityPage() {
           <h1 className="text-2xl font-bold text-fg">Activity Log</h1>
           <p className="text-fg-muted text-sm mt-1">Recent activity across your account</p>
         </div>
-        <Link href="/dashboard" className="text-sm text-[#0f2a3e] hover:underline">
+        <Link href="/dashboard" className="text-sm text-brand hover:underline">
           ← Back to Dashboard
         </Link>
       </div>
@@ -130,8 +130,8 @@ export default function ActivityPage() {
             onClick={() => setFilter(f.key)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
               filter === f.key
-                ? 'bg-[#0f2a3e] text-white'
-                : 'bg-white border border-border text-fg-muted hover:bg-surface-muted'
+                ? 'bg-brand text-white'
+                : 'bg-surface border border-border text-fg-muted hover:bg-surface-muted'
             }`}
           >
             {f.label}
@@ -145,7 +145,7 @@ export default function ActivityPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border p-12 text-center">
+        <div className="bg-surface rounded-2xl border p-12 text-center">
           <p className="text-fg-subtle text-lg">No activity found</p>
         </div>
       ) : (
@@ -160,7 +160,7 @@ export default function ActivityPage() {
                     <Link
                       key={activity.id}
                       href={activity.link}
-                      className="flex items-start gap-4 bg-white rounded-xl border border-border hover:border-border hover:shadow-sm transition p-4"
+                      className="flex items-start gap-4 bg-surface rounded-xl border border-border hover:border-border hover:shadow-sm transition p-4"
                     >
                       <div className={`w-10 h-10 rounded-lg ${config.bg} flex items-center justify-center text-lg flex-shrink-0`}>
                         {config.icon}

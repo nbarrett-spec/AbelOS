@@ -151,7 +151,7 @@ export default function ProjectSelectionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -183,7 +183,7 @@ export default function ProjectSelectionsPage() {
         </div>
         <button
           onClick={() => setShowNewHomeowner(!showNewHomeowner)}
-          className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg font-medium text-sm hover:bg-[#15395a] transition-colors"
+          className="px-4 py-2 bg-brand text-white rounded-lg font-medium text-sm hover:bg-[#15395a] transition-colors"
         >
           {showNewHomeowner ? 'Cancel' : 'Generate Access Link'}
         </button>
@@ -191,7 +191,7 @@ export default function ProjectSelectionsPage() {
 
       {/* New Homeowner Access Form */}
       {showNewHomeowner && (
-        <div className="bg-white rounded-xl border border-border p-6 mb-6">
+        <div className="bg-surface rounded-xl border border-border p-6 mb-6">
           <h3 className="text-lg font-bold text-fg mb-4">Create Homeowner Access</h3>
           <div className="space-y-4">
             <div>
@@ -205,7 +205,7 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, name: e.target.value })
                 }
                 placeholder="e.g., John Smith"
-                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
+                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-brand"
               />
             </div>
             <div>
@@ -219,7 +219,7 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, email: e.target.value })
                 }
                 placeholder="john@example.com"
-                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
+                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-brand"
               />
             </div>
             <div>
@@ -233,23 +233,23 @@ export default function ProjectSelectionsPage() {
                   setNewHomeownerForm({ ...newHomeownerForm, phone: e.target.value })
                 }
                 placeholder="(555) 123-4567"
-                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-[#0f2a3e]"
+                className="w-full px-4 py-2 border border-border-strong rounded-lg text-sm focus:outline-none focus:border-brand"
               />
             </div>
 
             {newAccessUrl && (
-              <div className="bg-[#0f2a3e]/5 border border-[#0f2a3e]/20 rounded-lg p-4">
+              <div className="bg-brand/5 border border-brand/20 rounded-lg p-4">
                 <p className="text-xs font-medium text-fg-muted mb-2">Access Link Created</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     readOnly
                     value={newAccessUrl}
-                    className="flex-1 px-3 py-2 bg-white border border-border-strong rounded text-xs font-mono"
+                    className="flex-1 px-3 py-2 bg-surface border border-border-strong rounded text-xs font-mono"
                   />
                   <button
                     onClick={copyToClipboard}
-                    className="px-3 py-2 bg-[#C6A24E] text-white rounded text-xs font-medium hover:bg-[#A8882A] transition-colors"
+                    className="px-3 py-2 bg-accent text-white rounded text-xs font-medium hover:bg-accent-hover transition-colors"
                   >
                     {copiedToClipboard ? 'Copied!' : 'Copy'}
                   </button>
@@ -260,7 +260,7 @@ export default function ProjectSelectionsPage() {
             <button
               onClick={handleCreateToken}
               disabled={creatingToken}
-              className="w-full px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-medium text-sm hover:bg-[#A8882A] transition-colors disabled:opacity-50"
+              className="w-full px-4 py-2 bg-accent text-white rounded-lg font-medium text-sm hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {creatingToken ? 'Creating...' : 'Create Access Link'}
             </button>
@@ -270,7 +270,7 @@ export default function ProjectSelectionsPage() {
 
       {/* Homeowner Access List */}
       {homeownerAccesses.length > 0 && (
-        <div className="bg-white rounded-xl border border-border overflow-hidden mb-6">
+        <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
           <div className="px-6 py-4 bg-surface-muted border-b border-border">
             <h3 className="text-sm font-bold text-fg">Homeowner Access Links</h3>
           </div>
@@ -312,7 +312,7 @@ export default function ProjectSelectionsPage() {
 
       {/* Selections Table */}
       {selectionsData && selectionsData.selections.length > 0 ? (
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface rounded-xl border border-border overflow-hidden">
           <div className="px-6 py-4 bg-surface-muted border-b border-border">
             <h3 className="text-sm font-bold text-fg">
               All Selections ({selectionsData.totalSelections})
@@ -321,7 +321,7 @@ export default function ProjectSelectionsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-white">
+                <tr className="border-b border-border bg-surface">
                   <th className="px-6 py-3 text-left font-semibold text-fg-muted">Homeowner</th>
                   <th className="px-6 py-3 text-left font-semibold text-fg-muted">Location</th>
                   <th className="px-6 py-3 text-left font-semibold text-fg-muted">Base Product</th>
@@ -357,7 +357,7 @@ export default function ProjectSelectionsPage() {
                         </p>
                         <p className="text-xs text-fg-muted">{selection.selectedProduct?.sku}</p>
                         {isUpgraded(selection) && (
-                          <span className="inline-block px-2 py-0.5 mt-1 rounded-full text-[10px] font-semibold bg-[#C6A24E]/10 text-[#C6A24E]">
+                          <span className="inline-block px-2 py-0.5 mt-1 rounded-full text-[10px] font-semibold bg-accent/10 text-accent">
                             Upgraded
                           </span>
                         )}
@@ -365,7 +365,7 @@ export default function ProjectSelectionsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {upgradePrice(selection) > 0 ? (
-                        <span className="font-bold text-[#C6A24E]">
+                        <span className="font-bold text-accent">
                           +${upgradePrice(selection).toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                           })}
@@ -390,7 +390,7 @@ export default function ProjectSelectionsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-border p-8 text-center">
+        <div className="bg-surface rounded-xl border border-border p-8 text-center">
           <p className="text-fg-subtle mb-2">No homeowner selections yet</p>
           <p className="text-xs text-fg-subtle">
             Generate access links above to let homeowners make selections
@@ -401,21 +401,21 @@ export default function ProjectSelectionsPage() {
       {/* Summary Stats */}
       {selectionsData && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <p className="text-xs text-fg-muted font-medium mb-1">Total Homeowners</p>
-            <p className="text-2xl font-bold text-[#0f2a3e]">
+            <p className="text-2xl font-bold text-brand">
               {selectionsData.totalHomeowners}
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <p className="text-xs text-fg-muted font-medium mb-1">Total Selections</p>
-            <p className="text-2xl font-bold text-[#0f2a3e]">
+            <p className="text-2xl font-bold text-brand">
               {selectionsData.totalSelections}
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <p className="text-xs text-fg-muted font-medium mb-1">Total Upgrade Cost</p>
-            <p className="text-2xl font-bold text-[#C6A24E]">
+            <p className="text-2xl font-bold text-accent">
               +$
               {selectionsData.selections
                 .reduce((sum, sel) => sum + sel.adderCost, 0)

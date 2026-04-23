@@ -231,7 +231,7 @@ export default function QuotesPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-4 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -267,7 +267,7 @@ export default function QuotesPage() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
+          className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors"
         >
           Request a Quote
         </button>
@@ -291,13 +291,13 @@ export default function QuotesPage() {
           onClick={() => setActiveTab('quotes')}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
             activeTab === 'quotes'
-              ? 'bg-white text-[#0f2a3e] shadow-sm'
+              ? 'bg-surface text-brand shadow-sm'
               : 'text-fg-muted hover:text-fg-muted'
           }`}
         >
           Formal Quotes
           {actionableQuotes > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-[#C6A24E] text-white text-[10px] rounded-full font-bold">
+            <span className="ml-2 px-2 py-0.5 bg-accent text-white text-[10px] rounded-full font-bold">
               {actionableQuotes}
             </span>
           )}
@@ -306,7 +306,7 @@ export default function QuotesPage() {
           onClick={() => setActiveTab('requests')}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
             activeTab === 'requests'
-              ? 'bg-white text-[#0f2a3e] shadow-sm'
+              ? 'bg-surface text-brand shadow-sm'
               : 'text-fg-muted hover:text-fg-muted'
           }`}
         >
@@ -321,10 +321,10 @@ export default function QuotesPage() {
 
       {/* ──── Formal Quotes Tab ──── */}
       {activeTab === 'quotes' && (
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface rounded-xl border border-border overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="w-6 h-6 mx-auto border-3 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 mx-auto border-3 border-brand border-t-transparent rounded-full animate-spin" />
             </div>
           ) : quotes.length === 0 ? (
             <div className="p-12 text-center">
@@ -335,7 +335,7 @@ export default function QuotesPage() {
               <p className="text-fg-muted mb-6">Once Abel Lumber prepares a quote for you, it will appear here for review and approval.</p>
               <button
                 onClick={() => { setActiveTab('requests'); setShowModal(true) }}
-                className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
+                className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors"
               >
                 Request a Quote
               </button>
@@ -363,7 +363,7 @@ export default function QuotesPage() {
                     return (
                       <tr key={q.id} className={`hover:bg-surface-muted transition-colors ${needsAction ? 'bg-blue-50/30' : ''}`}>
                         <td className="px-6 py-4">
-                          <Link href={`/dashboard/quotes/${q.id}`} className="text-sm font-mono font-semibold text-[#0f2a3e] hover:underline">
+                          <Link href={`/dashboard/quotes/${q.id}`} className="text-sm font-mono font-semibold text-brand hover:underline">
                             {q.quoteNumber}
                           </Link>
                           <p className="text-[11px] text-fg-subtle mt-0.5">{formatDate(q.createdAt)}</p>
@@ -391,7 +391,7 @@ export default function QuotesPage() {
                               <button
                                 onClick={() => convertToOrder(q.id)}
                                 disabled={convertingId === q.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0f2a3e] text-white text-xs font-semibold rounded-lg hover:bg-[#163d59] transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg hover:bg-[#163d59] transition-colors disabled:opacity-50"
                               >
                                 {convertingId === q.id ? (
                                   <>
@@ -406,14 +406,14 @@ export default function QuotesPage() {
                             {needsAction && !isExpired ? (
                               <Link
                                 href={`/dashboard/quotes/${q.id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C6A24E] text-white text-xs font-semibold rounded-lg hover:bg-[#A8882A] transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-xs font-semibold rounded-lg hover:bg-accent-hover transition-colors"
                               >
                                 Review
                               </Link>
                             ) : (
                               <Link
                                 href={`/dashboard/quotes/${q.id}`}
-                                className="text-sm text-[#0f2a3e] font-medium hover:underline"
+                                className="text-sm text-brand font-medium hover:underline"
                               >
                                 View
                               </Link>
@@ -432,10 +432,10 @@ export default function QuotesPage() {
 
       {/* ──── Quote Requests Tab ──── */}
       {activeTab === 'requests' && (
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="bg-surface rounded-xl border border-border overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="w-6 h-6 mx-auto border-3 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 mx-auto border-3 border-brand border-t-transparent rounded-full animate-spin" />
             </div>
           ) : requests.length === 0 ? (
             <div className="p-12 text-center">
@@ -446,7 +446,7 @@ export default function QuotesPage() {
               <p className="text-fg-muted mb-6">Submit a new quote request for your project.</p>
               <button
                 onClick={() => setShowModal(true)}
-                className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors"
+                className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors"
               >
                 Request a Quote
               </button>
@@ -478,7 +478,7 @@ export default function QuotesPage() {
                           className="hover:bg-surface-muted transition-colors cursor-pointer"
                           onClick={() => setExpandedId(isExpanded ? null : req.id)}
                         >
-                          <td className="px-6 py-4 text-sm font-mono font-semibold text-[#1B2A4A]">
+                          <td className="px-6 py-4 text-sm font-mono font-semibold text-fg">
                             <span className="inline-block w-4 mr-1 text-fg-subtle">{isExpanded ? '▾' : '▸'}</span>
                             {req.referenceNumber}
                           </td>
@@ -560,8 +560,8 @@ export default function QuotesPage() {
       {/* ──── Request Quote Modal ──── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+          <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-fg">Request a Quote</h2>
               <button
                 onClick={() => { setShowModal(false); setError('') }}
@@ -584,31 +584,31 @@ export default function QuotesPage() {
                 <label className="block text-sm font-semibold text-fg mb-1">Project Name *</label>
                 <input type="text" name="projectName" value={formData.projectName} onChange={handleInputChange}
                   placeholder="e.g., Downtown Commercial Complex"
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-fg mb-1">Project Address *</label>
                 <input type="text" name="projectAddress" value={formData.projectAddress} onChange={handleInputChange}
                   placeholder="e.g., 123 Main St"
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-fg mb-1">City</label>
                   <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City"
-                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-fg mb-1">State</label>
                   <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="TX" maxLength={2}
-                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-fg mb-1">Zip</label>
                   <input type="text" name="zip" value={formData.zip} onChange={handleInputChange} placeholder="75001"
-                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
                 </div>
               </div>
 
@@ -616,34 +616,34 @@ export default function QuotesPage() {
                 <label className="block text-sm font-semibold text-fg mb-1">Project Description *</label>
                 <textarea name="description" value={formData.description} onChange={handleInputChange}
                   placeholder="Describe your project, scope, and requirements..." rows={3}
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-fg mb-1">Product Categories * (comma-separated)</label>
                 <input type="text" name="productCategories" value={formData.productCategories} onChange={handleInputChange}
                   placeholder="e.g., Interior Doors, Hardware, Trim"
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-fg mb-1">Estimated Square Footage</label>
                 <input type="number" name="estimatedSquareFootage" value={formData.estimatedSquareFootage} onChange={handleInputChange}
                   placeholder="e.g., 5000"
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-fg mb-1">Preferred Delivery Date</label>
                 <input type="date" name="preferredDeliveryDate" value={formData.preferredDeliveryDate} onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-fg mb-1">Additional Notes</label>
                 <textarea name="notes" value={formData.notes} onChange={handleInputChange}
                   placeholder="Any additional information..." rows={2}
-                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent resize-none" />
+                  className="w-full px-3 py-2 border border-border-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none" />
               </div>
 
               <div className="flex gap-3 justify-end pt-4 border-t border-border">
@@ -652,7 +652,7 @@ export default function QuotesPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting}
-                  className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg font-semibold hover:bg-[#A8882A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="px-4 py-2 bg-accent text-white rounded-lg font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   {submitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>

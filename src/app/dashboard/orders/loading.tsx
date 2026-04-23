@@ -15,7 +15,7 @@ export default function Loading() {
       </div>
 
       {/* Table/List skeleton */}
-      <div className="bg-white rounded-xl border border-border p-6">
+      <div className="bg-surface rounded-xl border border-border p-6">
         {/* Table header */}
         <div className="flex gap-4 pb-4 border-b border-border mb-4">
           <div className="h-4 bg-surface-muted rounded w-20" />

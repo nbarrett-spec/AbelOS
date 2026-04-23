@@ -10,7 +10,7 @@ export default function Loading() {
       {/* Message list with sidebar layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[600px]">
         {/* Conversations sidebar */}
-        <div className="bg-white rounded-xl border border-border p-4">
+        <div className="bg-surface rounded-xl border border-border p-4">
           <div className="h-10 bg-surface-muted rounded w-full mb-4" />
           {[...Array(5)].map((_, i) => (
             <div key={i} className="py-3 border-b border-border last:border-0">
@@ -21,7 +21,7 @@ export default function Loading() {
         </div>
 
         {/* Chat area */}
-        <div className="lg:col-span-3 bg-white rounded-xl border border-border p-6 flex flex-col">
+        <div className="lg:col-span-3 bg-surface rounded-xl border border-border p-6 flex flex-col">
           {/* Message header */}
           <div className="border-b border-border pb-4 mb-4">
             <div className="h-5 bg-surface-muted rounded w-48 mb-2" />

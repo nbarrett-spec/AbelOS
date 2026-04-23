@@ -43,7 +43,7 @@ const NOTIF_COLORS: Record<string, { bg: string; text: string; border: string }>
   delivery_in_transit: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-l-4 border-orange-400' },
   delivery_complete: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-l-4 border-green-400' },
   delivery_rescheduled: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-l-4 border-purple-400' },
-  invoice_created: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-l-4 border-slate-400' },
+  invoice_created: { bg: 'bg-slate-50', text: 'text-fg-muted', border: 'border-l-4 border-slate-400' },
   invoice_overdue: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-l-4 border-red-400' },
   payment_received: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-l-4 border-emerald-400' },
   general: { bg: 'bg-surface-muted', text: 'text-fg-muted', border: 'border-l-4 border-gray-400' },
@@ -190,7 +190,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-surface-muted">
-      <div className="bg-white border-b border-border sticky top-0 z-10">
+      <div className="bg-surface border-b border-border sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'all'
                 ? 'bg-brand text-white'
-                : 'bg-white text-fg-muted border border-border hover:border-border-strong'
+                : 'bg-surface text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
             All ({notifications.length})
@@ -228,7 +228,7 @@ export default function NotificationsPage() {
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === 'unread'
                 ? 'bg-brand text-white'
-                : 'bg-white text-fg-muted border border-border hover:border-border-strong'
+                : 'bg-surface text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
             Unread ({notifications.filter(n => !n.read).length})
@@ -245,7 +245,7 @@ export default function NotificationsPage() {
             </div>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="bg-white rounded-lg border border-border py-12 text-center">
+          <div className="bg-surface rounded-lg border border-border py-12 text-center">
             <svg className="w-16 h-16 text-fg-subtle mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
@@ -278,7 +278,7 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={notif.id}
-                  className={`${colors.border} bg-white border border-border rounded-lg p-4 transition hover:shadow-md cursor-pointer ${
+                  className={`${colors.border} bg-surface border border-border rounded-lg p-4 transition hover:shadow-md cursor-pointer ${
                     !notif.read ? 'ring-1 ring-signal/20' : ''
                   }`}
                   onClick={() => handleNotificationClick(notif)}

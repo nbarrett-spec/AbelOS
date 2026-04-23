@@ -243,7 +243,7 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C6A24E] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
           <p className="text-fg-muted">Loading settings...</p>
         </div>
       </div>
@@ -253,7 +253,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-surface-muted">
       {/* Header */}
-      <div className="bg-white border-b border-border">
+      <div className="bg-surface border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-4">
             <Link
@@ -263,7 +263,7 @@ export default function SettingsPage() {
               <ChevronLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-[#1B2A4A]">
+              <h1 className="text-3xl font-bold text-fg">
                 Account Settings
               </h1>
               <p className="text-fg-muted mt-1">
@@ -292,8 +292,8 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Section 1: Company Profile */}
-          <div className="bg-white rounded-lg shadow-sm border border-border">
-            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
+          <div className="bg-surface rounded-lg shadow-sm border border-border">
+            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-brand to-brand-hover">
               <h2 className="text-xl font-bold text-white">Company Profile</h2>
             </div>
 
@@ -310,7 +310,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('companyName', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactName', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -340,7 +340,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactEmail', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -355,7 +355,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('contactPhone', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -370,7 +370,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('address', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -385,7 +385,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('city', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('state', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -415,7 +415,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleProfileChange('zip', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
               </div>
@@ -425,7 +425,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSaveProfile}
                   disabled={profileSaving}
-                  className="px-6 py-2 bg-[#C6A24E] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {profileSaving ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -434,8 +434,8 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 2: Change Password */}
-          <div className="bg-white rounded-lg shadow-sm border border-border">
-            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
+          <div className="bg-surface rounded-lg shadow-sm border border-border">
+            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-brand to-brand-hover">
               <h2 className="text-xl font-bold text-white">Change Password</h2>
             </div>
 
@@ -452,7 +452,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('currentPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('newPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                   <p className="text-xs text-fg-muted mt-1">
                     Minimum 8 characters
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handlePasswordChange('confirmPassword', e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-2 border border-border-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -502,7 +502,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSavePassword}
                   disabled={passwordSaving}
-                  className="px-6 py-2 bg-[#C6A24E] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {passwordSaving ? 'Saving...' : 'Update Password'}
                 </button>
@@ -511,8 +511,8 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 3: Notification Preferences */}
-          <div className="bg-white rounded-lg shadow-sm border border-border">
-            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-[#1B2A4A] to-[#2a3f5e]">
+          <div className="bg-surface rounded-lg shadow-sm border border-border">
+            <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-brand to-brand-hover">
               <h2 className="text-xl font-bold text-white">
                 Notification Preferences
               </h2>
@@ -533,11 +533,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('orderUpdates')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.orderUpdates ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.orderUpdates ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.orderUpdates ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -557,11 +557,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('quoteReady')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.quoteReady ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.quoteReady ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.quoteReady ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -581,11 +581,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('deliveryAlerts')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.deliveryAlerts ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.deliveryAlerts ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.deliveryAlerts ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -605,11 +605,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('warrantyUpdates')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.warrantyUpdates ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.warrantyUpdates ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.warrantyUpdates ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -629,11 +629,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('invoiceAlerts')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.invoiceAlerts ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.invoiceAlerts ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.invoiceAlerts ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -653,11 +653,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('promotions')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.promotions ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.promotions ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.promotions ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -677,11 +677,11 @@ export default function SettingsPage() {
                   <button
                     onClick={() => handlePreferenceChange('weeklyDigest')}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      preferences.weeklyDigest ? 'bg-[#C6A24E]' : 'bg-gray-300'
+                      preferences.weeklyDigest ? 'bg-accent' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                         preferences.weeklyDigest ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -694,7 +694,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSavePreferences}
                   disabled={preferencesSaving}
-                  className="px-6 py-2 bg-[#C6A24E] text-white font-medium rounded-lg hover:bg-[#d66f1a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {preferencesSaving ? 'Saving...' : 'Save Preferences'}
                 </button>

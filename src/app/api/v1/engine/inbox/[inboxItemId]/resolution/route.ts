@@ -119,6 +119,21 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const item = rows[0]
 
+    // brainLearnings is a newer additive column — select in isolation so an
+    // un-migrated DB returns null rather than blowing up the whole request.
+    let brainLearnings: Record<string, any> | null = null
+    try {
+      const learnRows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT "brainLearnings" FROM "InboxItem" WHERE "id" = $1 LIMIT 1`,
+        inboxItemId
+      )
+      if (learnRows.length > 0) {
+        brainLearnings = learnRows[0].brainLearnings ?? null
+      }
+    } catch {
+      // column may not exist yet — leave null
+    }
+
     // Surface whether the item is actually resolved. PENDING / SNOOZED
     // without resolvedAt is "still open" — the engine should keep polling
     // /pending instead of hammering this endpoint.
@@ -331,6 +346,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       result: item.result ?? null,
       snoozedUntil: item.snoozedUntil,
       brainAcknowledgedAt: item.brainAcknowledgedAt,
+      brainLearnings,
       item: {
         id: item.id,
         type: item.type,

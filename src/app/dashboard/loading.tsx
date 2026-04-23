@@ -10,7 +10,7 @@ export default function Loading() {
       {/* Stats grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-border p-5">
+          <div key={i} className="bg-surface rounded-xl border border-border p-5">
             <div className="h-3 bg-surface-muted rounded w-20 mb-3" />
             <div className="h-7 bg-surface-muted rounded w-24 mb-2" />
             <div className="h-2 bg-surface-muted rounded w-16" />
@@ -23,7 +23,7 @@ export default function Loading() {
         {/* Left column - projects and orders */}
         <div className="lg:col-span-2 space-y-6">
           {/* Projects section */}
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <div className="h-5 bg-surface-muted rounded w-32 mb-4" />
             {[...Array(3)].map((_, i) => (
               <div key={i} className="py-4 border-b border-border last:border-0">
@@ -34,7 +34,7 @@ export default function Loading() {
           </div>
 
           {/* Orders section */}
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <div className="h-5 bg-surface-muted rounded w-32 mb-4" />
             {[...Array(4)].map((_, i) => (
               <div key={i} className="flex gap-4 py-3 border-b border-border last:border-0">
@@ -49,7 +49,7 @@ export default function Loading() {
         {/* Right column - notifications and activity */}
         <div className="space-y-6">
           {/* Notifications */}
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <div className="h-5 bg-surface-muted rounded w-28 mb-4" />
             {[...Array(3)].map((_, i) => (
               <div key={i} className="py-3 border-b border-border last:border-0">
@@ -60,7 +60,7 @@ export default function Loading() {
           </div>
 
           {/* Quick actions */}
-          <div className="bg-white rounded-xl border border-border p-6">
+          <div className="bg-surface rounded-xl border border-border p-6">
             <div className="h-5 bg-surface-muted rounded w-32 mb-4" />
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-10 bg-surface-muted rounded mb-3 last:mb-0" />
