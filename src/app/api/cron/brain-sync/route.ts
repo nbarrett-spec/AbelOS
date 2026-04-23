@@ -679,17 +679,17 @@ export async function GET(request: NextRequest) {
     // 5. Record last sync timestamp
     const syncTimestamp = new Date().toISOString()
     const existingTs: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "AgentConfig" WHERE "key" = 'brain_sync_last' LIMIT 1`
+      `SELECT "id" FROM "AgentConfig" WHERE "agentRole" = 'brain' AND "configKey" = 'brain_sync_last' LIMIT 1`
     )
     if (existingTs.length > 0) {
       await prisma.$executeRawUnsafe(
-        `UPDATE "AgentConfig" SET "value" = $1, "updatedAt" = NOW() WHERE "key" = 'brain_sync_last'`,
+        `UPDATE "AgentConfig" SET "configValue" = $1::jsonb, "updatedAt" = NOW() WHERE "agentRole" = 'brain' AND "configKey" = 'brain_sync_last'`,
         JSON.stringify({ lastSync: syncTimestamp, stats })
       )
     } else {
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "AgentConfig" ("id", "key", "value", "createdAt", "updatedAt")
-         VALUES ($1, 'brain_sync_last', $2, NOW(), NOW())`,
+        `INSERT INTO "AgentConfig" ("id", "agentRole", "configKey", "configValue", "description", "updatedBy", "createdAt", "updatedAt")
+         VALUES ($1, 'brain', 'brain_sync_last', $2::jsonb, 'Brain sync last-run timestamp + stats', 'brain-sync', NOW(), NOW())`,
         generateId('ac'),
         JSON.stringify({ lastSync: syncTimestamp, stats })
       )

@@ -118,7 +118,6 @@ async function calculateFinancialSnapshot() {
 
     // ─── Store Snapshot via raw SQL ─────────────────────────────────────
     const snapshotId = `fs_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-    const now = new Date().toISOString()
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO "FinancialSnapshot" (
@@ -126,11 +125,11 @@ async function calculateFinancialSnapshot() {
         "arCurrent", "ar30", "ar60", "ar90Plus", dso, dpo, "currentRatio",
         "revenueMonth", "revenuePrior", "revenueYTD", "openPOTotal",
         "pendingInvoices", "overdueARPct", "topExposure", "createdAt"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+      ) VALUES ($1, $2::timestamp, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())`,
       snapshotId, today.toISOString(), cashOnHand, arTotal, apTotal, netCashPosition,
       arCurrent, ar30, ar60, ar90Plus, dso, dpo, currentRatio,
       revenueMonth, revenuePrior, revenueYTD, openPOTotal,
-      pendingInvoices, overdueARPct, JSON.stringify(topExposures), now
+      pendingInvoices, overdueARPct, JSON.stringify(topExposures)
     )
 
     return {
