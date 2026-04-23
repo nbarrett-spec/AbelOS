@@ -18,6 +18,9 @@
  * Idempotent on (builderId, email) — safe to re-run.
  *
  * Run:  node scripts/seed-brookfield-contacts.mjs
+ *
+ * Verified 2026-04-23: 5 contacts seeded for Builder cmmzrukex027i93op82wtbgg4
+ * (Brookfield Homes). Breakdown: 1 PURCHASING (Amanda, primary), 4 OTHER.
  */
 
 import { PrismaClient } from '@prisma/client';

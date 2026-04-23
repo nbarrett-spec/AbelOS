@@ -329,9 +329,9 @@ export default function SalesPipelinePage() {
   const totalValue = Object.values(pipeline).reduce((sum, stage) => sum + stage.stats.totalValue, 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream">
       {/* Header */}
-      <div className="bg-[#0f2a3e] text-white px-8 py-8">
+      <div className="bg-walnut-600 text-white px-8 py-8">
         <div className="max-w-full">
           <h1 className="text-3xl font-bold">Sales Pipeline</h1>
           <p className="text-amber-100 mt-2">Kanban view of all deals in progress</p>
@@ -340,17 +340,17 @@ export default function SalesPipelinePage() {
 
       <div className="max-w-full px-8 py-8">
         {/* Summary Stats */}
-        <div className="bg-gradient-to-r from-[#0f2a3e] to-[#5a3f2a] text-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-gradient-to-r from-walnut-600 to-walnut-500 text-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex gap-12">
               <div>
                 <p className="text-sm font-medium text-amber-100 mb-1">Total Deals</p>
-                <p className="text-3xl font-bold">{totalDeals}</p>
+                <p className="text-3xl font-bold font-mono tabular-nums">{totalDeals}</p>
               </div>
               <div className="border-l border-amber-400"></div>
               <div>
                 <p className="text-sm font-medium text-amber-100 mb-1">Pipeline Value</p>
-                <p className="text-3xl font-bold">{formatCurrency(totalValue)}</p>
+                <p className="text-3xl font-bold font-mono tabular-nums">{formatCurrency(totalValue)}</p>
               </div>
             </div>
           </div>
@@ -438,7 +438,7 @@ export default function SalesPipelinePage() {
                       </div>
                       <span className="bg-white bg-opacity-70 px-2.5 py-1 rounded-full text-sm font-semibold text-gray-700">{filteredDeals.length}</span>
                     </div>
-                    <div className="text-sm font-semibold text-gray-700">
+                    <div className="text-sm font-semibold text-gray-700 font-mono tabular-nums">
                       {filteredDeals.length > 0 ? formatCurrency(filteredDeals.reduce((sum, d) => sum + d.dealValue, 0)) : '—'}
                     </div>
                   </div>
@@ -472,7 +472,7 @@ export default function SalesPipelinePage() {
                           </div>
 
                           {/* Deal Value */}
-                          <p className="font-bold text-base text-[#C6A24E] mb-2">{formatCurrency(deal.dealValue)}</p>
+                          <p className="font-bold text-base text-gold-dark mb-2 font-mono tabular-nums">{formatCurrency(deal.dealValue)}</p>
 
                           {/* Probability Badge + Expected Close */}
                           <div className="flex items-center justify-between mb-2 gap-2">
@@ -489,7 +489,7 @@ export default function SalesPipelinePage() {
 
                           {/* Owner Initials */}
                           <div className="flex items-center gap-1 pt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#0f2a3e] text-white text-xs font-bold">{deal.owner?.initials || 'U'}</div>
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-walnut-600 text-white text-xs font-bold">{deal.owner?.initials || 'U'}</div>
                             <p className="text-xs text-gray-500">{deal.owner?.firstName || 'Unknown'}</p>
                           </div>
 
