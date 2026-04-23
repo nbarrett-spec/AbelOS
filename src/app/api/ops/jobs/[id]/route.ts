@@ -83,6 +83,14 @@ export async function GET(
       readinessCheck: job.readinessCheck,
       materialsLocked: job.materialsLocked,
       loadConfirmed: job.loadConfirmed,
+      // Material Confirm Checkpoint fields (added via ALTER in cron pre-flight).
+      // Using j.* in the SELECT already surfaces these — we just expose them
+      // explicitly so the Job detail banner doesn't need a second fetch.
+      materialConfirmedAt: job.materialConfirmedAt ?? null,
+      materialConfirmedBy: job.materialConfirmedBy ?? null,
+      materialConfirmNote: job.materialConfirmNote ?? null,
+      materialEscalatedAt: job.materialEscalatedAt ?? null,
+      materialEscalatedTo: job.materialEscalatedTo ?? null,
       scheduledDate: job.scheduledDate,
       actualDate: job.actualDate,
       completedAt: job.completedAt,

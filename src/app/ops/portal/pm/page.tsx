@@ -53,6 +53,7 @@ export default function PMPortal() {
   const [openTasks, setOpenTasks] = useState<Task[]>([])
   const [recentNotes, setRecentNotes] = useState<DecisionNote[]>([])
   const [topBuilders, setTopBuilders] = useState<Builder[]>([])
+  const [materialConfirmPending, setMaterialConfirmPending] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -143,6 +144,21 @@ export default function PMPortal() {
 
   useEffect(() => {
     loadData()
+  }, [])
+
+  // Material Confirm Checkpoint pending count — separate fetch so it doesn't
+  // gate the main dashboard render if the endpoint errors.
+  useEffect(() => {
+    let cancel = false
+    ;(async () => {
+      try {
+        const r = await fetch('/api/ops/pm/material-confirm-pending', { cache: 'no-store' })
+        if (!r.ok || cancel) return
+        const j = await r.json()
+        if (!cancel) setMaterialConfirmPending(Number(j.count) || 0)
+      } catch { /* ignore */ }
+    })()
+    return () => { cancel = true }
   }, [])
 
   const statusColors: Record<string, string> = {
@@ -372,6 +388,25 @@ export default function PMPortal() {
             </Link>
             <Link href="/ops/portal/pm/material-eta" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#0f2a3e] transition-all text-sm font-medium text-gray-900">
               📦 Material ETA
+            </Link>
+            <Link
+              href="/ops/portal/pm/material?filter=checkpoint-pending"
+              className={`flex items-center justify-between px-4 py-3 rounded-lg border transition-all text-sm font-medium ${
+                materialConfirmPending && materialConfirmPending > 0
+                  ? 'border-[#C0392B] bg-red-50 hover:bg-red-100 text-red-900'
+                  : 'border-gray-200 hover:bg-green-50 hover:border-[#27AE60] text-gray-900'
+              }`}
+            >
+              <span>🛑 Material Confirms Pending</span>
+              <span
+                className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+                  materialConfirmPending && materialConfirmPending > 0
+                    ? 'bg-[#C0392B] text-white'
+                    : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                {materialConfirmPending ?? '…'}
+              </span>
             </Link>
             <Link href="/ops/portal/pm/scorecard" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all text-sm font-medium text-gray-900">
               📈 PM Scorecard

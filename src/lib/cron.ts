@@ -253,6 +253,8 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'brain-sync', schedule: '0 */4 * * *', description: 'Push Aegis deltas to NUC brain (non-staff tables)' },
   { name: 'brain-sync-staff', schedule: '30 */4 * * *', description: 'Push Aegis Staff deltas to NUC brain' },
   { name: 'daily-digest', schedule: '0 11 * * *', description: 'Per-staff daily digest email (6 AM CT) — inbox, tasks, deliveries, invoices by role' },
+  { name: 'shortage-forecast', schedule: '0 */4 * * *', description: 'ATP shortage forecast: scan active jobs, upsert SmartPO recommendations + InboxItems for RED lines' },
+  { name: 'material-confirm-checkpoint', schedule: '0 13 * * *', description: 'T-7 Material Confirm Checkpoint: PM sign-off gate for jobs delivering within 7 days; auto-escalates to Clint at T-3' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import DocumentPanel from '@/components/DocumentPanel'
 import PresenceAvatars from '@/components/ui/PresenceAvatars'
 import HyphenDocumentsTab from './HyphenDocumentsTab'
+import AllocationPanel from './AllocationPanel'
+import MaterialConfirmBanner from './MaterialConfirmBanner'
 
 const STATUS_COLORS: Record<string, string> = {
   CREATED: '#95A5A6',
@@ -119,7 +121,7 @@ export default function JobDetailPage() {
     passing: boolean
     openPunchItems: number
   } | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'allocation'>('overview')
   const [hyphenDocCount, setHyphenDocCount] = useState<number>(0)
 
   useEffect(() => {
@@ -363,6 +365,13 @@ export default function JobDetailPage() {
         </div>
       </div>
 
+      {/* T-7 Material Confirm checkpoint banner — shows when scheduled within 7 days & not yet confirmed. */}
+      <MaterialConfirmBanner
+        jobId={job.id}
+        jobStatus={job.status}
+        scheduledDate={job.scheduledDate}
+      />
+
       {/* QC status banner — blocks the eye whenever a failing inspection exists. */}
       {qcStatus?.failing && (
         <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 flex items-center justify-between">
@@ -441,11 +450,27 @@ export default function JobDetailPage() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setActiveTab('allocation')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px inline-flex items-center gap-2 ${
+            activeTab === 'allocation'
+              ? 'border-[#0f2a3e] text-[#0f2a3e]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Allocation
+        </button>
       </div>
 
       {activeTab === 'documents' && (
         <div className="mb-6">
           <HyphenDocumentsTab jobId={jobId} />
+        </div>
+      )}
+
+      {activeTab === 'allocation' && (
+        <div className="mb-6">
+          <AllocationPanel jobId={jobId} />
         </div>
       )}
 
