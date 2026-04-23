@@ -164,6 +164,14 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   // Schedule & dispatch — PM is PRIMARY here (they schedule crews)
   '/ops/schedule': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
   '/ops/crews': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
+  // Material Calendar — the 30-day shortage visibility lens
+  '/ops/material-calendar': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  // SmartPO queue — auto-generated PO recommendations from ATP shortage forecast
+  '/ops/purchasing/smart-po': ['ADMIN', 'MANAGER', 'PURCHASING'],
+  // PM Material Status dashboard — per-PM green/amber/red job view
+  '/ops/portal/pm/material': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+  '/api/ops/portal/pm/material': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+  '/api/ops/purchasing/smart-po': ['ADMIN', 'MANAGER', 'PURCHASING'],
 
   // Pricing — PM added
   '/ops/pricing': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],

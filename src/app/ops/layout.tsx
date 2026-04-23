@@ -100,6 +100,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/ops/projects', label: 'PM Command Center', icon: '🎛️' },
       { href: '/ops/jobs', label: 'Job Pipeline', icon: '🔧' },
+      { href: '/ops/material-calendar', label: 'Material Calendar', icon: '📅' },
       { href: '/ops/schedule', label: 'Schedule & Dispatch', icon: '📅' },
       { href: '/ops/crews', label: 'Crews', icon: '👷' },
       { href: '/ops/inspections', label: 'Inspections', icon: '✅' },
@@ -188,7 +189,9 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/inventory', label: 'Inventory', icon: '📦' },
       { href: '/ops/inventory/intelligence', label: 'Inventory Intelligence', icon: '🧠' },
       { href: '/ops/inventory/allocations', label: 'Allocations', icon: '📍' },
+      { href: '/ops/material-calendar', label: 'Material Calendar', icon: '📅' },
       { href: '/ops/purchasing', label: 'Purchase Orders', icon: '🛒' },
+      { href: '/ops/purchasing/smart-po', label: 'SmartPO Queue', icon: '⚡' },
       { href: '/ops/purchasing/optimize', label: 'Purchasing Optimizer', icon: '⚖️' },
       { href: '/ops/procurement-intelligence', label: 'AI Procurement Brain', icon: '🤖' },
       { href: '/ops/mrp', label: 'MRP — Forward Demand', icon: '🎯' },
@@ -272,6 +275,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/ops/portal', label: 'Portal Hub', icon: '🏢' },
       { href: '/ops/portal/pm', label: 'PM Portal', icon: '📋' },
+      { href: '/ops/portal/pm/material', label: 'My Material Status', icon: '🎯' },
       { href: '/ops/portal/pm/briefing', label: 'Morning Briefing', icon: '☀️' },
       { href: '/ops/portal/pm/material-eta', label: 'Material ETA', icon: '📦' },
       { href: '/ops/portal/pm/scorecard', label: 'PM Scorecard', icon: '📈' },
