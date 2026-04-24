@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
+import {
+  FinancialYtdStrip,
+  FinancialMonthTable,
+  FinancialLineChart,
+  YearQuarterControls,
+  type QuarterFilter,
+} from '@/components/FinancialChart'
 
 interface DashboardData {
   cashPosition: {
@@ -53,11 +61,25 @@ export default function FinancialDashboard() {
   const [cashFlowHealth, setCashFlowHealth] = useState<any>(null)
   const [canViewFinancials, setCanViewFinancials] = useState(false)
 
+  // ── YTD / per-month rollup ──
+  const currentYear = new Date().getUTCFullYear()
+  const currentMonth = new Date().getUTCMonth() + 1
+  const [rollup, setRollup] = useState<MonthlyRollup | null>(null)
+  const [rollupYear, setRollupYear] = useState<number>(currentYear)
+  const [quarter, setQuarter] = useState<QuarterFilter>('YTD')
+
   useEffect(() => {
     fetchData()
     fetchCashFlowHealth()
     fetchPermissions()
   }, [])
+
+  useEffect(() => {
+    fetch(`/api/ops/finance/monthly-rollup?year=${rollupYear}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !d.error) setRollup(d) })
+      .catch(() => { /* silent */ })
+  }, [rollupYear])
 
   const fetchPermissions = async () => {
     try {
@@ -125,12 +147,41 @@ export default function FinancialDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Financial Dashboard</h1>
-        <p className="text-gray-500 mt-1">
-          CFO's command center - Cash position, AR aging, AP summary, and alerts
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Financial Dashboard</h1>
+          <p className="text-gray-500 mt-1">
+            CFO's command center - Cash position, AR aging, AP summary, and alerts
+          </p>
+        </div>
+        {rollup && (
+          <YearQuarterControls
+            year={rollupYear}
+            availableYears={[currentYear - 2, currentYear - 1, currentYear]}
+            onYearChange={setRollupYear}
+            quarter={quarter}
+            onQuarterChange={setQuarter}
+          />
+        )}
       </div>
+
+      {/* ── YTD KPI strip + per-month table + chart ───────────────────── */}
+      {rollup && (
+        <div className="space-y-4">
+          <FinancialYtdStrip ytd={rollup.ytd} restricted={!canViewFinancials} />
+          <FinancialMonthTable
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 12}
+            quarter={quarter}
+            restricted={!canViewFinancials}
+          />
+          <FinancialLineChart
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 0}
+            restricted={!canViewFinancials}
+          />
+        </div>
+      )}
 
       {/* Cash Position Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">

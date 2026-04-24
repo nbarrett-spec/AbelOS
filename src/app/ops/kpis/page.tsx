@@ -5,6 +5,14 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Download, Link as LinkIcon, Mail, Copy, Check, Calendar, RefreshCw } from 'lucide-react'
 import { PageHeader, Button } from '@/components/ui'
+import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
+import {
+  FinancialYtdStrip,
+  FinancialMonthTable,
+  FinancialLineChart,
+  YearQuarterControls,
+  type QuarterFilter,
+} from '@/components/FinancialChart'
 
 interface KPIData {
   asOf?: string
@@ -50,6 +58,20 @@ export default function KPIDashboard() {
   const [data, setData] = useState<KPIData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+
+  // ── YTD rollup ──
+  const currentYear = new Date().getUTCFullYear()
+  const currentMonth = new Date().getUTCMonth() + 1
+  const [rollup, setRollup] = useState<MonthlyRollup | null>(null)
+  const [rollupYear, setRollupYear] = useState<number>(currentYear)
+  const [quarter, setQuarter] = useState<QuarterFilter>('YTD')
+
+  useEffect(() => {
+    fetch(`/api/ops/finance/monthly-rollup?year=${rollupYear}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !d.error) setRollup(d) })
+      .catch(() => { /* silent */ })
+  }, [rollupYear])
 
   const loadKPIs = useCallback(async () => {
     try {
@@ -250,6 +272,35 @@ export default function KPIDashboard() {
           </span>
         )}
       </div>
+
+      {/* ── YTD KPI strip + per-month table + chart ───────────────────── */}
+      {rollup && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-wide font-semibold text-gray-500">Year to Date</div>
+              <div className="text-sm text-gray-600">{rollup.year} · live from Orders / Invoices / Payments / POs</div>
+            </div>
+            <YearQuarterControls
+              year={rollupYear}
+              availableYears={[currentYear - 2, currentYear - 1, currentYear]}
+              onYearChange={setRollupYear}
+              quarter={quarter}
+              onQuarterChange={setQuarter}
+            />
+          </div>
+          <FinancialYtdStrip ytd={rollup.ytd} />
+          <FinancialMonthTable
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 12}
+            quarter={quarter}
+          />
+          <FinancialLineChart
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 0}
+          />
+        </div>
+      )}
 
       {/* ROW 1: Hero KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

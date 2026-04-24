@@ -13,6 +13,14 @@ import {
   Card, CardHeader, CardTitle, CardDescription, CardBody,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
+import {
+  FinancialYtdStrip,
+  FinancialMonthTable,
+  FinancialLineChart,
+  YearQuarterControls,
+  type QuarterFilter,
+} from '@/components/FinancialChart'
 
 // ── Types (preserve API contract from /api/ops/executive/dashboard) ──────
 
@@ -88,10 +96,24 @@ export default function ExecutiveDashboard() {
   const [canViewFinancials, setCanViewFinancials] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
+  // ── YTD rollup ──
+  const currentYear = new Date().getUTCFullYear()
+  const currentMonth = new Date().getUTCMonth() + 1
+  const [rollup, setRollup] = useState<MonthlyRollup | null>(null)
+  const [rollupYear, setRollupYear] = useState<number>(currentYear)
+  const [quarter, setQuarter] = useState<QuarterFilter>('YTD')
+
   useEffect(() => {
     fetchData()
     fetchPermissions()
   }, [])
+
+  useEffect(() => {
+    fetch(`/api/ops/finance/monthly-rollup?year=${rollupYear}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !d.error) setRollup(d) })
+      .catch(() => { /* silent */ })
+  }, [rollupYear])
 
   const fetchPermissions = async () => {
     try {
@@ -175,6 +197,15 @@ export default function ExecutiveDashboard() {
         description="Revenue, pipeline, and operations at a glance."
         actions={
           <>
+            {rollup && (
+              <YearQuarterControls
+                year={rollupYear}
+                availableYears={[currentYear - 2, currentYear - 1, currentYear]}
+                onYearChange={setRollupYear}
+                quarter={quarter}
+                onQuarterChange={setQuarter}
+              />
+            )}
             <button onClick={fetchData} className="btn btn-secondary btn-sm" disabled={refreshing}>
               <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
               Refresh
@@ -186,6 +217,24 @@ export default function ExecutiveDashboard() {
           </>
         }
       />
+
+      {/* ── YTD KPI strip + per-month table + chart ───────────────────── */}
+      {rollup && (
+        <div className="space-y-4">
+          <FinancialYtdStrip ytd={rollup.ytd} restricted={!canViewFinancials} />
+          <FinancialMonthTable
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 12}
+            quarter={quarter}
+            restricted={!canViewFinancials}
+          />
+          <FinancialLineChart
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 0}
+            restricted={!canViewFinancials}
+          />
+        </div>
+      )}
 
       {/* ── Alerts strip ──────────────────────────────────────────────── */}
       {hasAlerts && (

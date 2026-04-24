@@ -18,6 +18,14 @@ import {
   X,
 } from 'lucide-react'
 import { PageHeader, Button } from '@/components/ui'
+import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
+import {
+  FinancialYtdStrip,
+  FinancialMonthTable,
+  FinancialLineChart,
+  YearQuarterControls,
+  type QuarterFilter,
+} from '@/components/FinancialChart'
 
 interface ReportData {
   period: number
@@ -60,6 +68,20 @@ export default function ReportsPage() {
   const [data, setData] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('30')
+
+  // ── YTD rollup ──
+  const currentYear = new Date().getUTCFullYear()
+  const currentMonth = new Date().getUTCMonth() + 1
+  const [rollup, setRollup] = useState<MonthlyRollup | null>(null)
+  const [rollupYear, setRollupYear] = useState<number>(currentYear)
+  const [quarter, setQuarter] = useState<QuarterFilter>('YTD')
+
+  useEffect(() => {
+    fetch(`/api/ops/finance/monthly-rollup?year=${rollupYear}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !d.error) setRollup(d) })
+      .catch(() => { /* silent */ })
+  }, [rollupYear])
 
   // Template panel state
   const [activeTemplate, setActiveTemplate] = useState<TemplateId | null>(null)
@@ -228,6 +250,35 @@ export default function ReportsPage() {
           </div>
         }
       />
+
+      {/* ── YTD KPI strip + per-month table + chart ───────────────────── */}
+      {rollup && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-wide font-semibold text-gray-500">Year to Date</div>
+              <div className="text-sm text-gray-600">{rollup.year} · revenue, COGS, GP, invoices, payments</div>
+            </div>
+            <YearQuarterControls
+              year={rollupYear}
+              availableYears={[currentYear - 2, currentYear - 1, currentYear]}
+              onYearChange={setRollupYear}
+              quarter={quarter}
+              onQuarterChange={setQuarter}
+            />
+          </div>
+          <FinancialYtdStrip ytd={rollup.ytd} />
+          <FinancialMonthTable
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 12}
+            quarter={quarter}
+          />
+          <FinancialLineChart
+            months={rollup.months}
+            currentMonth={rollupYear === currentYear ? currentMonth : 0}
+          />
+        </div>
+      )}
 
       {/* ── Report Templates ─────────────────────────────────────────────── */}
       <section className="rounded-xl border bg-white p-5">
