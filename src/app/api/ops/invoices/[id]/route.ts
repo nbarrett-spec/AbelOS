@@ -38,10 +38,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const inv = rows[0]
 
-    // Get items
+    // Get items — include lineType + any existing Installation/ScheduleEntry
+    // assignment so the UI can render "Already scheduled on X by crew Y".
     const items: any[] = await prisma.$queryRawUnsafe(`
-      SELECT "id", "invoiceId", "productId", "description", "quantity", "unitPrice", "lineTotal"
-      FROM "InvoiceItem" WHERE "invoiceId" = $1
+      SELECT
+        ii."id", ii."invoiceId", ii."productId", ii."description",
+        ii."quantity", ii."unitPrice", ii."lineTotal",
+        COALESCE(ii."lineType", 'MATERIAL') AS "lineType",
+        ins."id" AS "installationId",
+        ins."installNumber" AS "installationNumber",
+        ins."scheduledDate" AS "installationScheduledDate",
+        ins."status"::text AS "installationStatus",
+        ins."crewId" AS "installationCrewId",
+        insc."name" AS "installationCrewName",
+        se."id" AS "scheduleEntryId",
+        se."scheduledDate" AS "scheduleEntryScheduledDate",
+        se."status"::text AS "scheduleEntryStatus",
+        se."crewId" AS "scheduleEntryCrewId",
+        sec."name" AS "scheduleEntryCrewName"
+      FROM "InvoiceItem" ii
+      LEFT JOIN LATERAL (
+        SELECT * FROM "Installation"
+        WHERE "invoiceItemId" = ii."id"
+        ORDER BY "createdAt" DESC LIMIT 1
+      ) ins ON TRUE
+      LEFT JOIN "Crew" insc ON insc."id" = ins."crewId"
+      LEFT JOIN LATERAL (
+        SELECT * FROM "ScheduleEntry"
+        WHERE "invoiceItemId" = ii."id"
+        ORDER BY "createdAt" DESC LIMIT 1
+      ) se ON TRUE
+      LEFT JOIN "Crew" sec ON sec."id" = se."crewId"
+      WHERE ii."invoiceId" = $1
     `, id)
 
     // Get payments

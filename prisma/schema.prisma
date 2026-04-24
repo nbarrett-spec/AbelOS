@@ -1353,6 +1353,10 @@ model ScheduleEntry {
   startedAt   DateTime?
   completedAt DateTime?
 
+  // Back-ref to the invoice line that triggered this entry (loose, nullable).
+  invoiceItemId String?
+  invoiceItem   InvoiceItem? @relation(fields: [invoiceItemId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1360,6 +1364,7 @@ model ScheduleEntry {
   @@index([crewId])
   @@index([status])
   @@index([jobId])
+  @@index([invoiceItemId])
 }
 
 enum ScheduleType {
@@ -1527,6 +1532,10 @@ model Installation {
 
   notes String?
 
+  // Back-ref to the invoice line that triggered this install (loose, nullable).
+  invoiceItemId String?
+  invoiceItem   InvoiceItem? @relation(fields: [invoiceItemId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1534,6 +1543,7 @@ model Installation {
   @@index([status])
   @@index([crewId])
   @@index([installNumber])
+  @@index([invoiceItemId])
 }
 
 enum InstallationStatus {
@@ -1892,6 +1902,14 @@ model InvoiceItem {
   quantity    Int
   unitPrice   Float
   lineTotal   Float
+
+  // MATERIAL | LABOR | DELIVERY | SERVICE | OTHER.
+  // Only LABOR lines are clickable/schedulable in the UI.
+  lineType String @default("MATERIAL")
+
+  // Back-refs for schedulable lines (loose, no FK — see raw-SQL migration).
+  installations   Installation[]
+  scheduleEntries ScheduleEntry[]
 
   @@index([invoiceId])
   @@index([productId])

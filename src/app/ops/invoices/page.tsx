@@ -461,7 +461,11 @@ export default function InvoicesPage() {
               <tbody className="divide-y">
                 {filteredInvoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-[#0f2a3e]">{invoice.invoiceNumber}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-[#0f2a3e]">
+                      <Link href={`/ops/invoices/${invoice.id}`} className="hover:underline">
+                        {invoice.invoiceNumber}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{invoice.builderName || 'Unknown'}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.total)}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{invoice.dueDate ? formatDate(invoice.dueDate) : '-'}</td>

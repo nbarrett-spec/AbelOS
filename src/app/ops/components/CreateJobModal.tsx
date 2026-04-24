@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Modal } from './Modal'
+import { JOB_TYPE_OPTIONS, previewJobNumber, type JobType } from '@/lib/job-types'
 
 interface Builder {
   id: string
@@ -46,6 +47,7 @@ export function CreateJobModal({
     lotBlock: '',
     jobAddress: '',
     scopeType: 'DOORS_AND_TRIM',
+    jobType: '' as JobType | '',
     dropPlan: 'Single Drop',
     assignedPMId: '',
     scheduledDate: '',
@@ -106,6 +108,11 @@ export function CreateJobModal({
         lotBlock: formData.lotBlock || undefined,
         jobAddress: formData.jobAddress || undefined,
         scopeType: formData.scopeType,
+        // jobType is optional — when set (with jobAddress) the server
+        // generates a number of the form "<address> <code>" e.g.
+        // "10567 Boxthorn T1". Empty → server falls back to legacy
+        // JOB-YYYY-NNNN sequence.
+        jobType: formData.jobType || undefined,
         dropPlan: formData.dropPlan || undefined,
         assignedPMId: formData.assignedPMId || undefined,
         scheduledDate: formData.scheduledDate ? new Date(formData.scheduledDate).toISOString() : undefined,
@@ -130,6 +137,7 @@ export function CreateJobModal({
         lotBlock: '',
         jobAddress: '',
         scopeType: 'DOORS_AND_TRIM',
+        jobType: '',
         dropPlan: 'Single Drop',
         assignedPMId: '',
         scheduledDate: '',
@@ -216,10 +224,22 @@ export function CreateJobModal({
             placeholder="e.g., 1234 Main Street"
             className="input"
           />
+          {/* Live preview of the job number that will be generated.
+              Only shown once the user has picked both an address + a
+              JobType — otherwise the server falls back to JOB-YYYY-NNNN. */}
+          {(() => {
+            const preview = previewJobNumber(formData.jobAddress, formData.jobType)
+            if (!preview) return null
+            return (
+              <p className="mt-1 text-xs text-gray-500">
+                Preview job number: <span className="font-mono font-semibold">{preview}</span>
+              </p>
+            )
+          })()}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {/* Scope Type */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Scope Type — what work (doors / trim / hardware / full / custom) */}
           <div>
             <label className="label">
               Scope <span className="text-red-500">*</span>
@@ -231,6 +251,27 @@ export function CreateJobModal({
               className="input"
             >
               {SCOPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Job Type — operational phase (T1 / T1I / T2 / DR / FF / QC …).
+              Optional. Leave blank to get the legacy JOB-YYYY-NNNN number. */}
+          <div>
+            <label className="label">
+              Job Type
+            </label>
+            <select
+              name="jobType"
+              value={formData.jobType}
+              onChange={handleChange}
+              className="input"
+            >
+              <option value="">Legacy (JOB-YYYY-NNNN)</option>
+              {JOB_TYPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
