@@ -34,7 +34,12 @@ export const revalidate = 0
 // update this list. The SQL filter uses ILIKE with %-wildcards so naming
 // variants match (e.g. "Hayhurst Homes", "Haven Home Builders",
 // "TriStar Construction", "Bailey Brothers Homes").
-export const THOMAS_BUILDER_PATTERNS = [
+// Next.js 14 app-router page files only permit specific exports (default
+// component + dynamic/revalidate/runtime/generateMetadata/metadata/etc).
+// Arbitrary `export const` fails the build with "X is not a valid Page
+// export field". Kept module-private here; if this ever needs to be
+// imported elsewhere, move to src/lib/pm-filters.ts first.
+const THOMAS_BUILDER_PATTERNS = [
   '%Hayhurst%',
   '%Haven Home%',
   '%TriStar%',
