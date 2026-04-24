@@ -51,8 +51,21 @@ export async function POST(request: NextRequest) {
         builder.id
       )
 
-      // Build reset URL
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      // Build reset URL.
+      // Fallback chain matches src/lib/email.ts so a missing NEXT_PUBLIC_APP_URL
+      // doesn't silently produce a relative /reset-password?... link that breaks
+      // when opened from Gmail/Outlook. Warn in logs so the real fix (setting
+      // the env var) stays visible until done.
+      if (!process.env.NEXT_PUBLIC_APP_URL) {
+        console.warn(
+          '[forgot-password:builder] NEXT_PUBLIC_APP_URL is unset — reset links will use fallback.'
+        )
+      }
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.NODE_ENV === 'production'
+          ? 'https://app.abellumber.com'
+          : 'http://localhost:3000')
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`
 
       // Send password reset email (logs to console if RESEND_API_KEY not set)

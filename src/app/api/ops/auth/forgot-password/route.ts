@@ -67,12 +67,26 @@ export async function POST(request: NextRequest) {
         severity: 'CRITICAL',
       }).catch(() => {})
 
-      // Build reset URL
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      // Build reset URL.
+      // Fallback chain matches src/lib/email.ts so a missing NEXT_PUBLIC_APP_URL
+      // in Vercel prod doesn't silently produce a relative `/ops/reset-password?...`
+      // link that breaks when opened from Gmail/Outlook. Warn loudly so it shows
+      // in Vercel logs until the env var is set.
+      if (!process.env.NEXT_PUBLIC_APP_URL) {
+        console.warn(
+          '[forgot-password] NEXT_PUBLIC_APP_URL is unset — reset links will use fallback. ' +
+          'Set this in Vercel env to silence this warning.'
+        )
+      }
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.NODE_ENV === 'production'
+          ? 'https://app.abellumber.com'
+          : 'http://localhost:3000')
       const resetUrl = `${baseUrl}/ops/reset-password?token=${resetToken}`
 
       // Send password reset email
-      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://project-waqs0.vercel.app'
+      const APP_URL = baseUrl
       await sendEmail({
         to: staff.email,
         subject: 'Reset Your Abel Operations Password',
