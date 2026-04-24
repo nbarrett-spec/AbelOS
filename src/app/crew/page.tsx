@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import SopQuickAccess from '@/components/SopQuickAccess';
 
 interface ScheduleItem {
   id: string;
@@ -293,6 +294,9 @@ function CrewHomeInner() {
           ))}
         </div>
       )}
+
+      {/* Role-matched SOPs (delivery/driver + warehouse_lead surfaces here) */}
+      <SopQuickAccess role="DRIVER" limit={5} title="Driver SOPs" />
 
       {/* Helper Text */}
       <div className="bg-orange-50 border border-[#C6A24E] rounded-lg p-4 text-sm">

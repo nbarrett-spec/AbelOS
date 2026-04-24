@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useToast } from '@/contexts/ToastContext'
 import QRScanner from '@/components/ui/QRScanner'
 import { decodeTag } from '@/lib/qr-tags'
+import SopQuickAccess from '@/components/SopQuickAccess'
 
 const PICK_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
@@ -955,6 +956,11 @@ export default function PickScannerPage() {
           })}
         </div>
       )}
+
+      {/* Warehouse SOPs for the current staff role */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <SopQuickAccess role="WAREHOUSE_TECH" limit={5} title="Warehouse SOPs" />
+      </div>
 
       <style jsx>{`
         @keyframes fadeOut {

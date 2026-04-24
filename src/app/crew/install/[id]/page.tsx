@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import SopQuickAccess from '@/components/SopQuickAccess';
 
 interface InstallationDetail {
   id: string;
@@ -279,6 +280,9 @@ export default function InstallationDetailPage() {
           </p>
         )}
       </div>
+
+      {/* Installer SOPs for this role */}
+      <SopQuickAccess role="INSTALLER" limit={5} title="Installer SOPs" />
     </div>
   );
 }
