@@ -189,7 +189,7 @@ export default function BuilderTrendPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#111827' }}>
           BuilderTrend Integration
         </h1>
         <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '8px' }}>
@@ -229,7 +229,7 @@ export default function BuilderTrendPage() {
           <div
             style={{
               fontSize: '24px',
-              fontWeight: 'bold',
+              fontWeight: 600,
               color: '#111827',
               marginTop: '8px',
             }}
@@ -267,7 +267,7 @@ export default function BuilderTrendPage() {
           <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>
             Synced Projects
           </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginTop: '8px' }}>
+          <p style={{ fontSize: '24px', fontWeight: 600, color: '#111827', marginTop: '8px' }}>
             {stats.syncedProjects}
           </p>
         </div>
@@ -285,7 +285,7 @@ export default function BuilderTrendPage() {
           <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>
             Upcoming (7 days)
           </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginTop: '8px' }}>
+          <p style={{ fontSize: '24px', fontWeight: 600, color: '#111827', marginTop: '8px' }}>
             {stats.upcomingMilestones}
           </p>
         </div>
@@ -303,7 +303,7 @@ export default function BuilderTrendPage() {
           <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>
             Schedule Alerts
           </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginTop: '8px' }}>
+          <p style={{ fontSize: '24px', fontWeight: 600, color: '#111827', marginTop: '8px' }}>
             {stats.scheduleAlerts}
           </p>
         </div>

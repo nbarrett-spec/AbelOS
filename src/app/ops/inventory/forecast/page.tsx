@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Package } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 const NAVY = '#0f2a3e'
 const ORANGE = '#C6A24E'
@@ -145,7 +147,7 @@ export default function InventoryForecastPage() {
                 borderRadius: '4px',
                 cursor: generating ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
-                fontWeight: 'bold',
+                fontWeight: 600,
                 opacity: generating ? 0.6 : 1,
               }}
             >
@@ -179,7 +181,7 @@ export default function InventoryForecastPage() {
             <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase', marginBottom: '8px' }}>
               {card.label}
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: card.color }}>
+            <div style={{ fontSize: '24px', fontWeight: 600, color: card.color }}>
               {card.value}
             </div>
           </div>
@@ -257,9 +259,11 @@ export default function InventoryForecastPage() {
             </table>
           </div>
           {filtered.length === 0 && (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-              No products match the current filter
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<Package className="w-6 h-6 text-fg-subtle" />}
+              title="No items match your filters"
+            />
           )}
         </div>
       </div>
@@ -268,7 +272,7 @@ export default function InventoryForecastPage() {
       <div style={{ padding: '0 40px 40px' }}>
         <div style={{ backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
           <div style={{ padding: '20px', borderBottom: '1px solid #eee' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: NAVY }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, color: NAVY }}>
               Purchase Order Recommendations
             </h2>
           </div>

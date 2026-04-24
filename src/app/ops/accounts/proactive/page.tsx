@@ -530,13 +530,13 @@ export default function ProactiveAccountManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Proactive Account Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Monitor account health, retention, growth opportunities &amp; win-back candidates</p>
+          <h1 className="text-2xl font-semibold text-fg">Proactive Account Management</h1>
+          <p className="text-sm text-fg-muted mt-1">Monitor account health, retention, growth opportunities &amp; win-back candidates</p>
         </div>
         <button
           onClick={handleGenerateTriggers}
           disabled={generating}
-          className="px-4 py-2 bg-[#0f2a3e] text-white text-sm rounded-lg hover:bg-[#0f2a3e]/90 disabled:opacity-50"
+          className="px-4 py-2 bg-surface-elevated text-fg text-sm rounded-lg hover:bg-surface-muted disabled:opacity-50"
         >
           {generating ? 'Scanning...' : '🔍 Generate Triggers'}
         </button>
@@ -550,8 +550,8 @@ export default function ProactiveAccountManagementPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.id
-                ? 'border-[#C6A24E] text-[#C6A24E]'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-signal text-signal'
+                : 'border-transparent text-fg-muted hover:text-fg'
             }`}
           >
             {tab.label}
@@ -563,8 +563,8 @@ export default function ProactiveAccountManagementPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-[#C6A24E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Loading data...</p>
+            <div className="w-8 h-8 border-2 border-signal border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm text-fg-muted">Loading data...</p>
           </div>
         </div>
       ) : data ? (

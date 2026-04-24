@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 import { useDriverLocation } from '@/hooks/useDriverLocation'
 import { flushQueue, queueCount } from './ServiceWorker'
 import { Badge } from '@/components/ui'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Driver Portal — Today's Stops
@@ -299,15 +301,16 @@ export default function DriverTodayPage() {
         {stops.length === 0 && !loading && (
           <div
             style={{
-              textAlign: 'center',
-              padding: 48,
-              color: 'var(--fg-muted, #a39a8a)',
               background: 'var(--surface, #161a1d)',
               border: '1px solid var(--border, #2a2722)',
               borderRadius: 12,
             }}
           >
-            No deliveries scheduled for you today.
+            <EmptyState
+              icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+              title="No deliveries today"
+              description="No deliveries scheduled for you today."
+            />
           </div>
         )}
 

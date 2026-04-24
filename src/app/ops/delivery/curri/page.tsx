@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface CurriResponse {
   integrated: boolean
@@ -49,23 +52,21 @@ export default function CurriDeliveriesPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-canvas p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="text-xs tracking-[0.22em] uppercase text-slate-500 mb-2">Delivery · Third-Party Overflow</div>
-            <h1 className="text-3xl font-bold text-slate-900">Curri Deliveries</h1>
-            <p className="text-slate-600 mt-1">
-              On-demand courier for out-of-area or overflow loads when in-house fleet is fully booked.
-            </p>
-          </div>
-          <Link
-            href="/ops/delivery"
-            className="px-4 py-2 rounded border border-slate-300 text-slate-600 hover:bg-white hover:text-slate-900 text-sm"
-          >
-            ← Delivery Center
-          </Link>
-        </div>
+        <PageHeader
+          eyebrow="Delivery · Third-Party Overflow"
+          title="Curri Deliveries"
+          description="On-demand courier for out-of-area or overflow loads when in-house fleet is fully booked."
+          actions={
+            <Link
+              href="/ops/delivery"
+              className="px-4 py-2 rounded border border-border text-fg-muted hover:bg-surface hover:text-fg text-sm"
+            >
+              ← Delivery Center
+            </Link>
+          }
+        />
 
         {data && !data.curriConfigured && (
           <div className="bg-amber-50 border-l-4 border-amber-500 p-5 mb-6 rounded-lg">
@@ -77,7 +78,7 @@ export default function CurriDeliveriesPage() {
           </div>
         )}
 
-        {loading && <div className="bg-white rounded-lg p-6 text-center text-slate-500">Loading…</div>}
+        {loading && <div className="bg-surface rounded-lg p-6 text-center text-fg-muted">Loading…</div>}
 
         {err && (
           <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-lg text-red-900">
@@ -88,47 +89,49 @@ export default function CurriDeliveriesPage() {
         {data && !loading && !err && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">In-House · 30d</div>
-                <div className="text-3xl font-mono tabular-nums text-slate-900">{data.comparison.inHouse.count}</div>
-                <div className="text-xs text-slate-500 mt-1">
+              <div className="bg-surface rounded-lg shadow-sm border border-border p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-fg-muted mb-2">In-House · 30d</div>
+                <div className="text-3xl font-mono tabular-nums text-fg">{data.comparison.inHouse.count}</div>
+                <div className="text-xs text-fg-muted mt-1">
                   {data.comparison.inHouse.delivered} delivered · {data.comparison.inHouse.active} active
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Curri · 30d</div>
-                <div className="text-3xl font-mono tabular-nums text-slate-900">{data.comparison.curri.count}</div>
-                <div className="text-xs text-slate-500 mt-1">
+              <div className="bg-surface rounded-lg shadow-sm border border-border p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-fg-muted mb-2">Curri · 30d</div>
+                <div className="text-3xl font-mono tabular-nums text-fg">{data.comparison.curri.count}</div>
+                <div className="text-xs text-fg-muted mt-1">
                   {data.comparison.curri.delivered} delivered · {data.comparison.curri.active} active
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Curri Avg Cost</div>
-                <div className="text-3xl font-mono tabular-nums text-slate-900">
+              <div className="bg-surface rounded-lg shadow-sm border border-border p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-fg-muted mb-2">Curri Avg Cost</div>
+                <div className="text-3xl font-mono tabular-nums text-fg">
                   ${data.comparison.curri.avgCost.toFixed(0)}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">per delivery</div>
+                <div className="text-xs text-fg-muted mt-1">per delivery</div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Total Curri Spend</div>
-                <div className="text-3xl font-mono tabular-nums text-slate-900">
+              <div className="bg-surface rounded-lg shadow-sm border border-border p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-fg-muted mb-2">Total Curri Spend</div>
+                <div className="text-3xl font-mono tabular-nums text-fg">
                   ${(data.comparison.curri.avgCost * data.comparison.curri.count).toFixed(0)}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">last {data.windowDays}d</div>
+                <div className="text-xs text-fg-muted mt-1">last {data.windowDays}d</div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-4 border-b border-slate-200">
-                <h2 className="font-semibold text-slate-900">Recent Curri Deliveries</h2>
+            <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+              <div className="p-4 border-b border-border">
+                <h2 className="font-semibold text-fg">Recent Curri Deliveries</h2>
               </div>
               {data.deliveries.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                  No Curri deliveries in the last {data.windowDays} days.
-                </div>
+                <EmptyState
+                  icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+                  title="No deliveries scheduled"
+                  description={`No Curri deliveries in the last ${data.windowDays} days.`}
+                />
               ) : (
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <thead className="bg-surface-muted text-xs uppercase tracking-[0.18em] text-fg-muted">
                     <tr>
                       <th className="text-left p-3">Delivery #</th>
                       <th className="text-left p-3">Job</th>
@@ -140,7 +143,7 @@ export default function CurriDeliveriesPage() {
                   </thead>
                   <tbody>
                     {data.deliveries.map((d) => (
-                      <tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50">
+                      <tr key={d.id} className="border-t border-border hover:bg-row-hover">
                         <td className="p-3 font-mono text-xs">{d.deliveryNumber}</td>
                         <td className="p-3">{d.jobNumber || '—'}</td>
                         <td className="p-3 text-xs">{d.status}</td>
@@ -151,10 +154,10 @@ export default function CurriDeliveriesPage() {
                               Track ↗
                             </a>
                           ) : (
-                            <span className="text-slate-400 text-xs">—</span>
+                            <span className="text-fg-subtle text-xs">—</span>
                           )}
                         </td>
-                        <td className="p-3 text-xs text-slate-500">{new Date(d.createdAt).toLocaleDateString()}</td>
+                        <td className="p-3 text-xs text-fg-muted">{new Date(d.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>

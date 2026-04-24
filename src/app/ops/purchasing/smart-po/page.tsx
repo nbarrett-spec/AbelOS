@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { PageHeader, Card, CardBody, Badge, KPICard } from '@/components/ui'
-import { AlertTriangle, Send, Filter, Check, X, ExternalLink, RefreshCw } from 'lucide-react'
+import { PageHeader, Card, CardBody, Badge, KPICard, EmptyState } from '@/components/ui'
+import { AlertTriangle, Send, Filter, Check, X, ExternalLink, RefreshCw, Receipt } from 'lucide-react'
 
 interface SourceJob {
   id: string
@@ -309,9 +309,13 @@ export default function SmartPOQueuePage() {
                     </tr>
                   ) : recs.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-3 py-8 text-center text-fg-subtle">
-                        No pending SmartPO recommendations. The shortage-forecast cron will
-                        populate this queue as it detects RED ATP lines.
+                      <td colSpan={9} className="px-3 py-8">
+                        <EmptyState
+                          icon={<Receipt className="w-8 h-8 text-fg-subtle" />}
+                          title="No POs to display"
+                          description="The shortage-forecast cron will populate this queue as it detects RED ATP lines."
+                          size="default"
+                        />
                       </td>
                     </tr>
                   ) : (

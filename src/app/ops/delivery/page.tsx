@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface DeliveryData {
   id: string
@@ -688,17 +690,12 @@ export default function DeliveryCommandCenter() {
         </div>
 
         {getFilteredDeliveries().length === 0 ? (
-          <div
-            style={{
-              backgroundColor: 'white',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              padding: '40px',
-              textAlign: 'center',
-              color: '#6B7280',
-            }}
-          >
-            <p style={{ fontSize: '14px' }}>No deliveries matching filter</p>
+          <div className="bg-surface border border-border rounded-lg p-10">
+            <EmptyState
+              icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+              title="No deliveries scheduled"
+              description="No deliveries match this filter. Try switching to All or refresh."
+            />
           </div>
         ) : (
           <div>

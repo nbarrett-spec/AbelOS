@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import React, { Suspense } from 'react'
+import { ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { PageHeader, Card } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface Vendor {
   id: string
@@ -122,138 +125,198 @@ function NewPOForm() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, color: '#6B7280' }}>
-        Loading...
+      <div className="flex items-center justify-center min-h-[300px] text-sm text-fg-muted">
+        Loading…
       </div>
     )
   }
 
   if (success) {
     return (
-      <div style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center', padding: 40 }}>
-        <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
-        <h2 style={{ color: '#16A34A', fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Purchase Order Created!</h2>
-        <p style={{ color: '#6B7280' }}>Redirecting to purchase orders...</p>
+      <div className="max-w-xl mx-auto py-10 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-data-positive-bg ring-1 ring-border mb-4">
+          <CheckCircle2 className="w-8 h-8 text-data-positive" />
+        </div>
+        <h2 className="text-xl font-semibold text-fg mb-1">Purchase Order Created</h2>
+        <p className="text-sm text-fg-muted">Redirecting to purchase orders…</p>
       </div>
     )
   }
 
   const totalCost = form.quantity * form.unitCost
+  const lowStock = product && (product.onHand || 0) <= (product.reorderPoint || 0)
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>Create Purchase Order</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>
-            {product ? `Reorder: ${product.name}` : 'Create a new purchase order'}
-          </p>
-        </div>
-        <button onClick={() => router.back()}
-          style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-          ← Back
-        </button>
-      </div>
+    <div className="space-y-5 animate-enter max-w-3xl">
+      <PageHeader
+        eyebrow="Procurement"
+        title="Create Purchase Order"
+        description={product ? `Reorder: ${product.name}` : 'Create a new purchase order.'}
+        crumbs={[
+          { label: 'Ops', href: '/ops' },
+          { label: 'Purchasing', href: '/ops/purchasing' },
+          { label: 'New' },
+        ]}
+        actions={
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="btn btn-secondary btn-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back
+          </button>
+        }
+      />
 
       {/* Product Info Card */}
       {product && (
-        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#0f2a3e' }}>{product.name}</div>
-              <div style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>SKU: {product.sku} • {product.category}</div>
+        <Card variant="default" padding="md">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-semibold text-fg truncate">{product.name}</div>
+              <div className="text-xs text-fg-muted mt-0.5 font-mono">
+                SKU: {product.sku} <span className="text-fg-subtle">·</span> {product.category}
+              </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 13, color: '#6B7280' }}>Current Stock</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: (product.onHand || 0) <= (product.reorderPoint || 0) ? '#DC2626' : '#16A34A' }}>
+            <div className="text-right shrink-0">
+              <div className="eyebrow">Current Stock</div>
+              <div
+                className={cn(
+                  'metric metric-md tabular-nums mt-0.5',
+                  lowStock ? 'text-data-negative' : 'text-data-positive'
+                )}
+              >
                 {product.onHand}
               </div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Reorder at {product.reorderPoint}</div>
+              <div className="text-[11px] text-fg-subtle">Reorder at {product.reorderPoint}</div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 24 }}>
-        {error && (
-          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12, marginBottom: 16, color: '#DC2626', fontSize: 14 }}>
-            {error}
-          </div>
-        )}
+      <Card variant="default" padding="md">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="flex items-start gap-2 panel border-l-2 border-l-data-negative p-3">
+              <AlertTriangle className="w-4 h-4 text-data-negative shrink-0 mt-0.5" />
+              <div className="text-sm text-fg">{error}</div>
+            </div>
+          )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Vendor *</label>
-            <select value={form.vendorId} onChange={e => setForm({ ...form, vendorId: e.target.value })}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}>
-              <option value="">Select vendor...</option>
-              {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">
+                Vendor <span className="text-data-negative">*</span>
+              </label>
+              <select
+                value={form.vendorId}
+                onChange={e => setForm({ ...form, vendorId: e.target.value })}
+                className="input w-full"
+              >
+                <option value="">Select vendor…</option>
+                {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Priority</label>
+              <select
+                value={form.priority}
+                onChange={e => setForm({ ...form, priority: e.target.value })}
+                className="input w-full"
+              >
+                <option value="LOW">Low</option>
+                <option value="NORMAL">Normal</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Priority</label>
-            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}>
-              <option value="LOW">Low</option>
-              <option value="NORMAL">Normal</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-            </select>
-          </div>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Quantity *</label>
-            <input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">
+                Quantity <span className="text-data-negative">*</span>
+              </label>
+              <input
+                type="number"
+                value={form.quantity}
+                onChange={e => setForm({ ...form, quantity: Number(e.target.value) })}
+                className="input w-full tabular-nums"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Unit Cost ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.unitCost}
+                onChange={e => setForm({ ...form, unitCost: Number(e.target.value) })}
+                className="input w-full tabular-nums"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-fg-muted mb-1">Expected Date</label>
+              <input
+                type="date"
+                value={form.expectedDate}
+                onChange={e => setForm({ ...form, expectedDate: e.target.value })}
+                className="input w-full"
+              />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Unit Cost ($)</label>
-            <input type="number" step="0.01" value={form.unitCost} onChange={e => setForm({ ...form, unitCost: Number(e.target.value) })}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Expected Date</label>
-            <input type="date" value={form.expectedDate} onChange={e => setForm({ ...form, expectedDate: e.target.value })}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }} />
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Notes</label>
-          <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3}
-            placeholder="Any special instructions..."
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14, resize: 'vertical' }} />
-        </div>
-
-        {/* Total */}
-        <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: 16, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#166534' }}>Estimated Total</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#166534' }}>
-            ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div>
+            <label className="block text-xs font-medium text-fg-muted mb-1">Notes</label>
+            <textarea
+              value={form.notes}
+              onChange={e => setForm({ ...form, notes: e.target.value })}
+              rows={3}
+              placeholder="Any special instructions…"
+              className="input w-full resize-y"
+            />
           </div>
-        </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="submit" disabled={submitting}
-            style={{ flex: 1, padding: '12px 24px', borderRadius: 8, border: 'none', background: submitting ? '#9CA3AF' : '#C6A24E', color: '#fff', fontWeight: 700, fontSize: 15, cursor: submitting ? 'default' : 'pointer' }}>
-            {submitting ? 'Creating PO...' : 'Create Purchase Order'}
-          </button>
-          <button type="button" onClick={() => router.push('/ops/purchasing')}
-            style={{ padding: '12px 24px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-            Cancel
-          </button>
-        </div>
-      </form>
+          {/* Total */}
+          <div className="panel border-l-2 border-l-data-positive p-4 flex items-center justify-between">
+            <div className="text-sm font-medium text-fg-muted">Estimated Total</div>
+            <div className="metric metric-lg tabular-nums text-data-positive">
+              ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-primary btn-md flex-1"
+            >
+              {submitting ? 'Creating PO…' : 'Create Purchase Order'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/ops/purchasing')}
+              className="btn btn-secondary btn-md"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Card>
     </div>
   )
 }
 
 export default function NewPurchaseOrderPage() {
   return (
-    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 40, color: '#6B7280' }}>Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-10 text-sm text-fg-muted">
+          Loading…
+        </div>
+      }
+    >
       <NewPOForm />
     </Suspense>
   )

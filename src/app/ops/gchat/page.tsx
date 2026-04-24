@@ -209,7 +209,7 @@ export default function GoogleChatPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">
           Google Chat Integration
         </h1>
         <p className="text-gray-600">

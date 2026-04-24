@@ -7,7 +7,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { Package } from 'lucide-react'
 import { AnimatedCounter } from '@/components/ui/experience'
+import EmptyState from '@/components/ui/EmptyState'
 
 type StatusKey = '' | 'healthy' | 'low' | 'critical' | 'out' | 'overstocked'
 
@@ -328,25 +330,19 @@ export default function InventoryListPage() {
             Loading inventory…
           </div>
         ) : rows.length === 0 ? (
-          <div className="empty-state" style={{ padding: '60px 20px' }}>
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M3 9h18M9 21V9" />
-            </svg>
-            <h3 style={{ margin: '12px 0 4px', fontWeight: 600 }}>No products match these filters</h3>
-            <p style={{ color: 'var(--fg-muted)', fontSize: 13, margin: 0 }}>
-              Try clearing a filter or adjusting the search term.
-            </p>
-            {(search || category || status || zone) && (
-              <button
-                className="btn btn-secondary btn-sm"
-                style={{ marginTop: 16 }}
-                onClick={() => { setSearch(''); setCategory(''); setStatus(''); setZone('') }}
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={<Package className="w-8 h-8 text-fg-subtle" />}
+            title="No items match your filters"
+            description="Try clearing a filter or adjusting the search term."
+            action={
+              (search || category || status || zone)
+                ? {
+                    label: 'Clear filters',
+                    onClick: () => { setSearch(''); setCategory(''); setStatus(''); setZone('') },
+                  }
+                : undefined
+            }
+          />
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="datatable density-comfortable" style={{ minWidth: 1100 }}>

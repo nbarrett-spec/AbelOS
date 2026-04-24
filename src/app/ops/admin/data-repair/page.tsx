@@ -188,8 +188,8 @@ export default function DataRepairPage() {
 
       {loading && !data ? (
         <div className="animate-pulse grid grid-cols-12 gap-4">
-          <div className="col-span-8 h-96 rounded bg-gray-200" />
-          <div className="col-span-4 h-96 rounded bg-gray-200" />
+          <div className="col-span-8 h-96 rounded bg-surface-muted" />
+          <div className="col-span-4 h-96 rounded bg-surface-muted" />
         </div>
       ) : error && !data ? (
         <div className="rounded-md border border-red-200 bg-red-50 text-red-700 p-4 text-sm">
@@ -207,31 +207,31 @@ export default function DataRepairPage() {
           <div className="col-span-12 lg:col-span-8 space-y-3">
             <Card>
               <CardBody className="p-0">
-                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                <div className="px-4 py-3 border-b border-border bg-surface-muted flex items-center justify-between">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-900">
+                    <h2 className="text-sm font-semibold text-fg">
                       Flagged orders ({data.orders.length})
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-fg-muted mt-0.5">
                       {totalBig} with delta &gt; $1,000
                     </p>
                   </div>
                   <button
                     onClick={fetchData}
                     disabled={loading}
-                    className="text-xs text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                    className="text-xs text-fg-muted hover:text-fg disabled:opacity-50"
                   >
                     {loading ? 'loading…' : 'refresh'}
                   </button>
                 </div>
                 {data.orders.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-gray-500">
+                  <div className="p-8 text-center text-sm text-fg-muted">
                     No drift-flagged orders. Everything has been reviewed.
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                      <thead className="bg-surface-muted text-xs uppercase tracking-wide text-fg-muted">
                         <tr>
                           <th className="px-4 py-2 text-left font-semibold">Order</th>
                           <th className="px-4 py-2 text-left font-semibold">Builder</th>
@@ -241,25 +241,25 @@ export default function DataRepairPage() {
                           <th className="px-4 py-2 text-right font-semibold">Items</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-border">
                         {data.orders.map((o) => {
                           const big = o.delta > 1000
                           return (
                             <tr
                               key={o.id}
                               onClick={() => openOrder(o)}
-                              className="cursor-pointer hover:bg-gray-50"
+                              className="cursor-pointer hover:bg-row-hover"
                             >
-                              <td className="px-4 py-2 font-mono text-xs text-gray-900">
+                              <td className="px-4 py-2 font-mono text-xs text-fg">
                                 {o.orderNumber}
                               </td>
-                              <td className="px-4 py-2 text-gray-800">
-                                {o.builderName ?? <span className="text-gray-400">—</span>}
+                              <td className="px-4 py-2 text-fg">
+                                {o.builderName ?? <span className="text-fg-subtle">—</span>}
                               </td>
-                              <td className="px-4 py-2 text-right tabular-nums text-gray-700">
+                              <td className="px-4 py-2 text-right tabular-nums text-fg-muted">
                                 {fmtMoney(o.storedTotal)}
                               </td>
-                              <td className="px-4 py-2 text-right tabular-nums text-gray-900">
+                              <td className="px-4 py-2 text-right tabular-nums text-fg">
                                 {fmtMoney(o.computedTotal)}
                               </td>
                               <td className="px-4 py-2 text-right tabular-nums">
@@ -267,14 +267,14 @@ export default function DataRepairPage() {
                                   className={
                                     big
                                       ? 'inline-block px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-semibold'
-                                      : 'text-gray-700'
+                                      : 'text-fg-muted'
                                   }
                                 >
                                   {o.delta > 0 ? '+' : ''}
                                   {fmtMoney(o.delta)}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-right tabular-nums text-gray-600">
+                              <td className="px-4 py-2 text-right tabular-nums text-fg-muted">
                                 {o.items.length}
                               </td>
                             </tr>
@@ -287,7 +287,7 @@ export default function DataRepairPage() {
               </CardBody>
             </Card>
 
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <p className="text-xs text-fg-muted leading-relaxed">
               Classification source: <code>scripts/drift-deep-dive.mjs</code>. Accept writes{' '}
               <code>subtotal = Σ lineTotal</code> and <code>total = subtotal + tax + shipping</code>{' '}
               in a single transaction, then re-checks residual drift. Every action is recorded in{' '}
@@ -299,13 +299,13 @@ export default function DataRepairPage() {
           <aside className="col-span-12 lg:col-span-4 space-y-3">
             <Card>
               <CardBody>
-                <h3 className="text-xs uppercase text-gray-500 font-semibold">
+                <h3 className="text-xs uppercase text-fg-muted font-semibold">
                   Hidden revenue (currently flagged)
                 </h3>
-                <p className="text-3xl font-bold text-gray-900 mt-1 tabular-nums">
+                <p className="text-3xl font-semibold text-fg mt-1 tabular-nums">
                   {fmtMoney(data.summary.totalHiddenRevenue)}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-fg-muted mt-1">
                   Sum of positive deltas across {data.summary.flaggedCount} orders.
                 </p>
               </CardBody>
@@ -314,33 +314,33 @@ export default function DataRepairPage() {
             <div className="grid grid-cols-2 gap-3">
               <Card>
                 <CardBody>
-                  <h3 className="text-xs uppercase text-gray-500 font-semibold">Recovered</h3>
-                  <p className="text-xl font-bold text-green-700 mt-1 tabular-nums">
+                  <h3 className="text-xs uppercase text-fg-muted font-semibold">Recovered</h3>
+                  <p className="text-xl font-semibold text-green-700 mt-1 tabular-nums">
                     {fmtMoney(data.summary.recoveredSoFar)}
                   </p>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-fg-muted">
                     {data.summary.acceptedCount} accepted
                   </p>
                 </CardBody>
               </Card>
               <Card>
                 <CardBody>
-                  <h3 className="text-xs uppercase text-gray-500 font-semibold">Rejected</h3>
-                  <p className="text-xl font-bold text-gray-900 mt-1 tabular-nums">
+                  <h3 className="text-xs uppercase text-fg-muted font-semibold">Rejected</h3>
+                  <p className="text-xl font-semibold text-fg mt-1 tabular-nums">
                     {data.summary.rejectedCount}
                   </p>
-                  <p className="text-[11px] text-gray-500">kept stored total</p>
+                  <p className="text-[11px] text-fg-muted">kept stored total</p>
                 </CardBody>
               </Card>
             </div>
 
             <Card>
               <CardBody>
-                <h3 className="text-xs uppercase text-gray-500 font-semibold mb-2">
+                <h3 className="text-xs uppercase text-fg-muted font-semibold mb-2">
                   Builder breakdown
                 </h3>
                 {data.builderBreakdown.length === 0 ? (
-                  <p className="text-xs text-gray-500">Nothing flagged.</p>
+                  <p className="text-xs text-fg-muted">Nothing flagged.</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {data.builderBreakdown.map((b) => (
@@ -348,8 +348,8 @@ export default function DataRepairPage() {
                         key={b.builderId}
                         className="flex items-baseline justify-between text-sm"
                       >
-                        <span className="text-gray-800 truncate pr-2">{b.builderName}</span>
-                        <span className="tabular-nums text-gray-900 whitespace-nowrap">
+                        <span className="text-fg truncate pr-2">{b.builderName}</span>
+                        <span className="tabular-nums text-fg whitespace-nowrap">
                           {b.orders} order{b.orders === 1 ? '' : 's'} · {fmtMoney(b.hidden)}
                         </span>
                       </li>
@@ -371,7 +371,7 @@ export default function DataRepairPage() {
           selected ? (
             <span className="flex items-baseline gap-3">
               <span className="font-mono">{selected.orderNumber}</span>
-              <span className="text-xs font-normal text-gray-500">
+              <span className="text-xs font-normal text-fg-muted">
                 {selected.builderName ?? 'Unknown builder'}
               </span>
             </span>
@@ -381,7 +381,7 @@ export default function DataRepairPage() {
         footer={
           selected ? (
             <div className="flex items-center gap-2 flex-wrap w-full">
-              <div className="flex-1 min-w-0 text-[11px] text-gray-500">
+              <div className="flex-1 min-w-0 text-[11px] text-fg-muted">
                 {selected.items.length} line items · last updated{' '}
                 {new Date(selected.lastUpdatedAt).toLocaleDateString()}
               </div>
@@ -429,8 +429,8 @@ export default function DataRepairPage() {
           <div className="space-y-4">
             {/* Stored vs computed */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-                <h4 className="text-xs font-semibold uppercase text-gray-500 mb-2">
+              <div className="rounded-md border border-border bg-surface-muted p-3">
+                <h4 className="text-xs font-semibold uppercase text-fg-muted mb-2">
                   Stored (current DB)
                 </h4>
                 <dl className="text-sm space-y-1">
@@ -473,13 +473,13 @@ export default function DataRepairPage() {
             </div>
 
             {/* Line items */}
-            <div className="rounded-md border border-gray-200 overflow-hidden">
-              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-700">
+            <div className="rounded-md border border-border overflow-hidden">
+              <div className="px-3 py-2 bg-surface-muted border-b border-border text-xs font-semibold text-fg-muted">
                 Line items ({selected.items.length})
               </div>
               <div className="max-h-80 overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-white sticky top-0 text-[11px] uppercase text-gray-500 border-b">
+                  <thead className="bg-surface sticky top-0 text-[11px] uppercase text-fg-muted border-b border-border">
                     <tr>
                       <th className="px-3 py-1.5 text-left font-medium">Description</th>
                       <th className="px-3 py-1.5 text-right font-medium">Qty</th>
@@ -487,10 +487,10 @@ export default function DataRepairPage() {
                       <th className="px-3 py-1.5 text-right font-medium">Line total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-border">
                     {selected.items.map((it) => (
                       <tr key={it.id}>
-                        <td className="px-3 py-1.5 text-gray-800 truncate max-w-xl">
+                        <td className="px-3 py-1.5 text-fg truncate max-w-xl">
                           {it.description}
                         </td>
                         <td className="px-3 py-1.5 text-right tabular-nums">{it.qty}</td>
@@ -504,7 +504,7 @@ export default function DataRepairPage() {
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-gray-50 font-semibold text-sm">
+                    <tr className="bg-surface-muted font-semibold text-sm">
                       <td className="px-3 py-1.5" colSpan={3}>
                         Σ line totals
                       </td>
@@ -519,9 +519,9 @@ export default function DataRepairPage() {
 
             {/* Note input */}
             <label className="block">
-              <span className="block text-xs font-semibold text-gray-700 mb-1">
+              <span className="block text-xs font-semibold text-fg-muted mb-1">
                 Reason / note
-                <span className="font-normal text-gray-500">
+                <span className="font-normal text-fg-muted">
                   {' '}
                   (required for reject / flag · optional for accept)
                 </span>
@@ -531,7 +531,7 @@ export default function DataRepairPage() {
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
                 disabled={!!actionInFlight}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:opacity-70"
+                className="w-full px-3 py-2 text-sm border border-border-strong rounded-md bg-surface text-fg focus:ring-1 focus:ring-signal focus:border-signal disabled:bg-surface-muted disabled:opacity-70"
                 placeholder="e.g. intentional discount per Dawn / escalating to Nate — Toll batch bug unclear"
               />
             </label>
@@ -544,9 +544,9 @@ export default function DataRepairPage() {
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex justify-between ${bold ? 'font-semibold pt-1 border-t border-gray-200 mt-1' : ''}`}>
-      <span className="text-gray-600">{label}</span>
-      <span className="tabular-nums text-gray-900">{value}</span>
+    <div className={`flex justify-between ${bold ? 'font-semibold pt-1 border-t border-border mt-1' : ''}`}>
+      <span className="text-fg-muted">{label}</span>
+      <span className="tabular-nums text-fg">{value}</span>
     </div>
   )
 }

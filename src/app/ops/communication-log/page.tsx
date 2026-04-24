@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { Inbox } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Customer Communication Log
@@ -191,12 +193,12 @@ export default function CommunicationLogPage() {
     : logs
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-canvas">
       {/* Header */}
-      <div className="bg-[#1e3a5f] text-white px-8 py-8">
+      <div className="bg-navy-mid text-fg-inverse px-8 py-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-3xl font-semibold flex items-center gap-3">
               <span>📧</span> Communication Log
             </h1>
             <p className="text-blue-200 mt-2">
@@ -212,13 +214,13 @@ export default function CommunicationLogPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowGmailSync(!showGmailSync)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+              className="bg-white/10 hover:bg-white/20 text-fg-inverse px-4 py-2 rounded-lg text-sm flex items-center gap-2"
             >
               <span>📧</span> Gmail Sync
             </button>
             <button
               onClick={() => setShowLogForm(!showLogForm)}
-              className="bg-[#C6A24E] hover:bg-[#A8882A] text-white px-4 py-2 rounded-lg text-sm font-medium"
+              className="bg-signal hover:bg-signal-hover text-fg-on-accent px-4 py-2 rounded-lg text-sm font-medium"
             >
               + Log Communication
             </button>
@@ -229,23 +231,23 @@ export default function CommunicationLogPage() {
       <div className="max-w-7xl mx-auto px-8 py-6">
         {/* Gmail Sync Panel */}
         {showGmailSync && (
-          <div className="bg-white rounded-xl border border-blue-200 p-6 mb-6">
+          <div className="bg-surface-elev rounded-xl border border-blue-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-xl">📧</div>
                 <div>
-                  <h3 className="font-bold text-[#1e3a5f]">Gmail Sync</h3>
-                  <p className="text-xs text-gray-500">
+                  <h3 className="font-semibold text-fg">Gmail Sync</h3>
+                  <p className="text-xs text-fg-muted">
                     Auto-import emails from Abel Lumber Gmail accounts into the communication log
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowGmailSync(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setShowGmailSync(false)} className="text-fg-subtle hover:text-fg">✕</button>
             </div>
 
             {/* Connected Accounts */}
             <div className="mb-4">
-              <h4 className="text-xs font-semibold text-gray-500 mb-2">CONNECTED ACCOUNTS</h4>
+              <h4 className="text-xs font-semibold text-fg-muted mb-2">CONNECTED ACCOUNTS</h4>
               <div className="flex flex-wrap gap-2">
                 {GMAIL_ACCOUNTS.map((email) => (
                   <span key={email} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
@@ -253,7 +255,7 @@ export default function CommunicationLogPage() {
                   </span>
                 ))}
               </div>
-              <p className="text-[10px] text-gray-400 mt-2">
+              <p className="text-[10px] text-fg-subtle mt-2">
                 Manage accounts at{' '}
                 <a
                   href="https://admin.google.com/u/2/ac/users"
@@ -275,7 +277,7 @@ export default function CommunicationLogPage() {
               >
                 <div className="text-lg mb-1">📥</div>
                 <div className="text-xs font-semibold text-blue-700">Sync Today</div>
-                <div className="text-[10px] text-gray-500">Last 24 hours</div>
+                <div className="text-[10px] text-fg-muted">Last 24 hours</div>
               </button>
               <button
                 onClick={() => handleGmailSync('newer_than:7d', "This Week's Emails")}
@@ -284,7 +286,7 @@ export default function CommunicationLogPage() {
               >
                 <div className="text-lg mb-1">📧</div>
                 <div className="text-xs font-semibold text-blue-700">Sync Week</div>
-                <div className="text-[10px] text-gray-500">Last 7 days</div>
+                <div className="text-[10px] text-fg-muted">Last 7 days</div>
               </button>
               <button
                 onClick={() => handleGmailSync('newer_than:30d', "This Month's Emails")}
@@ -293,7 +295,7 @@ export default function CommunicationLogPage() {
               >
                 <div className="text-lg mb-1">📬</div>
                 <div className="text-xs font-semibold text-blue-700">Sync Month</div>
-                <div className="text-[10px] text-gray-500">Last 30 days</div>
+                <div className="text-[10px] text-fg-muted">Last 30 days</div>
               </button>
               <button
                 onClick={() => handleGmailSync('has:attachment newer_than:7d', 'Emails with Attachments')}
@@ -302,7 +304,7 @@ export default function CommunicationLogPage() {
               >
                 <div className="text-lg mb-1">📎</div>
                 <div className="text-xs font-semibold text-blue-700">With Attachments</div>
-                <div className="text-[10px] text-gray-500">Last 7 days</div>
+                <div className="text-[10px] text-fg-muted">Last 7 days</div>
               </button>
             </div>
 
@@ -324,7 +326,7 @@ export default function CommunicationLogPage() {
             )}
 
             {syncStatus?.lastSync && (
-              <p className="text-[10px] text-gray-400 mt-3">
+              <p className="text-[10px] text-fg-subtle mt-3">
                 Last sync: {new Date(syncStatus.lastSync).toLocaleString()}
               </p>
             )}
@@ -333,19 +335,19 @@ export default function CommunicationLogPage() {
 
         {/* Manual Log Form */}
         {showLogForm && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <div className="bg-surface-elev rounded-xl border border-border p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#1e3a5f]">Log a Communication</h3>
-              <button onClick={() => setShowLogForm(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <h3 className="font-semibold text-fg">Log a Communication</h3>
+              <button onClick={() => setShowLogForm(false)} className="text-fg-subtle hover:text-fg">✕</button>
             </div>
             <form onSubmit={handleLogSubmit}>
               <div className="grid grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Channel</label>
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">Channel</label>
                   <select
                     value={logForm.channel}
                     onChange={(e) => setLogForm({ ...logForm, channel: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                   >
                     {Object.entries(CHANNEL_CONFIG)
                       .filter(([k]) => k !== 'HYPHEN_NOTIFICATION' && k !== 'SYSTEM')
@@ -357,11 +359,11 @@ export default function CommunicationLogPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Direction</label>
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">Direction</label>
                   <select
                     value={logForm.direction}
                     onChange={(e) => setLogForm({ ...logForm, direction: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                   >
                     <option value="OUTBOUND">↗️ Outbound</option>
                     <option value="INBOUND">↙️ Inbound</option>
@@ -369,66 +371,66 @@ export default function CommunicationLogPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Subject</label>
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">Subject</label>
                   <input
                     value={logForm.subject}
                     onChange={(e) => setLogForm({ ...logForm, subject: e.target.value })}
                     placeholder="Call about Canyon Ridge delivery"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Duration (min)</label>
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">Duration (min)</label>
                   <input
                     type="number"
                     value={logForm.duration}
                     onChange={(e) => setLogForm({ ...logForm, duration: e.target.value })}
                     placeholder="15"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mt-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">From</label>
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">From</label>
                   <input
                     value={logForm.fromAddress}
                     onChange={(e) => setLogForm({ ...logForm, fromAddress: e.target.value })}
                     placeholder="n.barrett@abellumber.com"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">To (comma-separated)</label>
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">To (comma-separated)</label>
                   <input
                     value={logForm.toAddresses}
                     onChange={(e) => setLogForm({ ...logForm, toAddresses: e.target.value })}
                     placeholder="builder@example.com, pm@example.com"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                   />
                 </div>
               </div>
               <div className="mt-3">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Notes / Summary</label>
+                <label className="block text-xs font-semibold text-fg-muted mb-1">Notes / Summary</label>
                 <textarea
                   value={logForm.body}
                   onChange={(e) => setLogForm({ ...logForm, body: e.target.value })}
                   placeholder="Discussed delivery schedule for Lot 14, builder confirmed Tuesday morning window..."
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-elev"
                 />
               </div>
               <div className="mt-4 flex gap-3">
                 <button
                   type="submit"
-                  className="bg-[#0f2a3e] hover:bg-[#163d5c] text-white px-5 py-2 rounded-lg text-sm font-semibold"
+                  className="bg-navy-mid hover:bg-navy-light text-fg-inverse px-5 py-2 rounded-lg text-sm font-semibold"
                 >
                   Save Communication
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowLogForm(false)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm"
+                  className="bg-surface-muted hover:bg-row-hover text-fg-muted px-5 py-2 rounded-lg text-sm"
                 >
                   Cancel
                 </button>
@@ -438,7 +440,7 @@ export default function CommunicationLogPage() {
         )}
 
         {/* Filter Bar */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+        <div className="bg-surface-elev rounded-xl border border-border p-4 mb-6">
           <div className="flex items-center gap-4">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
@@ -447,9 +449,9 @@ export default function CommunicationLogPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by subject, sender, builder, content..."
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-signal focus:border-transparent bg-surface-elev"
               />
-              <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-fg-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -459,7 +461,7 @@ export default function CommunicationLogPage() {
               <button
                 onClick={() => setChannelFilter('')}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                  !channelFilter ? 'bg-[#0f2a3e] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  !channelFilter ? 'bg-navy-mid text-fg-inverse' : 'bg-surface-muted text-fg-muted hover:bg-row-hover'
                 }`}
               >
                 All
@@ -469,31 +471,31 @@ export default function CommunicationLogPage() {
                   key={key}
                   onClick={() => setChannelFilter(channelFilter === key ? '' : key)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                    channelFilter === key ? 'text-white' : 'text-gray-600 hover:bg-gray-200'
+                    channelFilter === key ? 'text-white' : 'text-fg-muted hover:bg-row-hover'
                   }`}
-                  style={channelFilter === key ? { backgroundColor: cfg.color } : { backgroundColor: '#F3F4F6' }}
+                  style={channelFilter === key ? { backgroundColor: cfg.color } : { backgroundColor: 'var(--surface-muted)' }}
                 >
                   {cfg.icon} {cfg.label}
                 </button>
               ))}
             </div>
 
-            <span className="text-xs text-gray-400 ml-auto">{total} total</span>
+            <span className="text-xs text-fg-subtle ml-auto">{total} total</span>
           </div>
         </div>
 
         {/* Communication Entries */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-signal border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
-            <div className="text-5xl mb-4">📧</div>
-            <h3 className="font-bold text-[#1e3a5f] mb-2">No Communication Logs Yet</h3>
-            <p className="text-sm text-gray-500 max-w-md mx-auto">
-              Click "Gmail Sync" to auto-import emails, or "Log Communication" to manually record calls, texts, and meetings.
-            </p>
+          <div className="bg-surface-elev rounded-xl border border-border">
+            <EmptyState
+              icon={<Inbox className="w-8 h-8 text-fg-subtle" />}
+              title="Inbox empty"
+              description='Click "Gmail Sync" to auto-import emails, or "Log Communication" to manually record calls, texts, and meetings.'
+            />
           </div>
         ) : (
           <div className="space-y-2">
@@ -505,8 +507,8 @@ export default function CommunicationLogPage() {
               return (
                 <div
                   key={log.id}
-                  className={`bg-white rounded-xl border transition-all cursor-pointer ${
-                    isExpanded ? 'border-[#0f2a3e] shadow-md' : 'border-gray-200 hover:border-gray-300'
+                  className={`bg-surface-elev rounded-xl border transition-all cursor-pointer ${
+                    isExpanded ? 'border-signal shadow-md' : 'border-border hover:border-border-strong'
                   }`}
                   onClick={() => setExpanded(isExpanded ? null : log.id)}
                 >
@@ -525,11 +527,11 @@ export default function CommunicationLogPage() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-800 truncate">
+                        <span className="text-sm font-semibold text-fg truncate">
                           {log.subject || `${channelCfg.label} — ${log.fromAddress || 'Unknown'}`}
                         </span>
                         {log.hasAttachments && (
-                          <span className="text-[10px] text-gray-400 flex-shrink-0">📎 {log.attachmentCount}</span>
+                          <span className="text-[10px] text-fg-subtle flex-shrink-0">📎 {log.attachmentCount}</span>
                         )}
                         {log.gmailMessageId && (
                           <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
@@ -542,7 +544,7 @@ export default function CommunicationLogPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                      <p className="text-xs text-fg-muted truncate mt-0.5">
                         {log.builder
                           ? `${log.builder.companyName} (${log.builder.contactName})`
                           : log.organization
@@ -560,7 +562,7 @@ export default function CommunicationLogPage() {
                       >
                         {channelCfg.label}
                       </span>
-                      <p className="text-[10px] text-gray-400 mt-1">
+                      <p className="text-[10px] text-fg-subtle mt-1">
                         {log.sentAt
                           ? new Date(log.sentAt).toLocaleDateString('en-US', {
                               month: 'short',
@@ -575,33 +577,33 @@ export default function CommunicationLogPage() {
 
                   {/* Expanded Content */}
                   {isExpanded && (
-                    <div className="px-5 pb-4 border-t border-gray-100 pt-3">
-                      <div className="text-xs text-gray-500 space-y-1 mb-3">
+                    <div className="px-5 pb-4 border-t border-border pt-3">
+                      <div className="text-xs text-fg-muted space-y-1 mb-3">
                         {log.fromAddress && (
                           <p>
-                            <span className="font-semibold text-gray-600">From:</span> {log.fromAddress}
+                            <span className="font-semibold text-fg-muted">From:</span> {log.fromAddress}
                           </p>
                         )}
                         {log.toAddresses?.length > 0 && (
                           <p>
-                            <span className="font-semibold text-gray-600">To:</span>{' '}
+                            <span className="font-semibold text-fg-muted">To:</span>{' '}
                             {log.toAddresses.join(', ')}
                           </p>
                         )}
                         {log.ccAddresses && log.ccAddresses.length > 0 && (
                           <p>
-                            <span className="font-semibold text-gray-600">CC:</span>{' '}
+                            <span className="font-semibold text-fg-muted">CC:</span>{' '}
                             {log.ccAddresses.join(', ')}
                           </p>
                         )}
                         {log.duration && (
                           <p>
-                            <span className="font-semibold text-gray-600">Duration:</span> {log.duration} min
+                            <span className="font-semibold text-fg-muted">Duration:</span> {log.duration} min
                           </p>
                         )}
                       </div>
                       {log.body && (
-                        <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-4 max-h-80 overflow-y-auto">
+                        <div className="text-sm text-fg leading-relaxed whitespace-pre-wrap bg-surface-muted rounded-lg p-4 max-h-80 overflow-y-auto">
                           {log.body}
                         </div>
                       )}
@@ -613,10 +615,10 @@ export default function CommunicationLogPage() {
                       )}
                       {log.attachments?.length > 0 && (
                         <div className="mt-3">
-                          <p className="text-xs font-semibold text-gray-600 mb-1">Attachments:</p>
+                          <p className="text-xs font-semibold text-fg-muted mb-1">Attachments:</p>
                           <div className="flex flex-wrap gap-2">
                             {log.attachments.map((att) => (
-                              <span key={att.id} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                              <span key={att.id} className="bg-surface-muted text-fg-muted px-2 py-1 rounded text-xs">
                                 📎 {att.fileName}
                                 {att.fileSize && ` (${(att.fileSize / 1024).toFixed(0)}KB)`}
                               </span>
@@ -628,7 +630,7 @@ export default function CommunicationLogPage() {
                         <div className="mt-3">
                           <Link
                             href={`/ops/accounts/${log.builder.id}`}
-                            className="text-xs text-[#0f2a3e] hover:underline font-medium"
+                            className="text-xs text-signal hover:underline font-medium"
                             onClick={(e) => e.stopPropagation()}
                           >
                             View Builder: {log.builder.companyName} →
@@ -649,17 +651,17 @@ export default function CommunicationLogPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+              className="px-4 py-2 rounded-lg border border-border bg-surface-elev text-sm text-fg-muted hover:bg-row-hover disabled:opacity-40"
             >
               ← Previous
             </button>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-fg-muted">
               Page {page} of {Math.ceil(total / 25)}
             </span>
             <button
               disabled={page >= Math.ceil(total / 25)}
               onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+              className="px-4 py-2 rounded-lg border border-border bg-surface-elev text-sm text-fg-muted hover:bg-row-hover disabled:opacity-40"
             >
               Next →
             </button>

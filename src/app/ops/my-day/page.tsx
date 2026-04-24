@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CalendarDays } from 'lucide-react'
+import { EmptyState } from '@/components/ui'
 
 interface Task {
   id: string
@@ -129,7 +131,7 @@ export default function MyDayPage() {
         ) : data ? (
           <>
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-slate-900 mb-2">{data.greeting}</h1>
+              <h1 className="text-4xl font-semibold text-slate-900 mb-2">{data.greeting}</h1>
               <p className="text-lg text-slate-600">{data.date}</p>
             </div>
 
@@ -144,7 +146,7 @@ export default function MyDayPage() {
                 }`}
               >
                 <p className="text-slate-600 text-sm font-medium">Total Tasks</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">{data.summary.totalTasks}</p>
+                <p className="text-3xl font-semibold text-slate-900 mt-2">{data.summary.totalTasks}</p>
               </button>
 
               <button
@@ -156,7 +158,7 @@ export default function MyDayPage() {
                 }`}
               >
                 <p className="text-red-700 text-sm font-medium">High Priority</p>
-                <p className="text-3xl font-bold text-red-900 mt-2">{data.summary.highPriority}</p>
+                <p className="text-3xl font-semibold text-red-900 mt-2">{data.summary.highPriority}</p>
               </button>
 
               <button
@@ -168,7 +170,7 @@ export default function MyDayPage() {
                 }`}
               >
                 <p className="text-amber-700 text-sm font-medium">Medium Priority</p>
-                <p className="text-3xl font-bold text-amber-900 mt-2">{data.summary.mediumPriority}</p>
+                <p className="text-3xl font-semibold text-amber-900 mt-2">{data.summary.mediumPriority}</p>
               </button>
 
               <button
@@ -180,17 +182,18 @@ export default function MyDayPage() {
                 }`}
               >
                 <p className="text-green-700 text-sm font-medium">Low Priority</p>
-                <p className="text-3xl font-bold text-green-900 mt-2">{data.summary.lowPriority}</p>
+                <p className="text-3xl font-semibold text-green-900 mt-2">{data.summary.lowPriority}</p>
               </button>
             </div>
 
             {/* Task List by Category */}
             {data.tasks.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">✓</div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">All caught up!</h2>
-                <p className="text-slate-600">You have no pending tasks. Take a breather or review completed work.</p>
-              </div>
+              <EmptyState
+                size="full"
+                icon={<CalendarDays className="w-10 h-10 text-fg-subtle" />}
+                title="All caught up!"
+                description="You have no pending tasks. Take a breather or review completed work."
+              />
             ) : (
               <div className="space-y-6">
                 {groupedTasks &&

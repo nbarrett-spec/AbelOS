@@ -6,6 +6,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Sparkles } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 import { checkStaffAuth } from '@/lib/api-auth'
 
 interface AgentAction {
@@ -163,7 +165,7 @@ export default function AgentWorkflowsPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '8px', color: '#0f2a3e' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '8px', color: '#0f2a3e' }}>
           AI Agent Workflows
         </h1>
         <p style={{ color: '#6B7280', fontSize: '16px' }}>
@@ -200,7 +202,7 @@ export default function AgentWorkflowsPage() {
             <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>
               {stat.label}
             </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#0f2a3e' }}>
+            <div style={{ fontSize: '28px', fontWeight: '600', color: '#0f2a3e' }}>
               {stat.value}
             </div>
           </div>
@@ -262,9 +264,11 @@ export default function AgentWorkflowsPage() {
         </div>
 
         {workflows.length === 0 ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: '#6B7280' }}>
-            <p>No workflows found. Run a quick action to get started.</p>
-          </div>
+          <EmptyState
+            icon={<Sparkles className="w-8 h-8 text-fg-subtle" />}
+            title="No insights yet"
+            description="No workflows found. Run a quick action to get started."
+          />
         ) : (
           <div>
             {workflows.map((workflow) => (

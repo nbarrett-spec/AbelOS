@@ -33,11 +33,12 @@ import Link from 'next/link'
 import {
   DollarSign, TrendingUp, TrendingDown, Wallet, AlertTriangle, Package, Factory,
   Truck, ShoppingCart, ArrowUpRight, RefreshCw, Clock, ChevronRight,
-  Activity, Building2, Briefcase, Archive, Calendar, Printer,
+  Activity, Building2, Briefcase, Archive, Calendar, Printer, History,
 } from 'lucide-react'
 import {
   KPICard, Sparkline, Badge, StatusBadge, PageHeader,
   Card, CardHeader, CardTitle, CardDescription, CardBody,
+  LiveDataIndicator, EmptyState,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
@@ -452,6 +453,9 @@ export default function ExecutiveDashboard() {
         }
       `}</style>
 
+      {/* ── Page-top live-data pulse — fires when refresh lands ──────── */}
+      <LiveDataIndicator trigger={lastRefreshed} />
+
       {/* ── Page header ───────────────────────────────────────────────── */}
       <PageHeader
         eyebrow="Executive"
@@ -468,6 +472,18 @@ export default function ExecutiveDashboard() {
                 onQuarterChange={setQuarter}
               />
             )}
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('abel:open-activity'))
+                }
+              }}
+              className="btn btn-ghost btn-sm"
+              title="Recent activity (A)"
+              aria-label="Open recent activity"
+            >
+              <History className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={() => typeof window !== 'undefined' && window.print()}
               className="btn btn-ghost btn-sm"
@@ -533,6 +549,8 @@ export default function ExecutiveDashboard() {
             icon={<DollarSign className="w-3.5 h-3.5" />}
             sparkline={kpiDerivations.revenueTrend}
             onClick={() => router.push('/ops/finance')}
+            animateValue
+            animateDelay={0}
           />
 
           {/* 2. YTD Gross Margin % */}
@@ -550,6 +568,8 @@ export default function ExecutiveDashboard() {
             subtitle={kpiDerivations.gmDeltaPct !== null ? 'vs prior YTD' : 'Revenue vs COGS'}
             icon={<Activity className="w-3.5 h-3.5" />}
             onClick={() => router.push('/ops/finance/health')}
+            animateValue
+            animateDelay={100}
           />
 
           {/* 3. Active Jobs */}
@@ -560,6 +580,8 @@ export default function ExecutiveDashboard() {
             subtitle="Excludes CLOSED / CANCELLED"
             icon={<Briefcase className="w-3.5 h-3.5" />}
             onClick={() => router.push('/ops/jobs?status=CREATED,IN_PRODUCTION,STAGED,LOADED,IN_TRANSIT,DELIVERED,INSTALLING,PUNCH_LIST,COMPLETE,INVOICED')}
+            animateValue
+            animateDelay={200}
           />
 
           {/* 4. Open Allocations — proxied by open-orders $ + count since
@@ -575,6 +597,8 @@ export default function ExecutiveDashboard() {
             icon={<Archive className="w-3.5 h-3.5" />}
             sparkline={kpiDerivations.allocTrend}
             onClick={() => router.push('/ops/inventory/allocations?status=RESERVED')}
+            animateValue
+            animateDelay={300}
           />
 
           {/* 5. Outstanding AR */}
@@ -591,6 +615,8 @@ export default function ExecutiveDashboard() {
             badge={kpiDerivations.overdueCount > 0 ? (
               <Badge variant="danger" size="xs" dot>{kpiDerivations.overdueCount} overdue</Badge>
             ) : undefined}
+            animateValue
+            animateDelay={400}
           />
 
           {/* 6. On-Time Delivery % (rolling window) */}
@@ -601,6 +627,8 @@ export default function ExecutiveDashboard() {
             subtitle="Last 30 days (proxy)"
             icon={<Truck className="w-3.5 h-3.5" />}
             onClick={() => router.push('/ops/delivery')}
+            animateValue
+            animateDelay={500}
           />
         </div>
       )}
@@ -647,9 +675,12 @@ export default function ExecutiveDashboard() {
         </div>
       )}
 
+      {/* ── Drafting-line divider between glance row and chart area ──── */}
+      <div className="divider-draft" />
+
       {/* ── Existing YTD KPI strip + per-month table + chart (preserved) */}
       {rollup && (
-        <div className="space-y-4">
+        <div id="section-financials" className="space-y-4">
           <FinancialYtdStrip ytd={rollup.ytd} restricted={!canViewFinancials} />
           <FinancialMonthTable
             months={rollup.months}
@@ -667,11 +698,12 @@ export default function ExecutiveDashboard() {
 
       {/* ── Alerts strip (preserved) ──────────────────────────────────── */}
       {hasAlerts && (
-        <div className="panel panel-live border-l-0 px-4 py-3 flex items-center gap-3 flex-wrap">
+        <div id="section-alerts" className="panel panel-live border-l-0 px-4 py-3 flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-data-warning">
             <AlertTriangle className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase tracking-wide">Action required</span>
           </div>
+          <LiveDataIndicator trigger={lastRefreshed} className="w-12 h-[2px]" />
           <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-4 text-sm text-fg">
             {data.alerts.overdueInvoices > 0 && (
@@ -698,22 +730,35 @@ export default function ExecutiveDashboard() {
         </div>
       )}
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Revenue monthly + pipeline (preserved) ────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div id="section-revenue-pipeline" className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Revenue trend */}
-        <Card variant="default" padding="none" className="lg:col-span-2">
+        <Card
+          variant="default"
+          padding="none"
+          className="lg:col-span-2 hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Revenue by Month</CardTitle>
               <CardDescription>Last {data.monthlyRevenue.length} months</CardDescription>
             </div>
-            <Badge variant="neutral" size="sm" dot>Live</Badge>
+            <div className="flex items-center gap-2">
+              <LiveDataIndicator trigger={lastRefreshed} className="w-10 h-[2px]" />
+              <Badge variant="neutral" size="sm" dot>Live</Badge>
+            </div>
           </CardHeader>
           <CardBody className="pt-5">
             {data.monthlyRevenue.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-fg-muted text-sm">
-                Revenue data will appear as orders land.
-              </div>
+              <EmptyState
+                icon="chart"
+                title="No financial data yet"
+                description="Revenue data will appear as orders land."
+                size="compact"
+              />
             ) : (
               <div className="space-y-2.5">
                 {data.monthlyRevenue.map((m) => {
@@ -749,18 +794,26 @@ export default function ExecutiveDashboard() {
         </Card>
 
         {/* Pipeline */}
-        <Card variant="default" padding="none">
+        <Card
+          variant="default"
+          padding="none"
+          className="hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Order Pipeline</CardTitle>
               <CardDescription>{fmtInt(data.pipelineHealth.totalOrders)} active</CardDescription>
             </div>
+            <LiveDataIndicator trigger={lastRefreshed} className="w-10 h-[2px]" />
           </CardHeader>
           <CardBody className="pt-4 space-y-2">
             {data.pipelineHealth.ordersByStatus.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-fg-muted text-sm">
-                No orders yet.
-              </div>
+              <EmptyState
+                icon="package"
+                title="No orders found"
+                description="Pipeline appears once orders are created."
+                size="compact"
+              />
             ) : (
               data.pipelineHealth.ordersByStatus.map((item) => {
                 const maxCount = Math.max(...data.pipelineHealth.ordersByStatus.map(s => s.count), 1)
@@ -848,10 +901,17 @@ export default function ExecutiveDashboard() {
         />
       </div>
 
+      {/* ── Drafting-line divider before builders block ───────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Top builders + builder metrics (preserved) ────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div id="section-builders" className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Top builders */}
-        <Card variant="default" padding="none" className="lg:col-span-2">
+        <Card
+          variant="default"
+          padding="none"
+          className="lg:col-span-2 hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Top Builders by Revenue</CardTitle>
@@ -863,7 +923,12 @@ export default function ExecutiveDashboard() {
           </CardHeader>
           <div className="overflow-x-auto">
             {data.builderMetrics.topBuilders.length === 0 ? (
-              <div className="text-center py-10 text-sm text-fg-muted">No builder revenue data yet.</div>
+              <EmptyState
+                icon="users"
+                title="No customers yet"
+                description="Builder revenue appears as orders land."
+                size="compact"
+              />
             ) : (
               <table className="datatable density-compact">
                 <thead>
@@ -917,7 +982,11 @@ export default function ExecutiveDashboard() {
         </Card>
 
         {/* Builder metrics / focus rail */}
-        <Card variant="default" padding="none">
+        <Card
+          variant="default"
+          padding="none"
+          className="hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Account Health</CardTitle>
@@ -976,7 +1045,11 @@ export default function ExecutiveDashboard() {
       </div>
 
       {/* ── AI / quick access rail (preserved) ────────────────────────── */}
-      <Card variant="default" padding="none">
+      <Card
+        variant="default"
+        padding="none"
+        className="hover:border-l-2 hover:border-signal transition-all duration-200"
+      >
         <CardHeader>
           <div>
             <CardTitle>Intelligence</CardTitle>

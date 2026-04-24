@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
 import { PageHeader, Card, KPICard, Badge, Button, Modal } from '@/components/ui'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface TodayDelivery {
   id: string
@@ -109,8 +111,12 @@ export default function TodayDeliveryBoard() {
         </div>
 
         {data?.drivers.length === 0 && (
-          <Card padding="lg" className="text-center text-fg-muted">
-            No deliveries scheduled today.
+          <Card padding="lg">
+            <EmptyState
+              icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+              title="No deliveries scheduled"
+              description="No drivers have stops on the board today."
+            />
           </Card>
         )}
 

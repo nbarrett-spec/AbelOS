@@ -175,7 +175,7 @@ export default function HomeownerAccessPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Homeowner Upgrade Portal</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">Homeowner Upgrade Portal</h1>
           <p className="text-sm text-gray-500 mt-1">
             Generate access codes for homeowners to view and select upgrades
           </p>
@@ -192,19 +192,19 @@ export default function HomeownerAccessPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Total Access Codes</p>
-          <p className="text-3xl font-bold text-[#0f2a3e] mt-2">{entries.length}</p>
+          <p className="text-3xl font-semibold text-[#0f2a3e] mt-2">{entries.length}</p>
         </div>
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Active Portals</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">{activeCount}</p>
+          <p className="text-3xl font-semibold text-green-600 mt-2">{activeCount}</p>
         </div>
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Total Upgrades Selected</p>
-          <p className="text-3xl font-bold text-[#C6A24E] mt-2">{totalUpgrades}</p>
+          <p className="text-3xl font-semibold text-signal mt-2">{totalUpgrades}</p>
         </div>
         <div className="bg-white rounded-lg border p-5">
           <p className="text-xs text-gray-500 uppercase font-semibold">Unique Builders</p>
-          <p className="text-3xl font-bold text-purple-600 mt-2">{new Set(entries.map(e => e.builderId)).size}</p>
+          <p className="text-3xl font-semibold text-purple-600 mt-2">{new Set(entries.map(e => e.builderId)).size}</p>
         </div>
       </div>
 
@@ -238,7 +238,7 @@ export default function HomeownerAccessPage() {
             <div key={entry.id} className={`bg-white rounded-lg border p-5 hover:shadow-md transition-shadow ${!entry.active ? 'opacity-60' : ''}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">{entry.homeownerName}</h3>
+                  <h3 className="text-base font-semibold text-gray-900">{entry.homeownerName}</h3>
                   <p className="text-xs text-gray-500">{entry.homeownerEmail}</p>
                 </div>
                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -264,7 +264,7 @@ export default function HomeownerAccessPage() {
               <div className="bg-gray-50 rounded-lg p-3 mb-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-semibold">Access Code</p>
-                  <p className="text-lg font-mono font-bold text-[#0f2a3e]">{entry.accessToken}</p>
+                  <p className="text-lg font-mono font-semibold text-[#0f2a3e]">{entry.accessToken}</p>
                 </div>
                 <button
                   onClick={() => copyCode(entry.accessToken, entry.id)}
@@ -311,7 +311,7 @@ export default function HomeownerAccessPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="border-b px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Generate Access Code</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Generate Access Code</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
             </div>
             <form onSubmit={handleCreate} className="px-6 py-4 space-y-4">

@@ -155,7 +155,7 @@ export default function LaborCostsPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: '#666' }}>
+      <div className="text-fg-muted" style={{ padding: 32, textAlign: 'center' }}>
         Loading labor cost data...
       </div>
     )
@@ -166,10 +166,10 @@ export default function LaborCostsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
+          <h1 className="text-fg" style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>
             Labor &amp; Overhead Costs
           </h1>
-          <p style={{ color: '#666', margin: '6px 0 0', fontSize: 14 }}>
+          <p className="text-fg-muted" style={{ margin: '6px 0 0', fontSize: 14 }}>
             Set labor and overhead costs per category. These flow into BOM cost calculations, pricing engine, and all margin reports.
           </p>
         </div>

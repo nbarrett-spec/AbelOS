@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import {
   ShoppingCart, Package, CheckCircle2, Clock, RefreshCw, Search, Sparkles,
-  AlertTriangle, TrendingUp, Zap, Plus, Truck, ChevronDown, ChevronUp,
+  AlertTriangle, TrendingUp, Zap, Plus, Truck, ChevronDown, ChevronUp, Receipt,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Card, CardHeader, CardTitle, CardDescription, CardBody,
@@ -602,7 +602,7 @@ export default function PurchaseOrdersPage() {
             rowKey={(o) => o.id}
             onRowClick={(o) => { window.location.href = `/ops/purchasing/${o.id}` }}
             keyboardNav
-            empty={<EmptyState icon="package" title="No purchase orders" description="Use AI Generate POs or create one manually." />}
+            empty={<EmptyState icon={<Receipt className="w-8 h-8 text-fg-subtle" />} title="No POs to display" description="Use AI Generate POs or create one manually." />}
             columns={[
               {
                 key: 'status',

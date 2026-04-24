@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Handshake } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Deal {
   id: string
@@ -145,7 +148,7 @@ export default function SalesPortal() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-surface-elev" />
       </div>
     )
   }
@@ -155,7 +158,7 @@ export default function SalesPortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); loadData() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
+        <button onClick={() => { setError(null); loadData() }} className="mt-4 px-4 py-2 bg-surface-elev text-white rounded-lg hover:bg-surface text-sm">
           Retry
         </button>
       </div>
@@ -164,27 +167,26 @@ export default function SalesPortal() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Sales Portal</h1>
-          <p className="text-gray-600 mt-1">Manage deals, track pipeline, and close business</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => router.push('/ops/quotes?create=1')}
-            className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors text-sm font-medium"
-          >
-            + New Deal
-          </button>
-          <button
-            onClick={() => router.push('/ops/accounts')}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-          >
-            Import Leads
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Sales Portal"
+        description="Manage deals, track pipeline, and close business"
+        actions={
+          <>
+            <button
+              onClick={() => router.push('/ops/quotes?create=1')}
+              className="px-4 py-2 bg-surface-elev text-white rounded-lg hover:bg-surface transition-colors text-sm font-medium"
+            >
+              + New Deal
+            </button>
+            <button
+              onClick={() => router.push('/ops/accounts')}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            >
+              Import Leads
+            </button>
+          </>
+        }
+      />
 
       {/* Toast notification */}
       {toastMessage && (
@@ -195,11 +197,11 @@ export default function SalesPortal() {
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Link href="/ops/portal/sales/briefing" className="bg-white rounded-xl border border-[#C6A24E] bg-orange-50 hover:bg-orange-100 transition-all p-4 text-center">
+        <Link href="/ops/portal/sales/briefing" className="bg-white rounded-xl border border-signal bg-orange-50 hover:bg-orange-100 transition-all p-4 text-center">
           <p className="text-2xl mb-2">☀️</p>
           <p className="text-sm font-medium text-gray-900">Morning Briefing</p>
         </Link>
-        <Link href="/deals" className="bg-white rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-[#0f2a3e] transition-all p-4 text-center">
+        <Link href="/deals" className="bg-white rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-surface-elev transition-all p-4 text-center">
           <p className="text-2xl mb-2">📊</p>
           <p className="text-sm font-medium text-gray-900">View Pipeline</p>
         </Link>
@@ -226,25 +228,25 @@ export default function SalesPortal() {
         {/* My Deals - spans 2 columns */}
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Active Deals</h2>
-            <Link href="/deals" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
+            <h2 className="text-lg font-semibold text-gray-900">Active Deals</h2>
+            <Link href="/deals" className="text-sm text-surface-elev hover:text-signal">
               View All →
             </Link>
           </div>
 
           {myDeals.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">🤝</p>
-              <p>No active deals yet</p>
-              <Link href="/deals/new" className="text-sm text-[#0f2a3e] hover:underline mt-2 inline-block">
-                Create your first deal →
-              </Link>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<Handshake className="w-6 h-6 text-fg-subtle" />}
+              title="No active deals yet"
+              description="Create your first deal to get started."
+              action={{ label: 'Create deal', href: '/deals/new' }}
+            />
           ) : (
             <div className="space-y-3">
               {myDeals.map(deal => (
                 <Link key={deal.id} href={`/deals/${deal.id}`}>
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-[#0f2a3e] hover:bg-blue-50 transition-all">
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-surface-elev hover:bg-blue-50 transition-all">
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">{deal.companyName}</p>
                       <p className="text-sm text-gray-600 mt-0.5">
@@ -257,7 +259,7 @@ export default function SalesPortal() {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-[#0f2a3e]">{formatCurrency(deal.dealValue)}</p>
+                      <p className="font-semibold text-surface-elev">{formatCurrency(deal.dealValue)}</p>
                     </div>
                   </div>
                 </Link>
@@ -268,15 +270,15 @@ export default function SalesPortal() {
 
         {/* Quick Stats */}
         <div className="bg-white rounded-xl border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
           <div className="space-y-4">
             <div>
               <p className="text-xs text-gray-500">Active Deals</p>
-              <p className="text-2xl font-bold text-[#0f2a3e]">{myDeals.length}</p>
+              <p className="text-2xl font-bold text-surface-elev">{myDeals.length}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Follow-Ups Due</p>
-              <p className="text-2xl font-bold text-[#C6A24E]">{followUps.length}</p>
+              <p className="text-2xl font-bold text-signal">{followUps.length}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Pipeline Value</p>
@@ -287,7 +289,7 @@ export default function SalesPortal() {
               </p>
             </div>
             <div className="pt-4 border-t">
-              <Link href="/ops/reports" className="block w-full px-4 py-2 text-sm font-medium text-[#0f2a3e] border border-[#0f2a3e] rounded-lg hover:bg-blue-50 transition-colors text-center">
+              <Link href="/ops/reports" className="block w-full px-4 py-2 text-sm font-medium text-surface-elev border border-surface-elev rounded-lg hover:bg-blue-50 transition-colors text-center">
                 View Detailed Analytics
               </Link>
             </div>
@@ -299,8 +301,8 @@ export default function SalesPortal() {
       {followUps.length > 0 && (
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Upcoming Follow-Ups</h2>
-            <Link href="/ops/portal/sales/briefing" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
+            <h2 className="text-lg font-semibold text-gray-900">Upcoming Follow-Ups</h2>
+            <Link href="/ops/portal/sales/briefing" className="text-sm text-surface-elev hover:text-signal">
               View All →
             </Link>
           </div>
@@ -317,7 +319,7 @@ export default function SalesPortal() {
                     setSelectedFollowUpDealId(followUp.dealId)
                     setShowActivityModal(true)
                   }}
-                  className="text-sm text-[#0f2a3e] hover:underline font-medium"
+                  className="text-sm text-surface-elev hover:underline font-medium"
                 >
                   Log Activity →
                 </button>
@@ -330,11 +332,11 @@ export default function SalesPortal() {
       {/* Recent Activity Feed */}
       {recentActivity.length > 0 && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
           <div className="space-y-3">
             {recentActivity.map(activity => (
               <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-gray-100 last:border-0">
-                <div className="w-2 h-2 bg-[#0f2a3e] rounded-full mt-1.5 flex-shrink-0" />
+                <div className="w-2 h-2 bg-surface-elev rounded-full mt-1.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">{activity.subject}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -350,10 +352,10 @@ export default function SalesPortal() {
       {/* Key Account Cards */}
       {featuredBuilders.length > 0 && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Featured Accounts</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Featured Accounts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {featuredBuilders.map(builder => (
-              <div key={builder.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#0f2a3e] transition-all">
+              <div key={builder.id} className="p-4 rounded-lg border border-gray-200 hover:border-surface-elev transition-all">
                 <p className="font-semibold text-gray-900 text-sm">{builder.companyName}</p>
                 <div className="mt-3 space-y-2 text-xs">
                   <div className="flex justify-between">
@@ -379,14 +381,14 @@ export default function SalesPortal() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full">
             <div className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Log Activity</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Log Activity</h3>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
                   <select
                     value={activityType}
                     onChange={(e) => setActivityType(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent">
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-surface-elev focus:border-transparent">
                     <option value="Call">Call</option>
                     <option value="Email">Email</option>
                     <option value="Meeting">Meeting</option>
@@ -399,7 +401,7 @@ export default function SalesPortal() {
                     value={activityNotes}
                     onChange={(e) => setActivityNotes(e.target.value)}
                     placeholder="Enter activity details..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent resize-none"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-surface-elev focus:border-transparent resize-none"
                     rows={4}
                   />
                 </div>
@@ -418,7 +420,7 @@ export default function SalesPortal() {
                 <button
                   onClick={handleSubmitActivity}
                   disabled={submittingActivity || !activityNotes.trim()}
-                  className="flex-1 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg text-sm font-medium hover:bg-[#0a1a28] transition-colors disabled:opacity-50">
+                  className="flex-1 px-4 py-2 bg-surface-elev text-white rounded-lg text-sm font-medium hover:bg-surface transition-colors disabled:opacity-50">
                   {submittingActivity ? 'Logging...' : 'Log Activity'}
                 </button>
               </div>

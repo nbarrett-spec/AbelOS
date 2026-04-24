@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Delivery {
   id: string
@@ -97,7 +100,7 @@ export default function DeliveryPortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
+        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-surface-elev text-white rounded-lg hover:bg-surface text-sm">
           Retry
         </button>
       </div>
@@ -106,21 +109,20 @@ export default function DeliveryPortal() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Delivery & Logistics Dashboard</h1>
-          <p className="text-gray-600 mt-1">Route planning, crew coordination, and delivery tracking</p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/ops/schedule" className="px-4 py-2 bg-[#3498DB] text-white rounded-lg hover:bg-[#2980B9] transition-colors text-sm font-medium">
-            🆕 Start Route
-          </Link>
-          <Link href="/ops/reports" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-            📊 Reports
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Delivery & Logistics Dashboard"
+        description="Route planning, crew coordination, and delivery tracking"
+        actions={
+          <>
+            <Link href="/ops/schedule" className="px-4 py-2 bg-[#3498DB] text-white rounded-lg hover:bg-[#2980B9] transition-colors text-sm font-medium">
+              🆕 Start Route
+            </Link>
+            <Link href="/ops/reports" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+              📊 Reports
+            </Link>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -136,7 +138,7 @@ export default function DeliveryPortal() {
           <p className="text-2xl font-bold text-gray-900 mt-1">{activeRoutes.length}</p>
           <p className="text-xs text-gray-400 mt-1">In delivery</p>
         </div>
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#C6A24E] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-signal p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Crews Available</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
             {crewAssignments.filter(c => c.activeDeliveries === 0).length}
@@ -155,17 +157,19 @@ export default function DeliveryPortal() {
         {/* Today's Deliveries */}
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Today's Deliveries</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Today's Deliveries</h2>
             <Link href="/ops/schedule" className="text-sm text-[#3498DB] hover:text-[#2980B9]">
               Full Schedule →
             </Link>
           </div>
 
           {todayDeliveries.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">🚚</p>
-              <p>No deliveries scheduled for today</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<Truck className="w-6 h-6 text-fg-subtle" />}
+              title="No deliveries scheduled"
+              description="No deliveries scheduled for today."
+            />
           ) : (
             <div className="space-y-3">
               {todayDeliveries.map((delivery) => (
@@ -207,7 +211,7 @@ export default function DeliveryPortal() {
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-2">
             <Link href="/ops/schedule" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#3498DB] transition-all text-sm font-medium text-gray-900 block text-center">
               🆕 Start Route
@@ -215,7 +219,7 @@ export default function DeliveryPortal() {
             <Link href="/ops/schedule" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all text-sm font-medium text-gray-900 block text-center">
               ✅ Log Delivery
             </Link>
-            <Link href="/ops/jobs" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C6A24E] transition-all text-sm font-medium text-gray-900 block text-center">
+            <Link href="/ops/jobs" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-signal transition-all text-sm font-medium text-gray-900 block text-center">
               ⚠️ Report Issue
             </Link>
             <Link href="/ops/reports" className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all text-sm font-medium text-gray-900 block text-center">
@@ -227,7 +231,7 @@ export default function DeliveryPortal() {
 
       {/* Active Routes in Real-Time */}
       <div className="bg-white rounded-xl border p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Active Routes (Live Tracking)</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Routes (Live Tracking)</h2>
 
         {activeRoutes.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -287,7 +291,7 @@ export default function DeliveryPortal() {
         {/* Upcoming Deliveries (Next 3 Days) */}
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Upcoming (Next 3 Days)</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Upcoming (Next 3 Days)</h2>
             <Link href="/ops/schedule" className="text-sm text-[#3498DB] hover:text-[#2980B9]">
               Full Calendar →
             </Link>
@@ -322,7 +326,7 @@ export default function DeliveryPortal() {
 
         {/* Crew Assignments & Utilization */}
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Crew Status & Assignments</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Crew Status & Assignments</h2>
 
           {crewAssignments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">

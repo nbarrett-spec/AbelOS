@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ShieldCheck, AlertTriangle, FileBarChart } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface QCJob {
   id: string
@@ -158,8 +161,8 @@ export default function QCPortal() {
     },
     NORMAL: {
       bg: 'bg-blue-50',
-      border: 'border-blue-200 hover:border-[#0f2a3e]',
-      badge: 'bg-[#0f2a3e] text-white',
+      border: 'border-blue-200 hover:border-surface-elev',
+      badge: 'bg-surface-elev text-white',
     },
   }
 
@@ -177,35 +180,32 @@ export default function QCPortal() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Quality Control Center</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:flex sm:gap-2">
-          <button
-            onClick={() => setShowLogModal(true)}
-            className="px-4 py-3 min-h-[48px] bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-          >
-            Log Result
-          </button>
-          <Link
-            href="/ops/portal/qc/queue"
-            className="px-4 py-3 min-h-[48px] bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium flex items-center justify-center text-center"
-          >
-            + Start Inspection
-          </Link>
-          <Link
-            href="/ops/manufacturing/qc"
-            className="px-4 py-3 min-h-[48px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center text-center"
-          >
-            All Checks
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Quality Control Center"
+        description={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        actions={
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:flex sm:gap-2">
+            <button
+              onClick={() => setShowLogModal(true)}
+              className="px-4 py-3 min-h-[48px] bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+            >
+              Log Result
+            </button>
+            <Link
+              href="/ops/portal/qc/queue"
+              className="px-4 py-3 min-h-[48px] bg-[#C0392B] text-white rounded-lg hover:bg-[#A93226] transition-colors text-sm font-medium flex items-center justify-center text-center"
+            >
+              + Start Inspection
+            </Link>
+            <Link
+              href="/ops/manufacturing/qc"
+              className="px-4 py-3 min-h-[48px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center text-center"
+            >
+              All Checks
+            </Link>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
@@ -248,7 +248,7 @@ export default function QCPortal() {
 
       {/* Quick Actions */}
       <div className="bg-white rounded-xl border p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
           <Link
             href="/ops/portal/qc/queue"
@@ -258,7 +258,7 @@ export default function QCPortal() {
           </Link>
           <Link
             href="/ops/portal/qc/queue"
-            className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-[#0f2a3e] transition-all text-sm font-medium text-gray-900 text-center flex items-center justify-center"
+            className="px-3 sm:px-4 py-3 min-h-[48px] rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-surface-elev transition-all text-sm font-medium text-gray-900 text-center flex items-center justify-center"
           >
             View Queue
           </Link>
@@ -288,17 +288,19 @@ export default function QCPortal() {
         {/* Inspection Queue - spans 2 columns */}
         <div className="lg:col-span-2 bg-white rounded-xl border p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">Inspection Queue</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Inspection Queue</h2>
             <Link href="/ops/portal/qc/queue" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[48px] flex items-center">
               View All →
             </Link>
           </div>
 
           {briefing.inspectionQueue.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">✅</p>
-              <p>All jobs inspected!</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<ShieldCheck className="w-6 h-6 text-fg-subtle" />}
+              title="All caught up"
+              description="All jobs have been inspected."
+            />
           ) : (
             <div className="space-y-3">
               {briefing.inspectionQueue.slice(0, 8).map((job) => {
@@ -340,17 +342,19 @@ export default function QCPortal() {
         {/* Failed/Rework Queue */}
         <div className="bg-white rounded-xl border p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">Rework Needed</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Rework Needed</h2>
             <Link href="/ops/portal/qc/rework" className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[48px] flex items-center">
               View All →
             </Link>
           </div>
 
           {briefing.failedJobs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">🎉</p>
-              <p>No rework needed</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<AlertTriangle className="w-6 h-6 text-fg-subtle" />}
+              title="No rework needed"
+              description="No failed jobs awaiting rework."
+            />
           ) : (
             <div className="space-y-3">
               {briefing.failedJobs.slice(0, 5).map((job) => (
@@ -375,15 +379,17 @@ export default function QCPortal() {
       {/* Recent Results */}
       <div className="bg-white rounded-xl border p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900">Recent Inspection Results</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Inspection Results</h2>
           <button className="text-sm text-[#C0392B] hover:text-[#A93226] min-h-[48px] flex items-center">View All →</button>
         </div>
 
         {briefing.recentResults.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-3xl mb-2">📋</p>
-            <p>No inspection results yet</p>
-          </div>
+          <EmptyState
+            size="compact"
+            icon={<FileBarChart className="w-6 h-6 text-fg-subtle" />}
+            title="No inspection results yet"
+            description="Logged QC results will appear here."
+          />
         ) : (
           <>
             {/* Mobile card list */}
@@ -454,7 +460,7 @@ export default function QCPortal() {
       {/* Defect Summary */}
       {briefing.defectSummary.length > 0 && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Defect Summary (Last 30 Days)</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Defect Summary (Last 30 Days)</h2>
           <div className="space-y-3">
             {briefing.defectSummary.map((defect) => {
               const maxCount = Math.max(...briefing.defectSummary.map((d) => d.count))

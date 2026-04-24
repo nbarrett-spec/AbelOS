@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Activity, AlertTriangle, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
-import { Card, CardBody, CardHeader, CardTitle, CardDescription, Badge } from '@/components/ui'
+import { Card, CardBody, CardHeader, CardTitle, CardDescription, Badge, LiveDataIndicator } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 type NucState = 'loading' | 'online' | 'degraded' | 'offline'
@@ -227,7 +227,11 @@ export default function NucStatusCard({ className }: { className?: string }) {
   }
 
   return (
-    <Card variant="default" padding="none" className={cn('relative', className)}>
+    <Card
+      variant="default"
+      padding="none"
+      className={cn('relative hover:border-l-2 hover:border-signal transition-all duration-200', className)}
+    >
       <CardHeader>
         <div className="flex items-center gap-2 min-w-0">
           <span aria-hidden className="relative flex w-2 h-2 shrink-0">
@@ -242,6 +246,7 @@ export default function NucStatusCard({ className }: { className?: string }) {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <LiveDataIndicator trigger={lastRefreshed} className="w-8 h-[2px]" />
           <Badge variant={tone.badge} size="xs" dot={state === 'online'}>
             {state.toUpperCase()}
           </Badge>

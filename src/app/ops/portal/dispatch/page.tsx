@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
 import { PageHeader, Card, KPICard, Badge, Button } from '@/components/ui'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Dispatch view — for Jordyn Steider (Delivery Logistical Supervisor)
@@ -164,9 +166,12 @@ export default function DispatchPage() {
           </div>
 
           {(!live?.locations || live.locations.length === 0) && (
-            <div className="text-sm text-fg-muted py-4">
-              No GPS pings yet today. Drivers need to toggle Share Location on their portal.
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<Truck className="w-6 h-6 text-fg-subtle" />}
+              title="No GPS pings yet today"
+              description="Drivers need to toggle Share Location on their portal."
+            />
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -234,7 +239,12 @@ export default function DispatchPage() {
         <Card padding="lg">
           <div className="text-sm font-semibold mb-3">Route progress by driver</div>
           {(!today || today.length === 0) && (
-            <div className="text-sm text-fg-muted py-4">No deliveries scheduled today.</div>
+            <EmptyState
+              size="compact"
+              icon={<Truck className="w-6 h-6 text-fg-subtle" />}
+              title="No deliveries scheduled"
+              description="No deliveries scheduled today."
+            />
           )}
           <div className="space-y-4">
             {today?.map((bucket) => {

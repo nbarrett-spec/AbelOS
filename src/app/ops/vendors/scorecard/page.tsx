@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Award, AlertTriangle, Timer, RefreshCw, Filter, ExternalLink,
+  Award, AlertTriangle, Timer, RefreshCw, Filter, ExternalLink, Factory,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Badge, DataTable, EmptyState, LiveDataIndicator,
@@ -362,9 +362,9 @@ export default function VendorScorecardPage() {
         ]}
         empty={
           <EmptyState
-            icon="package"
+            icon={<Factory />}
             size="compact"
-            title="No vendor activity"
+            title="No vendors"
             description={gradeFilter === 'all'
               ? `No POs in the last ${days} days.`
               : `No vendors match grade filter "${gradeFilter}".`}

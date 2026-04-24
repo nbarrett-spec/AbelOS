@@ -333,14 +333,14 @@ export default function JobsiteMapPage() {
   const unmappedJobs = totalJobs - mappedJobs
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       {/* Header */}
       <div className="bg-[#1e3a5f] text-white px-6 py-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
               <span className="text-2xl">🗺️</span>
-              <h1 className="text-2xl font-bold">Live Jobsite Map</h1>
+              <h1 className="text-2xl font-semibold">Live Jobsite Map</h1>
             </div>
             <p className="text-blue-200 mt-1 text-sm">
               {mappedJobs} jobsites mapped of {totalJobs} total
@@ -366,7 +366,7 @@ export default function JobsiteMapPage() {
       </div>
 
       {/* Status Filter Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3">
+      <div className="bg-surface border-b border-border px-6 py-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {JOB_STATUSES.map((status) => {
             const count =
@@ -380,7 +380,7 @@ export default function JobsiteMapPage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                   statusFilter === status.key
                     ? 'text-white shadow-sm'
-                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                    : 'text-fg-muted bg-surface-muted hover:bg-surface-muted/70'
                 }`}
                 style={
                   statusFilter === status.key
@@ -401,21 +401,21 @@ export default function JobsiteMapPage() {
       </div>
 
       {/* Search + Stats Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-4">
+      <div className="bg-surface border-b border-border px-6 py-2 flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <input
             type="text"
             placeholder="Search by builder, address, community, job #..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f2a3e] focus:border-transparent"
+            className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-signal focus:border-transparent"
           />
-          <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-fg-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <div className="text-xs text-gray-500">
-          Showing <strong className="text-gray-700">{filteredCount}</strong> jobs on map
+        <div className="text-xs text-fg-muted">
+          Showing <strong className="text-fg">{filteredCount}</strong> jobs on map
         </div>
       </div>
 
@@ -424,18 +424,18 @@ export default function JobsiteMapPage() {
         {/* Map */}
         <div className="flex-1 relative">
           {loading ? (
-            <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="flex items-center justify-center h-full bg-surface-muted">
               <div className="text-center">
-                <div className="w-10 h-10 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-gray-600 text-sm">Loading jobs...</p>
+                <div className="w-10 h-10 border-4 border-signal border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-fg-muted text-sm">Loading jobs...</p>
               </div>
             </div>
           ) : geocoding && geocodeProgress.done === 0 ? (
-            <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="flex items-center justify-center h-full bg-surface-muted">
               <div className="text-center">
                 <div className="w-10 h-10 border-4 border-[#C6A24E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-gray-600 text-sm">Geocoding addresses...</p>
-                <p className="text-gray-400 text-xs mt-1">This may take a moment for first load</p>
+                <p className="text-fg-muted text-sm">Geocoding addresses...</p>
+                <p className="text-fg-subtle text-xs mt-1">This may take a moment for first load</p>
               </div>
             </div>
           ) : (
@@ -446,12 +446,12 @@ export default function JobsiteMapPage() {
                 style={{ background: '#e8e8e8' }}
               />
               {geocoding && (
-                <div className="absolute top-3 left-3 z-[1000] bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
+                <div className="absolute top-3 left-3 z-[1000] bg-surface rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-[#C6A24E] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-fg-muted">
                     Geocoding {geocodeProgress.done}/{geocodeProgress.total}...
                   </span>
-                  <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-20 h-1.5 bg-surface-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[#C6A24E] rounded-full transition-all"
                       style={{
@@ -467,12 +467,12 @@ export default function JobsiteMapPage() {
 
         {/* Side Panel — Job Brief */}
         {selectedJob && (
-          <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto shadow-lg z-10">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <h3 className="font-bold text-[#1e3a5f] text-sm">Job Brief</h3>
+          <div className="w-96 bg-surface border-l border-border overflow-y-auto shadow-lg z-10">
+            <div className="sticky top-0 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
+              <h3 className="font-semibold text-[#1e3a5f] text-sm">Job Brief</h3>
               <button
                 onClick={() => setSelectedJob(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-fg-subtle hover:text-fg-muted"
               >
                 ✕
               </button>
@@ -486,7 +486,7 @@ export default function JobsiteMapPage() {
                 >
                   {getStatusInfo(selectedJob.status).label}
                 </span>
-                <span className="font-bold text-lg text-[#1e3a5f]">{selectedJob.jobNumber}</span>
+                <span className="font-semibold text-lg text-[#1e3a5f]">{selectedJob.jobNumber}</span>
               </div>
 
               {/* Details */}
@@ -519,7 +519,7 @@ export default function JobsiteMapPage() {
               <div className="space-y-2 pt-2">
                 <Link
                   href={`/ops/jobs/${selectedJob.id}`}
-                  className="block w-full text-center bg-[#0f2a3e] hover:bg-[#163d5c] text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                  className="block w-full text-center bg-signal hover:bg-signal-hover text-fg-on-accent py-2.5 rounded-lg text-sm font-semibold transition-colors"
                 >
                   Open Full Job Detail →
                 </Link>
@@ -576,18 +576,18 @@ export default function JobsiteMapPage() {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-gray-800 text-right max-w-[200px]">{value}</span>
+      <span className="text-fg-muted">{label}</span>
+      <span className="font-medium text-fg text-right max-w-[200px]">{value}</span>
     </div>
   )
 }
 
 function MiniStat({ label, value, icon }: { label: string; value: number; icon: string }) {
   return (
-    <div className="bg-gray-50 rounded-lg p-2 text-center">
+    <div className="bg-surface-muted rounded-lg p-2 text-center">
       <div className="text-lg">{icon}</div>
-      <div className="font-bold text-[#1e3a5f]">{value}</div>
-      <div className="text-[10px] text-gray-500">{label}</div>
+      <div className="font-semibold text-[#1e3a5f]">{value}</div>
+      <div className="text-[10px] text-fg-muted">{label}</div>
     </div>
   )
 }

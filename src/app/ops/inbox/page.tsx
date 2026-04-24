@@ -17,6 +17,7 @@
 import { useState } from 'react'
 import InboxQueue from '@/components/ui/InboxQueue'
 import Badge from '@/components/ui/Badge'
+import PageHeader from '@/components/ui/PageHeader'
 
 export default function InboxPage() {
   const [pendingCount, setPendingCount] = useState<number | null>(null)
@@ -24,25 +25,22 @@ export default function InboxPage() {
 
   return (
     <div className="space-y-4">
-      {/* Page header */}
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-fg tracking-tight">Inbox</h1>
-          <p className="text-xs text-fg-subtle mt-1">
-            Pending items assigned to you, or to your role. Resolve, snooze, or escalate.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {dataQualityCount > 0 && (
-            <Badge variant="danger" size="md">
-              {dataQualityCount} data quality
+      <PageHeader
+        title="Inbox"
+        description="Pending items assigned to you, or to your role. Resolve, snooze, or escalate."
+        actions={
+          <>
+            {dataQualityCount > 0 && (
+              <Badge variant="danger" size="md">
+                {dataQualityCount} data quality
+              </Badge>
+            )}
+            <Badge variant="neutral" size="md">
+              {pendingCount === null ? '…' : `${pendingCount} pending`}
             </Badge>
-          )}
-          <Badge variant="neutral" size="md">
-            {pendingCount === null ? '…' : `${pendingCount} pending`}
-          </Badge>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* Queue */}
       <InboxQueue

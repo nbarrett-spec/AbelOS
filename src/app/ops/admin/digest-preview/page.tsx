@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface StaffOption {
   id: string
@@ -111,22 +112,24 @@ export default function DigestPreviewPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-surface-elev text-fg-on-accent px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
 
-      <div>
-        <h1 className="text-2xl font-bold text-[#0f2a3e]">Daily Digest Preview</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Pick a staff member to see exactly what their 6 AM digest would look
-          like right now. "Send test" fires a real email (opt-out still applies).
-        </p>
-      </div>
+      <PageHeader
+        title="Daily Digest Preview"
+        description={'Pick a staff member to see exactly what their 6 AM digest would look like right now. "Send test" fires a real email (opt-out still applies).'}
+        crumbs={[
+          { label: 'Ops', href: '/ops' },
+          { label: 'Admin', href: '/ops/admin' },
+          { label: 'Digest Preview' },
+        ]}
+      />
 
-      <div className="bg-white border rounded-lg p-4 flex items-end gap-3 flex-wrap">
+      <div className="bg-surface border border-border rounded-lg p-4 flex items-end gap-3 flex-wrap">
         <div className="flex-1 min-w-[260px]">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">
+          <label className="block text-xs uppercase tracking-wide text-fg-muted mb-1">
             Staff
           </label>
           <select
@@ -135,7 +138,7 @@ export default function DigestPreviewPage() {
               setSelectedId(e.target.value)
               if (e.target.value) loadPreview(e.target.value)
             }}
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-fg"
           >
             <option value="">— select —</option>
             {staff.map((s) => (
@@ -146,24 +149,24 @@ export default function DigestPreviewPage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">
+          <label className="block text-xs uppercase tracking-wide text-fg-muted mb-1">
             Date
           </label>
-          <div className="px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-600 min-w-[120px]">
+          <div className="px-3 py-2 border border-border rounded-lg text-sm bg-surface-muted text-fg-muted min-w-[120px]">
             {preview?.digestDate || 'today'}
           </div>
         </div>
         <button
           disabled={!selectedId || loading}
           onClick={() => selectedId && loadPreview(selectedId)}
-          className="bg-[#0f2a3e] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] disabled:opacity-50"
+          className="bg-surface-elev text-fg-on-accent px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50"
         >
           {loading ? 'Loading…' : 'Refresh'}
         </button>
         <button
           disabled={!selectedId || sending}
           onClick={handleSendTest}
-          className="bg-[#C6A24E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#A8882A] disabled:opacity-50"
+          className="bg-signal text-fg-on-accent px-4 py-2 rounded-lg text-sm font-medium hover:bg-signal-hover disabled:opacity-50"
           title="Fires a real email (bypasses duplicate-block)"
         >
           {sending ? 'Sending…' : 'Send test'}
@@ -179,34 +182,34 @@ export default function DigestPreviewPage() {
       {preview && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <h2 className="text-sm font-semibold text-fg mb-3">
                 Summary
               </h2>
               <dl className="text-sm space-y-2">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">To</dt>
+                  <dt className="text-fg-muted">To</dt>
                   <dd className="font-mono text-xs">{preview.staffEmail}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Subject</dt>
+                  <dt className="text-fg-muted">Subject</dt>
                   <dd className="text-right text-xs max-w-[70%] truncate" title={preview.subject}>
                     {preview.subject}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Total items</dt>
+                  <dt className="text-fg-muted">Total items</dt>
                   <dd className="font-semibold">{preview.totalItems}</dd>
                 </div>
               </dl>
             </div>
 
-            <div className="bg-white border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <h2 className="text-sm font-semibold text-fg mb-3">
                 Sections ({preview.sections.length})
               </h2>
               {preview.sections.length === 0 ? (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-fg-muted">
                   Empty digest — this staff would be skipped by the cron.
                 </p>
               ) : (
@@ -216,8 +219,8 @@ export default function DigestPreviewPage() {
                       key={s.key}
                       className="flex items-center justify-between text-sm"
                     >
-                      <span className="text-gray-700">{s.title}</span>
-                      <span className="text-xs bg-[#0f2a3e]/10 text-[#0f2a3e] px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-fg-muted">{s.title}</span>
+                      <span className="text-xs bg-signal-subtle text-signal px-2 py-0.5 rounded-full font-medium">
                         {s.count}
                       </span>
                     </li>
@@ -227,8 +230,8 @@ export default function DigestPreviewPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-2 bg-white border rounded-lg overflow-hidden">
-            <div className="border-b px-4 py-2 text-xs text-gray-500 flex items-center justify-between">
+          <div className="lg:col-span-2 bg-surface border border-border rounded-lg overflow-hidden">
+            <div className="border-b border-border px-4 py-2 text-xs text-fg-muted flex items-center justify-between">
               <span>Rendered HTML</span>
               <span className="font-mono">{preview.subject}</span>
             </div>

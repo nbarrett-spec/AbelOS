@@ -262,14 +262,14 @@ export default function ManifestPage() {
         }
       `}</style>
 
-      <div className="print-hidden p-4 flex items-center gap-3 border-b bg-gray-100">
+      <div className="print-hidden p-4 flex items-center gap-3 border-b border-border bg-surface-muted">
         <button
           onClick={() => window.print()}
           className="px-3 py-1.5 bg-black text-white text-sm rounded"
         >
           Print all
         </button>
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-fg-muted">
           {data.drivers.length} driver{data.drivers.length === 1 ? '' : 's'} ·{' '}
           {data.drivers.reduce((s, d) => s + d.deliveries.length, 0)} stops ·{' '}
           {new Date(data.date).toLocaleDateString('en-US')}

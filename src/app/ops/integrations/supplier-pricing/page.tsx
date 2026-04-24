@@ -208,7 +208,7 @@ export default function SupplierPricingPage() {
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#111827' }}>
           Supplier Pricing Feed
         </h1>
         <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '8px' }}>
@@ -239,7 +239,7 @@ export default function SupplierPricingPage() {
           <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>
             Pending Updates
           </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginTop: '8px' }}>
+          <p style={{ fontSize: '24px', fontWeight: 600, color: '#111827', marginTop: '8px' }}>
             {stats.pendingUpdates}
           </p>
         </div>
@@ -257,7 +257,7 @@ export default function SupplierPricingPage() {
           <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>
             Applied Today
           </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginTop: '8px' }}>
+          <p style={{ fontSize: '24px', fontWeight: 600, color: '#111827', marginTop: '8px' }}>
             {stats.appliedToday}
           </p>
         </div>
@@ -278,7 +278,7 @@ export default function SupplierPricingPage() {
           <p
             style={{
               fontSize: '24px',
-              fontWeight: 'bold',
+              fontWeight: 600,
               color: stats.avgCostChange > 0 ? '#DC2626' : '#10B981',
               marginTop: '8px',
             }}
@@ -300,7 +300,7 @@ export default function SupplierPricingPage() {
           <p style={{ fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>
             Margin Risk Items
           </p>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginTop: '8px' }}>
+          <p style={{ fontSize: '24px', fontWeight: 600, color: '#111827', marginTop: '8px' }}>
             {stats.marginRiskItems}
           </p>
         </div>

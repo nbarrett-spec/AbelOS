@@ -202,6 +202,7 @@ export default function OperationsDashboard() {
           value={<AnimatedNumber value={throughput.completed} />}
           subtitle={`${fmtInt(throughput.inProgress)} in progress · ${fmtInt(throughput.scheduled)} scheduled`}
           icon={<Factory className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-status-distribution')?.scrollIntoView({ behavior: 'smooth' })}
         />
         <KPICard
           title="On-Time %"
@@ -209,6 +210,7 @@ export default function OperationsDashboard() {
           value={<AnimatedNumber value={onTimePct} format={(v) => `${Math.round(v)}%`} />}
           subtitle={`${data.vendorPerformance.length} vendors tracked`}
           icon={<TrendingUp className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-vendor-performance')?.scrollIntoView({ behavior: 'smooth' })}
         />
         <KPICard
           title="Cycle Time"
@@ -216,6 +218,7 @@ export default function OperationsDashboard() {
           value={<AnimatedNumber value={avgCycle} format={(v) => `${v.toFixed(1)}d`} />}
           subtitle="Avg across pipeline stages"
           icon={<Clock className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-job-velocity')?.scrollIntoView({ behavior: 'smooth' })}
         />
         <KPICard
           title="WIP"
@@ -223,18 +226,27 @@ export default function OperationsDashboard() {
           value={<AnimatedNumber value={wip} />}
           subtitle={`${fmtInt(throughput.scheduled)} scheduled next 2w`}
           icon={<Activity className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-schedule-heatmap')?.scrollIntoView({ behavior: 'smooth' })}
         />
       </div>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Status distribution + Today's deliveries ──────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card variant="default" padding="none" className="lg:col-span-2">
+      <div id="section-status-distribution" className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <Card
+          variant="default"
+          padding="none"
+          className="lg:col-span-2 hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Status Distribution</CardTitle>
               <CardDescription>Crew load across next 2 weeks</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <LiveDataIndicator trigger={refreshTick} className="w-10 h-[2px]" />
               <StatusBadge status="SCHEDULED" size="xs" />
               <StatusBadge status="IN_PROGRESS" size="xs" />
               <StatusBadge status="COMPLETED" size="xs" />
@@ -271,7 +283,11 @@ export default function OperationsDashboard() {
           </CardBody>
         </Card>
 
-        <Card variant="default" padding="none" className="panel-live">
+        <Card
+          variant="default"
+          padding="none"
+          className="panel-live hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Today's Deliveries</CardTitle>
@@ -279,7 +295,10 @@ export default function OperationsDashboard() {
                 <span className="tabular-nums">{todayDeliveries?.date ?? todayStr}</span>
               </CardDescription>
             </div>
-            <Badge variant="neutral" size="sm" dot>Live</Badge>
+            <div className="flex items-center gap-2">
+              <LiveDataIndicator trigger={refreshTick} className="w-10 h-[2px]" />
+              <Badge variant="neutral" size="sm" dot>Live</Badge>
+            </div>
           </CardHeader>
           <CardBody>
             {!todayDeliveries || todayDeliveries.total === 0 ? (
@@ -306,8 +325,16 @@ export default function OperationsDashboard() {
         </Card>
       </div>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Schedule heatmap (14 day) ─────────────────────────────────── */}
-      <Card variant="default" padding="none">
+      <Card
+        id="section-schedule-heatmap"
+        variant="default"
+        padding="none"
+        className="hover:border-l-2 hover:border-signal transition-all duration-200"
+      >
         <CardHeader>
           <div>
             <CardTitle>Schedule Density — 14 Day</CardTitle>
@@ -352,8 +379,16 @@ export default function OperationsDashboard() {
         </CardBody>
       </Card>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Job velocity ──────────────────────────────────────────────── */}
-      <Card variant="default" padding="none">
+      <Card
+        id="section-job-velocity"
+        variant="default"
+        padding="none"
+        className="hover:border-l-2 hover:border-signal transition-all duration-200"
+      >
         <CardHeader>
           <div>
             <CardTitle>Job Velocity by Stage</CardTitle>
@@ -396,9 +431,16 @@ export default function OperationsDashboard() {
         </CardBody>
       </Card>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Exceptions + Vendor performance ───────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Card variant="default" padding="none">
+        <Card
+          variant="default"
+          padding="none"
+          className="hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Exception Tracker</CardTitle>
@@ -446,15 +488,23 @@ export default function OperationsDashboard() {
           </CardBody>
         </Card>
 
-        <Card variant="default" padding="none">
+        <Card
+          id="section-vendor-performance"
+          variant="default"
+          padding="none"
+          className="hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Vendor Performance</CardTitle>
               <CardDescription>On-time rate and open exposure</CardDescription>
             </div>
-            <Link href="/ops/purchasing" className="text-xs text-fg-muted hover:text-accent">
-              All vendors →
-            </Link>
+            <div className="flex items-center gap-2">
+              <LiveDataIndicator trigger={refreshTick} className="w-10 h-[2px]" />
+              <Link href="/ops/purchasing" className="text-xs text-fg-muted hover:text-accent">
+                All vendors →
+              </Link>
+            </div>
           </CardHeader>
           <DataTable
             density="compact"

@@ -338,7 +338,7 @@ export default function AutomationsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>Automations & AI Tasks</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 600, color: '#0f2a3e', margin: 0 }}>Automations & AI Tasks</h1>
           <p style={{ color: '#666', margin: '4px 0 0' }}>Create automated workflows, AI-powered tasks, and role-based actions</p>
         </div>
         <button
@@ -365,7 +365,7 @@ export default function AutomationsPage() {
             border: '1px solid #e0e0e0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
           }}>
             <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>{stat.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+            <div style={{ fontSize: 28, fontWeight: 600, color: stat.color }}>{stat.value}</div>
           </div>
         ))}
       </div>
@@ -540,7 +540,7 @@ export default function AutomationsPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e' }}>{rule.name}</span>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: '#0f2a3e' }}>{rule.name}</span>
                         <span style={{
                           padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600,
                           background: rule.enabled ? '#e8f5e9' : '#f5f5f5',
@@ -655,7 +655,7 @@ export default function AutomationsPage() {
                       }}>
                         {template.category}
                       </span>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#0f2a3e', marginTop: 4 }}>{template.name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: '#0f2a3e', marginTop: 4 }}>{template.name}</div>
                     </div>
                     {installed ? (
                       <span style={{ padding: '4px 12px', background: '#e8f5e9', color: '#2e7d32', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>

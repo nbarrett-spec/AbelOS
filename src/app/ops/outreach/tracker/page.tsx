@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Send } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 const STAGE_COLORS: Record<string, string> = {
   NEW: '#95a5a6',
@@ -171,9 +173,20 @@ function DashboardView({ data }: { data: any }) {
 }
 
 function ProspectsView({ data }: { data: any }) {
+  if ((data.prospects || []).length === 0) {
+    return (
+      <div style={{ background: 'var(--surface-elevated)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+        <EmptyState
+          icon={<Send className="w-8 h-8 text-fg-subtle" />}
+          title="No outreach in flight"
+          description="Add prospects via the API to start tracking outreach."
+        />
+      </div>
+    )
+  }
   return (
     <div>
-      <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+      <div style={{ background: 'var(--surface-elevated)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#f8f9fa' }}>
@@ -211,9 +224,6 @@ function ProspectsView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{p.source || '—'}</td>
               </tr>
             ))}
-            {(data.prospects || []).length === 0 && (
-              <tr><td colSpan={8} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No active prospects. Add prospects via the API to start tracking outreach.</td></tr>
-            )}
           </tbody>
         </table>
       </div>

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Package } from 'lucide-react';
+import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
   { id: 'dashboard', label: 'Overview', icon: '📊' },
@@ -57,7 +59,7 @@ export default function InventoryIntelligencePage() {
           {TABS.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id ? 'border-[#C6A24E] text-[#C6A24E]' : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === tab.id ? 'border-signal text-signal' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}>
               <span className="mr-1">{tab.icon}</span> {tab.label}
             </button>
@@ -139,38 +141,45 @@ function ReorderTab({ data }: { data: any }) {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                {['Alert', 'SKU', 'Product', 'Category', 'On Hand', 'Committed', 'Available', 'Reorder Pt', 'Reorder Qty', 'Vendor', 'Lead Time'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {alerts.map((a: any, i: number) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-3 py-2">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${ALERT_COLORS[a.alertLevel] || ''}`}>
-                      {a.alertLevel}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-sm font-mono">{a.sku}</td>
-                  <td className="px-3 py-2 text-sm">{a.name}</td>
-                  <td className="px-3 py-2 text-sm">{a.category}</td>
-                  <td className="px-3 py-2 text-sm font-semibold">{a.onHand}</td>
-                  <td className="px-3 py-2 text-sm">{a.committed}</td>
-                  <td className="px-3 py-2 text-sm">{a.available}</td>
-                  <td className="px-3 py-2 text-sm">{a.reorderPoint}</td>
-                  <td className="px-3 py-2 text-sm">{a.reorderQty}</td>
-                  <td className="px-3 py-2 text-sm">{a.vendorName || '—'}</td>
-                  <td className="px-3 py-2 text-sm">{a.leadTimeDays ? `${a.leadTimeDays}d` : '—'}</td>
+        {alerts.length === 0 ? (
+          <EmptyState
+            icon={<Package className="w-8 h-8 text-fg-subtle" />}
+            title="No items match your filters"
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Alert', 'SKU', 'Product', 'Category', 'On Hand', 'Committed', 'Available', 'Reorder Pt', 'Reorder Qty', 'Vendor', 'Lead Time'].map((h) => (
+                    <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {alerts.map((a: any, i: number) => (
+                  <tr key={i} className="hover:bg-row-hover">
+                    <td className="px-3 py-2">
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${ALERT_COLORS[a.alertLevel] || ''}`}>
+                        {a.alertLevel}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-sm font-mono">{a.sku}</td>
+                    <td className="px-3 py-2 text-sm">{a.name}</td>
+                    <td className="px-3 py-2 text-sm">{a.category}</td>
+                    <td className="px-3 py-2 text-sm font-semibold">{a.onHand}</td>
+                    <td className="px-3 py-2 text-sm">{a.committed}</td>
+                    <td className="px-3 py-2 text-sm">{a.available}</td>
+                    <td className="px-3 py-2 text-sm">{a.reorderPoint}</td>
+                    <td className="px-3 py-2 text-sm">{a.reorderQty}</td>
+                    <td className="px-3 py-2 text-sm">{a.vendorName || '—'}</td>
+                    <td className="px-3 py-2 text-sm">{a.leadTimeDays ? `${a.leadTimeDays}d` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -203,7 +212,7 @@ function SlowMoversTab({ data }: { data: any }) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.filter((it: any) => it.velocityClass !== 'MODERATE').slice(0, 50).map((it: any, i: number) => (
-                <tr key={i} className="hover:bg-gray-50">
+                <tr key={i} className="hover:bg-row-hover">
                   <td className="px-3 py-2">
                     <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${VELOCITY_COLORS[it.velocityClass] || ''}`}>
                       {it.velocityClass}
@@ -249,7 +258,7 @@ function DemandTab({ data }: { data: any }) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {topProducts.map((p: any, i: number) => (
-                <tr key={i} className="hover:bg-gray-50">
+                <tr key={i} className="hover:bg-row-hover">
                   <td className="px-3 py-2 text-sm font-mono">{p.sku}</td>
                   <td className="px-3 py-2 text-sm">{p.name}</td>
                   <td className="px-3 py-2 text-sm">{p.category}</td>
@@ -296,7 +305,7 @@ function TurnoverTab({ data }: { data: any }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {cats.map((c: any, i: number) => (
-              <tr key={i} className="hover:bg-gray-50">
+              <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">{c.category}</td>
                 <td className="px-4 py-2 text-sm">{fmtN(c.skuCount)}</td>
                 <td className="px-4 py-2 text-sm">{fmtN(c.totalOnHand)}</td>
@@ -349,7 +358,7 @@ function StockoutTab({ data }: { data: any }) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((it: any, i: number) => (
-                <tr key={i} className={`hover:bg-gray-50 ${it.willStockOutBeforeReorder ? 'bg-red-50' : ''}`}>
+                <tr key={i} className={`hover:bg-row-hover ${it.willStockOutBeforeReorder ? 'bg-red-50' : ''}`}>
                   <td className="px-4 py-2 text-sm font-mono">{it.sku}</td>
                   <td className="px-4 py-2 text-sm">{it.name}</td>
                   <td className="px-4 py-2 text-sm">{it.onHand}</td>
@@ -359,7 +368,7 @@ function StockoutTab({ data }: { data: any }) {
                   <td className="px-4 py-2 text-sm">{it.leadTimeDays}d</td>
                   <td className="px-4 py-2 text-sm">
                     {it.willStockOutBeforeReorder ? (
-                      <span className="bg-red-600 text-white px-2 py-0.5 rounded text-xs font-bold">WILL STOCK OUT</span>
+                      <span className="bg-red-600 text-white px-2 py-0.5 rounded text-xs font-semibold">WILL STOCK OUT</span>
                     ) : (
                       <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium">OK</span>
                     )}
@@ -380,7 +389,7 @@ function KPI({ label, value, sub, color }: { label: string; value: string; sub: 
   return (
     <div className={`rounded-lg shadow-sm border p-6 ${bg[color] || bg.blue}`}>
       <p className="text-gray-600 text-sm font-medium mb-2">{label}</p>
-      <p className={`text-3xl font-bold ${tc[color] || tc.blue}`}>{value}</p>
+      <p className={`text-3xl font-semibold ${tc[color] || tc.blue}`}>{value}</p>
       <p className="text-gray-500 text-xs mt-2">{sub}</p>
     </div>
   );

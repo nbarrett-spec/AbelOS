@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Warehouse, Factory, ShieldCheck } from 'lucide-react'
 import { Modal } from '../../components/Modal'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface MaterialPick {
   id: string
@@ -186,7 +189,7 @@ export default function WarehousePortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); fetchData() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
+        <button onClick={() => { setError(null); fetchData() }} className="mt-4 px-4 py-2 bg-surface-elev text-white rounded-lg hover:bg-surface text-sm">
           Retry
         </button>
       </div>
@@ -198,27 +201,26 @@ export default function WarehousePortal() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Warehouse & Manufacturing</h1>
-          <p className="text-gray-600 mt-1">Pick lists, production queue, QC, and staging management</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setShowPickModal(true); setSelectedPick(null) }}
-            className="px-4 py-2 bg-[#27AE60] text-white rounded-lg hover:bg-[#229954] transition-colors text-sm font-medium"
-          >
-            + Start Pick
-          </button>
-          <Link href="/ops/portal/warehouse/gold-stock" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-            Gold Stock
-          </Link>
-          <Link href="/ops/jobs" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-            All Jobs
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Warehouse & Manufacturing"
+        description="Pick lists, production queue, QC, and staging management"
+        actions={
+          <>
+            <button
+              onClick={() => { setShowPickModal(true); setSelectedPick(null) }}
+              className="px-4 py-2 bg-[#27AE60] text-white rounded-lg hover:bg-[#229954] transition-colors text-sm font-medium"
+            >
+              + Start Pick
+            </button>
+            <Link href="/ops/portal/warehouse/gold-stock" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+              Gold Stock
+            </Link>
+            <Link href="/ops/jobs" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+              All Jobs
+            </Link>
+          </>
+        }
+      />
 
       {/* Toast */}
       {actionMsg && (
@@ -235,7 +237,7 @@ export default function WarehousePortal() {
           <p className="text-2xl font-bold text-gray-900 mt-1">{kpis.picksPending}</p>
           <p className="text-xs text-gray-400 mt-1">{pickSummary.picking} in progress</p>
         </div>
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#C6A24E] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-signal p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Jobs In Production</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{kpis.jobsInProduction}</p>
           <p className="text-xs text-gray-400 mt-1">Active jobs</p>
@@ -257,7 +259,7 @@ export default function WarehousePortal() {
         {/* Material Picks */}
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Material Picks</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Material Picks</h2>
             <div className="flex gap-2 text-xs">
               <span className="px-2 py-1 rounded bg-gray-100 text-gray-600">Pending: {pickSummary.pending}</span>
               <span className="px-2 py-1 rounded bg-blue-100 text-blue-600">Picking: {pickSummary.picking}</span>
@@ -269,10 +271,12 @@ export default function WarehousePortal() {
           </div>
 
           {picks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">&#128230;</p>
-              <p>No material picks in the system</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<Warehouse className="w-6 h-6 text-fg-subtle" />}
+              title="Nothing staged"
+              description="No material picks in the system."
+            />
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {picks.map((pick) => (
@@ -309,7 +313,7 @@ export default function WarehousePortal() {
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-2">
             <button
               onClick={() => { setShowPickModal(true); setSelectedPick(null) }}
@@ -345,15 +349,17 @@ export default function WarehousePortal() {
       {/* Production Queue */}
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Production Queue</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Production Queue</h2>
           <Link href="/ops/jobs" className="text-sm text-[#27AE60] hover:text-[#229954]">All Jobs &rarr;</Link>
         </div>
 
         {(dashboard?.productionQueue || []).length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-3xl mb-2">&#127981;</p>
-            <p>No jobs currently in production</p>
-          </div>
+          <EmptyState
+            size="compact"
+            icon={<Factory className="w-6 h-6 text-fg-subtle" />}
+            title="No jobs in production"
+            description="Production queue is empty."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {(dashboard?.productionQueue || []).map((job) => {
@@ -361,7 +367,7 @@ export default function WarehousePortal() {
                 ? Math.ceil((new Date(job.scheduledDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
                 : null
               return (
-                <div key={job.id} className="p-4 rounded-lg border border-gray-200 hover:border-[#C6A24E] transition-all">
+                <div key={job.id} className="p-4 rounded-lg border border-gray-200 hover:border-signal transition-all">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <p className="font-semibold text-gray-900">{job.jobNumber}</p>
@@ -389,17 +395,19 @@ export default function WarehousePortal() {
       {/* QC Checks */}
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Recent QC Checks</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Recent QC Checks</h2>
           <button onClick={() => setShowQCModal(true)} className="text-sm text-[#27AE60] hover:text-[#229954] font-medium">
             + New QC Check
           </button>
         </div>
 
         {qcChecks.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-3xl mb-2">&#x2714;&#xFE0F;</p>
-            <p>No QC checks recorded yet</p>
-          </div>
+          <EmptyState
+            size="compact"
+            icon={<ShieldCheck className="w-6 h-6 text-fg-subtle" />}
+            title="No QC checks recorded yet"
+            description="Run a QC check to see results here."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">

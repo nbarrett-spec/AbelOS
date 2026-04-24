@@ -15,6 +15,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -320,7 +321,7 @@ export default function ReceivingPage() {
         {/* Jobs flipped RED → GREEN */}
         {greened > 0 ? (
           <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5 mb-6">
-            <h2 className="text-sm font-bold text-emerald-700 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
               Jobs flipped RED → GREEN ({greened})
             </h2>
             <ul className="space-y-2">
@@ -368,7 +369,7 @@ export default function ReceivingPage() {
         {/* Per-job breakdown */}
         {byJob.size > 0 && (
           <div className="rounded-lg border border-border bg-surface mb-6">
-            <div className="px-5 py-3 border-b border-border text-xs font-bold uppercase tracking-wide text-fg-muted">
+            <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-wide text-fg-muted">
               Allocations released
             </div>
             <div className="divide-y divide-border">
@@ -398,7 +399,7 @@ export default function ReceivingPage() {
 
         {result.stillShort.length > 0 && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 mb-6">
-            <h3 className="text-sm font-bold text-red-700 mb-2">Still short</h3>
+            <h3 className="text-sm font-semibold text-red-700 mb-2">Still short</h3>
             <ul className="text-xs text-fg space-y-1">
               {result.stillShort.map((s) => (
                 <li key={s.productId}>
@@ -484,7 +485,7 @@ export default function ReceivingPage() {
 
         {/* Lines */}
         <div className="rounded-lg border border-border bg-surface overflow-hidden mb-6">
-          <div className="grid grid-cols-[3fr_1fr_1fr_1fr_1.2fr_1.2fr] gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wide text-fg-muted bg-surface-muted border-b border-border">
+          <div className="grid grid-cols-[3fr_1fr_1fr_1fr_1.2fr_1.2fr] gap-3 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-fg-muted bg-surface-muted border-b border-border">
             <div>Description</div>
             <div className="text-right">Ordered</div>
             <div className="text-right">Prev rec'd</div>
@@ -619,45 +620,57 @@ export default function ReceivingPage() {
         </div>
       )}
 
-      {/* Expected Today / Next 48h */}
-      <section className="mb-8">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-fg">
-            Expected Today / Next 48h
-          </h2>
-          <span className="text-xs text-fg-muted">{expectedBucket.length} PO{expectedBucket.length === 1 ? '' : 's'}</span>
-        </div>
-        {queueLoading ? (
-          <SkeletonRows />
-        ) : expectedBucket.length === 0 ? (
-          <EmptyBucket label="Nothing expected in the next 48 hours." />
-        ) : (
-          <div className="grid gap-2">
-            {expectedBucket.map((po) => (
-              <POCard key={po.id} po={po} onClick={() => openPO(po.id)} tone={tone(po)} formatDate={formatDate} formatCurrency={formatCurrency} />
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Whole-queue empty fallback (when both buckets empty after load) */}
+      {!queueLoading && queue.length === 0 && !queueError ? (
+        <EmptyState
+          icon="package"
+          title="Nothing to receive"
+          description="No open POs are waiting on dock check-in. New deliveries will appear here as POs are issued or scheduled."
+          size="full"
+        />
+      ) : (
+        <>
+          {/* Expected Today / Next 48h */}
+          <section className="mb-8">
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-fg">
+                Expected Today / Next 48h
+              </h2>
+              <span className="text-xs text-fg-muted">{expectedBucket.length} PO{expectedBucket.length === 1 ? '' : 's'}</span>
+            </div>
+            {queueLoading ? (
+              <SkeletonRows />
+            ) : expectedBucket.length === 0 ? (
+              <EmptyBucket label="Nothing expected in the next 48 hours." />
+            ) : (
+              <div className="grid gap-2">
+                {expectedBucket.map((po) => (
+                  <POCard key={po.id} po={po} onClick={() => openPO(po.id)} tone={tone(po)} formatDate={formatDate} formatCurrency={formatCurrency} />
+                ))}
+              </div>
+            )}
+          </section>
 
-      {/* Upcoming */}
-      <section>
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-fg">Upcoming &amp; open</h2>
-          <span className="text-xs text-fg-muted">{upcomingBucket.length} PO{upcomingBucket.length === 1 ? '' : 's'}</span>
-        </div>
-        {queueLoading ? (
-          <SkeletonRows />
-        ) : upcomingBucket.length === 0 ? (
-          <EmptyBucket label="No additional open POs." />
-        ) : (
-          <div className="grid gap-2">
-            {upcomingBucket.map((po) => (
-              <POCard key={po.id} po={po} onClick={() => openPO(po.id)} tone={tone(po)} formatDate={formatDate} formatCurrency={formatCurrency} />
-            ))}
-          </div>
-        )}
-      </section>
+          {/* Upcoming */}
+          <section>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-fg">Upcoming &amp; open</h2>
+              <span className="text-xs text-fg-muted">{upcomingBucket.length} PO{upcomingBucket.length === 1 ? '' : 's'}</span>
+            </div>
+            {queueLoading ? (
+              <SkeletonRows />
+            ) : upcomingBucket.length === 0 ? (
+              <EmptyBucket label="No additional open POs." />
+            ) : (
+              <div className="grid gap-2">
+                {upcomingBucket.map((po) => (
+                  <POCard key={po.id} po={po} onClick={() => openPO(po.id)} tone={tone(po)} formatDate={formatDate} formatCurrency={formatCurrency} />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
       {detailError && (
         <div className="fixed bottom-6 right-6 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 shadow-lg">

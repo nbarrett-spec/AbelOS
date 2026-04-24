@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Truck } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Crew {
   id: string
@@ -248,15 +250,12 @@ export default function RouteOptimizerPage() {
       </div>
 
       {!routeData ? (
-        <div style={{
-          backgroundColor: '#f5f5f5',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          padding: '48px',
-          textAlign: 'center',
-          color: '#666',
-        }}>
-          <p style={{ fontSize: '16px' }}>No deliveries scheduled for this date</p>
+        <div className="bg-surface-muted border border-border rounded-lg p-12">
+          <EmptyState
+            icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+            title="No deliveries scheduled"
+            description="No deliveries scheduled for this date — pick another date or assign stops to this crew."
+          />
         </div>
       ) : (
         <>

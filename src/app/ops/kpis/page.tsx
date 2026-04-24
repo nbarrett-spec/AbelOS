@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Download, Link as LinkIcon, Mail, Copy, Check, Calendar, RefreshCw } from 'lucide-react'
+import { Download, Link as LinkIcon, Mail, Copy, Check, Calendar, RefreshCw, BarChart3 } from 'lucide-react'
 import { PageHeader, Button } from '@/components/ui'
+import AnimatedCounter from '@/components/ui/AnimatedCounter'
+import EmptyState from '@/components/ui/EmptyState'
 import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
 import {
   FinancialYtdStrip,
@@ -49,6 +51,34 @@ interface KPIData {
 }
 
 type SectionId = 'summary' | 'ar-aging' | 'pipeline' | 'revenue' | 'hw-pitch'
+
+// Staggered count-up wrapper — holds at zero for `delay` ms, then arms
+// AnimatedCounter so each KPI in a row counts up 100ms after the prior.
+function DelayedAnimatedCounter({
+  value,
+  delay = 0,
+  format,
+  prefix,
+  suffix,
+}: {
+  value: number
+  delay?: number
+  format?: (n: number) => string
+  prefix?: string
+  suffix?: string
+}) {
+  const [armed, setArmed] = useState(delay <= 0)
+  useEffect(() => {
+    if (delay <= 0) return
+    const id = setTimeout(() => setArmed(true), delay)
+    return () => clearTimeout(id)
+  }, [delay])
+  if (!armed) {
+    const zero = format ? format(0) : '0'
+    return <span className="tabular-nums">{prefix ?? ''}{zero}{suffix ?? ''}</span>
+  }
+  return <AnimatedCounter value={value} format={format} prefix={prefix} suffix={suffix} />
+}
 
 export default function KPIDashboard() {
   const sp = useSearchParams()
@@ -216,9 +246,12 @@ export default function KPIDashboard() {
           description="Real-time key performance indicators"
           actions={headerActions}
         />
-        <div className="text-center text-gray-500 py-8">
-          Failed to load KPI data. Please try again.
-        </div>
+        <EmptyState
+          icon={<BarChart3 className="w-8 h-8 text-fg-subtle" />}
+          title="No KPIs to show"
+          description="Failed to load KPI data. Please try again."
+          action={{ label: 'Retry', onClick: () => loadKPIs() }}
+        />
       </div>
     )
   }
@@ -307,7 +340,9 @@ export default function KPIDashboard() {
         <div className={`rounded-xl border p-5 ${onTimeBg}`}>
           <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">On-Time Delivery Rate</p>
           <div className="mt-3 flex items-baseline gap-2">
-            <p className={`text-3xl font-bold ${onTimeColor}`}>{data.onTimeDeliveryRate}%</p>
+            <p className={`text-3xl font-semibold ${onTimeColor}`}>
+              <DelayedAnimatedCounter value={data.onTimeDeliveryRate} delay={0} suffix="%" />
+            </p>
             <span className={`text-lg ${onTimeColor}`}>{onTimeArrow}</span>
           </div>
           <p className="text-xs text-gray-500 mt-2">
@@ -318,7 +353,9 @@ export default function KPIDashboard() {
         <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Revenue This Month</p>
           <div className="mt-3">
-            <p className="text-3xl font-bold text-gray-900">{fmt(data.revenue.thisMonth)}</p>
+            <p className="text-3xl font-semibold text-gray-900">
+              <DelayedAnimatedCounter value={data.revenue.thisMonth} delay={100} format={fmt} />
+            </p>
             <div className="flex items-center gap-1 mt-2">
               <span className={`text-sm font-semibold ${revenueColor}`}>
                 {revenueArrow} {Math.abs(data.revenue.changePercent)}%
@@ -331,14 +368,18 @@ export default function KPIDashboard() {
         <Link href="/ops/orders" className="group">
           <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow cursor-pointer group-hover:border-[#0f2a3e]">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Open Orders</p>
-            <p className="text-3xl font-bold text-gray-900 mt-3">{data.openOrders}</p>
+            <p className="text-3xl font-semibold text-gray-900 mt-3">
+              <DelayedAnimatedCounter value={data.openOrders} delay={200} />
+            </p>
             <p className="text-xs text-gray-400 mt-2">Ready for action →</p>
           </div>
         </Link>
 
         <div className="rounded-xl border bg-white p-5 hover:shadow-md transition-shadow">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Quote Conversion (30d)</p>
-          <p className="text-3xl font-bold text-gray-900 mt-3">{data.quoteConversion}%</p>
+          <p className="text-3xl font-semibold text-gray-900 mt-3">
+            <DelayedAnimatedCounter value={data.quoteConversion} delay={300} suffix="%" />
+          </p>
           <p className="text-xs text-gray-400 mt-2">{data.jobsPipeline.length} jobs in pipeline</p>
         </div>
       </div>
@@ -348,8 +389,9 @@ export default function KPIDashboard() {
         <div className="rounded-xl border bg-white p-5">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Deliveries Today</p>
           <div className="mt-3">
-            <p className="text-2xl font-bold text-gray-900">
-              {data.deliveries.today.completed} <span className="text-gray-400">/ {data.deliveries.today.total}</span>
+            <p className="text-2xl font-semibold text-gray-900">
+              <DelayedAnimatedCounter value={data.deliveries.today.completed} delay={400} />
+              {' '}<span className="text-gray-400">/ <DelayedAnimatedCounter value={data.deliveries.today.total} delay={400} /></span>
             </p>
             <p className="text-xs text-gray-500 mt-2">completed of scheduled</p>
           </div>
@@ -357,19 +399,25 @@ export default function KPIDashboard() {
 
         <div className="rounded-xl border bg-white p-5">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Active Crews</p>
-          <p className="text-2xl font-bold text-gray-900 mt-3">{data.activeCrews}</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-3">
+            <DelayedAnimatedCounter value={data.activeCrews} delay={500} />
+          </p>
           <p className="text-xs text-gray-500 mt-2">teams deployed</p>
         </div>
 
         <div className={`rounded-xl border p-5 ${lowStockColor}`}>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Low Stock Alerts</p>
-          <p className={`text-2xl font-bold mt-3 ${lowStockText}`}>{data.lowStockItems}</p>
+          <p className={`text-2xl font-semibold mt-3 ${lowStockText}`}>
+            <DelayedAnimatedCounter value={data.lowStockItems} delay={600} />
+          </p>
           <p className="text-xs text-gray-500 mt-2">{data.lowStockItems > 5 ? 'Urgent' : 'Monitor closely'}</p>
         </div>
 
         <div className="rounded-xl border bg-red-50 p-5">
           <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Overdue Invoices</p>
-          <p className="text-2xl font-bold text-red-600 mt-3">{fmt(data.ar.overdueAmount)}</p>
+          <p className="text-2xl font-semibold text-red-600 mt-3">
+            <DelayedAnimatedCounter value={data.ar.overdueAmount} delay={700} format={fmt} />
+          </p>
           <p className="text-xs text-gray-600 mt-2">across {data.ar.overdueCount} invoices</p>
         </div>
       </div>
@@ -467,7 +515,7 @@ export default function KPIDashboard() {
             return (
               <div key={aging.bucket} className={`rounded-lg border ${colors.border} ${colors.bg} p-4`}>
                 <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">{aging.bucket}</p>
-                <p className={`text-xl font-bold mt-2 ${colors.text}`}>{fmt(aging.amount)}</p>
+                <p className={`text-xl font-semibold mt-2 ${colors.text}`}>{fmt(aging.amount)}</p>
                 <p className="text-xs text-gray-600 mt-1">{aging.invoiceCount} invoice{aging.invoiceCount !== 1 ? 's' : ''}</p>
               </div>
             )

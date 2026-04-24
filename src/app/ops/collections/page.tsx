@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Send, Phone, AlertTriangle, Ban, CheckSquare, MessageSquare,
   RefreshCw, Clock, Mail, ExternalLink, Filter, ArrowUpDown,
-  TrendingUp, Flame, User2,
+  TrendingUp, Flame, User2, Wallet,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Badge, StatusBadge, Card, CardHeader, CardTitle,
@@ -315,6 +315,21 @@ export default function CollectionsActionCenter() {
     }
   }, [data])
 
+  // Visual-only derived metric: % of AR currently in the "current" bucket
+  // (i.e., not past due). Read-only — no business logic, no state mutation.
+  const collectionRatePct = useMemo(() => {
+    if (!exposure) return null
+    const totals = [
+      exposure.aging.current.total,
+      exposure.aging.d30.total,
+      exposure.aging.d60.total,
+      exposure.aging.d90.total,
+    ]
+    const totalAr = totals.reduce((s, n) => s + n, 0)
+    if (totalAr <= 0) return null
+    return (exposure.aging.current.total / totalAr) * 100
+  }, [exposure])
+
   if (loading || !data) {
     return (
       <div className="space-y-5">
@@ -404,6 +419,8 @@ export default function CollectionsActionCenter() {
         sending={sendingReminderFor}
       />
 
+      <CollectionRateGauge rate={collectionRatePct} />
+
       <AgingBuckets
         aging={exposure?.aging || null}
         active={bucketFilter}
@@ -436,9 +453,9 @@ export default function CollectionsActionCenter() {
         <CardBody>
           {filteredQueue.length === 0 ? (
             <EmptyState
-              icon="check"
+              icon={<Wallet className="w-6 h-6 text-fg-subtle" />}
               size="compact"
-              title="Nothing due right now"
+              title="All caught up — no overdue invoices"
               description="No invoices past any active collection rule threshold. Monday inbox zero."
             />
           ) : (
@@ -712,9 +729,9 @@ function TopExposureCard({
       <Card variant="default">
         <CardBody>
           <EmptyState
-            icon="check"
+            icon={<Wallet className="w-6 h-6 text-fg-subtle" />}
             size="compact"
-            title="No exposure"
+            title="All caught up — no overdue invoices"
             description="No builder currently has an outstanding balance. Nothing to chase."
           />
         </CardBody>
@@ -753,7 +770,7 @@ function TopExposureCard({
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 items-start">
           <div className="min-w-0">
-            <h3 className="text-[20px] font-bold text-fg leading-tight">
+            <h3 className="text-[20px] font-semibold text-fg leading-tight">
               {builder.name}
             </h3>
             <div className="mt-2 flex items-center gap-3 flex-wrap text-[12px] text-fg-muted">
@@ -967,9 +984,9 @@ function BuildersByExposure({
       <CardBody>
         {sorted.length === 0 ? (
           <EmptyState
-            icon="check"
+            icon={<Wallet className="w-6 h-6 text-fg-subtle" />}
             size="compact"
-            title={filter ? 'No builders in this bucket' : 'No open balances'}
+            title={filter ? 'No builders in this bucket' : 'All caught up — no overdue invoices'}
             description={filter ? 'Try a different aging bucket.' : 'All accounts paid up.'}
           />
         ) : (
@@ -1066,5 +1083,103 @@ function SortBtn({
       <ArrowUpDown className="w-3 h-3" />
       {children}
     </button>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CollectionRateGauge — purely presentational SVG circular ring.
+// Receives a precomputed percentage; performs no fetching, no business logic,
+// and never mutates the rate it is shown. Color thresholds are visual-only.
+// ────────────────────────────────────────────────────────────────────────────
+
+function CollectionRateGauge({
+  rate,
+  label = 'AR Health',
+  sublabel = '% of AR currently not past due',
+}: {
+  rate: number | null
+  label?: string
+  sublabel?: string
+}) {
+  // Detect prefers-reduced-motion once on mount; default to false on SSR.
+  const [reduceMotion, setReduceMotion] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReduceMotion(mq.matches)
+    update()
+    mq.addEventListener?.('change', update)
+    return () => mq.removeEventListener?.('change', update)
+  }, [])
+
+  const RADIUS = 36
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS // ≈ 226.19
+  const safeRate = rate === null || Number.isNaN(rate) ? 0 : Math.max(0, Math.min(100, rate))
+  const dashOffset = CIRCUMFERENCE * (1 - safeRate / 100)
+
+  // Visual color thresholds — purely presentational.
+  const stroke =
+    rate === null
+      ? 'var(--fg-subtle)'
+      : safeRate >= 90
+        ? 'var(--chart-3)' // green — good
+        : safeRate >= 70
+          ? 'var(--chart-2)' // gold — mid
+          : 'var(--chart-4)' // red — poor
+
+  return (
+    <Card variant="default">
+      <CardBody className="flex items-center gap-4 py-4">
+        <div className="relative" style={{ width: 80, height: 80 }}>
+          <svg
+            width={80}
+            height={80}
+            viewBox="0 0 80 80"
+            role="img"
+            aria-label={
+              rate === null
+                ? `${label}: not available`
+                : `${label}: ${Math.round(safeRate)} percent`
+            }
+          >
+            {/* Track */}
+            <circle
+              cx={40}
+              cy={40}
+              r={RADIUS}
+              fill="none"
+              stroke="var(--border)"
+              strokeWidth={6}
+            />
+            {/* Progress */}
+            <circle
+              cx={40}
+              cy={40}
+              r={RADIUS}
+              fill="none"
+              stroke={stroke}
+              strokeWidth={6}
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={dashOffset}
+              transform="rotate(-90 40 40)"
+              style={{
+                transition: reduceMotion ? 'none' : 'stroke-dashoffset 800ms ease-out',
+              }}
+            />
+          </svg>
+          <div
+            className="absolute inset-0 flex items-center justify-center text-[14px] font-semibold tabular-nums text-fg"
+            style={MONO_STYLE}
+          >
+            {rate === null ? '—' : `${Math.round(safeRate)}%`}
+          </div>
+        </div>
+        <div className="min-w-0">
+          <div className="eyebrow text-[10px] text-fg-muted">{label}</div>
+          <div className="text-[13px] text-fg mt-0.5">{sublabel}</div>
+        </div>
+      </CardBody>
+    </Card>
   )
 }

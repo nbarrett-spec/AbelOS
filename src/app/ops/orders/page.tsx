@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Search, Calendar, FileText, Inbox, Factory, Package, DollarSign,
-  Truck, CheckCircle, ChevronDown, ChevronUp, X, Receipt, CreditCard
+  Truck, CheckCircle, ChevronDown, ChevronUp, X, Receipt, CreditCard,
+  ShoppingCart
 } from 'lucide-react'
 import { PageHeader, KPICard, StatusBadge, Badge } from '@/components/ui'
+import EmptyState from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 
 interface OrderItem {
@@ -401,10 +403,12 @@ export default function OpsOrdersPage() {
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="panel border-t-0 rounded-t-none text-center py-16">
-          <FileText className="w-10 h-10 text-fg-subtle mx-auto mb-3" />
-          <p className="text-sm font-medium text-fg">No orders found</p>
-          <p className="text-xs text-fg-muted mt-1">Orders are created when approved quotes are converted</p>
+        <div className="panel border-t-0 rounded-t-none">
+          <EmptyState
+            icon={<ShoppingCart className="w-8 h-8 text-fg-subtle" />}
+            title="No orders found"
+            description="Orders are created when approved quotes are converted"
+          />
         </div>
       ) : (
         <div className="panel border-t-0 rounded-t-none overflow-hidden">

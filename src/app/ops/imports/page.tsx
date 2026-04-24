@@ -127,7 +127,7 @@ export default function ImportsPage() {
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1e293b' }}>Data Import Center</h1>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: '#1e293b' }}>Data Import Center</h1>
         <p style={{ color: '#64748b', marginTop: '0.25rem' }}>
           Import data from InFlow CSV exports into the Abel Builder Platform
         </p>

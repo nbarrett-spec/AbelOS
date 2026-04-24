@@ -68,17 +68,17 @@ export default function AdminIndexPage() {
             href={link.href}
             className="block group"
           >
-            <Card className="h-full transition-colors group-hover:border-[#C6A24E]">
+            <Card className="h-full transition-colors group-hover:border-signal">
               <CardBody>
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-md bg-[#0f2a3e] text-white flex items-center justify-center text-xs font-semibold">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-md bg-surface-elev text-fg-on-accent flex items-center justify-center text-xs font-semibold">
                     {link.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#0f2a3e]">
+                    <h3 className="text-sm font-semibold text-fg group-hover:text-signal">
                       {link.label}
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1">{link.description}</p>
+                    <p className="text-xs text-fg-muted mt-1">{link.description}</p>
                   </div>
                 </div>
               </CardBody>

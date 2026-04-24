@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { ShieldCheck } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface WarrantyPolicy {
   id: string
@@ -122,7 +124,7 @@ export default function WarrantyPoliciesPage() {
     <div>
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-surface-elevated'
         }`}>
           {toast}
         </div>
@@ -132,7 +134,7 @@ export default function WarrantyPoliciesPage() {
         <div>
           <div className="flex items-center gap-3">
             <Link href="/ops/warranty" className="text-gray-400 hover:text-gray-600">&larr;</Link>
-            <h1 className="text-2xl font-bold text-gray-900">Warranty Policies</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Warranty Policies</h1>
           </div>
           <p className="text-sm text-gray-500 mt-1 ml-8">Define warranty terms, coverage, and claim processes</p>
         </div>
@@ -140,14 +142,14 @@ export default function WarrantyPoliciesPage() {
           {policies.length === 0 && (
             <button
               onClick={seedDefaults}
-              className="px-4 py-2 border border-[#C6A24E] text-[#C6A24E] rounded-lg text-sm font-medium hover:bg-orange-50"
+              className="px-4 py-2 border border-signal text-signal rounded-lg text-sm font-medium hover:bg-orange-50"
             >
               Load Default Policies
             </button>
           )}
           <button
             onClick={() => setShowNewForm(!showNewForm)}
-            className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]"
+            className="px-4 py-2 bg-signal text-white rounded-lg text-sm font-medium hover:bg-signal-hover"
           >
             + New Policy
           </button>
@@ -199,7 +201,7 @@ export default function WarrantyPoliciesPage() {
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowNewForm(false)} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-[#1B2A4A] text-white rounded-lg text-sm font-medium">Create Policy</button>
+              <button type="submit" className="px-4 py-2 bg-surface-elevated text-white rounded-lg text-sm font-medium">Create Policy</button>
             </div>
           </form>
         </div>
@@ -208,15 +210,14 @@ export default function WarrantyPoliciesPage() {
       {loading ? (
         <div className="p-12 text-center text-gray-400">Loading policies...</div>
       ) : policies.length === 0 ? (
-        <div className="bg-white rounded-xl border p-12 text-center">
-          <p className="text-gray-400 text-lg mb-2">No warranty policies configured</p>
-          <p className="text-gray-300 text-sm mb-4">Click &quot;Load Default Policies&quot; to set up Abel Lumber&apos;s standard warranty policies</p>
-          <button
-            onClick={seedDefaults}
-            className="px-6 py-3 bg-[#C6A24E] text-white rounded-lg font-medium hover:bg-[#d46711]"
-          >
-            Load Default Policies
-          </button>
+        <div className="bg-white rounded-xl border">
+          <EmptyState
+            icon={<ShieldCheck className="w-8 h-8 text-fg-subtle" />}
+            title="No warranty policies configured"
+            description="Click Load Default Policies to set up Abel Lumber's standard warranty policies"
+            action={{ label: 'Load Default Policies', onClick: seedDefaults }}
+            size="full"
+          />
         </div>
       ) : (
         <div className="space-y-8">

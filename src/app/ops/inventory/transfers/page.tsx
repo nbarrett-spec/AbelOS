@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Package } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface TransferItem {
   productId: string
@@ -161,7 +163,7 @@ export default function TransfersPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[#0f2a3e] mb-2">Stock Transfers</h1>
+            <h1 className="text-3xl font-bold text-fg mb-2">Stock Transfers</h1>
             <p className="text-gray-600">Manage inventory transfers between locations</p>
           </div>
           <button
@@ -175,7 +177,7 @@ export default function TransfersPage() {
         {/* New Form */}
         {showNewForm && (
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-bold text-[#0f2a3e] mb-6">Create Transfer</h2>
+            <h2 className="text-xl font-semibold text-fg mb-6">Create Transfer</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -296,7 +298,10 @@ export default function TransfersPage() {
           {loading ? (
             <div className="p-8 text-center text-gray-600">Loading transfers...</div>
           ) : transfers.length === 0 ? (
-            <div className="p-8 text-center text-gray-600">No transfers found</div>
+            <EmptyState
+              icon={<Package className="w-8 h-8 text-fg-subtle" />}
+              title="No items match your filters"
+            />
           ) : (
             <>
               <table className="w-full divide-y divide-gray-200">
@@ -327,9 +332,9 @@ export default function TransfersPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {transfers.map((transfer) => (
-                    <tr key={transfer.id} className="hover:bg-gray-50">
+                    <tr key={transfer.id} className="hover:bg-row-hover">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-mono text-sm font-semibold text-[#0f2a3e]">
+                        <span className="font-mono text-sm font-semibold text-fg">
                           {transfer.transferNumber}
                         </span>
                       </td>

@@ -62,7 +62,7 @@ export default function QuickBooksIntegrationPage() {
       <div className="bg-[#1e3a5f] text-white px-8 py-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">QuickBooks Online</h1>
+            <h1 className="text-3xl font-semibold">QuickBooks Online</h1>
             <p className="text-blue-200 mt-2">
               OAuth2 sync for invoices, payments, and month-end journals.
             </p>
@@ -93,7 +93,7 @@ export default function QuickBooksIntegrationPage() {
         {/* Status card */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-[#1e3a5f] text-lg">Connection Status</h2>
+            <h2 className="font-semibold text-[#1e3a5f] text-lg">Connection Status</h2>
             <button
               onClick={loadStatus}
               className="text-xs text-gray-500 hover:text-gray-700"
@@ -147,7 +147,7 @@ export default function QuickBooksIntegrationPage() {
 
         {/* Connect CTA */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-bold text-[#1e3a5f] text-lg mb-2">Connect QuickBooks</h2>
+          <h2 className="font-semibold text-[#1e3a5f] text-lg mb-2">Connect QuickBooks</h2>
           <p className="text-sm text-gray-600 mb-4">
             When phase 2 ships, this button kicks off the OAuth2 authorization
             flow with Intuit. You'll be redirected to QuickBooks to choose a
@@ -176,7 +176,7 @@ export default function QuickBooksIntegrationPage() {
 
         {/* What phase 2 turns on */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-bold text-[#1e3a5f] text-lg mb-3">Phase 2 Sync Coverage</h2>
+          <h2 className="font-semibold text-[#1e3a5f] text-lg mb-3">Phase 2 Sync Coverage</h2>
           <ul className="space-y-2 text-sm text-gray-700">
             <li className="flex items-start gap-2">
               <span className="text-gray-400">•</span>

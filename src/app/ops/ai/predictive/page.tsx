@@ -71,7 +71,7 @@ export default function PredictiveAnalyticsPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>AI Predictive Analytics</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0f2a3e', marginBottom: 4 }}>AI Predictive Analytics</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Revenue forecasting, demand prediction, behavioral models, and cash flow projections</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>

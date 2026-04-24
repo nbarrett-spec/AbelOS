@@ -66,9 +66,9 @@ function KPICard({ label, value, icon: Icon }: { label: string; value: string | 
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-gray-500 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-[#0f2a3e]">{value}</p>
+          <p className="text-2xl font-semibold text-fg">{value}</p>
         </div>
-        <Icon className="w-8 h-8 text-[#C6A24E] opacity-60" />
+        <Icon className="w-8 h-8 text-signal opacity-60" />
       </div>
     </div>
   )
@@ -123,7 +123,7 @@ function SuccessMessage({ createdPOs }: { createdPOs: CreatedPO[] }) {
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center py-12">
-      <Loader2 className="w-8 h-8 text-[#C6A24E] animate-spin" />
+      <Loader2 className="w-8 h-8 text-signal animate-spin" />
     </div>
   )
 }
@@ -257,7 +257,7 @@ export default function AutoReorderPage() {
     return (
       <div className="p-6 max-w-6xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#0f2a3e] mb-1">Auto-Reorder Purchase Orders</h1>
+          <h1 className="text-3xl font-bold text-fg mb-1">Auto-Reorder Purchase Orders</h1>
           <p className="text-gray-600">Bulk PO generation from inventory thresholds</p>
         </div>
 
@@ -270,7 +270,7 @@ export default function AutoReorderPage() {
               setCreatedPOs([])
               setSelectedVendors(new Set())
             }}
-            className="px-6 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#B08841] font-medium transition"
+            className="px-6 py-2 bg-signal text-white rounded-lg hover:bg-signal-hover font-medium transition"
           >
             Generate More POs
           </button>
@@ -283,7 +283,7 @@ export default function AutoReorderPage() {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#0f2a3e] mb-1">Auto-Reorder Purchase Orders</h1>
+        <h1 className="text-3xl font-bold text-fg mb-1">Auto-Reorder Purchase Orders</h1>
         <p className="text-gray-600">Automatically generate draft POs for items below reorder point</p>
       </div>
 
@@ -317,7 +317,7 @@ export default function AutoReorderPage() {
             <>
               {/* Vendor Groups */}
               <div className="mb-8">
-                <h2 className="text-xl font-semibold text-[#0f2a3e] mb-4">Vendor Groups ({selectedGroupCount} selected)</h2>
+                <h2 className="text-xl font-semibold text-fg mb-4">Vendor Groups ({selectedGroupCount} selected)</h2>
                 <div className="space-y-4">
                   {data.suggestions.map((group) => (
                     <div key={group.vendorId} className="bg-white/80 backdrop-blur border border-gray-200 rounded-xl p-5">
@@ -328,15 +328,15 @@ export default function AutoReorderPage() {
                             type="checkbox"
                             checked={selectedVendors.has(group.vendorId)}
                             onChange={() => toggleVendor(group.vendorId)}
-                            className="w-5 h-5 rounded border-gray-300 text-[#C6A24E] cursor-pointer"
+                            className="w-5 h-5 rounded border-gray-300 text-signal cursor-pointer"
                           />
                           <div>
-                            <h3 className="font-semibold text-[#0f2a3e]">{group.vendorName}</h3>
+                            <h3 className="font-semibold text-fg">{group.vendorName}</h3>
                             <p className="text-sm text-gray-600">{group.itemCount} items to reorder</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-[#0f2a3e]">{fmtMoney(group.subtotal)}</p>
+                          <p className="font-semibold text-fg">{fmtMoney(group.subtotal)}</p>
                           <p className="text-xs text-gray-500">{group.itemCount} items</p>
                         </div>
                       </div>
@@ -356,7 +356,7 @@ export default function AutoReorderPage() {
                           </thead>
                           <tbody>
                             {group.items.map((item) => (
-                              <tr key={item.productId} className="border-t border-gray-100 hover:bg-gray-50">
+                              <tr key={item.productId} className="border-t border-gray-100 hover:bg-row-hover">
                                 <td className="py-2 px-3 font-mono text-gray-700">{item.sku || '—'}</td>
                                 <td className="py-2 px-3 text-gray-700">{item.productName || '—'}</td>
                                 <td className="py-2 px-3 text-right">
@@ -369,7 +369,7 @@ export default function AutoReorderPage() {
                                 <td className="py-2 px-3 text-right text-gray-700">
                                   {item.vendorCost ? fmtMoney(item.vendorCost) : '—'}
                                 </td>
-                                <td className="py-2 px-3 text-right font-semibold text-[#C6A24E]">
+                                <td className="py-2 px-3 text-right font-semibold text-signal">
                                   {fmtMoney(item.lineTotal)}
                                 </td>
                               </tr>
@@ -410,7 +410,7 @@ export default function AutoReorderPage() {
               <div className="bg-white/80 backdrop-blur border border-gray-200 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-[#0f2a3e] mb-1">Generate Draft POs</h3>
+                    <h3 className="font-semibold text-fg mb-1">Generate Draft POs</h3>
                     <p className="text-sm text-gray-600">
                       {selectedGroupCount > 0
                         ? `Create ${selectedGroupCount} draft PO(s) with ${selectedItemCount} items totaling ${fmtMoney(selectedTotal)}`
@@ -422,7 +422,7 @@ export default function AutoReorderPage() {
                   <button
                     onClick={handleGeneratePOs}
                     disabled={selectedGroupCount === 0 || generating}
-                    className="px-6 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#B08841] disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition flex items-center gap-2"
+                    className="px-6 py-2 bg-signal text-white rounded-lg hover:bg-signal-hover disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition flex items-center gap-2"
                   >
                     {generating && <Loader2 className="w-4 h-4 animate-spin" />}
                     {generating ? 'Generating...' : 'Generate Draft POs'}

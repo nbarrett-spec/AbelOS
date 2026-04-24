@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Briefcase } from 'lucide-react'
 import { CreateJobModal } from '../components/CreateJobModal'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 const JOB_STATUSES = [
   { key: 'CREATED', label: 'New', color: '#95A5A6' },
@@ -206,8 +209,8 @@ export default function JobPipelinePage() {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-          <p className="mt-4 text-gray-600">Loading jobs...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-signal" />
+          <p className="mt-4 text-fg-muted">Loading jobs...</p>
         </div>
       </div>
     )
@@ -215,23 +218,18 @@ export default function JobPipelinePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Job Pipeline</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Track every job from order to closeout — T-72 → T-48 → T-24 → Day-of
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        title="Job Pipeline"
+        description="Track every job from order to closeout — T-72 → T-48 → T-24 → Day-of"
+        actions={
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
+            className="px-3 py-1.5 text-sm bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover transition-colors"
           >
             + Create Job
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Error message */}
       {error && (
@@ -265,21 +263,21 @@ export default function JobPipelinePage() {
       )}
 
       {/* Controls bar */}
-      <div className="bg-white rounded-xl border p-4 flex items-center gap-4 flex-wrap">
+      <div className="bg-surface rounded-xl border p-4 flex items-center gap-4 flex-wrap">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search jobs by builder, community..."
-          className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
+          className="flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-signal/20 focus:border-signal"
         />
         <div className="flex gap-1">
           <button
             onClick={() => setViewMode('board')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               viewMode === 'board'
-                ? 'bg-[#0f2a3e] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-signal text-fg-on-accent'
+                : 'bg-surface-muted text-fg-muted hover:bg-surface-muted/70'
             }`}
           >
             Board
@@ -288,8 +286,8 @@ export default function JobPipelinePage() {
             onClick={() => setViewMode('list')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               viewMode === 'list'
-                ? 'bg-[#0f2a3e] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-signal text-fg-on-accent'
+                : 'bg-surface-muted text-fg-muted hover:bg-surface-muted/70'
             }`}
           >
             List
@@ -303,8 +301,8 @@ export default function JobPipelinePage() {
           onClick={() => setActiveFilter('ALL')}
           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
             activeFilter === 'ALL'
-              ? 'bg-[#0f2a3e] text-white border-transparent'
-              : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
+              ? 'bg-signal text-fg-on-accent border-transparent'
+              : 'text-fg-muted border-border hover:border-border-strong bg-surface'
           }`}
         >
           All Jobs
@@ -329,7 +327,7 @@ export default function JobPipelinePage() {
             className={`px-3 py-1 text-xs rounded-full border transition-colors ${
               activeFilter === status.key
                 ? 'text-white border-transparent'
-                : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
+                : 'text-fg-muted border-border hover:border-border-strong bg-surface'
             }`}
             style={
               activeFilter === status.key
@@ -344,7 +342,7 @@ export default function JobPipelinePage() {
 
       {/* Needs-Date-Review dedicated view — inline confirm/edit per row */}
       {activeFilter === NEEDS_REVIEW_FILTER ? (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-surface rounded-xl border overflow-hidden">
           <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-amber-900">
@@ -363,7 +361,7 @@ export default function JobPipelinePage() {
             </button>
           </div>
           {filteredNeedsReview.length === 0 ? (
-            <div className="text-center text-gray-500 text-sm py-16">
+            <div className="text-center text-fg-muted text-sm py-16">
               <p className="text-4xl mb-3">✓</p>
               <p className="font-medium">No jobs need date review</p>
               <p className="text-xs mt-2 max-w-md mx-auto">
@@ -375,18 +373,18 @@ export default function JobPipelinePage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-surface-muted border-b">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Job #</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Builder</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Address</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Community</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">PM</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">Job #</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">Builder</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">Address</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">Community</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">PM</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Default (createdAt+14d)
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Edit Date</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">Action</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">Edit Date</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-fg">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -398,31 +396,31 @@ export default function JobPipelinePage() {
                     const edited = editVal !== currentIso
                     const saving = savingRow === job.id
                     return (
-                      <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={job.id} className="hover:bg-row-hover transition-colors">
                         <td className="px-4 py-3 text-sm">
                           <Link
                             href={`/ops/jobs/${job.id}`}
-                            className="font-mono text-[#0f2a3e] hover:underline"
+                            className="font-mono text-signal hover:underline"
                           >
                             {job.jobNumber}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        <td className="px-4 py-3 text-sm font-medium text-fg">
                           {job.builderName || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={job.jobAddress || ''}>
+                        <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate" title={job.jobAddress || ''}>
                           {job.jobAddress || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.community || '—'}
                           {job.lotBlock && (
-                            <span className="text-gray-400"> / {job.lotBlock}</span>
+                            <span className="text-fg-subtle"> / {job.lotBlock}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.assignedPM
                             ? `${job.assignedPM.firstName} ${job.assignedPM.lastName}`
-                            : <span className="text-gray-400">Unassigned</span>}
+                            : <span className="text-fg-subtle">Unassigned</span>}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <span className="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-mono text-xs">
@@ -441,7 +439,7 @@ export default function JobPipelinePage() {
                                 [job.id]: e.target.value,
                               }))
                             }
-                            className="px-2 py-1 border rounded text-xs focus:ring-2 focus:ring-[#0f2a3e]/20 focus:border-[#0f2a3e]"
+                            className="px-2 py-1 border rounded text-xs focus:ring-2 focus:ring-signal/20 focus:border-signal"
                           />
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -455,7 +453,7 @@ export default function JobPipelinePage() {
                             }
                             className={`px-3 py-1.5 text-xs rounded-lg text-white transition-colors disabled:opacity-50 ${
                               edited
-                                ? 'bg-[#0f2a3e] hover:bg-[#0a1a28]'
+                                ? 'bg-signal hover:bg-signal-hover'
                                 : 'bg-emerald-600 hover:bg-emerald-700'
                             }`}
                           >
@@ -485,16 +483,16 @@ export default function JobPipelinePage() {
                       className="w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: status.color }}
                     />
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-fg">
                       {status.label}
                     </span>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                    <span className="text-xs text-fg-subtle bg-surface-muted px-1.5 py-0.5 rounded">
                       {statusJobs.length}
                     </span>
                   </div>
-                  <div className="bg-gray-100/50 rounded-lg min-h-[400px] p-3 border border-dashed border-gray-200 space-y-2">
+                  <div className="bg-surface-muted/50 rounded-lg min-h-[400px] p-3 border border-dashed border-border space-y-2">
                     {statusJobs.length === 0 ? (
-                      <div className="text-center text-xs text-gray-400 pt-8">
+                      <div className="text-center text-xs text-fg-subtle pt-8">
                         No jobs
                       </div>
                     ) : (
@@ -504,33 +502,33 @@ export default function JobPipelinePage() {
                           href={`/ops/jobs/${job.id}`}
                           className="block"
                         >
-                          <div className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md hover:border-[#0f2a3e] transition-all cursor-pointer">
+                          <div className="bg-surface rounded-lg p-3 border border-border hover:shadow-md hover:border-signal transition-all cursor-pointer">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
-                                <p className="text-xs font-semibold text-gray-900 truncate">
+                                <p className="text-xs font-semibold text-fg truncate">
                                   {job.builderName}
                                 </p>
-                                <p className="text-xs text-gray-600 truncate">
+                                <p className="text-xs text-fg-muted truncate">
                                   {job.community || '—'}
                                 </p>
                               </div>
                             </div>
                             <div className="space-y-1.5 text-xs">
                               {job.lotBlock && (
-                              <div className="text-gray-700">
+                              <div className="text-fg-muted">
                                 <span className="font-medium">Lot:</span> {job.lotBlock}
                               </div>
                               )}
-                              <div className="text-gray-600 truncate" title={job.jobAddress || ''}>
+                              <div className="text-fg-muted truncate" title={job.jobAddress || ''}>
                                 <span className="font-medium">Address:</span> {job.jobAddress || '—'}
                               </div>
                               {job.assignedPM && (
-                                <div className="text-gray-600">
+                                <div className="text-fg-muted">
                                   <span className="font-medium">PM:</span> {job.assignedPM.firstName} {job.assignedPM.lastName}
                                 </div>
                               )}
                               {job.scheduledDate && (
-                                <div className="text-gray-600">
+                                <div className="text-fg-muted">
                                   <span className="font-medium">Scheduled:</span>{' '}
                                   {new Date(job.scheduledDate).toLocaleDateString()}
                                 </div>
@@ -548,41 +546,41 @@ export default function JobPipelinePage() {
         </div>
       ) : (
         /* List View */
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-surface rounded-xl border overflow-hidden">
           {filteredJobs.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm py-16">
-              <p className="text-4xl mb-3">📋</p>
-              <p className="font-medium">No jobs found</p>
-              <p className="text-xs mt-2 max-w-md mx-auto">
-                {jobs.length === 0
+            <EmptyState
+              icon={<Briefcase className="w-8 h-8 text-fg-subtle" />}
+              title="No jobs to display"
+              description={
+                jobs.length === 0
                   ? 'Jobs are created when quotes are approved and converted to orders.'
-                  : 'Try adjusting your search or filters.'}
-              </p>
-            </div>
+                  : 'Try adjusting your search or filters.'
+              }
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-surface-muted border-b">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Builder
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Community
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Lot/Block
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Address
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       PM
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Scheduled
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Status
                     </th>
                   </tr>
@@ -595,29 +593,29 @@ export default function JobPipelinePage() {
                     return (
                       <tr
                         key={job.id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="hover:bg-row-hover transition-colors"
                       >
                         <td className="px-4 py-3">
                           <Link
                             href={`/ops/jobs/${job.id}`}
-                            className="text-sm font-medium text-[#0f2a3e] hover:underline"
+                            className="text-sm font-medium text-signal hover:underline"
                           >
                             {job.builderName}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.community || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.lotBlock || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">
+                        <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate">
                           {job.jobAddress || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.assignedPM ? `${job.assignedPM.firstName} ${job.assignedPM.lastName}` : '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.scheduledDate
                             ? new Date(job.scheduledDate).toLocaleDateString()
                             : '—'}
@@ -640,7 +638,7 @@ export default function JobPipelinePage() {
             </div>
           )}
           {filteredJobs.length > LIST_PAGE_SIZE && (
-            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-fg-muted">
               <span>Showing {Math.min((listPage - 1) * LIST_PAGE_SIZE + 1, filteredJobs.length)}–{Math.min(listPage * LIST_PAGE_SIZE, filteredJobs.length)} of {filteredJobs.length}</span>
               <div className="flex gap-2">
                 <button onClick={() => setListPage(p => Math.max(1, p - 1))} disabled={listPage <= 1} className="px-3 py-1 border rounded text-xs disabled:opacity-40">Previous</button>
@@ -652,8 +650,8 @@ export default function JobPipelinePage() {
       )}
 
       {/* T-72/T-48/T-24 Workflow Legend */}
-      <div className="bg-white rounded-xl border p-5">
-        <h3 className="font-semibold text-gray-900 mb-3">
+      <div className="bg-surface rounded-xl border p-5">
+        <h3 className="font-semibold text-fg mb-3">
           Job Lifecycle — Drop Workflow
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -705,8 +703,8 @@ function WorkflowStep({
         style={{ backgroundColor: color }}
       />
       <div>
-        <p className="text-sm font-medium text-gray-900">{label}</p>
-        <p className="text-xs text-gray-500 mt-1">{description}</p>
+        <p className="text-sm font-medium text-fg">{label}</p>
+        <p className="text-xs text-fg-muted mt-1">{description}</p>
       </div>
     </div>
   )

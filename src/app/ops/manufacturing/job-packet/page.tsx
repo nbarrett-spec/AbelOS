@@ -135,28 +135,30 @@ export default function JobPacketPage() {
   if (!data) {
     return (
       <div style={{ maxWidth: 600, margin: '40px auto', padding: '0 20px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>🖨️ Print Job Packet</h1>
-        <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 24 }}>Select a job to generate a printable pick list, build sheets, and delivery info</p>
+        <h1 className="text-fg" style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>🖨️ Print Job Packet</h1>
+        <p className="text-fg-muted" style={{ fontSize: 13, marginBottom: 24 }}>Select a job to generate a printable pick list, build sheets, and delivery info</p>
         {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12, color: '#991B1B', marginBottom: 16 }}>{error}</div>}
         <input
           type="text"
           placeholder="Search by job number or builder..."
           value={jobSearch}
           onChange={e => setJobSearch(e.target.value)}
-          style={{ width: '100%', padding: '12px 16px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 14 }}
+          className="border border-border"
+          style={{ width: '100%', padding: '12px 16px', borderRadius: 8, fontSize: 14 }}
         />
-        {loading && <p style={{ textAlign: 'center', padding: 20, color: '#6B7280' }}>Loading...</p>}
+        {loading && <p className="text-fg-muted" style={{ textAlign: 'center', padding: 20 }}>Loading...</p>}
         {searchResults.length > 0 && (
-          <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, marginTop: 8, overflow: 'hidden' }}>
+          <div className="border border-border" style={{ borderRadius: 8, marginTop: 8, overflow: 'hidden' }}>
             {searchResults.map((j: any) => (
               <button
                 key={j.id}
                 onClick={() => loadData(j.id)}
-                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #F3F4F6', background: 'white', cursor: 'pointer', fontSize: 14, border: 'none' }}
+                className="bg-surface hover:bg-row-hover"
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #F3F4F6', cursor: 'pointer', fontSize: 14, border: 'none' }}
               >
                 <strong>{j.jobNumber}</strong>
-                <span style={{ color: '#6B7280', marginLeft: 8 }}>{j.builderName}</span>
-                <span style={{ color: '#9CA3AF', marginLeft: 8, fontSize: 12 }}>{j.community}</span>
+                <span className="text-fg-muted" style={{ marginLeft: 8 }}>{j.builderName}</span>
+                <span className="text-fg-subtle" style={{ marginLeft: 8, fontSize: 12 }}>{j.community}</span>
               </button>
             ))}
           </div>

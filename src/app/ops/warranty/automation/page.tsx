@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ShieldCheck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 const URGENCY_COLORS: Record<string, string> = { URGENT: '#e74c3c', SOON: '#C6A24E', UPCOMING: '#3498db' }
 const STATUS_COLORS: Record<string, string> = { OPEN: '#3498db', IN_PROGRESS: '#C6A24E', RESOLVED: '#27ae60', DENIED: '#e74c3c', ACTIVE: '#27ae60', EXPIRED: '#95a5a6' }
@@ -9,7 +12,7 @@ function KPICard({ label, value, sub, color }: { label: string; value: string | 
   return (
     <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 600, color: color || '#0f2a3e' }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -42,17 +45,19 @@ export default function WarrantyAutomationPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Warranty Automation</h1>
-      <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Automated warranty tracking, expiration alerts, claim analysis, and cost management</p>
-
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <PageHeader
+        title="Warranty Automation"
+        description="Automated warranty tracking, expiration alerts, claim analysis, and cost management"
+      >
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 600 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </PageHeader>
 
       {loading ? <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>Loading warranty data...</div> : (
         <>
@@ -81,7 +86,7 @@ function DashView({ data }: { data: any }) {
         <KPICard label="Total Resolved" value={Number(c.resolvedClaims || 0)} color="#27ae60" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Recent Claims</h3>
+      <h3 className="text-fg" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Recent Claims</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead><tr style={{ background: '#f8f9fa' }}>
@@ -101,7 +106,7 @@ function DashView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{new Date(c.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
-            {(data.recentClaims || []).length === 0 && <tr><td colSpan={5} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No warranty claims yet.</td></tr>}
+            {(data.recentClaims || []).length === 0 && <tr><td colSpan={5}><EmptyState icon={<ShieldCheck className="w-8 h-8 text-fg-subtle" />} title="No warranty claims yet" size="compact" /></td></tr>}
           </tbody>
         </table>
       </div>
@@ -119,7 +124,7 @@ function ExpiringView({ data }: { data: any }) {
         <KPICard label="Upcoming (90d)" value={s.upcoming || 0} color="#3498db" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Warranties Expiring Soon</h3>
+      <h3 className="text-fg" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Warranties Expiring Soon</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead><tr style={{ background: '#f8f9fa' }}>
@@ -143,14 +148,14 @@ function ExpiringView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{w.email}</td>
               </tr>
             ))}
-            {(data.expiring || []).length === 0 && <tr><td colSpan={7} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No warranties expiring in the next 90 days.</td></tr>}
+            {(data.expiring || []).length === 0 && <tr><td colSpan={7}><EmptyState icon={<ShieldCheck className="w-8 h-8 text-fg-subtle" />} title="Nothing expiring soon" description="No warranties expiring in the next 90 days." size="compact" /></td></tr>}
           </tbody>
         </table>
       </div>
 
       {(data.recentlyExpired || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#C6A24E' }}>Recently Expired — Extended Warranty Opportunity</h3>
+          <h3 className="text-signal" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Recently Expired — Extended Warranty Opportunity</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -182,7 +187,7 @@ function PatternsView({ data }: { data: any }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Claims by Category</h3>
+          <h3 className="text-fg" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Claims by Category</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -206,7 +211,7 @@ function PatternsView({ data }: { data: any }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Repeat Claimers</h3>
+          <h3 className="text-fg" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Repeat Claimers</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -222,7 +227,7 @@ function PatternsView({ data }: { data: any }) {
                     <td style={{ padding: '8px 14px', textAlign: 'right' }}>{Number(b.activeClaims)}</td>
                   </tr>
                 ))}
-                {(data.byBuilder || []).length === 0 && <tr><td colSpan={3} style={{ padding: 20, textAlign: 'center', color: '#999' }}>No repeat claimers.</td></tr>}
+                {(data.byBuilder || []).length === 0 && <tr><td colSpan={3}><EmptyState icon={<ShieldCheck className="w-8 h-8 text-fg-subtle" />} title="No repeat claimers" size="compact" /></td></tr>}
               </tbody>
             </table>
           </div>
@@ -231,7 +236,7 @@ function PatternsView({ data }: { data: any }) {
 
       {(data.monthly || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Monthly Claim Volume</h3>
+          <h3 className="text-fg" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Monthly Claim Volume</h3>
           <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8f9fa' }}>
@@ -323,7 +328,7 @@ function BuilderView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', fontSize: 12 }}>{b.latestExpiry ? new Date(b.latestExpiry).toLocaleDateString() : '—'}</td>
               </tr>
             ))}
-            {(data.builders || []).length === 0 && <tr><td colSpan={7} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No warranty records. Use Auto-Generate to create warranties from delivered orders.</td></tr>}
+            {(data.builders || []).length === 0 && <tr><td colSpan={7}><EmptyState icon={<ShieldCheck className="w-8 h-8 text-fg-subtle" />} title="No warranty records" description="Use Auto-Generate to create warranties from delivered orders." size="compact" /></td></tr>}
           </tbody>
         </table>
       </div>

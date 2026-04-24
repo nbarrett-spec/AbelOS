@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface BuildSheetData {
   job: any
@@ -137,19 +138,18 @@ export default function BuildSheetPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Build Sheet</h1>
-          <p className="text-gray-600 text-sm mt-1">Manufacturing worksheet with BOM expansion, picks, and QC gates</p>
-        </div>
-        <Link href="/ops/manufacturing" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">← Manufacturing Dashboard</Link>
-      </div>
+      <PageHeader
+        title="Build Sheet"
+        description="Manufacturing worksheet with BOM expansion, picks, and QC gates"
+        actions={
+          <Link href="/ops/manufacturing" className="text-sm text-[#0f2a3e] hover:text-signal">← Manufacturing Dashboard</Link>
+        }
+      />
 
       {/* Job Search */}
       {!data && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold mb-4">Select a Job</h2>
+          <h2 className="text-lg font-semibold mb-4">Select a Job</h2>
           <input
             type="text"
             placeholder="Search by job number or builder..."
@@ -192,23 +192,23 @@ export default function BuildSheetPage() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold">{data.job.jobNumber}</h2>
+                  <h2 className="text-xl font-semibold">{data.job.jobNumber}</h2>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(data.job.status)}`}>
                     {data.job.status?.replace(/_/g, ' ')}
                   </span>
                 </div>
-                <p className="text-gray-600 mt-1">{data.job.builderName} — {data.job.community} {data.job.lotBlock || ''}</p>
-                {data.job.jobAddress && <p className="text-gray-500 text-sm">{data.job.jobAddress}</p>}
-                {data.job.pmName && <p className="text-gray-500 text-sm mt-1">PM: {data.job.pmName}</p>}
+                <p className="text-fg-muted mt-1">{data.job.builderName} — {data.job.community} {data.job.lotBlock || ''}</p>
+                {data.job.jobAddress && <p className="text-fg-subtle text-sm">{data.job.jobAddress}</p>}
+                {data.job.pmName && <p className="text-fg-subtle text-sm mt-1">PM: {data.job.pmName}</p>}
                 {data.job.scheduledDate && (
                   <p className="text-sm mt-1 font-medium">Scheduled: {new Date(data.job.scheduledDate).toLocaleDateString()}</p>
                 )}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => { setData(null); setJobId(''); setJobSearch(''); }} className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
+                <button onClick={() => { setData(null); setJobId(''); setJobSearch(''); }} className="px-3 py-2 text-sm border rounded-lg hover:bg-row-hover">
                   Change Job
                 </button>
-                <button onClick={() => loadBuildSheet(jobId)} className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
+                <button onClick={() => loadBuildSheet(jobId)} className="px-3 py-2 text-sm border rounded-lg hover:bg-row-hover">
                   Refresh
                 </button>
               </div>
@@ -217,37 +217,37 @@ export default function BuildSheetPage() {
 
           {/* Validation Gates */}
           <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-bold text-gray-900 mb-3">Validation Gates</h3>
+            <h3 className="font-semibold text-fg mb-3">Validation Gates</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.pickListGenerated)}</div>
-                <p className="text-xs text-gray-600 mt-1">Pick List Generated</p>
+                <p className="text-xs text-fg-muted mt-1">Pick List Generated</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.allMaterialsAllocated)}</div>
-                <p className="text-xs text-gray-600 mt-1">Materials Allocated</p>
+                <p className="text-xs text-fg-muted mt-1">Materials Allocated</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.allPicksVerified)}</div>
-                <p className="text-xs text-gray-600 mt-1">All Picks Verified</p>
+                <p className="text-xs text-fg-muted mt-1">All Picks Verified</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.preProductionQCPassed)}</div>
-                <p className="text-xs text-gray-600 mt-1">Pre-Production QC</p>
+                <p className="text-xs text-fg-muted mt-1">Pre-Production QC</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.finalUnitQCPassed)}</div>
-                <p className="text-xs text-gray-600 mt-1">Final Unit QC</p>
+                <p className="text-xs text-fg-muted mt-1">Final Unit QC</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.preDeliveryQCPassed)}</div>
-                <p className="text-xs text-gray-600 mt-1">Pre-Delivery QC</p>
+                <p className="text-xs text-fg-muted mt-1">Pre-Delivery QC</p>
               </div>
             </div>
 
             {/* Progress bar */}
             <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <div className="flex justify-between text-sm text-fg-muted mb-1">
                 <span>Pick Progress</span>
                 <span>{data.pickSummary.percentComplete}%</span>
               </div>
@@ -257,7 +257,7 @@ export default function BuildSheetPage() {
                   style={{ width: `${data.pickSummary.percentComplete}%` }}
                 />
               </div>
-              <div className="flex gap-4 mt-2 text-xs text-gray-500">
+              <div className="flex gap-4 mt-2 text-xs text-fg-subtle">
                 <span>Short: {data.pickSummary.short}</span>
                 <span>Pending: {data.pickSummary.pending}</span>
                 <span>Picking: {data.pickSummary.picking}</span>
@@ -269,7 +269,7 @@ export default function BuildSheetPage() {
 
           {/* Actions */}
           <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-bold text-gray-900 mb-3">Actions</h3>
+            <h3 className="font-semibold text-fg mb-3">Actions</h3>
             <div className="flex flex-wrap gap-2">
               <button onClick={generatePicks} className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm font-medium">
                 {data.gates.pickListGenerated ? 'Regenerate Pick List' : 'Generate Pick List'}
@@ -343,20 +343,20 @@ export default function BuildSheetPage() {
           {/* Assembly Groups (BOM-expanded picks) */}
           {data.assemblyGroups.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Assembly Units</h3>
+              <h3 className="text-lg font-semibold text-fg">Assembly Units</h3>
               {data.assemblyGroups.map((group, idx) => (
                 <div key={idx} className="bg-white rounded-xl border overflow-hidden">
                   <div className="bg-gray-50 px-6 py-3 border-b flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-gray-900">{group.parent.name}</span>
-                      <span className="text-gray-500 ml-2 text-sm">SKU: {group.parent.sku}</span>
-                      <span className="text-gray-500 ml-2 text-sm">Qty: {group.parent.orderQty}</span>
-                      {group.parent.doorSize && <span className="text-gray-500 ml-2 text-sm">{group.parent.doorSize}</span>}
-                      {group.parent.handing && <span className="text-gray-500 ml-2 text-sm">{group.parent.handing}</span>}
+                      <span className="font-semibold text-fg">{group.parent.name}</span>
+                      <span className="text-fg-subtle ml-2 text-sm">SKU: {group.parent.sku}</span>
+                      <span className="text-fg-subtle ml-2 text-sm">Qty: {group.parent.orderQty}</span>
+                      {group.parent.doorSize && <span className="text-fg-subtle ml-2 text-sm">{group.parent.doorSize}</span>}
+                      {group.parent.handing && <span className="text-fg-subtle ml-2 text-sm">{group.parent.handing}</span>}
                     </div>
                   </div>
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+                    <thead className="bg-gray-50 text-fg-muted text-xs uppercase">
                       <tr>
                         <th className="px-4 py-2 text-left">Component</th>
                         <th className="px-4 py-2 text-left">SKU</th>
@@ -370,9 +370,9 @@ export default function BuildSheetPage() {
                     </thead>
                     <tbody className="divide-y">
                       {group.components.map((comp: any) => (
-                        <tr key={comp.id} className="hover:bg-gray-50">
+                        <tr key={comp.id} className="hover:bg-row-hover">
                           <td className="px-4 py-2 font-medium">{comp.description}</td>
-                          <td className="px-4 py-2 text-gray-600">{comp.sku}</td>
+                          <td className="px-4 py-2 text-fg-muted">{comp.sku}</td>
                           <td className="px-4 py-2 text-center">{comp.quantity}</td>
                           <td className="px-4 py-2 text-center">{comp.pickedQty}</td>
                           <td className="px-4 py-2 text-center">
@@ -380,7 +380,7 @@ export default function BuildSheetPage() {
                               {comp.status}
                             </span>
                           </td>
-                          <td className="px-4 py-2 text-center text-gray-500 text-xs">
+                          <td className="px-4 py-2 text-center text-fg-subtle text-xs">
                             {comp.inventory?.zone || '—'}{comp.inventory?.bin ? ` / ${comp.inventory.bin}` : ''}
                           </td>
                           <td className="px-4 py-2 text-center text-xs">
@@ -412,10 +412,10 @@ export default function BuildSheetPage() {
           {data.directPicks.length > 0 && (
             <div className="bg-white rounded-xl border overflow-hidden">
               <div className="bg-gray-50 px-6 py-3 border-b">
-                <h3 className="font-bold text-gray-900">Direct Items (No BOM)</h3>
+                <h3 className="font-semibold text-fg">Direct Items (No BOM)</h3>
               </div>
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+                <thead className="bg-gray-50 text-fg-muted text-xs uppercase">
                   <tr>
                     <th className="px-4 py-2 text-left">Description</th>
                     <th className="px-4 py-2 text-left">SKU</th>
@@ -428,9 +428,9 @@ export default function BuildSheetPage() {
                 </thead>
                 <tbody className="divide-y">
                   {data.directPicks.map((pick: any) => (
-                    <tr key={pick.id} className="hover:bg-gray-50">
+                    <tr key={pick.id} className="hover:bg-row-hover">
                       <td className="px-4 py-2 font-medium">{pick.description}</td>
-                      <td className="px-4 py-2 text-gray-600">{pick.sku}</td>
+                      <td className="px-4 py-2 text-fg-muted">{pick.sku}</td>
                       <td className="px-4 py-2 text-center">{pick.quantity}</td>
                       <td className="px-4 py-2 text-center">{pick.pickedQty}</td>
                       <td className="px-4 py-2 text-center">
@@ -438,7 +438,7 @@ export default function BuildSheetPage() {
                           {pick.status}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-center text-gray-500 text-xs">
+                      <td className="px-4 py-2 text-center text-fg-subtle text-xs">
                         {pick.inventory?.zone || '—'}{pick.inventory?.bin ? ` / ${pick.inventory.bin}` : ''}
                       </td>
                       <td className="px-4 py-2 text-center">
@@ -461,9 +461,9 @@ export default function BuildSheetPage() {
 
           {/* QC History */}
           <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-bold text-gray-900 mb-3">Quality Checks</h3>
+            <h3 className="font-semibold text-fg mb-3">Quality Checks</h3>
             {data.qcChecks.length === 0 ? (
-              <p className="text-gray-500 text-sm">No QC checks recorded yet.</p>
+              <p className="text-fg-subtle text-sm">No QC checks recorded yet.</p>
             ) : (
               <div className="space-y-2">
                 {data.qcChecks.map((qc: any) => (
@@ -476,7 +476,7 @@ export default function BuildSheetPage() {
                         'bg-yellow-100 text-yellow-700'
                       }`}>{qc.result}</span>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-fg-subtle">
                       {qc.inspectorName} — {new Date(qc.createdAt).toLocaleDateString()}
                     </div>
                   </div>

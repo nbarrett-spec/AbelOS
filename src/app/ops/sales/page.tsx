@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { TrendingUp } from 'lucide-react';
+import EmptyState from '@/components/ui/EmptyState';
 import { formatCurrency, formatPercent, getTimeAgo } from '@/lib/formatting';
 import { NewDealModal } from './components/NewDealModal';
 
@@ -231,7 +233,7 @@ export default function SalesDashboardPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-[#C6A24E] hover:bg-[#d46711] text-white px-8 py-3 rounded-lg font-bold text-base transition-colors transform hover:scale-105"
+            className="bg-signal hover:bg-signal-hover text-white px-8 py-3 rounded-lg font-semibold text-base transition-colors transform hover:scale-105"
           >
             + New Deal
           </button>
@@ -294,7 +296,7 @@ export default function SalesDashboardPage() {
         {(dealsByStage['BID_SUBMITTED']?.length > 0 || dealsByStage['BID_REVIEW']?.length > 0 || dealsByStage['NEGOTIATION']?.length > 0) && (
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Bids & Quotes Tracker</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Bids & Quotes Tracker</h3>
               <div className="flex gap-3 text-sm">
                 <span className="px-3 py-1 bg-yellow-200 rounded-full font-semibold text-yellow-800">
                   {(dealsByStage['BID_SUBMITTED']?.length || 0)} Submitted
@@ -328,7 +330,7 @@ export default function SalesDashboardPage() {
                         <p className="font-bold text-sm text-gray-900 truncate">{deal.companyName}</p>
                         <p className="text-xs text-gray-500 mb-2">{deal.contactName}</p>
                         <div className="flex items-center justify-between">
-                          <p className="text-lg font-bold text-[#C6A24E]">{formatCurrency(deal.dealValue)}</p>
+                          <p className="text-lg font-bold text-signal">{formatCurrency(deal.dealValue)}</p>
                           <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#1e3a5f] text-white text-xs font-semibold">
                             {deal.owner.initials}
                           </div>
@@ -338,7 +340,7 @@ export default function SalesDashboardPage() {
                           {['BID_SUBMITTED', 'BID_REVIEW', 'NEGOTIATION', 'WON'].map((s, i) => (
                             <div key={s} className={`h-1.5 flex-1 rounded-full ${
                               PIPELINE_STAGES.indexOf(deal.stage) >= PIPELINE_STAGES.indexOf(s)
-                                ? 'bg-[#C6A24E]' : 'bg-gray-200'
+                                ? 'bg-signal' : 'bg-gray-200'
                             }`} />
                           ))}
                         </div>
@@ -353,7 +355,7 @@ export default function SalesDashboardPage() {
         {/* Recently Updated Deals Section */}
         {sortedDeals.slice(0, 5).length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Recently Updated</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Recently Updated</h3>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {sortedDeals.slice(0, 5).map((deal) => {
                 const typeMap: Record<string, string> = {
@@ -375,7 +377,7 @@ export default function SalesDashboardPage() {
                       </div>
                       <p className="font-bold text-sm text-gray-900 truncate">{deal.companyName}</p>
                       <p className="text-xs text-gray-600 truncate mb-3">{deal.contactName}</p>
-                      <p className="text-lg font-bold text-[#C6A24E] mb-2">{formatCurrency(deal.dealValue)}</p>
+                      <p className="text-lg font-bold text-signal mb-2">{formatCurrency(deal.dealValue)}</p>
                       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                         <p className="text-xs text-gray-500">
                           {new Date(deal.expectedCloseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -419,7 +421,7 @@ export default function SalesDashboardPage() {
         {/* Pipeline Board - Kanban View */}
         {viewMode === 'kanban' && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Pipeline Board</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Pipeline Board</h2>
             <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="flex gap-4 p-4" style={{ minWidth: 'fit-content' }}>
                 {PIPELINE_STAGES.slice(0, 6).map((stage) => {
@@ -467,7 +469,7 @@ export default function SalesDashboardPage() {
                                 <p className="text-xs text-gray-600 truncate">
                                   {deal.contactName}
                                 </p>
-                                <p className="font-bold text-sm text-[#C6A24E] mt-2">
+                                <p className="font-bold text-sm text-signal mt-2">
                                   {formatCurrency(deal.dealValue)}
                                 </p>
                                 <div className="flex items-center justify-between mt-3">
@@ -497,8 +499,11 @@ export default function SalesDashboardPage() {
         {/* Pipeline Board - Table View */}
         {viewMode === 'table' && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">All Deals</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">All Deals</h2>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {sortedDeals.length === 0 ? (
+                <EmptyState icon={<TrendingUp className="w-8 h-8 text-fg-subtle" />} title="No leads in pipeline" description="Create a deal to get started." />
+              ) : (
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
@@ -521,7 +526,7 @@ export default function SalesDashboardPage() {
                             {STAGE_NAMES[deal.stage]}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-[#C6A24E]">{formatCurrency(deal.dealValue)}</td>
+                        <td className="px-6 py-4 text-sm font-bold text-signal">{formatCurrency(deal.dealValue)}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {new Date(deal.expectedCloseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
@@ -535,6 +540,7 @@ export default function SalesDashboardPage() {
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
           </div>
         )}
@@ -543,7 +549,7 @@ export default function SalesDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Activity */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Activity Feed</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Feed</h3>
             <div className="space-y-4">
               {activities.length === 0 ? (
                 <p className="text-gray-400 text-sm">No recent activity</p>
@@ -570,7 +576,7 @@ export default function SalesDashboardPage() {
 
           {/* Deals by Rep */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Team Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Performance</h3>
             <div className="space-y-4">
               {repSales.length === 0 ? (
                 <p className="text-gray-400 text-sm">No rep data</p>
@@ -590,7 +596,7 @@ export default function SalesDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-bold text-[#C6A24E]">{formatCurrency(rep.pipelineValue)}</p>
+                        <p className="text-sm font-bold text-signal">{formatCurrency(rep.pipelineValue)}</p>
                         <p className="text-xs text-gray-500">pipeline</p>
                       </div>
                     </div>

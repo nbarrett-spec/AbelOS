@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Factory } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
+import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 
 const QC_TYPES = [
   { key: 'PRE_PRODUCTION', label: 'Pre-Production' },
@@ -84,7 +88,7 @@ export default function QualityControlPage() {
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-          <p className="mt-4 text-gray-600">Loading quality checks...</p>
+          <p className="mt-4 text-fg-muted">Loading quality checks...</p>
         </div>
       </div>
     )
@@ -92,29 +96,26 @@ export default function QualityControlPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quality Control</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Track inspections and quality metrics across manufacturing stages
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
-          >
-            + New QC Check
-          </button>
-          <Link
-            href="/ops/manufacturing"
-            className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
-          >
-            Dashboard
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Quality Control"
+        description="Track inspections and quality metrics across manufacturing stages"
+        actions={
+          <>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
+            >
+              + New QC Check
+            </button>
+            <Link
+              href="/ops/manufacturing"
+              className="px-3 py-1.5 text-sm text-fg-muted bg-gray-100 rounded-lg hover:bg-surface-muted"
+            >
+              Dashboard
+            </Link>
+          </>
+        }
+      />
 
       {/* Error message */}
       {error && (
@@ -162,7 +163,7 @@ export default function QualityControlPage() {
           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
             activeFilter === 'ALL'
               ? 'bg-[#0f2a3e] text-white border-transparent'
-              : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
+              : 'text-fg-muted border-border hover:border-border-strong bg-white'
           }`}
         >
           All Checks ({checks.length})
@@ -176,7 +177,7 @@ export default function QualityControlPage() {
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 activeFilter === type.key
                   ? 'bg-[#0f2a3e] text-white border-transparent'
-                  : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
+                  : 'text-fg-muted border-border hover:border-border-strong bg-white'
               }`}
             >
               {type.label} ({typeCount})
@@ -188,27 +189,28 @@ export default function QualityControlPage() {
       {/* QC Checks Table */}
       <div className="bg-white rounded-xl border overflow-hidden">
         {filteredChecks.length === 0 ? (
-          <div className="text-center text-gray-400 text-sm py-16">
-            <p className="text-4xl mb-3">✅</p>
-            <p className="font-medium">No quality checks found</p>
-          </div>
+          <EmptyState
+            icon={<Factory className="w-8 h-8 text-fg-subtle" />}
+            title="No jobs in production"
+            description="No quality checks recorded for the current filter."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Job</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Inspector</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Result</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Defects</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Notes</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Job</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Inspector</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Result</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Defects</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Notes</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {filteredChecks.map((check) => (
-                  <tr key={check.id} className="hover:bg-gray-50">
+                  <tr key={check.id} className="hover:bg-row-hover">
                     <td className="px-4 py-3 text-sm">
                       {check.job ? (
                         <Link
@@ -218,53 +220,45 @@ export default function QualityControlPage() {
                           {check.job.jobNumber}
                         </Link>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-fg-subtle">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-fg-muted">
                       {QC_TYPES.find((t) => t.key === check.checkType)?.label || check.checkType}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-fg-muted">
                       {check.inspector.firstName} {check.inspector.lastName}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                          check.result === 'PASS'
-                            ? 'bg-green-100 text-green-700'
-                            : check.result === 'FAIL'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-yellow-100 text-yellow-700'
-                        }`}
-                      >
+                      <Badge variant={getStatusBadgeVariant(check.result)} size="sm">
                         {check.result}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-fg-muted">
                       {check.defectCodes.length > 0 ? (
                         <div className="flex gap-1 flex-wrap">
                           {check.defectCodes.slice(0, 2).map((code) => (
                             <span
                               key={code}
-                              className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
+                              className="px-2 py-0.5 rounded text-xs bg-gray-100 text-fg-muted"
                             >
                               {code}
                             </span>
                           ))}
                           {check.defectCodes.length > 2 && (
-                            <span className="px-2 py-0.5 text-xs text-gray-600">
+                            <span className="px-2 py-0.5 text-xs text-fg-muted">
                               +{check.defectCodes.length - 2}
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-fg-subtle">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
+                    <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate">
                       {check.notes || '—'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-fg-muted">
                       {new Date(check.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -278,13 +272,13 @@ export default function QualityControlPage() {
       {/* Common Defects */}
       {stats && stats.commonDefects && Object.keys(stats.commonDefects).length > 0 && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Common Defect Codes</h2>
+          <h2 className="text-lg font-semibold text-fg mb-4">Common Defect Codes</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(stats.commonDefects)
               .sort(([, a], [, b]) => b - a)
               .map(([code, count]) => (
                 <div key={code} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="font-mono font-medium text-gray-900">{code}</span>
+                  <span className="font-mono font-medium text-fg">{code}</span>
                   <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-sm font-semibold">
                     {count}
                   </span>
@@ -325,8 +319,8 @@ function MetricCard({
     <div className={`${color} border rounded-xl p-4`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-600 mb-1">{label}</p>
-          <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
+          <p className="text-xs text-fg-muted mb-1">{label}</p>
+          <p className={`text-2xl font-semibold ${textColor}`}>{value}</p>
         </div>
         <div className="text-3xl">{icon}</div>
       </div>
@@ -395,11 +389,11 @@ function CreateQCModal({
         </div>
       )}
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">New Quality Check</h2>
+        <h2 className="text-lg font-semibold text-fg mb-4">New Quality Check</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg-muted mb-1">
               Job (Optional)
             </label>
             <input
@@ -412,7 +406,7 @@ function CreateQCModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg-muted mb-1">
               Check Type
             </label>
             <select
@@ -429,7 +423,7 @@ function CreateQCModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg-muted mb-1">
               Result
             </label>
             <select
@@ -444,7 +438,7 @@ function CreateQCModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg-muted mb-1">
               Defect Codes (comma-separated)
             </label>
             <input
@@ -457,7 +451,7 @@ function CreateQCModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-fg-muted mb-1">
               Notes
             </label>
             <textarea
@@ -473,7 +467,7 @@ function CreateQCModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium text-fg-muted hover:bg-row-hover"
             >
               Cancel
             </button>

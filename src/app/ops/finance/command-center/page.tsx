@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { LineChart } from 'lucide-react'
 import {
   BarChart,
   DonutChart,
@@ -10,6 +11,7 @@ import {
   ProgressRing,
   Sparkline,
 } from '@/app/ops/components/Charts'
+import { PageHeader, EmptyState } from '@/components/ui'
 
 interface CommandCenterData {
   snapshot: {
@@ -118,7 +120,7 @@ export default function CommandCenterPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: '#9ca3af' }}>
+      <div className="p-8 text-center text-fg-subtle">
         Loading Financial Command Center...
       </div>
     )
@@ -126,10 +128,12 @@ export default function CommandCenterPage() {
 
   if (!data?.snapshot) {
     return (
-      <div style={{ padding: 32 }}>
-        <div style={{ color: '#dc2626', marginBottom: 16 }}>
-          No financial data available yet. The daily snapshot runs at 6am UTC.
-        </div>
+      <div className="p-8">
+        <EmptyState
+          icon={<LineChart className="w-8 h-8 text-fg-subtle" />}
+          title="No financial data yet"
+          description="The daily snapshot runs at 6am UTC."
+        />
       </div>
     )
   }
@@ -167,62 +171,45 @@ export default function CommandCenterPage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#f9fafb', minHeight: '100vh' }}>
+    <div className="bg-canvas min-h-screen">
       {/* Header */}
-      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '20px 32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1f2937' }}>Financial Command Center</h1>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6b7280' }}>
-              <input
-                type="checkbox"
-                checked={autoRefresh}
-                onChange={(e) => setAutoRefresh(e.target.checked)}
-                style={{ cursor: 'pointer' }}
-              />
-              Auto-refresh (5 min)
-            </label>
-            <button
-              onClick={fetchData}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: colors.walnut,
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            >
-              Refresh Now
-            </button>
-            <button
-              onClick={() => window.print()}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#f3f4f6',
-                color: '#374151',
-                border: '1px solid #d1d5db',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            >
-              Print
-            </button>
-          </div>
-        </div>
-        <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
-          Last updated: {lastRefresh.toLocaleTimeString()} | Generated {new Date().toLocaleDateString()}
-        </p>
+      <div className="bg-surface border-b border-border px-8 py-5">
+        <PageHeader
+          eyebrow="Finance"
+          title="Financial Command Center"
+          description={`Last updated: ${lastRefresh.toLocaleTimeString()} | Generated ${new Date().toLocaleDateString()}`}
+          actions={
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-fg-muted cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  className="cursor-pointer"
+                />
+                Auto-refresh (5 min)
+              </label>
+              <button
+                onClick={fetchData}
+                className="px-4 py-2 bg-[#0f2a3e] text-white border-none rounded-md cursor-pointer text-xs font-semibold"
+              >
+                Refresh Now
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-surface-muted text-fg border border-border rounded-md cursor-pointer text-xs font-semibold"
+              >
+                Print
+              </button>
+            </div>
+          }
+        />
       </div>
 
-      <div style={{ padding: 32, maxWidth: '100%' }}>
+      <div className="p-8 max-w-full">
         {/* ─── ZONE 1: VITAL SIGNS ─────────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#374151', marginBottom: 16 }}>Vital Signs</h2>
+          <h2 className="text-base font-semibold text-fg mb-4">Vital Signs</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
             {/* Cash Position */}
             <MiniStat
@@ -333,7 +320,7 @@ export default function CommandCenterPage() {
 
         {/* ─── ZONE 2: CHARTS ──────────────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#374151', marginBottom: 16 }}>Trends & Analysis</h2>
+          <h2 className="text-base font-semibold text-fg mb-4">Trends & Analysis</h2>
           <div
             style={{
               display: 'grid',
@@ -514,12 +501,12 @@ export default function CommandCenterPage() {
 
         {/* ─── ZONE 3: ACTION ITEMS ───────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#374151', marginBottom: 16 }}>Action Items & Alerts</h2>
+          <h2 className="text-base font-semibold text-fg mb-4">Action Items & Alerts</h2>
 
           {/* Alerts */}
           {data.alerts.length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 12 }}>Active Alerts</h3>
+              <h3 className="text-[13px] font-semibold text-fg mb-3">Active Alerts</h3>
               <div style={{ display: 'grid', gap: 12 }}>
                 {data.alerts.map((alert, i) => (
                   <div

@@ -215,7 +215,7 @@ export default function ManufacturingCommandCenter() {
       <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold">Manufacturing Command Center</h1>
+            <h1 className="text-3xl font-semibold">Manufacturing Command Center</h1>
             <button
               onClick={() => setShowAIPanel(!showAIPanel)}
               className="px-4 py-2 bg-blue-400/20 border border-blue-400/50 rounded text-blue-400 hover:bg-blue-400/30 transition"
@@ -366,7 +366,7 @@ export default function ManufacturingCommandCenter() {
             {/* Production Queue */}
             {overviewData && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4">Production Queue</h2>
+                <h2 className="text-xl font-semibold mb-4">Production Queue</h2>
                 <div className="space-y-3">
                   {overviewData.productionQueue
                     .slice(0, 5)
@@ -418,7 +418,7 @@ export default function ManufacturingCommandCenter() {
                     : 'bg-emerald-400/5 border-emerald-400/30'
                 }`}
               >
-                <h2 className="text-xl font-bold mb-4">Material Shortage Alerts</h2>
+                <h2 className="text-xl font-semibold mb-4">Material Shortage Alerts</h2>
                 {overviewData.shortages.length > 0 ? (
                   <div className="space-y-3">
                     {overviewData.shortages.map((short: ShortItem, i: number) => (
@@ -458,7 +458,7 @@ export default function ManufacturingCommandCenter() {
             {/* QC Summary */}
             {overviewData && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4">Quality Control Summary</h2>
+                <h2 className="text-xl font-semibold mb-4">Quality Control Summary</h2>
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="bg-gray-800 border border-gray-700 rounded p-4 text-center">
                     <div className="text-gray-400 text-xs uppercase mb-2">
@@ -523,7 +523,7 @@ export default function ManufacturingCommandCenter() {
             {/* Weekly Throughput */}
             {overviewData && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4">Weekly Throughput</h2>
+                <h2 className="text-xl font-semibold mb-4">Weekly Throughput</h2>
                 <div className="space-y-2">
                   {overviewData.weeklyThroughput.map((week: WeeklyThroughput) => (
                     <div key={week.week} className="flex items-center gap-4">
@@ -559,7 +559,7 @@ export default function ManufacturingCommandCenter() {
             {/* AI Manufacturing Assistant */}
             {showAIPanel && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col h-96">
-                <h2 className="text-lg font-bold mb-4">AI Manufacturing Assistant</h2>
+                <h2 className="text-lg font-semibold mb-4">AI Manufacturing Assistant</h2>
 
                 <div className="flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-800/30 rounded p-3 border border-gray-800">
                   {chatMessages.length === 0 ? (
@@ -617,7 +617,7 @@ export default function ManufacturingCommandCenter() {
 
             {/* Quick Actions */}
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <h2 className="text-lg font-bold mb-4">Quick Actions</h2>
+              <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-2">
                 <Link
                   href="/ops/manufacturing/build-sheet"

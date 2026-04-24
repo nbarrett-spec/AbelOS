@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Sparkles } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Scan {
   scanId: string
@@ -123,7 +125,7 @@ export default function ScanControlPanel() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-brand to-signal px-6 py-8 text-white">
-        <h1 className="text-4xl font-bold">NUC Scan Control Panel</h1>
+        <h1 className="text-4xl font-semibold">NUC Scan Control Panel</h1>
         <p className="mt-2 text-signal text-lg">11 autonomous intelligence scanners</p>
       </div>
 
@@ -157,7 +159,7 @@ export default function ScanControlPanel() {
               {/* Card Header */}
               <div className="p-6 pb-4">
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-bold text-brand flex-1">{scan.name}</h3>
+                  <h3 className="text-lg font-semibold text-brand flex-1">{scan.name}</h3>
                   <div className={`w-3 h-3 rounded-full ${getStatusColor(scan.status)}`} title={`Status: ${scan.status}`}></div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">{scan.description}</p>
@@ -209,7 +211,7 @@ export default function ScanControlPanel() {
                   {findings[scan.scanId] && findings[scan.scanId].length > 0 ? (
                     <div className="divide-y divide-gray-200">
                       {findings[scan.scanId].map((finding) => (
-                        <div key={finding.id} className="p-4 hover:bg-gray-100 transition-colors">
+                        <div key={finding.id} className="p-4 hover:bg-row-hover transition-colors">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <p className="font-medium text-sm text-gray-900">{finding.title}</p>
@@ -225,9 +227,12 @@ export default function ScanControlPanel() {
                       ))}
                     </div>
                   ) : (
-                    <div className="p-4 text-center">
-                      <p className="text-sm text-gray-500">No findings yet. Run the scan to generate findings.</p>
-                    </div>
+                    <EmptyState
+                      icon={<Sparkles className="w-8 h-8 text-fg-subtle" />}
+                      title="No insights yet"
+                      description="Run the scan to generate findings."
+                      size="compact"
+                    />
                   )}
                 </div>
               )}

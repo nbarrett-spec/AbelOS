@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Factory } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
 
 const PICK_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
@@ -110,7 +113,7 @@ export default function PickListPage() {
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-          <p className="mt-4 text-gray-600">Loading material picks...</p>
+          <p className="mt-4 text-fg-muted">Loading material picks...</p>
         </div>
       </div>
     )
@@ -123,21 +126,18 @@ export default function PickListPage() {
           {toast}
         </div>
       )}
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Material Pick List</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage warehouse picks for production jobs
-          </p>
-        </div>
-        <Link
-          href="/ops/manufacturing"
-          className="text-xs text-[#0f2a3e] hover:underline"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
+      <PageHeader
+        title="Material Pick List"
+        description="Manage warehouse picks for production jobs"
+        actions={
+          <Link
+            href="/ops/manufacturing"
+            className="text-xs text-[#0f2a3e] hover:underline"
+          >
+            ← Back to Dashboard
+          </Link>
+        }
+      />
 
       {/* Error message */}
       {error && (
@@ -154,7 +154,7 @@ export default function PickListPage() {
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               groupByJob
                 ? 'bg-[#0f2a3e] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-fg-muted hover:bg-surface-muted'
             }`}
           >
             {groupByJob ? 'Grouped by Job' : 'All Picks'}
@@ -169,7 +169,7 @@ export default function PickListPage() {
           className={`px-3 py-1 text-xs rounded-full border transition-colors ${
             activeFilter === 'ALL'
               ? 'bg-[#0f2a3e] text-white border-transparent'
-              : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
+              : 'text-fg-muted border-border hover:border-border-strong bg-white'
           }`}
         >
           All Picks ({picks.length})
@@ -181,7 +181,7 @@ export default function PickListPage() {
             className={`px-3 py-1 text-xs rounded-full border transition-colors ${
               activeFilter === status.key
                 ? 'text-white border-transparent'
-                : 'text-gray-600 border-gray-200 hover:border-gray-300 bg-white'
+                : 'text-fg-muted border-border hover:border-border-strong bg-white'
             }`}
             style={
               activeFilter === status.key
@@ -200,19 +200,19 @@ export default function PickListPage() {
         <div className="space-y-4">
           {Object.entries(groupedPicks).map(([jobNum, { job, picks: jobPicks }]) => (
             <div key={jobNum} className="bg-white rounded-xl border overflow-hidden">
-              <div className="bg-gray-50 px-4 py-3 border-b font-semibold text-gray-900">
+              <div className="bg-gray-50 px-4 py-3 border-b font-semibold text-fg">
                 {job.jobNumber} — {job.builderName}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">SKU</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Description</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Qty</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Picked</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Zone</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted">SKU</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted">Description</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted">Qty</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted">Picked</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted">Zone</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -234,23 +234,24 @@ export default function PickListPage() {
         // List view
         <div className="bg-white rounded-xl border overflow-hidden">
           {filteredPicks.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm py-16">
-              <p className="text-4xl mb-3">📦</p>
-              <p className="font-medium">No picks found</p>
-            </div>
+            <EmptyState
+              icon={<Factory className="w-8 h-8 text-fg-subtle" />}
+              title="No jobs in production"
+              description="No picks match the current filter."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">SKU</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Description</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Job</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Builder</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Qty</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Picked</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Zone</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">SKU</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Description</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Job</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Builder</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Qty</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Picked</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Zone</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -288,12 +289,12 @@ function PickRow({
   const pickProgress = pick.quantity > 0 ? (pick.pickedQty / pick.quantity) * 100 : 0
 
   return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-4 py-3 text-sm font-mono text-gray-900">{pick.sku}</td>
-      <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{pick.description}</td>
+    <tr className="hover:bg-row-hover">
+      <td className="px-4 py-3 text-sm font-mono text-fg">{pick.sku}</td>
+      <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate">{pick.description}</td>
       {showJobInfo && (
         <>
-          <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+          <td className="px-4 py-3 text-sm text-fg font-medium">
             <Link
               href={`/ops/jobs/${pick.job.id}`}
               className="text-[#0f2a3e] hover:underline"
@@ -301,22 +302,22 @@ function PickRow({
               {pick.job.jobNumber}
             </Link>
           </td>
-          <td className="px-4 py-3 text-sm text-gray-600">{pick.job.builderName}</td>
+          <td className="px-4 py-3 text-sm text-fg-muted">{pick.job.builderName}</td>
         </>
       )}
-      <td className="px-4 py-3 text-sm text-gray-700">{pick.quantity}</td>
+      <td className="px-4 py-3 text-sm text-fg-muted">{pick.quantity}</td>
       <td className="px-4 py-3">
         <div className="w-24">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-[#C6A24E] h-2 rounded-full"
+              className="bg-signal h-2 rounded-full"
               style={{ width: `${pickProgress}%` }}
             />
           </div>
-          <p className="text-xs text-gray-600 mt-1">{pick.pickedQty}/{pick.quantity}</p>
+          <p className="text-xs text-fg-muted mt-1">{pick.pickedQty}/{pick.quantity}</p>
         </div>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-600">{pick.zone || '—'}</td>
+      <td className="px-4 py-3 text-sm text-fg-muted">{pick.zone || '—'}</td>
       <td className="px-4 py-3">
         <select
           value={pick.status}

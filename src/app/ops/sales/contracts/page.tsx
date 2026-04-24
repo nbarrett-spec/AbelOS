@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FileText } from 'lucide-react';
+import EmptyState from '@/components/ui/EmptyState';
 import { CreateEditContractModal } from '../components/CreateEditContractModal';
 
 interface Contract {
@@ -162,7 +164,7 @@ export default function ContractsPage() {
           </div>
           <button
             onClick={handleNewContract}
-            className="bg-[#C6A24E] hover:bg-[#d46711] text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            className="bg-signal hover:bg-signal-hover text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             + New Contract
           </button>
@@ -179,7 +181,7 @@ export default function ContractsPage() {
             <select
               value={statusFilter}
               onChange={handleStatusFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-signal"
             >
               <option value="All">All Statuses</option>
               <option value="DRAFT">Draft</option>
@@ -199,7 +201,7 @@ export default function ContractsPage() {
               placeholder="Contract #, Title, or Company..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-signal"
             />
           </div>
         </div>
@@ -207,9 +209,7 @@ export default function ContractsPage() {
         {/* Contracts Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {filteredContracts.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <p>No contracts found</p>
-            </div>
+            <EmptyState icon={<FileText className="w-8 h-8 text-fg-subtle" />} title="No contracts found" description="Try adjusting filters or create a new contract." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -250,7 +250,7 @@ export default function ContractsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleEditContract(contract)}
-                          className="text-[#C6A24E] hover:text-[#d46711] font-medium"
+                          className="text-signal hover:text-signal-hover font-medium"
                         >
                           {contract.contractNumber}
                         </button>
@@ -290,7 +290,7 @@ export default function ContractsPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditContract(contract)}
-                            className="text-[#C6A24E] hover:text-[#d46711] text-sm font-medium"
+                            className="text-signal hover:text-signal-hover text-sm font-medium"
                           >
                             Edit
                           </button>

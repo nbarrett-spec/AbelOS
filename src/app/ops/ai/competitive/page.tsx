@@ -74,11 +74,11 @@ export default function CompetitiveIntelligencePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[#0f2a3e] text-white px-8 py-12">
+      <div className="bg-brand text-white px-8 py-12">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Competitive Intelligence</h1>
+          <h1 className="text-4xl font-semibold mb-2">Competitive Intelligence</h1>
           <p className="text-gray-300 text-lg">Market positioning and competitor analysis</p>
-          <button className="mt-6 px-4 py-2 bg-[#C6A24E] text-white rounded font-medium hover:bg-[#B87520] transition">
+          <button className="mt-6 px-4 py-2 bg-signal text-white rounded font-medium hover:bg-[#B87520] transition">
             + Add Competitor
           </button>
         </div>
@@ -88,26 +88,26 @@ export default function CompetitiveIntelligencePage() {
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Market Position Summary */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Market Position</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Market Position</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#27AE60]">
               <div className="text-sm font-medium text-gray-600 mb-2">Win Rate</div>
-              <div className="text-4xl font-bold text-gray-900">{data.marketPosition.winRate}%</div>
+              <div className="text-4xl font-semibold text-gray-900">{data.marketPosition.winRate}%</div>
               <div className="text-xs text-gray-500 mt-2">Last 6 months</div>
             </div>
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#27AE60]">
               <div className="text-sm font-medium text-gray-600 mb-2">Deals Won</div>
-              <div className="text-4xl font-bold text-gray-900">{data.marketPosition.totalDealsWon}</div>
+              <div className="text-4xl font-semibold text-gray-900">{data.marketPosition.totalDealsWon}</div>
               <div className="text-xs text-gray-500 mt-2">Closed</div>
             </div>
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
               <div className="text-sm font-medium text-gray-600 mb-2">Deals Lost</div>
-              <div className="text-4xl font-bold text-gray-900">{data.marketPosition.totalDealsLost}</div>
+              <div className="text-4xl font-semibold text-gray-900">{data.marketPosition.totalDealsLost}</div>
               <div className="text-xs text-gray-500 mt-2">Lost</div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#C6A24E]">
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-signal">
               <div className="text-sm font-medium text-gray-600 mb-2">Total Deals</div>
-              <div className="text-4xl font-bold text-gray-900">
+              <div className="text-4xl font-semibold text-gray-900">
                 {data.marketPosition.totalDealsWon + data.marketPosition.totalDealsLost}
               </div>
               <div className="text-xs text-gray-500 mt-2">Pipeline activity</div>
@@ -118,7 +118,7 @@ export default function CompetitiveIntelligencePage() {
         {/* Alerts Section */}
         {data.alerts.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Competitive Alerts</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Competitive Alerts</h2>
             <div className="space-y-4">
               {data.alerts.map((alert, idx) => {
                 const bgColor = alert.severity === 'HIGH' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'
@@ -134,7 +134,7 @@ export default function CompetitiveIntelligencePage() {
                         {alert.severity}
                       </div>
                       <div className="flex-1">
-                        <h3 className={`${titleColor} font-bold text-sm mb-1`}>{alert.title}</h3>
+                        <h3 className={`${titleColor} font-semibold text-sm mb-1`}>{alert.title}</h3>
                         <p className="text-gray-700 text-sm">{alert.description}</p>
                       </div>
                     </div>
@@ -147,13 +147,13 @@ export default function CompetitiveIntelligencePage() {
 
         {/* Competitors Grid */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Competitors</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Competitors</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {data.competitors.map((comp) => (
-              <div key={comp.id} className="bg-white rounded-lg shadow p-6 border-t-4 border-[#C6A24E]">
+              <div key={comp.id} className="bg-white rounded-lg shadow p-6 border-t-4 border-signal">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">{comp.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{comp.name}</h3>
                     <div className="flex gap-2 mt-2">
                       <span
                         className={`inline-block px-2 py-1 text-xs font-medium rounded ${
@@ -174,21 +174,21 @@ export default function CompetitiveIntelligencePage() {
                 <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b">
                   <div>
                     <div className="text-sm text-gray-600 font-medium">Win Rate</div>
-                    <div className="text-2xl font-bold text-[#27AE60]">{comp.winRate}%</div>
+                    <div className="text-2xl font-semibold text-[#27AE60]">{comp.winRate}%</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-600 font-medium">Loss Rate</div>
-                    <div className="text-2xl font-bold text-red-600">{comp.lossRate}%</div>
+                    <div className="text-2xl font-semibold text-red-600">{comp.lossRate}%</div>
                   </div>
                 </div>
 
                 {/* Strengths */}
                 <div className="mb-4">
-                  <h4 className="text-sm font-bold text-[#27AE60] mb-2">Strengths</h4>
+                  <h4 className="text-sm font-semibold text-[#27AE60] mb-2">Strengths</h4>
                   <ul className="space-y-1">
                     {comp.strengths.map((s, idx) => (
                       <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                        <span className="text-[#27AE60] font-bold">+</span>
+                        <span className="text-[#27AE60] font-semibold">+</span>
                         {s}
                       </li>
                     ))}
@@ -197,11 +197,11 @@ export default function CompetitiveIntelligencePage() {
 
                 {/* Weaknesses */}
                 <div className="mb-4">
-                  <h4 className="text-sm font-bold text-red-600 mb-2">Weaknesses</h4>
+                  <h4 className="text-sm font-semibold text-red-600 mb-2">Weaknesses</h4>
                   <ul className="space-y-1">
                     {comp.weaknesses.map((w, idx) => (
                       <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                        <span className="text-red-600 font-bold">−</span>
+                        <span className="text-red-600 font-semibold">−</span>
                         {w}
                       </li>
                     ))}
@@ -210,7 +210,7 @@ export default function CompetitiveIntelligencePage() {
 
                 {/* Overlap Categories */}
                 <div className="mb-4">
-                  <h4 className="text-sm font-bold text-gray-900 mb-2">Product Overlap</h4>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Product Overlap</h4>
                   <div className="flex flex-wrap gap-1">
                     {comp.primaryOverlap.map((cat, idx) => (
                       <span key={idx} className="inline-block bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded">
@@ -223,11 +223,11 @@ export default function CompetitiveIntelligencePage() {
                 {/* Recent Moves */}
                 {comp.recentMoves.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900 mb-2">Recent Moves</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Recent Moves</h4>
                     <ul className="space-y-1">
                       {comp.recentMoves.map((move, idx) => (
                         <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                          <span className="text-[#C6A24E] font-bold">•</span>
+                          <span className="text-signal font-semibold">•</span>
                           {move}
                         </li>
                       ))}
@@ -242,7 +242,7 @@ export default function CompetitiveIntelligencePage() {
         {/* Loss Analysis */}
         {data.marketPosition.topLossReasons.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Top Loss Reasons</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Top Loss Reasons</h2>
             <div className="bg-white rounded-lg shadow p-6">
               <div className="space-y-6">
                 {data.marketPosition.topLossReasons.map((reason, idx) => {
@@ -252,7 +252,7 @@ export default function CompetitiveIntelligencePage() {
                     <div key={idx}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-900">{reason.reason}</span>
-                        <span className="text-sm font-bold text-gray-600">{reason.count} losses</span>
+                        <span className="text-sm font-semibold text-gray-600">{reason.count} losses</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -271,24 +271,24 @@ export default function CompetitiveIntelligencePage() {
         {/* Pricing Pressure */}
         {data.marketPosition.pricingPressureProducts.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Products Under Margin Pressure</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Products Under Margin Pressure</h2>
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-100 border-b">
-                      <th className="px-6 py-3 text-left text-sm font-bold text-gray-900">Product</th>
-                      <th className="px-6 py-3 text-right text-sm font-bold text-gray-900">Current Margin</th>
-                      <th className="px-6 py-3 text-right text-sm font-bold text-gray-900">Prior Margin</th>
-                      <th className="px-6 py-3 text-right text-sm font-bold text-gray-900">Change</th>
-                      <th className="px-6 py-3 text-center text-sm font-bold text-gray-900">Trend</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Product</th>
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Current Margin</th>
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Prior Margin</th>
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Change</th>
+                      <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Trend</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.marketPosition.pricingPressureProducts.map((product, idx) => {
                       const isNegative = product.marginDelta < 0
                       return (
-                        <tr key={idx} className="border-b hover:bg-gray-50">
+                        <tr key={idx} className="border-b hover:bg-row-hover">
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.name}</td>
                           <td className="px-6 py-4 text-right text-sm text-gray-900">
                             {product.currentMargin.toFixed(1)}%
@@ -297,7 +297,7 @@ export default function CompetitiveIntelligencePage() {
                             {product.priorMargin.toFixed(1)}%
                           </td>
                           <td
-                            className={`px-6 py-4 text-right text-sm font-bold ${
+                            className={`px-6 py-4 text-right text-sm font-semibold ${
                               isNegative ? 'text-red-600' : 'text-[#27AE60]'
                             }`}
                           >

@@ -279,7 +279,7 @@ export default function BuilderHealthPage() {
                   filtered.map(builder => (
                     <tbody key={builder.builderId}>
                       <tr
-                        className="hover:bg-gray-50 cursor-pointer"
+                        className="hover:bg-row-hover cursor-pointer"
                         onClick={() => setExpandedId(expandedId === builder.builderId ? null : builder.builderId)}
                       >
                         <td className="px-4 py-3 font-semibold text-gray-900">{builder.builderName}</td>

@@ -207,6 +207,7 @@ export default function FinancialDashboard() {
             : restricted}
           subtitle={`${data.cashFlow.invoicesThisWeek} invoices issued`}
           icon={<TrendingUp className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-cash-waterfall')?.scrollIntoView({ behavior: 'smooth' })}
         />
         <KPICard
           title="Cash Out (weekly est.)"
@@ -216,6 +217,7 @@ export default function FinancialDashboard() {
             : restricted}
           subtitle="PO spend run-rate"
           icon={<TrendingDown className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-ap-schedule')?.scrollIntoView({ behavior: 'smooth' })}
         />
         <KPICard
           title="Net Weekly"
@@ -225,6 +227,7 @@ export default function FinancialDashboard() {
             : restricted}
           subtitle={netCash >= 0 ? 'Positive flow' : 'Negative flow'}
           icon={<Wallet className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-cash-waterfall')?.scrollIntoView({ behavior: 'smooth' })}
         />
         <KPICard
           title="Gross Margin"
@@ -234,11 +237,20 @@ export default function FinancialDashboard() {
             : restricted}
           subtitle={`${data.marginAnalysis.totalOrders} orders`}
           icon={<Activity className="w-3.5 h-3.5" />}
+          onClick={() => document.getElementById('section-vendor-spend')?.scrollIntoView({ behavior: 'smooth' })}
         />
       </div>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Cash waterfall (simple) ───────────────────────────────────── */}
-      <Card variant="default" padding="none">
+      <Card
+        id="section-cash-waterfall"
+        variant="default"
+        padding="none"
+        className="hover:border-l-2 hover:border-signal transition-all duration-200"
+      >
         <CardHeader>
           <div>
             <CardTitle>Cash Waterfall — 90 Day Outlook</CardTitle>
@@ -246,9 +258,12 @@ export default function FinancialDashboard() {
               Collections + expected AR by bucket, less weekly PO spend.
             </CardDescription>
           </div>
-          <Link href="/ops/finance/cash" className="text-xs text-fg-muted hover:text-accent">
-            Full model →
-          </Link>
+          <div className="flex items-center gap-2">
+            <LiveDataIndicator trigger={refreshTick} className="w-10 h-[2px]" />
+            <Link href="/ops/finance/cash" className="text-xs text-fg-muted hover:text-accent">
+              Full model →
+            </Link>
+          </div>
         </CardHeader>
         <CardBody>
           {(() => {
@@ -313,17 +328,27 @@ export default function FinancialDashboard() {
         </CardBody>
       </Card>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── AR aging + DSO ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card variant="default" padding="none" className="lg:col-span-2">
+      <div id="section-ar-aging" className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <Card
+          variant="default"
+          padding="none"
+          className="lg:col-span-2 hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>AR Aging</CardTitle>
               <CardDescription>Outstanding receivables by bucket</CardDescription>
             </div>
-            <Link href="/ops/finance/ar" className="text-xs text-fg-muted hover:text-accent">
-              All invoices →
-            </Link>
+            <div className="flex items-center gap-2">
+              <LiveDataIndicator trigger={refreshTick} className="w-10 h-[2px]" />
+              <Link href="/ops/finance/ar" className="text-xs text-fg-muted hover:text-accent">
+                All invoices →
+              </Link>
+            </div>
           </CardHeader>
           <CardBody>
             {(() => {
@@ -404,8 +429,16 @@ export default function FinancialDashboard() {
         </Card>
       </div>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── GM by account (top vendors proxy) ─────────────────────────── */}
-      <Card variant="default" padding="none">
+      <Card
+        id="section-vendor-spend"
+        variant="default"
+        padding="none"
+        className="hover:border-l-2 hover:border-signal transition-all duration-200"
+      >
         <CardHeader>
           <div>
             <CardTitle>Top Vendor Spend · GM Impact</CardTitle>
@@ -460,15 +493,25 @@ export default function FinancialDashboard() {
         />
       </Card>
 
+      {/* ── Drafting-line divider ─────────────────────────────────────── */}
+      <div className="divider-draft" />
+
       {/* ── Invoice pipeline + AP schedule ────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Card variant="default" padding="none">
+        <Card
+          variant="default"
+          padding="none"
+          className="hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>Invoice Pipeline</CardTitle>
               <CardDescription>Status + dollar value in-flight</CardDescription>
             </div>
-            <Link href="/ops/finance/ar" className="text-xs text-fg-muted hover:text-accent">AR →</Link>
+            <div className="flex items-center gap-2">
+              <LiveDataIndicator trigger={refreshTick} className="w-10 h-[2px]" />
+              <Link href="/ops/finance/ar" className="text-xs text-fg-muted hover:text-accent">AR →</Link>
+            </div>
           </CardHeader>
           <CardBody>
             {data.invoiceStatusPipeline.length === 0 ? (
@@ -503,7 +546,12 @@ export default function FinancialDashboard() {
           </CardBody>
         </Card>
 
-        <Card variant="default" padding="none">
+        <Card
+          id="section-ap-schedule"
+          variant="default"
+          padding="none"
+          className="hover:border-l-2 hover:border-signal transition-all duration-200"
+        >
           <CardHeader>
             <div>
               <CardTitle>AP Schedule Summary</CardTitle>

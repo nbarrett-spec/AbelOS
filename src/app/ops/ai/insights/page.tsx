@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { Sparkles } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ──────────────────────────────────────────────────────────────────────────
 // /ops/ai/insights — AI-powered intelligence dashboard
@@ -181,7 +183,7 @@ export default function InsightsPage() {
       {/* Header */}
       <div className="border-b border-slate-200 bg-white px-6 py-8 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold" style={{ color: '#0f2a3e' }}>
+          <h1 className="text-4xl font-semibold text-brand">
             AI Insights
           </h1>
           <p className="text-slate-600 mt-1">Intelligence from autonomous scans</p>
@@ -194,14 +196,14 @@ export default function InsightsPage() {
           {/* Critical */}
           <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
             <p className="text-slate-600 text-sm font-medium">Critical</p>
-            <p className="text-3xl font-bold text-red-600 mt-2">{summary.critical}</p>
+            <p className="text-3xl font-semibold text-red-600 mt-2">{summary.critical}</p>
             <p className="text-xs text-slate-500 mt-1">Immediate action</p>
           </div>
 
           {/* Warning */}
           <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
             <p className="text-slate-600 text-sm font-medium">Warning</p>
-            <p className="text-3xl font-bold" style={{ color: '#C6A24E' }}>
+            <p className="text-3xl font-semibold text-signal mt-2">
               {summary.warning}
             </p>
             <p className="text-xs text-slate-500 mt-1">Attention needed</p>
@@ -210,14 +212,14 @@ export default function InsightsPage() {
           {/* Info */}
           <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
             <p className="text-slate-600 text-sm font-medium">Info</p>
-            <p className="text-3xl font-bold text-blue-600 mt-2">{summary.info}</p>
+            <p className="text-3xl font-semibold text-blue-600 mt-2">{summary.info}</p>
             <p className="text-xs text-slate-500 mt-1">FYI</p>
           </div>
 
           {/* Total */}
           <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
             <p className="text-slate-600 text-sm font-medium">Total</p>
-            <p className="text-3xl font-bold text-slate-800 mt-2">{summary.total}</p>
+            <p className="text-3xl font-semibold text-slate-800 mt-2">{summary.total}</p>
             <p className="text-xs text-slate-500 mt-1">Active insights</p>
           </div>
         </div>
@@ -283,15 +285,13 @@ export default function InsightsPage() {
             <p className="text-sm mt-1">{error}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-12 text-center shadow-sm">
-            <p className="text-slate-600 text-lg">No insights match your filters</p>
-            <p className="text-slate-500 text-sm mt-2">Showing insights updates every 5 minutes</p>
-            <button
-              onClick={fetchInsights}
-              className="mt-4 px-4 py-2 rounded-md text-sm font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition"
-            >
-              Refresh
-            </button>
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+            <EmptyState
+              icon={<Sparkles className="w-8 h-8 text-fg-subtle" />}
+              title="No insights yet"
+              description="Insights update every 5 minutes from autonomous scans."
+              action={{ label: 'Refresh', onClick: fetchInsights }}
+            />
           </div>
         ) : (
           <div className="space-y-4">
@@ -329,7 +329,7 @@ export default function InsightsPage() {
 
                       {/* Impact + Entity Link + Source + Timestamp */}
                       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
-                        <div className="font-semibold" style={{ color: '#C6A24E' }}>
+                        <div className="font-semibold text-signal">
                           {insight.impact}
                         </div>
 

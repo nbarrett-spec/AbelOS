@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { Warehouse } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import QRScanner from '@/components/ui/QRScanner'
 import { decodeTag } from '@/lib/qr-tags'
 import SopQuickAccess from '@/components/SopQuickAccess'
+import EmptyState from '@/components/ui/EmptyState'
 
 const PICK_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
@@ -406,13 +408,11 @@ export default function PickScannerPage() {
             {jobsError}
           </div>
         ) : jobs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>No jobs</div>
-            <p style={{ color: '#ccc', fontSize: '1rem' }}>
-              No jobs are ready for picking. Jobs appear here when status is
-              IN_PRODUCTION or MATERIALS_LOCKED with a generated pick list.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Warehouse className="w-8 h-8 text-fg-subtle" />}
+            title="Nothing staged"
+            description="No jobs are ready for picking. Jobs appear here when status is IN_PRODUCTION or MATERIALS_LOCKED with a generated pick list."
+          />
         ) : (
           <div
             style={{

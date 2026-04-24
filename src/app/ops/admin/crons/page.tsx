@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
+import { Settings } from 'lucide-react'
 
 interface CronSummary {
   name: string
@@ -130,20 +133,23 @@ export default function CronsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cron Jobs</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Scheduled jobs observability. Auto-refreshes every 30s.
-          </p>
-        </div>
-        <button
-          onClick={loadSummary}
-          className="px-4 py-2 bg-brand text-white rounded hover:bg-brand/90 text-sm font-medium"
-        >
-          Refresh
-        </button>
-      </div>
+      <PageHeader
+        title="Cron Jobs"
+        description="Scheduled jobs observability. Auto-refreshes every 30s."
+        crumbs={[
+          { label: 'Ops', href: '/ops' },
+          { label: 'Admin', href: '/ops/admin' },
+          { label: 'Crons' },
+        ]}
+        actions={
+          <button
+            onClick={loadSummary}
+            className="px-4 py-2 bg-brand text-fg-on-accent rounded hover:bg-brand/90 text-sm font-medium"
+          >
+            Refresh
+          </button>
+        }
+      />
 
       {error && (
         <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -219,63 +225,70 @@ export default function CronsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs uppercase text-gray-500 font-semibold">Registered</div>
-          <div className="text-3xl font-bold text-gray-900 mt-1">{crons.length}</div>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="text-xs uppercase text-fg-muted font-semibold">Registered</div>
+          <div className="text-3xl font-semibold text-fg mt-1">{crons.length}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs uppercase text-gray-500 font-semibold">Success 24h</div>
-          <div className="text-3xl font-bold text-green-700 mt-1">{totalSuccess24h}</div>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="text-xs uppercase text-fg-muted font-semibold">Success 24h</div>
+          <div className="text-3xl font-semibold text-green-700 mt-1">{totalSuccess24h}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs uppercase text-gray-500 font-semibold">Failures 24h</div>
-          <div className={`text-3xl font-bold mt-1 ${totalFailures24h > 0 ? 'text-red-700' : 'text-gray-400'}`}>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="text-xs uppercase text-fg-muted font-semibold">Failures 24h</div>
+          <div className={`text-3xl font-semibold mt-1 ${totalFailures24h > 0 ? 'text-red-700' : 'text-fg-subtle'}`}>
             {totalFailures24h}
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-xs uppercase text-gray-500 font-semibold">Never Run</div>
-          <div className={`text-3xl font-bold mt-1 ${neverRan > 0 ? 'text-signal' : 'text-gray-400'}`}>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="text-xs uppercase text-fg-muted font-semibold">Never Run</div>
+          <div className={`text-3xl font-semibold mt-1 ${neverRan > 0 ? 'text-signal' : 'text-fg-subtle'}`}>
             {neverRan}
           </div>
         </div>
       </div>
 
       {/* Main table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-surface border border-border rounded-lg overflow-hidden">
+        {!loading && crons.length === 0 ? (
+          <EmptyState
+            icon={<Settings className="w-8 h-8 text-fg-subtle" />}
+            title="No cron jobs registered"
+            description="Scheduled jobs will appear here once they're registered."
+          />
+        ) : (
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-surface-muted">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Schedule</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Last Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Last Run</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Duration</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">24h S/F</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Error</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Schedule</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Last Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Last Run</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Duration</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">24h S/F</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Error</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {loading && crons.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">Loading...</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-fg-muted">Loading...</td>
               </tr>
             )}
             {crons.map((c) => (
               <tr
                 key={c.name}
-                className={`cursor-pointer hover:bg-gray-50 ${selected === c.name ? 'bg-blue-50' : ''}`}
+                className={`cursor-pointer hover:bg-row-hover ${selected === c.name ? 'bg-signal-subtle' : ''}`}
                 onClick={() => setSelected(c.name)}
               >
-                <td className="px-4 py-3 text-sm font-medium text-gray-900">{c.name}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 font-mono">{c.schedule}</td>
+                <td className="px-4 py-3 text-sm font-medium text-fg">{c.name}</td>
+                <td className="px-4 py-3 text-sm text-fg-muted font-mono">{c.schedule}</td>
                 <td className="px-4 py-3">{statusBadge(c.lastStatus)}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{fmtDate(c.lastRunAt)}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{fmtDuration(c.lastDurationMs)}</td>
+                <td className="px-4 py-3 text-sm text-fg-muted">{fmtDate(c.lastRunAt)}</td>
+                <td className="px-4 py-3 text-sm text-fg-muted">{fmtDuration(c.lastDurationMs)}</td>
                 <td className="px-4 py-3 text-sm">
                   <span className="text-green-700">{c.successCount24h}</span>
                   {' / '}
-                  <span className={c.failureCount24h > 0 ? 'text-red-700 font-semibold' : 'text-gray-500'}>
+                  <span className={c.failureCount24h > 0 ? 'text-red-700 font-semibold' : 'text-fg-muted'}>
                     {c.failureCount24h}
                   </span>
                 </td>
@@ -286,45 +299,46 @@ export default function CronsPage() {
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
       {/* Run history drawer */}
       {selected && (
-        <div className="mt-6 bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">
+        <div className="mt-6 bg-surface border border-border rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-surface-muted border-b border-border flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-fg">
               Recent runs: <span className="font-mono">{selected}</span>
             </h2>
             <button
               onClick={() => setSelected(null)}
-              className="text-gray-400 hover:text-gray-600 text-sm"
+              className="text-fg-subtle hover:text-fg-muted text-sm"
             >
               Close
             </button>
           </div>
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-surface-muted">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Started</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Duration</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Triggered By</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Error</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Started</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Status</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Duration</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Triggered By</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Error</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {runsLoading && (
-                <tr><td colSpan={5} className="px-4 py-4 text-center text-gray-500 text-sm">Loading runs...</td></tr>
+                <tr><td colSpan={5} className="px-4 py-4 text-center text-fg-muted text-sm">Loading runs...</td></tr>
               )}
               {!runsLoading && runs.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-4 text-center text-gray-500 text-sm">No runs recorded yet.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-4 text-center text-fg-muted text-sm">No runs recorded yet.</td></tr>
               )}
               {runs.map((r) => (
-                <tr key={r.id}>
-                  <td className="px-4 py-2 text-sm text-gray-600">{fmtDate(r.startedAt)}</td>
+                <tr key={r.id} className="hover:bg-row-hover">
+                  <td className="px-4 py-2 text-sm text-fg-muted">{fmtDate(r.startedAt)}</td>
                   <td className="px-4 py-2">{statusBadge(r.status)}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">{fmtDuration(r.durationMs)}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">{r.triggeredBy || 'schedule'}</td>
+                  <td className="px-4 py-2 text-sm text-fg-muted">{fmtDuration(r.durationMs)}</td>
+                  <td className="px-4 py-2 text-sm text-fg-muted">{r.triggeredBy || 'schedule'}</td>
                   <td className="px-4 py-2 text-xs text-red-700 max-w-md truncate" title={r.error || ''}>
                     {r.error || ''}
                   </td>

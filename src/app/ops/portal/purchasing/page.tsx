@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Receipt, Package, Factory } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PurchaseOrder {
   id: string
@@ -170,7 +173,7 @@ export default function PurchasingPortal() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C6A24E]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-signal" />
       </div>
     )
   }
@@ -180,7 +183,7 @@ export default function PurchasingPortal() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⚠️</div>
         <p className="text-gray-600 font-medium">{error}</p>
-        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
+        <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-surface-elev text-white rounded-lg hover:bg-surface text-sm">
           Retry
         </button>
       </div>
@@ -189,25 +192,24 @@ export default function PurchasingPortal() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Purchasing Dashboard</h1>
-          <p className="text-gray-600 mt-1">Purchase orders, inventory, and vendor management</p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/ops/purchasing" className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#A8882A] transition-colors text-sm font-medium">
-            + Create PO
-          </Link>
-          <Link href="/ops/reports" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-            📊 Reports
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Purchasing Dashboard"
+        description="Purchase orders, inventory, and vendor management"
+        actions={
+          <>
+            <Link href="/ops/purchasing" className="px-4 py-2 bg-signal text-white rounded-lg hover:bg-[#A8882A] transition-colors text-sm font-medium">
+              + Create PO
+            </Link>
+            <Link href="/ops/reports" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+              📊 Reports
+            </Link>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#C6A24E] p-4">
+        <div className="bg-white rounded-xl border border-l-4 border-l-signal p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">POs Pending Approval</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{posPending.length}</p>
           <p className="text-xs text-gray-400 mt-1">Awaiting signature</p>
@@ -234,17 +236,19 @@ export default function PurchasingPortal() {
         {/* POs Needing Approval */}
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">POs Needing Approval</h2>
-            <Link href="/ops/purchasing" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
+            <h2 className="text-lg font-semibold text-gray-900">POs Needing Approval</h2>
+            <Link href="/ops/purchasing" className="text-sm text-signal hover:text-[#A8882A]">
               View All →
             </Link>
           </div>
 
           {posPending.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">✅</p>
-              <p>All purchase orders approved!</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<Receipt className="w-6 h-6 text-fg-subtle" />}
+              title="All caught up"
+              description="All purchase orders approved."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -260,7 +264,7 @@ export default function PurchasingPortal() {
                   {posPending.map((po) => (
                     <tr key={po.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-3">
-                        <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-[#C6A24E] hover:text-[#A8882A]">
+                        <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-signal hover:text-[#A8882A]">
                           {po.poNumber}
                         </Link>
                       </td>
@@ -272,7 +276,7 @@ export default function PurchasingPortal() {
                         <button
                           onClick={() => handleApprove(po)}
                           disabled={approvingId === po.id}
-                          className="px-3 py-1 bg-[#C6A24E] text-white text-xs rounded hover:bg-[#A8882A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 bg-signal text-white text-xs rounded hover:bg-[#A8882A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {approvingId === po.id ? 'Approving...' : 'Approve'}
                         </button>
@@ -287,9 +291,9 @@ export default function PurchasingPortal() {
 
         {/* Quick Actions */}
         <div className="bg-white rounded-xl border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-2">
-            <Link href="/ops/purchasing" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-[#C6A24E] transition-all text-sm font-medium text-gray-900">
+            <Link href="/ops/purchasing" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-signal transition-all text-sm font-medium text-gray-900">
               🆕 Create PO
             </Link>
             <Link href="/ops/inventory" className="block px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-500 transition-all text-sm font-medium text-gray-900">
@@ -308,17 +312,19 @@ export default function PurchasingPortal() {
       {/* Low Stock Alerts */}
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Low Stock Alerts</h2>
-          <Link href="/ops/inventory" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
+          <h2 className="text-lg font-semibold text-gray-900">Low Stock Alerts</h2>
+          <Link href="/ops/inventory" className="text-sm text-signal hover:text-[#A8882A]">
             Full Inventory →
           </Link>
         </div>
 
         {lowStockItems.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-3xl mb-2">📦</p>
-            <p>All stock levels healthy</p>
-          </div>
+          <EmptyState
+            size="compact"
+            icon={<Package className="w-6 h-6 text-fg-subtle" />}
+            title="All stock levels healthy"
+            description="No items below reorder point."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {lowStockItems.map((item) => {
@@ -365,22 +371,24 @@ export default function PurchasingPortal() {
       {/* Top Vendors */}
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Top Vendors</h2>
-          <Link href="/ops/vendors" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
+          <h2 className="text-lg font-semibold text-gray-900">Top Vendors</h2>
+          <Link href="/ops/vendors" className="text-sm text-signal hover:text-[#A8882A]">
             All Vendors →
           </Link>
         </div>
         {vendors.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-3xl mb-2">🏭</p>
-            <p>No vendors found</p>
-          </div>
+          <EmptyState
+            size="compact"
+            icon={<Factory className="w-6 h-6 text-fg-subtle" />}
+            title="No vendors found"
+            description="Vendor relationships will appear here."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {vendors.map((vendor) => {
               const perf = vendorPerformance[vendor.id]
               return (
-                <div key={vendor.id || vendor.name} className="p-4 rounded-lg border border-gray-200 hover:border-[#C6A24E] transition-all">
+                <div key={vendor.id || vendor.name} className="p-4 rounded-lg border border-gray-200 hover:border-signal transition-all">
                   <p className="font-semibold text-gray-900 text-sm mb-1">{vendor.name}</p>
                   {vendor.code && (
                     <p className="text-xs text-gray-400 font-mono mb-3">{vendor.code}</p>
@@ -479,8 +487,8 @@ export default function PurchasingPortal() {
       {/* Recent POs */}
       <div className="bg-white rounded-xl border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Recent Purchase Orders</h2>
-          <Link href="/ops/purchasing" className="text-sm text-[#C6A24E] hover:text-[#A8882A]">
+          <h2 className="text-lg font-semibold text-gray-900">Recent Purchase Orders</h2>
+          <Link href="/ops/purchasing" className="text-sm text-signal hover:text-[#A8882A]">
             All Orders →
           </Link>
         </div>
@@ -500,7 +508,7 @@ export default function PurchasingPortal() {
               {recentPos.map((po) => (
                 <tr key={po.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-3">
-                    <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-[#C6A24E] hover:text-[#A8882A]">
+                    <Link href={`/ops/purchasing/${po.id}`} className="font-semibold text-signal hover:text-[#A8882A]">
                       {po.poNumber}
                     </Link>
                   </td>

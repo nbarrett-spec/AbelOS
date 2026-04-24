@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { Inbox } from 'lucide-react'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface Message {
   id: string
@@ -394,7 +397,7 @@ export default function MessagesPage() {
 
   if (!staff) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-fg-muted">
         Loading...
       </div>
     )
@@ -402,23 +405,24 @@ export default function MessagesPage() {
 
   return (
     <div className="h-full flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-        <button
-          onClick={() => setShowNewConversation(true)}
-          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
-        >
-          + New Message
-        </button>
-      </div>
+      <PageHeader
+        title="Messages"
+        actions={
+          <button
+            onClick={() => setShowNewConversation(true)}
+            className="px-4 py-2 bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover transition-colors font-medium text-sm"
+          >
+            + New Message
+          </button>
+        }
+      />
 
       {/* Main container */}
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Sidebar with conversations */}
-        <div className="w-80 bg-white rounded-lg border border-gray-200 flex flex-col">
+        <div className="w-80 bg-surface-elev rounded-lg border border-border flex flex-col">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-border">
             {[
               { id: 'dms', label: 'Direct Messages' },
               { id: 'groups', label: 'Groups' },
@@ -430,8 +434,8 @@ export default function MessagesPage() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === tab.id
-                    ? 'border-[#C6A24E] text-[#C6A24E]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    ? 'border-signal text-signal'
+                    : 'border-transparent text-fg-muted hover:text-fg'
                 }`}
               >
                 {tab.label}
@@ -444,38 +448,41 @@ export default function MessagesPage() {
             {activeTab === 'builders' ? (
               // Builder support conversations
               builderConversations.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 text-sm">
-                  No builder conversations
-                </div>
+                <EmptyState
+                  size="compact"
+                  icon={<Inbox className="w-6 h-6 text-fg-subtle" />}
+                  title="Inbox empty"
+                  description="No builder conversations."
+                />
               ) : (
                 builderConversations.map(conv => (
                   <button
                     key={conv.id}
                     onClick={() => { setSelectedConversation(conv.id); setIsBuilderThread(true) }}
-                    className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      selectedConversation === conv.id ? 'bg-orange-50' : ''
+                    className={`w-full text-left p-3 border-b border-border hover:bg-row-hover transition-colors ${
+                      selectedConversation === conv.id ? 'bg-signal-subtle' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm truncate flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[#C6A24E] shrink-0" />
+                        <h3 className="font-semibold text-fg text-sm truncate flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-signal shrink-0" />
                           {conv.name}
                         </h3>
                         {conv.lastMessage && (
-                          <p className="text-xs text-gray-600 truncate mt-1">
+                          <p className="text-xs text-fg-muted truncate mt-1">
                             {conv.lastMessage}
                           </p>
                         )}
                       </div>
                       {conv.unreadCount > 0 && (
-                        <span className="px-2 py-1 bg-[#C6A24E] text-white rounded-full text-xs font-bold flex-shrink-0">
+                        <span className="px-2 py-1 bg-signal text-fg-on-accent rounded-full text-xs font-bold flex-shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
                     </div>
                     {conv.lastMessageTime && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-fg-subtle mt-1">
                         {new Date(conv.lastMessageTime).toLocaleTimeString('en-US', {
                           hour: 'numeric',
                           minute: '2-digit',
@@ -488,29 +495,32 @@ export default function MessagesPage() {
             ) : activeTab === 'channels' ? (
               // Department channels
               departmentChannels.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 text-sm">
-                  No channels available
-                </div>
+                <EmptyState
+                  size="compact"
+                  icon={<Inbox className="w-6 h-6 text-fg-subtle" />}
+                  title="Inbox empty"
+                  description="No channels available."
+                />
               ) : (
                 departmentChannels.map(channel => (
                   <button
                     key={channel.id}
                     onClick={() => { setSelectedConversation(channel.id); setIsBuilderThread(false) }}
-                    className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      selectedConversation === channel.id ? 'bg-orange-50' : ''
+                    className={`w-full text-left p-3 border-b border-border hover:bg-row-hover transition-colors ${
+                      selectedConversation === channel.id ? 'bg-signal-subtle' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm truncate">
+                        <h3 className="font-semibold text-fg text-sm truncate">
                           # {channel.name}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-fg-muted truncate">
                           {channel.departmentScope} &bull; {channel.memberCount} members
                         </p>
                       </div>
                       {channel.unreadCount > 0 && (
-                        <span className="px-2 py-1 bg-[#C6A24E] text-white rounded-full text-xs font-bold flex-shrink-0">
+                        <span className="px-2 py-1 bg-signal text-fg-on-accent rounded-full text-xs font-bold flex-shrink-0">
                           {channel.unreadCount}
                         </span>
                       )}
@@ -521,25 +531,28 @@ export default function MessagesPage() {
             ) : (
               // Direct messages and groups
               filteredConversations.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 text-sm">
-                  No {activeTab === 'dms' ? 'direct messages' : 'groups'} yet
-                </div>
+                <EmptyState
+                  size="compact"
+                  icon={<Inbox className="w-6 h-6 text-fg-subtle" />}
+                  title="Inbox empty"
+                  description={`No ${activeTab === 'dms' ? 'direct messages' : 'groups'} yet.`}
+                />
               ) : (
                 filteredConversations.map(conv => (
                   <button
                     key={conv.id}
                     onClick={() => { setSelectedConversation(conv.id); setIsBuilderThread(false) }}
-                    className={`w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      selectedConversation === conv.id ? 'bg-orange-50' : ''
+                    className={`w-full text-left p-3 border-b border-border hover:bg-row-hover transition-colors ${
+                      selectedConversation === conv.id ? 'bg-signal-subtle' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm truncate">
+                        <h3 className="font-semibold text-fg text-sm truncate">
                           {conv.name}
                         </h3>
                         {conv.lastMessage && (
-                          <p className="text-xs text-gray-600 truncate mt-1">
+                          <p className="text-xs text-fg-muted truncate mt-1">
                             {conv.lastMessageSender && (
                               <span className="font-semibold">{conv.lastMessageSender}: </span>
                             )}
@@ -548,13 +561,13 @@ export default function MessagesPage() {
                         )}
                       </div>
                       {conv.unreadCount > 0 && (
-                        <span className="px-2 py-1 bg-[#C6A24E] text-white rounded-full text-xs font-bold flex-shrink-0">
+                        <span className="px-2 py-1 bg-signal text-fg-on-accent rounded-full text-xs font-bold flex-shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
                     </div>
                     {conv.lastMessageTime && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-fg-subtle mt-1">
                         {new Date(conv.lastMessageTime).toLocaleTimeString('en-US', {
                           hour: 'numeric',
                           minute: '2-digit',
@@ -569,16 +582,16 @@ export default function MessagesPage() {
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
+        <div className="flex-1 bg-surface-elev rounded-lg border border-border flex flex-col">
           {selectedConversation ? (
             <>
               {/* Conversation header */}
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="font-semibold text-gray-900">
+              <div className="p-4 border-b border-border">
+                <h2 className="font-semibold text-fg">
                   {selectedConvData?.name || 'Select a conversation'}
                 </h2>
                 {'participantCount' in (selectedConvData || {}) && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-fg-muted mt-1">
                     {(selectedConvData as any)?.participantCount || (selectedConvData as any)?.memberCount || 0} participants
                   </p>
                 )}
@@ -587,13 +600,15 @@ export default function MessagesPage() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading ? (
-                  <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="flex items-center justify-center h-full text-fg-muted">
                     Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    No messages yet. Start the conversation!
-                  </div>
+                  <EmptyState
+                    icon={<Inbox className="w-8 h-8 text-fg-subtle" />}
+                    title="Inbox empty"
+                    description="No messages yet. Start the conversation."
+                  />
                 ) : (
                   messages.map(message => (
                     <div key={message.id} className="flex gap-3">
@@ -606,20 +621,20 @@ export default function MessagesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <span className="font-semibold text-gray-900 text-sm">
+                          <span className="font-semibold text-fg text-sm">
                             {message.senderName}
                           </span>
-                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
+                          <span className="text-xs px-2 py-0.5 bg-surface-muted text-fg-muted rounded">
                             {message.senderRole}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-fg-subtle">
                             {new Date(message.timestamp).toLocaleTimeString('en-US', {
                               hour: 'numeric',
                               minute: '2-digit',
                             })}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-800 mt-1 break-words">
+                        <p className="text-sm text-fg mt-1 break-words">
                           {message.body}
                         </p>
                       </div>
@@ -630,7 +645,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Message input */}
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-border">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -643,11 +658,11 @@ export default function MessagesPage() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent text-sm"
+                    className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-signal focus:border-transparent text-sm bg-surface-elev"
                   />
                   <button
                     onClick={handleSendMessage}
-                    className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
+                    className="px-4 py-2 bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover transition-colors font-medium text-sm"
                   >
                     Send
                   </button>
@@ -655,7 +670,7 @@ export default function MessagesPage() {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="flex items-center justify-center h-full text-fg-muted">
               <div className="text-center">
                 <p className="text-lg font-medium">No conversation selected</p>
                 <p className="text-sm mt-2">Click on a conversation to start messaging</p>
@@ -668,13 +683,13 @@ export default function MessagesPage() {
       {/* New Conversation Modal */}
       {showNewConversation && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">New Message</h3>
+          <div className="bg-surface-elev rounded-lg p-6 max-w-md w-full mx-4 border border-border">
+            <h3 className="text-lg font-semibold text-fg mb-4">New Message</h3>
 
             <div className="space-y-4">
               {/* Conversation name (optional for group) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg-muted mb-1">
                   Group Name (optional)
                 </label>
                 <input
@@ -682,20 +697,20 @@ export default function MessagesPage() {
                   value={newConversationName}
                   onChange={e => setNewConversationName(e.target.value)}
                   placeholder="Leave blank for direct message"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C6A24E] focus:border-transparent text-sm"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-signal focus:border-transparent text-sm bg-surface-elev"
                 />
               </div>
 
               {/* Staff list */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-fg-muted mb-2">
                   Select Recipients
                 </label>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {staffList.map(s => (
                     <label
                       key={s.id}
-                      className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                      className="flex items-center gap-3 p-2 hover:bg-row-hover rounded cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -712,8 +727,8 @@ export default function MessagesPage() {
                         className="w-4 h-4"
                       />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{s.firstName} {s.lastName}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium text-fg">{s.firstName} {s.lastName}</p>
+                        <p className="text-xs text-fg-muted">
                           {s.role} &bull; {s.department}
                         </p>
                       </div>
@@ -724,7 +739,7 @@ export default function MessagesPage() {
 
               {/* Selected count */}
               {selectedRecipients.length > 0 && (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-fg-muted">
                   {selectedRecipients.length} recipient{selectedRecipients.length !== 1 ? 's' : ''} selected
                 </p>
               )}
@@ -738,14 +753,14 @@ export default function MessagesPage() {
                   setSelectedRecipients([])
                   setNewConversationName('')
                 }}
-                className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
+                className="flex-1 px-4 py-2 text-fg-muted border border-border rounded-lg hover:bg-row-hover transition-colors font-medium text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateConversation}
                 disabled={selectedRecipients.length === 0}
-                className="flex-1 px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+                className="flex-1 px-4 py-2 bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover disabled:bg-surface-muted disabled:text-fg-subtle disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
                 Start Chat
               </button>

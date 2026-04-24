@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Factory } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
+import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 
 interface DashboardData {
   productionQueue: {
@@ -86,7 +90,7 @@ export default function ManufacturingDashboard() {
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-          <p className="mt-4 text-gray-600">Loading manufacturing dashboard...</p>
+          <p className="mt-4 text-fg-muted">Loading manufacturing dashboard...</p>
         </div>
       </div>
     )
@@ -94,23 +98,20 @@ export default function ManufacturingDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manufacturing Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Production floor overview — track jobs, picks, and quality
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/ops/manufacturing/build-sheet" className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm font-medium">
-            Build Sheet
-          </Link>
-          <Link href="/ops/manufacturing/bom" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
-            Manage BOMs
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Manufacturing Dashboard"
+        description="Production floor overview — track jobs, picks, and quality"
+        actions={
+          <>
+            <Link href="/ops/manufacturing/build-sheet" className="px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm font-medium">
+              Build Sheet
+            </Link>
+            <Link href="/ops/manufacturing/bom" className="px-4 py-2 border border-border rounded-lg hover:bg-row-hover text-sm font-medium">
+              Manage BOMs
+            </Link>
+          </>
+        }
+      />
 
       {/* Error message */}
       {error && (
@@ -178,7 +179,7 @@ export default function ManufacturingDashboard() {
           {/* Production Queue */}
           <div className="bg-white rounded-xl border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Production Queue</h2>
+              <h2 className="text-lg font-semibold text-fg">Production Queue</h2>
               <Link
                 href="/ops/manufacturing/picks"
                 className="text-xs text-[#0f2a3e] hover:underline"
@@ -188,7 +189,11 @@ export default function ManufacturingDashboard() {
             </div>
             <div className="space-y-2">
               {data.productionQueue.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">No jobs in production</p>
+                <EmptyState
+                  size="compact"
+                  icon={<Factory className="w-6 h-6 text-fg-subtle" />}
+                  title="No jobs in production"
+                />
               ) : (
                 data.productionQueue.slice(0, 5).map((job) => (
                   <Link
@@ -197,19 +202,19 @@ export default function ManufacturingDashboard() {
                     className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer no-underline"
                   >
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">{job.jobNumber}</p>
-                      <p className="text-xs text-gray-600">{job.builderName}</p>
+                      <p className="text-sm font-semibold text-fg">{job.jobNumber}</p>
+                      <p className="text-xs text-fg-muted">{job.builderName}</p>
                       {job.community && (
-                        <p className="text-xs text-gray-500">{job.community}</p>
+                        <p className="text-xs text-fg-subtle">{job.community}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-fg-muted">
                         {new Date(job.scheduledDate).toLocaleDateString()}
                       </p>
-                      <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-[#9B59B6]/10 text-[#9B59B6]">
+                      <Badge variant={getStatusBadgeVariant(job.status)} size="xs" className="mt-1">
                         {job.status === 'IN_PRODUCTION' ? 'Production' : 'Staged'}
-                      </span>
+                      </Badge>
                     </div>
                   </Link>
                 ))
@@ -220,7 +225,7 @@ export default function ManufacturingDashboard() {
           {/* Material Pick Status */}
           <div className="bg-white rounded-xl border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Material Pick Status</h2>
+              <h2 className="text-lg font-semibold text-fg">Material Pick Status</h2>
               <Link
                 href="/ops/manufacturing/picks"
                 className="text-xs text-[#0f2a3e] hover:underline"
@@ -240,7 +245,7 @@ export default function ManufacturingDashboard() {
           {/* QC Summary */}
           <div className="bg-white rounded-xl border p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Recent Quality Checks</h2>
+              <h2 className="text-lg font-semibold text-fg">Recent Quality Checks</h2>
               <Link
                 href="/ops/manufacturing/qc"
                 className="text-xs text-[#0f2a3e] hover:underline"
@@ -249,37 +254,29 @@ export default function ManufacturingDashboard() {
               </Link>
             </div>
             {data.qualityCheckSummary.recentChecks.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4">No recent quality checks</p>
+              <p className="text-sm text-fg-muted py-4">No recent quality checks</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="border-b bg-gray-50">
                     <tr>
-                      <th className="text-left py-2 px-3 font-semibold text-gray-700">Job</th>
-                      <th className="text-left py-2 px-3 font-semibold text-gray-700">Type</th>
-                      <th className="text-left py-2 px-3 font-semibold text-gray-700">Result</th>
-                      <th className="text-left py-2 px-3 font-semibold text-gray-700">Date</th>
+                      <th className="text-left py-2 px-3 font-semibold text-fg-muted">Job</th>
+                      <th className="text-left py-2 px-3 font-semibold text-fg-muted">Type</th>
+                      <th className="text-left py-2 px-3 font-semibold text-fg-muted">Result</th>
+                      <th className="text-left py-2 px-3 font-semibold text-fg-muted">Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {data.qualityCheckSummary.recentChecks.slice(0, 5).map((check) => (
-                      <tr key={check.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.location.href = `/ops/jobs/${check.jobId}`}>
-                        <td className="py-2 px-3 text-gray-900 font-medium hover:text-[#0f2a3e] hover:underline">{check.jobNumber}</td>
-                        <td className="py-2 px-3 text-gray-600">{check.checkType.replace(/_/g, ' ')}</td>
+                      <tr key={check.id} className="hover:bg-row-hover cursor-pointer" onClick={() => window.location.href = `/ops/jobs/${check.jobId}`}>
+                        <td className="py-2 px-3 text-fg font-medium hover:text-[#0f2a3e] hover:underline">{check.jobNumber}</td>
+                        <td className="py-2 px-3 text-fg-muted">{check.checkType.replace(/_/g, ' ')}</td>
                         <td className="py-2 px-3">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                              check.result === 'PASS'
-                                ? 'bg-green-100 text-green-700'
-                                : check.result === 'FAIL'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-yellow-100 text-yellow-700'
-                            }`}
-                          >
+                          <Badge variant={getStatusBadgeVariant(check.result)} size="xs">
                             {check.result}
-                          </span>
+                          </Badge>
                         </td>
-                        <td className="py-2 px-3 text-gray-600 text-xs">
+                        <td className="py-2 px-3 text-fg-muted text-xs">
                           {new Date(check.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
@@ -312,8 +309,8 @@ function KPICard({
     <div className={`${color} border rounded-xl p-4`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-600 mb-1">{label}</p>
-          <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
+          <p className="text-xs text-fg-muted mb-1">{label}</p>
+          <p className={`text-2xl font-semibold ${textColor}`}>{value}</p>
         </div>
         <div className="text-3xl">{icon}</div>
       </div>
@@ -332,8 +329,8 @@ function PickStatusRow({
 }) {
   return (
     <div className="flex items-center justify-between p-2">
-      <span className="text-sm text-gray-700">{label}</span>
-      <span className={`px-3 py-1 rounded-lg font-semibold text-sm text-gray-900 ${color}`}>
+      <span className="text-sm text-fg-muted">{label}</span>
+      <span className={`px-3 py-1 rounded-lg font-semibold text-sm text-fg ${color}`}>
         {count}
       </span>
     </div>

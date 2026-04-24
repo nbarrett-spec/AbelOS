@@ -161,7 +161,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
-            <select value={activityType} onChange={(e) => setActivityType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]">
+            <select value={activityType} onChange={(e) => setActivityType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal">
               <option value="CALL">Call</option>
               <option value="EMAIL">Email</option>
               <option value="MEETING">Meeting</option>
@@ -178,7 +178,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g., Discussed pricing options"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               required
             />
           </div>
@@ -190,7 +190,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional details..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E] resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal resize-none"
             />
           </div>
 
@@ -200,7 +200,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
               type="date"
               value={followUpDate}
               onChange={(e) => setFollowUpDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
             />
           </div>
 
@@ -211,7 +211,7 @@ function ActivityLogModal({ isOpen, dealId, dealName, onClose }: { isOpen: boole
             <button
               type="submit"
               disabled={submitting || !subject.trim()}
-              className="flex-1 px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711] disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2 bg-signal text-white rounded-lg text-sm font-medium hover:bg-signal-hover disabled:opacity-50 transition-colors"
             >
               {submitting ? 'Logging...' : 'Log Activity'}
             </button>
@@ -366,13 +366,13 @@ export default function SalesPipelinePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Company or contact..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Owner</label>
-              <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]">
+              <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal">
                 <option value="">All owners</option>
                 {Object.entries(owners).map(([id, name]) => (
                   <option key={id} value={id}>
@@ -388,7 +388,7 @@ export default function SalesPipelinePage() {
                 type="date"
                 value={dateRangeStart}
                 onChange={(e) => setDateRangeStart(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               />
             </div>
 
@@ -398,7 +398,7 @@ export default function SalesPipelinePage() {
                 type="date"
                 value={dateRangeEnd}
                 onChange={(e) => setDateRangeEnd(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
               />
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function SalesPipelinePage() {
                   setDateRangeStart('')
                   setDateRangeEnd('')
                 }}
-                className="text-sm text-[#C6A24E] hover:underline font-medium"
+                className="text-sm text-signal hover:underline font-medium"
               >
                 Clear filters
               </button>
@@ -503,7 +503,7 @@ export default function SalesPipelinePage() {
                                   <button
                                     key={nextStage}
                                     onClick={() => handleMoveStage(deal.id, nextStage)}
-                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-[#C6A24E] hover:text-white transition-colors font-medium"
+                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-signal hover:text-white transition-colors font-medium"
                                   >
                                     {STAGE_NAMES[nextStage].split(' ')[0]}
                                   </button>

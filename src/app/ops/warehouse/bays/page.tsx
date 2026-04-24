@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Warehouse } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Bay {
   id: string
@@ -177,7 +180,7 @@ export default function WarehouseBayMapPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
+      <div className="text-fg-muted" style={{ padding: 40, textAlign: 'center' }}>
         <p style={{ fontSize: 14 }}>Loading warehouse bay map...</p>
       </div>
     )
@@ -185,56 +188,53 @@ export default function WarehouseBayMapPage() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
-            🏭 Warehouse Bay Map
-          </h1>
-          <p style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
-            Real-time bay utilization and door locations
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{ padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Add Bay
-          </button>
-          <button
-            onClick={() => setShowBulkModal(true)}
-            style={{ padding: '8px 16px', background: '#C6A24E', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Bulk Create
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Warehouse Bay Map"
+        description="Real-time bay utilization and door locations"
+        actions={
+          <>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-surface-elevated text-fg"
+              style={{ padding: '8px 16px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              + Add Bay
+            </button>
+            <button
+              onClick={() => setShowBulkModal(true)}
+              className="text-fg"
+              style={{ padding: '8px 16px', background: '#C6A24E', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              + Bulk Create
+            </button>
+          </>
+        }
+      />
 
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Total Bays</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#0f2a3e' }}>{bays.length}</div>
+          <div className="text-fg" style={{ fontSize: 28, fontWeight: 600 }}>{bays.length}</div>
         </div>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Doors Stored</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#0f2a3e' }}>{totalDoors}</div>
+          <div className="text-fg" style={{ fontSize: 28, fontWeight: 600 }}>{totalDoors}</div>
           <div style={{ fontSize: 11, color: '#6B7280' }}>of {totalCapacity} capacity</div>
         </div>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>QC Passed</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#10B981' }}>{totalReady}</div>
+          <div style={{ fontSize: 28, fontWeight: 600, color: '#10B981' }}>{totalReady}</div>
           <div style={{ fontSize: 11, color: '#6B7280' }}>ready for staging</div>
         </div>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Staged</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#F59E0B' }}>{totalStaged}</div>
+          <div style={{ fontSize: 28, fontWeight: 600, color: '#F59E0B' }}>{totalStaged}</div>
           <div style={{ fontSize: 11, color: '#6B7280' }}>ready for delivery</div>
         </div>
         <div style={{ background: 'white', borderRadius: 10, padding: 16, border: '1px solid #E5E7EB' }}>
           <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Utilization</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: getUtilColor(totalCapacity ? Math.round((totalDoors / totalCapacity) * 100) : 0) }}>
+          <div style={{ fontSize: 28, fontWeight: 600, color: getUtilColor(totalCapacity ? Math.round((totalDoors / totalCapacity) * 100) : 0) }}>
             {totalCapacity ? Math.round((totalDoors / totalCapacity) * 100) : 0}%
           </div>
         </div>
@@ -289,7 +289,7 @@ export default function WarehouseBayMapPage() {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: zoneColor }} />
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>{bay.bayNumber}</span>
+                <span className="text-fg" style={{ fontSize: 15, fontWeight: 600 }}>{bay.bayNumber}</span>
                 <span style={{
                   fontSize: 10, padding: '2px 8px', borderRadius: 10,
                   background: `${zoneColor}15`, color: zoneColor, fontWeight: 600
@@ -334,9 +334,12 @@ export default function WarehouseBayMapPage() {
         })}
 
         {bays.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: '#9CA3AF' }}>
-            <p style={{ fontSize: 16, marginBottom: 8 }}>No bays created yet</p>
-            <p style={{ fontSize: 13 }}>Use &quot;Add Bay&quot; or &quot;Bulk Create&quot; to set up your warehouse</p>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <EmptyState
+              icon={<Warehouse className="w-8 h-8 text-fg-subtle" />}
+              title="No bays created yet"
+              description="Use Add Bay or Bulk Create to set up your warehouse"
+            />
           </div>
         )}
       </div>
@@ -350,7 +353,7 @@ export default function WarehouseBayMapPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
+              <h2 className="text-fg" style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
                 Bay {selectedBay.bayNumber}
               </h2>
               <p style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
@@ -385,7 +388,7 @@ export default function WarehouseBayMapPage() {
                   {bayDoors.map(door => (
                     <tr key={door.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                       <td style={{ padding: '8px 12px' }}>
-                        <a href={`/door/${door.serialNumber}`} style={{ color: '#0f2a3e', fontWeight: 600, textDecoration: 'none' }}>
+                        <a href={`/door/${door.serialNumber}`} className="text-fg" style={{ fontWeight: 600, textDecoration: 'none' }}>
                           {door.serialNumber}
                         </a>
                       </td>
@@ -413,7 +416,7 @@ export default function WarehouseBayMapPage() {
       {/* Zone Summary Table */}
       {zones.length > 0 && !zoneFilter && (
         <div style={{ background: 'white', borderRadius: 12, padding: 20, border: '1px solid #E5E7EB' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }}>Zone Summary</h3>
+          <h3 className="text-fg" style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Zone Summary</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #E5E7EB' }}>
@@ -458,7 +461,7 @@ export default function WarehouseBayMapPage() {
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 400, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f2a3e', marginBottom: 16 }}>Add Warehouse Bay</h3>
+            <h3 className="text-fg" style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Add Warehouse Bay</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Bay Number *</label>
@@ -519,7 +522,7 @@ export default function WarehouseBayMapPage() {
       {showBulkModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 440, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Bulk Create Bays</h3>
+            <h3 className="text-fg" style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Bulk Create Bays</h3>
             <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>Creates numbered bays from prefix + start to end number</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

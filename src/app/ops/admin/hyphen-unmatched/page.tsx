@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { RefreshCw, AlertTriangle, Search, CheckCircle2 } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface UnmatchedDoc {
   id: string
@@ -88,30 +89,27 @@ export default function HyphenUnmatchedPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <nav className="text-xs text-gray-500 mb-1">
-            <Link href="/ops" className="hover:underline">Ops</Link>
-            {' / '}
-            <Link href="/ops/admin" className="hover:underline">Admin</Link>
-            {' / Hyphen Unmatched'}
-          </nav>
-          <h1 className="text-2xl font-bold text-gray-900">Hyphen — Unmatched Documents</h1>
-          <p className="text-sm text-gray-500">
-            Hyphen docs that couldn't be confidently tied to a Job. Assign each to the right Job so the PM sees it under their Documents tab.
-          </p>
-        </div>
-        <button
-          onClick={load}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-[#0f2a3e] text-white hover:bg-[#163d5a] font-medium"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
-      </div>
+      <PageHeader
+        title="Hyphen — Unmatched Documents"
+        description="Hyphen docs that couldn't be confidently tied to a Job. Assign each to the right Job so the PM sees it under their Documents tab."
+        crumbs={[
+          { label: 'Ops', href: '/ops' },
+          { label: 'Admin', href: '/ops/admin' },
+          { label: 'Hyphen Unmatched' },
+        ]}
+        actions={
+          <button
+            onClick={load}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-surface-elev text-fg-on-accent hover:opacity-90 font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Needs review" value={counts.total} color="text-[#0f2a3e]" />
+        <StatCard label="Needs review" value={counts.total} color="text-fg" />
         <StatCard label="Unmatched" value={counts.unmatched} color="text-red-600" />
         <StatCard label="Low confidence" value={counts.low} color="text-orange-600" />
         <StatCard label="Medium confidence" value={counts.medium} color="text-amber-600" />
@@ -123,53 +121,53 @@ export default function HyphenUnmatchedPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-surface rounded-lg border border-border overflow-hidden">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-surface-muted border-b border-border">
             <tr>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">File</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">PO</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">Builder</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">Address / Lot</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">Confidence</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">Scraped</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-gray-500 font-semibold px-4 py-2">Action</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">File</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">PO</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">Builder</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">Address / Lot</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">Confidence</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">Scraped</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-fg-muted font-semibold px-4 py-2">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">Loading…</td>
+                <td colSpan={7} className="px-4 py-10 text-center text-fg-subtle text-sm">Loading…</td>
               </tr>
             )}
             {!loading && docs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
+                <td colSpan={7} className="px-4 py-10 text-center text-fg-subtle text-sm">
                   <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-green-500" />
                   No unmatched documents. All Hyphen scrapes are correlating.
                 </td>
               </tr>
             )}
             {docs.map((d) => (
-              <tr key={d.id} className="hover:bg-gray-50">
+              <tr key={d.id} className="hover:bg-row-hover">
                 <td className="px-4 py-2">
-                  <div className="text-sm font-medium text-gray-900 max-w-[260px] truncate">
+                  <div className="text-sm font-medium text-fg max-w-[260px] truncate">
                     {d.fileName || `${d.eventType}`}
                   </div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-[11px] text-fg-muted">
                     {d.docCategory || d.eventType}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-sm font-mono tabular-nums text-gray-800">
+                <td className="px-4 py-2 text-sm font-mono tabular-nums text-fg">
                   {d.poNumber || '—'}
                 </td>
-                <td className="px-4 py-2 text-sm text-gray-800 max-w-[180px] truncate">
+                <td className="px-4 py-2 text-sm text-fg max-w-[180px] truncate">
                   {d.builderName || '—'}
                 </td>
-                <td className="px-4 py-2 text-sm text-gray-700 max-w-[240px]">
+                <td className="px-4 py-2 text-sm text-fg-muted max-w-[240px]">
                   <div className="truncate">{d.jobAddress || '—'}</div>
                   {d.lotBlock && (
-                    <div className="text-[11px] text-gray-500 font-mono">Lot {d.lotBlock}</div>
+                    <div className="text-[11px] text-fg-muted font-mono">Lot {d.lotBlock}</div>
                   )}
                 </td>
                 <td className="px-4 py-2">
@@ -177,7 +175,7 @@ export default function HyphenUnmatchedPage() {
                     {d.matchConfidence || '—'}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-[11px] text-gray-500 font-mono tabular-nums">
+                <td className="px-4 py-2 text-[11px] text-fg-muted font-mono tabular-nums">
                   {fmtAgo(d.scrapedAt)}
                 </td>
                 <td className="px-4 py-2">
@@ -194,7 +192,7 @@ export default function HyphenUnmatchedPage() {
                   ) : (
                     <button
                       onClick={() => setActiveAssign(d.id)}
-                      className="px-3 py-1 text-xs rounded border border-[#0f2a3e] text-[#0f2a3e] hover:bg-blue-50 font-medium"
+                      className="px-3 py-1 text-xs rounded border border-signal text-signal hover:bg-signal-subtle font-medium"
                     >
                       Assign to Job
                     </button>
@@ -211,9 +209,9 @@ export default function HyphenUnmatchedPage() {
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="bg-white rounded-lg border p-4">
-      <p className="text-xs text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className={`text-2xl font-bold font-mono tabular-nums ${color}`}>{value}</p>
+    <div className="bg-surface rounded-lg border border-border p-4">
+      <p className="text-xs text-fg-muted uppercase tracking-wider">{label}</p>
+      <p className={`text-2xl font-semibold font-mono tabular-nums ${color}`}>{value}</p>
     </div>
   )
 }
@@ -277,35 +275,35 @@ function AssignDropdown({
     <div className="flex flex-col gap-1 min-w-[320px]">
       <div className="flex items-center gap-1">
         <div className="flex-1 relative">
-          <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-fg-subtle" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search jobs by # / address / PO"
-            className="w-full border border-gray-300 rounded pl-7 pr-2 py-1 text-xs"
+            className="w-full border border-border-strong rounded pl-7 pr-2 py-1 text-xs bg-surface text-fg"
             autoFocus
           />
         </div>
         <button
           onClick={onCancel}
-          className="px-2 py-1 text-[11px] text-gray-500 hover:text-gray-700"
+          className="px-2 py-1 text-[11px] text-fg-muted hover:text-fg"
         >
           Cancel
         </button>
       </div>
       {err && <div className="text-[11px] text-red-600">{err}</div>}
-      {searching && <div className="text-[11px] text-gray-500">Searching…</div>}
+      {searching && <div className="text-[11px] text-fg-muted">Searching…</div>}
       {results.length > 0 && (
-        <div className="border border-gray-200 rounded max-h-48 overflow-y-auto bg-white shadow-sm">
+        <div className="border border-border rounded max-h-48 overflow-y-auto bg-surface shadow-sm">
           {results.map((j) => (
             <button
               key={j.id}
               disabled={assigning}
               onClick={() => assign(j.id)}
-              className="w-full text-left px-2 py-1.5 hover:bg-blue-50 border-b last:border-b-0 disabled:opacity-50"
+              className="w-full text-left px-2 py-1.5 hover:bg-row-hover border-b border-border last:border-b-0 disabled:opacity-50"
             >
-              <div className="text-xs font-semibold text-[#0f2a3e]">{j.jobNumber}</div>
-              <div className="text-[11px] text-gray-600 truncate">
+              <div className="text-xs font-semibold text-signal">{j.jobNumber}</div>
+              <div className="text-[11px] text-fg-muted truncate">
                 {j.builderName} · {j.jobAddress || j.community || '—'}
                 {j.lotBlock ? ` · Lot ${j.lotBlock}` : ''}
               </div>

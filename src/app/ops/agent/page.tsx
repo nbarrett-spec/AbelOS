@@ -165,7 +165,7 @@ export default function AgentDashboard() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0f2a3e', margin: 0 }}>AI Agent Dashboard</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#0f2a3e', margin: 0 }}>AI Agent Dashboard</h1>
           <p style={{ color: '#6b7280', margin: '4px 0 0' }}>
             Monitor conversations, approve schedule changes, manage escalations
             {loading && <span style={{ marginLeft: '8px', color: '#D4B96A' }}>{'\u2022'} Refreshing...</span>}

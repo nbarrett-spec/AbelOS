@@ -121,7 +121,7 @@ export default function InstallerTodayPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.18em] text-fg-subtle">Installer</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-fg flex items-center gap-2 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-fg flex items-center gap-2 mt-1">
             <HardHat className="w-7 h-7 text-accent-fg" />
             {greeting}
           </h1>

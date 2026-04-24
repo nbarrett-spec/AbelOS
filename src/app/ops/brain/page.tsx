@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ActivitySquare, BarChart3, Database, RefreshCw, ZapOff, CheckCircle2, AlertCircle, Brain } from 'lucide-react'
+import { ActivitySquare, BarChart3, Database, RefreshCw, ZapOff, CheckCircle2, AlertCircle, Brain, Sparkles } from 'lucide-react'
 import { KPICard, PageHeader } from '@/components/ui'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface EntityScore {
   entity_id: string
@@ -169,7 +170,7 @@ export default function BrainDashboard() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="mt-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-[#0a1a28] transition-colors disabled:bg-gray-300 font-medium flex items-center gap-2"
+          className="mt-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-navy transition-colors disabled:bg-gray-300 font-medium flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
           {syncing ? 'Syncing...' : 'Sync Now'}
@@ -341,10 +342,12 @@ export default function BrainDashboard() {
             </table>
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-400">
-            <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No entity scores available yet</p>
-          </div>
+          <EmptyState
+            icon={<Sparkles className="w-8 h-8 text-fg-subtle" />}
+            title="No insights yet"
+            description="No entity scores available yet."
+            size="compact"
+          />
         )}
       </div>
 
@@ -366,7 +369,7 @@ export default function BrainDashboard() {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-[#0a1a28] transition-colors disabled:bg-gray-300 font-medium flex items-center gap-2"
+            className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-navy transition-colors disabled:bg-gray-300 font-medium flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             {syncing ? 'Syncing...' : 'Trigger Full Sync'}

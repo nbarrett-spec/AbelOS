@@ -157,8 +157,8 @@ export default function SalesReportsPage() {
               onClick={() => setPeriod(p)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 period === p
-                  ? 'bg-[#C6A24E] text-white'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:border-[#C6A24E]'
+                  ? 'bg-signal text-white'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:border-signal'
               }`}
             >
               {p === 'this_month'
@@ -193,7 +193,7 @@ export default function SalesReportsPage() {
           {/* Win Rate */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <p className="text-gray-600 text-sm font-medium mb-2">Win Rate</p>
-            <p className="text-2xl font-bold text-[#C6A24E]">{data.summary.winRate}%</p>
+            <p className="text-2xl font-bold text-signal">{data.summary.winRate}%</p>
             <p className="text-gray-400 text-xs mt-2">of closed deals</p>
           </div>
 
@@ -223,7 +223,7 @@ export default function SalesReportsPage() {
 
         {/* Pipeline Funnel */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-bold text-[#1e3a5f] mb-6">Pipeline Funnel</h2>
+          <h2 className="text-lg font-semibold text-[#1e3a5f] mb-6">Pipeline Funnel</h2>
           <div className="space-y-4">
             {data.pipeline
               .sort((a, b) => {
@@ -268,7 +268,7 @@ export default function SalesReportsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Deals by Source */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Deals by Source</h2>
+            <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Deals by Source</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -304,7 +304,7 @@ export default function SalesReportsPage() {
 
           {/* Monthly Trend */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Monthly Trend</h2>
+            <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Monthly Trend</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -343,7 +343,7 @@ export default function SalesReportsPage() {
 
         {/* Rep Performance */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Rep Performance</h2>
+          <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Rep Performance</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -368,7 +368,7 @@ export default function SalesReportsPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{rep.repName}</span>
                         {topPerformer && rep.repId === topPerformer.repId && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#C6A24E] text-white text-xs font-semibold">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-signal text-white text-xs font-semibold">
                             ⭐ Top
                           </span>
                         )}
@@ -382,7 +382,7 @@ export default function SalesReportsPage() {
                     <td className="text-right py-3 px-4 text-gray-900 font-medium">
                       {formatCurrency(rep.wonValue)}
                     </td>
-                    <td className="text-right py-3 px-4 text-[#C6A24E] font-bold">{rep.winRate}%</td>
+                    <td className="text-right py-3 px-4 text-signal font-bold">{rep.winRate}%</td>
                   </tr>
                 ))}
                 {data.byRep.length === 0 && (
@@ -399,7 +399,7 @@ export default function SalesReportsPage() {
 
         {/* Recent Wins */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Recent Wins</h2>
+          <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Recent Wins</h2>
           {data.recentWins.length === 0 ? (
             <p className="text-gray-400 text-sm">No recent wins</p>
           ) : (

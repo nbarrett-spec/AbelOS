@@ -105,7 +105,7 @@ export default function ValuationPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#0f2a3e] mb-2">Inventory Valuation</h1>
+          <h1 className="text-3xl font-bold text-fg mb-2">Inventory Valuation</h1>
           <p className="text-gray-600">Complete inventory value breakdown by category and location</p>
         </div>
 
@@ -113,23 +113,23 @@ export default function ValuationPage() {
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6">
             <div className="text-sm font-medium text-gray-600 mb-2">Total Value</div>
-            <div className="text-3xl font-bold text-[#0f2a3e]">
+            <div className="text-3xl font-semibold text-fg">
               {formatCurrency(data.totalValue)}
             </div>
           </div>
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6">
             <div className="text-sm font-medium text-gray-600 mb-2">Total Items</div>
-            <div className="text-3xl font-bold text-[#0f2a3e]">{data.totalItems}</div>
+            <div className="text-3xl font-semibold text-fg">{data.totalItems}</div>
           </div>
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6">
             <div className="text-sm font-medium text-gray-600 mb-2">Total Units</div>
-            <div className="text-3xl font-bold text-[#0f2a3e]">
+            <div className="text-3xl font-semibold text-fg">
               {data.totalUnits.toLocaleString()}
             </div>
           </div>
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6">
             <div className="text-sm font-medium text-gray-600 mb-2">Avg Unit Cost</div>
-            <div className="text-3xl font-bold text-[#0f2a3e]">
+            <div className="text-3xl font-semibold text-fg">
               {data.totalUnits > 0
                 ? formatCurrency(data.totalValue / data.totalUnits)
                 : '$0'}
@@ -139,7 +139,7 @@ export default function ValuationPage() {
 
         {/* Category Breakdown */}
         <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-[#0f2a3e] mb-6">By Category</h2>
+          <h2 className="text-xl font-semibold text-fg mb-6">By Category</h2>
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -152,7 +152,7 @@ export default function ValuationPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {data.byCategory.map((cat) => (
-                <tr key={cat.category} className="hover:bg-gray-50">
+                <tr key={cat.category} className="hover:bg-row-hover">
                   <td className="py-3 text-sm font-medium text-gray-900">{cat.category}</td>
                   <td className="py-3 text-sm text-gray-600">{cat.itemCount}</td>
                   <td className="py-3 text-sm text-gray-600">{cat.units.toLocaleString()}</td>
@@ -176,7 +176,7 @@ export default function ValuationPage() {
 
         {/* Location Breakdown */}
         <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-[#0f2a3e] mb-6">By Location</h2>
+          <h2 className="text-xl font-semibold text-fg mb-6">By Location</h2>
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -188,7 +188,7 @@ export default function ValuationPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {data.byLocation.map((loc) => (
-                <tr key={loc.location} className="hover:bg-gray-50">
+                <tr key={loc.location} className="hover:bg-row-hover">
                   <td className="py-3 text-sm font-medium text-gray-900">{loc.location}</td>
                   <td className="py-3 text-sm text-gray-600">{loc.units.toLocaleString()}</td>
                   <td className="py-3 text-sm text-gray-600">{formatCurrency(loc.value)}</td>
@@ -196,7 +196,7 @@ export default function ValuationPage() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#C6A24E]"
+                          className="h-full bg-signal"
                           style={{ width: `${parseFloat(loc.pct)}%` }}
                         ></div>
                       </div>
@@ -211,7 +211,7 @@ export default function ValuationPage() {
 
         {/* Top 20 Items */}
         <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-[#0f2a3e] mb-6">Top 20 Highest-Value Items</h2>
+          <h2 className="text-xl font-semibold text-fg mb-6">Top 20 Highest-Value Items</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -226,13 +226,13 @@ export default function ValuationPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {data.topItems.map((item) => (
-                  <tr key={item.productId} className="hover:bg-gray-50">
+                  <tr key={item.productId} className="hover:bg-row-hover">
                     <td className="py-3 text-sm font-mono text-gray-600">{item.sku}</td>
                     <td className="py-3 text-sm text-gray-900">{item.productName}</td>
                     <td className="py-3 text-sm text-gray-600">{item.category}</td>
                     <td className="py-3 text-sm text-gray-600">{item.onHand}</td>
                     <td className="py-3 text-sm text-gray-600">{formatCurrency(item.unitCost)}</td>
-                    <td className="py-3 text-sm font-semibold text-[#0f2a3e]">
+                    <td className="py-3 text-sm font-semibold text-fg">
                       {formatCurrency(item.totalValue)}
                     </td>
                   </tr>
@@ -246,7 +246,7 @@ export default function ValuationPage() {
         <div className="grid grid-cols-2 gap-8">
           {data.zeroCostItems > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-red-900 mb-2">⚠️ Data Quality Alert</h3>
+              <h3 className="text-lg font-semibold text-red-900 mb-2">⚠️ Data Quality Alert</h3>
               <p className="text-red-700 mb-2">
                 {data.zeroCostItems} item{data.zeroCostItems !== 1 ? 's' : ''} with zero cost
                 found. Please review pricing data.
@@ -256,7 +256,7 @@ export default function ValuationPage() {
 
           {data.slowMovingItems.length > 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-yellow-900 mb-2">⚠️ Slow-Moving Inventory</h3>
+              <h3 className="text-lg font-semibold text-yellow-900 mb-2">⚠️ Slow-Moving Inventory</h3>
               <p className="text-yellow-700 mb-2">
                 {data.slowMovingItems.length} item{data.slowMovingItems.length !== 1 ? 's' : ''} not
                 received in 90+ days
@@ -271,7 +271,7 @@ export default function ValuationPage() {
         {/* Slow-Moving Details */}
         {data.slowMovingItems.length > 0 && (
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-6 mt-8">
-            <h2 className="text-xl font-bold text-[#0f2a3e] mb-6">Slow-Moving Items Detail</h2>
+            <h2 className="text-xl font-semibold text-fg mb-6">Slow-Moving Items Detail</h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -286,12 +286,12 @@ export default function ValuationPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {data.slowMovingItems.map((item) => (
-                    <tr key={item.productId} className="hover:bg-gray-50">
+                    <tr key={item.productId} className="hover:bg-row-hover">
                       <td className="py-3 text-sm font-mono text-gray-600">{item.sku}</td>
                       <td className="py-3 text-sm text-gray-900">{item.productName}</td>
                       <td className="py-3 text-sm text-gray-600">{item.onHand}</td>
                       <td className="py-3 text-sm text-gray-600">{formatCurrency(item.unitCost)}</td>
-                      <td className="py-3 text-sm font-semibold text-[#0f2a3e]">
+                      <td className="py-3 text-sm font-semibold text-fg">
                         {formatCurrency(item.totalValue)}
                       </td>
                       <td className="py-3 text-sm text-gray-600">

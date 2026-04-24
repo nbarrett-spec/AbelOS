@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Package } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Door {
   id: string
@@ -153,7 +156,7 @@ export default function DoorRegistryPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
+      <div className="text-fg-muted" style={{ padding: 40, textAlign: 'center' }}>
         <p style={{ fontSize: 14 }}>Loading door registry...</p>
       </div>
     )
@@ -161,31 +164,28 @@ export default function DoorRegistryPage() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
-            📱 Door Identity Registry
-          </h1>
-          <p style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
-            NFC-tagged door lifecycle tracking — production through installation
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{ padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Tag Single Door
-          </button>
-          <button
-            onClick={() => setShowOrderModal(true)}
-            style={{ padding: '8px 16px', background: '#C6A24E', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Tag From Order
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Door Identity Registry"
+        description="NFC-tagged door lifecycle tracking — production through installation"
+        actions={
+          <>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-surface-elevated text-fg"
+              style={{ padding: '8px 16px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              + Tag Single Door
+            </button>
+            <button
+              onClick={() => setShowOrderModal(true)}
+              className="text-fg"
+              style={{ padding: '8px 16px', background: '#C6A24E', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              + Tag From Order
+            </button>
+          </>
+        }
+      />
 
       {/* Summary Cards */}
       {summary && (
@@ -256,8 +256,12 @@ export default function DoorRegistryPage() {
             <tbody>
               {doors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>
-                    {search || statusFilter ? 'No doors match your filter' : 'No doors registered yet. Use "Tag From Order" to get started.'}
+                  <td colSpan={7}>
+                    <EmptyState
+                      icon={<Package className="w-8 h-8 text-fg-subtle" />}
+                      title={search || statusFilter ? 'No doors match your filter' : 'No doors registered yet'}
+                      description={search || statusFilter ? undefined : 'Use Tag From Order to get started.'}
+                    />
                   </td>
                 </tr>
               ) : doors.map(door => {
@@ -266,7 +270,7 @@ export default function DoorRegistryPage() {
                 return (
                   <tr key={door.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                     <td style={{ padding: '10px 12px' }}>
-                      <a href={`/door/${door.serialNumber}`} style={{ color: '#0f2a3e', fontWeight: 600, textDecoration: 'none', fontFamily: 'monospace', fontSize: 12 }}>
+                      <a href={`/door/${door.serialNumber}`} className="text-fg" style={{ fontWeight: 600, textDecoration: 'none', fontFamily: 'monospace', fontSize: 12 }}>
                         {door.serialNumber}
                       </a>
                     </td>
@@ -308,7 +312,7 @@ export default function DoorRegistryPage() {
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f2a3e', marginBottom: 16 }}>Tag Single Door</h3>
+            <h3 className="text-fg" style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Tag Single Door</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Product ID *</label>
@@ -361,7 +365,7 @@ export default function DoorRegistryPage() {
       {showOrderModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#C6A24E', marginBottom: 4 }}>Tag Doors From Order</h3>
+            <h3 className="text-signal" style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Tag Doors From Order</h3>
             <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>
               Creates one door identity per unit for every item in the order
             </p>
@@ -411,7 +415,7 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
   return (
     <div style={{ background: 'white', borderRadius: 10, padding: 14, border: '1px solid #E5E7EB' }}>
       <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontSize: 24, fontWeight: 600, color }}>{value}</div>
     </div>
   )
 }

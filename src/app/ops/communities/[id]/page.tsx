@@ -294,35 +294,35 @@ export default function CommunityDetailPage() {
       {/* ── Quick Actions ────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 mb-4">
         <Link href={`/ops/jobs?community=${encodeURIComponent(community.name)}`}
-          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 bg-surface-elevated text-fg rounded text-sm font-medium hover:bg-surface-muted inline-flex items-center gap-1.5 no-underline">
           🏗️ View Jobs
         </Link>
         <Link href={`/ops/blueprints/analyze?communityId=${community.id}`}
-          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 bg-surface-elevated text-fg rounded text-sm font-medium hover:bg-surface-muted inline-flex items-center gap-1.5 no-underline">
           📐 Add Blueprint
         </Link>
         <Link href={`/ops/takeoff-tool?communityId=${community.id}&community=${encodeURIComponent(community.name)}`}
-          className="px-3 py-1.5 bg-[#C6A24E] text-white rounded text-sm font-medium hover:bg-[#A8882A] inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 bg-signal text-fg-on-accent rounded text-sm font-medium hover:bg-signal-hover inline-flex items-center gap-1.5 no-underline">
           🤖 AI Takeoff
         </Link>
         <Link href={`/ops/schedule?communityId=${community.id}`}
-          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 border border-border text-fg rounded text-sm font-medium hover:bg-row-hover inline-flex items-center gap-1.5 no-underline">
           📅 Schedule Task
         </Link>
         <Link href={`/ops/delivery?communityId=${community.id}`}
-          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 border border-border text-fg rounded text-sm font-medium hover:bg-row-hover inline-flex items-center gap-1.5 no-underline">
           🚚 Schedule Delivery
         </Link>
         <Link href={`/ops/orders?communityId=${community.id}`}
-          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 border border-border text-fg rounded text-sm font-medium hover:bg-row-hover inline-flex items-center gap-1.5 no-underline">
           📦 Orders
         </Link>
         <Link href={`/ops/floor-plans?communityId=${community.id}`}
-          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 border border-border text-fg rounded text-sm font-medium hover:bg-row-hover inline-flex items-center gap-1.5 no-underline">
           🗺️ Floor Plans
         </Link>
         <Link href={`/ops/accounts/${community.builderId}`}
-          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          className="px-3 py-1.5 border border-border text-fg rounded text-sm font-medium hover:bg-row-hover inline-flex items-center gap-1.5 no-underline">
           🏢 Builder Account
         </Link>
       </div>
@@ -470,7 +470,7 @@ function OverviewTab({ community, stats, contacts, jobs, tasks, notes }: {
           ) : (
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {activeJobs.slice(0, 10).map(j => (
-                <Link key={j.id} href={`/ops/jobs/${j.id}/profile`} className="block p-2 hover:bg-gray-50 rounded text-sm">
+                <Link key={j.id} href={`/ops/jobs/${j.id}/profile`} className="block p-2 hover:bg-row-hover rounded text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-gray-500">{j.jobNumber}</span>
                     <span className={`text-xs px-1.5 py-0.5 rounded ${JOB_STATUS_COLORS[j.status] || 'bg-gray-100'}`}>
@@ -528,7 +528,7 @@ function ContactsTab({ contacts }: { contacts: Contact[] }) {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {contacts.map(c => (
-            <tr key={c.id} className="hover:bg-gray-50">
+            <tr key={c.id} className="hover:bg-row-hover">
               <td className="px-4 py-3">
                 <div className="font-medium">
                   {c.firstName} {c.lastName}
@@ -580,7 +580,7 @@ function JobsTab({ jobs, stats }: { jobs: Job[]; stats: Stats | null }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {jobs.map(j => (
-              <tr key={j.id} className="hover:bg-gray-50 cursor-pointer">
+              <tr key={j.id} className="hover:bg-row-hover cursor-pointer">
                 <td className="px-4 py-3">
                   <Link href={`/ops/jobs/${j.id}/profile`} className="font-mono text-blue-600 hover:underline text-xs">
                     {j.jobNumber}
@@ -629,7 +629,7 @@ function TasksTab({ tasks }: { tasks: Task[] }) {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {tasks.map(t => (
-            <tr key={t.id} className="hover:bg-gray-50">
+            <tr key={t.id} className="hover:bg-row-hover">
               <td className="px-4 py-3">
                 <div className="font-medium text-gray-900">{t.title}</div>
                 {t.description && <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{t.description}</div>}
@@ -659,7 +659,7 @@ function CommsTab({ commLogs }: { commLogs: CommLog[] }) {
       ) : (
         <div className="divide-y divide-gray-100">
           {commLogs.map(log => (
-            <div key={log.id} className="px-4 py-3 hover:bg-gray-50">
+            <div key={log.id} className="px-4 py-3 hover:bg-row-hover">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
                   log.direction === 'INBOUND' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
@@ -754,7 +754,7 @@ function FloorPlansTab({ floorPlans, communityId }: { floorPlans: FloorPlan[]; c
             </thead>
             <tbody className="divide-y divide-gray-100">
               {floorPlans.map(fp => (
-                <tr key={fp.id} className="hover:bg-gray-50">
+                <tr key={fp.id} className="hover:bg-row-hover">
                   <td className="px-4 py-3 font-medium text-gray-900">{fp.name}</td>
                   <td className="px-4 py-3 text-gray-600 font-mono text-xs">{fp.planNumber || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{fp.sqFootage?.toLocaleString() || '—'}</td>
@@ -765,7 +765,7 @@ function FloorPlansTab({ floorPlans, communityId }: { floorPlans: FloorPlan[]; c
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => openBom(fp.id)}
-                      className="text-xs px-2.5 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
+                      className="text-xs px-2.5 py-1 rounded border border-gray-300 text-gray-700 hover:bg-surface-muted hover:border-gray-400"
                     >
                       View BoM
                     </button>

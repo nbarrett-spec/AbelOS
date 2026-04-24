@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AlertCircle, TrendingUp, DollarSign, Users, Package, Clock } from 'lucide-react';
+import { AlertCircle, TrendingUp, DollarSign, Users, Package, Clock, LineChart } from 'lucide-react';
+import { PageHeader, EmptyState } from '@/components/ui';
 
 const NAVY = '#0f2a3e';
 const ORANGE = '#C6A24E';
@@ -255,8 +256,8 @@ export default function FinancialOptimizationPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '18px', color: '#666' }}>Loading financial data...</div>
+      <div className="p-10 text-center">
+        <div className="text-lg text-fg-muted">Loading financial data...</div>
       </div>
     );
   }
@@ -264,15 +265,14 @@ export default function FinancialOptimizationPage() {
   const maxCashFlowAmount = Math.max(...cashFlow.map((c) => Math.abs(c.amount)));
 
   return (
-    <div style={{ backgroundColor: '#F9FAFB', minHeight: '100vh', padding: '24px' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="bg-canvas min-h-screen p-6">
+      <div className="max-w-[1400px] mx-auto">
         {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: NAVY, margin: 0 }}>
-            Financial Optimization Dashboard
-          </h1>
-          <p style={{ color: '#666', marginTop: '8px' }}>Maximize operational efficiency and profitability</p>
-        </div>
+        <PageHeader
+          eyebrow="Finance"
+          title="Financial Optimization Dashboard"
+          description="Maximize operational efficiency and profitability."
+        />
 
         {error && (
           <div
@@ -559,7 +559,7 @@ export default function FinancialOptimizationPage() {
             Profit Optimization Log
           </h2>
           {optimizationLog.length > 0 ? (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${NAVY}` }}>
@@ -588,9 +588,12 @@ export default function FinancialOptimizationPage() {
               </table>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '32px', color: '#9CA3AF' }}>
-              No optimization actions have been implemented yet.
-            </div>
+            <EmptyState
+              icon={<LineChart className="w-8 h-8 text-fg-subtle" />}
+              title="No financial data yet"
+              description="No optimization actions have been implemented yet."
+              size="compact"
+            />
           )}
         </div>
       </div>

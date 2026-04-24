@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ShoppingCart, Receipt, Wallet, Activity } from 'lucide-react';
+import { PageHeader } from '@/components/ui';
+import EmptyState from '@/components/ui/EmptyState';
 
 // Types — matched to /api/ops/ai-orders response schema
 interface PORecommendation {
@@ -474,16 +477,15 @@ export default function AIOrderCommandCenter() {
           ) : recommendations.length === 0 ? (
             <div
               style={{
-                textAlign: 'center',
-                padding: '40px 20px',
                 backgroundColor: LIGHT_GRAY,
                 borderRadius: '8px',
-                color: '#999',
               }}
             >
-              <p style={{ fontSize: '16px', margin: 0 }}>
-                No PO recommendations at this time
-              </p>
+              <EmptyState
+                icon={<Receipt className="w-8 h-8 text-fg-subtle" />}
+                title="No POs to display"
+                description="No PO recommendations at this time"
+              />
             </div>
           ) : (
             <div
@@ -760,14 +762,15 @@ export default function AIOrderCommandCenter() {
           ) : receivedOrders.length === 0 ? (
             <div
               style={{
-                textAlign: 'center',
-                padding: '40px 20px',
                 backgroundColor: LIGHT_GRAY,
                 borderRadius: '8px',
-                color: '#999',
               }}
             >
-              <p style={{ fontSize: '16px', margin: 0 }}>No received orders</p>
+              <EmptyState
+                icon={<ShoppingCart className="w-8 h-8 text-fg-subtle" />}
+                title="No orders found"
+                description="No received orders awaiting confirmation"
+              />
             </div>
           ) : (
             <div
@@ -982,14 +985,15 @@ export default function AIOrderCommandCenter() {
           ) : creditAlerts.length === 0 ? (
             <div
               style={{
-                textAlign: 'center',
-                padding: '40px 20px',
                 backgroundColor: LIGHT_GRAY,
                 borderRadius: '8px',
-                color: '#999',
               }}
             >
-              <p style={{ fontSize: '16px', margin: 0 }}>All vendor credits are healthy</p>
+              <EmptyState
+                icon={<Wallet className="w-8 h-8 text-fg-subtle" />}
+                title="All vendor credits are healthy"
+                description="No credit warnings to review"
+              />
             </div>
           ) : (
             <div
@@ -1112,16 +1116,15 @@ export default function AIOrderCommandCenter() {
 
           <div
             style={{
-              textAlign: 'center',
-              padding: '40px 20px',
               backgroundColor: LIGHT_GRAY,
               borderRadius: '8px',
-              color: '#999',
             }}
           >
-            <p style={{ fontSize: '16px', margin: 0 }}>
-              Activity log will populate as orders are created and confirmed
-            </p>
+            <EmptyState
+              icon={<Activity className="w-8 h-8 text-fg-subtle" />}
+              title="No activity yet"
+              description="Activity log will populate as orders are created and confirmed"
+            />
           </div>
         </div>
       </div>

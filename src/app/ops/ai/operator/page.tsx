@@ -194,7 +194,7 @@ export default function AIOperatorPage() {
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '700', color: COLORS.navy, margin: 0 }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '600', color: COLORS.navy, margin: 0 }}>
             Good morning, Nate
           </h1>
           <button

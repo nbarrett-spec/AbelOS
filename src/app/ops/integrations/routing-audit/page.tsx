@@ -181,7 +181,7 @@ export default function RoutingAuditPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Integration Routing Audit</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Integration Routing Audit</h1>
           <p className="text-sm text-gray-500 mt-1">
             Complete data flow map across all integrations &middot; Audited {formatDate(data.auditTimestamp)}
           </p>
@@ -656,7 +656,7 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
   }
   return (
     <div className={`rounded-lg p-3 ${colorMap[color] || colorMap.blue}`}>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-2xl font-semibold">{value}</p>
       <p className="text-[10px] font-medium opacity-70 uppercase tracking-wide">{label}</p>
     </div>
   )

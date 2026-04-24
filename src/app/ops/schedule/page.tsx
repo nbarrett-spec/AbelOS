@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { CalendarDays } from 'lucide-react'
+import { EmptyState, PageHeader } from '@/components/ui'
 import { CreateScheduleModal } from '../components/CreateScheduleModal'
 import { ScheduleEntryModal } from '../components/ScheduleEntryModal'
 
@@ -179,12 +181,10 @@ export default function SchedulePage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Schedule & Dispatch</h1>
-            <p className="text-sm text-gray-500 mt-1">Loading schedule...</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Schedule & Dispatch"
+          description="Loading schedule..."
+        />
         <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
           <p className="text-lg">Loading schedule data...</p>
         </div>
@@ -195,28 +195,26 @@ export default function SchedulePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule & Dispatch</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Delivery routes, install crews, and pickup scheduling
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#27AE60] text-white rounded-lg hover:bg-[#229954]"
-          >
-            + Schedule Delivery
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28]"
-          >
-            + Schedule Install
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Schedule & Dispatch"
+        description="Delivery routes, install crews, and pickup scheduling"
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-3 py-1.5 text-sm bg-data-positive text-white rounded-lg hover:bg-data-positive/90"
+            >
+              + Schedule Delivery
+            </button>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-3 py-1.5 text-sm bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover"
+            >
+              + Schedule Install
+            </button>
+          </div>
+        }
+      />
 
       {/* View toggle & navigation */}
       <div className="bg-white rounded-xl border p-4 flex items-center justify-between">
@@ -230,7 +228,7 @@ export default function SchedulePage() {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="px-2 py-1 text-xs font-semibold text-[#C6A24E] border border-[#C6A24E]/30 rounded hover:bg-[#C6A24E]/5 transition"
+              className="px-2 py-1 text-xs font-semibold text-signal border border-signal/30 rounded hover:bg-signal/5 transition"
             >
               Today
             </button>
@@ -267,7 +265,7 @@ export default function SchedulePage() {
               onClick={() => setView(v)}
               className={`px-3 py-1.5 text-sm rounded-lg capitalize ${
                 view === v
-                  ? 'bg-[#0f2a3e] text-white'
+                  ? 'bg-signal text-fg-on-accent'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -281,28 +279,28 @@ export default function SchedulePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold">Today&apos;s Deliveries</p>
-          <p className="text-2xl font-bold text-[#0f2a3e] mt-1">{todayDeliveries}</p>
+          <p className="text-2xl font-semibold text-signal mt-1">{todayDeliveries}</p>
           <p className="text-xs text-gray-400 mt-1">
             {todayEntries.length > 0 ? `${todayEntries.length} total entries` : 'No entries'}
           </p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold">Today&apos;s Installs</p>
-          <p className="text-2xl font-bold text-[#27AE60] mt-1">{todayInstalls}</p>
+          <p className="text-2xl font-semibold text-data-positive mt-1">{todayInstalls}</p>
           <p className="text-xs text-gray-400 mt-1">
             {todayEntries.filter((e) => e.entryType === 'INSTALLATION').length} installs assigned
           </p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold">This Week</p>
-          <p className="text-2xl font-bold text-[#C6A24E] mt-1">{weekDeliveries + weekInstalls}</p>
+          <p className="text-2xl font-semibold text-signal mt-1">{weekDeliveries + weekInstalls}</p>
           <p className="text-xs text-gray-400 mt-1">
             {weekDeliveries} deliveries, {weekInstalls} installs
           </p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase font-semibold">Active Crews</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{crews.length}</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{crews.length}</p>
           <p className="text-xs text-gray-400 mt-1">
             {crewSummaries.reduce((sum, c) => sum + c.count, 0)} entries assigned
           </p>
@@ -317,9 +315,9 @@ export default function SchedulePage() {
               key={crew.name}
               className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-3"
             >
-              <p className="text-sm font-semibold text-[#0f2a3e]">{crew.name}</p>
+              <p className="text-sm font-semibold text-signal">{crew.name}</p>
               <p className="text-xs text-gray-600 mb-2">{crew.crewType}</p>
-              <p className="text-2xl font-bold text-[#C6A24E]">{crew.count}</p>
+              <p className="text-2xl font-semibold text-signal">{crew.count}</p>
               <p className="text-xs text-gray-500">entries this week</p>
             </div>
           ))}
@@ -342,13 +340,13 @@ export default function SchedulePage() {
               <div
                 key={d.day}
                 className={`text-center py-4 border-r last:border-r-0 ${
-                  d.isToday ? 'bg-[#0f2a3e]/10' : 'bg-gray-50'
+                  d.isToday ? 'bg-signal/10' : 'bg-gray-50'
                 }`}
               >
                 <p className="text-xs text-gray-500 uppercase font-semibold">{d.day}</p>
                 <p
-                  className={`text-lg font-bold ${
-                    d.isToday ? 'text-[#C6A24E]' : 'text-gray-900'
+                  className={`text-lg font-semibold ${
+                    d.isToday ? 'text-signal' : 'text-gray-900'
                   }`}
                 >
                   {d.date}
@@ -370,8 +368,8 @@ export default function SchedulePage() {
                     return (
                       <div
                         key={`${hour}-${dayIndex}`}
-                        className={`border-r last:border-r-0 px-1 py-1 hover:bg-gray-50 cursor-pointer ${
-                          d.isToday ? 'bg-[#0f2a3e]/[0.02]' : ''
+                        className={`border-r last:border-r-0 px-1 py-1 hover:bg-row-hover cursor-pointer ${
+                          d.isToday ? 'bg-signal/[0.02]' : ''
                         }`}
                       >
                         {dayIndex === 0 && (
@@ -403,11 +401,12 @@ export default function SchedulePage() {
               ))}
             </div>
           ) : (
-            <div className="text-center text-gray-400 text-sm py-8 border-t">
-              <p>No schedule entries for this week</p>
-              <p className="text-xs mt-1">
-                Deliveries and installs will appear on the calendar as jobs are scheduled
-              </p>
+            <div className="border-t">
+              <EmptyState
+                icon={<CalendarDays className="w-8 h-8 text-fg-subtle" />}
+                title="Nothing on the schedule"
+                description="Deliveries and installs will appear on the calendar as jobs are scheduled."
+              />
             </div>
           )}
         </div>
@@ -431,7 +430,7 @@ export default function SchedulePage() {
               </thead>
               <tbody>
                 {entries.map((entry) => (
-                  <tr key={entry.id} onClick={() => handleEntryClick(entry)} className="border-b hover:bg-gray-50 cursor-pointer">
+                  <tr key={entry.id} onClick={() => handleEntryClick(entry)} className="border-b hover:bg-row-hover cursor-pointer">
                     <td className="px-4 py-3 text-sm">
                       <span
                         className="inline-block px-2 py-1 rounded text-white text-xs font-semibold"
@@ -468,12 +467,12 @@ export default function SchedulePage() {
       )}
 
       {view === 'list' && entries.length === 0 && (
-        <div className="bg-white rounded-xl border p-8 text-center text-gray-400">
-          <p className="text-4xl mb-3">📋</p>
-          <p className="font-medium">No upcoming schedule entries</p>
-          <p className="text-xs mt-2">
-            Schedule deliveries and installs to see them listed here with route details
-          </p>
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <EmptyState
+            icon={<CalendarDays className="w-8 h-8 text-fg-subtle" />}
+            title="Nothing on the schedule"
+            description="Schedule deliveries and installs to see them listed here with route details."
+          />
         </div>
       )}
 
@@ -492,7 +491,7 @@ export default function SchedulePage() {
           {todayEntries.length > 0 ? (
             <div className="divide-y">
               {todayEntries.map((entry) => (
-                <div key={entry.id} onClick={() => handleEntryClick(entry)} className="p-4 hover:bg-gray-50 cursor-pointer">
+                <div key={entry.id} onClick={() => handleEntryClick(entry)} className="p-4 hover:bg-row-hover cursor-pointer">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-semibold text-gray-900">{entry.title}</p>
@@ -523,10 +522,11 @@ export default function SchedulePage() {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center text-gray-400">
-              <p className="text-4xl mb-3">📅</p>
-              <p className="font-medium">No deliveries or installs scheduled for today</p>
-            </div>
+            <EmptyState
+              icon={<CalendarDays className="w-8 h-8 text-fg-subtle" />}
+              title="Nothing on the schedule"
+              description="No deliveries or installs scheduled for today."
+            />
           )}
         </div>
       )}

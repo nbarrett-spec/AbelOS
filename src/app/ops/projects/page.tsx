@@ -12,6 +12,7 @@ import {
   Modal,
 } from '@/components/ui'
 import Link from 'next/link'
+import { FolderKanban } from 'lucide-react'
 
 interface CommandRow {
   projectId: string
@@ -253,6 +254,7 @@ export default function ProjectsCommandCenter() {
         <div className="space-y-5">
           {!filteredGroups?.length && !loading && (
             <EmptyState
+              icon={<FolderKanban />}
               title="No active jobs"
               description="No jobs in the active pipeline for this view. Try switching the PM filter or check back after new orders are booked."
             />

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Package } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface ProductInventory {
   id: string
@@ -301,7 +303,7 @@ export default function AllocationManagementPage() {
             <p style={{ color: '#6B7280', fontSize: '12px', fontWeight: '500', marginBottom: '8px' }}>
               {card.label}
             </p>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', color: card.color }}>
+            <p style={{ fontSize: '24px', fontWeight: 600, color: card.color }}>
               {card.value}
             </p>
           </div>
@@ -369,9 +371,11 @@ export default function AllocationManagementPage() {
                 Loading allocations...
               </div>
             ) : allocations.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>
-                No allocations found
-              </div>
+              <EmptyState
+                size="compact"
+                icon={<Package className="w-6 h-6 text-fg-subtle" />}
+                title="No items match your filters"
+              />
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>

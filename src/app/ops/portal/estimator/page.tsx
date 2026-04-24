@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { ClipboardCheck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PortalData {
   summary: {
@@ -63,18 +66,15 @@ export default function EstimatorPortalPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Estimator Portal</h1>
-          <p className="text-gray-600 mt-1">Takeoffs, quotes, and estimates</p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        title="Estimator Portal"
+        description="Takeoffs, quotes, and estimates"
+        actions={
           <Link href="/ops/portal/estimator/briefing" className="px-4 py-2 bg-[#16A085] text-white rounded-lg hover:bg-[#138D75] transition-colors text-sm font-medium">
             📋 Morning Briefing
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -117,17 +117,19 @@ export default function EstimatorPortalPage() {
         {/* Takeoffs Awaiting Review */}
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Takeoffs Awaiting Review</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Takeoffs Awaiting Review</h2>
             <Link href="/ops/takeoffs" className="text-sm text-[#16A085] hover:text-[#138D75]">
               View All →
             </Link>
           </div>
 
           {!data || data.takeoffsToReview.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">📋</p>
-              <p>No takeoffs to review</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<ClipboardCheck className="w-6 h-6 text-fg-subtle" />}
+              title="No takeoffs to review"
+              description="Takeoffs awaiting your review will appear here."
+            />
           ) : (
             <div className="space-y-3">
               {data.takeoffsToReview.slice(0, 6).map((t: any) => (
@@ -155,17 +157,19 @@ export default function EstimatorPortalPage() {
         {/* Quotes Expiring */}
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Quotes Expiring Soon</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Quotes Expiring Soon</h2>
             <Link href="/ops/quotes" className="text-sm text-[#16A085] hover:text-[#138D75]">
               View All →
             </Link>
           </div>
 
           {!data || data.quotesExpiring.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-3xl mb-2">✅</p>
-              <p>No quotes expiring soon</p>
-            </div>
+            <EmptyState
+              size="compact"
+              icon={<ClipboardCheck className="w-6 h-6 text-fg-subtle" />}
+              title="No quotes expiring soon"
+              description="All quotes are within their valid window."
+            />
           ) : (
             <div className="space-y-3">
               {data.quotesExpiring.slice(0, 6).map((q: any) => (
@@ -194,7 +198,7 @@ export default function EstimatorPortalPage() {
       {/* New Requests Today */}
       {data && data.newRequests.length > 0 && (
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">New Requests Today</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">New Requests Today</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {data.newRequests.map((req: any) => (
               <Link

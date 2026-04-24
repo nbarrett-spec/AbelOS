@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Bell } from 'lucide-react'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface Notification {
   id: string
@@ -233,25 +236,22 @@ export default function NotificationsPage() {
 
   return (
     <div className="h-full flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          {unreadCount > 0 && (
-            <p className="text-sm text-gray-500 mt-1">
-              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-            </p>
-          )}
-        </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={handleMarkAllRead}
-            className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Mark all read
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Notifications"
+        description={unreadCount > 0
+          ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
+          : undefined}
+        actions={
+          unreadCount > 0 ? (
+            <button
+              onClick={handleMarkAllRead}
+              className="px-4 py-2 text-sm font-medium text-fg-muted border border-border rounded-lg hover:bg-row-hover transition-colors"
+            >
+              Mark all read
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -261,8 +261,8 @@ export default function NotificationsPage() {
             onClick={() => setSelectedFilter(filterType as any)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
               selectedFilter === filterType
-                ? 'bg-[#C6A24E] text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
+                ? 'bg-signal text-fg-on-accent'
+                : 'bg-surface-elev text-fg-muted border border-border hover:border-border-strong'
             }`}
           >
             {filterType === 'All' ? 'All' : NOTIFICATION_CONFIG[filterType as NotificationType].label}
@@ -271,20 +271,19 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notifications */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-lg border border-gray-200">
+      <div className="flex-1 overflow-y-auto bg-surface-elev rounded-lg border border-border">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-fg-muted">
             <p>Loading notifications...</p>
           </div>
         ) : Object.values(groupedNotifications).every(g => g.length === 0) ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="text-center">
-              <p className="text-lg font-medium">No notifications</p>
-              <p className="text-sm mt-2">You're all caught up!</p>
-            </div>
-          </div>
+          <EmptyState
+            icon={<Bell className="w-8 h-8 text-fg-subtle" />}
+            title="No notifications"
+            description="You're all caught up!"
+          />
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-border">
             {['Today', 'Yesterday', 'Earlier'].map(dateGroup => {
               const notifs = groupedNotifications[dateGroup]
               if (notifs.length === 0) return null
@@ -292,8 +291,8 @@ export default function NotificationsPage() {
               return (
                 <div key={dateGroup}>
                   {/* Date header */}
-                  <div className="sticky top-0 bg-gray-50 px-6 py-3 border-b border-gray-200">
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <div className="sticky top-0 bg-surface-muted px-6 py-3 border-b border-border">
+                    <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
                       {dateGroup}
                     </h3>
                   </div>
@@ -305,10 +304,10 @@ export default function NotificationsPage() {
                       <button
                         key={notification.id}
                         onClick={() => handleNotificationClick(notification)}
-                        className={`w-full text-left px-6 py-4 border-l-4 transition-all hover:bg-gray-50 ${
+                        className={`w-full text-left px-6 py-4 border-l-4 transition-all hover:bg-row-hover ${
                           notification.read
-                            ? 'border-transparent bg-white'
-                            : 'border-[#C6A24E] bg-orange-50/30'
+                            ? 'border-transparent bg-surface-elev'
+                            : 'border-signal bg-signal-subtle/30'
                         } ${notification.link ? 'cursor-pointer' : ''}`}
                       >
                         <div className="flex gap-4">
@@ -328,18 +327,18 @@ export default function NotificationsPage() {
                                 <h4
                                   className={`font-semibold ${
                                     notification.read
-                                      ? 'text-gray-700'
-                                      : 'text-gray-900'
+                                      ? 'text-fg-muted'
+                                      : 'text-fg'
                                   }`}
                                 >
                                   {notification.title}
                                 </h4>
-                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                <p className="text-sm text-fg-muted mt-1 line-clamp-2">
                                   {notification.body}
                                 </p>
                               </div>
                               {!notification.read && (
-                                <div className="w-2 h-2 rounded-full bg-[#C6A24E] flex-shrink-0 mt-2" />
+                                <div className="w-2 h-2 rounded-full bg-signal flex-shrink-0 mt-2" />
                               )}
                             </div>
 
@@ -352,7 +351,7 @@ export default function NotificationsPage() {
                                   {config.label}
                                 </span>
                               </div>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-fg-subtle">
                                 {getRelativeTime(notification.timestamp)}
                               </span>
                             </div>

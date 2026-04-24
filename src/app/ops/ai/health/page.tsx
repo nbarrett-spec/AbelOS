@@ -36,8 +36,8 @@ function HealthGauge({ score, grade }: { score: number; grade: string }) {
         <circle cx="90" cy="90" r="70" fill="none" stroke={color} strokeWidth="14"
           strokeDasharray={circumference} strokeDashoffset={offset}
           strokeLinecap="round" transform="rotate(-90 90 90)" />
-        <text x="90" y="78" textAnchor="middle" fontSize="36" fontWeight="800" fill={color}>{score}</text>
-        <text x="90" y="105" textAnchor="middle" fontSize="22" fontWeight="700" fill={color}>{grade}</text>
+        <text x="90" y="78" textAnchor="middle" fontSize="36" fontWeight="700" fill={color}>{score}</text>
+        <text x="90" y="105" textAnchor="middle" fontSize="22" fontWeight="600" fill={color}>{grade}</text>
         <text x="90" y="125" textAnchor="middle" fontSize="11" fill="#999">/ 100</text>
       </svg>
     </div>
@@ -82,7 +82,7 @@ export default function HealthMonitorPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Business Health Monitor</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0f2a3e', marginBottom: 4 }}>Business Health Monitor</h1>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>AI-powered business health scoring, anomaly detection, and actionable intelligence</p>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -170,7 +170,7 @@ function ScorecardsView({ data }: { data: any }) {
   const d = data.departments || {}
   const CardSection = ({ title, color, items }: { title: string; color: string; items: { label: string; value: any }[] }) => (
     <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderTop: `4px solid ${color}` }}>
-      <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700, color }}>{title}</h3>
+      <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600, color }}>{title}</h3>
       {items.map(item => (
         <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0', fontSize: 14 }}>
           <span style={{ color: '#555' }}>{item.label}</span>

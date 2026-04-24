@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Factory } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface StagingJob {
   id: string
@@ -67,7 +70,7 @@ export default function StagingPage() {
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
-          <p className="mt-4 text-gray-600">Loading staging area...</p>
+          <p className="mt-4 text-fg-muted">Loading staging area...</p>
         </div>
       </div>
     )
@@ -75,21 +78,18 @@ export default function StagingPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Staging Area</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage job staging workflow from production through loading
-          </p>
-        </div>
-        <Link
-          href="/ops/manufacturing"
-          className="text-xs text-[#0f2a3e] hover:underline"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
+      <PageHeader
+        title="Staging Area"
+        description="Manage job staging workflow from production through loading"
+        actions={
+          <Link
+            href="/ops/manufacturing"
+            className="text-xs text-[#0f2a3e] hover:underline"
+          >
+            ← Back to Dashboard
+          </Link>
+        }
+      />
 
       {/* Error message */}
       {error && (
@@ -127,16 +127,18 @@ export default function StagingPage() {
           <div className="w-[380px] flex-shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-purple-500" />
-              <span className="font-semibold text-gray-900">In Production</span>
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+              <span className="font-semibold text-fg">In Production</span>
+              <span className="text-xs font-medium text-fg-subtle bg-gray-100 px-2 py-0.5 rounded">
                 {jobsByStatus.IN_PRODUCTION.length}
               </span>
             </div>
             <div className="bg-gray-100/50 rounded-lg min-h-[600px] p-3 border border-dashed border-gray-300 space-y-2">
               {jobsByStatus.IN_PRODUCTION.length === 0 ? (
-                <div className="text-center text-xs text-gray-400 pt-8">
-                  No jobs in production
-                </div>
+                <EmptyState
+                  size="compact"
+                  icon={<Factory className="w-6 h-6 text-fg-subtle" />}
+                  title="No jobs in production"
+                />
               ) : (
                 jobsByStatus.IN_PRODUCTION.map((job) => (
                   <JobCard
@@ -154,14 +156,14 @@ export default function StagingPage() {
           <div className="w-[380px] flex-shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-yellow-500" />
-              <span className="font-semibold text-gray-900">Staged</span>
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+              <span className="font-semibold text-fg">Staged</span>
+              <span className="text-xs font-medium text-fg-subtle bg-gray-100 px-2 py-0.5 rounded">
                 {jobsByStatus.STAGED.length}
               </span>
             </div>
             <div className="bg-gray-100/50 rounded-lg min-h-[600px] p-3 border border-dashed border-gray-300 space-y-2">
               {jobsByStatus.STAGED.length === 0 ? (
-                <div className="text-center text-xs text-gray-400 pt-8">
+                <div className="text-center text-xs text-fg-subtle pt-8">
                   No jobs staged
                 </div>
               ) : (
@@ -181,14 +183,14 @@ export default function StagingPage() {
           <div className="w-[380px] flex-shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="font-semibold text-gray-900">Loaded</span>
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+              <span className="font-semibold text-fg">Loaded</span>
+              <span className="text-xs font-medium text-fg-subtle bg-gray-100 px-2 py-0.5 rounded">
                 {jobsByStatus.LOADED.length}
               </span>
             </div>
             <div className="bg-gray-100/50 rounded-lg min-h-[600px] p-3 border border-dashed border-gray-300 space-y-2">
               {jobsByStatus.LOADED.length === 0 ? (
-                <div className="text-center text-xs text-gray-400 pt-8">
+                <div className="text-center text-xs text-fg-subtle pt-8">
                   No jobs loaded
                 </div>
               ) : (
@@ -234,8 +236,8 @@ function SummaryCard({
     <div className={`${color} border rounded-xl p-4`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-600">{label}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
+          <p className="text-xs text-fg-muted">{label}</p>
+          <p className="text-2xl font-semibold text-fg mt-1">{count}</p>
         </div>
         <div className="text-3xl">{icon}</div>
       </div>
@@ -309,16 +311,16 @@ function JobCard({
         </div>
       )}
       <Link href={`/ops/jobs/${job.id}`} className="block mb-2">
-        <p className="text-xs font-bold text-gray-900 hover:text-[#0f2a3e]">{job.jobNumber}</p>
-        <p className="text-xs text-gray-600">{job.builderName}</p>
+        <p className="text-xs font-semibold text-fg hover:text-[#0f2a3e]">{job.jobNumber}</p>
+        <p className="text-xs text-fg-muted">{job.builderName}</p>
       </Link>
 
       {job.community && (
-        <p className="text-xs text-gray-500 mb-2">{job.community}</p>
+        <p className="text-xs text-fg-subtle mb-2">{job.community}</p>
       )}
 
       {job.scheduledDate && (
-        <p className="text-xs text-gray-600 mb-2">
+        <p className="text-xs text-fg-muted mb-2">
           Scheduled: {new Date(job.scheduledDate).toLocaleDateString()}
         </p>
       )}
@@ -326,19 +328,19 @@ function JobCard({
       {/* Pick Progress */}
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-gray-600">Items Complete</span>
-          <span className="text-xs font-medium text-gray-700">{Math.round(pickProgress)}%</span>
+          <span className="text-xs text-fg-muted">Items Complete</span>
+          <span className="text-xs font-medium text-fg-muted">{Math.round(pickProgress)}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-1.5">
           <div
-            className="bg-[#C6A24E] h-1.5 rounded-full transition-all"
+            className="bg-signal h-1.5 rounded-full transition-all"
             style={{ width: `${pickProgress}%` }}
           />
         </div>
       </div>
 
       {/* Materials Summary */}
-      <div className="text-xs text-gray-600 mb-3 space-y-0.5">
+      <div className="text-xs text-fg-muted mb-3 space-y-0.5">
         <p>{job.materialPicksCount} items • {job.materialPicks.length} picked</p>
       </div>
 
@@ -350,7 +352,7 @@ function JobCard({
           className={`w-full px-2 py-1 rounded text-xs font-medium transition-colors ${
             allPicksReady
               ? 'bg-[#0f2a3e] text-white hover:bg-[#0a1a28]'
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-gray-200 text-fg-subtle cursor-not-allowed'
           } disabled:opacity-50`}
         >
           {isUpdating ? 'Updating...' : status === 'IN_PRODUCTION' ? 'Move to Staging' : 'Confirm Load'}

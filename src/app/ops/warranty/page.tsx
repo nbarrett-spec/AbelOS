@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { ShieldCheck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface WarrantyClaim {
   id: string
@@ -241,59 +244,58 @@ export default function WarrantyDashboard() {
     <div>
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-surface-elevated'
         }`}>
           {toast}
         </div>
       )}
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Warranty Center</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage warranty claims, policies, and inspections</p>
-        </div>
-        <div className="flex gap-3">
-          <Link
-            href="/ops/warranty/policies"
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Manage Policies
-          </Link>
-          <button
-            onClick={() => setShowNewClaimModal(true)}
-            className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]"
-          >
-            + New Claim
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Warranty Center"
+        description="Manage warranty claims, policies, and inspections"
+        actions={
+          <>
+            <Link
+              href="/ops/warranty/policies"
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Manage Policies
+            </Link>
+            <button
+              onClick={() => setShowNewClaimModal(true)}
+              className="px-4 py-2 bg-signal text-white rounded-lg text-sm font-medium hover:bg-signal-hover"
+            >
+              + New Claim
+            </button>
+          </>
+        }
+      />
 
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl border p-4">
             <p className="text-[10px] font-semibold text-gray-400 uppercase">Open Claims</p>
-            <p className="text-2xl font-bold text-[#1B2A4A]">{openCount}</p>
+            <p className="text-2xl font-semibold text-[#1B2A4A]">{openCount}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-[10px] font-semibold text-gray-400 uppercase">Submitted</p>
-            <p className="text-2xl font-bold text-blue-600">{Number(stats.submitted || 0)}</p>
+            <p className="text-2xl font-semibold text-blue-600">{Number(stats.submitted || 0)}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-[10px] font-semibold text-gray-400 uppercase">In Progress</p>
-            <p className="text-2xl font-bold text-orange-600">{Number(stats.in_progress || 0) + Number(stats.under_review || 0)}</p>
+            <p className="text-2xl font-semibold text-orange-600">{Number(stats.in_progress || 0) + Number(stats.under_review || 0)}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-[10px] font-semibold text-gray-400 uppercase">Resolved</p>
-            <p className="text-2xl font-bold text-emerald-600">{Number(stats.resolved || 0)}</p>
+            <p className="text-2xl font-semibold text-emerald-600">{Number(stats.resolved || 0)}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-[10px] font-semibold text-gray-400 uppercase">Urgent</p>
-            <p className="text-2xl font-bold text-red-600">{Number(stats.urgent || 0)}</p>
+            <p className="text-2xl font-semibold text-red-600">{Number(stats.urgent || 0)}</p>
           </div>
           <div className="bg-white rounded-xl border p-4">
             <p className="text-[10px] font-semibold text-gray-400 uppercase">Total Cost</p>
-            <p className="text-2xl font-bold text-gray-900">${Number(stats.total_cost || 0).toLocaleString()}</p>
+            <p className="text-2xl font-semibold text-gray-900">${Number(stats.total_cost || 0).toLocaleString()}</p>
           </div>
         </div>
       )}
@@ -345,10 +347,11 @@ export default function WarrantyDashboard() {
         {loading ? (
           <div className="p-12 text-center text-gray-400">Loading claims...</div>
         ) : claims.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-gray-400 text-lg mb-2">No warranty claims found</p>
-            <p className="text-gray-300 text-sm">Claims submitted by builders or staff will appear here</p>
-          </div>
+          <EmptyState
+            icon={<ShieldCheck className="w-8 h-8 text-fg-subtle" />}
+            title="No warranty claims found"
+            description="Claims submitted by builders or staff will appear here"
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px]">
@@ -371,7 +374,7 @@ export default function WarrantyDashboard() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openClaimDetail(claim)}
-                        className="text-[#C6A24E] hover:text-[#d46711] font-medium text-sm"
+                        className="text-signal hover:text-signal-hover font-medium text-sm"
                       >
                         {claim.claimNumber}
                       </button>
@@ -427,7 +430,7 @@ export default function WarrantyDashboard() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 mb-8">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">{selectedClaim.claimNumber}</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{selectedClaim.claimNumber}</h3>
                 <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${STATUS_COLORS[selectedClaim.status]}`}>
                   {STATUS_LABELS[selectedClaim.status]}
                 </span>
@@ -513,7 +516,7 @@ export default function WarrantyDashboard() {
                     rows={2} className="border rounded px-2 py-1 text-sm w-full" placeholder="Add internal notes..." />
                 </div>
                 <button onClick={handleSaveEdits} disabled={saving}
-                  className="mt-2 px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-xs font-medium hover:bg-[#0a1a28] disabled:opacity-50">
+                  className="mt-2 px-3 py-1.5 bg-surface-elevated text-white rounded text-xs font-medium hover:bg-surface disabled:opacity-50">
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -570,7 +573,7 @@ export default function WarrantyDashboard() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-16 overflow-auto">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 mb-8">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="text-lg font-bold text-gray-900">New Warranty Claim</h3>
+              <h3 className="text-lg font-semibold text-gray-900">New Warranty Claim</h3>
               <button onClick={() => setShowNewClaimModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
             </div>
             <form onSubmit={handleCreateClaim} className="px-6 py-4 space-y-4 max-h-[65vh] overflow-y-auto">
@@ -658,7 +661,7 @@ export default function WarrantyDashboard() {
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={() => setShowNewClaimModal(false)} className="px-4 py-2 border rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#d46711]">Submit Claim</button>
+                <button type="submit" className="px-4 py-2 bg-signal text-white rounded-lg text-sm font-medium hover:bg-signal-hover">Submit Claim</button>
               </div>
             </form>
           </div>

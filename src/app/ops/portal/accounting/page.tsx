@@ -176,7 +176,7 @@ export default function AccountingCommandCenter() {
         <div className="text-center py-12">
           <div className="text-4xl mb-4">⚠️</div>
           <p className="text-gray-600 font-medium">{error}</p>
-          <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] text-sm">
+          <button onClick={() => { setError(null); window.location.reload() }} className="mt-4 px-4 py-2 bg-surface-elev text-white rounded-lg hover:bg-surface text-sm">
             Retry
           </button>
         </div>
@@ -191,7 +191,7 @@ export default function AccountingCommandCenter() {
         <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-3">
-              <h1 className="text-3xl font-bold text-white">Accounting Command Center</h1>
+              <h1 className="text-3xl font-semibold text-white">Accounting Command Center</h1>
               <span className="text-signal-hover text-sm font-semibold">For: Dawn</span>
             </div>
             <div className="flex items-center gap-3">
@@ -337,7 +337,7 @@ export default function AccountingCommandCenter() {
             {/* Revenue vs Expenses */}
             {overview && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h2 className="text-white text-lg font-bold mb-6">Revenue vs Expenses</h2>
+                <h2 className="text-white text-lg font-semibold mb-6">Revenue vs Expenses</h2>
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between mb-2">
@@ -367,7 +367,7 @@ export default function AccountingCommandCenter() {
             {/* Invoice Status Breakdown */}
             {overview && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h2 className="text-white text-lg font-bold mb-6">Invoice Status Breakdown</h2>
+                <h2 className="text-white text-lg font-semibold mb-6">Invoice Status Breakdown</h2>
                 <div className="space-y-4">
                   <div className="h-8 bg-gray-800 rounded-full overflow-hidden flex">
                     {Object.entries(overview.invoiceStatusCounts).map(([status, count]: [string, number]) => {
@@ -398,7 +398,7 @@ export default function AccountingCommandCenter() {
             {/* Top Outstanding Builders */}
             {overview && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h2 className="text-white text-lg font-bold mb-6">Top Outstanding Builders</h2>
+                <h2 className="text-white text-lg font-semibold mb-6">Top Outstanding Builders</h2>
                 <div className="space-y-3">
                   {overview.topBuilders.map((builder: { name: string; balance: number; id: string }) => (
                     <div key={builder.id} className="flex items-center justify-between bg-gray-800/30 border border-gray-700 rounded-lg p-4 hover:bg-gray-800/50 transition-colors">
@@ -419,7 +419,7 @@ export default function AccountingCommandCenter() {
             {/* Recent Payments */}
             {overview && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h2 className="text-white text-lg font-bold mb-6">Recent Payments</h2>
+                <h2 className="text-white text-lg font-semibold mb-6">Recent Payments</h2>
                 <div className="space-y-3">
                   {overview.recentPayments.map((payment: { id: string; invoiceNumber: string; builder: string; amount: number; date: string; method: string }) => (
                     <div key={payment.id} className="flex items-center justify-between bg-gray-800/30 border border-gray-700 rounded-lg p-4">
@@ -446,7 +446,7 @@ export default function AccountingCommandCenter() {
             {/* AI Financial Assistant */}
             {aiPanelOpen && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col h-96">
-                <h2 className="text-white text-lg font-bold mb-4">AI Financial Assistant</h2>
+                <h2 className="text-white text-lg font-semibold mb-4">AI Financial Assistant</h2>
                 <div className="flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-950/50 rounded-lg p-3">
                   {chatMessages.length === 0 && (
                     <div className="flex items-center justify-center h-full text-gray-500 text-sm text-center">
@@ -500,7 +500,7 @@ export default function AccountingCommandCenter() {
 
             {/* Quick Actions */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h2 className="text-white text-lg font-bold mb-4">Quick Actions</h2>
+              <h2 className="text-white text-lg font-semibold mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 gap-3">
                 <Link
                   href="/ops/invoices?action=create"
@@ -548,7 +548,7 @@ export default function AccountingCommandCenter() {
           {/* PO Status Summary */}
           {overview && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h2 className="text-white text-lg font-bold mb-6">PO Status Summary</h2>
+              <h2 className="text-white text-lg font-semibold mb-6">PO Status Summary</h2>
               <div className="flex flex-wrap gap-3">
                 {Object.entries(overview.poStatusCounts).map(([status, count]: [string, number]) => {
                   let colorClass = 'bg-gray-700 text-gray-200'
@@ -572,7 +572,7 @@ export default function AccountingCommandCenter() {
           {/* Upcoming AP */}
           {overview && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h2 className="text-white text-lg font-bold mb-6">Upcoming AP</h2>
+              <h2 className="text-white text-lg font-semibold mb-6">Upcoming AP</h2>
               <div className="space-y-3">
                 {overview.upcomingAP.map((item: { id: string; poNumber: string; vendor: string; amount: number; dueDate: string }) => (
                   <div key={item.id} className="flex items-center justify-between bg-gray-800/30 border border-gray-700 rounded-lg p-4">

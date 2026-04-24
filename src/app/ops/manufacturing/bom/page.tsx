@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { Wrench } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
+import PageHeader from '@/components/ui/PageHeader'
 
 export default function BOMManagementPage() {
   const [parents, setParents] = useState<any[]>([])
@@ -114,20 +117,20 @@ export default function BOMManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bill of Materials</h1>
-          <p className="text-gray-600 text-sm mt-1">Define component breakdowns for assembled products (prehung doors, etc.)</p>
-        </div>
-        <Link href="/ops/manufacturing" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">← Manufacturing Dashboard</Link>
-      </div>
+      <PageHeader
+        title="Bill of Materials"
+        description="Define component breakdowns for assembled products (prehung doors, etc.)"
+        actions={
+          <Link href="/ops/manufacturing" className="text-sm text-[#0f2a3e] hover:text-signal">← Manufacturing Dashboard</Link>
+        }
+      />
 
       {msg && <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700 text-sm">{msg}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Parent Products List */}
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="font-bold text-gray-900 mb-3">Parent Products with BOMs</h2>
+          <h2 className="font-semibold text-fg mb-3">Parent Products with BOMs</h2>
           <input
             type="text"
             placeholder="Search products..."
@@ -142,20 +145,20 @@ export default function BOMManagementPage() {
                 key={p.id}
                 onClick={() => loadBOM(p.id)}
                 className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                  selectedParent?.id === p.id ? 'border-[#0f2a3e] bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
+                  selectedParent?.id === p.id ? 'border-[#0f2a3e] bg-blue-50' : 'border-gray-200 hover:bg-row-hover'
                 }`}
               >
                 <p className="font-semibold text-sm">{p.name}</p>
-                <p className="text-xs text-gray-500">{p.sku} — {p.componentCount} components</p>
-                <p className="text-xs text-gray-400">Cost: ${p.totalComponentCost?.toFixed(2)}</p>
+                <p className="text-xs text-fg-subtle">{p.sku} — {p.componentCount} components</p>
+                <p className="text-xs text-fg-subtle">Cost: ${p.totalComponentCost?.toFixed(2)}</p>
               </button>
             ))}
-            {parents.length === 0 && <p className="text-gray-500 text-sm">No BOMs defined yet. Select a product to start.</p>}
+            {parents.length === 0 && <p className="text-fg-muted text-sm">No BOMs defined yet. Select a product to start.</p>}
           </div>
 
           {/* Quick-create: pick a product that doesn't have a BOM yet */}
           <div className="mt-4 pt-4 border-t">
-            <p className="text-xs text-gray-600 mb-2 font-medium">Set up BOM for:</p>
+            <p className="text-xs text-fg-muted mb-2 font-medium">Set up BOM for:</p>
             <div className="max-h-32 overflow-auto space-y-1">
               {potentialParents
                 .filter(pp => !parents.some(p => p.id === pp.id))
@@ -164,9 +167,9 @@ export default function BOMManagementPage() {
                   <button
                     key={pp.id}
                     onClick={() => { setSelectedParent(pp); setComponents([]) }}
-                    className="w-full text-left px-2 py-1 text-xs rounded hover:bg-gray-100"
+                    className="w-full text-left px-2 py-1 text-xs rounded hover:bg-surface-muted"
                   >
-                    {pp.name} <span className="text-gray-400">({pp.sku})</span>
+                    {pp.name} <span className="text-fg-subtle">({pp.sku})</span>
                   </button>
                 ))}
             </div>
@@ -178,21 +181,21 @@ export default function BOMManagementPage() {
           {selectedParent ? (
             <>
               <div className="bg-white rounded-xl border p-6">
-                <h2 className="font-bold text-gray-900">{selectedParent.name}</h2>
-                <p className="text-sm text-gray-500">{selectedParent.sku} — {selectedParent.category}</p>
+                <h2 className="font-semibold text-fg">{selectedParent.name}</h2>
+                <p className="text-sm text-fg-subtle">{selectedParent.sku} — {selectedParent.category}</p>
                 {selectedParent.basePrice && (
-                  <p className="text-sm text-gray-500 mt-1">Base Price: ${selectedParent.basePrice?.toFixed(2)} | Cost: ${selectedParent.cost?.toFixed(2)}</p>
+                  <p className="text-sm text-fg-subtle mt-1">Base Price: ${selectedParent.basePrice?.toFixed(2)} | Cost: ${selectedParent.cost?.toFixed(2)}</p>
                 )}
               </div>
 
               {/* Current Components */}
               <div className="bg-white rounded-xl border overflow-hidden">
                 <div className="bg-gray-50 px-6 py-3 border-b">
-                  <h3 className="font-bold text-gray-900">Components ({components.length})</h3>
+                  <h3 className="font-semibold text-fg">Components ({components.length})</h3>
                 </div>
                 {components.length > 0 ? (
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+                    <thead className="bg-gray-50 text-fg-muted text-xs uppercase">
                       <tr>
                         <th className="px-4 py-2 text-left">Type</th>
                         <th className="px-4 py-2 text-left">Component</th>
@@ -205,12 +208,12 @@ export default function BOMManagementPage() {
                     </thead>
                     <tbody className="divide-y">
                       {components.map((c) => (
-                        <tr key={c.id} className="hover:bg-gray-50">
+                        <tr key={c.id} className="hover:bg-row-hover">
                           <td className="px-4 py-2">
                             <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{c.componentType || '—'}</span>
                           </td>
                           <td className="px-4 py-2 font-medium">{c.componentName}</td>
-                          <td className="px-4 py-2 text-gray-500">{c.componentSku}</td>
+                          <td className="px-4 py-2 text-fg-subtle">{c.componentSku}</td>
                           <td className="px-4 py-2 text-center">{c.quantity}</td>
                           <td className="px-4 py-2 text-right">${c.componentCost?.toFixed(2)}</td>
                           <td className="px-4 py-2 text-center">
@@ -228,8 +231,8 @@ export default function BOMManagementPage() {
                     </tbody>
                     <tfoot className="bg-gray-50">
                       <tr>
-                        <td colSpan={4} className="px-4 py-2 font-bold text-right">Total Component Cost:</td>
-                        <td className="px-4 py-2 text-right font-bold">
+                        <td colSpan={4} className="px-4 py-2 font-semibold text-right">Total Component Cost:</td>
+                        <td className="px-4 py-2 text-right font-semibold">
                           ${components.reduce((sum, c) => sum + (c.componentCost * c.quantity), 0).toFixed(2)}
                         </td>
                         <td colSpan={2}></td>
@@ -237,7 +240,7 @@ export default function BOMManagementPage() {
                     </tfoot>
                   </table>
                 ) : (
-                  <div className="p-6 text-center text-gray-500">
+                  <div className="p-6 text-center text-fg-muted">
                     <p>No components added yet. Search below to add.</p>
                   </div>
                 )}
@@ -245,7 +248,7 @@ export default function BOMManagementPage() {
 
               {/* Add Component */}
               <div className="bg-white rounded-xl border p-6">
-                <h3 className="font-bold text-gray-900 mb-3">Add Component</h3>
+                <h3 className="font-semibold text-fg mb-3">Add Component</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div className="md:col-span-2 relative">
                     <input
@@ -264,7 +267,7 @@ export default function BOMManagementPage() {
                             className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm"
                           >
                             <span className="font-medium">{p.name}</span>
-                            <span className="text-gray-400 ml-2">{p.sku}</span>
+                            <span className="text-fg-subtle ml-2">{p.sku}</span>
                           </button>
                         ))}
                       </div>
@@ -290,10 +293,13 @@ export default function BOMManagementPage() {
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-xl border p-12 text-center text-gray-500">
-              <p className="text-4xl mb-4">🔩</p>
-              <p className="text-lg font-medium">Select a product to view or edit its BOM</p>
-              <p className="text-sm mt-2">Choose from the left panel, or pick a product to set up a new BOM</p>
+            <div className="bg-white rounded-xl border p-6">
+              <EmptyState
+                size="full"
+                icon={<Wrench className="w-10 h-10 text-fg-subtle" />}
+                title="Select a product to view or edit its BOM"
+                description="Choose from the left panel, or pick a product to set up a new BOM"
+              />
             </div>
           )}
         </div>

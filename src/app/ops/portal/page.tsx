@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { LayoutGrid } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface PortalSummary {
   pm: { openJobs: number; pendingNotes: number; upcomingDeliveries: number }
@@ -18,7 +21,7 @@ const portals = [
     description: 'Project management, job tracking, and delivery scheduling',
     icon: '👷',
     href: '/ops/portal/pm',
-    color: 'from-[#0f2a3e] to-[#0a1a28]',
+    color: 'from-surface-elev to-surface',
     countKey: 'pm',
     countField: 'openJobs',
   },
@@ -93,19 +96,22 @@ export default function PortalSelector() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Department Portals</h1>
-        <p className="text-gray-600 mt-2">
-          Select your department to access specialized tools and dashboards
-        </p>
-      </div>
+      <PageHeader
+        title="Department Portals"
+        description="Select your department to access specialized tools and dashboards"
+      />
 
       {/* Portal cards grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-surface-elev" />
         </div>
+      ) : portals.length === 0 ? (
+        <EmptyState
+          icon={<LayoutGrid className="w-8 h-8 text-fg-subtle" />}
+          title="No portals configured"
+          description="Department portals will appear here once configured."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {portals.map((portal) => {
@@ -118,7 +124,7 @@ export default function PortalSelector() {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-sm font-medium text-white/80">Department</p>
-                        <h2 className="text-2xl font-bold mt-1">{portal.title}</h2>
+                        <h2 className="text-2xl font-semibold mt-1">{portal.title}</h2>
                       </div>
                       <div className="text-4xl opacity-80 group-hover:opacity-100 transition-opacity">
                         {portal.icon}

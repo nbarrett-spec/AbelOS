@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FileText } from 'lucide-react';
+import EmptyState from '@/components/ui/EmptyState';
 import { RequestDocumentModal } from '../components/RequestDocumentModal';
 
 interface Document {
@@ -175,7 +177,7 @@ export default function DocumentsPage() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-[#C6A24E] hover:bg-[#d46711] text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            className="bg-signal hover:bg-signal-hover text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             + Request Document
           </button>
@@ -219,7 +221,7 @@ export default function DocumentsPage() {
             <select
               value={statusFilter}
               onChange={handleStatusFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-signal"
             >
               <option value="All">All Statuses</option>
               <option value="PENDING">Pending</option>
@@ -238,7 +240,7 @@ export default function DocumentsPage() {
             <select
               value={typeFilter}
               onChange={handleTypeFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-signal"
             >
               <option value="All">All Types</option>
               {Object.entries(DOCUMENT_TYPES).map(([key, value]) => (
@@ -258,7 +260,7 @@ export default function DocumentsPage() {
               placeholder="Title, company, or staff..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-signal"
             />
           </div>
         </div>
@@ -266,9 +268,7 @@ export default function DocumentsPage() {
         {/* Documents Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {filteredDocuments.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <p>No documents found</p>
-            </div>
+            <EmptyState icon={<FileText className="w-8 h-8 text-fg-subtle" />} title="No documents found" description="Try adjusting filters or request a new document." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -342,7 +342,7 @@ export default function DocumentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
-                          <button className="text-[#C6A24E] hover:text-[#d46711] text-sm font-medium">
+                          <button className="text-signal hover:text-signal-hover text-sm font-medium">
                             Update
                           </button>
                           <button className="text-[#1e3a5f] hover:text-[#153250] text-sm font-medium">

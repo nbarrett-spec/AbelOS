@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { Truck } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Fleet & Logistics Hub
@@ -142,12 +144,12 @@ export default function FleetLogisticsHub() {
   const scheduled = deliveries.filter((d) => d.status === 'SCHEDULED')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-canvas">
       {/* Header */}
       <div className="bg-[#1e3a5f] text-white px-8 py-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-3xl font-semibold flex items-center gap-3">
               <span>🚛</span> Fleet & Logistics Hub
             </h1>
             <p className="text-blue-200 mt-2">
@@ -178,7 +180,7 @@ export default function FleetLogisticsHub() {
       </div>
 
       {/* Tab Bar */}
-      <div className="bg-white border-b border-gray-200 px-8">
+      <div className="bg-surface border-b border-border px-8">
         <div className="flex gap-1 -mb-px overflow-x-auto">
           {TABS.map((tab) => (
             <button
@@ -186,8 +188,8 @@ export default function FleetLogisticsHub() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-[#C6A24E] text-[#C6A24E]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-signal text-signal'
+                  : 'border-transparent text-fg-muted hover:text-fg'
               }`}
             >
               <span className="mr-1.5">{tab.icon}</span>
@@ -275,19 +277,23 @@ function OverviewTab({
       </div>
 
       {/* Active Deliveries */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-bold text-[#1e3a5f]">Today's Deliveries</h3>
-          <span className="text-sm text-gray-500">{deliveries.length} total</span>
+      <div className="bg-surface rounded-xl border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-semibold text-[#1e3a5f]">Today's Deliveries</h3>
+          <span className="text-sm text-fg-muted">{deliveries.length} total</span>
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {deliveries.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-400">No deliveries scheduled for today</div>
+            <EmptyState
+              icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+              title="No deliveries scheduled"
+              description="Nothing on the schedule for today."
+            />
           ) : (
             deliveries.slice(0, 15).map((d) => {
               const statusInfo = STATUS_COLORS[d.status] || STATUS_COLORS.SCHEDULED
               return (
-                <div key={d.id} className="px-6 py-3 flex items-center gap-4 hover:bg-gray-50">
+                <div key={d.id} className="px-6 py-3 flex items-center gap-4 hover:bg-row-hover">
                   <span
                     className="px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{ background: statusInfo.bg, color: statusInfo.text }}
@@ -295,14 +301,14 @@ function OverviewTab({
                     {statusInfo.label}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-800 truncate">
+                    <div className="font-medium text-sm text-fg truncate">
                       {d.deliveryNumber} — {d.job?.builderName || 'Unknown'}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">{d.address}</div>
+                    <div className="text-xs text-fg-muted truncate">{d.address}</div>
                   </div>
-                  <div className="text-xs text-gray-500">{d.crewName || 'Unassigned'}</div>
+                  <div className="text-xs text-fg-muted">{d.crewName || 'Unassigned'}</div>
                   {d.latestTracking?.eta && (
-                    <div className="text-xs font-medium text-[#C6A24E]">
+                    <div className="text-xs font-medium text-signal">
                       ETA: {new Date(d.latestTracking.eta).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>
                   )}
@@ -320,13 +326,13 @@ function OverviewTab({
       </div>
 
       {/* Crew Status Grid */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-[#1e3a5f]">Crew Status</h3>
+      <div className="bg-surface rounded-xl border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="font-semibold text-[#1e3a5f]">Crew Status</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
           {crews.length === 0 ? (
-            <div className="col-span-full text-center text-gray-400 py-4">No delivery crews found</div>
+            <div className="col-span-full text-center text-fg-subtle py-4">No delivery crews found</div>
           ) : (
             crews.map((crew) => {
               const crewDeliveries = deliveries.filter((d) => d.crewId === crew.id)
@@ -397,24 +403,24 @@ function LiveTrackingTab({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-bold text-[#1e3a5f]">Live Vehicle Positions</h3>
+      <div className="bg-surface rounded-xl border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-semibold text-[#1e3a5f]">Live Vehicle Positions</h3>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-fg-muted">
               {activeDeliveries.length} vehicles active
             </span>
           </div>
         </div>
         <div
           ref={mapRef}
-          className="h-[500px] bg-gray-100 flex items-center justify-center"
+          className="h-[500px] bg-surface-muted flex items-center justify-center"
         >
           <div className="text-center max-w-md px-8">
             <div className="text-4xl mb-3">📡</div>
-            <h4 className="font-bold text-[#1e3a5f] mb-2">GPS Tracking Ready</h4>
-            <p className="text-sm text-gray-600 mb-4">
+            <h4 className="font-semibold text-[#1e3a5f] mb-2">GPS Tracking Ready</h4>
+            <p className="text-sm text-fg-muted mb-4">
               Connect GPS trackers to see real-time vehicle positions on this map.
               See the GPS Trackers tab for setup instructions and recommended hardware.
             </p>
@@ -429,15 +435,17 @@ function LiveTrackingTab({
       </div>
 
       {/* Active Deliveries List */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-[#1e3a5f]">Active Deliveries</h3>
+      <div className="bg-surface rounded-xl border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="font-semibold text-[#1e3a5f]">Active Deliveries</h3>
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {activeDeliveries.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-400">
-              No deliveries currently in transit
-            </div>
+            <EmptyState
+              icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+              title="No deliveries scheduled"
+              description="No deliveries currently in transit."
+            />
           ) : (
             activeDeliveries.map((d) => (
               <div key={d.id} className="px-6 py-4">
@@ -500,11 +508,11 @@ function RoutePlanningTab({
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-surface rounded-xl border border-border p-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h3 className="font-bold text-[#1e3a5f]">Route Planning</h3>
-            <p className="text-sm text-gray-500 mt-1">
+            <h3 className="font-semibold text-[#1e3a5f]">Route Planning</h3>
+            <p className="text-sm text-fg-muted mt-1">
               Plan and optimize delivery routes for your crews
             </p>
           </div>
@@ -513,7 +521,7 @@ function RoutePlanningTab({
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="border border-border rounded-lg px-3 py-2 text-sm"
             />
             <Link
               href="/ops/delivery/route-optimizer"
@@ -549,26 +557,26 @@ function RoutePlanningTab({
 
       {/* Crew Routes */}
       {crewRoutes.map(({ crew, deliveries: crewDels }) => (
-        <div key={crew.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div key={crew.id} className="bg-surface rounded-xl border border-border overflow-hidden">
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-lg">🚛</span>
               <div>
-                <h4 className="font-bold text-[#1e3a5f] text-sm">{crew.name}</h4>
-                <div className="text-xs text-gray-500">
+                <h4 className="font-semibold text-[#1e3a5f] text-sm">{crew.name}</h4>
+                <div className="text-xs text-fg-muted">
                   {crew.vehiclePlate || 'No vehicle'} • {crewDels.length} stops
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-fg-subtle">
                 Est. {Math.ceil(crewDels.length * 35)} min total
               </span>
             </div>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-border">
             {crewDels.length === 0 ? (
-              <div className="px-6 py-4 text-sm text-gray-400">No stops assigned</div>
+              <div className="px-6 py-4 text-sm text-fg-subtle">No stops assigned</div>
             ) : (
               crewDels.map((d, idx) => {
                 const statusInfo = STATUS_COLORS[d.status] || STATUS_COLORS.SCHEDULED
@@ -622,8 +630,8 @@ function DispatchBoard({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-[#1e3a5f]">Dispatch Board</h3>
-        <div className="text-sm text-gray-500">
+        <h3 className="font-semibold text-[#1e3a5f]">Dispatch Board</h3>
+        <div className="text-sm text-fg-muted">
           Drag and drop coming soon — use Delivery Center for status updates
         </div>
       </div>
@@ -631,28 +639,28 @@ function DispatchBoard({
         {columns.map((col) => {
           const colDeliveries = deliveries.filter((d) => d.status === col.key)
           return (
-            <div key={col.key} className="bg-gray-50 rounded-xl p-3 min-h-[400px]">
+            <div key={col.key} className="bg-surface-muted rounded-xl p-3 min-h-[400px]">
               <div className="flex items-center gap-2 mb-3">
                 <span
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ background: col.color }}
                 />
-                <span className="text-xs font-bold text-gray-700">{col.label}</span>
-                <span className="text-xs text-gray-400 ml-auto">{colDeliveries.length}</span>
+                <span className="text-xs font-semibold text-fg">{col.label}</span>
+                <span className="text-xs text-fg-subtle ml-auto">{colDeliveries.length}</span>
               </div>
               <div className="space-y-2">
                 {colDeliveries.map((d) => (
                   <div
                     key={d.id}
-                    className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm"
+                    className="bg-surface rounded-lg border border-border p-3 shadow-sm"
                   >
-                    <div className="text-xs font-bold text-[#1e3a5f]">{d.deliveryNumber}</div>
-                    <div className="text-xs text-gray-600 mt-1 truncate">
+                    <div className="text-xs font-semibold text-[#1e3a5f]">{d.deliveryNumber}</div>
+                    <div className="text-xs text-fg-muted mt-1 truncate">
                       {d.job?.builderName}
                     </div>
-                    <div className="text-[10px] text-gray-400 mt-1 truncate">{d.address}</div>
+                    <div className="text-[10px] text-fg-subtle mt-1 truncate">{d.address}</div>
                     {d.crewName && (
-                      <div className="mt-2 text-[10px] bg-gray-50 rounded px-1.5 py-0.5 text-gray-600">
+                      <div className="mt-2 text-[10px] bg-surface-muted rounded px-1.5 py-0.5 text-fg-muted">
                         🚛 {d.crewName}
                       </div>
                     )}
@@ -700,43 +708,42 @@ function VehiclesTab({ vehicles, crews }: { vehicles: Vehicle[]; crews: Crew[] }
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-[#1e3a5f]">Vehicle Fleet</h3>
+        <h3 className="font-semibold text-[#1e3a5f]">Vehicle Fleet</h3>
         <button className="bg-[#0f2a3e] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#163d5c]">
           + Add Vehicle
         </button>
       </div>
 
       {fleetData.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <div className="text-4xl mb-3">🚛</div>
-          <h4 className="font-bold text-[#1e3a5f] mb-2">No Vehicles Registered</h4>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            Add your fleet vehicles to track maintenance, fuel, mileage, and GPS positions.
-            Vehicles are assigned to delivery crews.
-          </p>
+        <div className="bg-surface rounded-xl border border-border p-6">
+          <EmptyState
+            icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+            title="No deliveries scheduled"
+            description="Add your fleet vehicles to track maintenance, fuel, mileage, and GPS positions. Vehicles are assigned to delivery crews."
+          />
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-surface rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-surface-muted">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Vehicle</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Assigned Crew</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">GPS Tracker</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Last Location</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted">Vehicle</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted">Assigned Crew</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted">GPS Tracker</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted">Last Location</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {fleetData.map((v) => (
-                <tr key={v.id} className="hover:bg-gray-50">
+                <tr key={v.id} className="hover:bg-row-hover">
                   <td className="px-4 py-3">
                     <div className="font-medium">{v.plate}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-fg-muted">
                       {v.year > 0 ? `${v.year} ${v.make} ${v.model}` : v.type}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{v.assignedCrewName || '—'}</td>
+                  <td className="px-4 py-3 text-fg-muted">{v.assignedCrewName || '—'}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -750,14 +757,14 @@ function VehiclesTab({ vehicles, crews }: { vehicles: Vehicle[]; crews: Crew[] }
                       {v.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-fg-muted">
                     {v.gpsTrackerId ? (
                       <span className="text-green-600 text-xs">✓ Connected</span>
                     ) : (
-                      <span className="text-gray-400 text-xs">Not installed</span>
+                      <span className="text-fg-subtle text-xs">Not installed</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500">
+                  <td className="px-4 py-3 text-xs text-fg-muted">
                     {v.lastKnownLocation || 'No data'}
                   </td>
                 </tr>
@@ -891,54 +898,54 @@ function GPSTrackerSetup() {
         {trackers.map((tracker) => (
           <div
             key={tracker.name}
-            className={`bg-white rounded-xl border overflow-hidden ${
-              tracker.recommended ? 'border-[#C6A24E] ring-2 ring-[#C6A24E]/20' : 'border-gray-200'
+            className={`bg-surface rounded-xl border overflow-hidden ${
+              tracker.recommended ? 'border-signal ring-2 ring-signal/20' : 'border-border'
             }`}
           >
-            <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
+            <div className="px-6 py-4 flex items-center justify-between border-b border-border">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📡</span>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-[#1e3a5f]">{tracker.name}</h4>
+                    <h4 className="font-semibold text-[#1e3a5f]">{tracker.name}</h4>
                     {tracker.recommended && (
-                      <span className="bg-[#C6A24E] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <span className="bg-[#C6A24E] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
                         RECOMMENDED
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500">{tracker.type}</div>
+                  <div className="text-xs text-fg-muted">{tracker.type}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-bold text-[#1e3a5f]">{tracker.price}</div>
-                <div className="text-xs text-gray-500">Best for: {tracker.bestFor}</div>
+                <div className="font-semibold text-[#1e3a5f]">{tracker.price}</div>
+                <div className="text-xs text-fg-muted">Best for: {tracker.bestFor}</div>
               </div>
             </div>
             <div className="px-6 py-4 grid grid-cols-3 gap-6">
               <div>
-                <h5 className="text-xs font-bold text-green-700 mb-2">Pros</h5>
+                <h5 className="text-xs font-semibold text-green-700 mb-2">Pros</h5>
                 <ul className="space-y-1">
                   {tracker.pros.map((pro, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                    <li key={i} className="text-xs text-fg-muted flex items-start gap-1">
                       <span className="text-green-500 mt-0.5">✓</span> {pro}
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h5 className="text-xs font-bold text-red-700 mb-2">Cons</h5>
+                <h5 className="text-xs font-semibold text-red-700 mb-2">Cons</h5>
                 <ul className="space-y-1">
                   {tracker.cons.map((con, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                    <li key={i} className="text-xs text-fg-muted flex items-start gap-1">
                       <span className="text-red-500 mt-0.5">✕</span> {con}
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h5 className="text-xs font-bold text-[#0f2a3e] mb-2">Aegis Integration</h5>
-                <p className="text-xs text-gray-600">{tracker.integration}</p>
+                <h5 className="text-xs font-semibold text-[#0f2a3e] mb-2">Aegis Integration</h5>
+                <p className="text-xs text-fg-muted">{tracker.integration}</p>
               </div>
             </div>
           </div>
@@ -946,34 +953,34 @@ function GPSTrackerSetup() {
       </div>
 
       {/* Integration Architecture */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-bold text-[#1e3a5f] mb-4">How GPS Integration Works with Aegis</h3>
+      <div className="bg-surface rounded-xl border border-border p-6">
+        <h3 className="font-semibold text-[#1e3a5f] mb-4">How GPS Integration Works with Aegis</h3>
         <div className="grid grid-cols-4 gap-4 text-center">
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-surface-muted rounded-lg p-4">
             <div className="text-2xl mb-2">📡</div>
-            <div className="text-xs font-bold text-gray-700">GPS Tracker</div>
-            <div className="text-[10px] text-gray-500 mt-1">Reports location every 10-30s</div>
+            <div className="text-xs font-semibold text-fg">GPS Tracker</div>
+            <div className="text-[10px] text-fg-muted mt-1">Reports location every 10-30s</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-surface-muted rounded-lg p-4">
             <div className="text-2xl mb-2">☁️</div>
-            <div className="text-xs font-bold text-gray-700">Tracker Cloud</div>
-            <div className="text-[10px] text-gray-500 mt-1">Samsara/Trackit servers</div>
+            <div className="text-xs font-semibold text-fg">Tracker Cloud</div>
+            <div className="text-[10px] text-fg-muted mt-1">Samsara/Trackit servers</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-surface-muted rounded-lg p-4">
             <div className="text-2xl mb-2">🔗</div>
-            <div className="text-xs font-bold text-gray-700">Webhook/API</div>
-            <div className="text-[10px] text-gray-500 mt-1">Pushes events to Aegis</div>
+            <div className="text-xs font-semibold text-fg">Webhook/API</div>
+            <div className="text-[10px] text-fg-muted mt-1">Pushes events to Aegis</div>
           </div>
           <div className="bg-[#0f2a3e]/10 rounded-lg p-4 border border-[#0f2a3e]/20">
             <div className="text-2xl mb-2">🖥️</div>
-            <div className="text-xs font-bold text-[#0f2a3e]">Aegis</div>
-            <div className="text-[10px] text-gray-500 mt-1">Shows on Fleet Hub map</div>
+            <div className="text-xs font-semibold text-[#0f2a3e]">Aegis</div>
+            <div className="text-[10px] text-fg-muted mt-1">Shows on Fleet Hub map</div>
           </div>
         </div>
         <div className="flex items-center justify-between mt-4 px-8">
-          <div className="h-0.5 flex-1 bg-gray-300" />
-          <span className="px-3 text-xs text-gray-400">Data Flow</span>
-          <div className="h-0.5 flex-1 bg-gray-300" />
+          <div className="h-0.5 flex-1 bg-border" />
+          <span className="px-3 text-xs text-fg-subtle">Data Flow</span>
+          <div className="h-0.5 flex-1 bg-border" />
         </div>
         <div className="mt-4 bg-blue-50 rounded-lg p-4 text-sm text-blue-800">
           <strong>Next step:</strong> Once you choose a tracker, we'll build the webhook endpoint
@@ -1001,12 +1008,12 @@ function KPICard({
   color: string
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <div className="bg-surface rounded-xl border border-border p-4">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{icon}</span>
-        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-xs text-fg-muted">{label}</span>
       </div>
-      <div className="text-2xl font-bold" style={{ color }}>
+      <div className="text-2xl font-semibold" style={{ color }}>
         {value}
       </div>
     </div>

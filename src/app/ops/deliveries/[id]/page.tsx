@@ -114,13 +114,13 @@ export default function OpsDeliveryDetailPage() {
   }
 
   if (loading) {
-    return <div style={{ padding: 32 }}>Loading delivery…</div>
+    return <div className="p-8 text-fg-muted">Loading delivery…</div>
   }
   if (error || !data) {
     return (
-      <div style={{ padding: 32 }}>
-        <p style={{ color: '#b91c1c' }}>{error || 'Delivery not found'}</p>
-        <Link href="/ops/portal/delivery" style={{ color: '#0f2a3e' }}>
+      <div className="p-8">
+        <p className="text-red-700">{error || 'Delivery not found'}</p>
+        <Link href="/ops/portal/delivery" className="text-fg-muted hover:text-fg">
           Back to delivery dashboard
         </Link>
       </div>

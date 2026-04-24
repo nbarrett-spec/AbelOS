@@ -329,8 +329,8 @@ export default function JobDetailPage() {
     return (
       <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0f2a3e] mx-auto mb-4" />
-          <p className="text-gray-500">Loading job details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-signal mx-auto mb-4" />
+          <p className="text-fg-muted">Loading job details...</p>
         </div>
       </div>
     )
@@ -342,7 +342,7 @@ export default function JobDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 text-lg font-semibold mb-2">Error</p>
           <p className="text-red-600">{error || 'Job not found'}</p>
-          <button onClick={() => router.push('/ops/jobs')} className="mt-4 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg hover:bg-[#163d5a]">
+          <button onClick={() => router.push('/ops/jobs')} className="mt-4 px-4 py-2 bg-signal text-fg-on-accent rounded-lg hover:bg-signal-hover">
             Back to Pipeline
           </button>
         </div>
@@ -357,10 +357,10 @@ export default function JobDetailPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push('/ops/jobs')} className="text-gray-400 hover:text-gray-600 text-2xl">←</button>
+        <button onClick={() => router.push('/ops/jobs')} className="text-fg-subtle hover:text-fg-muted text-2xl">←</button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{job.jobNumber}</h1>
+            <h1 className="text-2xl font-semibold text-fg">{job.jobNumber}</h1>
             <span
               className="px-3 py-1 rounded-full text-white text-sm font-medium"
               style={{ backgroundColor: STATUS_COLORS[job.status] || '#95A5A6' }}
@@ -368,14 +368,14 @@ export default function JobDetailPage() {
               {STATUS_LABELS[job.status] || job.status}
             </span>
           </div>
-          <p className="text-gray-500 mt-1">{job.builderName} — {job.community || 'No community'}{job.lotBlock ? ` • ${job.lotBlock}` : ''}</p>
+          <p className="text-fg-muted mt-1">{job.builderName} — {job.community || 'No community'}{job.lotBlock ? ` • ${job.lotBlock}` : ''}</p>
         </div>
         <div className="flex items-center gap-2">
           <PresenceAvatars recordId={job.id} recordType="job" />
           {MATERIAL_DRAWER_ENABLED && (
             <button
               onClick={() => setShowMaterialDrawer(true)}
-              className="px-4 py-2 border border-[#0f2a3e] text-[#0f2a3e] rounded-lg hover:bg-[#0f2a3e] hover:text-white font-medium transition-colors"
+              className="px-4 py-2 border border-signal text-signal rounded-lg hover:bg-signal hover:text-fg-on-accent font-medium transition-colors"
             >
               Materials
             </button>
@@ -422,7 +422,7 @@ export default function JobDetailPage() {
       )}
 
       {/* Status Progress */}
-      <div className="bg-white rounded-lg border p-4 mb-6 overflow-x-auto">
+      <div className="bg-surface rounded-lg border p-4 mb-6 overflow-x-auto">
         <div className="flex items-center min-w-[900px]">
           {STATUS_FLOW.slice(0, -1).map((s, i) => {
             const isActive = s === job.status
@@ -432,17 +432,17 @@ export default function JobDetailPage() {
               <div key={s} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isPast ? 'text-white' : isActive ? 'text-white ring-4 ring-opacity-30' : 'text-gray-400 bg-gray-200'}`}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${isPast ? 'text-white' : isActive ? 'text-white ring-4 ring-opacity-30' : 'text-fg-subtle bg-surface-muted'}`}
                     style={isPast || isActive ? { backgroundColor: color, '--tw-ring-color': color } as React.CSSProperties : {}}
                   >
                     {isPast ? '✓' : i + 1}
                   </div>
-                  <span className={`text-[10px] mt-1 text-center ${isActive ? 'font-bold text-gray-900' : isPast ? 'text-gray-600' : 'text-gray-400'}`}>
+                  <span className={`text-[10px] mt-1 text-center ${isActive ? 'font-semibold text-fg' : isPast ? 'text-fg-muted' : 'text-fg-subtle'}`}>
                     {STATUS_LABELS[s]?.replace(' ', '\n') || s}
                   </span>
                 </div>
                 {i < STATUS_FLOW.length - 2 && (
-                  <div className={`h-0.5 flex-1 ${isPast ? 'bg-green-400' : 'bg-gray-200'}`} />
+                  <div className={`h-0.5 flex-1 ${isPast ? 'bg-green-400' : 'bg-surface-muted'}`} />
                 )}
               </div>
             )
@@ -451,13 +451,13 @@ export default function JobDetailPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
+      <div className="flex items-center gap-1 mb-4 border-b border-border">
         <button
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
             activeTab === 'overview'
-              ? 'border-[#0f2a3e] text-[#0f2a3e]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-signal text-signal'
+              : 'border-transparent text-fg-muted hover:text-fg'
           }`}
         >
           Overview
@@ -466,13 +466,13 @@ export default function JobDetailPage() {
           onClick={() => setActiveTab('documents')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px inline-flex items-center gap-2 ${
             activeTab === 'documents'
-              ? 'border-[#0f2a3e] text-[#0f2a3e]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-signal text-signal'
+              : 'border-transparent text-fg-muted hover:text-fg'
           }`}
         >
           Documents
           {hyphenDocCount > 0 && (
-            <span className="text-[10px] font-mono tabular-nums text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-mono tabular-nums text-fg-muted bg-surface-muted px-1.5 py-0.5 rounded">
               {hyphenDocCount}
             </span>
           )}
@@ -481,8 +481,8 @@ export default function JobDetailPage() {
           onClick={() => setActiveTab('allocation')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px inline-flex items-center gap-2 ${
             activeTab === 'allocation'
-              ? 'border-[#0f2a3e] text-[#0f2a3e]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-signal text-signal'
+              : 'border-transparent text-fg-muted hover:text-fg'
           }`}
         >
           Allocation
@@ -509,47 +509,47 @@ export default function JobDetailPage() {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Job Info */}
-          <div className="bg-white rounded-lg border p-5">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Information</h2>
+          <div className="bg-surface rounded-lg border p-5">
+            <h2 className="text-lg font-semibold text-fg mb-4">Job Information</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Address</p>
-                <p className="text-sm font-medium text-gray-900">{job.jobAddress || '—'}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Address</p>
+                <p className="text-sm font-medium text-fg">{job.jobAddress || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Lot / Block</p>
-                <p className="text-sm font-medium text-gray-900">{job.lotBlock || '—'}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Lot / Block</p>
+                <p className="text-sm font-medium text-fg">{job.lotBlock || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Community</p>
-                <p className="text-sm font-medium text-gray-900">{job.community || '—'}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Community</p>
+                <p className="text-sm font-medium text-fg">{job.community || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Scope</p>
-                <p className="text-sm font-medium text-gray-900">{job.scopeType?.replace(/_/g, ' ') || '—'}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Scope</p>
+                <p className="text-sm font-medium text-fg">{job.scopeType?.replace(/_/g, ' ') || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Scheduled Date</p>
-                <p className="text-sm font-medium text-gray-900">{formatDate(job.scheduledDate)}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Scheduled Date</p>
+                <p className="text-sm font-medium text-fg">{formatDate(job.scheduledDate)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Actual Date</p>
-                <p className="text-sm font-medium text-gray-900">{formatDate(job.actualDate)}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Actual Date</p>
+                <p className="text-sm font-medium text-fg">{formatDate(job.actualDate)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Drop Plan</p>
-                <p className="text-sm font-medium text-gray-900">{job.dropPlan || '—'}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Drop Plan</p>
+                <p className="text-sm font-medium text-fg">{job.dropPlan || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Created</p>
-                <p className="text-sm font-medium text-gray-900">{formatDate(job.createdAt)}</p>
+                <p className="text-xs text-fg-muted uppercase tracking-wider">Created</p>
+                <p className="text-sm font-medium text-fg">{formatDate(job.createdAt)}</p>
               </div>
             </div>
           </div>
 
           {/* Readiness Checks */}
-          <div className="bg-white rounded-lg border p-5">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Readiness Checklist</h2>
+          <div className="bg-surface rounded-lg border p-5">
+            <h2 className="text-lg font-semibold text-fg mb-4">Readiness Checklist</h2>
             <div className="space-y-3">
               {[
                 { label: 'Readiness Check (T-72)', done: job.readinessCheck },
@@ -557,20 +557,20 @@ export default function JobDetailPage() {
                 { label: 'Load Confirmed (T-24)', done: job.loadConfirmed },
               ].map(item => (
                 <div key={item.label} className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${item.done ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${item.done ? 'bg-green-100 text-green-600' : 'bg-surface-muted text-fg-subtle'}`}>
                     {item.done ? '✓' : '○'}
                   </div>
-                  <span className={`text-sm ${item.done ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>{item.label}</span>
+                  <span className={`text-sm ${item.done ? 'text-fg font-medium' : 'text-fg-muted'}`}>{item.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Profitability Panel */}
-          <div className="bg-white rounded-lg border p-5">
+          <div className="bg-surface rounded-lg border p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Job Profitability</h2>
-              <button onClick={loadProfitability} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#0f2a3e] hover:bg-[#163d5a]">
+              <h2 className="text-lg font-semibold text-fg">Job Profitability</h2>
+              <button onClick={loadProfitability} className="text-xs px-3 py-1.5 rounded-lg font-medium text-fg-on-accent bg-signal hover:bg-signal-hover">
                 {showProfit ? 'Hide' : 'Analyze'}
               </button>
             </div>
@@ -578,35 +578,35 @@ export default function JobDetailPage() {
               <div>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="bg-blue-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500">Revenue</p>
-                    <p className="text-lg font-bold text-[#0f2a3e]">{formatCurrency(profitability.profitability.totalRevenue)}</p>
+                    <p className="text-xs text-fg-muted">Revenue</p>
+                    <p className="text-lg font-semibold text-signal">{formatCurrency(profitability.profitability.totalRevenue)}</p>
                   </div>
                   <div className="bg-orange-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500">BOM Cost</p>
-                    <p className="text-lg font-bold text-[#C6A24E]">{formatCurrency(profitability.profitability.totalBomCost)}</p>
+                    <p className="text-xs text-fg-muted">BOM Cost</p>
+                    <p className="text-lg font-semibold text-signal">{formatCurrency(profitability.profitability.totalBomCost)}</p>
                   </div>
                   <div className={`rounded-lg p-3 text-center ${profitability.profitability.grossMargin >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                    <p className="text-xs text-gray-500">Gross Margin</p>
-                    <p className={`text-lg font-bold ${profitability.profitability.grossMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className="text-xs text-fg-muted">Gross Margin</p>
+                    <p className={`text-lg font-semibold ${profitability.profitability.grossMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(profitability.profitability.grossMargin)}
                     </p>
                   </div>
                   <div className={`rounded-lg p-3 text-center ${profitability.profitability.marginPct >= 20 ? 'bg-green-50' : profitability.profitability.marginPct >= 10 ? 'bg-yellow-50' : 'bg-red-50'}`}>
-                    <p className="text-xs text-gray-500">Margin %</p>
-                    <p className={`text-lg font-bold ${profitability.profitability.marginPct >= 20 ? 'text-green-600' : profitability.profitability.marginPct >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    <p className="text-xs text-fg-muted">Margin %</p>
+                    <p className={`text-lg font-semibold ${profitability.profitability.marginPct >= 20 ? 'text-green-600' : profitability.profitability.marginPct >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
                       {profitability.profitability.marginPct}%
                     </p>
                   </div>
                 </div>
                 {profitability.byCategory?.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">By Category</p>
+                    <p className="text-xs text-fg-muted uppercase tracking-wider mb-2">By Category</p>
                     <div className="space-y-2">
                       {profitability.byCategory.map((cat: any) => (
                         <div key={cat.category} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700">{cat.category}</span>
+                          <span className="text-fg-muted">{cat.category}</span>
                           <div className="flex items-center gap-3">
-                            <span className="text-gray-500">{formatCurrency(cat.revenue)}</span>
+                            <span className="text-fg-muted">{formatCurrency(cat.revenue)}</span>
                             <span className={`font-medium ${cat.marginPct >= 20 ? 'text-green-600' : cat.marginPct >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
                               {cat.marginPct}%
                             </span>
@@ -618,24 +618,24 @@ export default function JobDetailPage() {
                 )}
               </div>
             ) : !showProfit ? (
-              <p className="text-sm text-gray-400">Click Analyze to calculate margins using BOM costs</p>
+              <p className="text-sm text-fg-subtle">Click Analyze to calculate margins using BOM costs</p>
             ) : (
-              <p className="text-sm text-gray-400">No order linked to this job</p>
+              <p className="text-sm text-fg-subtle">No order linked to this job</p>
             )}
           </div>
 
           {/* Schedule Entries */}
           {job.scheduleEntries.length > 0 && (
-            <div className="bg-white rounded-lg border p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Schedule ({job.scheduleEntries.length})</h2>
+            <div className="bg-surface rounded-lg border p-5">
+              <h2 className="text-lg font-semibold text-fg mb-4">Schedule ({job.scheduleEntries.length})</h2>
               <div className="space-y-2">
                 {job.scheduleEntries.map((se: any) => (
-                  <div key={se.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={se.id} className="flex items-center justify-between p-3 bg-surface-muted rounded-lg">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{se.title || se.entryType}</p>
-                      <p className="text-xs text-gray-500">{formatDate(se.scheduledDate)}{se.scheduledTime ? ` at ${se.scheduledTime}` : ''}</p>
+                      <p className="text-sm font-medium text-fg">{se.title || se.entryType}</p>
+                      <p className="text-xs text-fg-muted">{formatDate(se.scheduledDate)}{se.scheduledTime ? ` at ${se.scheduledTime}` : ''}</p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded ${se.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : se.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs px-2 py-1 rounded ${se.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : se.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-surface-muted text-fg-muted'}`}>
                       {se.status}
                     </span>
                   </div>
@@ -646,13 +646,13 @@ export default function JobDetailPage() {
 
           {/* Decision Notes */}
           {job.decisionNotes.length > 0 && (
-            <div className="bg-white rounded-lg border p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Decision Notes ({job.decisionNotes.length})</h2>
+            <div className="bg-surface rounded-lg border p-5">
+              <h2 className="text-lg font-semibold text-fg mb-4">Decision Notes ({job.decisionNotes.length})</h2>
               <div className="space-y-3">
                 {job.decisionNotes.map((dn: any) => (
                   <div key={dn.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-gray-900">{dn.note || dn.content}</p>
-                    <p className="text-xs text-gray-500 mt-1">{formatDate(dn.createdAt)}</p>
+                    <p className="text-sm text-fg">{dn.note || dn.content}</p>
+                    <p className="text-xs text-fg-muted mt-1">{formatDate(dn.createdAt)}</p>
                   </div>
                 ))}
               </div>
@@ -661,14 +661,14 @@ export default function JobDetailPage() {
 
           {/* Quality Checks */}
           {job.qualityChecks.length > 0 && (
-            <div className="bg-white rounded-lg border p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quality Checks ({job.qualityChecks.length})</h2>
+            <div className="bg-surface rounded-lg border p-5">
+              <h2 className="text-lg font-semibold text-fg mb-4">Quality Checks ({job.qualityChecks.length})</h2>
               <div className="space-y-2">
                 {job.qualityChecks.map((qc: any) => (
-                  <div key={qc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={qc.id} className="flex items-center justify-between p-3 bg-surface-muted rounded-lg">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{qc.checkType || qc.type || 'Inspection'}</p>
-                      <p className="text-xs text-gray-500">{qc.notes || '—'}</p>
+                      <p className="text-sm font-medium text-fg">{qc.checkType || qc.type || 'Inspection'}</p>
+                      <p className="text-xs text-fg-muted">{qc.notes || '—'}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded ${qc.passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {qc.passed ? 'Passed' : 'Failed'}
@@ -680,19 +680,19 @@ export default function JobDetailPage() {
           )}
 
           {/* Change Orders */}
-          <div className="bg-white rounded-lg border p-5">
+          <div className="bg-surface rounded-lg border p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Change Orders</h2>
+              <h2 className="text-lg font-semibold text-fg">Change Orders</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowCoPreview(true)}
-                  className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#0f2a3e] hover:bg-[#143549]"
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium text-fg-on-accent bg-signal hover:bg-signal-hover"
                   title="Preview material impact before committing a CO"
                 >
                   Preview Change Order
                 </button>
                 <button onClick={() => setShowCOForm(!showCOForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#C6A24E] hover:bg-[#A8882A]">+ New</button>
-                <button onClick={loadChangeOrders} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#0f2a3e] border border-[#0f2a3e] hover:bg-blue-50">
+                <button onClick={loadChangeOrders} className="text-xs px-3 py-1.5 rounded-lg font-medium text-signal border border-signal hover:bg-blue-50">
                   {showCO ? 'Hide' : 'Load'}
                 </button>
               </div>
@@ -703,27 +703,27 @@ export default function JobDetailPage() {
                 <textarea value={coForm.description} onChange={e => setCoForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" className="w-full border rounded px-3 py-2 text-sm" rows={2} />
                 <div className="flex gap-2 items-center">
                   <input value={coForm.costImpact} onChange={e => setCoForm(f => ({ ...f, costImpact: e.target.value }))} placeholder="Cost impact ($)" className="border rounded px-3 py-2 text-sm w-32" type="number" />
-                  <button onClick={createChangeOrder} className="px-3 py-2 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#163d5a]">Create CO</button>
-                  <button onClick={() => setShowCOForm(false)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                  <button onClick={createChangeOrder} className="px-3 py-2 bg-signal text-fg-on-accent rounded text-sm font-medium hover:bg-signal-hover">Create CO</button>
+                  <button onClick={() => setShowCOForm(false)} className="text-xs text-fg-muted hover:text-fg">Cancel</button>
                 </div>
               </div>
             )}
             {showCO && (
               <div className="space-y-2">
                 {changeOrders.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-3">No change orders</p>
+                  <p className="text-sm text-fg-subtle text-center py-3">No change orders</p>
                 ) : changeOrders.map((co: any) => (
                   <div key={co.id} className="p-3 border rounded-lg">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">{co.changeNumber}</span>
+                      <span className="text-sm font-medium text-fg">{co.changeNumber}</span>
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                         co.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
                         co.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' :
                         co.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-600'
+                        'bg-surface-muted text-fg-muted'
                       }`}>{co.status}</span>
                     </div>
-                    <p className="text-sm text-gray-700">{co.reason}</p>
+                    <p className="text-sm text-fg-muted">{co.reason}</p>
                     {co.costImpact !== 0 && <p className="text-xs mt-1 font-medium" style={{ color: co.costImpact > 0 ? '#E74C3C' : '#27AE60' }}>Cost Impact: {formatCurrency(co.costImpact)}</p>}
                     {co.status === 'DRAFT' && (
                       <button onClick={() => updateCOStatus(co.id, 'submit')} className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Submit for Approval</button>
@@ -741,12 +741,12 @@ export default function JobDetailPage() {
           </div>
 
           {/* Punch List */}
-          <div className="bg-white rounded-lg border p-5">
+          <div className="bg-surface rounded-lg border p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Punch List</h2>
+              <h2 className="text-lg font-semibold text-fg">Punch List</h2>
               <div className="flex gap-2">
                 <button onClick={() => setShowPunchForm(!showPunchForm)} className="text-xs px-3 py-1.5 rounded-lg font-medium text-white bg-[#C6A24E] hover:bg-[#A8882A]">+ Add Item</button>
-                <button onClick={loadPunchItems} className="text-xs px-3 py-1.5 rounded-lg font-medium text-[#0f2a3e] border border-[#0f2a3e] hover:bg-blue-50">
+                <button onClick={loadPunchItems} className="text-xs px-3 py-1.5 rounded-lg font-medium text-signal border border-signal hover:bg-blue-50">
                   {showPunch ? 'Hide' : 'Load'}
                 </button>
               </div>
@@ -769,24 +769,24 @@ export default function JobDetailPage() {
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={createPunchItem} className="px-3 py-2 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#163d5a]">Add Item</button>
-                  <button onClick={() => setShowPunchForm(false)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                  <button onClick={createPunchItem} className="px-3 py-2 bg-signal text-fg-on-accent rounded text-sm font-medium hover:bg-signal-hover">Add Item</button>
+                  <button onClick={() => setShowPunchForm(false)} className="text-xs text-fg-muted hover:text-fg">Cancel</button>
                 </div>
               </div>
             )}
             {showPunch && (
               <div className="space-y-2">
                 {punchItems.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-3">No punch items</p>
+                  <p className="text-sm text-fg-subtle text-center py-3">No punch items</p>
                 ) : punchItems.map((pi: any) => (
                   <div key={pi.id} className={`p-3 border rounded-lg ${pi.status === 'RESOLVED' ? 'bg-green-50 border-green-200' : pi.severity === 'CRITICAL' ? 'bg-red-50 border-red-200' : ''}`}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{pi.punchNumber}</span>
+                        <span className="text-sm font-medium text-fg">{pi.punchNumber}</span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                           pi.severity === 'CRITICAL' ? 'bg-red-200 text-red-800' :
                           pi.severity === 'MAJOR' ? 'bg-orange-200 text-orange-800' :
-                          'bg-gray-200 text-gray-700'
+                          'bg-surface-muted text-fg-muted'
                         }`}>{pi.severity}</span>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded ${
@@ -795,8 +795,8 @@ export default function JobDetailPage() {
                         'bg-yellow-100 text-yellow-700'
                       }`}>{pi.status.replace(/_/g, ' ')}</span>
                     </div>
-                    <p className="text-sm text-gray-700">{pi.description}</p>
-                    {pi.location && <p className="text-xs text-gray-500 mt-1">Location: {pi.location}</p>}
+                    <p className="text-sm text-fg-muted">{pi.description}</p>
+                    {pi.location && <p className="text-xs text-fg-muted mt-1">Location: {pi.location}</p>}
                     {pi.status === 'OPEN' && (
                       <div className="mt-2 flex gap-2">
                         <button onClick={() => updatePunchStatus(pi.id, 'start')} className="text-xs px-2 py-1 bg-blue-600 text-white rounded">Start</button>
@@ -822,60 +822,60 @@ export default function JobDetailPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Builder & Contact */}
-          <div className="bg-white rounded-lg border p-5">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Builder</h2>
-            <p className="text-sm font-bold text-gray-900">{job.builderName}</p>
-            {job.builderContact && <p className="text-sm text-gray-600">{job.builderContact}</p>}
+          <div className="bg-surface rounded-lg border p-5">
+            <h2 className="text-lg font-semibold text-fg mb-4">Builder</h2>
+            <p className="text-sm font-semibold text-fg">{job.builderName}</p>
+            {job.builderContact && <p className="text-sm text-fg-muted">{job.builderContact}</p>}
             {job.order?.builder && (
               <div className="mt-3 pt-3 border-t space-y-1">
                 {job.order.builder.email && <p className="text-sm text-blue-600">{job.order.builder.email}</p>}
-                {job.order.builder.phone && <p className="text-sm text-gray-600">{job.order.builder.phone}</p>}
-                <Link href={`/ops/accounts`} className="text-xs text-[#0f2a3e] hover:underline">View Account →</Link>
+                {job.order.builder.phone && <p className="text-sm text-fg-muted">{job.order.builder.phone}</p>}
+                <Link href={`/ops/accounts`} className="text-xs text-signal hover:underline">View Account →</Link>
               </div>
             )}
           </div>
 
           {/* Assigned PM */}
-          <div className="bg-white rounded-lg border p-5">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Manager</h2>
+          <div className="bg-surface rounded-lg border p-5">
+            <h2 className="text-lg font-semibold text-fg mb-4">Project Manager</h2>
             {job.assignedPM ? (
               <div>
-                <p className="text-sm font-bold text-gray-900">{job.assignedPM.firstName} {job.assignedPM.lastName}</p>
+                <p className="text-sm font-semibold text-fg">{job.assignedPM.firstName} {job.assignedPM.lastName}</p>
                 {job.assignedPM.email && <p className="text-sm text-blue-600">{job.assignedPM.email}</p>}
-                {job.assignedPM.phone && <p className="text-sm text-gray-600">{job.assignedPM.phone}</p>}
+                {job.assignedPM.phone && <p className="text-sm text-fg-muted">{job.assignedPM.phone}</p>}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 italic">Unassigned</p>
+              <p className="text-sm text-fg-subtle italic">Unassigned</p>
             )}
           </div>
 
           {/* Linked Order */}
           {job.order && (
-            <div className="bg-white rounded-lg border p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Linked Order</h2>
+            <div className="bg-surface rounded-lg border p-5">
+              <h2 className="text-lg font-semibold text-fg mb-4">Linked Order</h2>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">Order #</span>
-                  <span className="text-sm font-medium text-[#0f2a3e]">{job.order.orderNumber}</span>
+                  <span className="text-xs text-fg-muted">Order #</span>
+                  <span className="text-sm font-medium text-signal">{job.order.orderNumber}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">Total</span>
-                  <span className="text-sm font-bold">{formatCurrency(job.order.total)}</span>
+                  <span className="text-xs text-fg-muted">Total</span>
+                  <span className="text-sm font-semibold">{formatCurrency(job.order.total)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">Status</span>
+                  <span className="text-xs text-fg-muted">Status</span>
                   <span className="text-sm">{job.order.status}</span>
                 </div>
                 {job.order.poNumber && (
                   <div className="flex justify-between">
-                    <span className="text-xs text-gray-500">PO #</span>
+                    <span className="text-xs text-fg-muted">PO #</span>
                     <span className="text-sm">{job.order.poNumber}</span>
                   </div>
                 )}
                 {job.order.deliveryNotes && (
                   <div className="mt-2 pt-2 border-t">
-                    <p className="text-xs text-gray-500">Delivery Notes</p>
-                    <p className="text-sm text-gray-700">{job.order.deliveryNotes}</p>
+                    <p className="text-xs text-fg-muted">Delivery Notes</p>
+                    <p className="text-sm text-fg-muted">{job.order.deliveryNotes}</p>
                   </div>
                 )}
               </div>
@@ -883,8 +883,8 @@ export default function JobDetailPage() {
           )}
 
           {/* Tasks Summary */}
-          <div className="bg-white rounded-lg border p-5">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity Summary</h2>
+          <div className="bg-surface rounded-lg border p-5">
+            <h2 className="text-lg font-semibold text-fg mb-4">Activity Summary</h2>
             <div className="space-y-2">
               {[
                 { label: 'Tasks', count: job.tasks.length },
@@ -896,8 +896,8 @@ export default function JobDetailPage() {
                 { label: 'Decision Notes', count: job.decisionNotes.length },
               ].map(item => (
                 <div key={item.label} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{item.label}</span>
-                  <span className={`text-sm font-bold ${item.count > 0 ? 'text-[#0f2a3e]' : 'text-gray-300'}`}>{item.count}</span>
+                  <span className="text-sm text-fg-muted">{item.label}</span>
+                  <span className={`text-sm font-semibold ${item.count > 0 ? 'text-signal' : 'text-fg-subtle'}`}>{item.count}</span>
                 </div>
               ))}
             </div>

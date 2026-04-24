@@ -337,17 +337,17 @@ export default function InFlowIntegrationPage() {
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
             <div className="glass-card" style={{ padding: 16 }}>
               <div className="eyebrow">Products in Aegis</div>
-              <div style={{ fontSize: 28, fontWeight: 700, margin: '4px 0' }}>{counts.products.toLocaleString()}</div>
+              <div style={{ fontSize: 28, fontWeight: 600, margin: '4px 0' }}>{counts.products.toLocaleString()}</div>
               <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>{counts.inflowLinked} linked to InFlow</div>
             </div>
             <div className="glass-card" style={{ padding: 16 }}>
               <div className="eyebrow">Inventory Records</div>
-              <div style={{ fontSize: 28, fontWeight: 700, margin: '4px 0' }}>{counts.inventory.toLocaleString()}</div>
+              <div style={{ fontSize: 28, fontWeight: 600, margin: '4px 0' }}>{counts.inventory.toLocaleString()}</div>
               <div style={{ fontSize: 12, color: 'var(--fg-muted)' }}>Stock level entries</div>
             </div>
             <div className="glass-card" style={{ padding: 16 }}>
               <div className="eyebrow">Last Sync</div>
-              <div style={{ fontSize: 28, fontWeight: 700, margin: '4px 0' }}>{fmtDate(config?.lastSyncAt)}</div>
+              <div style={{ fontSize: 28, fontWeight: 600, margin: '4px 0' }}>{fmtDate(config?.lastSyncAt)}</div>
               {config?.lastSyncStatus && (
                 <div style={{
                   fontSize: 12,
@@ -359,7 +359,7 @@ export default function InFlowIntegrationPage() {
             </div>
             <div className="glass-card" style={{ padding: 16 }}>
               <div className="eyebrow">Sync Mode</div>
-              <div style={{ fontSize: 20, fontWeight: 700, margin: '4px 0' }}>
+              <div style={{ fontSize: 20, fontWeight: 600, margin: '4px 0' }}>
                 {SYNC_MODES.find(m => m.key === currentMode)?.icon}{' '}
                 {SYNC_MODES.find(m => m.key === currentMode)?.label}
               </div>

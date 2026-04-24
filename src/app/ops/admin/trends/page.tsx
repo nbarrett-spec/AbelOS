@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import EmptyState from '@/components/ui/EmptyState'
+import { LineChart } from 'lucide-react'
 
 interface MetricSeries {
   period: string
@@ -40,7 +42,7 @@ function formatValue(value: number, format: string): string {
 // Inline SVG sparkline
 function Sparkline({ series, trend }: { series: MetricSeries[]; trend: string }) {
   if (!series || series.length === 0) {
-    return <div className="w-full h-10 bg-gray-100 rounded" />
+    return <div className="w-full h-10 bg-surface-muted rounded" />
   }
 
   const values = series.map((s) => s.value)
@@ -69,7 +71,7 @@ function Sparkline({ series, trend }: { series: MetricSeries[]; trend: string })
 // Expanded chart view
 function ExpandedChart({ metric }: { metric: Metric }) {
   if (!metric.series || metric.series.length === 0) {
-    return <div className="p-4 text-gray-500">No data available</div>
+    return <div className="p-4 text-fg-muted">No data available</div>
   }
 
   const values = metric.series.map((s) => s.value)
@@ -98,8 +100,8 @@ function ExpandedChart({ metric }: { metric: Metric }) {
     metric.trend === 'UP' ? '#27AE60' : metric.trend === 'DOWN' ? '#E74C3C' : '#999999'
 
   return (
-    <div className="p-4 bg-gray-50 rounded">
-      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full border border-gray-200 rounded bg-white">
+    <div className="p-4 bg-surface-muted rounded">
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full border border-border rounded bg-surface">
         {/* Gridlines */}
         {ySteps.map((step, i) => (
           <g key={i}>
@@ -141,14 +143,14 @@ function ExpandedChart({ metric }: { metric: Metric }) {
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-300">
+            <tr className="border-b border-border-strong">
               <th className="text-left py-2 px-2">Period</th>
               <th className="text-right py-2 px-2">Value</th>
             </tr>
           </thead>
           <tbody>
             {metric.series.map((s, i) => (
-              <tr key={i} className="border-b border-gray-200 hover:bg-gray-100">
+              <tr key={i} className="border-b border-border hover:bg-row-hover">
                 <td className="py-2 px-2">{s.period}</td>
                 <td className="text-right py-2 px-2 font-mono">{formatValue(s.value, metric.format)}</td>
               </tr>
@@ -188,7 +190,7 @@ export default function AdminTrendsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0f2a3e]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-signal" />
       </div>
     )
   }
@@ -196,28 +198,28 @@ export default function AdminTrendsPage() {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Failed to load trends data</p>
+        <p className="text-fg-muted">Failed to load trends data</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-canvas">
       {/* Header */}
-      <div className="bg-[#0f2a3e] text-white py-8 px-6">
-        <h1 className="text-3xl font-bold">Business Trends</h1>
-        <p className="text-gray-300 mt-2">12-month metric tracking across all operations</p>
+      <div className="bg-surface-elev text-fg-on-accent py-8 px-6">
+        <h1 className="text-3xl font-semibold">Business Trends</h1>
+        <p className="text-fg-muted mt-2">12-month metric tracking across all operations</p>
       </div>
 
       {/* Controls */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div className="bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex gap-4">
           <button
             onClick={() => setPeriod('6')}
             className={`px-4 py-2 rounded font-medium transition ${
               period === '6'
-                ? 'bg-[#C6A24E] text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-signal text-fg-on-accent'
+                : 'bg-surface-muted text-fg-muted hover:bg-surface-elev'
             }`}
           >
             Last 6 Months
@@ -226,20 +228,27 @@ export default function AdminTrendsPage() {
             onClick={() => setPeriod('12')}
             className={`px-4 py-2 rounded font-medium transition ${
               period === '12'
-                ? 'bg-[#C6A24E] text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-signal text-fg-on-accent'
+                : 'bg-surface-muted text-fg-muted hover:bg-surface-elev'
             }`}
           >
             Last 12 Months
           </button>
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-fg-muted">
           Generated {new Date(data.generatedAt).toLocaleString()}
         </p>
       </div>
 
       {/* Metrics Grid */}
       <div className="p-6">
+        {data.metrics.length === 0 ? (
+          <EmptyState
+            icon={<LineChart className="w-8 h-8 text-fg-subtle" />}
+            title="No trends data"
+            description="Metrics will appear here once the trend tracker has data."
+          />
+        ) : (
         <div className="grid grid-cols-4 gap-6">
           {data.metrics.map((metric) => (
             <div
@@ -247,15 +256,15 @@ export default function AdminTrendsPage() {
               onClick={() =>
                 setExpandedId(expandedId === metric.id ? null : metric.id)
               }
-              className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition border-l-4 border-[#C6A24E]"
+              className="bg-surface rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition border-l-4 border-signal"
             >
               {/* Metric name */}
-              <h3 className="text-sm font-semibold text-gray-700 truncate">
+              <h3 className="text-sm font-semibold text-fg-muted truncate">
                 {metric.name}
               </h3>
 
               {/* Current value */}
-              <p className="text-2xl font-bold text-[#0f2a3e] mt-3">
+              <p className="text-2xl font-semibold text-fg mt-3">
                 {formatValue(metric.currentValue, metric.format)}
               </p>
 
@@ -268,7 +277,7 @@ export default function AdminTrendsPage() {
                   <span className="text-[#E74C3C] font-bold text-lg">▼</span>
                 )}
                 {metric.trend === 'FLAT' && (
-                  <span className="text-gray-400 font-bold text-lg">—</span>
+                  <span className="text-fg-subtle font-bold text-lg">—</span>
                 )}
                 <span
                   className={`text-sm font-semibold ${
@@ -276,7 +285,7 @@ export default function AdminTrendsPage() {
                       ? 'text-[#27AE60]'
                       : metric.trend === 'DOWN'
                         ? 'text-[#E74C3C]'
-                        : 'text-gray-500'
+                        : 'text-fg-muted'
                   }`}
                 >
                   {Math.abs(metric.changePercent).toFixed(1)}%
@@ -290,17 +299,18 @@ export default function AdminTrendsPage() {
             </div>
           ))}
         </div>
+        )}
 
         {/* Expanded view */}
         {expandedId && (
-          <div className="mt-8 bg-white rounded-lg shadow p-6 border-l-4 border-[#C6A24E]">
+          <div className="mt-8 bg-surface rounded-lg shadow p-6 border-l-4 border-signal">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-[#0f2a3e]">
+              <h2 className="text-2xl font-semibold text-fg">
                 {data.metrics.find((m) => m.id === expandedId)?.name}
               </h2>
               <button
                 onClick={() => setExpandedId(null)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-fg-muted hover:text-fg text-2xl"
               >
                 ✕
               </button>

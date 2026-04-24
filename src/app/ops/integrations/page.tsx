@@ -141,7 +141,7 @@ export default function IntegrationsPage() {
         </div>
       )}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937' }}>System Integrations</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: '#1f2937' }}>System Integrations</h1>
         <p style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
           Connect InFlow, ECI Bolt, Gmail, and Hyphen to keep your data in sync
         </p>
@@ -165,7 +165,7 @@ export default function IntegrationsPage() {
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                   <span style={{ fontSize: 28 }}>{PROVIDER_ICONS[integration.provider]}</span>
                   <div>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>{integration.name}</h3>
+                    <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1f2937' }}>{integration.name}</h3>
                     <p style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{integration.description}</p>
                   </div>
                 </div>
