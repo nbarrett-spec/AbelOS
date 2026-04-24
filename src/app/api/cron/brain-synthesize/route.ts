@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { startCronRun, finishCronRun } from '@/lib/cron'
 
 // GET /api/cron/brain-synthesize — daily knowledge synthesis nudge.
-// POSTs to brain.abellumber.com/brain/knowledge/synthesize behind CF Access.
+// Fires the Brain's three pipeline stages (ingest → polish → narrate)
+// against brain.abellumber.com behind CF Access.
 // Coordinator (8400) is hung — call Brain directly. Schedule: 0 6 * * *.
 // Auth: Bearer ${CRON_SECRET}.
 
@@ -35,36 +36,35 @@ export async function GET(request: NextRequest) {
     headers['CF-Access-Client-Secret'] = cfSecret
   }
 
+  const stages = ['ingest', 'polish', 'narrate'] as const
+  const results: Array<{ stage: string; status: number; ok: boolean }> = []
   try {
-    const res = await fetch(`${BRAIN_BASE_URL}/brain/knowledge/synthesize`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({}),
-      signal: AbortSignal.timeout(110_000),
-      redirect: 'manual',
-    })
-
-    const raw = await res.text()
-    let data: any = raw
-    try { data = JSON.parse(raw) } catch {}
-
-    const ok = res.ok
+    for (const stage of stages) {
+      try {
+        const res = await fetch(`${BRAIN_BASE_URL}/brain/trigger/${stage}`, {
+          method: 'POST',
+          headers,
+          signal: AbortSignal.timeout(35_000),
+          redirect: 'manual',
+        })
+        results.push({ stage, status: res.status, ok: res.ok })
+      } catch (err: any) {
+        results.push({ stage, status: 504, ok: false })
+      }
+    }
+    const ok = results.every((r) => r.ok)
     await finishCronRun(runId, ok ? 'SUCCESS' : 'FAILURE', Date.now() - started, {
-      result: { status: res.status, body: data },
-      error: ok ? undefined : `Brain synthesize returned ${res.status}`,
+      result: { stages: results },
+      error: ok ? undefined : `One or more Brain trigger stages failed`,
     })
-
-    return NextResponse.json(
-      { success: ok, status: res.status, body: data },
-      { status: ok ? 200 : 502 }
-    )
+    return NextResponse.json({ success: ok, stages: results }, { status: ok ? 200 : 502 })
   } catch (error: any) {
     console.error('brain-synthesize cron error:', error)
     await finishCronRun(runId, 'FAILURE', Date.now() - started, {
       error: error?.message || String(error),
     })
     return NextResponse.json(
-      { success: false, error: error?.message || String(error) },
+      { success: false, error: error?.message || String(error), stages: results },
       { status: 500 }
     )
   }

@@ -1,10 +1,14 @@
 /**
  * POST /api/v1/brain/synthesize
  *
- * Staff-triggered knowledge synthesis. Proxies to the NUC Brain at
- * brain.abellumber.com/brain/knowledge/synthesize behind CF Access.
+ * Staff-triggered knowledge synthesis. The NUC Brain exposes three pipeline
+ * triggers — /brain/trigger/{ingest,polish,narrate} — and this route fires
+ * them in sequence so a single button press digests new events end-to-end.
  *
- * Body: { categories?: string[], force?: boolean }
+ * Body (optional): { stages?: ('ingest'|'polish'|'narrate')[] } — defaults
+ * to all three. force/categories accepted but currently unused (Brain side
+ * has no synthesis filter API).
+ *
  * Auth: staff session (requireStaffAuth — same as other v1 routes).
  *
  * Coordinator (port 8400) is currently hung; this calls the Brain directly.
@@ -23,13 +27,14 @@ export async function POST(req: NextRequest) {
   const auth = await requireStaffAuth(req)
   if (auth.error) return auth.error
 
-  let body: { categories?: string[]; force?: boolean } = {}
+  let body: { stages?: Array<'ingest' | 'polish' | 'narrate'> } = {}
   try {
     const text = await req.text()
     if (text) body = JSON.parse(text)
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
+  const stages = body.stages?.length ? body.stages : (['ingest', 'polish', 'narrate'] as const)
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -42,31 +47,23 @@ export async function POST(req: NextRequest) {
     headers['CF-Access-Client-Secret'] = cfSecret
   }
 
-  try {
-    const res = await fetch(`${BRAIN_BASE_URL}/brain/knowledge/synthesize`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(60_000),
-      redirect: 'manual',
-    })
-
-    const raw = await res.text()
-    let data: any = raw
-    try { data = JSON.parse(raw) } catch {}
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: 'Brain synthesize failed', status: res.status, body: data },
-        { status: res.status >= 500 ? 502 : res.status }
-      )
+  const results: Array<{ stage: string; status: number; ok: boolean; body?: unknown }> = []
+  for (const stage of stages) {
+    try {
+      const res = await fetch(`${BRAIN_BASE_URL}/brain/trigger/${stage}`, {
+        method: 'POST',
+        headers,
+        signal: AbortSignal.timeout(60_000),
+        redirect: 'manual',
+      })
+      const raw = await res.text().catch(() => '')
+      let data: unknown = raw
+      try { data = JSON.parse(raw) } catch {}
+      results.push({ stage, status: res.status, ok: res.ok, body: data })
+    } catch (err: any) {
+      results.push({ stage, status: 504, ok: false, body: err?.message || 'fetch failed' })
     }
-    return NextResponse.json(data)
-  } catch (err: any) {
-    console.error('[POST /api/v1/brain/synthesize] error', err)
-    return NextResponse.json(
-      { error: err?.message || 'Brain unreachable', status: 504 },
-      { status: 504 }
-    )
   }
+  const ok = results.every((r) => r.ok)
+  return NextResponse.json({ ok, results }, { status: ok ? 200 : 502 })
 }

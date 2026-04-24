@@ -1,8 +1,9 @@
 /**
- * GET /api/v1/brain/knowledge?category=...&limit=...
+ * GET /api/v1/brain/knowledge?type=...&limit=...&q=...
  *
- * Proxies to the NUC Brain at brain.abellumber.com/brain/knowledge/list
- * behind CF Access. Lets the Aegis UI read synthesized knowledge.
+ * Proxies to the NUC Brain. The Brain has no /knowledge/list endpoint —
+ * its data model is entities + events. This route maps to /brain/entities
+ * (with optional ?type= filter) or /brain/search (when ?q= is given).
  *
  * Auth: staff session (requireStaffAuth — same as other v1 routes).
  */
@@ -20,13 +21,16 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error
 
   const url = new URL(req.url)
-  const category = url.searchParams.get('category')
-  const limit = url.searchParams.get('limit')
+  const type = url.searchParams.get('type') || url.searchParams.get('category')
+  const limit = url.searchParams.get('limit') || '50'
+  const q = url.searchParams.get('q')
 
   const qs = new URLSearchParams()
-  if (category) qs.set('category', category)
-  if (limit) qs.set('limit', limit)
-  const tail = qs.toString() ? `?${qs.toString()}` : ''
+  qs.set('limit', limit)
+  if (q) qs.set('q', q)
+  if (type) qs.set('type', type)
+  const path = q ? `/brain/search` : `/brain/entities`
+  const tail = `?${qs.toString()}`
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -40,7 +44,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(`${BRAIN_BASE_URL}/brain/knowledge/list${tail}`, {
+    const res = await fetch(`${BRAIN_BASE_URL}${path}${tail}`, {
       method: 'GET',
       headers,
       signal: AbortSignal.timeout(60_000),
@@ -53,7 +57,7 @@ export async function GET(req: NextRequest) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: 'Brain knowledge/list failed', status: res.status, body: data },
+        { error: 'Brain entity/search failed', status: res.status, body: data },
         { status: res.status >= 500 ? 502 : res.status }
       )
     }
