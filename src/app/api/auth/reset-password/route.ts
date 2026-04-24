@@ -4,18 +4,59 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { logger, getRequestId } from '@/lib/logger'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit'
+
+// Fire-and-forget audit call. logAudit() internally try/catches + returns ''
+// on any failure, and we attach .catch(() => {}) defensively so a rejected
+// promise can never bubble up and break the auth response. Audit logging
+// MUST NOT fail the request. Not awaited — keeps response timing unchanged.
+const mask = (e: string) => {
+  const [u, d] = (e || '').split('@')
+  if (!d) return '***'
+  return u.length <= 2 ? '***@' + d : u.slice(0, 2) + '***@' + d
+}
+function getIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
 
 // POST /api/auth/reset-password — validate token and set new password
 export async function POST(request: NextRequest) {
+  const ipAddress = getIp(request)
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
   // Rate limit by IP — stops token brute-force and mass-reset abuse
   const limited = await checkRateLimit(request, authLimiter, 10, 'reset-password')
-  if (limited) return limited
+  if (limited) {
+    logAudit({
+      staffId: 'unknown',
+      action: 'FAIL_RATE_LIMIT',
+      entity: 'auth',
+      details: { route: 'reset-password', ip: ipAddress, userAgent },
+      ipAddress,
+      userAgent,
+      severity: 'WARN',
+    }).catch(() => {})
+    return limited
+  }
 
   const requestId = getRequestId(request)
   try {
     const { token, password } = await request.json()
 
     if (!token || !password) {
+      logAudit({
+        staffId: 'unknown',
+        action: 'FAIL_VALIDATION',
+        entity: 'auth',
+        details: { route: 'reset-password', ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'INFO',
+      }).catch(() => {})
       return NextResponse.json(
         { error: 'Token and password are required' },
         { status: 400 }
@@ -23,6 +64,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (password.length < 8) {
+      logAudit({
+        staffId: 'unknown',
+        action: 'FAIL_PASSWORD_POLICY',
+        entity: 'auth',
+        details: { route: 'reset-password', ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'INFO',
+      }).catch(() => {})
       return NextResponse.json(
         { error: 'Password must be at least 8 characters' },
         { status: 400 }
@@ -38,6 +88,15 @@ export async function POST(request: NextRequest) {
     ` as any[]
 
     if (builders.length === 0) {
+      logAudit({
+        staffId: 'unknown',
+        action: 'FAIL_INVALID_TOKEN',
+        entity: 'auth',
+        details: { route: 'reset-password', ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'WARN',
+      }).catch(() => {})
       return NextResponse.json(
         { error: 'Invalid or expired reset link. Please request a new one.' },
         { status: 400 }
@@ -54,6 +113,16 @@ export async function POST(request: NextRequest) {
         SET "resetToken" = NULL, "resetTokenExpiry" = NULL
         WHERE "id" = ${builder.id}
       `
+      logAudit({
+        staffId: `builder:${builder.id}`,
+        action: 'FAIL_TOKEN_EXPIRED',
+        entity: 'auth',
+        entityId: builder.id,
+        details: { route: 'reset-password', userId: builder.id, email: mask(builder.email), ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'WARN',
+      }).catch(() => {})
       return NextResponse.json(
         { error: 'This reset link has expired. Please request a new one.' },
         { status: 400 }
@@ -72,11 +141,31 @@ export async function POST(request: NextRequest) {
       WHERE "id" = ${builder.id}
     `
 
+    logAudit({
+      staffId: `builder:${builder.id}`,
+      action: 'RESET_PASSWORD',
+      entity: 'auth',
+      entityId: builder.id,
+      details: { userId: builder.id, email: mask(builder.email), ip: ipAddress, userAgent },
+      ipAddress,
+      userAgent,
+      severity: 'WARN',
+    }).catch(() => {})
+
     return NextResponse.json({
       message: 'Password reset successfully. You can now sign in with your new password.',
     })
   } catch (error: any) {
     logger.error('reset_password_error', error, { requestId })
+    logAudit({
+      staffId: 'unknown',
+      action: 'FAIL_ERROR',
+      entity: 'auth',
+      details: { route: 'reset-password', ip: ipAddress, userAgent },
+      ipAddress,
+      userAgent,
+      severity: 'WARN',
+    }).catch(() => {})
     return NextResponse.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 }

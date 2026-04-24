@@ -6,6 +6,17 @@ import { loginSchema } from '@/lib/validations'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logger, getRequestId } from '@/lib/logger'
 import { logSecurityEvent } from '@/lib/security-events'
+import { logAudit } from '@/lib/audit'
+
+// Fire-and-forget audit call. logAudit() internally try/catches + returns ''
+// on any failure, and we attach .catch(() => {}) defensively so a rejected
+// promise can never bubble up and break the auth response. Audit logging
+// MUST NOT fail the request. Not awaited — keeps response timing unchanged.
+const mask = (e: string) => {
+  const [u, d] = (e || '').split('@')
+  if (!d) return '***'
+  return u.length <= 2 ? '***@' + d : u.slice(0, 2) + '***@' + d
+}
 
 function clientIp(request: NextRequest): string {
   return (
@@ -17,15 +28,37 @@ function clientIp(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   const requestId = getRequestId(request)
+  const ipAddress = clientIp(request)
+  const userAgent = request.headers.get('user-agent') || 'unknown'
   try {
     // Rate limit login attempts — logs a RATE_LIMIT SecurityEvent on rejection.
     const limited = await checkRateLimit(request, authLimiter, 10, 'builder-login')
-    if (limited) return limited
+    if (limited) {
+      logAudit({
+        staffId: 'unknown',
+        action: 'FAIL_RATE_LIMIT',
+        entity: 'auth',
+        details: { route: 'login', ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'WARN',
+      }).catch(() => {})
+      return limited
+    }
 
     const body = await request.json()
     const parsed = loginSchema.safeParse(body)
 
     if (!parsed.success) {
+      logAudit({
+        staffId: 'unknown',
+        action: 'FAIL_VALIDATION',
+        entity: 'auth',
+        details: { route: 'login', ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'INFO',
+      }).catch(() => {})
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 400 }
@@ -50,6 +83,15 @@ export async function POST(request: NextRequest) {
           requestId,
           details: { reason: 'unknown_email', emailPrefix: email.slice(0, 2) },
         })
+        logAudit({
+          staffId: 'unknown',
+          action: 'FAIL_UNKNOWN_EMAIL',
+          entity: 'auth',
+          details: { route: 'login', email: mask(email), ip: ipAddress, userAgent },
+          ipAddress,
+          userAgent,
+          severity: 'INFO',
+        }).catch(() => {})
         return NextResponse.json(
           { error: 'Invalid email or password' },
           { status: 401 }
@@ -68,6 +110,16 @@ export async function POST(request: NextRequest) {
           requestId,
           details: { reason: 'inactive_account', builderId: builder.id },
         })
+        logAudit({
+          staffId: `builder:${builder.id}`,
+          action: 'FAIL_INACTIVE_ACCOUNT',
+          entity: 'auth',
+          entityId: builder.id,
+          details: { route: 'login', userId: builder.id, email: mask(builder.email), ip: ipAddress, userAgent },
+          ipAddress,
+          userAgent,
+          severity: 'WARN',
+        }).catch(() => {})
         return NextResponse.json(
           { error: 'Account is not active. Please contact support.' },
           { status: 403 }
@@ -85,6 +137,16 @@ export async function POST(request: NextRequest) {
           requestId,
           details: { reason: 'bad_password', builderId: builder.id },
         })
+        logAudit({
+          staffId: `builder:${builder.id}`,
+          action: 'FAIL_WRONG_PASSWORD',
+          entity: 'auth',
+          entityId: builder.id,
+          details: { route: 'login', userId: builder.id, email: mask(builder.email), ip: ipAddress, userAgent },
+          ipAddress,
+          userAgent,
+          severity: 'WARN',
+        }).catch(() => {})
         return NextResponse.json(
           { error: 'Invalid email or password' },
           { status: 401 }
@@ -98,6 +160,17 @@ export async function POST(request: NextRequest) {
       })
       await setSessionCookie(token, body.rememberMe === true)
 
+      logAudit({
+        staffId: `builder:${builder.id}`,
+        action: 'LOGIN',
+        entity: 'auth',
+        entityId: builder.id,
+        details: { userId: builder.id, email: mask(builder.email), ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'INFO',
+      }).catch(() => {})
+
       return NextResponse.json({
         builder: {
           id: builder.id,
@@ -109,10 +182,28 @@ export async function POST(request: NextRequest) {
       })
     } catch (dbError) {
       logger.error('login_db_error', dbError, { requestId })
+      logAudit({
+        staffId: 'unknown',
+        action: 'FAIL_DB_ERROR',
+        entity: 'auth',
+        details: { route: 'login', ip: ipAddress, userAgent },
+        ipAddress,
+        userAgent,
+        severity: 'WARN',
+      }).catch(() => {})
       return NextResponse.json({ error: 'Login failed' }, { status: 500 })
     }
   } catch (error) {
     logger.error('login_error', error, { requestId })
+    logAudit({
+      staffId: 'unknown',
+      action: 'FAIL_ERROR',
+      entity: 'auth',
+      details: { route: 'login', ip: ipAddress, userAgent },
+      ipAddress,
+      userAgent,
+      severity: 'WARN',
+    }).catch(() => {})
     return NextResponse.json({ error: 'Login failed' }, { status: 500 })
   }
 }

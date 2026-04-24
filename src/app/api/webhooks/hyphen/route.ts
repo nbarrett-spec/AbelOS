@@ -9,6 +9,7 @@ import {
   markWebhookProcessed,
   markWebhookFailed,
 } from '@/lib/webhook'
+import { logAudit } from '@/lib/audit'
 
 // POST /api/webhooks/hyphen — Handle Hyphen BuildPro/SupplyPro events
 //
@@ -16,6 +17,11 @@ import {
 // falls back to shared-secret "x-webhook-secret" comparison.
 //
 // Idempotency: keyed off body.eventId / body.id / x-event-id header.
+//
+// Audit: every mutation-bearing branch (RECEIVE, PROCESS, FAIL) records an
+// AuditLog entry via logAudit() so /admin/audit has full visibility into
+// external webhook activity. Uses `entity: 'hyphen_webhook'` per the
+// Wave-2 sprint contract — do not rename without a coordinated migration.
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
 
@@ -46,6 +52,23 @@ export async function POST(request: NextRequest) {
     }
   }
   if (!authenticated) {
+    // Record the reject — this IS a mutation of the audit trail and helps
+    // detect probing of the webhook surface.
+    await logAudit({
+      staffId: '',
+      action: 'FAIL',
+      entity: 'hyphen_webhook',
+      details: {
+        reason: 'auth_rejected',
+        hasHmac: !!hmacHeader,
+        hasSharedSecret: !!sharedSecretHeader,
+        hasConfiguredSecret: !!webhookSecret,
+        bodyLength: rawBody?.length || 0,
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+      severity: 'WARN',
+    }).catch(() => {})
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -54,6 +77,15 @@ export async function POST(request: NextRequest) {
     const eventType = body.eventType || body.event || request.headers.get('x-event-type')
 
     if (!eventType) {
+      await logAudit({
+        staffId: '',
+        action: 'FAIL',
+        entity: 'hyphen_webhook',
+        details: { reason: 'missing_event_type', bodyKeys: Object.keys(body || {}) },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+        severity: 'WARN',
+      }).catch(() => {})
       return NextResponse.json({ error: 'Missing event type' }, { status: 400 })
     }
 
@@ -65,14 +97,65 @@ export async function POST(request: NextRequest) {
       `${eventType}:${JSON.stringify(body.data || body).length}:${Date.now()}`
     const idem = await ensureIdempotent('hyphen', eventId, eventType, body)
     if (idem.status === 'duplicate') {
+      // Audit the dup receive so replay visibility is complete.
+      await logAudit({
+        staffId: '',
+        action: 'RECEIVE',
+        entity: 'hyphen_webhook',
+        entityId: eventId,
+        details: { eventType, duplicate: true, idempotencyId: idem.id },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+      }).catch(() => {})
       return NextResponse.json({ received: true, duplicate: true })
     }
+
+    // First-time receipt — record before dispatching to the handler so we
+    // still have a trail if handleWebhook crashes hard.
+    await logAudit({
+      staffId: '',
+      action: 'RECEIVE',
+      entity: 'hyphen_webhook',
+      entityId: eventId,
+      details: {
+        eventType,
+        idempotencyId: idem.id,
+        // Truncate the payload echo to keep AuditLog rows small — the full
+        // body already lives in the WebhookIngest / HyphenOrderEvent row.
+        payloadPreview: truncatePayload(body),
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    }).catch(() => {})
 
     try {
       await handleWebhook(eventType, body.data || body)
       await markWebhookProcessed(idem.id)
+      await logAudit({
+        staffId: '',
+        action: 'PROCESS',
+        entity: 'hyphen_webhook',
+        entityId: eventId,
+        details: { eventType, idempotencyId: idem.id },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+      }).catch(() => {})
     } catch (err: any) {
       await markWebhookFailed(idem.id, err?.message || String(err))
+      await logAudit({
+        staffId: '',
+        action: 'FAIL',
+        entity: 'hyphen_webhook',
+        entityId: eventId,
+        details: {
+          eventType,
+          idempotencyId: idem.id,
+          error: err?.message || String(err),
+        },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+        severity: 'WARN',
+      }).catch(() => {})
       throw err
     }
 
@@ -80,5 +163,24 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Hyphen webhook error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * Shrink payload to a form safe to keep inside AuditLog.details. The full
+ * body is persisted elsewhere (WebhookIngest / HyphenOrderEvent) — this
+ * is only a breadcrumb so admins can see "what came in" at a glance.
+ */
+function truncatePayload(body: any): any {
+  try {
+    const json = JSON.stringify(body || {})
+    if (json.length <= 2000) return body
+    return {
+      _truncated: true,
+      _originalBytes: json.length,
+      preview: json.slice(0, 2000),
+    }
+  } catch {
+    return { _truncated: true, _error: 'unserializable' }
   }
 }
