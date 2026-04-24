@@ -259,25 +259,24 @@ async function ingestPOLineItems(poToOrderId, fallbackProductId) {
       r['Account_Category'] && `[${r['Account_Category']}]`,
     ].filter(Boolean).join(' · ') || `BWP line ${lineId}`;
 
-    // Idempotency via unique partial index on legacyLineId (raw-SQL upsert).
+    // Idempotency via deterministic id — ON CONFLICT on primary key.
     try {
       const id = `oi_bwp_${lineId}`;
+      const pre = await prisma.$queryRawUnsafe(`SELECT id FROM "OrderItem" WHERE id=$1`, id);
       await prisma.$executeRawUnsafe(
         `INSERT INTO "OrderItem" ("id","orderId","productId","description","quantity","unitPrice","lineTotal","legacyLineId")
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         ON CONFLICT ("legacyLineId") DO UPDATE SET
+         ON CONFLICT ("id") DO UPDATE SET
            "orderId"=EXCLUDED."orderId",
            "productId"=EXCLUDED."productId",
            "description"=EXCLUDED."description",
            "quantity"=EXCLUDED."quantity",
            "unitPrice"=EXCLUDED."unitPrice",
-           "lineTotal"=EXCLUDED."lineTotal"
-         RETURNING (xmax = 0) AS inserted`,
+           "lineTotal"=EXCLUDED."lineTotal",
+           "legacyLineId"=EXCLUDED."legacyLineId"`,
         id, orderId, fallbackProductId, description, 1, amount, amount, lineId
       );
-      // Can't easily tell insert vs update from executeRawUnsafe return; track rough counts by pre-check.
-      // Cheap check: count by legacyLineId AFTER op.
-      inserted++; // optimistic; best-effort distinction below
+      if (Array.isArray(pre) && pre.length > 0) updated++; else inserted++;
     } catch (e) {
       console.warn(`[LINE ${lineId}] skipped: ${e.message}`);
       skipped++;
@@ -305,10 +304,14 @@ async function ingestInvoices(builderId, createdById) {
     const checkDate = parseDateSafe(r['Check_Date']);
     const statusRaw = (r['Status'] || '').trim().toUpperCase();
     const hasCheck = (r['Check_Number'] || '').trim().length > 0;
-    const paid = hasCheck && amount > 0; // historical — if check issued, we were paid
-    const amountPaid = paid ? amount : 0;
-    const balanceDue = paid ? 0 : amount;
-    const status = paid ? 'PAID' : (statusRaw === 'VOID' ? 'VOID' : (amount === 0 ? 'PAID' : 'OVERDUE'));
+    // Historical close-out logic: if a check was issued (any sign), treat invoice
+    // as reconciled so it doesn't distort current AR. Credit memos (negative
+    // amount) with checks are also reconciled. Only checkless active invoices
+    // contribute to outstanding balance.
+    const reconciled = hasCheck || amount === 0 || statusRaw === 'VOID';
+    const amountPaid = reconciled ? amount : 0;
+    const balanceDue = reconciled ? 0 : amount;
+    const status = statusRaw === 'VOID' ? 'VOID' : (reconciled ? 'PAID' : 'OVERDUE');
     const data = {
       invoiceNumber,
       builderId,
@@ -320,7 +323,7 @@ async function ingestInvoices(builderId, createdById) {
       status,
       paymentTerm: 'NET_30',
       issuedAt: issuedAt || undefined,
-      paidAt: paid ? (checkDate || issuedAt || undefined) : undefined,
+      paidAt: reconciled ? (checkDate || issuedAt || undefined) : undefined,
       notes: [
         'PULTE BWP HISTORICAL',
         r['Description'] && r['Description'],
@@ -646,7 +649,7 @@ async function main() {
     },
     ingest: {
       orders: { inserted: po.inserted, updated: po.updated, skipped: po.skipped },
-      orderItems: { processed: lines.inserted, skipped: lines.skipped, orphanPO: lines.orphanPO },
+      orderItems: { inserted: lines.inserted, updated: lines.updated, skipped: lines.skipped, orphanPO: lines.orphanPO },
       invoices: { inserted: inv.inserted, updated: inv.updated, skipped: inv.skipped },
       payments: { inserted: pay.paymentsFromInvoices, orphan: pay.paySkipped },
       backcharges: { inserted: bc.inserted, updated: bc.updated, skipped: bc.skipped },
