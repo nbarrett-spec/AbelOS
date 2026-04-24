@@ -158,6 +158,41 @@ interface CorrelateInput {
   builderName?: string | null
   jobAddress?: string | null
   lotBlock?: string | null
+  subdivision?: string | null
+}
+
+/**
+ * Consult the HyphenCommunityAlias table to resolve a Hyphen portal
+ * subdivision label (e.g. "The Grove Frisco 55s") to an Aegis Community.id
+ * (e.g. "The Grove"). Returns null if the table is absent or no row matches.
+ *
+ * The table is created by scripts/seed-hyphen-community-aliases.mjs and is
+ * maintained out-of-band; we tolerate its absence gracefully so this function
+ * never breaks ingest.
+ */
+async function resolveCommunityIdFromSubdivision(
+  subdivision: string | null | undefined,
+): Promise<{ communityId: string | null; builderId: string | null; confidence: MatchConfidence } | null> {
+  if (!subdivision || !subdivision.trim()) return null
+  try {
+    const rows = await prisma.$queryRawUnsafe<{
+      aegisCommunityId: string | null
+      builderId: string | null
+      matchConfidence: string | null
+    }[]>(
+      `SELECT "aegisCommunityId", "builderId", "matchConfidence"
+         FROM "HyphenCommunityAlias"
+        WHERE "hyphenName" = $1
+        LIMIT 1`,
+      subdivision,
+    )
+    if (!rows.length || !rows[0].aegisCommunityId) return null
+    const conf = (rows[0].matchConfidence || 'LOW') as MatchConfidence
+    return { communityId: rows[0].aegisCommunityId, builderId: rows[0].builderId, confidence: conf }
+  } catch {
+    // Table may not exist in some environments — that's fine.
+    return null
+  }
 }
 
 /**
@@ -210,6 +245,13 @@ export async function correlateToJob(
     }
   }
 
+  // ── Community alias bridge: Hyphen subdivision → Aegis Community ───
+  // Resolved early so we can (a) scope address candidates to the right
+  // community and (b) fall back to community-only matching when the street
+  // address is a seed placeholder like "Copper Canyon - Lot 50".
+  const communityAlias = await resolveCommunityIdFromSubdivision(input.subdivision)
+  const resolvedBuilderId = builderId || communityAlias?.builderId || null
+
   // ── MEDIUM/LOW: address fuzzy match ────────────────────────────────
   const normalizedAddr = normalizeAddress(input.jobAddress)
   if (normalizedAddr && normalizedAddr.length >= 5) {
@@ -258,18 +300,62 @@ export async function correlateToJob(
       hits.sort((a, b) => b.score - a.score)
       const top = hits[0]
       if (top.builderHit && top.lotHit) {
-        return { jobId: top.jobId, builderId, matchConfidence: 'MEDIUM', matchMethod: 'address_lot_builder' }
+        return { jobId: top.jobId, builderId: resolvedBuilderId, matchConfidence: 'MEDIUM', matchMethod: 'address_lot_builder' }
       }
       if (top.builderHit) {
-        return { jobId: top.jobId, builderId, matchConfidence: 'MEDIUM', matchMethod: 'address_builder' }
+        return { jobId: top.jobId, builderId: resolvedBuilderId, matchConfidence: 'MEDIUM', matchMethod: 'address_builder' }
       }
-      return { jobId: top.jobId, builderId, matchConfidence: 'LOW', matchMethod: 'address_only' }
+      return { jobId: top.jobId, builderId: resolvedBuilderId, matchConfidence: 'LOW', matchMethod: 'address_only' }
+    }
+  }
+
+  // ── LOW: community-alias fallback ──────────────────────────────────
+  // Address-based match failed. If we resolved a community from the Hyphen
+  // subdivision label, try to match on Job.communityId (+ lot block when
+  // present). This is how we pick up the 66 Brookfield Jobs whose jobAddress
+  // is a seed placeholder without a street number.
+  if (communityAlias?.communityId) {
+    const normLot = normalizeStr(input.lotBlock)
+    const commJobs = await prisma.$queryRawUnsafe<{
+      id: string
+      lotBlock: string | null
+      jobAddress: string | null
+    }[]>(
+      `SELECT "id","lotBlock","jobAddress"
+         FROM "Job"
+        WHERE "communityId" = $1
+        ORDER BY "createdAt" DESC
+        LIMIT 500`,
+      communityAlias.communityId,
+    )
+
+    if (commJobs.length) {
+      // If we have a lot/block, try to narrow to the exact lot.
+      if (normLot) {
+        const lotHit = commJobs.find((j) => normalizeStr(j.lotBlock) === normLot)
+        if (lotHit) {
+          return {
+            jobId: lotHit.id,
+            builderId: resolvedBuilderId,
+            matchConfidence: 'MEDIUM',
+            matchMethod: 'address_lot_builder',
+          }
+        }
+      }
+      // No lot hit — return just the community linkage as LOW. Matcher is
+      // non-deterministic (picks newest), so consumers should treat as hint.
+      return {
+        jobId: commJobs[0].id,
+        builderId: resolvedBuilderId,
+        matchConfidence: 'LOW',
+        matchMethod: 'address_only',
+      }
     }
   }
 
   return {
     jobId: null,
-    builderId,
+    builderId: resolvedBuilderId,
     matchConfidence: 'UNMATCHED',
     matchMethod: 'unmatched',
   }

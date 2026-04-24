@@ -119,6 +119,7 @@ export async function POST(req: NextRequest) {
     builderName: m.builder_name ?? null,
     jobAddress: m.job_address ?? null,
     lotBlock: m.lot_block ?? null,
+    subdivision: m.subdivision ?? null,
   })
 
   const scrapedAt = parseDate(m.scraped_at) || new Date()

@@ -41,10 +41,16 @@ interface DashboardData {
   kpis: { jobsInProduction: number; picksPending: number; qcPassRate: number; itemsStaged: number }
 }
 
+interface CrossDockSummary {
+  totalFlags: number
+  expectedToday: number
+}
+
 export default function WarehousePortal() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [picks, setPicks] = useState<MaterialPick[]>([])
   const [qcChecks, setQcChecks] = useState<QCCheck[]>([])
+  const [crossDock, setCrossDock] = useState<CrossDockSummary>({ totalFlags: 0, expectedToday: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)

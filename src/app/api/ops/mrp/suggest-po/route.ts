@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
+import { getForecastDemand } from '@/lib/mrp/forecast'
 
 /**
  * POST /api/ops/mrp/suggest-po
@@ -58,12 +59,27 @@ export async function POST(request: NextRequest) {
       select: { vendorCost: true, minOrderQty: true, vendorSku: true },
     })
 
+    // Forecast-aware sizing: if the caller didn't pin a quantity, roll the
+    // shortfall/reorderQty floor forward by 1 month of forecast demand so
+    // we're not back here next week. DemandForecast may be empty (first
+    // cron hasn't run yet) — in that case we fall back to the old behavior.
+    let forecastUsed: number | null = null
     if (!quantity || quantity <= 0) {
       const inv = await prisma.inventoryItem.findFirst({
         where: { productId },
         select: { reorderQty: true },
       })
-      quantity = Math.max(vp?.minOrderQty ?? 1, inv?.reorderQty ?? 10)
+      const baseQty = Math.max(vp?.minOrderQty ?? 1, inv?.reorderQty ?? 10)
+
+      try {
+        forecastUsed = await getForecastDemand(productId, 1)
+      } catch {
+        forecastUsed = null
+      }
+
+      quantity = forecastUsed != null && forecastUsed > 0
+        ? Math.max(baseQty + Math.round(forecastUsed), baseQty)
+        : baseQty
     }
 
     const unitCost = vp?.vendorCost ?? product.cost ?? 0
@@ -95,7 +111,9 @@ export async function POST(request: NextRequest) {
         status: 'DRAFT',
         subtotal: lineTotal,
         total: lineTotal,
-        notes: `Auto-suggested by MRP for ${product.sku}`,
+        notes: forecastUsed != null && forecastUsed > 0
+          ? `Auto-suggested by MRP for ${product.sku} (includes +${Math.round(forecastUsed)} forward-month forecast)`
+          : `Auto-suggested by MRP for ${product.sku}`,
         source: 'MRP_SUGGESTED',
         items: {
           create: [
@@ -113,9 +131,15 @@ export async function POST(request: NextRequest) {
       select: { id: true, poNumber: true },
     })
 
-    await audit(request, 'CREATE', 'PurchaseOrder', po.id, { poNumber: po.poNumber, productId, quantity, source: 'MRP_SUGGESTED' })
+    await audit(request, 'CREATE', 'PurchaseOrder', po.id, {
+      poNumber: po.poNumber,
+      productId,
+      quantity,
+      forecastUsed,
+      source: 'MRP_SUGGESTED',
+    })
 
-    return NextResponse.json({ ok: true, po })
+    return NextResponse.json({ ok: true, po, forecastUsed })
   } catch (err: any) {
     console.error('[mrp suggest-po] error', err)
     return NextResponse.json({ error: err?.message || 'failed' }, { status: 500 })

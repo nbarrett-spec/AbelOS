@@ -171,6 +171,10 @@
     {
       "path": "/api/cron/collections-ladder",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/demand-forecast-weekly",
+      "schedule": "0 7 * * 0"
     }
   ]
 }

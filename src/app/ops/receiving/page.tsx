@@ -39,6 +39,13 @@ interface QueuePO {
   }
 }
 
+interface CrossDockJob {
+  id: string
+  jobNumber: string
+  builderName: string | null
+  scheduledDate: string | null
+}
+
 interface POLine {
   id: string
   productId: string | null
@@ -51,6 +58,8 @@ interface POLine {
   damagedQty: number
   remaining: number
   receiveStatus: 'PENDING' | 'PARTIAL' | 'COMPLETE'
+  crossDockFlag?: boolean
+  crossDockJobs?: CrossDockJob[]
 }
 
 interface PODetail {
@@ -408,6 +417,7 @@ export default function ReceivingPage() {
   // RECEIVE VIEW
   // ═════════════════════════════════════════════════════════════════════════
   if (view === 'receive' && detail) {
+    const crossDockLines = detail.items.filter((l) => l.crossDockFlag)
     return (
       <div className="p-6 max-w-6xl mx-auto">
         <PageHeader
@@ -433,6 +443,45 @@ export default function ReceivingPage() {
           }
         />
 
+        {/* Cross-dock banner — show above lines when any line is flagged */}
+        {crossDockLines.length > 0 && (
+          <div className="rounded-lg border-2 border-red-600 bg-red-500/10 p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-red-600 text-white">
+                CROSS-DOCK — DO NOT PUT AWAY
+              </span>
+              <span className="text-xs text-red-700 font-semibold">
+                {crossDockLines.length} line{crossDockLines.length === 1 ? '' : 's'} needed for an urgent job
+              </span>
+            </div>
+            <div className="text-xs text-fg mb-2">
+              Stage flagged lines at the dock door for immediate delivery. Do not put away — the field crew is waiting.
+            </div>
+            <ul className="space-y-1 text-xs">
+              {crossDockLines.map((l) => (
+                <li key={l.id} className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-red-700 font-semibold">{l.vendorSku || '—'}</span>
+                  <span className="text-fg-muted">→</span>
+                  {(l.crossDockJobs || []).map((j) => (
+                    <a
+                      key={j.id}
+                      href={`/ops/jobs/${j.id}`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-red-500/40 bg-red-500/5 text-red-700 hover:bg-red-500/10 font-semibold"
+                    >
+                      {j.jobNumber}
+                      {j.scheduledDate && (
+                        <span className="text-red-600/80 font-normal">
+                          · {formatDate(j.scheduledDate)}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Lines */}
         <div className="rounded-lg border border-border bg-surface overflow-hidden mb-6">
           <div className="grid grid-cols-[3fr_1fr_1fr_1fr_1.2fr_1.2fr] gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wide text-fg-muted bg-surface-muted border-b border-border">
@@ -445,14 +494,29 @@ export default function ReceivingPage() {
           </div>
           {detail.items.map((line) => {
             const st = formState[line.id]
+            const flagged = Boolean(line.crossDockFlag)
             return (
               <div
                 key={line.id}
-                className="grid grid-cols-[3fr_1fr_1fr_1fr_1.2fr_1.2fr] gap-3 px-4 py-3 items-center border-b border-border last:border-b-0 text-sm"
+                className={`grid grid-cols-[3fr_1fr_1fr_1fr_1.2fr_1.2fr] gap-3 px-4 py-3 items-center border-b last:border-b-0 text-sm ${
+                  flagged ? 'bg-red-500/5 border-l-4 border-l-red-600 border-b-red-500/30' : 'border-b-border'
+                }`}
               >
                 <div>
-                  <div className="font-medium text-fg">{line.description}</div>
+                  <div className="flex items-center gap-2">
+                    {flagged && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-600 text-white">
+                        CROSS-DOCK
+                      </span>
+                    )}
+                    <div className="font-medium text-fg">{line.description}</div>
+                  </div>
                   <div className="text-xs text-fg-muted font-mono">{line.vendorSku || '—'}</div>
+                  {flagged && (line.crossDockJobs?.length ?? 0) > 0 && (
+                    <div className="text-[11px] text-red-700 mt-0.5">
+                      Needed for: {line.crossDockJobs!.map((j) => j.jobNumber).join(', ')}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right font-mono">{line.quantity}</div>
                 <div className="text-right font-mono text-fg-muted">{line.receivedQty}</div>
