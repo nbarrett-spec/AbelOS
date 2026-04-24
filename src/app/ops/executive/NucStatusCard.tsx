@@ -3,18 +3,22 @@
 // ──────────────────────────────────────────────────────────────────────────
 // NucStatusCard — Monday-morning glance for the NUC brain engine.
 //
-// Calls /api/integrations/nuc/health (Wave 2) on mount + every 60s.
-// That endpoint always returns HTTP 200 (by design) — so we key off the
-// `ok` field in the body, not the status code. When Aegis is running on
-// Vercel the Tailscale IP 100.84.113.47 isn't routable and `ok` will be
-// false with error=NUC_UNREACHABLE; we render that as RED with Tailscale
-// context rather than a scary "app is broken" error. On Nate's local
-// browser (which has Tailscale) it renders GREEN with latency + engine
-// version. The `note` field in the response explains how to enable via
-// Cloudflare Tunnel when reachable from Vercel becomes a priority.
+// Wave 2.1: Now reads from the DB-backed /api/ops/nuc/status endpoint
+// which is populated by the NUC's push-based heartbeat cron. This solves
+// the Tailscale routing problem — the old pull-based approach tried to
+// reach 100.84.113.47 from Vercel which always failed.
 //
-// Auto-refresh: 60s interval, paused when the tab is hidden to avoid
-// pointless fetches. Manual refresh via the small refresh glyph.
+// The NUC pushes health data to POST /api/v1/engine/heartbeat every 60s.
+// This card polls GET /api/ops/nuc/status every 60s to read the latest
+// heartbeat from the database.
+//
+// States:
+//   - online:   coordinator heartbeat is fresh and status === 'online'
+//   - degraded: coordinator reports degraded modules, or heartbeat is
+//               slightly stale (< 5 min)
+//   - offline:  no heartbeat received, or heartbeat stale (> 3 min),
+//               or coordinator reports error
+//   - loading:  initial fetch in progress
 // ──────────────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -24,27 +28,52 @@ import { cn } from '@/lib/utils'
 
 type NucState = 'loading' | 'online' | 'degraded' | 'offline'
 
-interface HealthResponse {
+interface NodeStatus {
+  nodeId: string
+  nodeRole: string
+  engineVersion: string | null
+  status: string
+  moduleStatus: Record<string, 'ok' | 'degraded' | 'error'> | null
+  latencyMs: number | null
+  uptimeSeconds: number | null
+  errorCount: number | null
+  lastScanAt: string | null
+  receivedAt: string
+  staleSeconds: number
+  isStale: boolean
+}
+
+interface StatusResponse {
   ok: boolean
-  latencyMs?: number | null
-  engineVersion?: string
-  moduleStatus?: Record<string, 'ok' | 'degraded' | 'error'>
+  nodes: NodeStatus[]
+  coordinator: NodeStatus | null
+  checkedAt: string
   error?: string
-  detail?: string
-  checkedAt?: string
-  note?: string
 }
 
 const POLL_MS = 60_000
 
-function classify(data: HealthResponse | null, fetchError: string | null): NucState {
+function classify(data: StatusResponse | null, fetchError: string | null): NucState {
   if (fetchError) return 'offline'
   if (!data) return 'loading'
-  if (!data.ok) return 'offline'
-  // Any module in error = degraded; otherwise online.
-  const modules = Object.values(data.moduleStatus ?? {})
+  if (!data.coordinator) return 'offline'
+
+  const coord = data.coordinator
+
+  // Stale heartbeat = offline
+  if (coord.isStale) return 'offline'
+
+  // Coordinator reports error status
+  if (coord.status === 'error') return 'offline'
+
+  // Check module-level health
+  const modules = Object.values(coord.moduleStatus ?? {})
   if (modules.some((s) => s === 'error')) return 'offline'
   if (modules.some((s) => s === 'degraded')) return 'degraded'
+
+  // Coordinator reports degraded
+  if (coord.status === 'degraded') return 'degraded'
+
   return 'online'
 }
 
@@ -81,8 +110,15 @@ function toneFor(state: NucState) {
   }
 }
 
+function formatUptime(seconds: number | null): string | null {
+  if (seconds == null) return null
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+  return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`
+}
+
 export default function NucStatusCard({ className }: { className?: string }) {
-  const [data, setData] = useState<HealthResponse | null>(null)
+  const [data, setData] = useState<StatusResponse | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [lastRefreshed, setLastRefreshed] = useState<number | null>(null)
   const [manuallyRefreshing, setManuallyRefreshing] = useState(false)
@@ -91,13 +127,11 @@ export default function NucStatusCard({ className }: { className?: string }) {
   const load = useCallback(async (isManual = false) => {
     if (isManual) setManuallyRefreshing(true)
     try {
-      const res = await fetch('/api/integrations/nuc/health', { cache: 'no-store' })
-      // Route always returns 200 (by design). A non-200 here means network/auth,
-      // not NUC offline — surface as fetch error.
+      const res = await fetch('/api/ops/nuc/status', { cache: 'no-store' })
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`)
       }
-      const body: HealthResponse = await res.json()
+      const body: StatusResponse = await res.json()
       setData(body)
       setFetchError(null)
     } catch (err) {
@@ -109,7 +143,6 @@ export default function NucStatusCard({ className }: { className?: string }) {
   }, [])
 
   useEffect(() => {
-    // Initial fetch + 60s poll, paused when tab hidden.
     load()
 
     function start() {
@@ -127,7 +160,6 @@ export default function NucStatusCard({ className }: { className?: string }) {
       if (document.hidden) {
         stop()
       } else {
-        // Immediate refresh on return; resume polling.
         load()
         start()
       }
@@ -143,12 +175,11 @@ export default function NucStatusCard({ className }: { className?: string }) {
 
   const state = classify(data, fetchError)
   const tone = toneFor(state)
-  const moduleCount = data?.moduleStatus ? Object.keys(data.moduleStatus).length : null
-  const latency = data?.latencyMs ?? null
+  const coord = data?.coordinator
+  const moduleCount = coord?.moduleStatus ? Object.keys(coord.moduleStatus).length : null
+  const latency = coord?.latencyMs ?? null
+  const uptime = formatUptime(coord?.uptimeSeconds ?? null)
 
-  // Human-friendly "seconds ago" — recomputed on render so it stays fresh
-  // within the card's re-render cadence. A separate ticker isn't worth the
-  // extra re-renders for this secondary metric.
   const agoStr = (() => {
     if (!lastRefreshed) return ''
     const sec = Math.max(0, Math.floor((Date.now() - lastRefreshed) / 1000))
@@ -158,7 +189,7 @@ export default function NucStatusCard({ className }: { className?: string }) {
     return `${min}m ago`
   })()
 
-  // Headline text for each state — executive glance, one phrase.
+  // Headline text — executive glance
   let headline: string
   let detail: string | null = null
   switch (state) {
@@ -169,22 +200,28 @@ export default function NucStatusCard({ className }: { className?: string }) {
       headline = moduleCount
         ? `Engine online — ${moduleCount} module${moduleCount === 1 ? '' : 's'}${latency != null ? ` · ${latency}ms` : ''}`
         : `Engine online${latency != null ? ` · ${latency}ms` : ''}`
-      detail = data?.engineVersion ? `v${data.engineVersion}` : null
+      detail = [
+        coord?.engineVersion ? `v${coord.engineVersion}` : null,
+        uptime ? `uptime ${uptime}` : null,
+      ].filter(Boolean).join(' · ') || null
       break
     case 'degraded':
       headline = 'Engine degraded — some modules unhealthy'
-      detail = data?.detail ?? null
+      detail = coord?.engineVersion ? `v${coord.engineVersion}` : null
       break
     case 'offline':
       if (fetchError) {
-        headline = 'Health check failed'
+        headline = 'Status check failed'
         detail = fetchError
-      } else if (data?.error === 'NUC_UNREACHABLE' || data?.error === 'NUC_OFFLINE') {
-        headline = 'Offline — NUC unreachable from this environment'
-        detail = 'Tailscale-only IP (100.84.113.47) is not routable here. Configure NUC_BRAIN_URL to a Cloudflare Tunnel to enable on Vercel.'
+      } else if (!coord) {
+        headline = 'Offline — no heartbeat received'
+        detail = 'NUC brain engine has not reported in. Verify the heartbeat cron is running on the NUC coordinator.'
+      } else if (coord.isStale) {
+        headline = `Offline — last heartbeat ${Math.floor(coord.staleSeconds / 60)}m ago`
+        detail = `Last seen: ${new Date(coord.receivedAt).toLocaleString()}`
       } else {
-        headline = 'Offline'
-        detail = data?.detail ?? data?.error ?? 'NUC brain engine not responding.'
+        headline = 'Offline — engine reporting errors'
+        detail = coord?.engineVersion ? `v${coord.engineVersion}` : null
       }
       break
   }
@@ -228,10 +265,10 @@ export default function NucStatusCard({ className }: { className?: string }) {
           <p className="text-[11px] text-fg-subtle leading-relaxed">{detail}</p>
         )}
 
-        {/* Per-module strip — only when we have moduleStatus data */}
-        {data?.moduleStatus && Object.keys(data.moduleStatus).length > 0 && (
+        {/* Per-module strip */}
+        {coord?.moduleStatus && Object.keys(coord.moduleStatus).length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1.5">
-            {Object.entries(data.moduleStatus).map(([name, status]) => (
+            {Object.entries(coord.moduleStatus).map(([name, status]) => (
               <span
                 key={name}
                 title={`${name}: ${status}`}
@@ -248,6 +285,15 @@ export default function NucStatusCard({ className }: { className?: string }) {
                 {name}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Worker nodes (if any) */}
+        {data && data.nodes.length > 1 && (
+          <div className="flex items-center gap-2 pt-1.5 text-[11px] text-fg-subtle">
+            <span>{data.nodes.length} node{data.nodes.length === 1 ? '' : 's'}</span>
+            <span className="text-fg-muted">·</span>
+            <span>{data.nodes.filter(n => !n.isStale && n.status === 'online').length} online</span>
           </div>
         )}
 

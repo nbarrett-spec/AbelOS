@@ -5698,6 +5698,24 @@ model UptimeProbe {
   @@index([createdAt(sort: Desc)], map: "idx_uptimeprobe_created")
 }
 
+model NucHeartbeat {
+  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  nodeId        String   @unique
+  nodeRole      String   @default("coordinator")
+  engineVersion String?
+  status        String   @default("online")
+  moduleStatus  Json?    @default("{}")
+  latencyMs     Int?
+  uptimeSeconds Int?
+  errorCount    Int?     @default(0)
+  lastScanAt    DateTime?
+  meta          Json?    @default("{}")
+  receivedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([receivedAt(sort: Desc)], map: "idx_nucheartbeat_received")
+}
+
 model VendorPerformance {
   id             Int       @id @default(autoincrement())
   vendorId       String

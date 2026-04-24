@@ -258,6 +258,7 @@ export async function middleware(request: NextRequest) {
     // Skip CSRF for Gmail sync API key auth (Google Apps Script, no browser origin)
     const gmailSyncApiKey = request.headers.get('x-api-key')
     if ((pathname.startsWith('/api/agent-hub') && authHeader?.startsWith('Bearer ')) ||
+        (pathname.startsWith('/api/v1/engine') && authHeader?.startsWith('Bearer ')) ||
         (pathname === '/api/ops/communication-logs/gmail-sync' && gmailSyncApiKey) ||
         (pathname === '/api/ops/hyphen/ingest' && authHeader?.startsWith('Bearer '))) {
       // CSRF not applicable for API key auth — validated in route handler
