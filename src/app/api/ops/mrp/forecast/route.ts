@@ -45,24 +45,30 @@ export async function GET(request: NextRequest) {
     // report what's actually driving safety stock. Otherwise return live.
     let persisted: Array<{ month: string; forecastQty: number; low: number; high: number }> = []
     if (!recompute) {
+      // DemandForecast schema stashes the CI band inside basedOn JSON —
+      // see src/lib/mrp/forecast.ts persistForecast().
       const rows = await prisma.$queryRawUnsafe<
-        Array<{ forecastMonth: Date; forecastQty: number; confidenceLow: number | null; confidenceHigh: number | null }>
+        Array<{ forecastDate: Date; predictedDemand: number; basedOn: any }>
       >(
-        `SELECT "forecastMonth", "forecastQty", "confidenceLow", "confidenceHigh"
+        `SELECT "forecastDate", "predictedDemand", "basedOn"
            FROM "DemandForecast"
           WHERE "productId" = $1
-            AND "forecastMonth" >= date_trunc('month', NOW())::date
-          ORDER BY "forecastMonth" ASC
+            AND "forecastDate" >= date_trunc('month', NOW())
+          ORDER BY "forecastDate" ASC
           LIMIT $2`,
         productId,
         months
       )
-      persisted = rows.map((r) => ({
-        month: r.forecastMonth.toISOString().slice(0, 10),
-        forecastQty: Number(r.forecastQty),
-        low: Number(r.confidenceLow ?? 0),
-        high: Number(r.confidenceHigh ?? r.forecastQty),
-      }))
+      persisted = rows.map((r) => {
+        const qty = Number(r.predictedDemand)
+        const bo = r.basedOn && typeof r.basedOn === 'object' ? r.basedOn : {}
+        return {
+          month: r.forecastDate.toISOString().slice(0, 10),
+          forecastQty: qty,
+          low: Number(bo.confidenceLow ?? 0),
+          high: Number(bo.confidenceHigh ?? qty),
+        }
+      })
     }
 
     const forecast = (persisted.length > 0
@@ -123,13 +129,13 @@ export async function GET(request: NextRequest) {
   const forecastRows = productIdList.length === 0
     ? []
     : await prisma.$queryRawUnsafe<
-        Array<{ productId: string; forecastMonth: Date; forecastQty: number }>
+        Array<{ productId: string; forecastDate: Date; predictedDemand: number }>
       >(
-        `SELECT "productId", "forecastMonth", "forecastQty"
+        `SELECT "productId", "forecastDate", "predictedDemand"
            FROM "DemandForecast"
           WHERE "productId" = ANY($1::text[])
-            AND "forecastMonth" >= date_trunc('month', NOW())::date
-          ORDER BY "forecastMonth" ASC
+            AND "forecastDate" >= date_trunc('month', NOW())
+          ORDER BY "forecastDate" ASC
           LIMIT 500`,
         productIdList
       )
@@ -138,7 +144,7 @@ export async function GET(request: NextRequest) {
   for (const r of forecastRows) {
     forecastByProduct.set(
       r.productId,
-      (forecastByProduct.get(r.productId) || 0) + Number(r.forecastQty)
+      (forecastByProduct.get(r.productId) || 0) + Number(r.predictedDemand)
     )
   }
 
