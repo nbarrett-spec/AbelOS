@@ -334,7 +334,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** Clear response cache — exported for tests/cron. Module-private otherwise. */
-export function _clearYtdCache() {
-  cache.clear()
-}
+// NOTE: cache invalidation was previously exposed as `export function _clearYtdCache()`
+// but Next.js 14 app-router route files only permit HTTP method + config exports
+// (GET/POST/.../dynamic/revalidate/runtime/etc). Any other export = build failure.
+// Cache.clear() is reachable via restarting the Lambda cold start — no caller
+// relied on this symbol. If invalidation is ever needed at runtime, add a
+// POST handler with an ?action=clear-cache query param gated behind checkStaffAuth.
