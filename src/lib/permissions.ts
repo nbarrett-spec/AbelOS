@@ -170,6 +170,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/crews': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
   // Material Calendar — the 30-day shortage visibility lens
   '/ops/material-calendar': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  // Substitution approval queue (page) — broader access for visibility,
+  // actual approve/reject actions are role-gated at the API layer.
+  '/ops/substitutions': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'WAREHOUSE_LEAD'],
   // SmartPO queue — auto-generated PO recommendations from ATP shortage forecast
   '/ops/purchasing/smart-po': ['ADMIN', 'MANAGER', 'PURCHASING'],
   // PM Material Status dashboard — per-PM green/amber/red job view
@@ -460,6 +463,11 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Material ETA & Crew Conflicts
   '/api/ops/material-eta': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
   '/api/ops/material-calendar': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+
+  // Substitution approval queue — anyone with product-level sub access can
+  // create a request; only PM/MANAGER/ADMIN can approve or reject (the
+  // approve/reject endpoints re-check this explicitly).
+  '/api/ops/substitutions': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'WAREHOUSE_LEAD'],
   '/api/ops/crew-conflicts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
   '/api/ops/readiness-check': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
 
@@ -480,6 +488,9 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Today's Pick Queue — list + mark-picked
   '/api/ops/warehouse/picks/today': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
   '/api/ops/warehouse/picks': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
+
+  // Weekly Cycle Count — WAREHOUSE_LEAD owns it, techs can record counts
+  '/api/ops/warehouse/cycle-count': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
 
   // Receiving & Returns
   '/api/ops/receiving': ['ADMIN', 'MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'PROJECT_MANAGER'],

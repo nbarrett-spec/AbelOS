@@ -454,8 +454,10 @@ async function runFixture(fx) {
   banner(`FIXTURE ${fx.label}`);
   let okLocal = true;
 
-  // 1) POST
-  const { status, body } = await postIngest(fx.payload);
+  // 1) POST (or in-process dispatch)
+  const { status, body } = IN_PROCESS
+    ? await inProcessIngest(fx.payload)
+    : await postIngest(fx.payload);
   if (status === 401) {
     fail(`HTTP 401 — AEGIS_API_KEY on the server does not match the key in this script's env.`);
     return false;

@@ -330,6 +330,11 @@ export default function WarehousePortal() {
             >
               &#x1F69A; Job Pipeline
             </Link>
+            <Link href="/ops/portal/warehouse/cycle-count"
+              className="block w-full px-4 py-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-500 transition-all text-sm font-medium text-gray-900"
+            >
+              &#128203; Cycle Count (Weekly)
+            </Link>
           </div>
         </div>
       </div>

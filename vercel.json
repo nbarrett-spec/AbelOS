@@ -175,6 +175,14 @@
     {
       "path": "/api/cron/demand-forecast-weekly",
       "schedule": "0 7 * * 0"
+    },
+    {
+      "path": "/api/cron/cycle-count-schedule",
+      "schedule": "0 11 * * 1"
+    },
+    {
+      "path": "/api/cron/gold-stock-monitor",
+      "schedule": "0 5 * * *"
     }
   ]
 }

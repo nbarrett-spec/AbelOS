@@ -941,6 +941,7 @@ function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | n
   const [subOptions, setSubOptions] = useState<SubstituteOption[]>([])
   const [subLoading, setSubLoading] = useState(false)
   const [subError, setSubError] = useState<string | null>(null)
+  const [subNotice, setSubNotice] = useState<string | null>(null)
   const [applying, setApplying] = useState<string | null>(null)
 
   const openSubSheet = useCallback(async (row: DrillRow) => {
@@ -966,6 +967,7 @@ function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | n
   const applySub = useCallback(async (row: DrillRow, sub: SubstituteOption) => {
     if (!data?.job?.id) return
     setApplying(sub.id)
+    setSubNotice(null)
     try {
       const res = await fetch(`/api/ops/products/${row.productId}/substitutes/apply`, {
         method: 'POST',
@@ -976,9 +978,21 @@ function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | n
           quantity: Math.max(1, row.shortfall || row.required - row.allocated),
         }),
       })
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const b = await res.json().catch(() => ({}))
-        throw new Error(b.error || `HTTP ${res.status}`)
+        throw new Error(json.error || `HTTP ${res.status}`)
+      }
+      // CONDITIONAL subs go through an approval workflow — no allocation yet.
+      if (json?.pending) {
+        setSubNotice(
+          json.message ||
+            'Request submitted — awaiting PM approval before inventory is allocated.'
+        )
+        // Keep the modal open briefly so the user sees the confirmation,
+        // then close.
+        setTimeout(() => setSubRow(null), 1800)
+        // Do not refetch calendar — nothing changed yet.
+        return
       }
       setSubRow(null)
       onApplied?.()
@@ -1125,8 +1139,12 @@ function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | n
           options={subOptions}
           loading={subLoading}
           error={subError}
+          notice={subNotice}
           applying={applying}
-          onClose={() => setSubRow(null)}
+          onClose={() => {
+            setSubRow(null)
+            setSubNotice(null)
+          }}
           onApply={(sub) => applySub(subRow, sub)}
         />
       )}
@@ -1141,6 +1159,7 @@ function SubstituteModal({
   options,
   loading,
   error,
+  notice,
   applying,
   onClose,
   onApply,
@@ -1149,6 +1168,7 @@ function SubstituteModal({
   options: SubstituteOption[]
   loading: boolean
   error: string | null
+  notice: string | null
   applying: string | null
   onClose: () => void
   onApply: (sub: SubstituteOption) => void
@@ -1178,6 +1198,11 @@ function SubstituteModal({
           </button>
         </div>
         <div className="overflow-auto p-3">
+          {notice && (
+            <div className="mb-2 px-2.5 py-1.5 text-[11.5px] rounded border border-amber-300 bg-amber-50 text-amber-900">
+              {notice}
+            </div>
+          )}
           {loading ? (
             <div className="text-[12px] text-fg-muted">Loading substitutes…</div>
           ) : error ? (
@@ -1228,9 +1253,21 @@ function SubstituteModal({
                       className="px-2 py-1 text-[11px] rounded border border-border hover:border-fg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={!canApply || applying === s.id}
                       onClick={() => onApply(s)}
-                      title={canApply ? 'Apply this substitute' : 'No stock available for this substitute'}
+                      title={
+                        !canApply
+                          ? 'No stock available for this substitute'
+                          : s.compatibility === 'CONDITIONAL'
+                          ? 'Submit for PM approval — CONDITIONAL subs need review before allocation'
+                          : 'Apply this substitute'
+                      }
                     >
-                      {applying === s.id ? 'Applying…' : 'Apply'}
+                      {applying === s.id
+                        ? s.compatibility === 'CONDITIONAL'
+                          ? 'Submitting…'
+                          : 'Applying…'
+                        : s.compatibility === 'CONDITIONAL'
+                        ? 'Request'
+                        : 'Apply'}
                     </button>
                   </div>
                 )
