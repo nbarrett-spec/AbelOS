@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import FreshnessPanel from './FreshnessPanel'
 
 interface Integration {
   provider: string
@@ -145,6 +146,8 @@ export default function IntegrationsPage() {
           Connect InFlow, ECI Bolt, Gmail, and Hyphen to keep your data in sync
         </p>
       </div>
+
+      <FreshnessPanel />
 
       {loading ? (
         <p style={{ color: '#9ca3af', textAlign: 'center', padding: 40 }}>Loading integrations...</p>

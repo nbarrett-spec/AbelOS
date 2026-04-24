@@ -6,9 +6,17 @@ import Link from 'next/link'
 import DocumentPanel from '@/components/DocumentPanel'
 import PresenceAvatars from '@/components/ui/PresenceAvatars'
 import HyphenDocumentsTab from './HyphenDocumentsTab'
+import HyphenPanel from './HyphenPanel'
 import AllocationPanel from './AllocationPanel'
 import MaterialConfirmBanner from './MaterialConfirmBanner'
+import MaterialDrawer from './MaterialDrawer'
 import CoPreviewSheet from './CoPreviewSheet'
+
+// Feature flags — default ON unless explicitly 'off'. Evaluated at bundle time.
+const HYPHEN_PANEL_ENABLED =
+  process.env.NEXT_PUBLIC_FEATURE_HYPHEN_PANEL !== 'off'
+const MATERIAL_DRAWER_ENABLED =
+  process.env.NEXT_PUBLIC_FEATURE_MATERIAL_DRAWER !== 'off'
 
 const STATUS_COLORS: Record<string, string> = {
   CREATED: '#95A5A6',
@@ -126,6 +134,8 @@ export default function JobDetailPage() {
   const [hyphenDocCount, setHyphenDocCount] = useState<number>(0)
   // CO impact preview sheet — opens from the Change Orders card header.
   const [showCoPreview, setShowCoPreview] = useState(false)
+  // Material drill-down drawer — opens from header "Materials" button.
+  const [showMaterialDrawer, setShowMaterialDrawer] = useState(false)
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -356,6 +366,14 @@ export default function JobDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <PresenceAvatars recordId={job.id} recordType="job" />
+          {MATERIAL_DRAWER_ENABLED && (
+            <button
+              onClick={() => setShowMaterialDrawer(true)}
+              className="px-4 py-2 border border-[#0f2a3e] text-[#0f2a3e] rounded-lg hover:bg-[#0f2a3e] hover:text-white font-medium transition-colors"
+            >
+              Materials
+            </button>
+          )}
           {nextStatus && (
             <button
               onClick={advanceStatus}
@@ -466,8 +484,9 @@ export default function JobDetailPage() {
       </div>
 
       {activeTab === 'documents' && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-6">
           <HyphenDocumentsTab jobId={jobId} />
+          {HYPHEN_PANEL_ENABLED && <HyphenPanel jobId={jobId} />}
         </div>
       )}
 
@@ -886,6 +905,15 @@ export default function JobDetailPage() {
         open={showCoPreview}
         onClose={() => setShowCoPreview(false)}
       />
+
+      {/* Material drill-down drawer — root-mounted for full-page overlay. */}
+      {MATERIAL_DRAWER_ENABLED && (
+        <MaterialDrawer
+          jobId={jobId}
+          open={showMaterialDrawer}
+          onClose={() => setShowMaterialDrawer(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,401 +1,614 @@
-'use client'
+// /admin/builders/[id] — server-rendered builder detail with Overview + Details tabs.
+//
+// WHY THIS IS A SERVER COMPONENT NOW
+// The original implementation was a client component doing a fetch-on-mount
+// waterfall. That was fine when the page was small but isn't great context
+// for PMs or Dawn — they want AR exposure, open job count, and who to call
+// visible in a single server round-trip (Wave-3 C8 scope).
+//
+// Strategy: This file is the server wrapper. It:
+//   1. Fetches builder + all new data concurrently via Promise.all so the
+//      slowest query dominates instead of serialized waits.
+//   2. Renders the new Overview tab sections (AR callout, KPIs, contact,
+//      open jobs, recent activity, AR detail) as server-rendered HTML.
+//   3. Mounts the legacy client component (BuilderDetailClient) under the
+//      Details tab. The legacy component preserves all editing behavior
+//      (payment term, status, auto-invoice toggle) unchanged.
+//
+// Tab selection uses the `?tab=` query param so no client JS is required —
+// the tab strip is two Links. Default is Overview. Feature flag
+// NEXT_PUBLIC_FEATURE_BUILDER_OVERVIEW=off hides the new sections and
+// renders only the legacy Details view (graceful rollback).
+//
+// DATA MODEL NOTES
+// - Job has no direct Builder FK — the link is the denormalized
+//   Job.builderName column. We match by name using the builder's
+//   companyName. This mirrors the pattern in /brittney/page.tsx.
+// - Invoice has a builderId column (string, no FK) — filter directly.
+// - CommunicationLog has builderId — used for last-communication-date.
+// - AuditLog lookup is a broad match: entityId = builder.id for Builder
+//   entity rows, PLUS invoiceIds and jobIds that belong to this builder.
+//   We cap at 10 rows sorted by createdAt DESC.
+//
+// GRACEFUL DEGRADATION
+// Any of the secondary queries (contacts, comms, audit) can throw without
+// killing the page — each is wrapped and defaults to [] / null so a missing
+// table or schema drift on one branch degrades to "no data" rather than 500.
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import { PageHeader, KPICard, Card, CardBody, EmptyState, Badge } from '@/components/ui'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
-interface BuilderDetail {
+import AROverview, {
+  computeAgingBuckets,
+  type ARInvoiceRow,
+} from './sections/AROverview'
+import OpenJobsSection, { type OpenJobRow } from './sections/OpenJobsSection'
+import ContactCard, { type PrimaryContact } from './sections/ContactCard'
+import BuilderDetailClient from './sections/BuilderDetailClient'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+// ── Types for the raw DB rows we hit via $queryRawUnsafe ─────────────────
+// We use raw queries for rows that either (a) don't have a typed Prisma
+// relation to Builder or (b) need aggregates Prisma's query builder
+// doesn't express cleanly.
+
+interface BuilderRow {
   id: string
   companyName: string
   contactName: string
   email: string
-  phone?: string
-  address?: string
-  city?: string
-  state?: string
-  zip?: string
-  paymentTerm: string
+  phone: string | null
+  accountBalance: number | null
   status: string
-  accountBalance: number
-  taxExempt: boolean
-  taxId?: string
-  customPricingCount: number
-  autoInvoiceOnDelivery?: boolean
 }
 
-interface Project {
+interface InvoiceRawRow {
   id: string
-  name: string
-  status: string
-  createdAt: string
-}
-
-interface Quote {
-  id: string
-  quoteNumber: string
+  invoiceNumber: string
   total: number
+  amountPaid: number
+  balanceDue: number
   status: string
-  createdAt: string
+  issuedAt: Date | null
+  dueDate: Date | null
+  createdAt: Date
 }
 
-const PAYMENT_TERMS = ['PAY_AT_ORDER', 'PAY_ON_DELIVERY', 'NET_15', 'NET_30']
-const STATUSES = ['PENDING', 'ACTIVE', 'SUSPENDED', 'CLOSED']
+interface JobRawRow {
+  id: string
+  jobNumber: string
+  community: string | null
+  lotBlock: string | null
+  status: string
+  scheduledDate: Date | null
+  readinessCheck: boolean
+  materialsLocked: boolean
+  loadConfirmed: boolean
+  assignedPMId: string | null
+}
 
-export default function BuilderDetailPage() {
-  const params = useParams()
-  const builderId = params.id as string
+interface StaffNameRow {
+  id: string
+  firstName: string
+  lastName: string
+}
 
-  const [builder, setBuilder] = useState<BuilderDetail | null>(null)
-  const [projects, setProjects] = useState<Project[]>([])
-  const [quotes, setQuotes] = useState<Quote[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [updating, setUpdating] = useState(false)
-  const [editPaymentTerm, setEditPaymentTerm] = useState('')
-  const [editStatus, setEditStatus] = useState('')
-  const [autoInvoiceOnDelivery, setAutoInvoiceOnDelivery] = useState(true)
-  const [savingToggle, setSavingToggle] = useState(false)
-  const [toast, setToast] = useState('')
-  const [toastType, setToastType] = useState<'success' | 'error'>('success')
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast(msg); setToastType(type); setTimeout(() => setToast(''), 3500)
-  }
+interface ContactRawRow {
+  id: string
+  firstName: string
+  lastName: string
+  title: string | null
+  email: string | null
+  phone: string | null
+  mobile: string | null
+  isPrimary: boolean
+  createdAt: Date
+}
 
-  useEffect(() => {
-    async function fetchBuilder() {
-      try {
-        const res = await fetch(`/api/admin/builders/${builderId}`)
-        if (!res.ok) throw new Error('Failed to fetch builder')
-        const data = await res.json()
-        setBuilder(data.builder)
-        setProjects(data.builder.projects)
-        setQuotes(data.quotes)
-        setEditPaymentTerm(data.builder.paymentTerm)
-        setEditStatus(data.builder.status)
+interface LastCommRow {
+  sentAt: Date | null
+  createdAt: Date | null
+}
 
-        // Settings (autoInvoiceOnDelivery etc.) live on the ops endpoint to
-        // keep the admin core payload stable. Fetch separately; failure is
-        // non-fatal — we fall back to the default (true).
-        try {
-          const settingsRes = await fetch(`/api/ops/builders/${builderId}/settings`)
-          if (settingsRes.ok) {
-            const settingsData = await settingsRes.json()
-            setAutoInvoiceOnDelivery(settingsData.settings?.autoInvoiceOnDelivery ?? true)
-          }
-        } catch {
-          // keep defaults
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error fetching builder')
-      } finally {
-        setLoading(false)
-      }
-    }
+interface LastPaymentRow {
+  receivedAt: Date
+}
 
-    fetchBuilder()
-  }, [builderId])
+interface YtdRow {
+  ytd: number | null
+}
 
-  const handleToggleAutoInvoice = async (next: boolean) => {
-    setSavingToggle(true)
-    const prev = autoInvoiceOnDelivery
-    // Optimistic update so the switch feels responsive; revert on failure.
-    setAutoInvoiceOnDelivery(next)
-    try {
-      const res = await fetch(`/api/ops/builders/${builderId}/settings`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ autoInvoiceOnDelivery: next }),
-      })
-      if (!res.ok) throw new Error('Failed to save toggle')
-      showToast(
-        next
-          ? 'Auto-invoice on delivery enabled'
-          : 'Auto-invoice on delivery disabled'
+interface AuditRow {
+  id: string
+  action: string
+  entity: string
+  entityId: string | null
+  staffId: string | null
+  details: any
+  severity: string | null
+  createdAt: Date
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.floor((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function avgAgeDays(invoices: ARInvoiceRow[]): number {
+  if (invoices.length === 0) return 0
+  const now = Date.now()
+  const total = invoices.reduce((acc, inv) => {
+    const anchor = inv.dueDate || inv.issuedAt || inv.createdAt
+    return acc + (now - new Date(anchor).getTime()) / (1000 * 60 * 60 * 24)
+  }, 0)
+  return Math.floor(total / invoices.length)
+}
+
+// ── Page ────────────────────────────────────────────────────────────────
+
+export default async function BuilderDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string }
+  searchParams?: { tab?: string }
+}) {
+  const builderId = params.id
+  const featureOn = process.env.NEXT_PUBLIC_FEATURE_BUILDER_OVERVIEW !== 'off'
+  const activeTab = featureOn ? (searchParams?.tab === 'details' ? 'details' : 'overview') : 'details'
+
+  // ── 1. Builder existence + identity ───────────────────────────────────
+  // Use raw SQL here because we only need a small projection and want to
+  // co-locate with the other raw aggregates below for consistency.
+  const builderRows = await prisma.$queryRawUnsafe<BuilderRow[]>(
+    `SELECT id, "companyName", "contactName", email, phone,
+            "accountBalance", status::text AS status
+       FROM "Builder"
+      WHERE id = $1
+      LIMIT 1`,
+    builderId
+  )
+  const builder = builderRows[0]
+  if (!builder) notFound()
+
+  // ── 2. Concurrent fetch for all Overview-tab data ─────────────────────
+  // Each block is defensively try/caught so a single bad branch doesn't
+  // kill the page. Missing data degrades to empty state.
+  const [
+    invoices,
+    jobs,
+    contacts,
+    lastCommRow,
+    lastPaymentRow,
+    ytdRow,
+    auditLogs,
+  ] = await Promise.all([
+    // Outstanding invoices — NOT DRAFT/PAID/VOID/WRITE_OFF
+    prisma
+      .$queryRawUnsafe<InvoiceRawRow[]>(
+        `SELECT id, "invoiceNumber", total, "amountPaid", "balanceDue",
+                status::text AS status, "issuedAt", "dueDate", "createdAt"
+           FROM "Invoice"
+          WHERE "builderId" = $1
+            AND "balanceDue" > 0
+            AND status::text NOT IN ('DRAFT','PAID','VOID','WRITE_OFF')
+          ORDER BY COALESCE("dueDate", "issuedAt", "createdAt") ASC`,
+        builderId
       )
-    } catch (err) {
-      setAutoInvoiceOnDelivery(prev)
-      showToast('Could not save setting', 'error')
-    } finally {
-      setSavingToggle(false)
-    }
-  }
+      .catch(() => [] as InvoiceRawRow[]),
 
-  const handleUpdateBuilder = async () => {
-    if (!builder) return
+    // Open jobs — exclude CLOSED (terminal). We intentionally keep
+    // COMPLETE/INVOICED visible because PMs care about those until
+    // payment clears and status flips to CLOSED.
+    prisma
+      .$queryRawUnsafe<JobRawRow[]>(
+        `SELECT j.id, j."jobNumber", j.community, j."lotBlock",
+                j.status::text AS status, j."scheduledDate",
+                j."readinessCheck", j."materialsLocked", j."loadConfirmed",
+                j."assignedPMId"
+           FROM "Job" j
+          WHERE j."builderName" ILIKE $1
+            AND j.status::text != 'CLOSED'
+          ORDER BY j."scheduledDate" ASC NULLS LAST, j."jobNumber" ASC
+          LIMIT 200`,
+        builder.companyName
+      )
+      .catch(() => [] as JobRawRow[]),
 
-    setUpdating(true)
+    // BuilderContacts — pick primary, fall back to earliest
+    prisma
+      .$queryRawUnsafe<ContactRawRow[]>(
+        `SELECT id, "firstName", "lastName", title, email, phone, mobile,
+                "isPrimary", "createdAt"
+           FROM "BuilderContact"
+          WHERE "builderId" = $1
+          ORDER BY "isPrimary" DESC, "createdAt" ASC
+          LIMIT 10`,
+        builderId
+      )
+      .catch(() => [] as ContactRawRow[]),
+
+    // Last communication on this builder
+    prisma
+      .$queryRawUnsafe<LastCommRow[]>(
+        `SELECT "sentAt", "createdAt"
+           FROM "CommunicationLog"
+          WHERE "builderId" = $1
+          ORDER BY COALESCE("sentAt", "createdAt") DESC
+          LIMIT 1`,
+        builderId
+      )
+      .catch(() => [] as LastCommRow[]),
+
+    // Last payment — join Payment -> Invoice to scope to this builder
+    prisma
+      .$queryRawUnsafe<LastPaymentRow[]>(
+        `SELECT p."receivedAt"
+           FROM "Payment" p
+           JOIN "Invoice" i ON i.id = p."invoiceId"
+          WHERE i."builderId" = $1
+          ORDER BY p."receivedAt" DESC
+          LIMIT 1`,
+        builderId
+      )
+      .catch(() => [] as LastPaymentRow[]),
+
+    // YTD revenue — sum paid invoices issued this calendar year. We use
+    // amountPaid (not total) so "revenue" reflects money actually in, not
+    // billed. Matches how Dawn talks about it in weekly close calls.
+    prisma
+      .$queryRawUnsafe<YtdRow[]>(
+        `SELECT COALESCE(SUM("amountPaid"), 0)::float8 AS ytd
+           FROM "Invoice"
+          WHERE "builderId" = $1
+            AND "issuedAt" >= date_trunc('year', NOW())`,
+        builderId
+      )
+      .catch(() => [{ ytd: 0 } as YtdRow]),
+
+    // Recent activity — last 10 AuditLog rows touching this builder, its
+    // invoices, or its jobs. We build the entityId list in a second step
+    // via a CTE to keep the query simple.
+    prisma
+      .$queryRawUnsafe<AuditRow[]>(
+        `WITH scoped AS (
+           SELECT id FROM "Invoice" WHERE "builderId" = $1
+           UNION
+           SELECT id FROM "Job" WHERE "builderName" ILIKE $2
+         )
+         SELECT id, action, entity, "entityId", "staffId", details,
+                severity, "createdAt"
+           FROM "AuditLog"
+          WHERE ("entity" = 'Builder' AND "entityId" = $1)
+             OR ("entity" IN ('Invoice','Payment','Job','PurchaseOrder')
+                 AND "entityId" IN (SELECT id FROM scoped))
+          ORDER BY "createdAt" DESC
+          LIMIT 10`,
+        builderId,
+        builder.companyName
+      )
+      .catch(() => [] as AuditRow[]),
+  ])
+
+  // ── 3. Derive view-model bits ─────────────────────────────────────────
+
+  const invoiceRows: ARInvoiceRow[] = invoices.map((i) => ({
+    id: i.id,
+    invoiceNumber: i.invoiceNumber,
+    total: Number(i.total),
+    amountPaid: Number(i.amountPaid),
+    balanceDue: Number(i.balanceDue),
+    status: i.status,
+    issuedAt: i.issuedAt,
+    dueDate: i.dueDate,
+    createdAt: i.createdAt,
+  }))
+
+  const buckets = computeAgingBuckets(invoiceRows)
+  const outstandingAR = invoiceRows.reduce((acc, i) => acc + i.balanceDue, 0)
+  const avgAge = avgAgeDays(invoiceRows)
+  const arDanger = outstandingAR >= 25000 || avgAge >= 60
+
+  // Resolve PM names for open jobs in one extra query.
+  const pmIds = Array.from(
+    new Set(jobs.map((j) => j.assignedPMId).filter(Boolean) as string[])
+  )
+  let pmMap = new Map<string, string>()
+  if (pmIds.length > 0) {
     try {
-      const res = await fetch(`/api/admin/builders/${builderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: editStatus,
-          paymentTerm: editPaymentTerm,
-        }),
-      })
-
-      if (!res.ok) throw new Error('Failed to update builder')
-      const data = await res.json()
-      setBuilder({ ...builder, ...data.builder })
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Error updating builder', 'error')
-    } finally {
-      setUpdating(false)
+      const staffRows = await prisma.$queryRawUnsafe<StaffNameRow[]>(
+        `SELECT id, "firstName", "lastName" FROM "Staff" WHERE id = ANY($1::text[])`,
+        pmIds
+      )
+      pmMap = new Map(
+        staffRows.map((s) => [s.id, `${s.firstName} ${s.lastName}`.trim()])
+      )
+    } catch {
+      // ignore — just leave PM column as "Unassigned"
     }
   }
 
-  if (loading) {
-    return <div className="text-center py-12">Loading...</div>
-  }
+  const jobRows: OpenJobRow[] = jobs.map((j) => ({
+    id: j.id,
+    jobNumber: j.jobNumber,
+    community: j.community,
+    lotBlock: j.lotBlock,
+    status: j.status,
+    scheduledDate: j.scheduledDate,
+    readinessCheck: j.readinessCheck,
+    materialsLocked: j.materialsLocked,
+    loadConfirmed: j.loadConfirmed,
+    assignedPMName: j.assignedPMId ? pmMap.get(j.assignedPMId) || null : null,
+  }))
 
-  if (error || !builder) {
-    return <div className="text-center py-12 text-red-600">{error || 'Builder not found'}</div>
-  }
+  const primaryContact: PrimaryContact | null = contacts[0]
+    ? {
+        id: contacts[0].id,
+        firstName: contacts[0].firstName,
+        lastName: contacts[0].lastName,
+        title: contacts[0].title,
+        email: contacts[0].email,
+        phone: contacts[0].phone,
+        mobile: contacts[0].mobile,
+        isPrimary: contacts[0].isPrimary,
+      }
+    : null
+
+  const lastCommAt = lastCommRow[0]
+    ? lastCommRow[0].sentAt || lastCommRow[0].createdAt
+    : null
+
+  const lastPaymentAt = lastPaymentRow[0]?.receivedAt || null
+  const daysSinceLastPayment = lastPaymentAt
+    ? daysBetween(new Date(), new Date(lastPaymentAt))
+    : null
+
+  const ytdRevenue = Number(ytdRow[0]?.ytd || 0)
+
+  // ── 4. Render ─────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-8">
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all ${toastType === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
-          {toast}
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Builder"
+        title={builder.companyName}
+        description={builder.contactName}
+        crumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Builders', href: '/admin/builders' },
+          { label: builder.companyName },
+        ]}
+      />
+
+      {/* Tab strip — server-rendered, uses ?tab= query param */}
+      {featureOn && (
+        <div role="tablist" className="flex border-b border-border gap-1">
+          <TabLink
+            href={`/admin/builders/${builderId}?tab=overview`}
+            active={activeTab === 'overview'}
+            label="Overview"
+          />
+          <TabLink
+            href={`/admin/builders/${builderId}?tab=details`}
+            active={activeTab === 'details'}
+            label="Details"
+          />
         </div>
       )}
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/admin/builders" className="text-brand hover:underline text-sm font-medium mb-2 inline-block">
-            ← Back to Builders
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{builder.companyName}</h1>
-          <p className="text-gray-600 mt-1">{builder.contactName}</p>
-        </div>
-      </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Contact Info Card */}
-        <div className="card p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Contact Info</h2>
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="text-gray-600 font-medium">Email</p>
-              <p className="text-gray-900">{builder.email}</p>
-            </div>
-            <div>
-              <p className="text-gray-600 font-medium">Phone</p>
-              <p className="text-gray-900">{builder.phone || 'N/A'}</p>
-            </div>
-            {builder.address && (
-              <div>
-                <p className="text-gray-600 font-medium">Address</p>
-                <p className="text-gray-900">
-                  {builder.address}
-                  {builder.city && `, ${builder.city}`}
-                  {builder.state && `, ${builder.state}`}
-                  {builder.zip && ` ${builder.zip}`}
-                </p>
-              </div>
-            )}
-            {builder.taxId && (
-              <div>
-                <p className="text-gray-600 font-medium">Tax ID</p>
-                <p className="text-gray-900">{builder.taxId}</p>
-              </div>
-            )}
+      {activeTab === 'overview' && featureOn && (
+        <>
+          {/* KPI summary strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPICard
+              title="Outstanding AR"
+              value={formatCurrency(outstandingAR)}
+              accent={arDanger ? 'negative' : outstandingAR > 0 ? 'accent' : 'neutral'}
+              subtitle={
+                invoiceRows.length > 0
+                  ? `${invoiceRows.length} open · avg ${avgAge}d`
+                  : 'No open invoices'
+              }
+            />
+            <KPICard
+              title="Open jobs"
+              value={jobRows.length}
+              accent="brand"
+              subtitle={
+                jobRows.length === 0
+                  ? 'None active'
+                  : `${
+                      jobRows.filter((j) => j.readinessCheck && j.materialsLocked).length
+                    } materials ready`
+              }
+            />
+            <KPICard
+              title="YTD revenue"
+              value={formatCurrency(ytdRevenue)}
+              accent={ytdRevenue > 0 ? 'positive' : 'neutral'}
+              subtitle="Paid invoices, this year"
+            />
+            <KPICard
+              title="Days since payment"
+              value={daysSinceLastPayment ?? '—'}
+              accent={
+                daysSinceLastPayment === null
+                  ? 'neutral'
+                  : daysSinceLastPayment > 45
+                  ? 'negative'
+                  : daysSinceLastPayment > 30
+                  ? 'accent'
+                  : 'positive'
+              }
+              subtitle={
+                lastPaymentAt
+                  ? `Last: ${formatDate(lastPaymentAt)}`
+                  : 'No payments on record'
+              }
+            />
           </div>
-        </div>
 
-        {/* Account Info Card */}
-        <div className="card p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Account Info</h2>
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="text-gray-600 font-medium">Balance</p>
-              <p className={`text-lg font-semibold ${builder.accountBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(builder.accountBalance)}
-              </p>
+          {/* Contact card — top-right on wide screens, standalone on mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <AROverview
+                invoices={invoiceRows}
+                buckets={buckets}
+                openByDefault={arDanger}
+              />
+              <OpenJobsSection jobs={jobRows} />
             </div>
-            <div>
-              <p className="text-gray-600 font-medium">Custom Pricing</p>
-              <p className="text-gray-900">{builder.customPricingCount} products</p>
-            </div>
-            <div>
-              <p className="text-gray-600 font-medium">Tax Exempt</p>
-              <p className="text-gray-900">{builder.taxExempt ? 'Yes' : 'No'}</p>
+            <div className="space-y-6">
+              <ContactCard
+                contact={primaryContact}
+                lastCommunicationAt={lastCommAt}
+                fallbackName={builder.contactName}
+                fallbackEmail={builder.email}
+                fallbackPhone={builder.phone}
+                mailtoSubject={`Abel Lumber — ${builder.companyName}`}
+              />
+
+              {/* Secondary contacts (if any beyond primary) */}
+              {contacts.length > 1 && (
+                <Card>
+                  <CardBody>
+                    <div className="text-xs uppercase tracking-wide text-fg-muted mb-3">
+                      Other contacts
+                    </div>
+                    <ul className="space-y-2 text-sm">
+                      {contacts.slice(1, 5).map((c) => (
+                        <li
+                          key={c.id}
+                          className="flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="text-fg">
+                              {c.firstName} {c.lastName}
+                            </div>
+                            {c.title && (
+                              <div className="text-xs text-fg-muted">
+                                {c.title}
+                              </div>
+                            )}
+                          </div>
+                          {c.email && (
+                            <a
+                              href={`mailto:${encodeURIComponent(c.email)}`}
+                              className="text-xs text-brand hover:underline"
+                            >
+                              Email
+                            </a>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardBody>
+                </Card>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Settings Card */}
-        <div className="card p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="label">Payment Term</label>
-              <select
-                value={editPaymentTerm}
-                onChange={(e) => setEditPaymentTerm(e.target.value)}
-                className="input text-sm"
-              >
-                {PAYMENT_TERMS.map((term) => (
-                  <option key={term} value={term}>
-                    {term}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Status</label>
-              <select
-                value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value)}
-                className="input text-sm"
-              >
-                {STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={handleUpdateBuilder}
-              disabled={updating}
-              className="btn-primary w-full disabled:opacity-50"
-            >
-              {updating ? 'Updating...' : 'Save Changes'}
-            </button>
-
-            <div className="pt-4 mt-2 border-t border-gray-200">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoInvoiceOnDelivery}
-                  onChange={(e) => handleToggleAutoInvoice(e.target.checked)}
-                  disabled={savingToggle}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+          {/* Recent activity */}
+          <Card>
+            <CardBody>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-fg-muted">
+                    Recent activity
+                  </div>
+                  <div className="text-lg font-semibold text-fg">
+                    Last {auditLogs.length} events
+                  </div>
+                </div>
+              </div>
+              {auditLogs.length === 0 ? (
+                <EmptyState
+                  title="No audit events yet"
+                  description="Actions taken on this builder, their invoices, jobs, and POs will appear here."
                 />
-                <span className="text-sm">
-                  <span className="font-medium text-gray-900 block">
-                    Auto-invoice on delivery
-                  </span>
-                  <span className="text-gray-600 text-xs">
-                    When on, a DRAFT invoice is created automatically the moment
-                    a delivery is marked complete. Turn off for COD / prepay
-                    accounts that invoice manually.
-                  </span>
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Projects Section */}
-      <div className="card p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Projects ({projects.length})
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-200">
-              <tr className="text-gray-600 font-semibold">
-                <th className="text-left py-3 px-4">Project Name</th>
-                <th className="text-left py-3 px-4">Status</th>
-                <th className="text-left py-3 px-4">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.length > 0 ? (
-                projects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 font-medium text-brand">
-                      {project.name}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-800">
-                        {project.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {formatDate(project.createdAt)}
-                    </td>
-                  </tr>
-                ))
               ) : (
-                <tr>
-                  <td colSpan={3} className="py-8 text-center text-gray-500">
-                    No projects yet
-                  </td>
-                </tr>
+                <ul className="divide-y divide-border">
+                  {auditLogs.map((a) => {
+                    const staffName =
+                      (a.details && typeof a.details === 'object' && a.details.staffName) ||
+                      a.staffId ||
+                      'system'
+                    return (
+                      <li key={a.id} className="py-2 flex items-center gap-3 text-sm">
+                        <Badge
+                          variant={
+                            a.severity === 'CRITICAL'
+                              ? 'danger'
+                              : a.severity === 'WARN'
+                              ? 'warning'
+                              : 'neutral'
+                          }
+                          size="sm"
+                        >
+                          {a.action}
+                        </Badge>
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">
+                            <span className="text-fg">{a.entity}</span>
+                            {a.entityId && (
+                              <span className="text-fg-muted text-xs font-mono ml-2">
+                                {a.entityId.slice(0, 12)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-fg-muted truncate">
+                            by {staffName}
+                          </div>
+                        </div>
+                        <div className="text-xs text-fg-muted whitespace-nowrap">
+                          {formatDate(a.createdAt)}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </CardBody>
+          </Card>
+        </>
+      )}
 
-      {/* Recent Quotes Section */}
-      <div className="card p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Recent Quotes ({quotes.length})
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-200">
-              <tr className="text-gray-600 font-semibold">
-                <th className="text-left py-3 px-4">Quote Number</th>
-                <th className="text-left py-3 px-4">Total</th>
-                <th className="text-left py-3 px-4">Status</th>
-                <th className="text-left py-3 px-4">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quotes.length > 0 ? (
-                quotes.map((quote) => (
-                  <tr
-                    key={quote.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 font-medium text-brand">
-                      {quote.quoteNumber}
-                    </td>
-                    <td className="py-3 px-4 font-semibold">
-                      {formatCurrency(quote.total)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                          quote.status === 'APPROVED'
-                            ? 'bg-green-100 text-green-800'
-                            : quote.status === 'SENT'
-                            ? 'bg-blue-100 text-blue-800'
-                            : quote.status === 'DRAFT'
-                            ? 'bg-gray-100 text-gray-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}
-                      >
-                        {quote.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {formatDate(quote.createdAt)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-gray-500">
-                    No quotes yet
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {activeTab === 'details' && (
+        <BuilderDetailClient builderId={builderId} />
+      )}
     </div>
+  )
+}
+
+// ── Tab link — server-rendered, no client JS ─────────────────────────────
+function TabLink({
+  href,
+  active,
+  label,
+}: {
+  href: string
+  active: boolean
+  label: string
+}) {
+  return (
+    <Link
+      href={href}
+      role="tab"
+      aria-selected={active}
+      className="px-4 py-2 text-sm font-medium transition-colors"
+      style={{
+        color: active ? 'var(--fg)' : 'var(--fg-muted)',
+        borderBottom: active ? '2px solid var(--brand)' : '2px solid transparent',
+        marginBottom: '-1px',
+      }}
+    >
+      {label}
+    </Link>
   )
 }

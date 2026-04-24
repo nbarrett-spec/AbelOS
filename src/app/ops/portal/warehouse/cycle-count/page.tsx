@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import HistoryPanel, { type HistoryBatch } from './HistoryPanel'
+
+const HISTORY_ENABLED =
+  process.env.NEXT_PUBLIC_FEATURE_CYCLECOUNT_HISTORY !== 'off'
 
 interface BatchLine {
   id: string
@@ -32,20 +36,6 @@ interface CurrentBatch {
   closedAt: string | null
 }
 
-interface HistoryBatch {
-  id: string
-  weekStart: string
-  status: string
-  totalSkus: number
-  completedSkus: number
-  discrepanciesFound: number
-  completionRate: number
-  varianceDollars: number
-  assignedToName: string | null
-  createdAt: string
-  closedAt: string | null
-}
-
 export default function CycleCountPage() {
   const [batch, setBatch] = useState<CurrentBatch | null>(null)
   const [lines, setLines] = useState<BatchLine[]>([])
@@ -57,7 +47,6 @@ export default function CycleCountPage() {
   const [closing, setClosing] = useState(false)
   const [inputs, setInputs] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
-  const [showHistory, setShowHistory] = useState(false)
 
   const loadAll = useCallback(async () => {
     try {
@@ -182,12 +171,6 @@ export default function CycleCountPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowHistory((v) => !v)}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
-          >
-            {showHistory ? 'Hide' : 'Show'} History
-          </button>
           <Link
             href="/ops/portal/warehouse"
             className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 text-sm font-medium"
@@ -458,97 +441,8 @@ export default function CycleCountPage() {
         </>
       )}
 
-      {/* History */}
-      {showHistory && (
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-bold text-gray-900">History (last 12 weeks)</h2>
-            <p className="text-xs text-gray-500 mt-1">
-              Discrepancy trend — watch for weeks where variance $ spikes.
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b text-xs text-gray-600 uppercase">
-                <tr>
-                  <th className="px-4 py-3 text-left">Week</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Assigned</th>
-                  <th className="px-4 py-3 text-right">Completion</th>
-                  <th className="px-4 py-3 text-right">Discrepancies</th>
-                  <th className="px-4 py-3 text-right">Variance $</th>
-                  <th className="px-4 py-3 text-left">Closed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((h) => (
-                  <tr key={h.id} className="border-b">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {new Date(h.weekStart).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-xs px-2 py-1 rounded font-medium ${
-                          h.status === 'OPEN'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {h.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {h.assignedToName || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {h.completedSkus}/{h.totalSkus} (
-                      {Math.round(h.completionRate * 100)}%)
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span
-                        className={`font-medium ${
-                          h.discrepanciesFound > 0
-                            ? 'text-red-600'
-                            : 'text-gray-500'
-                        }`}
-                      >
-                        {h.discrepanciesFound}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span
-                        className={
-                          h.varianceDollars > 0 ? 'text-red-600' : 'text-gray-500'
-                        }
-                      >
-                        ${h.varianceDollars.toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {h.closedAt
-                        ? new Date(h.closedAt).toLocaleDateString()
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-                {history.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-4 py-8 text-center text-gray-500 text-sm"
-                    >
-                      No historical batches yet
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* Discrepancy Trend — Last 12 Weeks */}
+      {HISTORY_ENABLED && <HistoryPanel batches={history} loading={false} />}
     </div>
   )
 }

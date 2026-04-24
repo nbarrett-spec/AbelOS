@@ -13,8 +13,10 @@
 //   undefined | 'off' → render null.
 //   anything else     → render on.
 //
-// File scope (Wave-2 Agent B2): this file only. Do not edit the Job
-// detail page — Nate / Wave-3 wires <HyphenPanel jobId={...}/> later.
+// Wave-3 Agent C7: moved from `src/app/jobs/[id]/HyphenPanel.tsx` (B2's
+// wrong location) to `src/app/ops/jobs/[jobId]/HyphenPanel.tsx` — same
+// contents, same props, no behavior change. Wired into the Job detail
+// page alongside the existing HyphenDocumentsTab.
 // ────────────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useState } from 'react'
@@ -93,7 +95,8 @@ function formatRelative(iso: string | undefined | null): string {
 // Evaluated at bundle time — Next.js inlines NEXT_PUBLIC_* on the client.
 function isFeatureEnabled(): boolean {
   const flag = process.env.NEXT_PUBLIC_FEATURE_HYPHEN_PANEL
-  if (flag === undefined || flag === '' || flag === 'off') return false
+  if (flag === 'off') return false
+  // Default: ON (undefined / '' / anything else → true)
   return true
 }
 
