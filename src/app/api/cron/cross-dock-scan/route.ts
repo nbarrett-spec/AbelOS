@@ -47,6 +47,8 @@ interface CrossDockScanResult {
   flaggedLines: number
   newFlags: number
   clearedFlags: number
+  skippedPastDue: number
+  dismissed: number
   inboxItemsCreated: number
   warehouseLeadId: string | null
   errors: string[]
@@ -58,17 +60,20 @@ export async function GET(request: NextRequest) {
   if (!expected || cronSecret !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  return runCrossDockScan('schedule')
+  const cleanup = request.nextUrl.searchParams.get('cleanup') === '1'
+  return runCrossDockScan('schedule', cleanup)
 }
 
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
-  return runCrossDockScan('manual')
+  const cleanup = request.nextUrl.searchParams.get('cleanup') === '1'
+  return runCrossDockScan('manual', cleanup)
 }
 
 async function runCrossDockScan(
-  triggeredBy: 'schedule' | 'manual'
+  triggeredBy: 'schedule' | 'manual',
+  cleanup = false
 ): Promise<NextResponse<CrossDockScanResult>> {
   const runId = await startCronRun('cross-dock-scan', triggeredBy)
   const started = Date.now()
@@ -79,6 +84,8 @@ async function runCrossDockScan(
     flaggedLines: 0,
     newFlags: 0,
     clearedFlags: 0,
+    skippedPastDue: 0,
+    dismissed: 0,
     inboxItemsCreated: 0,
     warehouseLeadId: null,
     errors: [],
@@ -90,6 +97,46 @@ async function runCrossDockScan(
 
     // Resolve assignee: prefer Gunner (WAREHOUSE_LEAD) → any WAREHOUSE_LEAD → null.
     result.warehouseLeadId = await resolveWarehouseLead()
+
+    // Count POs that *would* have qualified pre-fix but are now skipped because
+    // they're >14 days past-due. Useful observability: tells us how much noise
+    // the date-drift filter is actually absorbing.
+    const pastDueCount = await prisma.$queryRawUnsafe<Array<{ c: bigint | number }>>(
+      `
+      SELECT COUNT(DISTINCT po."id")::bigint AS c
+      FROM "PurchaseOrder" po
+      JOIN "PurchaseOrderItem" poi ON poi."purchaseOrderId" = po."id"
+      WHERE po."status" IN ('SENT_TO_VENDOR','APPROVED','PARTIALLY_RECEIVED')
+        AND po."expectedDate" IS NOT NULL
+        AND po."expectedDate" < NOW() - INTERVAL '14 days'
+        AND poi."productId" IS NOT NULL
+      `
+    )
+    result.skippedPastDue = Number(pastDueCount[0]?.c ?? 0)
+
+    // Gated cleanup: dismiss any flagged POIs whose PO is now >14 days past-due.
+    // Same effect as clearStaleFlags but scoped to the past-due case, and runs
+    // up-front so the scan itself can't re-flag them (it won't — the main query
+    // excludes them — but doing this first produces clean counts).
+    if (cleanup) {
+      const dismissed = await prisma.$executeRawUnsafe(
+        `
+        UPDATE "PurchaseOrderItem" poi
+        SET "crossDockFlag" = false,
+            "crossDockJobIds" = NULL,
+            "crossDockCheckedAt" = NOW()
+        FROM "PurchaseOrder" po
+        WHERE poi."purchaseOrderId" = po."id"
+          AND poi."crossDockFlag" = true
+          AND po."expectedDate" IS NOT NULL
+          AND po."expectedDate" < NOW() - INTERVAL '14 days'
+        `
+      )
+      result.dismissed = Number(dismissed) || 0
+      console.log(
+        `[cross-dock-scan] cleanup=1: dismissed ${result.dismissed} stale past-due flags`
+      )
+    }
 
     // Pull candidate PO lines joined to urgent backordered allocations.
     const rows = await prisma.$queryRawUnsafe<
@@ -126,6 +173,7 @@ async function runCrossDockScan(
       WHERE po."status" IN ('SENT_TO_VENDOR','APPROVED','PARTIALLY_RECEIVED')
         AND po."expectedDate" IS NOT NULL
         AND po."expectedDate" <= NOW() + INTERVAL '7 days'
+        AND po."expectedDate" >= NOW() - INTERVAL '14 days'
         AND poi."productId" IS NOT NULL
       `
     )
@@ -289,6 +337,10 @@ async function runCrossDockScan(
     // don't linger. Scope: any POI flagged=true that we didn't touch above.
     await clearStaleFlags(result, new Set(toFlag.map((l) => l.poItemId).concat(toClear)))
 
+    console.log(
+      `[cross-dock-scan] done: generated=${result.newFlags} skippedPastDue=${result.skippedPastDue} dismissed=${result.dismissed} cleared=${result.clearedFlags} flagged=${result.flaggedLines}`
+    )
+
     await finishCronRun(
       runId,
       result.errors.length > 0 ? 'FAILURE' : 'SUCCESS',
@@ -447,6 +499,7 @@ async function clearStaleFlags(
         po."status" NOT IN ('SENT_TO_VENDOR','APPROVED','PARTIALLY_RECEIVED')
         OR po."expectedDate" IS NULL
         OR po."expectedDate" > NOW() + INTERVAL '7 days'
+        OR po."expectedDate" < NOW() - INTERVAL '14 days'
         OR poi."productId" IS NULL
       )
     `

@@ -40,6 +40,194 @@ async function getConfig(): Promise<InflowConfig | null> {
   return null
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// fetchWithBackoff — retry helper shared by every InFlow call.
+//
+// Policy (matches Wave-1 A4 spec, 2026-04-23):
+//   • Max 5 retries per call (6 total attempts including the initial try).
+//   • Retry on 429 and any 5xx. Non-retryable on 4xx other than 429.
+//   • Backoff schedule: 500ms, 1s, 2s, 4s, 8s — with ±20% jitter.
+//   • Honor `Retry-After` header when server sends one (clamped to at least
+//     the computed backoff so we never retry faster than planned).
+//   • Per-attempt duration logging: endpoint, status, attempts, ms.
+//   • Final failure throws an Error with full context (status, URL, body
+//     snippet ≤ 512 chars) so the cron log and Sentry can attribute blame.
+//   • Network/DNS errors (fetch throws) are retried the same as 5xx.
+//
+// Also drives the consecutive-failure circuit breaker used by the cron
+// route — see `recordEndpointFailure`/`resetEndpointFailure` below.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface FetchWithBackoffOptions {
+  /** Max retries AFTER the initial attempt. Default 5 → up to 6 total tries. */
+  maxRetries?: number
+  /** Base delay in ms for attempt 0's backoff. Default 500. Schedule = base * 2^n. */
+  baseMs?: number
+  /** Upper cap on any single backoff sleep. Default 30s — protects Vercel timeout. */
+  capMs?: number
+  /** For testability: force a 429 on the first N attempts (helper mocks rate-limit). */
+  forceRetryAttempts?: number
+}
+
+interface FetchWithBackoffResult<T> {
+  data: T
+  attempts: number
+  durationMs: number
+  status: number
+}
+
+function jitter(ms: number): number {
+  // ±20% jitter. Random in [0.8, 1.2].
+  const factor = 0.8 + Math.random() * 0.4
+  return Math.round(ms * factor)
+}
+
+function normalizeEndpoint(path: string): string {
+  // Strip query so circuit-breaker + logs bucket by endpoint, not by page number.
+  // `/products?page=1&pageSize=100` → `/products`.
+  const qIdx = path.indexOf('?')
+  return qIdx === -1 ? path : path.slice(0, qIdx)
+}
+
+export async function fetchWithBackoff<T = any>(
+  url: string,
+  init: RequestInit,
+  opts: FetchWithBackoffOptions & { endpoint?: string } = {}
+): Promise<FetchWithBackoffResult<T>> {
+  const maxRetries = opts.maxRetries ?? 5
+  const baseMs = opts.baseMs ?? 500
+  const capMs = opts.capMs ?? 30_000
+  const endpoint = opts.endpoint ?? url
+  const startedAt = Date.now()
+  let attempt = 0
+  let lastStatus = 0
+  let lastBody = ''
+
+  while (attempt <= maxRetries) {
+    const attemptStart = Date.now()
+    let response: Response | null = null
+    let threwNetwork = false
+    let networkErr: any = null
+
+    try {
+      // forceRetryAttempts is a test hook — simulates a 429 for the first N
+      // attempts so we can verify the helper retries without hitting the live
+      // API. See `__mockRateLimitedFetch` below for manual-run usage.
+      if (opts.forceRetryAttempts && attempt < opts.forceRetryAttempts) {
+        response = new Response('{"error":"rate limit (forced)"}', {
+          status: 429,
+          headers: { 'Retry-After': '0' },
+        })
+      } else {
+        response = await fetch(url, init)
+      }
+    } catch (err: any) {
+      threwNetwork = true
+      networkErr = err
+    }
+
+    const attemptMs = Date.now() - attemptStart
+
+    // Success path.
+    if (response && response.ok) {
+      const data = (await response.json()) as T
+      const totalMs = Date.now() - startedAt
+      console.log(`[InFlow] ${endpoint} ok status=${response.status} attempts=${attempt + 1} ms=${totalMs}`)
+      resetEndpointFailure(normalizeEndpoint(endpoint))
+      return { data, attempts: attempt + 1, durationMs: totalMs, status: response.status }
+    }
+
+    // Figure out whether to retry.
+    const status = response?.status ?? 0
+    lastStatus = status
+    const retryable = threwNetwork || status === 429 || (status >= 500 && status <= 599)
+
+    // Capture body snippet for error context (best-effort; bodies can be huge).
+    if (response) {
+      try {
+        lastBody = (await response.text()).slice(0, 512)
+      } catch {
+        lastBody = ''
+      }
+    } else if (threwNetwork) {
+      lastBody = `network error: ${networkErr?.message || String(networkErr)}`
+    }
+
+    if (!retryable || attempt >= maxRetries) {
+      // Give up.
+      const totalMs = Date.now() - startedAt
+      console.warn(`[InFlow] ${endpoint} fail status=${status} attempts=${attempt + 1} ms=${totalMs} body="${lastBody.slice(0, 120)}"`)
+      recordEndpointFailure(normalizeEndpoint(endpoint))
+      const err: any = new Error(
+        `InFlow API ${status || 'ERR'} on ${endpoint} after ${attempt + 1} attempts: ${lastBody}`
+      )
+      err.status = status
+      err.url = url
+      err.endpoint = endpoint
+      err.attempts = attempt + 1
+      err.bodySnippet = lastBody
+      throw err
+    }
+
+    // Compute backoff. Schedule = base * 2^attempt with ±20% jitter.
+    // Retry-After (seconds) takes precedence, but we never go below the
+    // computed floor so a buggy `Retry-After: 0` can't cause a tight loop.
+    const expMs = Math.min(baseMs * Math.pow(2, attempt), capMs)
+    let backoffMs = jitter(expMs)
+    const retryAfterHeader = response?.headers.get('Retry-After')
+    if (retryAfterHeader) {
+      const secs = parseInt(retryAfterHeader, 10)
+      if (Number.isFinite(secs) && secs > 0) {
+        backoffMs = Math.max(secs * 1000, backoffMs)
+      }
+    }
+    backoffMs = Math.min(backoffMs, capMs)
+
+    console.warn(
+      `[InFlow] ${endpoint} retry status=${status || 'net-err'} attempt=${attempt + 1}/${maxRetries + 1} ms=${attemptMs} backoff=${backoffMs}ms retry-after=${retryAfterHeader || 'none'}`
+    )
+    await new Promise(r => setTimeout(r, backoffMs))
+    attempt++
+  }
+
+  // Unreachable — the while body always either returns or throws.
+  const totalMs = Date.now() - startedAt
+  recordEndpointFailure(normalizeEndpoint(endpoint))
+  throw new Error(`InFlow API ${lastStatus}: exhausted ${maxRetries + 1} attempts on ${endpoint} (total ${totalMs}ms): ${lastBody}`)
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Circuit breaker: track consecutive failures per normalized endpoint.
+// The cron route uses this to bail early and mark the run degraded when a
+// single InFlow endpoint is chronically broken — no thrash, no false PARTIAL
+// successes — see `consecutiveFailuresForAnyEndpoint` / `degradedEndpoint`.
+// ──────────────────────────────────────────────────────────────────────────
+
+const endpointFailureCount = new Map<string, number>()
+
+function recordEndpointFailure(endpoint: string) {
+  endpointFailureCount.set(endpoint, (endpointFailureCount.get(endpoint) ?? 0) + 1)
+}
+
+function resetEndpointFailure(endpoint: string) {
+  if (endpointFailureCount.has(endpoint)) {
+    endpointFailureCount.delete(endpoint)
+  }
+}
+
+/** Returns the endpoint that has tripped the threshold, or null. */
+export function degradedEndpoint(threshold = 10): string | null {
+  for (const [endpoint, count] of endpointFailureCount.entries()) {
+    if (count >= threshold) return endpoint
+  }
+  return null
+}
+
+/** Clears the in-memory circuit breaker state. Call at the top of each cron run. */
+export function resetDegradedTracker() {
+  endpointFailureCount.clear()
+}
+
 async function inflowFetch(path: string, config: InflowConfig, options?: RequestInit) {
   const url = `${INFLOW_BASE}/${config.companyId}${path}`
   const headers: Record<string, string> = {
@@ -48,42 +236,21 @@ async function inflowFetch(path: string, config: InflowConfig, options?: Request
     'Accept': 'application/json;version=2026-02-24',
   }
 
-  // Retry up to 6 times on 429 with exponential backoff.
-  // InFlow quota: 60 req/min per company. Honor Retry-After header when present.
-  // Bumped from 3 to 6 attempts so a burst doesn't kill a whole 60+ page walk.
-  const MAX_ATTEMPTS = 6
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...headers,
-        ...(options?.headers || {}),
-      },
-    })
-
-    if (response.status === 429) {
-      // Honor Retry-After if present; otherwise exponential backoff capped at 32s.
-      // 1s, 2s, 4s, 8s, 16s, 32s — total ~63s budget before giving up.
-      const retryAfterHeader = response.headers.get('Retry-After')
-      const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN
-      const expBackoffMs = Math.min(1000 * Math.pow(2, attempt), 32000)
-      const backoff = Number.isFinite(retryAfterSec) && retryAfterSec > 0
-        ? Math.max(retryAfterSec * 1000, 1000)
-        : expBackoffMs
-      console.warn(`[InFlow] 429 on ${path}, sleeping ${backoff}ms (attempt ${attempt + 1}/${MAX_ATTEMPTS}, retry-after=${retryAfterHeader || 'none'})`)
-      await new Promise(r => setTimeout(r, backoff))
-      continue
-    }
-
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`InFlow API ${response.status}: ${text}`)
-    }
-
-    return response.json()
+  const merged: RequestInit = {
+    ...options,
+    headers: {
+      ...headers,
+      ...(options?.headers || {}),
+    },
   }
 
-  throw new Error(`InFlow API 429: rate limited after ${MAX_ATTEMPTS} retries on ${path}`)
+  const { data } = await fetchWithBackoff<any>(url, merged, {
+    maxRetries: 5,
+    baseMs: 500,
+    capMs: 30_000,
+    endpoint: path,
+  })
+  return data
 }
 
 // ─── Shared: write SyncLog via raw SQL (never use Prisma client for this) ──
