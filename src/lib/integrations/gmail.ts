@@ -748,11 +748,16 @@ async function matchEmailToContact(from: string, to: string[]): Promise<{
   const externalAddresses = allAddresses.filter(e => !e.includes('@abellumber.com'))
   const internalAddresses = allAddresses.filter(e => e.includes('@abellumber.com'))
 
-  // Match external addresses to builders
+  // Match external addresses to builders.
+  // NOTE: Builder has a scalar `organizationId` FK but NO `organization` relation
+  // in the Prisma schema — an `include: { organization: true }` here throws
+  // `Invalid prisma.builder.findFirst() invocation` on every external email,
+  // which was the real cause of the 64% gmail-sync failure rate (2026-04-23).
+  // Select only scalar fields; we already have organizationId to link the org.
   for (const addr of externalAddresses) {
     const builder = await (prisma as any).builder.findFirst({
       where: { email: addr },
-      include: { organization: true },
+      select: { id: true, organizationId: true },
     })
     if (builder) {
       builderId = builder.id
@@ -763,6 +768,7 @@ async function matchEmailToContact(from: string, to: string[]): Promise<{
     // Try matching to org contact email
     const org = await (prisma as any).builderOrganization.findFirst({
       where: { email: addr },
+      select: { id: true },
     })
     if (org) {
       organizationId = org.id
