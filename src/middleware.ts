@@ -138,8 +138,12 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/ops')) {
     // Allow public ops routes
     if (opsPublicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
-      // Setup-account should always be accessible (even if logged in — employee may be resetting)
-      if (pathname.startsWith('/ops/setup-account')) {
+      // Setup-account and reset-password should always be accessible — even if
+      // the user has a (possibly stale/expired) staff cookie.  Without this
+      // carve-out the cookie-existence check below redirects them to /ops,
+      // where the JWT fails and they end up on /ops/login instead of the
+      // reset page.
+      if (pathname.startsWith('/ops/setup-account') || pathname.startsWith('/ops/reset-password')) {
         const res = NextResponse.next()
         return addRequestIdToResponse(res, requestId)
       }
