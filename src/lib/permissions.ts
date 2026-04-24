@@ -79,8 +79,8 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/vendors': ['ADMIN', 'MANAGER', 'PURCHASING', 'PROJECT_MANAGER'],
   '/ops/vendors/scorecard': ['ADMIN', 'MANAGER', 'PURCHASING'],
 
-  // Finance — open to all office roles (they need visibility to keep company healthy)
-  '/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'PURCHASING', 'SALES_REP', 'ESTIMATOR'],
+  // Finance — restricted to accounting + managerial/executive positions
+  '/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/ops/finance/patterns': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/ops/finance/ap-forecast': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
   // AR aging dashboard — primary owners: Dawn (ACCOUNTING) + leadership.
@@ -158,7 +158,7 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
 
   // Collections & Cash Flow — finance + admin
   '/ops/collections': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
-  '/ops/cash-flow-optimizer': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER'],
+  '/ops/cash-flow-optimizer': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/ops/procurement-intelligence': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING'],
   '/ops/automations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'ACCOUNTING', 'SALES_REP'],
 
@@ -191,6 +191,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/takeoff-review': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
   // AI Takeoff Tool — in-house blueprint → BOM scaffold
   '/ops/takeoff-tool': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
+
+  // Blueprints — upload + AI analysis
+  '/ops/blueprints': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
 
   // Organizations & Communities
   '/ops/organizations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],
@@ -331,8 +334,8 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/import-bolt': ['ADMIN', 'MANAGER'],
   '/api/ops/import-hyphen': ['ADMIN', 'MANAGER'],
 
-  // Financial APIs — open to office roles for operational visibility
-  '/api/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'PURCHASING', 'SALES_REP', 'ESTIMATOR'],
+  // Financial APIs — restricted to accounting + managerial/executive
+  '/api/ops/finance': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/finance/monthly-close': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/finance/payment-patterns': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/finance/ap-forecast': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
@@ -440,6 +443,9 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Takeoff APIs
   '/api/ops/takeoffs': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
 
+  // Blueprint APIs — PMs, estimators, sales need upload + analysis access
+  '/api/ops/blueprints': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
+
   // Purchasing APIs — PM added for visibility
   '/api/ops/purchasing': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING'],
 
@@ -450,6 +456,8 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/procurement-intelligence': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING'],
   '/api/ops/automations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'ACCOUNTING', 'SALES_REP'],
   '/api/ops/ai/daily-briefing': ALL_ROLES,
+  '/api/ops/ai/chat': ALL_ROLES,
+  '/api/ops/ai': ALL_ROLES,
 
   // PM Performance Dashboard
   '/api/ops/pm-dashboard': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],

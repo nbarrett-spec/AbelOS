@@ -1029,6 +1029,46 @@ export default function AccountDetailPage() {
         }
       />
 
+      {/* ── Quick Actions ──────────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <a href={`/ops/orders?builderId=${builder.id}`}
+          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          📦 New Order
+        </a>
+        <a href={`/ops/quotes?builderId=${builder.id}`}
+          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          📋 Create Quote
+        </a>
+        <a href={`/ops/blueprints/analyze?builderId=${builder.id}`}
+          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          📐 Add Blueprint
+        </a>
+        <a href={`/ops/takeoff-tool?builderId=${builder.id}&builder=${encodeURIComponent(builder.companyName)}`}
+          className="px-3 py-1.5 bg-[#C6A24E] text-white rounded text-sm font-medium hover:bg-[#A8882A] inline-flex items-center gap-1.5 no-underline">
+          🤖 AI Takeoff
+        </a>
+        <a href={`/ops/schedule?builderId=${builder.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          📅 Schedule Task
+        </a>
+        <a href={`/ops/delivery?builderId=${builder.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          🚚 Schedule Delivery
+        </a>
+        <a href={`/ops/jobs?builderName=${encodeURIComponent(builder.companyName)}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          🏗️ View Jobs
+        </a>
+        <a href={`/ops/communication-log?builderId=${builder.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          💬 Communication Log
+        </a>
+        <a href={`/ops/contracts?builderId=${builder.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          📄 Contracts
+        </a>
+      </div>
+
       {/* ── KPI row ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <KPICard

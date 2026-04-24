@@ -18,6 +18,8 @@ import JobChip, {
   RAIL_COLORS,
   MATERIALS_COLOR,
   MATERIALS_LABEL,
+  JOB_TYPE_COLORS,
+  JOB_TYPE_LABELS,
 } from './JobChip'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -41,6 +43,8 @@ interface BuilderLite {
 interface CalendarEvent extends JobChipEvent {
   assignedPMId: string | null
 }
+
+type ViewMode = 'month' | 'week'
 
 interface CalendarResponse {
   month: string
@@ -106,10 +110,14 @@ export default function CalendarGrid({
     month: now.getUTCMonth() + 1,
   })
 
+  // ── View mode ───────────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<ViewMode>('month')
+
   // ── Filters ─────────────────────────────────────────────────────────────
   const [pmFilter, setPmFilter] = useState<Set<string>>(new Set())
   const [builderFilter, setBuilderFilter] = useState<Set<string>>(new Set())
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set())
+  const [jobTypeFilter, setJobTypeFilter] = useState<Set<string>>(new Set())
   const [hideClosed, setHideClosed] = useState(false)
 
   // ── Data ────────────────────────────────────────────────────────────────
@@ -202,10 +210,15 @@ export default function CalendarGrid({
   // per-event). ─────────────────────────────────────────────────────────
   const filteredEvents = useMemo(() => {
     if (!data) return []
-    const events = data.events
-    if (statusFilter.size === 0) return events
-    return events.filter((e) => statusFilter.has(bucketStatus(e.status)))
-  }, [data, statusFilter])
+    let events = data.events
+    if (statusFilter.size > 0) {
+      events = events.filter((e) => statusFilter.has(bucketStatus(e.status)))
+    }
+    if (jobTypeFilter.size > 0) {
+      events = events.filter((e) => e.jobType && jobTypeFilter.has(e.jobType))
+    }
+    return events
+  }, [data, statusFilter, jobTypeFilter])
 
   // ── Bucket events by day (YYYY-MM-DD key) ─────────────────────────────
   const eventsByDay = useMemo(() => {
@@ -223,6 +236,19 @@ export default function CalendarGrid({
 
   // ── Compute grid days ──────────────────────────────────────────────────
   const gridDays = useMemo(() => {
+    if (viewMode === 'week') {
+      // Week view: show the week containing the 1st of the month (or today if same month)
+      const refDate = (anchor.year === now.getUTCFullYear() && anchor.month === now.getUTCMonth() + 1)
+        ? now
+        : new Date(Date.UTC(anchor.year, anchor.month - 1, 1))
+      const weekStart = startOfMondayWeek(refDate)
+      const days: Date[] = []
+      for (let i = 0; i < 7; i++) {
+        days.push(addDaysUTC(weekStart, i))
+      }
+      return days
+    }
+    // Month view
     const monthStart = new Date(Date.UTC(anchor.year, anchor.month - 1, 1))
     const monthEnd = new Date(Date.UTC(anchor.year, anchor.month, 0))
     const gridStart = startOfMondayWeek(monthStart)
@@ -232,7 +258,7 @@ export default function CalendarGrid({
       days.push(d)
     }
     return days
-  }, [anchor])
+  }, [anchor, viewMode])
 
   const today = new Date()
 
@@ -312,6 +338,23 @@ export default function CalendarGrid({
           <div className="text-[15px] font-semibold text-fg ml-3 tabular-nums">
             {monthLabel(anchor.year, anchor.month)}
           </div>
+
+          {/* View mode toggle */}
+          <div className="ml-3 inline-flex items-center rounded-md border border-border bg-surface-muted/30 p-0.5">
+            {(['month', 'week'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-2.5 h-6 rounded text-[11px] font-medium transition-colors capitalize ${
+                  viewMode === mode
+                    ? 'bg-surface-elevated text-fg shadow-sm'
+                    : 'text-fg-muted hover:text-fg'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -333,6 +376,10 @@ export default function CalendarGrid({
             selected={statusFilter}
             onChange={setStatusFilter}
             counts={bucketCounts}
+          />
+          <JobTypeFilter
+            selected={jobTypeFilter}
+            onChange={setJobTypeFilter}
           />
           <label className="flex items-center gap-1.5 text-[11.5px] text-fg-muted select-none cursor-pointer px-2 h-7 rounded-md border border-border bg-surface-muted/30 hover:text-fg">
             <input
@@ -399,7 +446,8 @@ export default function CalendarGrid({
               const events = eventsByDay.get(key) ?? []
               const inMonth = d.getUTCMonth() + 1 === anchor.month
               const isToday = sameDayUTC(d, today)
-              const visible = events.slice(0, 3)
+              const maxVisible = viewMode === 'week' ? 8 : 3
+              const visible = events.slice(0, maxVisible)
               const overflow = events.length - visible.length
 
               const todayGrad =
@@ -408,7 +456,7 @@ export default function CalendarGrid({
               return (
                 <div
                   key={key}
-                  className={`relative rounded-md border min-h-[110px] flex flex-col transition-colors ${
+                  className={`relative rounded-md border ${viewMode === 'week' ? 'min-h-[280px]' : 'min-h-[110px]'} flex flex-col transition-colors ${
                     inMonth
                       ? 'border-border bg-surface-muted/20'
                       : 'border-border/40 bg-transparent opacity-55'
@@ -626,30 +674,126 @@ function StatusFilter({
   )
 }
 
+function JobTypeFilter({
+  selected,
+  onChange,
+}: {
+  selected: Set<string>
+  onChange: (next: Set<string>) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const types = Object.keys(JOB_TYPE_LABELS)
+
+  const toggle = (t: string) => {
+    const next = new Set(selected)
+    if (next.has(t)) next.delete(t)
+    else next.add(t)
+    onChange(next)
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 px-2.5 h-7 text-[11.5px] rounded-md border border-border bg-surface-muted/30 hover:text-fg hover:border-border-strong transition-colors ${
+          selected.size > 0 ? 'text-fg border-[var(--c1)]/40' : 'text-fg-muted'
+        }`}
+      >
+        <span className="text-fg-subtle uppercase tracking-wide font-medium text-[9.5px] bp-label">Type:</span>
+        <span className="truncate max-w-[140px]">
+          {selected.size === 0
+            ? 'All types'
+            : selected.size === 1
+              ? JOB_TYPE_LABELS[[...selected][0]] || [...selected][0]
+              : `${selected.size} types`}
+        </span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-8 z-20 w-[260px] max-h-[400px] overflow-auto rounded-md border border-border bg-surface-elevated shadow-lg p-1">
+          {types.map((t) => (
+            <label
+              key={t}
+              className="flex items-center gap-2 px-2 py-1 text-[12px] text-fg hover:bg-surface-muted/50 rounded cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selected.has(t)}
+                onChange={() => toggle(t)}
+                className="accent-[var(--c1)]"
+              />
+              <span
+                className="w-2.5 h-2.5 rounded-sm shrink-0"
+                style={{ background: JOB_TYPE_COLORS[t] }}
+              />
+              <span className="truncate">{JOB_TYPE_LABELS[t]}</span>
+            </label>
+          ))}
+          {selected.size > 0 && (
+            <div className="border-t border-border mt-1 pt-1">
+              <button
+                onClick={() => onChange(new Set())}
+                className="w-full text-[11px] text-fg-muted hover:text-fg px-2 py-1 text-left"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Legend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10.5px] text-fg-muted">
-      <span className="eyebrow bp-label">Materials:</span>
-      {(['green', 'amber', 'red', 'unknown'] as MaterialsStatus[]).map((m) => (
-        <span key={m} className="inline-flex items-center gap-1">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: MATERIALS_COLOR[m] }}
-          />
-          {MATERIALS_LABEL[m]}
-        </span>
-      ))}
-      <span className="h-3 w-px bg-border mx-1" />
-      <span className="eyebrow bp-label">Status:</span>
-      {(['IN_PROGRESS', 'PENDING', 'READY_TO_CLOSE', 'CLOSED'] as const).map((b) => (
-        <span key={b} className="inline-flex items-center gap-1">
-          <span
-            className="w-2 h-0.5 rounded"
-            style={{ background: RAIL_COLORS[b] }}
-          />
-          {BUCKET_LABEL[b]}
-        </span>
-      ))}
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10.5px] text-fg-muted">
+        <span className="eyebrow bp-label">Materials:</span>
+        {(['green', 'amber', 'red', 'unknown'] as MaterialsStatus[]).map((m) => (
+          <span key={m} className="inline-flex items-center gap-1">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: MATERIALS_COLOR[m] }}
+            />
+            {MATERIALS_LABEL[m]}
+          </span>
+        ))}
+        <span className="h-3 w-px bg-border mx-1" />
+        <span className="eyebrow bp-label">Status:</span>
+        {(['IN_PROGRESS', 'PENDING', 'READY_TO_CLOSE', 'CLOSED'] as const).map((b) => (
+          <span key={b} className="inline-flex items-center gap-1">
+            <span
+              className="w-2 h-0.5 rounded"
+              style={{ background: RAIL_COLORS[b] }}
+            />
+            {BUCKET_LABEL[b]}
+          </span>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-fg-muted">
+        <span className="eyebrow bp-label">Job Type:</span>
+        {Object.entries(JOB_TYPE_LABELS).map(([key, label]) => (
+          <span key={key} className="inline-flex items-center gap-1">
+            <span
+              className="w-2 h-2 rounded-sm"
+              style={{ background: JOB_TYPE_COLORS[key] }}
+            />
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }

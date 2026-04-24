@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
         community: true,
         builderName: true,
         status: true,
-        scopeType: true, // schema column — surfaced as `jobType` in response for UI compat
+        jobType: true, // real column now — was aliased from scopeType in 8c9d286 pre-migration
         assignedPMId: true,
         scheduledDate: true,
       },
@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
           community: true,
           builderName: true,
           status: true,
-          scopeType: true, // MUST match `jobs` select above — typeof jobs leaks shape
+          jobType: true, // MUST match `jobs` select above — typeof jobs leaks shape
           assignedPMId: true,
           scheduledDate: true,
         },
@@ -339,7 +339,7 @@ export async function GET(request: NextRequest) {
           community: job.community,
           builderName: job.builderName,
           status: job.status,
-          jobType: job.scopeType,
+          jobType: job.jobType,
           dateKind: 'start',
           date: toYmd(job.scheduledDate),
           materialsStatus: mat,
@@ -356,7 +356,7 @@ export async function GET(request: NextRequest) {
           community: job.community,
           builderName: job.builderName,
           status: job.status,
-          jobType: job.scopeType,
+          jobType: job.jobType,
           dateKind: 'close',
           date: toYmd(close),
           materialsStatus: mat,

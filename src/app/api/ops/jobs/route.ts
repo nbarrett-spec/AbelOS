@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
         j."lotBlock",
         j."community",
         j."scopeType",
+        j."jobType",
         j."dropPlan",
         j."assignedPMId",
         j."status",
@@ -118,6 +119,8 @@ export async function GET(request: NextRequest) {
         j."completedAt",
         j."latitude",
         j."longitude",
+        j."boltJobId",
+        j."inflowJobId",
         j."createdAt",
         j."updatedAt"
       FROM "Job" j
@@ -262,6 +265,7 @@ export async function POST(request: NextRequest) {
     const {
       builderName,
       scopeType,
+      jobType,
       orderId,
       lotBlock,
       community,
@@ -280,18 +284,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate jobNumber in format "JOB-YYYY-NNNN"
-    const year = new Date().getFullYear();
-    const jobNumberPrefix = `JOB-${year}-`;
+    // Job type code map for new numbering format: "<address> <code>"
+    const JOB_TYPE_CODES: Record<string, string> = {
+      TRIM_1: 'T1', TRIM_1_INSTALL: 'T1I', TRIM_2: 'T2', TRIM_2_INSTALL: 'T2I',
+      DOORS: 'DR', DOOR_INSTALL: 'DRI', HARDWARE: 'HW', HARDWARE_INSTALL: 'HWI',
+      FINAL_FRONT: 'FF', FINAL_FRONT_INSTALL: 'FFI', QC_WALK: 'QC', PUNCH: 'PL',
+      WARRANTY: 'WR', CUSTOM: 'CU',
+    }
 
-    const maxNumQuery = `
-      SELECT COALESCE(MAX(CAST(SUBSTRING("jobNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
-      FROM "Job"
-      WHERE "jobNumber" LIKE $1
-    `;
-    const maxNumResult: any = await prisma.$queryRawUnsafe(maxNumQuery, `${jobNumberPrefix}%`);
-    const nextNumber = (maxNumResult[0]?.max_num || 0) + 1;
-    const jobNumber = `${jobNumberPrefix}${String(nextNumber).padStart(4, '0')}`;
+    // Generate jobNumber:
+    //   New format (when jobAddress + jobType provided): "10567 Boxthorn T1"
+    //   Legacy fallback: "JOB-YYYY-NNNN"
+    let jobNumber: string
+    if (jobAddress && jobType && JOB_TYPE_CODES[jobType]) {
+      jobNumber = `${jobAddress} ${JOB_TYPE_CODES[jobType]}`
+    } else {
+      const year = new Date().getFullYear();
+      const jobNumberPrefix = `JOB-${year}-`;
+      const maxNumQuery = `
+        SELECT COALESCE(MAX(CAST(SUBSTRING("jobNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
+        FROM "Job"
+        WHERE "jobNumber" LIKE $1
+      `;
+      const maxNumResult: any = await prisma.$queryRawUnsafe(maxNumQuery, `${jobNumberPrefix}%`);
+      const nextNumber = (maxNumResult[0]?.max_num || 0) + 1;
+      jobNumber = `${jobNumberPrefix}${String(nextNumber).padStart(4, '0')}`;
+    }
 
     // Generate UUID for the new job
     const uuidQuery = `SELECT gen_random_uuid() AS id`;
@@ -305,6 +323,7 @@ export async function POST(request: NextRequest) {
         "jobNumber",
         "builderName",
         "scopeType",
+        "jobType",
         "orderId",
         "lotBlock",
         "community",
@@ -321,7 +340,7 @@ export async function POST(request: NextRequest) {
         $2,
         $3,
         $4::"ScopeType",
-        $5,
+        $5::"JobType",
         $6,
         $7,
         $8,
@@ -329,9 +348,10 @@ export async function POST(request: NextRequest) {
         $10,
         $11,
         $12,
-        $13::"JobStatus",
-        $14,
-        $15
+        $13,
+        $14::"JobStatus",
+        $15,
+        $16
       )
     `;
 
@@ -342,6 +362,7 @@ export async function POST(request: NextRequest) {
       jobNumber,
       builderName,
       scopeType,
+      jobType || null,
       orderId || null,
       lotBlock || null,
       community || null,

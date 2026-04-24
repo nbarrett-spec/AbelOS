@@ -1072,8 +1072,9 @@ model Job {
   divisionId String?
   locationId String? @default("loc_abel_dfw")
 
-  // Scope
+  // Scope & Type
   scopeType ScopeType
+  jobType   JobType?  // Operational phase: T1, T2, FF, DR, HW, QC, etc.
   dropPlan  String? // "Single Drop", "Staged", "Multi-Drop"
 
   // Assignment
@@ -1132,6 +1133,25 @@ enum JobStatus {
   COMPLETE // All work done
   INVOICED // Invoice sent
   CLOSED // Payment received, job archived
+}
+
+// Job Type — operational phase/visit type (drives job numbering + calendar color coding)
+// Job number format: "<address> <type_code>" e.g. "10567 Boxthorn T1"
+enum JobType {
+  TRIM_1          // T1 — first trim package
+  TRIM_1_INSTALL  // T1I — first trim install
+  TRIM_2          // T2 — second trim (finish)
+  TRIM_2_INSTALL  // T2I — second trim install
+  DOORS           // DR — door delivery
+  DOOR_INSTALL    // DRI — door install
+  HARDWARE        // HW — hardware delivery
+  HARDWARE_INSTALL // HWI — hardware install
+  FINAL_FRONT     // FF — final front (porch columns, exterior trim)
+  FINAL_FRONT_INSTALL // FFI — final front install
+  QC_WALK         // QC — quality control walkthrough
+  PUNCH           // PL — punch list fixes
+  WARRANTY        // WR — warranty callback
+  CUSTOM          // CU — custom / other
 }
 
 enum ScopeType {

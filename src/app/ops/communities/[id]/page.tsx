@@ -291,6 +291,42 @@ export default function CommunityDetailPage() {
         </div>
       </div>
 
+      {/* ── Quick Actions ────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Link href={`/ops/jobs?community=${encodeURIComponent(community.name)}`}
+          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          🏗️ View Jobs
+        </Link>
+        <Link href={`/ops/blueprints/analyze?communityId=${community.id}`}
+          className="px-3 py-1.5 bg-[#0f2a3e] text-white rounded text-sm font-medium hover:bg-[#1a3f5c] inline-flex items-center gap-1.5 no-underline">
+          📐 Add Blueprint
+        </Link>
+        <Link href={`/ops/takeoff-tool?communityId=${community.id}&community=${encodeURIComponent(community.name)}`}
+          className="px-3 py-1.5 bg-[#C6A24E] text-white rounded text-sm font-medium hover:bg-[#A8882A] inline-flex items-center gap-1.5 no-underline">
+          🤖 AI Takeoff
+        </Link>
+        <Link href={`/ops/schedule?communityId=${community.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          📅 Schedule Task
+        </Link>
+        <Link href={`/ops/delivery?communityId=${community.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          🚚 Schedule Delivery
+        </Link>
+        <Link href={`/ops/orders?communityId=${community.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          📦 Orders
+        </Link>
+        <Link href={`/ops/floor-plans?communityId=${community.id}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          🗺️ Floor Plans
+        </Link>
+        <Link href={`/ops/accounts/${community.builderId}`}
+          className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-1.5 no-underline">
+          🏢 Builder Account
+        </Link>
+      </div>
+
       {/* ── Tab bar ─────────────────────────────────────────── */}
       <div className="border-b border-gray-200 mb-6">
         <div className="flex gap-1">
