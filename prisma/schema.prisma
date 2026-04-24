@@ -695,6 +695,7 @@ model Product {
   // Classification
   category    String // Interior Doors, Exterior Doors, Trim, Hardware
   subcategory String? // Pre-Hung, Slab, Bifold, etc.
+  productType String  @default("PHYSICAL") // PHYSICAL | LABOR | SERVICE | OVERHEAD — gates Smart Reorder / MRP suggestions
 
   // Pricing
   cost         Float // Abel's cost
@@ -1074,7 +1075,7 @@ model Job {
 
   // Scope & Type
   scopeType ScopeType
-  jobType   JobType?  // Operational phase: T1, T2, FF, DR, HW, QC, etc.
+  jobType   JobType? // Operational phase: T1, T2, FF, DR, HW, QC, etc.
   dropPlan  String? // "Single Drop", "Staged", "Multi-Drop"
 
   // Assignment
@@ -1138,20 +1139,20 @@ enum JobStatus {
 // Job Type — operational phase/visit type (drives job numbering + calendar color coding)
 // Job number format: "<address> <type_code>" e.g. "10567 Boxthorn T1"
 enum JobType {
-  TRIM_1          // T1 — first trim package
-  TRIM_1_INSTALL  // T1I — first trim install
-  TRIM_2          // T2 — second trim (finish)
-  TRIM_2_INSTALL  // T2I — second trim install
-  DOORS           // DR — door delivery
-  DOOR_INSTALL    // DRI — door install
-  HARDWARE        // HW — hardware delivery
+  TRIM_1 // T1 — first trim package
+  TRIM_1_INSTALL // T1I — first trim install
+  TRIM_2 // T2 — second trim (finish)
+  TRIM_2_INSTALL // T2I — second trim install
+  DOORS // DR — door delivery
+  DOOR_INSTALL // DRI — door install
+  HARDWARE // HW — hardware delivery
   HARDWARE_INSTALL // HWI — hardware install
-  FINAL_FRONT     // FF — final front (porch columns, exterior trim)
+  FINAL_FRONT // FF — final front (porch columns, exterior trim)
   FINAL_FRONT_INSTALL // FFI — final front install
-  QC_WALK         // QC — quality control walkthrough
-  PUNCH           // PL — punch list fixes
-  WARRANTY        // WR — warranty callback
-  CUSTOM          // CU — custom / other
+  QC_WALK // QC — quality control walkthrough
+  PUNCH // PL — punch list fixes
+  WARRANTY // WR — warranty callback
+  CUSTOM // CU — custom / other
 }
 
 enum ScopeType {
@@ -1668,6 +1669,22 @@ model VendorProduct {
   @@index([productId])
   @@index([vendorId])
   @@index([preferred])
+}
+
+// Trim/install subcontractor vendors (separate from material Vendor / Supplier).
+// Used for labor pricing on install crews — DFW Door, Texas Innovation, etc.
+model TrimVendor {
+  id           String   @id @default(cuid())
+  name         String // "DFW Door", "Texas Innovation"
+  contactEmail String?
+  contactPhone String?
+  rates        Json     @default("{}") // { "interior_prehung": 45.00, "exterior": 85.00, ... }
+  active       Boolean  @default(true)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active])
 }
 
 model PurchaseOrder {
@@ -5717,19 +5734,19 @@ model UptimeProbe {
 }
 
 model NucHeartbeat {
-  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  nodeId        String   @unique
-  nodeRole      String   @default("coordinator")
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  nodeId        String    @unique
+  nodeRole      String    @default("coordinator")
   engineVersion String?
-  status        String   @default("online")
-  moduleStatus  Json?    @default("{}")
+  status        String    @default("online")
+  moduleStatus  Json?     @default("{}")
   latencyMs     Int?
   uptimeSeconds Int?
-  errorCount    Int?     @default(0)
+  errorCount    Int?      @default(0)
   lastScanAt    DateTime?
-  meta          Json?    @default("{}")
-  receivedAt    DateTime @default(now())
-  createdAt     DateTime @default(now())
+  meta          Json?     @default("{}")
+  receivedAt    DateTime  @default(now())
+  createdAt     DateTime  @default(now())
 
   @@index([receivedAt(sort: Desc)], map: "idx_nucheartbeat_received")
 }
