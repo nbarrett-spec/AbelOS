@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Factory } from 'lucide-react'
+import { Factory, Search, X, ArrowRight } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
 
@@ -36,6 +36,9 @@ export default function StagingPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
+  const [search, setSearch] = useState('')
+  const [moveModalOpen, setMoveModalOpen] = useState(false)
+  const [pageToast, setPageToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     fetchStagingJobs()
@@ -59,10 +62,63 @@ export default function StagingPage() {
     }
   }
 
+  const showPageToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setPageToast({ msg, type })
+    setTimeout(() => setPageToast(null), 3500)
+  }
+
+  // Pure client-side filter — applies to all 3 columns. No refetch.
+  // Address isn't returned by the staging API, so we include `community`
+  // and `lotBlock` (the location surrogates that are in the payload).
+  const filteredJobs = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return jobs
+    return jobs.filter((j) => {
+      const haystack = [
+        j.jobNumber,
+        j.builderName,
+        j.community || '',
+        j.lotBlock || '',
+      ]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [jobs, search])
+
   const jobsByStatus = {
-    IN_PRODUCTION: jobs.filter((j) => j.status === 'IN_PRODUCTION'),
-    STAGED: jobs.filter((j) => j.status === 'STAGED'),
-    LOADED: jobs.filter((j) => j.status === 'LOADED'),
+    IN_PRODUCTION: filteredJobs.filter((j) => j.status === 'IN_PRODUCTION'),
+    STAGED: filteredJobs.filter((j) => j.status === 'STAGED'),
+    LOADED: filteredJobs.filter((j) => j.status === 'LOADED'),
+  }
+
+  // Unfiltered IN_PRODUCTION list — fuels the "Move Job to Staging" picker
+  // so the modal isn't constrained by the page-level search above.
+  const inProductionAll = useMemo(
+    () => jobs.filter((j) => j.status === 'IN_PRODUCTION'),
+    [jobs]
+  )
+
+  const handleMoveToStaged = async (jobId: string) => {
+    try {
+      const res = await fetch(`/api/ops/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'STAGED' }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || 'Failed to move job to staging')
+      }
+      showPageToast('Job moved to Staged', 'success')
+      setMoveModalOpen(false)
+      await fetchStagingJobs()
+    } catch (err) {
+      showPageToast(
+        err instanceof Error ? err.message : 'Failed to move job',
+        'error'
+      )
+    }
   }
 
   if (loading) {
@@ -82,14 +138,57 @@ export default function StagingPage() {
         title="Staging Area"
         description="Manage job staging workflow from production through loading"
         actions={
-          <Link
-            href="/ops/manufacturing"
-            className="text-xs text-[#0f2a3e] hover:underline"
-          >
-            ← Back to Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMoveModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f2a3e] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#0a1a28]"
+            >
+              <ArrowRight className="w-3.5 h-3.5" />
+              Move Job to Staging
+            </button>
+            <Link
+              href="/ops/manufacturing"
+              className="text-xs text-[#0f2a3e] hover:underline"
+            >
+              ← Back to Dashboard
+            </Link>
+          </div>
         }
       />
+
+      {/* Page-level toast for Move action */}
+      {pageToast && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
+            pageToast.type === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+          }`}
+        >
+          {pageToast.msg}
+        </div>
+      )}
+
+      {/* Search bar — pure client-side filter on already-loaded jobs */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by job #, community, lot/block, or builder…"
+          className="w-full pl-9 pr-9 py-2 rounded-lg border border-border bg-surface text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-[#0f2a3e]"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-surface-muted"
+            aria-label="Clear search"
+          >
+            <X className="w-4 h-4 text-fg-subtle" />
+          </button>
+        )}
+      </div>
 
       {/* Error message */}
       {error && (
@@ -216,6 +315,136 @@ export default function StagingPage() {
           <li>• <strong>Staged:</strong> Production complete, job packed and staged in warehouse ready for loading</li>
           <li>• <strong>Loaded:</strong> Job confirmed on truck, ready for delivery</li>
         </ul>
+      </div>
+
+      {/* Move Job to Staging modal */}
+      {moveModalOpen && (
+        <MoveJobModal
+          inProductionJobs={inProductionAll}
+          onClose={() => setMoveModalOpen(false)}
+          onMove={handleMoveToStaged}
+        />
+      )}
+    </div>
+  )
+}
+
+function MoveJobModal({
+  inProductionJobs,
+  onClose,
+  onMove,
+}: {
+  inProductionJobs: StagingJob[]
+  onClose: () => void
+  onMove: (jobId: string) => Promise<void>
+}) {
+  const [modalSearch, setModalSearch] = useState('')
+  const [movingId, setMovingId] = useState<string | null>(null)
+
+  const filtered = useMemo(() => {
+    const q = modalSearch.trim().toLowerCase()
+    if (!q) return inProductionJobs
+    return inProductionJobs.filter((j) => {
+      const haystack = [
+        j.jobNumber,
+        j.builderName,
+        j.community || '',
+        j.lotBlock || '',
+      ]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [inProductionJobs, modalSearch])
+
+  const handleSelect = async (jobId: string) => {
+    if (movingId) return
+    setMovingId(jobId)
+    try {
+      await onMove(jobId)
+    } finally {
+      setMovingId(null)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div>
+            <h3 className="text-sm font-semibold text-fg">Move Job to Staging</h3>
+            <p className="text-xs text-fg-muted">
+              Select an in-production job to move to STAGED.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded hover:bg-surface-muted"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4 text-fg-subtle" />
+          </button>
+        </div>
+
+        <div className="px-4 py-3 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none" />
+            <input
+              type="text"
+              value={modalSearch}
+              onChange={(e) => setModalSearch(e.target.value)}
+              placeholder="Search in-production jobs…"
+              autoFocus
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-surface text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-[#0f2a3e]"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-2 py-2">
+          {filtered.length === 0 ? (
+            <div className="text-center text-xs text-fg-subtle py-8">
+              {inProductionJobs.length === 0
+                ? 'No jobs currently in production.'
+                : 'No matches.'}
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {filtered.map((job) => (
+                <li key={job.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(job.id)}
+                    disabled={movingId !== null}
+                    className="w-full text-left px-3 py-2 rounded-lg border border-border hover:bg-row-hover hover:border-[#0f2a3e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-fg truncate">
+                          {job.jobNumber}
+                        </p>
+                        <p className="text-xs text-fg-muted truncate">
+                          {job.builderName}
+                          {job.community ? ` · ${job.community}` : ''}
+                          {job.lotBlock ? ` · ${job.lotBlock}` : ''}
+                        </p>
+                      </div>
+                      <span className="text-xs font-medium text-[#0f2a3e] whitespace-nowrap">
+                        {movingId === job.id ? 'Moving…' : 'Move →'}
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   )

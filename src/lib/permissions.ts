@@ -56,8 +56,10 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   // Dashboard — everyone
   '/ops': ALL_ROLES,
 
-  // Executive dashboards — OPEN TO ALL (sensitive numbers filtered at field level)
-  '/ops/executive': ALL_ROLES,
+  // Executive dashboards — restricted to leadership + accounting.
+  // PMs and floor roles get visibility through /ops, /ops/reports, and their
+  // role-specific portals; the CEO Dashboard itself is leadership-only.
+  '/ops/executive': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
 
   // Reports — OPEN TO ALL
   '/ops/reports': ALL_ROLES,
@@ -463,6 +465,14 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/pm-dashboard': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
   '/api/ops/pm-briefing': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
   '/api/ops/pm-scorecard': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+
+  // PM landing/book endpoints (/api/ops/pm/{roster,book,activity,today,compare,
+  // material-confirm-pending,ar}). The roster is the PM directory used by the
+  // /ops/pm landing page and a number of filter UIs; the book is the per-PM
+  // workload view. Without an explicit entry these paths fell through the
+  // default-deny in canAccessAPI() and 403'd for everyone except ADMIN, which
+  // broke /ops/pm for MANAGER and PROJECT_MANAGER users.
+  '/api/ops/pm': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
 
   // Change Orders & Punch Items
   '/api/ops/change-orders': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],

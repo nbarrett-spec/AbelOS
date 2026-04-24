@@ -46,6 +46,7 @@ export default function FloorPlansPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
 
   // Project search for upload
   const [projectSearch, setProjectSearch] = useState('')
@@ -99,18 +100,65 @@ export default function FloorPlansPage() {
     if (projectSearchTimeoutRef.current) clearTimeout(projectSearchTimeoutRef.current)
     projectSearchTimeoutRef.current = setTimeout(async () => {
       try {
-        const resp = await fetch(`/api/ops/floor-plans?search=${encodeURIComponent(projectSearch)}&limit=1`)
-        // Actually we need a project search endpoint. Let's search projects via a simple approach
-        const resp2 = await fetch(`/api/projects?search=${encodeURIComponent(projectSearch)}&limit=10`)
-        if (resp2.ok) {
-          const data = await resp2.json()
+        // Use the upload route's GET handler which searches projects (staff-auth aware).
+        const resp = await fetch(`/api/ops/floor-plans/upload?search=${encodeURIComponent(projectSearch)}&limit=10`)
+        if (resp.ok) {
+          const data = await resp.json()
           setProjectResults(data.projects || [])
+        } else {
+          setProjectResults([])
         }
       } catch (err) {
         console.error('Project search failed:', err)
+        setProjectResults([])
       }
     }, 300)
   }, [projectSearch])
+
+  // Accepted MIME / extensions (must match server validation)
+  const ACCEPTED_MIME = ['application/pdf', 'image/png', 'image/jpeg', 'image/tiff', 'image/webp']
+  const ACCEPTED_EXT = ['.pdf', '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp']
+  const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
+  function selectFile(f: File): boolean {
+    setUploadError('')
+    const ext = '.' + (f.name.split('.').pop() || '').toLowerCase()
+    const mimeOk = ACCEPTED_MIME.includes(f.type) || f.type.startsWith('image/') || f.type === 'application/pdf'
+    const extOk = ACCEPTED_EXT.includes(ext)
+    if (!mimeOk && !extOk) {
+      setUploadError('Unsupported file type. Allowed: PDF, PNG, JPEG, TIFF, WebP.')
+      return false
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      setUploadError('File too large. Maximum 50MB.')
+      return false
+    }
+    setUploadFile(f)
+    return true
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+    if (!isDragging) setIsDragging(true)
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const files = e.dataTransfer?.files
+    if (files && files.length > 0) {
+      selectFile(files[0])
+    }
+  }
 
   async function handleUpload() {
     if (!uploadFile || !uploadProjectId) return
@@ -127,16 +175,21 @@ export default function FloorPlansPage() {
         method: 'POST',
         body: formData,
       })
-      const data = await resp.json()
+      let data: any = null
+      try {
+        data = await resp.json()
+      } catch {
+        // non-JSON response
+      }
       if (!resp.ok) {
-        setUploadError(data.error || 'Upload failed')
+        setUploadError((data && data.error) || `Upload failed (${resp.status})`)
         return
       }
       setUploadOpen(false)
       resetUploadForm()
       loadFloorPlans()
     } catch (err: any) {
-      setUploadError(err.message || 'Upload failed')
+      setUploadError(err?.message || 'Upload failed')
     } finally {
       setUploading(false)
     }
@@ -151,6 +204,7 @@ export default function FloorPlansPage() {
     setProjectSearch('')
     setProjectResults([])
     setSelectedProject(null)
+    setIsDragging(false)
   }
 
   async function handleEditSave() {
@@ -468,19 +522,31 @@ export default function FloorPlansPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="text-center">
+                  <label
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      isDragging ? 'bg-blue-50 border-[#0f2a3e]' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-center pointer-events-none">
                       <p className="text-2xl mb-1">📄</p>
-                      <p className="text-sm text-gray-500">Click to select a file</p>
+                      <p className="text-sm text-gray-500">
+                        {isDragging ? 'Drop file here' : 'Click or drag a file here'}
+                      </p>
                       <p className="text-xs text-gray-400 mt-1">PDF, PNG, JPEG, TIFF, WebP (max 50MB)</p>
                     </div>
                     <input
                       type="file"
                       className="hidden"
-                      accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp"
+                      accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,application/pdf,image/png,image/jpeg,image/tiff,image/webp"
                       onChange={(e) => {
                         const f = e.target.files?.[0]
-                        if (f) setUploadFile(f)
+                        if (f) selectFile(f)
+                        // reset value so re-selecting the same file fires onChange
+                        e.target.value = ''
                       }}
                     />
                   </label>

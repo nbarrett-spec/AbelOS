@@ -33,6 +33,38 @@ const PRESET_COLORS = [
   { hex: '#D4B96A', name: 'Gold' },
 ];
 
+// Theme presets — wired to :root[data-theme="..."] CSS blocks in globals.css.
+// Empty string ('') = blueprint (default — no data-theme attribute).
+type ThemePreset = '' | 'midnight' | 'warm-oak';
+
+const THEME_PRESETS: {
+  value: ThemePreset;
+  name: string;
+  description: string;
+  swatch: { canvas: string; surface: string; signal: string };
+}[] = [
+  {
+    value: '',
+    name: 'Blueprint',
+    description: 'The default — deep navy with warm gold signal',
+    swatch: { canvas: '#080D1A', surface: '#0F1A2E', signal: '#C6A24E' },
+  },
+  {
+    value: 'midnight',
+    name: 'Midnight',
+    description: 'Deeper blacks, dimmer gold — late-shift friendly',
+    swatch: { canvas: '#020609', surface: '#05131F', signal: '#B89340' },
+  },
+  {
+    value: 'warm-oak',
+    name: 'Warm Oak',
+    description: 'Warm walnut surfaces with copper signal',
+    swatch: { canvas: '#2A1F14', surface: '#3D2E1F', signal: '#C4956A' },
+  },
+];
+
+const THEME_PRESET_KEY = 'abel-theme-preset';
+
 const DEFAULT_SECTIONS: DashboardSection[] = [
   { id: 'overview', name: 'Overview', visible: true, order: 1 },
   { id: 'jobs-projects', name: 'Jobs & Projects', visible: true, order: 2 },
@@ -49,7 +81,30 @@ export default function AppearancePage() {
   const [saved, setSaved] = useState(false);
   const [customColor, setCustomColor] = useState('#C6A24E');
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [themePreset, setThemePreset] = useState<ThemePreset>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Read active theme preset on mount — prefer the live DOM value (set by
+  // hydration / prior session) and fall back to localStorage.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isPreset = (v: string | undefined): v is 'midnight' | 'warm-oak' =>
+      v === 'midnight' || v === 'warm-oak';
+    const fromDom = document.documentElement.dataset.theme;
+    const fromStorage = localStorage.getItem(THEME_PRESET_KEY) || '';
+    let active: ThemePreset = '';
+    if (isPreset(fromDom)) {
+      active = fromDom;
+    } else if (isPreset(fromStorage)) {
+      active = fromStorage;
+    }
+    setThemePreset(active);
+    // If localStorage had a preset but DOM didn't (e.g. cold mount), apply it
+    // so the page reflects the saved selection immediately.
+    if (active && fromDom !== active) {
+      document.documentElement.dataset.theme = active;
+    }
+  }, []);
 
   // Fetch preferences on mount
   useEffect(() => {
@@ -132,13 +187,15 @@ export default function AppearancePage() {
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : prefs.theme;
 
-    // Toggle dark class — activates the full Aegis Glass dark token set in globals.css
+    // Toggle dark class — activates the full Aegis Glass dark token set in globals.css.
+    // Note: we intentionally do NOT touch root's data-theme attribute here —
+    // that's reserved for the theme preset (blueprint / midnight / warm-oak),
+    // which is set independently via handleThemePreset.
     if (resolvedTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    root.setAttribute('data-theme', resolvedTheme);
 
     // Font size
     const fontSizes: Record<string, string> = { small: '14px', medium: '16px', large: '18px' };
@@ -162,6 +219,28 @@ export default function AppearancePage() {
     setPreferences(updated);
     applyInstant(updated);
     savePreferences(updated);
+  };
+
+  // Apply a theme preset (blueprint / midnight / warm-oak) — distinct from
+  // light/dark mode. Sets the data-theme attribute on <html>, persists to
+  // localStorage so the choice survives reloads, and updates local state.
+  const handleThemePreset = (value: ThemePreset) => {
+    setThemePreset(value);
+    const root = document.documentElement;
+    if (value === '') {
+      delete root.dataset.theme;
+    } else {
+      root.dataset.theme = value;
+    }
+    try {
+      if (value === '') {
+        localStorage.removeItem(THEME_PRESET_KEY);
+      } else {
+        localStorage.setItem(THEME_PRESET_KEY, value);
+      }
+    } catch {
+      /* ignore — private mode / storage disabled */
+    }
   };
 
   const handleAccentColor = (hex: string) => {
@@ -485,6 +564,108 @@ export default function AppearancePage() {
               <p className="text-fg-subtle" style={{ margin: '0', fontSize: '12px' }}>Matches your OS settings</p>
             </div>
           </div>
+        </div>
+
+        {/* Section 1.5: Theme Preset */}
+        <div style={{ marginBottom: '48px' }}>
+          <h2 className="text-fg" style={{ fontSize: '20px', fontWeight: '600', margin: '0 0 8px 0' }}>
+            Theme Preset
+          </h2>
+          <p className="text-fg-muted" style={{ fontSize: '14px', margin: '0 0 24px 0' }}>
+            Pick the overall canvas, surface, and signal palette
+          </p>
+
+          <div
+            role="radiogroup"
+            aria-label="Theme preset"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}
+          >
+            {THEME_PRESETS.map((preset) => {
+              const selected = themePreset === preset.value;
+              return (
+                <div
+                  key={preset.value || 'blueprint'}
+                  role="radio"
+                  aria-checked={selected}
+                  tabIndex={0}
+                  onClick={() => handleThemePreset(preset.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleThemePreset(preset.value);
+                    }
+                  }}
+                  style={{
+                    padding: '20px',
+                    borderRadius: '8px',
+                    border: `3px solid ${selected ? accentColor : '#e5e7eb'}`,
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    outline: 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selected) {
+                      e.currentTarget.style.borderColor = '#d1d5db';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selected) {
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                    }
+                  }}
+                >
+                  {/* Swatch — three vertical bands: canvas / surface / signal */}
+                  <div
+                    style={{
+                      height: '120px',
+                      borderRadius: '6px',
+                      marginBottom: '12px',
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 2fr 1fr',
+                      gap: '0',
+                      overflow: 'hidden',
+                      border: '1px solid #e5e7eb',
+                    }}
+                  >
+                    <div style={{ backgroundColor: preset.swatch.canvas }} />
+                    <div style={{ backgroundColor: preset.swatch.surface }} />
+                    <div style={{ backgroundColor: preset.swatch.signal }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <h3 className="text-fg" style={{ margin: '0', fontSize: '16px', fontWeight: '600' }}>
+                      {preset.name}
+                    </h3>
+                    {selected && (
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          backgroundColor: accentColor,
+                          color: '#fff',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-fg-subtle" style={{ margin: '0', fontSize: '12px' }}>
+                    {preset.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-fg-subtle" style={{ marginTop: '12px', fontSize: '12px' }}>
+            Saved locally on this device. Other appearance settings (light/dark, accent color, etc.) still apply on top.
+          </p>
         </div>
 
         {/* Section 2: Accent Color Picker */}

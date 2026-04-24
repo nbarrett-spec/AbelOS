@@ -7,6 +7,7 @@ import { runOrderStatusCascades, onOrderConfirmed } from '@/lib/cascades/order-l
 import { checkBuilderCreditStatus } from '@/lib/credit-hold'
 import { createTaskForOrderReceived } from '@/lib/events/task'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { toCsv } from '@/lib/csv'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const searchParams = request.nextUrl.searchParams;
+    const format = searchParams.get('format');
+    const isCsv = format === 'csv';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const builderId = searchParams.get('builderId');
@@ -21,6 +24,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const pmId = searchParams.get('pmId');
     const sortBy = searchParams.get('sortBy') || 'orderDate';
     const includeForecast = searchParams.get('includeForecast') === 'true';
     const sortDir = (searchParams.get('sortDir') || 'desc') as 'asc' | 'desc';
@@ -64,6 +68,14 @@ export async function GET(request: NextRequest) {
       params.push(searchParam, searchParam, searchParam);
     }
 
+    // PM filter: orders with at least one Job assigned to this PM.
+    if (pmId) {
+      whereConditions.push(
+        `EXISTS (SELECT 1 FROM "Job" j WHERE j."orderId" = o."id" AND j."assignedPMId" = $${params.length + 1})`
+      );
+      params.push(pmId);
+    }
+
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     // Determine order clause (whitelist approach)
@@ -88,6 +100,12 @@ export async function GET(request: NextRequest) {
     const countResult = await prisma.$queryRawUnsafe(countQuery, ...params);
     const total = (countResult as any[])[0]?.total || 0;
 
+    // CSV exports skip pagination — but cap at a sane upper bound so a
+    // runaway export can't OOM the worker. 5000 rows is well above any
+    // realistic filtered-orders set.
+    const effectiveLimit = isCsv ? 5000 : limit;
+    const effectiveSkip = isCsv ? 0 : skip;
+
     // Fetch paginated orders with builder data
     const ordersQuery = `
       SELECT
@@ -104,7 +122,7 @@ export async function GET(request: NextRequest) {
       ${orderClause}
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `;
-    const orders = await prisma.$queryRawUnsafe(ordersQuery, ...params, limit, skip);
+    const orders = await prisma.$queryRawUnsafe(ordersQuery, ...params, effectiveLimit, effectiveSkip);
 
     // Get order IDs for batch fetching relationships
     const orderIds = (orders as any[]).map(o => o.id);
@@ -136,12 +154,19 @@ export async function GET(request: NextRequest) {
       `;
       jobs = await prisma.$queryRawUnsafe(jobsQuery, orderIds);
 
-      // Fetch quotes
+      // Fetch quotes — pull project fields too so the orders page can display
+      // project name/address without a second round-trip.
       const quoteIdsArr = (orders as any[]).map(o => o.quoteId).filter(Boolean);
       if (quoteIdsArr.length > 0) {
         quotes = await prisma.$queryRawUnsafe(
-          `SELECT "id", "quoteNumber", "status", "total", "subtotal", "taxAmount", "createdAt", "updatedAt"
-           FROM "Quote" WHERE "id" = ANY($1::text[])`,
+          `SELECT q."id", q."quoteNumber", q."status", q."total", q."subtotal", q."taxAmount",
+                  q."projectId", q."createdAt", q."updatedAt",
+                  p."id" as "project_id", p."name" as "project_name",
+                  p."jobAddress" as "project_jobAddress", p."city" as "project_city",
+                  p."state" as "project_state"
+           FROM "Quote" q
+           LEFT JOIN "Project" p ON q."projectId" = p."id"
+           WHERE q."id" = ANY($1::text[])`,
           quoteIdsArr
         );
       }
@@ -181,7 +206,28 @@ export async function GET(request: NextRequest) {
 
       const orderJobs = jobs.filter(job => job.orderId === order.id);
 
-      const orderQuote = quotes.find(q => q.id === order.quoteId);
+      const matchedQuote = quotes.find(q => q.id === order.quoteId);
+      const orderQuote = matchedQuote
+        ? {
+            id: matchedQuote.id,
+            quoteNumber: matchedQuote.quoteNumber,
+            status: matchedQuote.status,
+            total: matchedQuote.total,
+            subtotal: matchedQuote.subtotal,
+            taxAmount: matchedQuote.taxAmount,
+            createdAt: matchedQuote.createdAt,
+            updatedAt: matchedQuote.updatedAt,
+            project: matchedQuote.project_id
+              ? {
+                  id: matchedQuote.project_id,
+                  name: matchedQuote.project_name,
+                  jobAddress: matchedQuote.project_jobAddress,
+                  city: matchedQuote.project_city,
+                  state: matchedQuote.project_state,
+                }
+              : null,
+          }
+        : undefined;
 
       return {
         id: order.id,
@@ -207,6 +253,50 @@ export async function GET(request: NextRequest) {
         quote: orderQuote,
       };
     });
+
+    if (isCsv) {
+      const rows = data.map((o: any) => {
+        const project = o.quote?.project;
+        const community = project?.name || '';
+        const addressParts = [project?.jobAddress, project?.city, project?.state]
+          .filter(Boolean)
+          .join(', ');
+        const linkedJobs = (o.jobs || [])
+          .map((j: any) => j.jobNumber)
+          .filter(Boolean)
+          .join(', ');
+        return {
+          orderNumber: o.orderNumber,
+          builder: o.builder?.companyName || '',
+          community,
+          address: addressParts,
+          status: o.status,
+          total: typeof o.total === 'number' ? o.total.toFixed(2) : o.total,
+          createdAt: o.createdAt ? new Date(o.createdAt).toISOString() : '',
+          scheduledDelivery: o.deliveryDate ? new Date(o.deliveryDate).toISOString() : '',
+          linkedJobs,
+        };
+      });
+      const csv = toCsv(rows, [
+        { key: 'orderNumber', label: 'Order Number' },
+        { key: 'builder', label: 'Builder' },
+        { key: 'community', label: 'Community' },
+        { key: 'address', label: 'Address' },
+        { key: 'status', label: 'Status' },
+        { key: 'total', label: 'Total' },
+        { key: 'createdAt', label: 'Created At' },
+        { key: 'scheduledDelivery', label: 'Scheduled Delivery' },
+        { key: 'linkedJobs', label: 'Linked Jobs' },
+      ]);
+      const today = new Date().toISOString().split('T')[0];
+      return new Response(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="orders-${today}.csv"`,
+        },
+      });
+    }
 
     return NextResponse.json(
       {

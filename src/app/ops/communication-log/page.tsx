@@ -213,6 +213,17 @@ export default function CommunicationLogPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={() => {
+                const params = new URLSearchParams()
+                params.set('format', 'csv')
+                if (channelFilter) params.set('channel', channelFilter)
+                window.location.href = `/api/ops/communication-logs?${params.toString()}`
+              }}
+              className="bg-white/10 hover:bg-white/20 text-fg-inverse px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+            >
+              Export CSV
+            </button>
+            <button
               onClick={() => setShowGmailSync(!showGmailSync)}
               className="bg-white/10 hover:bg-white/20 text-fg-inverse px-4 py-2 rounded-lg text-sm flex items-center gap-2"
             >

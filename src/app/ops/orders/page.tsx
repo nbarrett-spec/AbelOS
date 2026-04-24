@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Search, Calendar, FileText, Inbox, Factory, Package, DollarSign,
   Truck, CheckCircle, ChevronDown, ChevronUp, X, Receipt, CreditCard,
-  ShoppingCart
+  ShoppingCart, Download
 } from 'lucide-react'
 import { PageHeader, KPICard, StatusBadge, Badge } from '@/components/ui'
 import EmptyState from '@/components/ui/EmptyState'
@@ -17,7 +17,8 @@ interface OrderItem {
   quantity: number
   unitPrice: number
   lineTotal: number
-  product?: { name: string; sku: string }
+  productId?: string | null
+  product?: { id?: string; name: string; sku: string } | null
 }
 
 interface Order {
@@ -70,6 +71,8 @@ export default function OpsOrdersPage() {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [pmFilter, setPmFilter] = useState<string>('')
+  const [pms, setPms] = useState<{ id: string; firstName: string; lastName: string }[]>([])
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
@@ -88,7 +91,15 @@ export default function OpsOrdersPage() {
   // Generate invoice state
   const [invoiceMsg, setInvoiceMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useEffect(() => { fetchOrders() }, [statusFilter, search, dateFrom, dateTo, sortBy, sortDir, page])
+  useEffect(() => { fetchOrders() }, [statusFilter, search, dateFrom, dateTo, pmFilter, sortBy, sortDir, page])
+
+  // Load PM roster for filter dropdown — non-blocking; on failure, leave empty.
+  useEffect(() => {
+    fetch('/api/ops/pm/roster')
+      .then(r => r.json())
+      .then(d => setPms(d.pms || d.data || []))
+      .catch(() => {})
+  }, [])
 
   async function fetchOrders() {
     try {
@@ -97,6 +108,7 @@ export default function OpsOrdersPage() {
       if (search) params.set('search', search)
       if (dateFrom) params.set('dateFrom', dateFrom)
       if (dateTo) params.set('dateTo', dateTo)
+      if (pmFilter) params.set('pmId', pmFilter)
       params.set('sortBy', sortBy)
       params.set('sortDir', sortDir)
       params.set('page', String(page))
@@ -110,6 +122,17 @@ export default function OpsOrdersPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function exportCsv() {
+    const params = new URLSearchParams()
+    params.set('format', 'csv')
+    if (statusFilter) params.set('status', statusFilter)
+    if (search) params.set('search', search)
+    if (dateFrom) params.set('dateFrom', dateFrom)
+    if (dateTo) params.set('dateTo', dateTo)
+    if (pmFilter) params.set('pmId', pmFilter)
+    window.location.href = `/api/ops/orders?${params.toString()}`
   }
 
   async function updateOrder(orderId: string, updates: Record<string, any>) {
@@ -326,7 +349,7 @@ export default function OpsOrdersPage() {
               className="input pl-9"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Calendar className="w-3.5 h-3.5 text-fg-subtle" />
             <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
               className="input font-numeric" style={{ width: 'auto' }} />
@@ -338,6 +361,23 @@ export default function OpsOrdersPage() {
                 <X className="w-3 h-3" /> Clear
               </button>
             )}
+            <select
+              value={pmFilter}
+              onChange={(e) => { setPmFilter(e.target.value); setPage(1) }}
+              className="input"
+              style={{ width: 'auto' }}
+              aria-label="Filter by PM"
+            >
+              <option value="">All PMs</option>
+              {pms.map(pm => (
+                <option key={pm.id} value={pm.id}>
+                  {pm.firstName} {pm.lastName}
+                </option>
+              ))}
+            </select>
+            <button onClick={exportCsv} className="btn btn-secondary btn-sm ml-auto">
+              <Download className="w-3.5 h-3.5" /> Export CSV
+            </button>
           </div>
         </div>
         <div className="flex gap-1 flex-wrap">
@@ -459,6 +499,27 @@ export default function OpsOrdersPage() {
                           {new Date(order.deliveryDate).toLocaleDateString()}
                         </span>
                       )}
+                      {order.jobs && order.jobs.length > 0 && (
+                        <span className="ml-2 inline-flex items-center gap-1">
+                          <span className="text-fg-subtle">·</span>
+                          <Link
+                            href={`/ops/jobs/${order.jobs[0].id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-signal hover:underline cursor-pointer font-mono"
+                          >
+                            {order.jobs[0].jobNumber}
+                          </Link>
+                          {order.jobs.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setExpandedOrder(order.id) }}
+                              className="text-signal hover:underline cursor-pointer"
+                            >
+                              +{order.jobs.length - 1} View all
+                            </button>
+                          )}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="w-28 text-right shrink-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
@@ -544,17 +605,41 @@ export default function OpsOrdersPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {order.items.slice(0, 10).map(item => (
-                            <tr key={item.id}>
-                              <td className="text-fg">
-                                {item.description}
-                                {item.product?.sku && <span className="text-fg-subtle ml-2 text-xs font-mono">{item.product.sku}</span>}
-                              </td>
-                              <td className="num text-fg-muted">{item.quantity}</td>
-                              <td className="num text-fg-muted hidden sm:table-cell">{fmt(item.unitPrice)}</td>
-                              <td className="num font-medium text-fg">{fmt(item.lineTotal)}</td>
-                            </tr>
-                          ))}
+                          {order.items.slice(0, 10).map(item => {
+                            const productId = item.productId || item.product?.id
+                            const skuLabel = item.product?.sku
+                            return (
+                              <tr key={item.id}>
+                                <td className="text-fg">
+                                  {productId ? (
+                                    <Link
+                                      href={`/ops/products/${productId}`}
+                                      className="text-signal hover:underline cursor-pointer"
+                                    >
+                                      {item.description}
+                                    </Link>
+                                  ) : (
+                                    <span>{item.description}</span>
+                                  )}
+                                  {skuLabel && (
+                                    productId ? (
+                                      <Link
+                                        href={`/ops/products/${productId}`}
+                                        className="text-signal hover:underline cursor-pointer ml-2 text-xs font-mono"
+                                      >
+                                        {skuLabel}
+                                      </Link>
+                                    ) : (
+                                      <span className="text-fg-subtle ml-2 text-xs font-mono">{skuLabel}</span>
+                                    )
+                                  )}
+                                </td>
+                                <td className="num text-fg-muted">{item.quantity}</td>
+                                <td className="num text-fg-muted hidden sm:table-cell">{fmt(item.unitPrice)}</td>
+                                <td className="num font-medium text-fg">{fmt(item.lineTotal)}</td>
+                              </tr>
+                            )
+                          })}
                           {order.items.length > 10 && (
                             <tr>
                               <td colSpan={4} className="text-center text-xs text-fg-subtle">
@@ -572,16 +657,24 @@ export default function OpsOrdersPage() {
                       </table>
                     </div>
 
-                    {/* Linked Jobs */}
+                    {/* Linked Jobs (Sales Order ↔ Work Order linkage) */}
                     {order.jobs && order.jobs.length > 0 && (
                       <div className="panel p-3 mb-3">
-                        <p className="eyebrow mb-1.5">Linked Jobs</p>
-                        <div className="flex flex-wrap gap-2">
+                        <p className="eyebrow mb-1.5">
+                          Linked Jobs <span className="text-fg-subtle">({order.jobs.length})</span>
+                        </p>
+                        <div className="flex flex-wrap gap-2 items-center">
                           {order.jobs.map(job => (
-                            <Badge key={job.id} variant="success" size="sm" dot>
-                              <span className="font-mono">{job.jobNumber}</span>
-                              <span className="ml-1 text-fg-muted">· {job.status}</span>
-                            </Badge>
+                            <Link
+                              key={job.id}
+                              href={`/ops/jobs/${job.id}`}
+                              className="text-signal hover:underline cursor-pointer"
+                            >
+                              <Badge variant="success" size="sm" dot>
+                                <span className="font-mono">{job.jobNumber}</span>
+                                <span className="ml-1 text-fg-muted">· {job.status}</span>
+                              </Badge>
+                            </Link>
                           ))}
                         </div>
                       </div>

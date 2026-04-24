@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { FileText } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 
@@ -148,7 +149,15 @@ function BuilderTab({ data }: { data: any }) {
           <tbody className="divide-y divide-border">
             {builders.map((b: any, i: number) => (
               <tr key={i} className="hover:bg-row-hover">
-                <td className="px-4 py-2 text-sm font-medium">{b.companyName}</td>
+                <td className="px-4 py-2 text-sm font-medium">
+                  {b.builderId ? (
+                    <Link href={`/ops/accounts/${b.builderId}`} className="text-signal hover:underline">
+                      {b.companyName}
+                    </Link>
+                  ) : (
+                    b.companyName
+                  )}
+                </td>
                 <td className="px-4 py-2 text-sm">{fmtN(b.totalQuotes)}</td>
                 <td className="px-4 py-2 text-sm text-green-600 font-medium">{fmtN(b.converted)}</td>
                 <td className="px-4 py-2 text-sm text-red-600">{fmtN(b.expired)}</td>
@@ -195,7 +204,18 @@ function CategoryTab({ data }: { data: any }) {
           <tbody className="divide-y divide-border">
             {cats.map((c: any, i: number) => (
               <tr key={i} className="hover:bg-row-hover">
-                <td className="px-4 py-2 text-sm font-medium">{c.category}</td>
+                <td className="px-4 py-2 text-sm font-medium">
+                  {c.category && c.category !== 'Unknown' ? (
+                    <Link
+                      href={`/ops/products?category=${encodeURIComponent(c.category)}`}
+                      className="text-signal hover:underline"
+                    >
+                      {c.category}
+                    </Link>
+                  ) : (
+                    c.category
+                  )}
+                </td>
                 <td className="px-4 py-2 text-sm">{fmtN(c.quotesContaining)}</td>
                 <td className="px-4 py-2 text-sm text-green-600">{fmtN(c.orderedQuotes)}</td>
                 <td className="px-4 py-2 text-sm">
@@ -247,7 +267,15 @@ function RecoveryTab({ data }: { data: any }) {
             <tbody className="divide-y divide-border">
               {recoverable.map((r: any, i: number) => (
                 <tr key={i} className="hover:bg-row-hover">
-                  <td className="px-4 py-2 text-sm font-medium">{r.companyName}</td>
+                  <td className="px-4 py-2 text-sm font-medium">
+                    {r.builderId ? (
+                      <Link href={`/ops/accounts/${r.builderId}`} className="text-signal hover:underline">
+                        {r.companyName}
+                      </Link>
+                    ) : (
+                      r.companyName
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-sm">{r.projectName || '—'}</td>
                   <td className="px-4 py-2 text-sm font-semibold">{fmt$(r.totalAmount)}</td>
                   <td className="px-4 py-2 text-sm">{r.status}</td>
@@ -282,7 +310,15 @@ function RecoveryTab({ data }: { data: any }) {
               <tbody className="divide-y divide-orange-100">
                 {neverOrdered.map((n: any, i: number) => (
                   <tr key={i} className="hover:bg-orange-50">
-                    <td className="px-4 py-2 text-sm font-medium">{n.companyName}</td>
+                    <td className="px-4 py-2 text-sm font-medium">
+                      {n.builderId ? (
+                        <Link href={`/ops/accounts/${n.builderId}`} className="text-signal hover:underline">
+                          {n.companyName}
+                        </Link>
+                      ) : (
+                        n.companyName
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-sm">{n.quoteCount}</td>
                     <td className="px-4 py-2 text-sm font-semibold">{fmt$(n.totalQuoted)}</td>
                     <td className="px-4 py-2 text-sm">{n.lastQuoteDate ? new Date(n.lastQuoteDate).toLocaleDateString() : '—'}</td>
@@ -316,10 +352,24 @@ function TrendsTab({ data }: { data: any }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {monthly.map((m: any, i: number) => (
+            {monthly.map((m: any, i: number) => {
+              const d = m.month ? new Date(m.month) : null;
+              const monthStr = d && !isNaN(d.getTime())
+                ? `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+                : '';
+              const monthLabel = d && !isNaN(d.getTime())
+                ? d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+                : '—';
+              return (
               <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
-                  {new Date(m.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  {monthStr ? (
+                    <Link href={`/ops/quotes?month=${monthStr}`} className="text-signal hover:underline">
+                      {monthLabel}
+                    </Link>
+                  ) : (
+                    monthLabel
+                  )}
                 </td>
                 <td className="px-4 py-2 text-sm">{fmtN(m.totalQuotes)}</td>
                 <td className="px-4 py-2 text-sm text-green-600 font-medium">{fmtN(m.converted)}</td>
@@ -336,7 +386,8 @@ function TrendsTab({ data }: { data: any }) {
                 <td className="px-4 py-2 text-sm">{fmt$(m.totalValue)}</td>
                 <td className="px-4 py-2 text-sm text-green-600">{fmt$(m.convertedValue)}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

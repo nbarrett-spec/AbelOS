@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { Factory } from 'lucide-react'
+import { Factory, ClipboardCheck } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
@@ -14,6 +14,23 @@ const QC_TYPES = [
   { key: 'PRE_DELIVERY', label: 'Pre-Delivery' },
   { key: 'POST_INSTALL', label: 'Post-Install' },
 ]
+
+// Active (non-terminal) job statuses used by the modal's job-search dropdown.
+// Matches the server-side ACTIVE_JOB_STATUSES in /api/ops/manufacturing/qc.
+// Excludes terminal statuses COMPLETE / INVOICED / CLOSED. The Job-status
+// enum has no CANCELLED or ON_HOLD value.
+const ACTIVE_JOB_STATUSES = [
+  'CREATED',
+  'READINESS_CHECK',
+  'MATERIALS_LOCKED',
+  'IN_PRODUCTION',
+  'STAGED',
+  'LOADED',
+  'IN_TRANSIT',
+  'DELIVERED',
+  'INSTALLING',
+  'PUNCH_LIST',
+].join(',')
 
 interface QualityCheck {
   id: string
@@ -29,6 +46,7 @@ interface QualityCheck {
     id: string
     jobNumber: string
     builderName: string
+    jobAddress?: string | null
   } | null
   createdAt: string
 }
@@ -44,22 +62,52 @@ interface ApiResponse {
   }
 }
 
+interface PendingJob {
+  id: string
+  jobNumber: string
+  builderName: string
+  jobAddress: string | null
+  community: string | null
+  jobType: string | null
+  scopeType: string | null
+  status: string
+  scheduledDate: string | null
+}
+
+type PendingSortKey = 'jobNumber' | 'builderName' | 'jobAddress' | 'community' | 'jobType' | 'scheduledDate'
+
 export default function QualityControlPage() {
   const [checks, setChecks] = useState<QualityCheck[]>([])
   const [stats, setStats] = useState<ApiResponse['stats'] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState('ALL')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  useEffect(() => {
-    fetchChecks()
-  }, [])
+  // Pending-QC queue state
+  const [pending, setPending] = useState<PendingJob[]>([])
+  const [pendingLoading, setPendingLoading] = useState(true)
+  const [pendingSortKey, setPendingSortKey] = useState<PendingSortKey>('scheduledDate')
+  const [pendingSortDir, setPendingSortDir] = useState<'asc' | 'desc'>('asc')
 
-  const fetchChecks = async () => {
+  // Prefilled job id for the modal when launched from the queue's row action.
+  const [prefillJobId, setPrefillJobId] = useState<string | null>(null)
+
+  // Debounce searchInput → searchQuery
+  useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(searchInput.trim()), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  const fetchChecks = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/ops/manufacturing/qc')
+      const url = searchQuery
+        ? `/api/ops/manufacturing/qc?search=${encodeURIComponent(searchQuery)}`
+        : '/api/ops/manufacturing/qc'
+      const response = await fetch(url)
       if (!response.ok) {
         throw new Error('Failed to fetch quality checks')
       }
@@ -72,7 +120,30 @@ export default function QualityControlPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery])
+
+  const fetchPending = useCallback(async () => {
+    try {
+      setPendingLoading(true)
+      const res = await fetch('/api/ops/manufacturing/qc?queue=pending')
+      if (!res.ok) throw new Error('Failed to load pending queue')
+      const data = await res.json()
+      setPending(data.pending || [])
+    } catch {
+      // Non-fatal — keep page usable even if the queue fails.
+      setPending([])
+    } finally {
+      setPendingLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchChecks()
+  }, [fetchChecks])
+
+  useEffect(() => {
+    fetchPending()
+  }, [fetchPending])
 
   const filteredChecks = checks.filter(
     (check) => activeFilter === 'ALL' || check.checkType === activeFilter
@@ -82,6 +153,36 @@ export default function QualityControlPage() {
   const failCount = checks.filter((c) => c.result === 'FAIL').length
   const conditionalCount = checks.filter((c) => c.result === 'CONDITIONAL_PASS').length
   const passRate = checks.length > 0 ? (passCount / checks.length) * 100 : 0
+
+  const sortedPending = useMemo(() => {
+    const dirMul = pendingSortDir === 'asc' ? 1 : -1
+    const arr = [...pending]
+    arr.sort((a, b) => {
+      const av = (a[pendingSortKey] as string | null) ?? ''
+      const bv = (b[pendingSortKey] as string | null) ?? ''
+      if (pendingSortKey === 'scheduledDate') {
+        const at = av ? new Date(av).getTime() : Number.POSITIVE_INFINITY
+        const bt = bv ? new Date(bv).getTime() : Number.POSITIVE_INFINITY
+        return (at - bt) * dirMul
+      }
+      return av.localeCompare(bv) * dirMul
+    })
+    return arr
+  }, [pending, pendingSortKey, pendingSortDir])
+
+  const togglePendingSort = (key: PendingSortKey) => {
+    if (pendingSortKey === key) {
+      setPendingSortDir(pendingSortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setPendingSortKey(key)
+      setPendingSortDir('asc')
+    }
+  }
+
+  const handleStartCheckForJob = (jobId: string) => {
+    setPrefillJobId(jobId)
+    setIsCreateModalOpen(true)
+  }
 
   if (loading) {
     return (
@@ -102,7 +203,10 @@ export default function QualityControlPage() {
         actions={
           <>
             <button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => {
+                setPrefillJobId(null)
+                setIsCreateModalOpen(true)
+              }}
               className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
             >
               + New QC Check
@@ -156,6 +260,127 @@ export default function QualityControlPage() {
         />
       </div>
 
+      {/* Jobs Pending QC queue (above search) */}
+      <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="px-4 py-3 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck className="w-4 h-4 text-fg-muted" />
+            <h2 className="text-sm font-semibold text-fg">Jobs Pending QC</h2>
+            <span className="px-2 py-0.5 rounded bg-gray-100 text-xs text-fg-muted">
+              {pending.length}
+            </span>
+          </div>
+          <p className="text-xs text-fg-subtle">
+            STAGED or IN_PRODUCTION jobs without a PASS QC check
+          </p>
+        </div>
+        {pendingLoading ? (
+          <div className="px-4 py-6 text-sm text-fg-muted">Loading queue...</div>
+        ) : sortedPending.length === 0 ? (
+          <EmptyState
+            icon={<ClipboardCheck className="w-8 h-8 text-fg-subtle" />}
+            title="No jobs pending QC"
+            description="Every staged or in-production job has a passing QC check."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <SortableTh
+                    label="Job"
+                    active={pendingSortKey === 'jobNumber'}
+                    dir={pendingSortDir}
+                    onClick={() => togglePendingSort('jobNumber')}
+                  />
+                  <SortableTh
+                    label="Builder"
+                    active={pendingSortKey === 'builderName'}
+                    dir={pendingSortDir}
+                    onClick={() => togglePendingSort('builderName')}
+                  />
+                  <SortableTh
+                    label="Address"
+                    active={pendingSortKey === 'jobAddress'}
+                    dir={pendingSortDir}
+                    onClick={() => togglePendingSort('jobAddress')}
+                  />
+                  <SortableTh
+                    label="Community"
+                    active={pendingSortKey === 'community'}
+                    dir={pendingSortDir}
+                    onClick={() => togglePendingSort('community')}
+                  />
+                  <SortableTh
+                    label="Type"
+                    active={pendingSortKey === 'jobType'}
+                    dir={pendingSortDir}
+                    onClick={() => togglePendingSort('jobType')}
+                  />
+                  <SortableTh
+                    label="Scheduled"
+                    active={pendingSortKey === 'scheduledDate'}
+                    dir={pendingSortDir}
+                    onClick={() => togglePendingSort('scheduledDate')}
+                  />
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {sortedPending.map((job) => (
+                  <tr key={job.id} className="hover:bg-row-hover">
+                    <td className="px-4 py-3 text-sm">
+                      <Link
+                        href={`/ops/jobs/${job.id}`}
+                        className="text-[#0f2a3e] hover:underline font-medium"
+                      >
+                        {job.jobNumber}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-fg-muted">{job.builderName || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-fg-muted">{job.jobAddress || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-fg-muted">{job.community || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-fg-muted">{job.jobType || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-fg-muted">
+                      {job.scheduledDate
+                        ? new Date(job.scheduledDate).toLocaleDateString()
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        onClick={() => handleStartCheckForJob(job.id)}
+                        className="px-2 py-1 text-xs rounded-lg bg-[#0f2a3e] text-white hover:bg-[#0a1a28]"
+                      >
+                        Start QC Check
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Search bar — queries job number AND job address */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search QC checks by job number or address..."
+          className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#0f2a3e]/20 focus:outline-none"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchInput('')}
+            className="px-3 py-2 text-xs rounded-lg border border-border bg-white text-fg-muted hover:bg-row-hover"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       {/* Type filter pills */}
       <div className="flex gap-2 flex-wrap">
         <button
@@ -191,8 +416,12 @@ export default function QualityControlPage() {
         {filteredChecks.length === 0 ? (
           <EmptyState
             icon={<Factory className="w-8 h-8 text-fg-subtle" />}
-            title="No jobs in production"
-            description="No quality checks recorded for the current filter."
+            title="No QC checks to display"
+            description={
+              searchQuery
+                ? `No checks match "${searchQuery}". Try a different search.`
+                : 'No quality checks recorded for the current filter.'
+            }
           />
         ) : (
           <div className="overflow-x-auto">
@@ -291,10 +520,16 @@ export default function QualityControlPage() {
       {/* Create QC Modal */}
       {isCreateModalOpen && (
         <CreateQCModal
-          onClose={() => setIsCreateModalOpen(false)}
+          initialJobId={prefillJobId}
+          onClose={() => {
+            setIsCreateModalOpen(false)
+            setPrefillJobId(null)
+          }}
           onSuccess={() => {
             setIsCreateModalOpen(false)
+            setPrefillJobId(null)
             fetchChecks()
+            fetchPending()
           }}
         />
       )}
@@ -328,52 +563,151 @@ function MetricCard({
   )
 }
 
+function SortableTh({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  dir: 'asc' | 'desc'
+  onClick: () => void
+}) {
+  return (
+    <th
+      onClick={onClick}
+      className="px-4 py-3 text-left text-xs font-semibold text-fg-muted cursor-pointer select-none hover:bg-row-hover"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {active && <span aria-hidden>{dir === 'asc' ? '↑' : '↓'}</span>}
+      </span>
+    </th>
+  )
+}
+
+interface JobSearchResult {
+  id: string
+  jobNumber: string
+  jobAddress?: string | null
+  builderName?: string | null
+  community?: string | null
+  status?: string | null
+}
+
 function CreateQCModal({
+  initialJobId,
   onClose,
   onSuccess,
 }: {
+  initialJobId?: string | null
   onClose: () => void
   onSuccess: () => void
 }) {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+
+  // Job dropdown state
+  const [jobSearchInput, setJobSearchInput] = useState('')
+  const [jobResults, setJobResults] = useState<JobSearchResult[]>([])
+  const [selectedJob, setSelectedJob] = useState<JobSearchResult | null>(null)
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [showJobDropdown, setShowJobDropdown] = useState(false)
+
   const [formData, setFormData] = useState({
-    jobId: '',
     checkType: 'FINAL_UNIT',
     result: 'PASS',
     notes: '',
     defectCodes: '',
   })
+
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast(msg); setToastType(type);
-    setTimeout(() => setToast(''), 3500);
-  };
+    setToast(msg)
+    setToastType(type)
+    setTimeout(() => setToast(''), 4000)
+  }
+
+  // Hydrate selectedJob from initialJobId (queue → modal flow). Show a
+  // placeholder label immediately; user can still click "Change" to search.
+  useEffect(() => {
+    if (!initialJobId) return
+    setSelectedJob({ id: initialJobId, jobNumber: 'Selected job' })
+  }, [initialJobId])
+
+  // Search-as-you-type for jobs (active statuses only).
+  useEffect(() => {
+    const q = jobSearchInput.trim()
+    if (q.length < 2) {
+      setJobResults([])
+      return
+    }
+    const t = setTimeout(async () => {
+      try {
+        setJobsLoading(true)
+        const res = await fetch(
+          `/api/ops/jobs?search=${encodeURIComponent(q)}&limit=8&status=${ACTIVE_JOB_STATUSES}`
+        )
+        if (res.ok) {
+          const d = await res.json()
+          setJobResults(d.jobs || [])
+        }
+      } catch {
+        // ignore
+      } finally {
+        setJobsLoading(false)
+      }
+    }, 250)
+    return () => clearTimeout(t)
+  }, [jobSearchInput])
+
+  const handleSelectJob = (job: JobSearchResult) => {
+    setSelectedJob(job)
+    setJobSearchInput('')
+    setJobResults([])
+    setShowJobDropdown(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     try {
-      setLoading(true)
       const response = await fetch('/api/ops/manufacturing/qc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          jobId: selectedJob?.id || null,
+          checkType: formData.checkType,
+          result: formData.result,
+          notes: formData.notes,
           defectCodes: formData.defectCodes
             .split(',')
             .map((c) => c.trim())
             .filter((c) => c),
-          jobId: formData.jobId || null,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create quality check')
+        // Surface API error message to the user instead of swallowing it.
+        let detail = `HTTP ${response.status}`
+        try {
+          const data = await response.json()
+          detail = data.error || data.detail || detail
+        } catch {
+          // body wasn't JSON — leave detail as the status code
+        }
+        throw new Error(detail)
       }
 
-      onSuccess()
+      showToast('Quality check created', 'success')
+      // Brief delay so the success toast is visible before the modal closes.
+      setTimeout(() => onSuccess(), 600)
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to create quality check', 'error')
+      showToast(
+        err instanceof Error ? err.message : 'Failed to create quality check',
+        'error'
+      )
     } finally {
       setLoading(false)
     }
@@ -382,9 +716,11 @@ function CreateQCModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
-        }`}>
+        <div
+          className={`fixed top-4 right-4 z-[60] px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
+            toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+          }`}
+        >
           {toast}
         </div>
       )}
@@ -392,17 +728,74 @@ function CreateQCModal({
         <h2 className="text-lg font-semibold text-fg mb-4">New Quality Check</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          {/* Job search-as-you-type dropdown */}
+          <div className="relative">
             <label className="block text-sm font-medium text-fg-muted mb-1">
-              Job (Optional)
+              Job
             </label>
-            <input
-              type="text"
-              value={formData.jobId}
-              onChange={(e) => setFormData({ ...formData, jobId: e.target.value })}
-              placeholder="Job ID"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
-            />
+            {selectedJob ? (
+              <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50">
+                <div className="text-sm">
+                  <div className="font-medium text-fg">{selectedJob.jobNumber}</div>
+                  {selectedJob.jobAddress && (
+                    <div className="text-xs text-fg-muted">{selectedJob.jobAddress}</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedJob(null)
+                    setJobSearchInput('')
+                  }}
+                  className="text-xs text-fg-muted hover:text-fg underline"
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={jobSearchInput}
+                  onChange={(e) => {
+                    setJobSearchInput(e.target.value)
+                    setShowJobDropdown(true)
+                  }}
+                  onFocus={() => setShowJobDropdown(true)}
+                  placeholder="Search active jobs by number or address..."
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
+                />
+                {showJobDropdown && jobSearchInput.trim().length >= 2 && (
+                  <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+                    {jobsLoading ? (
+                      <div className="px-3 py-2 text-sm text-fg-muted">Searching...</div>
+                    ) : jobResults.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-fg-muted">
+                        No active jobs match.
+                      </div>
+                    ) : (
+                      jobResults.map((j) => (
+                        <button
+                          type="button"
+                          key={j.id}
+                          onClick={() => handleSelectJob(j)}
+                          className="block w-full text-left px-3 py-2 hover:bg-row-hover text-sm"
+                        >
+                          <div className="font-medium text-fg">{j.jobNumber}</div>
+                          <div className="text-xs text-fg-muted">
+                            {j.jobAddress || '—'}
+                            {j.builderName ? ` · ${j.builderName}` : ''}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+                <p className="mt-1 text-xs text-fg-subtle">
+                  Optional. Searches active (non-terminal) jobs only.
+                </p>
+              </>
+            )}
           </div>
 
           <div>

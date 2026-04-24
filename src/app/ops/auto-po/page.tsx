@@ -16,6 +16,7 @@ interface Candidate {
   unitCost: number
   vendorId: string | null
   vendorName: string | null
+  productType: string | null
 }
 
 interface RecentPO {
@@ -60,17 +61,16 @@ export default function AutoPOPage() {
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [includeNonPhysical, setIncludeNonPhysical] = useState(false)
 
-  // Fetch initial data
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async (includeNonPhys: boolean) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/ops/auto-po')
+      const url = includeNonPhys
+        ? '/api/ops/auto-po?includeNonPhysical=1'
+        : '/api/ops/auto-po'
+      const response = await fetch(url)
       if (!response.ok) {
         throw new Error('Failed to fetch auto-PO data')
       }
@@ -83,7 +83,12 @@ export default function AutoPOPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  // Fetch initial data and refetch when toggle changes
+  useEffect(() => {
+    fetchData(includeNonPhysical)
+  }, [fetchData, includeNonPhysical])
 
   const handleSelectProduct = useCallback((productId: string) => {
     setSelectedProducts((prev) => {
@@ -135,7 +140,7 @@ export default function AutoPOPage() {
       setSelectedProducts(new Set())
 
       // Refetch data
-      await fetchData()
+      await fetchData(includeNonPhysical)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'An error occurred'
@@ -278,13 +283,25 @@ export default function AutoPOPage() {
 
         {/* Candidates Section */}
         <div className="mb-8 rounded-lg border border-border bg-surface">
-          <div className="border-b border-border px-6 py-4">
-            <h2 className="text-lg font-semibold text-fg">
-              Reorder Candidates
-            </h2>
-            <p className="mt-1 text-sm text-fg-muted">
-              Products at or below reorder point
-            </p>
+          <div className="border-b border-border px-6 py-4 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-fg">
+                Reorder Candidates
+              </h2>
+              <p className="mt-1 text-sm text-fg-muted">
+                Products at or below reorder point
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-fg-muted cursor-pointer select-none whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={includeNonPhysical}
+                onChange={(e) => setIncludeNonPhysical(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-signal focus:ring-signal"
+                aria-label="Include service and overhead products"
+              />
+              Include service/overhead
+            </label>
           </div>
 
           {loading ? (
@@ -348,7 +365,22 @@ export default function AutoPOPage() {
                           />
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-fg">
-                          {candidate.name}
+                          <div className="flex items-center gap-2">
+                            <span>{candidate.name}</span>
+                            {candidate.productType ? (
+                              <span
+                                className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                                  candidate.productType === 'PHYSICAL'
+                                    ? 'bg-data-info-bg text-data-info-fg'
+                                    : 'bg-surface-muted text-fg-subtle'
+                                }`}
+                                title={`Product type: ${candidate.productType}`}
+                              >
+                                {candidate.productType.charAt(0) +
+                                  candidate.productType.slice(1).toLowerCase()}
+                              </span>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-fg-muted">
                           {candidate.sku}

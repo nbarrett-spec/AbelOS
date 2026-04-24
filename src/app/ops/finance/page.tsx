@@ -56,6 +56,10 @@ interface DashboardData {
   }>
 }
 
+// Roles allowed on /ops/finance — must mirror permissions.ts ROUTE_ACCESS.
+// Anyone outside this set is redirected to /ops/today on mount.
+const FINANCE_ALLOWED_ROLES = new Set<string>(['ADMIN', 'MANAGER', 'ACCOUNTING'])
+
 export default function FinancialDashboard() {
   const router = useRouter()
   const [data, setData] = useState<DashboardData | null>(null)
@@ -63,6 +67,9 @@ export default function FinancialDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [cashFlowHealth, setCashFlowHealth] = useState<any>(null)
   const [canViewFinancials, setCanViewFinancials] = useState(false)
+  // Role gate: 'checking' until /api/ops/auth/me returns; 'allowed' for
+  // ADMIN/MANAGER/ACCOUNTING; 'denied' otherwise (triggers redirect).
+  const [roleStatus, setRoleStatus] = useState<'checking' | 'allowed' | 'denied'>('checking')
 
   // ── YTD / per-month rollup ──
   const currentYear = new Date().getUTCFullYear()
@@ -70,6 +77,37 @@ export default function FinancialDashboard() {
   const [rollup, setRollup] = useState<MonthlyRollup | null>(null)
   const [rollupYear, setRollupYear] = useState<number>(currentYear)
   const [quarter, setQuarter] = useState<QuarterFilter>('YTD')
+
+  // Role gate: redirect non-mgmt away from Financial Dashboard.
+  // Server still enforces via canAccessRoute(); this is the client-side
+  // bounce so the page never renders for unauthorized roles.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/ops/auth/me')
+        if (!res.ok) {
+          if (!cancelled) setRoleStatus('denied')
+          return
+        }
+        const body = await res.json()
+        const roles: string[] = Array.isArray(body?.staff?.roles)
+          ? body.staff.roles
+          : body?.staff?.role ? [body.staff.role] : []
+        const allowed = roles.some((r) => FINANCE_ALLOWED_ROLES.has(r))
+        if (cancelled) return
+        if (allowed) {
+          setRoleStatus('allowed')
+        } else {
+          setRoleStatus('denied')
+          router.push('/ops/today')
+        }
+      } catch {
+        if (!cancelled) setRoleStatus('denied')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [router])
 
   useEffect(() => {
     fetchData()
@@ -128,6 +166,12 @@ export default function FinancialDashboard() {
       ••••••
     </span>
   )
+
+  // Don't render anything for unauthorized roles — they're being redirected.
+  // 'checking' renders nothing too so flash-of-content doesn't happen.
+  if (roleStatus !== 'allowed') {
+    return null
+  }
 
   if (loading) {
     return (

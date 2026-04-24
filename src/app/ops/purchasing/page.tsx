@@ -5,12 +5,14 @@ import Link from 'next/link'
 import {
   ShoppingCart, Package, CheckCircle2, Clock, RefreshCw, Search, Sparkles,
   AlertTriangle, TrendingUp, Zap, Plus, Truck, ChevronDown, ChevronUp, Receipt,
+  Download, ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Card, CardHeader, CardTitle, CardDescription, CardBody,
   DataTable, Badge, StatusBadge, EmptyState, AnimatedNumber, LiveDataIndicator,
   InfoTip, Tabs,
 } from '@/components/ui'
+import { getStatusBadgeVariant } from '@/components/ui/Badge'
 import { useLiveTick } from '@/hooks/useLiveTopic'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +24,10 @@ interface PO {
   dutyCost: number; totalCost: number; expectedDate: string; actualDate: string; trackingNumber: string
   notes: string; aiGenerated: boolean; aiReason: string; itemCount: number; totalReceived: number
   totalOrdered: number; createdAt: string
+  // Optional joined fields surfaced by the API for display + filtering
+  vendorId?: string; vendorName?: string; vendorCode?: string
+  builderId?: string | null; builderName?: string | null
+  pmId?: string | null; pmName?: string | null
 }
 
 interface POStats {
@@ -68,6 +74,10 @@ interface VendorScorecard {
   }
 }
 
+interface PMOption { id: string; firstName: string; lastName: string }
+interface BuilderOption { id: string; companyName: string }
+interface VendorOption { id: string; name: string; code?: string }
+
 // ── Formatters ───────────────────────────────────────────────────────────
 
 const fmtMoneyCompact = (n: number) => {
@@ -80,7 +90,9 @@ const fmtMoneyCompact = (n: number) => {
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n)
 
-const STATUSES = ['ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'IN_TRANSIT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED']
+const STATUSES = ['ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED']
+
+type SortDir = 'asc' | 'desc'
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
@@ -89,8 +101,23 @@ export default function PurchaseOrdersPage() {
   const [stats, setStats] = useState<POStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Filters (apply to all views)
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [search, setSearch] = useState('')
+  const [pmFilter, setPmFilter] = useState<string>('')
+  const [builderFilter, setBuilderFilter] = useState<string>('')
+  const [vendorFilter, setVendorFilter] = useState<string>('')
+
+  // Filter source data
+  const [pms, setPms] = useState<PMOption[]>([])
+  const [builders, setBuilders] = useState<BuilderOption[]>([])
+  const [vendors, setVendors] = useState<VendorOption[]>([])
+
+  // All POs sort
+  const [sortBy, setSortBy] = useState<string>('createdAt')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
   const [recommendations, setRecommendations] = useState<RecommendationGroup[]>([])
   const [scorecards, setScorecards] = useState<VendorScorecard[]>([])
   const [recsLoading, setRecsLoading] = useState(false)
@@ -102,14 +129,25 @@ export default function PurchaseOrdersPage() {
 
   const liveTick = useLiveTick('pos')
 
+  // ── Build query string for the PO endpoint ────────────────────────────
+  const buildQuery = useCallback(() => {
+    const params = new URLSearchParams()
+    if (statusFilter !== 'ALL') params.set('status', statusFilter)
+    if (search) params.set('search', search)
+    if (pmFilter) params.set('pmId', pmFilter)
+    if (builderFilter) params.set('builderId', builderFilter)
+    if (vendorFilter) params.set('vendorId', vendorFilter)
+    if (sortBy) params.set('sortBy', sortBy)
+    if (sortDir) params.set('sortDir', sortDir)
+    return params.toString()
+  }, [statusFilter, search, pmFilter, builderFilter, vendorFilter, sortBy, sortDir])
+
   const fetchPOs = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const params = new URLSearchParams()
-      if (statusFilter !== 'ALL') params.set('status', statusFilter)
-      if (search) params.set('search', search)
-      const res = await fetch(`/api/ops/procurement/purchase-orders?${params}`)
+      const qs = buildQuery()
+      const res = await fetch(`/api/ops/procurement/purchase-orders?${qs}`)
       if (res.ok) {
         const d = await res.json()
         setOrders(d.orders || [])
@@ -122,7 +160,7 @@ export default function PurchaseOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, search])
+  }, [buildQuery])
 
   const fetchRecommendations = useCallback(async () => {
     setRecsLoading(true)
@@ -146,6 +184,44 @@ export default function PurchaseOrdersPage() {
     } finally {
       setScoresLoading(false)
     }
+  }, [])
+
+  // ── Filter source loaders ────────────────────────────────────────────
+  useEffect(() => {
+    // PM roster — primary source per shared pattern
+    fetch('/api/ops/pm/roster')
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d?.pms || d?.data || []) as PMOption[]
+        setPms(list)
+      })
+      .catch(() => {})
+
+    // Builders
+    fetch('/api/ops/builders?limit=200')
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d?.builders || d?.data || []) as any[]
+        setBuilders(
+          list
+            .map((b) => ({ id: b.id, companyName: b.companyName || b.name || b.id }))
+            .sort((a, b) => a.companyName.localeCompare(b.companyName)),
+        )
+      })
+      .catch(() => {})
+
+    // Vendors
+    fetch('/api/ops/vendors?limit=200')
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d?.vendors || d?.data || []) as any[]
+        setVendors(
+          list
+            .map((v) => ({ id: v.id, name: v.name || v.id, code: v.code }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        )
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -199,12 +275,42 @@ export default function PurchaseOrdersPage() {
       RECEIVED: [],
     }
     for (const o of orders) {
-      if (buckets[o.status]) buckets[o.status].push(o)
-      else if (o.status === 'APPROVED' || o.status === 'PENDING_APPROVAL') buckets.DRAFT.push(o)
-      else if (o.status === 'IN_TRANSIT') buckets.SENT.push(o)
+      // Map all statuses to one of the four kanban columns. The backing enum
+      // is SENT_TO_VENDOR, but the column header is "SENT" for brevity.
+      if (o.status === 'DRAFT' || o.status === 'PENDING_APPROVAL' || o.status === 'APPROVED') {
+        buckets.DRAFT.push(o)
+      } else if (o.status === 'SENT_TO_VENDOR' || o.status === 'IN_TRANSIT' || o.status === 'SENT') {
+        buckets.SENT.push(o)
+      } else if (o.status === 'PARTIALLY_RECEIVED') {
+        buckets.PARTIALLY_RECEIVED.push(o)
+      } else if (o.status === 'RECEIVED') {
+        buckets.RECEIVED.push(o)
+      }
+      // CANCELLED intentionally not displayed in kanban
     }
     return buckets
   }, [orders])
+
+  const exportCsv = () => {
+    const qs = buildQuery()
+    window.location.href = `/api/ops/procurement/purchase-orders?${qs}&format=csv`
+  }
+
+  const toggleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(key)
+      setSortDir('desc')
+    }
+  }
+
+  const SortIcon = ({ k }: { k: string }) => {
+    if (sortBy !== k) return <ArrowUpDown className="w-3 h-3 inline ml-1 text-fg-subtle" />
+    return sortDir === 'asc'
+      ? <ArrowUp className="w-3 h-3 inline ml-1 text-accent" />
+      : <ArrowDown className="w-3 h-3 inline ml-1 text-accent" />
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────
 
@@ -236,6 +342,10 @@ export default function PurchaseOrdersPage() {
             <button onClick={fetchPOs} className="btn btn-secondary btn-sm" disabled={loading}>
               <RefreshCw className={cn('w-3.5 h-3.5', loading && 'animate-spin')} />
               Refresh
+            </button>
+            <button onClick={exportCsv} className="btn btn-secondary btn-sm" disabled={loading}>
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
             </button>
             <Link href="/ops/procurement-intelligence" className="btn btn-primary btn-sm">
               <Sparkles className="w-3.5 h-3.5" /> AI Generate POs
@@ -285,12 +395,96 @@ export default function PurchaseOrdersPage() {
         </div>
       )}
 
+      {/* ── Filter bar (applies to Pipeline and All POs views) ────────── */}
+      <Card variant="default" padding="md">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none" />
+            <input
+              placeholder="Search PO# or supplier…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input w-full pl-8"
+            />
+          </div>
+          <select
+            value={pmFilter}
+            onChange={(e) => setPmFilter(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            aria-label="Filter by PM"
+          >
+            <option value="">All PMs</option>
+            {pms.map((pm) => (
+              <option key={pm.id} value={pm.id}>
+                {pm.firstName} {pm.lastName}
+              </option>
+            ))}
+          </select>
+          <select
+            value={builderFilter}
+            onChange={(e) => setBuilderFilter(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            aria-label="Filter by Builder"
+          >
+            <option value="">All Builders</option>
+            {builders.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.companyName}
+              </option>
+            ))}
+          </select>
+          <select
+            value={vendorFilter}
+            onChange={(e) => setVendorFilter(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            aria-label="Filter by Vendor"
+          >
+            <option value="">All Vendors</option>
+            {vendors.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
+          {(pmFilter || builderFilter || vendorFilter || statusFilter !== 'ALL' || search) && (
+            <button
+              onClick={() => {
+                setPmFilter('')
+                setBuilderFilter('')
+                setVendorFilter('')
+                setStatusFilter('ALL')
+                setSearch('')
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap mt-3">
+          {STATUSES.map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={cn(
+                'text-[11px] px-2 py-1 rounded-md transition-colors',
+                statusFilter === s
+                  ? 'bg-brand text-fg-on-accent font-medium'
+                  : 'text-fg-muted hover:bg-surface-muted',
+              )}
+            >
+              {s.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
+      </Card>
+
       <Tabs
         tabs={[
           { id: 'pipeline', label: 'Pipeline' },
           { id: 'recommendations', label: `Smart Reorder${recommendations.length > 0 ? ` · ${recommendations.length}` : ''}` },
           { id: 'scorecards', label: 'Vendor Scorecards' },
-          { id: 'all', label: 'All POs' },
+          { id: 'all', label: `All POs${orders.length > 0 ? ` · ${orders.length}` : ''}` },
         ] as any}
         activeTab={activeTab}
         onChange={(t) => setActiveTab(t)}
@@ -307,7 +501,9 @@ export default function PurchaseOrdersPage() {
                   <div className="min-w-0">
                     <CardTitle>
                       <span className="flex items-center gap-2">
-                        <StatusBadge status={col} size="sm" />
+                        <Badge variant={getStatusBadgeVariant(col)} size="sm">
+                          {col.replace(/_/g, ' ')}
+                        </Badge>
                         <span className="text-[11px] text-fg-subtle tabular-nums">{items.length}</span>
                       </span>
                     </CardTitle>
@@ -327,7 +523,12 @@ export default function PurchaseOrdersPage() {
                           <span className="font-semibold font-mono text-xs text-fg truncate">{po.poNumber}</span>
                           {po.aiGenerated && <Badge variant="brand" size="xs">AI</Badge>}
                         </div>
-                        <div className="text-xs text-fg-muted truncate mb-2">{po.supplierName}</div>
+                        <div className="text-xs text-fg-muted truncate mb-2">
+                          {po.supplierName || po.vendorName || '—'}
+                        </div>
+                        {po.builderName && (
+                          <div className="text-[11px] text-fg-subtle truncate mb-2">{po.builderName}</div>
+                        )}
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-fg-subtle tabular-nums">{po.itemCount} items</span>
                           <span className="font-semibold tabular-nums text-fg">
@@ -562,109 +763,113 @@ export default function PurchaseOrdersPage() {
 
       {/* ── ALL POs ───────────────────────────────────────────────────── */}
       {activeTab === 'all' && (
-        <>
-          <Card variant="default" padding="md">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[240px]">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none" />
-                  <input
-                    placeholder="Search PO# or supplier…"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="input w-full pl-8"
-                  />
+        <DataTable
+          density="default"
+          data={orders}
+          loading={loading}
+          rowKey={(o) => o.id}
+          onRowClick={(o) => { window.location.href = `/ops/purchasing/${o.id}` }}
+          keyboardNav
+          empty={<EmptyState icon={<Receipt className="w-8 h-8 text-fg-subtle" />} title="No POs to display" description="Adjust filters or use AI Generate POs to seed the pipeline." />}
+          columns={[
+            {
+              key: 'poNumber',
+              header: (
+                <button onClick={() => toggleSort('poNumber')} className="text-left">
+                  PO# <SortIcon k="poNumber" />
+                </button>
+              ),
+              cell: (o) => (
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-semibold text-fg">{o.poNumber}</span>
+                  {o.aiGenerated && <Badge variant="brand" size="xs">AI</Badge>}
+                  {o.priority === 'URGENT' && <Badge variant="danger" size="xs">URGENT</Badge>}
                 </div>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {STATUSES.map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      'text-[11px] px-2 py-1 rounded-md transition-colors',
-                      statusFilter === s
-                        ? 'bg-brand text-fg-on-accent font-medium'
-                        : 'text-fg-muted hover:bg-surface-muted'
-                    )}
-                  >
-                    {s.replace(/_/g, ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </Card>
-
-          <DataTable
-            density="default"
-            data={orders}
-            loading={loading}
-            rowKey={(o) => o.id}
-            onRowClick={(o) => { window.location.href = `/ops/purchasing/${o.id}` }}
-            keyboardNav
-            empty={<EmptyState icon={<Receipt className="w-8 h-8 text-fg-subtle" />} title="No POs to display" description="Use AI Generate POs or create one manually." />}
-            columns={[
-              {
-                key: 'status',
-                header: 'Status',
-                cell: (o) => <StatusBadge status={o.status} size="sm" />,
-              },
-              {
-                key: 'poNumber',
-                header: 'PO#',
-                cell: (o) => (
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold text-fg">{o.poNumber}</span>
-                    {o.aiGenerated && <Badge variant="brand" size="xs">AI</Badge>}
-                    {o.priority === 'URGENT' && <Badge variant="danger" size="xs">URGENT</Badge>}
-                  </div>
-                ),
-              },
-              {
-                key: 'supplierName',
-                header: 'Supplier',
-                cell: (o) => (
-                  <div>
-                    <div className="text-sm text-fg">{o.supplierName}</div>
-                    <div className="text-[11px] text-fg-subtle">{o.supplierType}</div>
-                  </div>
-                ),
-              },
-              {
-                key: 'itemCount',
-                header: 'Items',
-                numeric: true,
-                cell: (o) => <span className="tabular-nums">{o.itemCount}</span>,
-              },
-              {
-                key: 'received',
-                header: 'Received',
-                numeric: true,
-                cell: (o) => (
-                  <span className={cn('tabular-nums', o.totalReceived >= o.totalOrdered ? 'text-data-positive' : 'text-accent')}>
-                    {o.totalReceived}/{o.totalOrdered}
-                  </span>
-                ),
-              },
-              {
-                key: 'totalCost',
-                header: 'Total',
-                numeric: true,
-                heatmap: true,
-                heatmapValue: (o) => o.totalCost,
-                cell: (o) => <span className="tabular-nums font-semibold">{fmtMoney(o.totalCost)}</span>,
-              },
-              {
-                key: 'expectedDate',
-                header: 'ETA',
-                hideOnMobile: true,
-                cell: (o) => o.expectedDate
-                  ? <span className="tabular-nums text-fg-muted">{new Date(o.expectedDate).toLocaleDateString()}</span>
-                  : <span className="text-fg-subtle">—</span>,
-              },
-            ]}
-          />
-        </>
+              ),
+            },
+            {
+              key: 'vendor',
+              header: 'Vendor',
+              cell: (o) => (
+                <div>
+                  <div className="text-sm text-fg">{o.supplierName || o.vendorName || '—'}</div>
+                  {o.vendorCode && <div className="text-[11px] text-fg-subtle font-mono">{o.vendorCode}</div>}
+                </div>
+              ),
+            },
+            {
+              key: 'builder',
+              header: 'Builder',
+              cell: (o) => (
+                <span className="text-sm text-fg-muted">{o.builderName || <span className="text-fg-subtle">—</span>}</span>
+              ),
+            },
+            {
+              key: 'total',
+              header: (
+                <button onClick={() => toggleSort('total')} className="text-right w-full">
+                  Total <SortIcon k="total" />
+                </button>
+              ),
+              numeric: true,
+              heatmap: true,
+              heatmapValue: (o) => o.totalCost,
+              cell: (o) => <span className="tabular-nums font-semibold">{fmtMoney(o.totalCost)}</span>,
+            },
+            {
+              key: 'itemCount',
+              header: 'Items',
+              numeric: true,
+              cell: (o) => <span className="tabular-nums">{o.itemCount}</span>,
+            },
+            {
+              key: 'status',
+              header: (
+                <button onClick={() => toggleSort('status')} className="text-left">
+                  Status <SortIcon k="status" />
+                </button>
+              ),
+              cell: (o) => (
+                <Badge variant={getStatusBadgeVariant(o.status)} size="sm">
+                  {o.status.replace(/_/g, ' ')}
+                </Badge>
+              ),
+            },
+            {
+              key: 'createdAt',
+              header: (
+                <button onClick={() => toggleSort('createdAt')} className="text-left">
+                  Created <SortIcon k="createdAt" />
+                </button>
+              ),
+              hideOnMobile: true,
+              cell: (o) => o.createdAt
+                ? <span className="tabular-nums text-fg-muted">{new Date(o.createdAt).toLocaleDateString()}</span>
+                : <span className="text-fg-subtle">—</span>,
+            },
+            {
+              key: 'expectedDate',
+              header: 'ETA',
+              hideOnMobile: true,
+              cell: (o) => o.expectedDate
+                ? <span className="tabular-nums text-fg-muted">{new Date(o.expectedDate).toLocaleDateString()}</span>
+                : <span className="text-fg-subtle">—</span>,
+            },
+            {
+              key: 'action',
+              header: '',
+              cell: (o) => (
+                <Link
+                  href={`/ops/purchasing/${o.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="btn btn-secondary btn-xs"
+                >
+                  View
+                </Link>
+              ),
+            },
+          ]}
+        />
       )}
     </div>
   )

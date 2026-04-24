@@ -17,6 +17,45 @@ const ALLOWED_TYPES = [
 ]
 const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp']
 
+// GET /api/ops/floor-plans/upload?search=... — Helper for the upload modal:
+// search projects by name/address/community/builder so the user can pick one.
+// Lives on the upload route (rather than a sibling) because project search is
+// only used by this modal and would otherwise require modifying an out-of-scope
+// route during the bugfix wave.
+export async function GET(request: NextRequest) {
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
+  const { searchParams } = new URL(request.url)
+  const search = (searchParams.get('search') || '').trim()
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 25)
+
+  if (!search || search.length < 2) {
+    return safeJson({ projects: [] })
+  }
+
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT p."id", p."name", p."jobAddress", p."planName", p."status",
+              b."companyName" as "builderName", b."id" as "builderId"
+       FROM "Project" p
+       LEFT JOIN "Builder" b ON b."id" = p."builderId"
+       WHERE p."name" ILIKE $1
+          OR p."jobAddress" ILIKE $1
+          OR p."planName" ILIKE $1
+          OR b."companyName" ILIKE $1
+       ORDER BY p."updatedAt" DESC NULLS LAST
+       LIMIT $2`,
+      `%${search}%`,
+      limit
+    )
+    return safeJson({ projects: rows })
+  } catch (error: any) {
+    console.error('Floor plan project-search error:', error)
+    return safeJson({ projects: [] })
+  }
+}
+
 // POST /api/ops/floor-plans/upload — Upload a floor plan file
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)

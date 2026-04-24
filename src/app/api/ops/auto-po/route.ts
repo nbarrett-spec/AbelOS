@@ -14,7 +14,16 @@ export async function GET(req: NextRequest) {
   try {
     await checkStaffAuthWithFallback(req)
 
+    // Optional toggle: include service/overhead/labor products. Default false → PHYSICAL only.
+    const includeNonPhysical = req.nextUrl.searchParams.get('includeNonPhysical') === '1'
+      || req.nextUrl.searchParams.get('includeNonPhysical') === 'true'
+
     // Products below reorder point from InventoryItem, joined to preferred VendorProduct
+    // and to Product for productType (filters out LABOR/SERVICE/OVERHEAD by default).
+    const productTypeFilter = includeNonPhysical
+      ? ''
+      : `AND (p."productType" = 'PHYSICAL' OR p."productType" IS NULL)`
+
     const candidates: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         ii.id,
@@ -26,12 +35,15 @@ export async function GET(req: NextRequest) {
         ii."reorderQty",
         ii."unitCost",
         vp."vendorId",
-        v.name as "vendorName"
+        v.name as "vendorName",
+        p."productType" as "productType"
       FROM "InventoryItem" ii
+      LEFT JOIN "Product" p ON p.id = ii."productId"
       LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = TRUE
       LEFT JOIN "Vendor" v ON v.id = vp."vendorId" AND v.active = TRUE
       WHERE (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint"
         AND ii."reorderQty" > 0
+        ${productTypeFilter}
       ORDER BY (ii."onHand"::float / NULLIF(ii."reorderPoint", 0)::float) ASC
     `)
 
@@ -87,6 +99,7 @@ export async function POST(req: NextRequest) {
     audit(req, 'GENERATE_DRAFT_POS', 'PurchaseOrder', undefined, { productIds, all }).catch(() => {})
 
     // Fetch candidate items from InventoryItem + preferred vendor
+    // Always exclude LABOR/SERVICE/OVERHEAD products from PO generation — they aren't physically reorderable.
     let candidates: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         ii."productId",
@@ -99,12 +112,15 @@ export async function POST(req: NextRequest) {
         vp."vendorId",
         vp."vendorSku",
         vp."vendorCost",
-        v.name as "vendorName"
+        v.name as "vendorName",
+        p."productType" as "productType"
       FROM "InventoryItem" ii
+      LEFT JOIN "Product" p ON p.id = ii."productId"
       LEFT JOIN "VendorProduct" vp ON vp."productId" = ii."productId" AND vp.preferred = TRUE
       LEFT JOIN "Vendor" v ON v.id = vp."vendorId" AND v.active = TRUE
       WHERE (ii."onHand" + COALESCE(ii."onOrder", 0)) <= ii."reorderPoint"
         AND ii."reorderQty" > 0
+        AND (p."productType" = 'PHYSICAL' OR p."productType" IS NULL)
     `)
 
     // Filter to selected products if not "all"

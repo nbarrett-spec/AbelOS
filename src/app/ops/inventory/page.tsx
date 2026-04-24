@@ -182,6 +182,22 @@ export default function InventoryListPage() {
           <button className="btn btn-secondary btn-sm" onClick={() => { loadKpis(); loadRows() }}>
             Refresh
           </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              const qs = new URLSearchParams()
+              qs.set('format', 'csv')
+              if (search) qs.set('search', search)
+              if (category) qs.set('category', category)
+              if (status) qs.set('status', status)
+              if (zone) qs.set('zone', zone)
+              qs.set('sort', sort)
+              qs.set('dir', dir)
+              window.location.href = `/api/ops/inventory?${qs.toString()}`
+            }}
+          >
+            Export CSV
+          </button>
           <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
             Print
           </button>

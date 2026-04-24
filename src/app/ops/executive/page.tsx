@@ -185,6 +185,10 @@ function toWeeklySpark(values: number[]): number[] {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
+// Roles allowed on /ops/executive — must mirror permissions.ts ROUTE_ACCESS.
+// Anyone outside this set is redirected to /ops/today on mount.
+const EXECUTIVE_ALLOWED_ROLES = new Set<string>(['ADMIN', 'MANAGER', 'ACCOUNTING'])
+
 export default function ExecutiveDashboard() {
   const router = useRouter()
   const [data, setData] = useState<DashboardData | null>(null)
@@ -197,6 +201,9 @@ export default function ExecutiveDashboard() {
   const [lastRefreshed, setLastRefreshed] = useState<number>(Date.now())
   const [threeYearCompare, setThreeYearCompare] = useState(false)
   const [nowTick, setNowTick] = useState(Date.now())
+  // Role gate: 'checking' until /api/ops/auth/me returns; 'allowed' for
+  // ADMIN/MANAGER/ACCOUNTING; 'denied' otherwise (triggers redirect).
+  const [roleStatus, setRoleStatus] = useState<'checking' | 'allowed' | 'denied'>('checking')
 
   // ── YTD rollup (pre-wave-3 behavior, preserved) ──
   const currentYear = new Date().getUTCFullYear()
@@ -210,6 +217,38 @@ export default function ExecutiveDashboard() {
     const id = setInterval(() => setNowTick(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  // Role gate: redirect non-mgmt away from CEO Dashboard.
+  // Server still enforces via canAccessRoute(); this is the client-side
+  // bounce so the page never renders for unauthorized roles.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/ops/auth/me')
+        if (!res.ok) {
+          // 401/403 — middleware will redirect to login; nothing to do here.
+          if (!cancelled) setRoleStatus('denied')
+          return
+        }
+        const body = await res.json()
+        const roles: string[] = Array.isArray(body?.staff?.roles)
+          ? body.staff.roles
+          : body?.staff?.role ? [body.staff.role] : []
+        const allowed = roles.some((r) => EXECUTIVE_ALLOWED_ROLES.has(r))
+        if (cancelled) return
+        if (allowed) {
+          setRoleStatus('allowed')
+        } else {
+          setRoleStatus('denied')
+          router.push('/ops/today')
+        }
+      } catch {
+        if (!cancelled) setRoleStatus('denied')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [router])
 
   // Initial load
   useEffect(() => {
@@ -380,6 +419,12 @@ export default function ExecutiveDashboard() {
 
   const agoSec = Math.max(0, Math.floor((nowTick - lastRefreshed) / 1000))
   const agoLabel = agoSec < 5 ? 'just now' : agoSec < 60 ? `${agoSec}s ago` : `${Math.floor(agoSec / 60)}m ago`
+
+  // Don't render anything for unauthorized roles — they're being redirected.
+  // 'checking' renders nothing too so flash-of-content doesn't happen.
+  if (roleStatus !== 'allowed') {
+    return null
+  }
 
   if (loading) {
     return (

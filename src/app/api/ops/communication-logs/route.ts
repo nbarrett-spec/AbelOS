@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { recordCommunicationActivity } from '@/lib/events/activity'
+import { toCsv } from '@/lib/csv'
 
 // GET /api/ops/communication-logs — List communication logs with filters
 export async function GET(request: NextRequest) {
@@ -12,6 +13,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
+    const format = searchParams.get('format') || ''
     const builderId = searchParams.get('builderId') || ''
     const organizationId = searchParams.get('organizationId') || ''
     const jobId = searchParams.get('jobId') || ''
@@ -49,6 +51,64 @@ export async function GET(request: NextRequest) {
       whereClause += ` AND cl."status" = $${idx}::"CommLogStatus"`
       params.push(status)
       idx++
+    }
+
+    // CSV export — metadata only (NO body) to keep it shareable. Same filters,
+    // capped at 5000 rows. Returned before the heavier listing path.
+    if (format === 'csv') {
+      const csvRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT cl."id", cl."channel"::text AS "channel", cl."direction"::text AS "direction",
+                cl."subject", cl."fromAddress", cl."toAddresses", cl."sentAt", cl."duration",
+                cl."hasAttachments", cl."attachmentCount", cl."status"::text AS "status",
+                b."companyName" AS "builderCompanyName",
+                o."name" AS "orgName"
+         FROM "CommunicationLog" cl
+         LEFT JOIN "Builder" b ON b."id" = cl."builderId"
+         LEFT JOIN "BuilderOrganization" o ON o."id" = cl."organizationId"
+         ${whereClause}
+         ORDER BY cl."sentAt" DESC NULLS LAST
+         LIMIT 5000`,
+        ...params
+      )
+
+      const fmtDate = (d: any) => (d ? new Date(d).toISOString().split('T')[0] : '')
+      const rows = csvRows.map(r => ({
+        sentAt: fmtDate(r.sentAt),
+        channel: r.channel ?? '',
+        direction: r.direction ?? '',
+        builder: r.builderCompanyName ?? '',
+        organization: r.orgName ?? '',
+        fromAddress: r.fromAddress ?? '',
+        toAddresses: Array.isArray(r.toAddresses) ? r.toAddresses.join('; ') : (r.toAddresses ?? ''),
+        subject: r.subject ?? '',
+        durationSec: r.duration ?? '',
+        hasAttachments: r.hasAttachments ? 'true' : 'false',
+        attachmentCount: r.attachmentCount ?? 0,
+        status: r.status ?? '',
+      }))
+
+      const csv = toCsv(rows, [
+        { key: 'sentAt', label: 'Sent' },
+        { key: 'channel', label: 'Channel' },
+        { key: 'direction', label: 'Direction' },
+        { key: 'builder', label: 'Builder' },
+        { key: 'organization', label: 'Organization' },
+        { key: 'fromAddress', label: 'From' },
+        { key: 'toAddresses', label: 'To' },
+        { key: 'subject', label: 'Subject' },
+        { key: 'durationSec', label: 'Duration (s)' },
+        { key: 'hasAttachments', label: 'Has Attachments' },
+        { key: 'attachmentCount', label: 'Attachment Count' },
+        { key: 'status', label: 'Status' },
+      ])
+
+      const filename = `communication-log-${new Date().toISOString().split('T')[0]}.csv`
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
     }
 
     const [logs, countResult] = await Promise.all([

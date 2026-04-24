@@ -79,7 +79,9 @@ Always include the action reasoning in your text message as well.`
       content: m.content,
     }))
 
-    // Send to Claude with tool support
+    // Send to Claude with tool support.
+    // maxTokens 4096 (per Anthropic guidance for tool-heavy chats) and
+    // maxIterations 10 give tool-heavy questions room to complete (BUGFIX 2.6).
     const result = await sendMessage({
       systemPrompt,
       messages: claudeMessages,
@@ -88,6 +90,7 @@ Always include the action reasoning in your text message as well.`
         return await executeTool(toolName, toolInput, staffRoles, hasFinancialAccess)
       },
       maxTokens: 4096,
+      maxIterations: 10,
     })
 
     // Parse actions from the response text if present
@@ -100,6 +103,10 @@ Always include the action reasoning in your text message as well.`
         summary: tc.name.replace(/_/g, ' '),
       })),
       ...(actions.length > 0 && { actions }),
+      // truncated=true means the tool-use loop hit its iteration cap before
+      // arriving at a final answer. UI should surface a banner so the user
+      // can refine the question for a complete reply.
+      ...(result.truncated && { truncated: true }),
     })
   } catch (error: any) {
     console.error('AI Chat error:', error)

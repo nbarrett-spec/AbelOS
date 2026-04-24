@@ -55,12 +55,21 @@ export default function BuilderAccountsPage() {
   const [termFilter, setTermFilter] = useState('ALL')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [pmFilter, setPmFilter] = useState<string>('')
+  const [pms, setPms] = useState<{ id: string; firstName: string; lastName: string }[]>([])
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [refreshTick, setRefreshTick] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/ops/pm/roster')
+      .then((r) => r.json())
+      .then((d) => setPms(d.data || d.pms || []))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -72,6 +81,7 @@ export default function BuilderAccountsPage() {
         if (termFilter !== 'ALL') params.append('paymentTerm', termFilter)
         if (dateFrom) params.append('dateFrom', dateFrom)
         if (dateTo) params.append('dateTo', dateTo)
+        if (pmFilter) params.append('pmId', pmFilter)
         params.append('sortBy', sortBy)
         params.append('sortDir', sortDir)
         params.append('page', page.toString())
@@ -93,7 +103,7 @@ export default function BuilderAccountsPage() {
       }
     }
     load()
-  }, [search, statusFilter, termFilter, dateFrom, dateTo, sortBy, sortDir, page])
+  }, [search, statusFilter, termFilter, dateFrom, dateTo, pmFilter, sortBy, sortDir, page])
 
   const toggleSort = (key: string) => {
     if (sortBy === key) {
@@ -222,6 +232,19 @@ export default function BuilderAccountsPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <label className="label mb-0 whitespace-nowrap">PM</label>
+            <select
+              value={pmFilter}
+              onChange={(e) => { setPmFilter(e.target.value); setPage(1) }}
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            >
+              <option value="">All PMs</option>
+              {pms.map((pm) => (
+                <option key={pm.id} value={pm.id}>
+                  {pm.firstName} {pm.lastName}
+                </option>
+              ))}
+            </select>
             <label className="label mb-0 whitespace-nowrap">From</label>
             <input
               type="date"
@@ -272,6 +295,7 @@ export default function BuilderAccountsPage() {
                 setTermFilter('ALL')
                 setDateFrom('')
                 setDateTo('')
+                setPmFilter('')
                 setPage(1)
               },
             }}

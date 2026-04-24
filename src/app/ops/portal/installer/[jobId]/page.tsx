@@ -279,9 +279,9 @@ export default function InstallerJobDetailPage() {
   if (loading) {
     return (
       <div className="space-y-3 pb-20">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton variant="blueprint" className="h-10 w-48" />
+        <Skeleton variant="blueprint" className="h-40 w-full" />
+        <Skeleton variant="blueprint" className="h-64 w-full" />
       </div>
     )
   }

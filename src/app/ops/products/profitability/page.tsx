@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Package } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
+import { Badge } from '@/components/ui/Badge'
 
 interface ProductProfitScore {
   productId: string
@@ -32,6 +33,28 @@ interface ProductProfitScore {
   trendDirection: 'UP' | 'FLAT' | 'DOWN'
   onHand: number
   flags: string[]
+  /** Optional — present once the API surfaces it. PHYSICAL | LABOR | SERVICE | OVERHEAD */
+  productType?: string
+}
+
+// Mirrors the migration backfill rule in scripts/_apply-bugfix-migration.mjs.
+// Used as a client-side fallback when the API doesn't yet expose productType,
+// so the "exclude labor" filter still works for the ~102 labor products.
+function isLaborProduct(p: ProductProfitScore): boolean {
+  if (p.productType) return p.productType === 'LABOR'
+  const name = (p.name || '').toLowerCase()
+  const cat = (p.category || '').toLowerCase()
+  return (
+    name.includes('labor') ||
+    name.includes('install') ||
+    cat.includes('labor') ||
+    cat.includes('install') ||
+    cat.includes('service')
+  )
+}
+
+function hasMissingCost(p: ProductProfitScore): boolean {
+  return p.cost == null || p.cost <= 0
 }
 
 interface ProfitabilitySummary {
@@ -76,6 +99,13 @@ export default function ProductProfitabilityPage() {
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null)
   const [categories, setCategories] = useState<string[]>([])
   const [hideNoCost, setHideNoCost] = useState(false)
+  // Cost-filter toggle: ALL | HAS_COST | MISSING_COST
+  const [costFilter, setCostFilter] = useState<'ALL' | 'HAS_COST' | 'MISSING_COST'>('ALL')
+  // Default off — labor products are expected to have null cost, exclude them
+  // from the missing-cost view unless the user opts in.
+  const [includeLabor, setIncludeLabor] = useState(false)
+  // When true, products with missing cost are bubbled to the top regardless of sortBy
+  const [missingCostFirst, setMissingCostFirst] = useState(false)
 
   // Load data
   useEffect(() => {
@@ -110,7 +140,17 @@ export default function ProductProfitabilityPage() {
     if (categoryFilter !== 'ALL' && p.category !== categoryFilter) return false
     if (gradeFilter !== 'ALL' && p.grade !== gradeFilter) return false
     if (flagFilter !== 'ALL' && !p.flags.includes(flagFilter)) return false
-    if (hideNoCost && (p.cost ?? 0) <= 0) return false
+    if (hideNoCost && hasMissingCost(p)) return false
+
+    // Cost filter — three-state toggle
+    const missing = hasMissingCost(p)
+    if (costFilter === 'HAS_COST' && missing) return false
+    if (costFilter === 'MISSING_COST') {
+      if (!missing) return false
+      // Labor products legitimately have null cost; exclude unless opted in
+      if (!includeLabor && isLaborProduct(p)) return false
+    }
+
     return true
   })
 
@@ -131,6 +171,11 @@ export default function ProductProfitabilityPage() {
   }
 
   filtered.sort((a, b) => {
+    if (missingCostFirst) {
+      const aMissing = hasMissingCost(a) ? 1 : 0
+      const bMissing = hasMissingCost(b) ? 1 : 0
+      if (aMissing !== bMissing) return bMissing - aMissing // missing first
+    }
     const aVal = getSortVal(a)
     const bVal = getSortVal(b)
     if (sortDir === 'asc') return aVal - bVal
@@ -154,6 +199,77 @@ export default function ProductProfitabilityPage() {
     }
   }
 
+  // ── Missing-cost summary (excludes labor by default to match the filter
+  //    semantics — labor products legitimately lack a cost)
+  const totalForCostStats = products.length
+  const missingCostNonLabor = products.filter(
+    p => hasMissingCost(p) && !isLaborProduct(p)
+  ).length
+  const missingCostLabor = products.filter(
+    p => hasMissingCost(p) && isLaborProduct(p)
+  ).length
+  const missingCostTotal = missingCostNonLabor + missingCostLabor
+  const missingCostCount = includeLabor ? missingCostTotal : missingCostNonLabor
+  const missingCostPct = totalForCostStats > 0
+    ? Math.round((missingCostCount / totalForCostStats) * 100)
+    : 0
+
+  // ── CSV export — only the rows that match the current "missing cost" definition
+  const escapeCsv = (val: string | number | null | undefined): string => {
+    if (val == null) return ''
+    const s = String(val)
+    if (/[",\n\r]/.test(s)) {
+      return `"${s.replace(/"/g, '""')}"`
+    }
+    return s
+  }
+
+  const exportMissingCostCsv = () => {
+    const rows = products.filter(p => {
+      if (!hasMissingCost(p)) return false
+      if (!includeLabor && isLaborProduct(p)) return false
+      return true
+    })
+    const headers = [
+      'SKU',
+      'Name',
+      'Category',
+      'Product Type',
+      'Base Price',
+      'Cost',
+      'Grade',
+      'On Hand',
+      'Units 12mo',
+      'Revenue 12mo',
+    ]
+    const lines = [headers.join(',')]
+    for (const p of rows) {
+      lines.push([
+        escapeCsv(p.sku),
+        escapeCsv(p.name),
+        escapeCsv(p.category),
+        escapeCsv(p.productType ?? (isLaborProduct(p) ? 'LABOR (inferred)' : 'PHYSICAL (inferred)')),
+        escapeCsv(p.basePrice),
+        escapeCsv(p.cost ?? 0),
+        escapeCsv(p.grade),
+        escapeCsv(p.onHand),
+        escapeCsv(p.unitsSold12mo),
+        escapeCsv(p.revenue12mo),
+      ].join(','))
+    }
+    const csv = lines.join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const date = new Date().toISOString().split('T')[0]
+    a.href = url
+    a.download = `missing-cost-products-${date}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -175,12 +291,19 @@ export default function ProductProfitabilityPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex items-start justify-between gap-4">
           <PageHeader
             title="Product Profitability"
             description="A-F grades across margin, revenue, volume, and trend"
             className="mb-0"
           />
+          {missingCostTotal > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="danger" size="sm">
+                {missingCostCount} of {totalForCostStats} missing cost ({missingCostPct}%)
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
 
@@ -370,6 +493,65 @@ export default function ProductProfitabilityPage() {
               </div>
             </div>
           </div>
+
+          {/* Row 2 — Cost filter, sort toggle, labor sub-filter, CSV export */}
+          <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-600 uppercase">Cost</span>
+              <div className="inline-flex rounded border border-gray-300 overflow-hidden text-sm">
+                {(['ALL', 'HAS_COST', 'MISSING_COST'] as const).map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setCostFilter(opt)}
+                    className={`px-3 py-1.5 transition-colors ${
+                      costFilter === opt
+                        ? 'bg-brand text-white font-semibold'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {opt === 'ALL' ? 'All' : opt === 'HAS_COST' ? 'Has Cost' : 'Missing Cost'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={missingCostFirst}
+                onChange={e => setMissingCostFirst(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Sort by missing cost first
+            </label>
+
+            {costFilter === 'MISSING_COST' && (
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeLabor}
+                  onChange={e => setIncludeLabor(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                Include labor products
+                <span className="text-xs text-gray-500">
+                  ({missingCostLabor} labor)
+                </span>
+              </label>
+            )}
+
+            <div className="ml-auto">
+              <button
+                type="button"
+                onClick={exportMissingCostCsv}
+                disabled={missingCostCount === 0}
+                className="px-3 py-1.5 text-sm font-semibold rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Export missing-cost products ({missingCostCount})
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -451,8 +633,15 @@ export default function ProductProfitabilityPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3 text-right">{formatCurrency(product.basePrice)}</td>
-                      <td className={`px-3 py-3 text-right ${product.cost <= 0 ? 'text-warning-600 italic' : ''}`}>
-                        {product.cost > 0 ? formatCurrency(product.cost) : '—'}
+                      <td className={`px-3 py-3 text-right ${hasMissingCost(product) ? 'text-warning-600 italic' : ''}`}>
+                        {hasMissingCost(product) ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <Badge variant="danger" size="xs">Cost Missing</Badge>
+                            <span>—</span>
+                          </div>
+                        ) : (
+                          formatCurrency(product.cost)
+                        )}
                       </td>
                       <td className={`px-3 py-3 text-right font-semibold ${
                         product.marginDollar < 0 ? 'text-danger-600' :

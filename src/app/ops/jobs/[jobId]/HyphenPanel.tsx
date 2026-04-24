@@ -241,10 +241,10 @@ function LoadingBody() {
       aria-label="Loading Hyphen sync data"
       className="grid grid-cols-1 md:grid-cols-2 gap-3"
     >
-      <Skeleton height="h-24" rounded="md" />
-      <Skeleton height="h-24" rounded="md" />
-      <Skeleton height="h-24" rounded="md" />
-      <Skeleton height="h-24" rounded="md" />
+      <Skeleton variant="blueprint" height="h-24" rounded="md" />
+      <Skeleton variant="blueprint" height="h-24" rounded="md" />
+      <Skeleton variant="blueprint" height="h-24" rounded="md" />
+      <Skeleton variant="blueprint" height="h-24" rounded="md" />
     </div>
   )
 }

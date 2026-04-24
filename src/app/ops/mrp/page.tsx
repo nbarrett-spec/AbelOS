@@ -570,6 +570,10 @@ function StockoutsTab({
         />
       </div>
 
+      <div className="text-[11px] text-fg-subtle">
+        Labor and service items are excluded from MRP suggestions.
+      </div>
+
       <DataTable
         data={rows}
         rowKey={(r) => r.productId}

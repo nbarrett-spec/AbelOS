@@ -1,11 +1,30 @@
 'use client'
 
+// ──────────────────────────────────────────────────────────────────────────
+// Catalog Management — Categories + Suppliers
+//
+// Migration screen behavior:
+//   • This page is gated by `migrationRequired` from /api/ops/product-categories
+//     and /api/ops/suppliers. Either API will set the flag if its underlying
+//     table doesn't exist (Postgres relation-not-found error).
+//   • The Run Migration button posts to /api/ops/migrate/product-expansion,
+//     which executes idempotent CREATE TABLE IF NOT EXISTS / INSERT ... ON
+//     CONFLICT DO NOTHING SQL. Safe to re-run; existing tables are skipped.
+//   • Once the tables exist (in Prisma schema as ProductCategory, Supplier,
+//     SupplierProduct since 2026-04 — see prisma/schema.prisma:5046+/5539+),
+//     the GET endpoints will return data and `migrationRequired` will be
+//     undefined, which lets the normal UI render.
+//   • DO NOT auto-run on render — this stays behind the explicit button so
+//     the orchestrator/Nate decides when to apply on prod.
+// ──────────────────────────────────────────────────────────────────────────
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Package } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
+import Sheet from '@/components/ui/Sheet'
 
 interface Category {
   id: string
@@ -32,17 +51,28 @@ interface Supplier {
   email: string | null
   phone: string | null
   website: string | null
+  address?: string | null
   city: string | null
   state: string | null
+  zip?: string | null
   categories: string[]
   paymentTerms: string
   leadTimeDays: number
   minOrderAmount: number
+  freightPolicy?: string | null
   qualityRating: number
   onTimeRate: number
   active: boolean
   notes: string | null
   productCount: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface MigrationResultRow {
+  name: string
+  status: 'ok' | 'error'
+  error?: string
 }
 
 type Tab = 'categories' | 'suppliers'
@@ -55,9 +85,20 @@ export default function CatalogManagementPage() {
   const [supplierStats, setSupplierStats] = useState({ total: 0, activeCount: 0, manufacturers: 0, distributors: 0 })
   const [loading, setLoading] = useState(true)
   const [migrationRequired, setMigrationRequired] = useState(false)
+  const [migrationRunning, setMigrationRunning] = useState(false)
+  const [migrationResults, setMigrationResults] = useState<MigrationResultRow[] | null>(null)
+  const [migrationSummary, setMigrationSummary] = useState<string>('')
+  const [migrationFailed, setMigrationFailed] = useState(false)
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
   const [supplierSearch, setSupplierSearch] = useState('')
   const [supplierType, setSupplierType] = useState('')
+
+  // Detail-panel state — opens a right-side Sheet with full record data.
+  // Sheet component handles viewport positioning, escape-to-close, and
+  // backdrop click. No custom absolute/fixed offsets — fixes the offscreen
+  // bug seen on legacy product/supplier card click handlers.
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
 
   // New category form
   const [showNewCat, setShowNewCat] = useState(false)
@@ -173,24 +214,42 @@ export default function CatalogManagementPage() {
   }
 
   async function runMigration() {
-    if (!confirm('This will create ProductCategory, Supplier, and SupplierProduct tables. Continue?')) return
+    if (migrationRunning) return
+    if (!confirm('This will create ProductCategory, Supplier, SupplierProduct, and BuilderApplication tables (idempotent — safe to re-run). Continue?')) return
+    setMigrationRunning(true)
+    setMigrationResults(null)
+    setMigrationSummary('')
+    setMigrationFailed(false)
     try {
       const resp = await fetch('/api/ops/migrate/product-expansion', { method: 'POST' })
       const data = await resp.json()
-      if (data.success) {
-        addToast({ type: 'success', title: 'Migration complete', message: data.message })
+      const results: MigrationResultRow[] = Array.isArray(data?.results) ? data.results : []
+      setMigrationResults(results)
+      setMigrationSummary(data?.message || '')
+      if (data?.success) {
+        setMigrationFailed(false)
+        addToast({ type: 'success', title: 'Migration complete', message: data.message || 'All steps applied' })
+        // Re-check whether tables exist now. If so, drop the migration screen.
         setMigrationRequired(false)
         loadCategories()
         loadSuppliers()
       } else {
-        addToast({ type: 'error', title: 'Migration failed', message: data.message })
+        setMigrationFailed(true)
+        addToast({ type: 'error', title: 'Migration failed', message: data?.message || 'See detail list below' })
       }
     } catch (err) {
-      addToast({ type: 'error', title: 'Error', message: 'Migration failed' })
+      setMigrationFailed(true)
+      addToast({ type: 'error', title: 'Error', message: 'Migration request failed (network or auth)' })
+    } finally {
+      setMigrationRunning(false)
     }
   }
 
   // ── MIGRATION REQUIRED STATE ──
+  // Shows when either /api/ops/product-categories or /api/ops/suppliers
+  // returned `migrationRequired: true` (table missing in Postgres).
+  // The button POSTs to /api/ops/migrate/product-expansion which is
+  // idempotent (CREATE TABLE IF NOT EXISTS / ON CONFLICT DO NOTHING).
   if (migrationRequired) {
     return (
       <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
@@ -202,23 +261,81 @@ export default function CatalogManagementPage() {
             borderWidth: 2, borderStyle: 'dashed', textAlign: 'center',
           }}
         >
-          <p style={{ fontSize: 48, marginBottom: 12 }}>🔧</p>
+          <p style={{ fontSize: 48, marginBottom: 12 }} aria-hidden>🔧</p>
           <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1f2937', marginBottom: 8 }}>Product Expansion Migration Required</h2>
           <p style={{ fontSize: 14, color: '#6b7280', maxWidth: 500, margin: '0 auto 24px' }}>
-            The ProductCategory and Supplier tables haven&apos;t been created yet.
+            The <code style={{ fontFamily: 'monospace', backgroundColor: '#f3f4f6', padding: '1px 6px', borderRadius: 4 }}>ProductCategory</code> and{' '}
+            <code style={{ fontFamily: 'monospace', backgroundColor: '#f3f4f6', padding: '1px 6px', borderRadius: 4 }}>Supplier</code> tables haven&apos;t been created yet.
             Run the product expansion migration to set up categories, suppliers, and the builder application system.
+            This operation is idempotent and safe to re-run.
           </p>
           <button
             onClick={runMigration}
+            disabled={migrationRunning}
             className="bg-signal"
+            aria-busy={migrationRunning}
             style={{
               padding: '12px 32px', borderRadius: 12,
-              color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              color: 'white', border: 'none', fontSize: 15, fontWeight: 600,
+              cursor: migrationRunning ? 'wait' : 'pointer',
+              opacity: migrationRunning ? 0.7 : 1,
+              display: 'inline-flex', alignItems: 'center', gap: 10,
             }}
           >
-            Run Product Expansion Migration
+            {migrationRunning && (
+              <span
+                aria-hidden
+                style={{
+                  width: 14, height: 14, borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.5)', borderTopColor: 'white',
+                  animation: 'spin 0.8s linear infinite', display: 'inline-block',
+                }}
+              />
+            )}
+            {migrationRunning ? 'Running migration…' : 'Run Product Expansion Migration'}
           </button>
+
+          {migrationResults && migrationResults.length > 0 && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                marginTop: 28, textAlign: 'left',
+                backgroundColor: migrationFailed ? '#FEF2F2' : '#F0FDF4',
+                border: `1px solid ${migrationFailed ? '#FECACA' : '#BBF7D0'}`,
+                borderRadius: 10, padding: 16,
+              }}
+            >
+              <p style={{ fontSize: 13, fontWeight: 600, color: migrationFailed ? '#991B1B' : '#166534', marginBottom: 8 }}>
+                {migrationSummary || (migrationFailed ? 'Migration failed' : 'Migration complete')}
+              </p>
+              <ul style={{ fontSize: 12, fontFamily: 'monospace', maxHeight: 240, overflowY: 'auto', listStyle: 'none', padding: 0, margin: 0 }}>
+                {migrationResults.map((r, idx) => (
+                  <li
+                    key={`${r.name}-${idx}`}
+                    style={{
+                      padding: '4px 0',
+                      color: r.status === 'ok' ? '#15803D' : '#B91C1C',
+                      borderBottom: idx < migrationResults.length - 1 ? '1px dashed rgba(0,0,0,0.06)' : 'none',
+                      display: 'flex', justifyContent: 'space-between', gap: 12,
+                    }}
+                  >
+                    <span>{r.status === 'ok' ? '✓' : '✗'} {r.name}</span>
+                    {r.error && <span style={{ color: '#9CA3AF', fontSize: 11 }}>{r.error}</span>}
+                  </li>
+                ))}
+              </ul>
+              {!migrationFailed && (
+                <p style={{ fontSize: 12, color: '#166534', marginTop: 12 }}>
+                  Catalog will load momentarily…
+                </p>
+              )}
+            </div>
+          )}
         </div>
+        <style jsx>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
       </div>
     )
   }
@@ -334,18 +451,39 @@ export default function CatalogManagementPage() {
                           <span style={{ fontSize: 16, color: '#9ca3af', transform: expandedCat === cat.id ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform 0.2s' }}>▼</span>
                         </div>
                       )}
+                      <button
+                        onClick={e => { e.stopPropagation(); setSelectedCategory(cat) }}
+                        style={{
+                          padding: '6px 12px', borderRadius: 6, border: '1px solid #e5e7eb',
+                          backgroundColor: 'white', color: '#374151', fontSize: 12, fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                        aria-label={`View details for ${cat.name}`}
+                      >
+                        Details
+                      </button>
                     </div>
                   </div>
 
-                  {/* Sub-categories */}
+                  {/* Sub-categories — clickable to open detail Sheet */}
                   {expandedCat === cat.id && cat.children && cat.children.length > 0 && (
                     <div style={{ borderTop: '1px solid #f3f4f6', padding: '8px 20px 16px 56px' }}>
                       {cat.children.map(sub => (
-                        <div key={sub.id} style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          padding: '10px 16px', borderRadius: 8, marginTop: 4,
-                          backgroundColor: '#f9fafb',
-                        }}>
+                        <div
+                          key={sub.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedCategory(sub)}
+                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedCategory(sub) } }}
+                          style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '10px 16px', borderRadius: 8, marginTop: 4,
+                            backgroundColor: '#f9fafb', cursor: 'pointer',
+                            transition: 'background-color 150ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f3f4f6' }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f9fafb' }}
+                        >
                           <div>
                             <p style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>{sub.name}</p>
                             <p style={{ fontSize: 12, color: '#9ca3af' }}>{sub.description}</p>
@@ -410,12 +548,23 @@ export default function CatalogManagementPage() {
             </button>
           </div>
 
-          {/* Supplier Cards */}
+          {/* Supplier Cards — click to open detail Sheet (right-side slide-over,
+              viewport-anchored, no offscreen positioning issues) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 12 }}>
             {suppliers.map(sup => (
-              <div key={sup.id} style={{
-                padding: 20, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb',
-              }}>
+              <div
+                key={sup.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedSupplier(sup)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedSupplier(sup) } }}
+                style={{
+                  padding: 20, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb',
+                  cursor: 'pointer', transition: 'border-color 150ms, box-shadow 150ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#C6A24E' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb' }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div>
                     <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1f2937' }}>{sup.name}</h3>
@@ -597,6 +746,193 @@ export default function CatalogManagementPage() {
           </div>
         </div>
       )}
+
+      {/* ═══ SUPPLIER DETAIL SHEET ═══
+          Right-side slide-over via shared Sheet component (fixed inset-0 with
+          right-aligned panel — always within viewport regardless of where the
+          user clicked). Replaces the prior ad-hoc detail panes that could
+          render offscreen. Shows full Supplier record fields. */}
+      <Sheet
+        open={!!selectedSupplier}
+        onClose={() => setSelectedSupplier(null)}
+        title={selectedSupplier?.name}
+        subtitle={selectedSupplier ? `${selectedSupplier.type} · ${selectedSupplier.code}` : undefined}
+        tabs={['details', 'raw']}
+        raw={selectedSupplier ?? undefined}
+        width="default"
+      >
+        {selectedSupplier && (
+          <div className="space-y-4">
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{
+                padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+                backgroundColor: selectedSupplier.type === 'MANUFACTURER' ? '#FEF3C7' : '#EBF5FF',
+                color: selectedSupplier.type === 'MANUFACTURER' ? '#92400E' : '#0f2a3e',
+              }}>{selectedSupplier.type}</span>
+              <span style={{
+                padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+                backgroundColor: selectedSupplier.active ? '#DCFCE7' : '#FEE2E2',
+                color: selectedSupplier.active ? '#166534' : '#991B1B',
+              }}>{selectedSupplier.active ? 'Active' : 'Inactive'}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#6b7280', backgroundColor: '#f3f4f6', padding: '3px 8px', borderRadius: 4 }}>
+                {selectedSupplier.code}
+              </span>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Contact</h4>
+              <dl style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px 12px', fontSize: 13 }}>
+                <dt style={{ color: '#6b7280' }}>Contact Name</dt>
+                <dd style={{ color: '#111827' }}>{selectedSupplier.contactName || '—'}</dd>
+                <dt style={{ color: '#6b7280' }}>Email</dt>
+                <dd style={{ color: '#111827' }}>
+                  {selectedSupplier.email ? (
+                    <a href={`mailto:${selectedSupplier.email}`} style={{ color: '#0f2a3e', textDecoration: 'underline' }}>{selectedSupplier.email}</a>
+                  ) : '—'}
+                </dd>
+                <dt style={{ color: '#6b7280' }}>Phone</dt>
+                <dd style={{ color: '#111827' }}>
+                  {selectedSupplier.phone ? (
+                    <a href={`tel:${selectedSupplier.phone}`} style={{ color: '#0f2a3e', textDecoration: 'underline' }}>{selectedSupplier.phone}</a>
+                  ) : '—'}
+                </dd>
+                <dt style={{ color: '#6b7280' }}>Website</dt>
+                <dd style={{ color: '#111827' }}>
+                  {selectedSupplier.website ? (
+                    <a href={selectedSupplier.website} target="_blank" rel="noreferrer" style={{ color: '#0f2a3e', textDecoration: 'underline' }}>{selectedSupplier.website}</a>
+                  ) : '—'}
+                </dd>
+              </dl>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Address</h4>
+              <dl style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '6px 12px', fontSize: 13 }}>
+                <dt style={{ color: '#6b7280' }}>Street</dt>
+                <dd style={{ color: '#111827' }}>{selectedSupplier.address || '—'}</dd>
+                <dt style={{ color: '#6b7280' }}>City / State</dt>
+                <dd style={{ color: '#111827' }}>
+                  {[selectedSupplier.city, selectedSupplier.state].filter(Boolean).join(', ') || '—'}
+                </dd>
+                <dt style={{ color: '#6b7280' }}>ZIP</dt>
+                <dd style={{ color: '#111827' }}>{selectedSupplier.zip || '—'}</dd>
+              </dl>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Categories Served</h4>
+              {selectedSupplier.categories && selectedSupplier.categories.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {selectedSupplier.categories.map(c => (
+                    <span key={c} style={{
+                      padding: '3px 10px', borderRadius: 99, fontSize: 11,
+                      backgroundColor: '#f3f4f6', color: '#374151',
+                    }}>{c}</span>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: 13, color: '#9ca3af' }}>No categories listed</p>
+              )}
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Commercial Terms</h4>
+              <dl style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '6px 12px', fontSize: 13 }}>
+                <dt style={{ color: '#6b7280' }}>Payment Terms</dt>
+                <dd style={{ color: '#111827', fontWeight: 500 }}>{selectedSupplier.paymentTerms || 'NET_30'}</dd>
+                <dt style={{ color: '#6b7280' }}>Lead Time</dt>
+                <dd style={{ color: '#111827' }}>{selectedSupplier.leadTimeDays ?? 14} days</dd>
+                <dt style={{ color: '#6b7280' }}>Min Order</dt>
+                <dd style={{ color: '#111827' }}>
+                  {typeof selectedSupplier.minOrderAmount === 'number' && selectedSupplier.minOrderAmount > 0
+                    ? `$${selectedSupplier.minOrderAmount.toLocaleString()}`
+                    : '—'}
+                </dd>
+                <dt style={{ color: '#6b7280' }}>Freight Policy</dt>
+                <dd style={{ color: '#111827' }}>{selectedSupplier.freightPolicy || '—'}</dd>
+              </dl>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Performance</h4>
+              <dl style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '6px 12px', fontSize: 13 }}>
+                <dt style={{ color: '#6b7280' }}>Quality Rating</dt>
+                <dd style={{ color: '#111827' }}>
+                  {typeof selectedSupplier.qualityRating === 'number' && selectedSupplier.qualityRating > 0
+                    ? `${selectedSupplier.qualityRating.toFixed(2)} / 5.00`
+                    : 'Not rated'}
+                </dd>
+                <dt style={{ color: '#6b7280' }}>On-Time Rate</dt>
+                <dd style={{ color: '#111827' }}>
+                  {typeof selectedSupplier.onTimeRate === 'number' && selectedSupplier.onTimeRate > 0
+                    ? `${(selectedSupplier.onTimeRate * 100).toFixed(0)}%`
+                    : 'No history'}
+                </dd>
+                <dt style={{ color: '#6b7280' }}>Linked Products</dt>
+                <dd style={{ color: '#111827', fontWeight: 600 }}>{selectedSupplier.productCount}</dd>
+              </dl>
+            </div>
+
+            {selectedSupplier.notes && (
+              <div>
+                <h4 style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Notes</h4>
+                <p style={{ fontSize: 13, color: '#374151', backgroundColor: '#f9fafb', padding: 12, borderRadius: 8, fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
+                  {selectedSupplier.notes}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Sheet>
+
+      {/* ═══ CATEGORY DETAIL SHEET ═══ */}
+      <Sheet
+        open={!!selectedCategory}
+        onClose={() => setSelectedCategory(null)}
+        title={selectedCategory?.name}
+        subtitle={selectedCategory ? `Slug: ${selectedCategory.slug}` : undefined}
+        tabs={['details', 'raw']}
+        raw={selectedCategory ?? undefined}
+        width="default"
+      >
+        {selectedCategory && (
+          <div className="space-y-4">
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{
+                padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+                backgroundColor: selectedCategory.active ? '#DCFCE7' : '#FEE2E2',
+                color: selectedCategory.active ? '#166534' : '#991B1B',
+              }}>{selectedCategory.active ? 'Active' : 'Inactive'}</span>
+              {selectedCategory.parentName && (
+                <span style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, backgroundColor: '#f3f4f6', color: '#374151' }}>
+                  Parent: {selectedCategory.parentName}
+                </span>
+              )}
+            </div>
+
+            <dl style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '6px 12px', fontSize: 13 }}>
+              <dt style={{ color: '#6b7280' }}>Description</dt>
+              <dd style={{ color: '#111827' }}>{selectedCategory.description || '—'}</dd>
+              <dt style={{ color: '#6b7280' }}>Icon</dt>
+              <dd style={{ color: '#111827', fontSize: 18 }}>{selectedCategory.icon || '—'}</dd>
+              <dt style={{ color: '#6b7280' }}>Sort Order</dt>
+              <dd style={{ color: '#111827' }}>{selectedCategory.sortOrder}</dd>
+              <dt style={{ color: '#6b7280' }}>Target Margin</dt>
+              <dd style={{ color: '#10B981', fontWeight: 600 }}>
+                {Math.round((selectedCategory.marginTarget || 0.35) * 100)}%
+              </dd>
+              <dt style={{ color: '#6b7280' }}>Live Products</dt>
+              <dd style={{ color: '#111827', fontWeight: 600 }}>{selectedCategory.liveProductCount || 0}</dd>
+              {selectedCategory.children && selectedCategory.children.length > 0 && (
+                <>
+                  <dt style={{ color: '#6b7280' }}>Sub-categories</dt>
+                  <dd style={{ color: '#111827' }}>{selectedCategory.children.length}</dd>
+                </>
+              )}
+            </dl>
+          </div>
+        )}
+      </Sheet>
     </div>
   )
 }

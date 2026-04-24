@@ -85,9 +85,9 @@ export default function InstallerSchedulePage() {
 
       {loading ? (
         <div className="space-y-3">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
+          <Skeleton variant="blueprint" className="h-24 w-full" />
+          <Skeleton variant="blueprint" className="h-24 w-full" />
+          <Skeleton variant="blueprint" className="h-24 w-full" />
         </div>
       ) : error ? (
         <EmptyState title="Schedule unavailable" description={error} />

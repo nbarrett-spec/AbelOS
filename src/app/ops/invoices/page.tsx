@@ -199,6 +199,21 @@ export default function InvoicesPage() {
         actions={
           <>
             <button
+              onClick={() => {
+                const params = new URLSearchParams()
+                params.set('format', 'csv')
+                if (statusFilter !== 'ALL') params.set('status', statusFilter)
+                if (dateFrom) params.set('dateFrom', dateFrom)
+                if (dateTo) params.set('dateTo', dateTo)
+                params.set('sortBy', sortBy)
+                params.set('sortDir', sortDir)
+                window.location.href = `/api/ops/invoices?${params.toString()}`
+              }}
+              className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-row-hover"
+            >
+              Export CSV
+            </button>
+            <button
               onClick={() => void 0 /* ECI Bolt import - coming soon */}
               className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-row-hover"
             >

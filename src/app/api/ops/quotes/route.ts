@@ -6,6 +6,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { recordQuoteActivity } from '@/lib/events/activity'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { toCsv } from '@/lib/csv'
 
 // GET /api/ops/quotes — List all quotes (ops-side, no builder auth required)
 export async function GET(request: NextRequest) {
@@ -32,12 +33,14 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams
+    const format = searchParams.get('format')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)))
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
+    const pmId = searchParams.get('pmId')
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortDir = searchParams.get('sortDir') || 'desc'
     const skip = (page - 1) * limit
@@ -72,6 +75,17 @@ export async function GET(request: NextRequest) {
       params.push(new Date(dateTo + 'T23:59:59.999Z').toISOString())
       idx++
     }
+    // PM filter — Quote ↔ Order(quoteId) ↔ Job(orderId).assignedPMId.
+    // EXISTS keeps the row-set distinct even when a quote has multiple jobs.
+    if (pmId) {
+      whereConditions.push(`EXISTS (
+        SELECT 1 FROM "Order" o2
+        JOIN "Job" j2 ON j2."orderId" = o2."id"
+        WHERE o2."quoteId" = q."id" AND j2."assignedPMId" = $${idx}
+      )`)
+      params.push(pmId)
+      idx++
+    }
 
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : ''
 
@@ -86,6 +100,61 @@ export async function GET(request: NextRequest) {
       project: `p."name" ${dir}`,
     }
     const orderByClause = sortMap[sortBy] || `q."createdAt" ${dir}`
+
+    // CSV export — same filters, no pagination (cap at 5000), columns specified
+    // by BUGFIX-HANDOFF 6.1. Returned before the count/list path so the heavy
+    // pagination query is skipped.
+    if (format === 'csv') {
+      const csvQuery = `
+        SELECT
+          q."quoteNumber",
+          q."status"::text AS "status",
+          q."total",
+          q."createdAt",
+          q."validUntil",
+          b."companyName" AS "builder",
+          (SELECT COUNT(*)::int FROM "QuoteItem" qi WHERE qi."quoteId" = q."id") AS "linesCount",
+          (SELECT o."orderNumber" FROM "Order" o WHERE o."quoteId" = q."id" LIMIT 1) AS "convertedOrderNumber"
+        FROM "Quote" q
+        JOIN "Project" p ON q."projectId" = p."id"
+        JOIN "Builder" b ON p."builderId" = b."id"
+        ${whereClause}
+        ORDER BY ${orderByClause}
+        LIMIT 5000
+      `
+      const csvRows = await prisma.$queryRawUnsafe<any[]>(csvQuery, ...params)
+
+      const fmtDate = (d: any) => (d ? new Date(d).toISOString().split('T')[0] : '')
+      const rows = csvRows.map((r) => ({
+        quoteNumber: r.quoteNumber,
+        builder: r.builder ?? '',
+        status: r.status,
+        total: r.total != null ? Number(r.total).toFixed(2) : '',
+        createdAt: fmtDate(r.createdAt),
+        expiresAt: fmtDate(r.validUntil),
+        linesCount: r.linesCount ?? 0,
+        convertedOrderNumber: r.convertedOrderNumber ?? '',
+      }))
+
+      const csv = toCsv(rows, [
+        { key: 'quoteNumber', label: 'Quote #' },
+        { key: 'builder', label: 'Builder' },
+        { key: 'status', label: 'Status' },
+        { key: 'total', label: 'Total' },
+        { key: 'createdAt', label: 'Created' },
+        { key: 'expiresAt', label: 'Expires' },
+        { key: 'linesCount', label: 'Line Items' },
+        { key: 'convertedOrderNumber', label: 'Order #' },
+      ])
+
+      const filename = `quotes-${new Date().toISOString().split('T')[0]}.csv`
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
 
     // Count total records
     const countQuery = `

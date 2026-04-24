@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { prisma } from '@/lib/prisma'
 import { runMrpProjection } from '@/lib/mrp'
 
 /**
@@ -9,6 +10,9 @@ import { runMrpProjection } from '@/lib/mrp'
  *
  * Returns only the products projected to go below safety stock within the horizon,
  * ordered by daysUntilStockout ascending.
+ *
+ * Labor / service / overhead products are excluded — MRP suggestions are only meaningful
+ * for physical inventory. This is a stricter filter than auto-po (no opt-back-in).
  *
  * Query params:
  *   ?horizonDays=90
@@ -30,6 +34,22 @@ export async function GET(request: NextRequest) {
     const projection = await runMrpProjection({ horizonDays, leadBufferDays })
 
     let stockouts = projection.products.filter((p) => p.stockoutDate !== null)
+
+    // Exclude labor / service / overhead products. PHYSICAL or NULL only.
+    if (stockouts.length > 0) {
+      const candidateIds = stockouts.map((p) => p.productId)
+      const physicalRows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `
+        SELECT "id"
+        FROM "Product"
+        WHERE "id" = ANY($1::text[])
+          AND ("productType" = 'PHYSICAL' OR "productType" IS NULL)
+        `,
+        candidateIds
+      )
+      const physicalSet = new Set(physicalRows.map((r) => r.id))
+      stockouts = stockouts.filter((p) => physicalSet.has(p.productId))
+    }
 
     if (vendorId) {
       stockouts = stockouts.filter((p) => p.preferredVendor?.vendorId === vendorId)

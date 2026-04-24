@@ -61,6 +61,12 @@ interface OrgOption {
   code: string
 }
 
+interface PmOption {
+  id: string
+  firstName: string
+  lastName: string
+}
+
 interface FormData {
   organizationId: string
   name: string
@@ -98,7 +104,16 @@ export default function CommunitiesPage() {
   const [orgOptions, setOrgOptions] = useState<OrgOption[]>([])
   const [divisionOptions, setDivisionOptions] = useState<Division[]>([])
   const [selectedDivisionFilter, setSelectedDivisionFilter] = useState('')
+  const [pmFilter, setPmFilter] = useState<string>('')
+  const [pms, setPms] = useState<PmOption[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/ops/pm/roster')
+      .then((r) => r.json())
+      .then((d) => setPms(d.pms || d.data || []))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -111,6 +126,9 @@ export default function CommunitiesPage() {
         }
         if (selectedDivisionFilter) {
           params.append('divisionId', selectedDivisionFilter)
+        }
+        if (pmFilter) {
+          params.append('pmId', pmFilter)
         }
         const response = await fetch(`/api/ops/communities?${params.toString()}`)
         if (!response.ok) {
@@ -127,7 +145,7 @@ export default function CommunitiesPage() {
 
     const debounceTimer = setTimeout(fetchCommunities, 300)
     return () => clearTimeout(debounceTimer)
-  }, [search, refreshKey, selectedDivisionFilter])
+  }, [search, refreshKey, selectedDivisionFilter, pmFilter])
 
   const router = useRouter()
 
@@ -299,6 +317,26 @@ export default function CommunitiesPage() {
             {divisionOptions.map((div) => (
               <option key={div.id} value={div.id}>
                 {div.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={pmFilter}
+            onChange={(e) => setPmFilter(e.target.value)}
+            style={{
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            }}
+          >
+            <option value="">All PMs</option>
+            {pms.map((pm) => (
+              <option key={pm.id} value={pm.id}>
+                {pm.firstName} {pm.lastName}
               </option>
             ))}
           </select>

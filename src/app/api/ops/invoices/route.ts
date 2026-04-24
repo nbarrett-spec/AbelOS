@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { toCsv } from '@/lib/csv'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const searchParams = request.nextUrl.searchParams
+    const format = searchParams.get('format')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const status = searchParams.get('status')
@@ -80,6 +82,61 @@ export async function GET(request: NextRequest) {
       createdAt: `i."createdAt" ${sortDir}`,
     }
     const orderClause = invSortMap[sortBy] || `i."createdAt" ${sortDir}`
+
+    // CSV export — same filters, no pagination (cap at 5000). Returned before
+    // the heavier paginated/aging path so the export is fast.
+    if (format === 'csv') {
+      const csvRows: any[] = await prisma.$queryRawUnsafe(`
+        SELECT i."invoiceNumber", b."companyName" AS "builderName",
+               i."status"::text AS "status",
+               i."paymentTerm"::text AS "paymentTerm",
+               i."total", i."amountPaid",
+               (i."total" - COALESCE(i."amountPaid",0))::float AS "balanceDue",
+               i."issuedAt", i."dueDate", i."paidAt", i."createdAt"
+        FROM "Invoice" i
+        LEFT JOIN "Builder" b ON b."id" = i."builderId"
+        ${whereClause}
+        ORDER BY ${orderClause}
+        LIMIT 5000
+      `, ...params)
+
+      const fmtDate = (d: any) => (d ? new Date(d).toISOString().split('T')[0] : '')
+      const rows = csvRows.map(r => ({
+        invoiceNumber: r.invoiceNumber,
+        builder: r.builderName ?? '',
+        status: r.status ?? '',
+        paymentTerm: r.paymentTerm ?? '',
+        total: r.total != null ? Number(r.total).toFixed(2) : '',
+        amountPaid: r.amountPaid != null ? Number(r.amountPaid).toFixed(2) : '',
+        balanceDue: r.balanceDue != null ? Number(r.balanceDue).toFixed(2) : '',
+        issuedAt: fmtDate(r.issuedAt),
+        dueDate: fmtDate(r.dueDate),
+        paidAt: fmtDate(r.paidAt),
+        createdAt: fmtDate(r.createdAt),
+      }))
+
+      const csv = toCsv(rows, [
+        { key: 'invoiceNumber', label: 'Invoice #' },
+        { key: 'builder', label: 'Builder' },
+        { key: 'status', label: 'Status' },
+        { key: 'paymentTerm', label: 'Payment Term' },
+        { key: 'total', label: 'Total' },
+        { key: 'amountPaid', label: 'Amount Paid' },
+        { key: 'balanceDue', label: 'Balance Due' },
+        { key: 'issuedAt', label: 'Issued' },
+        { key: 'dueDate', label: 'Due' },
+        { key: 'paidAt', label: 'Paid' },
+        { key: 'createdAt', label: 'Created' },
+      ])
+
+      const filename = `invoices-${new Date().toISOString().split('T')[0]}.csv`
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
 
     // Get invoices with builder info
     const invoices: any[] = await prisma.$queryRawUnsafe(`

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Printable Job Packet — Combined manufacturing document
@@ -32,6 +32,39 @@ interface BuildSheetData {
   }
 }
 
+// ── Job-queue row shape (subset of /api/ops/jobs response) ───────────────
+interface QueueJob {
+  id: string
+  jobNumber: string
+  builderName: string | null
+  community: string | null
+  jobAddress: string | null
+  scheduledDate: string | null
+  status: string
+  scopeType: string | null
+  jobType: string | null
+  assignedPMId: string | null
+  assignedPM?: { firstName?: string; lastName?: string } | null
+}
+
+interface PMOption {
+  id: string
+  firstName: string
+  lastName: string
+}
+
+// JobType → interior/exterior mapping. EXTERIOR covers final-front /
+// front-door scopes. Everything else (TRIM_*, DOORS, HARDWARE_*, etc.) is
+// treated as interior. CUSTOM/QC/PUNCH/WARRANTY remain unassigned and pass
+// every type filter except when a specific bucket is selected.
+const EXTERIOR_JOB_TYPES = new Set(['FINAL_FRONT', 'FINAL_FRONT_INSTALL'])
+const INTERIOR_JOB_TYPES = new Set([
+  'TRIM_1', 'TRIM_1_INSTALL',
+  'TRIM_2', 'TRIM_2_INSTALL',
+  'DOORS', 'DOOR_INSTALL',
+  'HARDWARE', 'HARDWARE_INSTALL',
+])
+
 export default function JobPacketPage() {
   const [jobId, setJobId] = useState('')
   const [jobSearch, setJobSearch] = useState('')
@@ -43,6 +76,15 @@ export default function JobPacketPage() {
   const [advancing, setAdvancing] = useState(false)
   const [advanceMessage, setAdvanceMessage] = useState('')
   const printRef = useRef<HTMLDivElement>(null)
+
+  // ── Job queue state (shown above the search bar) ──────────────────────
+  const [queueJobs, setQueueJobs] = useState<QueueJob[]>([])
+  const [queueLoading, setQueueLoading] = useState(false)
+  const [queueError, setQueueError] = useState('')
+  const [pms, setPms] = useState<PMOption[]>([])
+  const [typeFilter, setTypeFilter] = useState<'' | 'interior' | 'exterior'>('')
+  const [builderFilter, setBuilderFilter] = useState<string>('')
+  const [pmFilter, setPmFilter] = useState<string>('')
 
   const searchJobs = useCallback(async (q: string) => {
     if (!q || q.length < 2) { setSearchResults([]); return }
@@ -59,6 +101,59 @@ export default function JobPacketPage() {
     const t = setTimeout(() => searchJobs(jobSearch), 300)
     return () => clearTimeout(t)
   }, [jobSearch, searchJobs])
+
+  // Load PM list once for the filter dropdown.
+  useEffect(() => {
+    fetch('/api/ops/pm/roster')
+      .then(r => r.json())
+      .then(d => {
+        const list = (d.pms || d.data || []) as PMOption[]
+        setPms(list)
+      })
+      .catch(() => { /* silent — filter just won't populate */ })
+  }, [])
+
+  // Fetch the queue. Re-runs when builder or PM filter changes (server-side
+  // filters). Type filter is applied client-side so we don't refetch for it.
+  const fetchQueue = useCallback(async () => {
+    setQueueLoading(true)
+    setQueueError('')
+    try {
+      const params = new URLSearchParams({
+        status: 'MATERIALS_LOCKED,IN_PRODUCTION',
+        limit: '100',
+      })
+      if (builderFilter.trim()) params.set('builderName', builderFilter.trim())
+      if (pmFilter) params.set('assignedPMId', pmFilter)
+      const res = await fetch(`/api/ops/jobs?${params.toString()}`)
+      if (!res.ok) throw new Error('Failed to load job queue')
+      const d = await res.json()
+      setQueueJobs((d.data || []) as QueueJob[])
+    } catch (e: any) {
+      setQueueError(e?.message || 'Failed to load job queue')
+      setQueueJobs([])
+    } finally {
+      setQueueLoading(false)
+    }
+  }, [builderFilter, pmFilter])
+
+  useEffect(() => { fetchQueue() }, [fetchQueue])
+
+  // Apply client-side type filter and sort by scheduledDate ASC (nulls last).
+  const visibleQueueJobs = useMemo(() => {
+    const filtered = queueJobs.filter(j => {
+      if (!typeFilter) return true
+      const jt = (j.jobType || '').toUpperCase()
+      if (typeFilter === 'interior') return INTERIOR_JOB_TYPES.has(jt)
+      if (typeFilter === 'exterior') return EXTERIOR_JOB_TYPES.has(jt)
+      return true
+    })
+    return [...filtered].sort((a, b) => {
+      const ta = a.scheduledDate ? new Date(a.scheduledDate).getTime() : Number.POSITIVE_INFINITY
+      const tb = b.scheduledDate ? new Date(b.scheduledDate).getTime() : Number.POSITIVE_INFINITY
+      return ta - tb
+    })
+  }, [queueJobs, typeFilter])
 
   const loadData = async (id: string) => {
     setLoading(true); setError('')
@@ -133,11 +228,138 @@ export default function JobPacketPage() {
 
   // ── Job search (only shown before data loads, hidden in print) ──
   if (!data) {
+    const fmtSched = (d: string | null) => {
+      if (!d) return '—'
+      const dt = new Date(d)
+      if (Number.isNaN(dt.getTime())) return '—'
+      return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
     return (
-      <div style={{ maxWidth: 600, margin: '40px auto', padding: '0 20px' }}>
+      <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 20px' }}>
         <h1 className="text-fg" style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>🖨️ Print Job Packet</h1>
         <p className="text-fg-muted" style={{ fontSize: 13, marginBottom: 24 }}>Select a job to generate a printable pick list, build sheets, and delivery info</p>
         {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12, color: '#991B1B', marginBottom: 16 }}>{error}</div>}
+
+        {/* ── Job Queue (active manufacturing jobs) ─────────────────── */}
+        <div className="bg-surface border border-border" style={{ borderRadius: 12, padding: 20, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h2 className="text-fg" style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Active Manufacturing Jobs</h2>
+              <p className="text-fg-muted" style={{ fontSize: 12, margin: '2px 0 0' }}>
+                Materials Locked &amp; In Production — sorted by scheduled date
+              </p>
+            </div>
+            <button
+              onClick={fetchQueue}
+              className="border border-border bg-surface hover:bg-row-hover"
+              style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+            >
+              {queueLoading ? 'Loading…' : 'Refresh'}
+            </button>
+          </div>
+
+          {/* Filter row */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+            <select
+              value={typeFilter}
+              onChange={e => setTypeFilter(e.target.value as '' | 'interior' | 'exterior')}
+              className="border border-border bg-surface text-fg"
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13 }}
+            >
+              <option value="">All Types</option>
+              <option value="interior">Interior</option>
+              <option value="exterior">Exterior</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Filter by builder…"
+              value={builderFilter}
+              onChange={e => setBuilderFilter(e.target.value)}
+              className="border border-border bg-surface text-fg"
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13, minWidth: 200 }}
+            />
+            <select
+              value={pmFilter}
+              onChange={e => setPmFilter(e.target.value)}
+              className="border border-border bg-surface text-fg"
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13 }}
+            >
+              <option value="">All PMs</option>
+              {pms.map(pm => (
+                <option key={pm.id} value={pm.id}>
+                  {pm.firstName} {pm.lastName}
+                </option>
+              ))}
+            </select>
+            {(typeFilter || builderFilter || pmFilter) && (
+              <button
+                onClick={() => { setTypeFilter(''); setBuilderFilter(''); setPmFilter('') }}
+                className="text-fg-muted hover:text-fg"
+                style={{ padding: '8px 12px', borderRadius: 8, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {queueError && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 10, color: '#991B1B', fontSize: 12, marginBottom: 12 }}>
+              {queueError}
+            </div>
+          )}
+
+          <div className="border border-border" style={{ borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr className="bg-surface-muted text-fg-muted" style={{ textAlign: 'left' }}>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Job #</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Builder</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Community</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Address</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Scheduled</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Status</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queueLoading && visibleQueueJobs.length === 0 && (
+                  <tr><td colSpan={7} className="text-fg-muted" style={{ padding: 20, textAlign: 'center', fontSize: 13 }}>Loading queue…</td></tr>
+                )}
+                {!queueLoading && visibleQueueJobs.length === 0 && (
+                  <tr><td colSpan={7} className="text-fg-muted" style={{ padding: 20, textAlign: 'center', fontSize: 13 }}>
+                    No jobs match. Try clearing filters or use search below.
+                  </td></tr>
+                )}
+                {visibleQueueJobs.map((j, idx) => (
+                  <tr
+                    key={j.id}
+                    className="hover:bg-row-hover"
+                    style={{ borderTop: idx === 0 ? 'none' : '1px solid #F3F4F6' }}
+                  >
+                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{j.jobNumber}</td>
+                    <td style={{ padding: '10px 12px' }} className="text-fg">{j.builderName || '—'}</td>
+                    <td style={{ padding: '10px 12px' }} className="text-fg-muted">{j.community || '—'}</td>
+                    <td style={{ padding: '10px 12px' }} className="text-fg-muted">{j.jobAddress || '—'}</td>
+                    <td style={{ padding: '10px 12px' }} className="text-fg-muted">{fmtSched(j.scheduledDate)}</td>
+                    <td style={{ padding: '10px 12px', fontSize: 11 }} className="text-fg-muted">
+                      {j.status?.replace(/_/g, ' ')}
+                    </td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                      <button
+                        onClick={() => loadData(j.id)}
+                        style={{ padding: '6px 12px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Print Packet
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* ── Search bar (existing) ──────────────────────────────────── */}
         <input
           type="text"
           placeholder="Search by job number or builder..."

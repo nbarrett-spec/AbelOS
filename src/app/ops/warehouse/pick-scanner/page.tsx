@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Warehouse } from 'lucide-react'
+import { Warehouse, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import QRScanner from '@/components/ui/QRScanner'
 import { decodeTag } from '@/lib/qr-tags'
 import SopQuickAccess from '@/components/SopQuickAccess'
 import EmptyState from '@/components/ui/EmptyState'
+
+// Statuses the warehouse pick-scanner cares about. Kept as a single source
+// of truth so the API filter and the on-screen "Showing:" chip can't drift.
+const ACTIVE_PICK_STATUSES = ['MATERIALS_LOCKED', 'IN_PRODUCTION'] as const
 
 const PICK_STATUSES = [
   { key: 'PENDING', label: 'Pending', color: '#95A5A6' },
@@ -69,6 +73,15 @@ export default function PickScannerPage() {
   // Camera vs. HID-barcode/text fallback. Default to camera for phone use.
   const [scanMode, setScanMode] = useState<'camera' | 'text'>('camera')
 
+  // Manual job-number lookup (parallel path to QR scanning when camera fails)
+  const [jobLookupInput, setJobLookupInput] = useState('')
+  const [jobLookupError, setJobLookupError] = useState<string | null>(null)
+  const [jobLookupLoading, setJobLookupLoading] = useState(false)
+
+  // Camera initialization error surfaced from QRScanner — drives a banner so
+  // the scanner area never goes blank when getUserMedia rejects.
+  const [cameraError, setCameraError] = useState<string | null>(null)
+
   const scanInputRef = useRef<HTMLInputElement>(null)
   const verifyingRef = useRef(false)
 
@@ -127,8 +140,88 @@ export default function PickScannerPage() {
     setSkuFilter('')
     setError(null)
     setLastScanMessage(null)
+    setCameraError(null)
     fetchJobs()
   }
+
+  // ── Manual job lookup ─────────────────────────────────────────────────
+  // Parallel path to QR scanning: lets the picker type a job number and jump
+  // straight into the pick UI. Used when the camera is unavailable, when
+  // jobs aren't yet listed (e.g. just transitioned to MATERIALS_LOCKED), or
+  // for any picker who prefers keyboard entry.
+  const lookupJobByNumber = useCallback(
+    async (raw: string) => {
+      const trimmed = raw.trim()
+      if (!trimmed) return
+      setJobLookupError(null)
+      setJobLookupLoading(true)
+      try {
+        // Prefer matches already in the loaded list — same-tab navigation
+        // without an extra round-trip.
+        const local = jobs.find(
+          j => j.jobNumber.toLowerCase() === trimmed.toLowerCase()
+        )
+        if (local) {
+          await startPicking(local)
+          setJobLookupInput('')
+          return
+        }
+
+        // Fall back to the jobs API, scoped to active pick statuses.
+        const params = new URLSearchParams({
+          search: trimmed,
+          status: ACTIVE_PICK_STATUSES.join(','),
+          limit: '5',
+        })
+        const res = await fetch(`/api/ops/jobs?${params.toString()}`)
+        if (!res.ok) throw new Error(`Lookup failed (HTTP ${res.status})`)
+        const data = await res.json()
+        const jobsResult: any[] = data.jobs || data.data || []
+        const exact =
+          jobsResult.find(
+            (j: any) =>
+              (j.jobNumber || '').toLowerCase() === trimmed.toLowerCase()
+          ) || jobsResult[0]
+
+        if (!exact) {
+          setJobLookupError(
+            `No active pick job matches "${trimmed}". Job must be MATERIALS_LOCKED or IN_PRODUCTION.`
+          )
+          return
+        }
+
+        // Hydrate a ReadyJob shape good enough for the pick UI; counts will
+        // be filled by fetchPicks once the user is in the pick view.
+        const hydrated: ReadyJob = {
+          id: exact.id,
+          jobNumber: exact.jobNumber,
+          builderName: exact.builderName || '',
+          scheduledDate: exact.scheduledDate || null,
+          status: exact.status || '',
+          orderNumber: exact.orderNumber || exact.order?.orderNumber || null,
+          orderId: exact.orderId || exact.order?.id || null,
+          totalPicks: 0,
+          verifiedPicks: 0,
+          pickedPicks: 0,
+          shortPicks: 0,
+          pendingPicks: 0,
+          allComplete: false,
+        }
+        await startPicking(hydrated)
+        setJobLookupInput('')
+      } catch (err) {
+        setJobLookupError(
+          err instanceof Error ? err.message : 'Lookup failed'
+        )
+      } finally {
+        setJobLookupLoading(false)
+      }
+    },
+    // startPicking depends on fetchPicks/scanMode but is stable enough here;
+    // we intentionally re-create on jobs change so local hits are fresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [jobs]
+  )
 
   // ── Audio feedback ─────────────────────────────────────────────────────
   const playSound = (type: 'success' | 'error') => {
@@ -352,7 +445,7 @@ export default function PickScannerPage() {
         </div>
 
         {/* Actions row */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
           <button
             onClick={fetchJobs}
             style={{
@@ -389,11 +482,120 @@ export default function PickScannerPage() {
           </Link>
         </div>
 
+        {/* Manual job-number lookup — parallel path to QR scanning. Always
+            visible so pickers can jump straight to a job by number even when
+            the camera is unavailable or the job hasn't appeared in the list
+            yet. */}
+        <div
+          style={{
+            backgroundColor: '#2a2a3e',
+            border: '1px solid #444',
+            borderRadius: '0.75rem',
+            padding: '1rem',
+            marginBottom: '1rem',
+          }}
+        >
+          <label
+            htmlFor="pick-job-lookup"
+            style={{
+              display: 'block',
+              fontSize: '0.75rem',
+              color: '#aaa',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Look up by job number
+          </label>
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              void lookupJobByNumber(jobLookupInput)
+            }}
+            style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}
+          >
+            <input
+              id="pick-job-lookup"
+              type="text"
+              value={jobLookupInput}
+              onChange={e => setJobLookupInput(e.target.value)}
+              placeholder="Job number (e.g. 1234567)"
+              style={{
+                flex: 1,
+                minWidth: 200,
+                minHeight: TAP_TARGET,
+                padding: '0.75rem 1rem',
+                fontSize: '1rem',
+                backgroundColor: '#1a1a2e',
+                border: '2px solid #444',
+                borderRadius: '0.5rem',
+                color: '#fff',
+                fontWeight: 'bold',
+                letterSpacing: '0.05em',
+              }}
+              autoComplete="off"
+              disabled={jobLookupLoading}
+            />
+            <button
+              type="submit"
+              disabled={jobLookupLoading || !jobLookupInput.trim()}
+              style={{
+                minHeight: TAP_TARGET,
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#C6A24E',
+                color: '#1a1a2e',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                cursor: jobLookupLoading ? 'wait' : 'pointer',
+                opacity: jobLookupLoading || !jobLookupInput.trim() ? 0.6 : 1,
+              }}
+            >
+              {jobLookupLoading ? 'Looking up...' : 'Look up'}
+            </button>
+          </form>
+          {jobLookupError && (
+            <div
+              style={{
+                marginTop: '0.5rem',
+                color: '#FF6B6B',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+              }}
+            >
+              {jobLookupError}
+            </div>
+          )}
+        </div>
+
+        {/* Status filter chip — makes the implicit job-list filter explicit
+            so pickers know why a job they expected isn't showing. */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 0.75rem',
+            backgroundColor: 'rgba(198, 162, 78, 0.12)',
+            border: '1px solid #C6A24E',
+            borderRadius: '999px',
+            fontSize: '0.75rem',
+            color: '#E8C97A',
+            fontWeight: 'bold',
+            marginBottom: '1rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}
+        >
+          <span style={{ opacity: 0.7 }}>Showing:</span>
+          <span>{ACTIVE_PICK_STATUSES.join(', ')} jobs</span>
+        </div>
+
         {jobsLoading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>Loading</div>
-            <p>Fetching ready-to-pick jobs...</p>
-          </div>
+          <JobListSkeleton />
         ) : jobsError ? (
           <div
             style={{
@@ -410,8 +612,10 @@ export default function PickScannerPage() {
         ) : jobs.length === 0 ? (
           <EmptyState
             icon={<Warehouse className="w-8 h-8 text-fg-subtle" />}
-            title="Nothing staged"
-            description="No jobs are ready for picking. Jobs appear here when status is IN_PRODUCTION or MATERIALS_LOCKED with a generated pick list."
+            title="No jobs ready for picking"
+            description="Jobs must be in MATERIALS_LOCKED or IN_PRODUCTION status. If a job should be here, check that its pick list has been generated."
+            action={{ label: 'View All Jobs', href: '/ops/jobs' }}
+            secondaryAction={{ label: 'Refresh', onClick: fetchJobs }}
           />
         ) : (
           <div
@@ -648,7 +852,12 @@ export default function PickScannerPage() {
           <div style={{ display: 'flex', gap: '0.25rem' }}>
             <button
               type="button"
-              onClick={() => setScanMode('camera')}
+              onClick={() => {
+                setScanMode('camera')
+                // Give the camera a clean retry when the user explicitly
+                // toggles back to it.
+                setCameraError(null)
+              }}
               style={{
                 minHeight: 36,
                 padding: '0.4rem 0.8rem',
@@ -689,12 +898,69 @@ export default function PickScannerPage() {
 
         {scanMode === 'camera' ? (
           <div style={{ marginBottom: '0.25rem' }}>
+            {cameraError && (
+              <div
+                role="alert"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                  backgroundColor: 'rgba(231, 76, 60, 0.15)',
+                  border: '2px solid #E74C3C',
+                  borderRadius: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  marginBottom: '0.5rem',
+                  color: '#FFC1B6',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                }}
+              >
+                <AlertTriangle
+                  size={18}
+                  style={{ flexShrink: 0, marginTop: 2 }}
+                  aria-hidden
+                />
+                <div>
+                  Camera unavailable. Use manual entry below.
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScanMode('text')
+                      setTimeout(() => scanInputRef.current?.focus(), 50)
+                    }}
+                    style={{
+                      marginLeft: '0.5rem',
+                      background: 'transparent',
+                      color: '#C6A24E',
+                      border: 'none',
+                      textDecoration: 'underline',
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    Switch to keyboard
+                  </button>
+                </div>
+              </div>
+            )}
             <QRScanner
               active={!!selectedJob && !verifying}
               onScan={code => {
                 void runScan(code)
               }}
-              onError={err => console.error('[QRScanner]', err)}
+              onError={err => {
+                console.error('[QRScanner]', err)
+                // Surface the failure in the page UI so the scanner area
+                // never goes blank when getUserMedia rejects (no camera,
+                // permission denied, lib failed to load, etc).
+                const msg =
+                  (err as any)?.message ||
+                  (err as any)?.name ||
+                  'Camera unavailable'
+                setCameraError(typeof msg === 'string' ? msg : 'Camera unavailable')
+              }}
               prompt="Scan product QR or barcode"
             />
           </div>
@@ -825,9 +1091,7 @@ export default function PickScannerPage() {
 
       {/* Pick list */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p>Loading picks...</p>
-        </div>
+        <PickListSkeleton />
       ) : filteredPicks.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <p>
@@ -1007,6 +1271,192 @@ function Stat({
       >
         {value}
       </div>
+    </div>
+  )
+}
+
+// Lightweight skeleton mimicking the job-card grid so the page never goes
+// blank while /api/ops/warehouse/ready-to-pick is in flight.
+function JobListSkeleton() {
+  const cards = [0, 1, 2, 3]
+  return (
+    <div
+      role="status"
+      aria-label="Loading ready-to-pick jobs"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+        gap: '1rem',
+      }}
+    >
+      {cards.map(i => (
+        <div
+          key={i}
+          style={{
+            backgroundColor: '#2a2a3e',
+            border: '1px solid #3a3a4e',
+            borderRadius: '0.75rem',
+            padding: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }}
+        >
+          <div
+            style={{
+              height: '1.5rem',
+              width: '40%',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.25rem',
+            }}
+          />
+          <div
+            style={{
+              height: '0.875rem',
+              width: '70%',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.25rem',
+            }}
+          />
+          <div
+            style={{
+              height: '0.875rem',
+              width: '50%',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.25rem',
+            }}
+          />
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '0.5rem',
+            }}
+          >
+            {[0, 1, 2, 3].map(j => (
+              <div
+                key={j}
+                style={{
+                  height: '2.5rem',
+                  backgroundColor: '#1a1a2e',
+                  border: '1px solid #3a3a4e',
+                  borderRadius: '0.25rem',
+                }}
+              />
+            ))}
+          </div>
+          <div
+            style={{
+              height: '0.5rem',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.25rem',
+            }}
+          />
+          <div
+            style={{
+              height: '2.75rem',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.5rem',
+            }}
+          />
+        </div>
+      ))}
+      <style jsx>{`
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.55;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// Compact skeleton for the pick-rows list while picks-for-job is in flight.
+function PickListSkeleton() {
+  const rows = [0, 1, 2]
+  return (
+    <div
+      role="status"
+      aria-label="Loading picks"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        flex: 1,
+      }}
+    >
+      {rows.map(i => (
+        <div
+          key={i}
+          style={{
+            backgroundColor: '#2a2a3e',
+            border: '2px solid #3a3a4e',
+            borderRadius: '0.75rem',
+            padding: '1rem',
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }}
+        >
+          <div
+            style={{
+              height: '1.25rem',
+              width: '30%',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.25rem',
+              marginBottom: '0.5rem',
+            }}
+          />
+          <div
+            style={{
+              height: '0.95rem',
+              width: '70%',
+              backgroundColor: '#3a3a4e',
+              borderRadius: '0.25rem',
+              marginBottom: '0.75rem',
+            }}
+          />
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '0.75rem',
+            }}
+          >
+            <div
+              style={{
+                height: '2.25rem',
+                backgroundColor: '#1a1a2e',
+                border: '1px solid #3a3a4e',
+                borderRadius: '0.25rem',
+              }}
+            />
+            <div
+              style={{
+                height: '2.25rem',
+                backgroundColor: '#1a1a2e',
+                border: '1px solid #3a3a4e',
+                borderRadius: '0.25rem',
+              }}
+            />
+          </div>
+        </div>
+      ))}
+      <style jsx>{`
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.55;
+          }
+        }
+      `}</style>
     </div>
   )
 }

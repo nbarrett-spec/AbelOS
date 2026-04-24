@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { toCsv } from '@/lib/csv'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/suppliers — List all vendors (suppliers)
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'ACTIVE'
     const search = searchParams.get('search')
+    const format = searchParams.get('format')
 
     const conditions: string[] = []
     const params: any[] = []
@@ -50,6 +52,52 @@ export async function GET(request: NextRequest) {
       ${where}
       ORDER BY v."name" ASC
     `, ...params)
+
+    // CSV export — same filtered set, no extra trim. The supplier list is
+    // bounded (Vendor table is small) so no LIMIT is needed.
+    if (format === 'csv') {
+      const rows = (suppliers as any[]).map((s: any) => ({
+        code: s.code ?? '',
+        name: s.name ?? '',
+        contactName: s.contactName ?? '',
+        email: s.email ?? '',
+        phone: s.phone ?? '',
+        website: s.website ?? '',
+        address: s.address ?? '',
+        accountNumber: s.accountNumber ?? '',
+        avgLeadDays: s.avgLeadDays == null ? '' : Number(s.avgLeadDays).toString(),
+        onTimeRate: s.onTimeRate == null ? '' : `${(Number(s.onTimeRate) * 100).toFixed(1)}%`,
+        productCount: s.productCount ?? 0,
+        poCount: s.poCount ?? 0,
+        spend12mo: s.spend12mo == null ? '0.00' : Number(s.spend12mo).toFixed(2),
+        active: s.active ? 'true' : 'false',
+      }))
+
+      const csv = toCsv(rows, [
+        { key: 'code', label: 'Code' },
+        { key: 'name', label: 'Name' },
+        { key: 'contactName', label: 'Contact' },
+        { key: 'email', label: 'Email' },
+        { key: 'phone', label: 'Phone' },
+        { key: 'website', label: 'Website' },
+        { key: 'address', label: 'Address' },
+        { key: 'accountNumber', label: 'Account #' },
+        { key: 'avgLeadDays', label: 'Avg Lead (d)' },
+        { key: 'onTimeRate', label: 'On-Time %' },
+        { key: 'productCount', label: 'Products' },
+        { key: 'poCount', label: 'POs' },
+        { key: 'spend12mo', label: '12mo Spend' },
+        { key: 'active', label: 'Active' },
+      ])
+
+      const filename = `vendors-${new Date().toISOString().split('T')[0]}.csv`
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
 
     return NextResponse.json({ suppliers })
   } catch (error) {

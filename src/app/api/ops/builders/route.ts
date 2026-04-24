@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const termFilter = searchParams.get('paymentTerm') || 'ALL'
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
+    const pmId = searchParams.get('pmId') || ''
 
     // Sort params
     const sortBy = searchParams.get('sortBy') || 'createdAt'
@@ -108,6 +109,21 @@ export async function GET(request: NextRequest) {
         sqlParams.push((where.createdAt as any).lte.toISOString())
         pidx++
       }
+    }
+
+    // PM filter: builder appears if it has any job assigned to that PM
+    // (via Builder -> Order -> Job.assignedPMId)
+    if (pmId) {
+      whereConditions.push(
+        `EXISTS (
+          SELECT 1 FROM "Order" o2
+          JOIN "Job" j ON j."orderId" = o2."id"
+          WHERE o2."builderId" = b."id"
+            AND j."assignedPMId" = $${pidx}
+        )`
+      )
+      sqlParams.push(pmId)
+      pidx++
     }
 
     if (whereConditions.length > 0) {

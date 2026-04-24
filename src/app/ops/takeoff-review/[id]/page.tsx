@@ -415,9 +415,13 @@ export default function TakeoffReviewDetailPage() {
                               {CATEGORY_ICONS[item.category] || '📋'} {item.category}
                             </span>
                             {item.product ? (
-                              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                              <Link
+                                href={`/ops/products/${item.product.id}`}
+                                className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded hover:underline text-signal"
+                                onClick={e => e.stopPropagation()}
+                              >
                                 ✓ {item.product.sku}
-                              </span>
+                              </Link>
                             ) : (
                               <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
                                 Unmatched
@@ -430,7 +434,15 @@ export default function TakeoffReviewDetailPage() {
                           <p className="text-sm text-gray-800 mt-1">{item.description}</p>
                           {item.product && (
                             <p className="text-xs text-gray-500 mt-0.5">
-                              → {item.product.name} @ ${item.product.basePrice.toFixed(2)}
+                              →{' '}
+                              <Link
+                                href={`/ops/products/${item.product.id}`}
+                                className="text-signal hover:underline"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {item.product.name}
+                              </Link>{' '}
+                              @ ${item.product.basePrice.toFixed(2)}
                             </p>
                           )}
                         </div>

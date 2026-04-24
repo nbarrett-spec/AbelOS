@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import PageHeader from '@/components/ui/PageHeader'
 
@@ -25,6 +25,28 @@ interface BuildSheetData {
   }
 }
 
+interface BuildQueueJob {
+  id: string
+  jobNumber: string
+  builder: string | null
+  community: string | null
+  address: string | null
+  lotBlock: string | null
+  scheduledDate: string | null
+  status: string
+  scopeType: string | null
+  jobType: string | null
+  assignedPMId: string | null
+  pmName: string | null
+  pickProgress: { total: number; verified: number; percentComplete: number }
+}
+
+interface PMOption {
+  id: string
+  firstName: string
+  lastName: string
+}
+
 export default function BuildSheetPage() {
   const [jobId, setJobId] = useState('')
   const [jobSearch, setJobSearch] = useState('')
@@ -35,6 +57,15 @@ export default function BuildSheetPage() {
 
   // Job search list
   const [searchResults, setSearchResults] = useState<any[]>([])
+
+  // Build queue (above the search bar) — unrelated to the search dropdown above
+  const [queue, setQueue] = useState<BuildQueueJob[]>([])
+  const [queueLoading, setQueueLoading] = useState(false)
+  const [queueError, setQueueError] = useState('')
+  const [productTypeFilter, setProductTypeFilter] = useState<'' | 'Exterior' | 'Interior'>('')
+  const [builderFilter, setBuilderFilter] = useState('')
+  const [pmFilter, setPmFilter] = useState('')
+  const [pms, setPms] = useState<PMOption[]>([])
 
   const searchJobs = useCallback(async (q: string) => {
     if (!q || q.length < 2) { setSearchResults([]); return }
@@ -51,6 +82,54 @@ export default function BuildSheetPage() {
     const t = setTimeout(() => searchJobs(jobSearch), 300)
     return () => clearTimeout(t)
   }, [jobSearch, searchJobs])
+
+  // PM roster for filter dropdown
+  useEffect(() => {
+    fetch('/api/ops/pm/roster')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return
+        const list = (d.pms || d.data || []) as PMOption[]
+        setPms(list)
+      })
+      .catch(() => { /* ignore — page works without PM filter */ })
+  }, [])
+
+  // Build queue fetch — refetches when filters change
+  const loadQueue = useCallback(async () => {
+    setQueueLoading(true)
+    setQueueError('')
+    try {
+      const qs = new URLSearchParams()
+      qs.set('status', 'MATERIALS_LOCKED,IN_PRODUCTION')
+      if (productTypeFilter) qs.set('productType', productTypeFilter)
+      if (builderFilter) qs.set('builder', builderFilter)
+      if (pmFilter) qs.set('pmId', pmFilter)
+      const res = await fetch(`/api/ops/manufacturing/build-queue?${qs.toString()}`)
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        throw new Error(e.error || `Queue load failed (${res.status})`)
+      }
+      const d = await res.json()
+      setQueue(Array.isArray(d.jobs) ? d.jobs : [])
+    } catch (e: any) {
+      setQueueError(e.message || 'Failed to load queue')
+      setQueue([])
+    } finally {
+      setQueueLoading(false)
+    }
+  }, [productTypeFilter, builderFilter, pmFilter])
+
+  useEffect(() => {
+    loadQueue()
+  }, [loadQueue])
+
+  // Builder options derived from current queue (cheap; no extra request)
+  const builderOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const j of queue) if (j.builder) set.add(j.builder)
+    return Array.from(set).sort()
+  }, [queue])
 
   const loadBuildSheet = async (id: string) => {
     setLoading(true)
@@ -145,6 +224,129 @@ export default function BuildSheetPage() {
           <Link href="/ops/manufacturing" className="text-sm text-[#0f2a3e] hover:text-signal">← Manufacturing Dashboard</Link>
         }
       />
+
+      {/* Build Queue (active jobs) — sits ABOVE the search bar */}
+      {!data && (
+        <div className="bg-white rounded-xl border p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-lg font-semibold">Build Queue</h2>
+              <p className="text-sm text-fg-muted">
+                Jobs ready for manufacturing, sorted by scheduled date.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <select
+                value={productTypeFilter}
+                onChange={(e) => setProductTypeFilter(e.target.value as '' | 'Exterior' | 'Interior')}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              >
+                <option value="">All Product Types</option>
+                <option value="Exterior">Exterior</option>
+                <option value="Interior">Interior</option>
+              </select>
+              <select
+                value={builderFilter}
+                onChange={(e) => setBuilderFilter(e.target.value)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              >
+                <option value="">All Builders</option>
+                {builderOptions.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+              <select
+                value={pmFilter}
+                onChange={(e) => setPmFilter(e.target.value)}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              >
+                <option value="">All PMs</option>
+                {pms.map((pm) => (
+                  <option key={pm.id} value={pm.id}>
+                    {pm.firstName} {pm.lastName}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => loadQueue()}
+                className="px-3 py-2 text-sm border rounded-lg hover:bg-row-hover"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            {queueError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm mb-3">
+                {queueError}
+              </div>
+            )}
+            {queueLoading && queue.length === 0 ? (
+              <div className="py-6 text-center text-fg-muted text-sm">Loading queue...</div>
+            ) : queue.length === 0 ? (
+              <div className="py-6 text-center text-fg-muted text-sm">
+                No jobs in the build queue match the current filters.
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-fg-muted text-xs uppercase">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Job #</th>
+                    <th className="px-3 py-2 text-left">Builder</th>
+                    <th className="px-3 py-2 text-left">Community</th>
+                    <th className="px-3 py-2 text-left">Address</th>
+                    <th className="px-3 py-2 text-left">Scheduled</th>
+                    <th className="px-3 py-2 text-center">Status</th>
+                    <th className="px-3 py-2 text-center">Pick %</th>
+                    <th className="px-3 py-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {queue.map((j) => (
+                    <tr key={j.id} className="hover:bg-row-hover">
+                      <td className="px-3 py-2 font-medium">{j.jobNumber}</td>
+                      <td className="px-3 py-2">{j.builder || '—'}</td>
+                      <td className="px-3 py-2 text-fg-muted">
+                        {j.community || '—'}{j.lotBlock ? ` · ${j.lotBlock}` : ''}
+                      </td>
+                      <td className="px-3 py-2 text-fg-muted text-xs">{j.address || '—'}</td>
+                      <td className="px-3 py-2 text-xs">
+                        {j.scheduledDate ? new Date(j.scheduledDate).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor(j.status)}`}>
+                          {j.status?.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center text-xs">
+                        {j.pickProgress.total > 0 ? (
+                          <span className={j.pickProgress.percentComplete === 100 ? 'text-green-600 font-medium' : ''}>
+                            {j.pickProgress.percentComplete}%
+                            <span className="text-fg-subtle ml-1">
+                              ({j.pickProgress.verified}/{j.pickProgress.total})
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-fg-subtle">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          onClick={() => loadBuildSheet(j.id)}
+                          className="text-xs px-3 py-1 bg-[#0f2a3e] text-white rounded hover:bg-[#0a1a28]"
+                        >
+                          View Build Sheet
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Job Search */}
       {!data && (

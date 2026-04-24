@@ -78,10 +78,23 @@ export default function VendorsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', margin: 0 }}>🏢 Supplier Management</h1>
           <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>Manage domestic and overseas suppliers for procurement</p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#0f2a3e', color: '#fff', fontWeight: 600, fontSize: 14 }}>
-          + Add Supplier
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams()
+              params.set('format', 'csv')
+              if (filter.status) params.set('status', filter.status)
+              if (filter.search) params.set('search', filter.search)
+              window.location.href = `/api/ops/procurement/suppliers?${params.toString()}`
+            }}
+            style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D1D5DB', cursor: 'pointer', background: '#fff', color: '#0f2a3e', fontWeight: 600, fontSize: 14 }}>
+            Export CSV
+          </button>
+          <button onClick={() => setShowAdd(!showAdd)}
+            style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#0f2a3e', color: '#fff', fontWeight: 600, fontSize: 14 }}>
+            + Add Supplier
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

@@ -5,6 +5,23 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { mirrorQualityCheckToInspection } from '@/lib/events/inspection'
 
+// Active (non-terminal) job statuses for QC dropdowns and pending-queue inputs.
+// Excludes COMPLETE / INVOICED / CLOSED (terminal). The Job-status enum in
+// schema.prisma has no CANCELLED or ON_HOLD value; the closest analogues are
+// the three terminal values above.
+const ACTIVE_JOB_STATUSES = [
+  'CREATED',
+  'READINESS_CHECK',
+  'MATERIALS_LOCKED',
+  'IN_PRODUCTION',
+  'STAGED',
+  'LOADED',
+  'IN_TRANSIT',
+  'DELIVERED',
+  'INSTALLING',
+  'PUNCH_LIST',
+] as const
+
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
@@ -13,9 +30,38 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
     const result = searchParams.get('result')
+    const search = searchParams.get('search')
+    const queue = searchParams.get('queue') // 'pending' = jobs pending QC
+
+    // ── Pending-QC queue branch ──────────────────────────────────────────
+    // Returns jobs in STAGED or IN_PRODUCTION that do NOT yet have any
+    // QualityCheck row with result = 'PASS'.
+    if (queue === 'pending') {
+      const pendingQuery = `
+        SELECT
+          j.id,
+          j."jobNumber",
+          j."builderName",
+          j."jobAddress",
+          j."community",
+          j."jobType",
+          j."scopeType",
+          j."status",
+          j."scheduledDate"
+        FROM "Job" j
+        WHERE j."status"::text IN ('STAGED', 'IN_PRODUCTION')
+          AND NOT EXISTS (
+            SELECT 1 FROM "QualityCheck" qc
+            WHERE qc."jobId" = j.id AND qc.result = 'PASS'
+          )
+        ORDER BY j."scheduledDate" ASC NULLS LAST, j."jobNumber" ASC
+      `
+      const pending: any = await prisma.$queryRawUnsafe(pendingQuery)
+      return NextResponse.json({ pending })
+    }
 
     // Build dynamic WHERE clause
-    const whereConditions = []
+    const whereConditions: string[] = []
     const params: any[] = []
 
     if (type) {
@@ -25,6 +71,15 @@ export async function GET(request: NextRequest) {
     if (result) {
       whereConditions.push('qc.result = $' + (params.length + 1))
       params.push(result)
+    }
+    // Search by Job.jobNumber OR Job.jobAddress (ILIKE both with OR).
+    if (search) {
+      const i = params.length + 1
+      whereConditions.push(
+        `(j."jobNumber" ILIKE $${i} OR j."jobAddress" ILIKE $${i + 1})`
+      )
+      const pat = `%${search}%`
+      params.push(pat, pat)
     }
 
     const whereClause =
@@ -44,7 +99,8 @@ export async function GET(request: NextRequest) {
         s."lastName" as "inspector_lastName",
         j.id as "job_id",
         j."jobNumber" as "job_jobNumber",
-        j."builderName" as "job_builderName"
+        j."builderName" as "job_builderName",
+        j."jobAddress" as "job_jobAddress"
       FROM "QualityCheck" qc
       LEFT JOIN "Staff" s ON qc."inspectorId" = s.id
       LEFT JOIN "Job" j ON qc."jobId" = j.id
@@ -73,6 +129,7 @@ export async function GET(request: NextRequest) {
             id: check.job_id,
             jobNumber: check.job_jobNumber,
             builderName: check.job_builderName,
+            jobAddress: check.job_jobAddress,
           }
         : null,
     }))
@@ -115,6 +172,7 @@ export async function GET(request: NextRequest) {
       checks: formattedChecks,
       total: formattedChecks.length,
       stats,
+      activeStatuses: ACTIVE_JOB_STATUSES,
     })
   } catch (error) {
     console.error('QC error:', error)
@@ -143,19 +201,53 @@ export async function POST(request: NextRequest) {
       inspectorId,
     } = body
 
-    // Get the current user as inspector if not provided
-    let actualInspectorId = inspectorId
+    // ── Required-field validation (surface specific messages to the UI) ──
+    if (!checkType) {
+      return NextResponse.json(
+        { error: 'checkType is required' },
+        { status: 400 }
+      )
+    }
+    if (!result) {
+      return NextResponse.json(
+        { error: 'result is required' },
+        { status: 400 }
+      )
+    }
+
+    // ── Resolve the inspector ────────────────────────────────────────────
+    // Priority: explicit body.inspectorId → current authed staff
+    // (x-staff-id header) → first staff with role QC_INSPECTOR.
+    // Surfaces a clear 400 if none of those resolve to a real Staff row.
+    let actualInspectorId: string | null = inspectorId || null
+
     if (!actualInspectorId) {
-      // For now, we'll use a default inspector - in production, get from session
+      const sessionStaffId = request.headers.get('x-staff-id')
+      if (sessionStaffId) {
+        const verifyQuery = `SELECT id FROM "Staff" WHERE id = $1 LIMIT 1`
+        const found: any = await prisma.$queryRawUnsafe(verifyQuery, sessionStaffId)
+        if (found && found.length > 0) {
+          actualInspectorId = found[0].id
+        }
+      }
+    }
+
+    if (!actualInspectorId) {
       const inspectorQuery = `SELECT id FROM "Staff" WHERE role = 'QC_INSPECTOR' LIMIT 1`
       const inspectors: any = await prisma.$queryRawUnsafe(inspectorQuery)
-      if (!inspectors || inspectors.length === 0) {
-        return NextResponse.json(
-          { error: 'No QC inspector found' },
-          { status: 400 }
-        )
+      if (inspectors && inspectors.length > 0) {
+        actualInspectorId = inspectors[0].id
       }
-      actualInspectorId = inspectors[0].id
+    }
+
+    if (!actualInspectorId) {
+      return NextResponse.json(
+        {
+          error:
+            'Could not resolve an inspector. No authenticated staff session and no QC_INSPECTOR exists in the Staff table.',
+        },
+        { status: 400 }
+      )
     }
 
     // Generate ID for new quality check
@@ -178,8 +270,6 @@ export async function POST(request: NextRequest) {
       defectCodes || [],
       actualInspectorId
     )
-
-    const check = checks[0]
 
     // Fetch complete record with relationships
     const fetchQuery = `
@@ -233,8 +323,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 })
   } catch (error) {
     console.error('QC creation error:', error)
+    const message =
+      error instanceof Error ? error.message : 'Failed to create quality check'
     return NextResponse.json(
-      { error: 'Failed to create quality check' },
+      { error: 'Failed to create quality check', detail: message },
       { status: 500 }
     )
   }

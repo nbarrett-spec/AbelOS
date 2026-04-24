@@ -102,9 +102,13 @@ export default function AIOrderCommandCenter() {
         setReceivedOrders(d.soRecommendations || []);
         setCreditAlerts(d.creditAlerts || []);
         setSummary(d.summary || { pendingOrders: 0, poRecommendations: 0, autoConfirmable: 0, creditWarnings: 0 });
+      } else {
+        const errMsg = await extractErrorMessage(res, 'Failed to load data');
+        showToast('error', errMsg);
       }
     } catch (error) {
-      showToast('error', 'Failed to load data');
+      const msg = error instanceof Error ? error.message : 'Failed to load data';
+      showToast('error', msg);
     } finally {
       setLoading(false);
     }
@@ -112,10 +116,34 @@ export default function AIOrderCommandCenter() {
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 3000);
+    // Errors stay longer than success messages so the user can read them
+    setTimeout(() => setToast(null), type === 'error' ? 6000 : 3000);
+  };
+
+  // Pull a useful error message out of a non-OK response. Falls back to the
+  // provided default if the body is empty / not JSON.
+  const extractErrorMessage = async (res: Response, fallback: string): Promise<string> => {
+    try {
+      const data = await res.json();
+      // API returns either { error: '...' } (GET) or { success: false, message: '...' } (POST)
+      const detail =
+        (data && typeof data.message === 'string' && data.message) ||
+        (data && typeof data.error === 'string' && data.error) ||
+        '';
+      if (detail) {
+        return res.status === 400 || res.status === 422
+          ? `${fallback}: ${detail}`
+          : detail;
+      }
+    } catch {
+      // body wasn't JSON — fall through
+    }
+    return `${fallback} (HTTP ${res.status})`;
   };
 
   const createPO = async (recommendationIndex: number, vendorName: string) => {
+    // Guard against double-clicks: if any action is in flight, ignore
+    if (loadingAction !== null) return;
     setLoadingAction(`po-${recommendationIndex}`);
     try {
       const res = await fetch('/api/ops/ai-orders', {
@@ -124,19 +152,27 @@ export default function AIOrderCommandCenter() {
         body: JSON.stringify({ action: 'create_po', recommendationIndex }),
       });
       if (res.ok) {
-        showToast('success', `PO created for ${vendorName}`);
+        let successMsg = `PO created successfully for ${vendorName}`;
+        try {
+          const data = await res.json();
+          if (data && data.message) successMsg = data.message;
+        } catch {}
+        showToast('success', successMsg);
         await fetchAllData();
       } else {
-        showToast('error', 'Failed to create PO');
+        const errMsg = await extractErrorMessage(res, 'Failed to create PO');
+        showToast('error', errMsg);
       }
     } catch (error) {
-      showToast('error', 'Error creating PO');
+      const msg = error instanceof Error ? error.message : 'Failed to create PO';
+      showToast('error', msg);
     } finally {
       setLoadingAction(null);
     }
   };
 
   const createAllPOs = async () => {
+    if (loadingAction !== null) return;
     setLoadingAction('create-all');
     try {
       const res = await fetch('/api/ops/ai-orders', {
@@ -145,19 +181,27 @@ export default function AIOrderCommandCenter() {
         body: JSON.stringify({ action: 'create_all_pos' }),
       });
       if (res.ok) {
-        showToast('success', `${recommendations.length} POs created successfully`);
+        let successMsg = `${recommendations.length} POs created successfully`;
+        try {
+          const data = await res.json();
+          if (data && data.message) successMsg = data.message;
+        } catch {}
+        showToast('success', successMsg);
         await fetchAllData();
       } else {
-        showToast('error', 'Failed to create all POs');
+        const errMsg = await extractErrorMessage(res, 'Failed to create all POs');
+        showToast('error', errMsg);
       }
     } catch (error) {
-      showToast('error', 'Error creating POs');
+      const msg = error instanceof Error ? error.message : 'Failed to create all POs';
+      showToast('error', msg);
     } finally {
       setLoadingAction(null);
     }
   };
 
   const confirmOrder = async (orderId: string) => {
+    if (loadingAction !== null) return;
     setLoadingAction(`order-${orderId}`);
     try {
       const res = await fetch('/api/ops/ai-orders', {
@@ -166,35 +210,67 @@ export default function AIOrderCommandCenter() {
         body: JSON.stringify({ action: 'confirm_order', orderId }),
       });
       if (res.ok) {
-        showToast('success', 'Order confirmed successfully');
+        let successMsg = 'Order confirmed successfully';
+        try {
+          const data = await res.json();
+          if (data && data.message) successMsg = data.message;
+        } catch {}
+        showToast('success', successMsg);
         await fetchAllData();
       } else {
-        showToast('error', 'Failed to confirm order');
+        const errMsg = await extractErrorMessage(res, 'Failed to confirm order');
+        showToast('error', errMsg);
       }
     } catch (error) {
-      showToast('error', 'Error confirming order');
+      const msg = error instanceof Error ? error.message : 'Failed to confirm order';
+      showToast('error', msg);
     } finally {
       setLoadingAction(null);
     }
   };
 
   const confirmAllOrders = async () => {
+    if (loadingAction !== null) return;
     setLoadingAction('confirm-all');
     let confirmed = 0;
+    let firstError: string | null = null;
     try {
       const available = receivedOrders.filter((o) => o.allItemsAvailable);
       for (const order of available) {
-        const res = await fetch('/api/ops/ai-orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'confirm_order', orderId: order.orderId }),
-        });
-        if (res.ok) confirmed++;
+        try {
+          const res = await fetch('/api/ops/ai-orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'confirm_order', orderId: order.orderId }),
+          });
+          if (res.ok) {
+            confirmed++;
+          } else if (firstError === null) {
+            firstError = await extractErrorMessage(
+              res,
+              `Failed to confirm ${order.orderNumber}`
+            );
+          }
+        } catch (perOrderErr) {
+          if (firstError === null) {
+            firstError =
+              perOrderErr instanceof Error
+                ? perOrderErr.message
+                : `Failed to confirm ${order.orderNumber}`;
+          }
+        }
       }
-      showToast('success', `${confirmed} orders confirmed`);
+      if (firstError && confirmed === 0) {
+        showToast('error', firstError);
+      } else if (firstError) {
+        showToast('error', `${confirmed} confirmed; first failure: ${firstError}`);
+      } else {
+        showToast('success', `${confirmed} orders confirmed`);
+      }
       await fetchAllData();
     } catch (error) {
-      showToast('error', 'Error confirming orders');
+      const msg = error instanceof Error ? error.message : 'Failed to confirm orders';
+      showToast('error', msg);
     } finally {
       setLoadingAction(null);
     }
@@ -228,6 +304,8 @@ export default function AIOrderCommandCenter() {
       {/* Toast Notifications */}
       {toast && (
         <div
+          role="alert"
+          aria-live="polite"
           style={{
             position: 'fixed',
             top: '20px',
@@ -239,6 +317,10 @@ export default function AIOrderCommandCenter() {
             zIndex: 1000,
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             fontWeight: 500,
+            maxWidth: '420px',
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap',
+            lineHeight: 1.4,
           }}
         >
           {toast.message}
@@ -293,13 +375,13 @@ export default function AIOrderCommandCenter() {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button
               onClick={fetchAllData}
-              disabled={loading}
+              disabled={loading || loadingAction !== null}
               style={{
                 padding: '10px 16px',
                 borderRadius: '6px',
                 border: `1px solid ${BORDER_COLOR}`,
                 backgroundColor: '#F5F5F5',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: loading || loadingAction !== null ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
                 fontWeight: 500,
                 color: ABEL_NAVY,
@@ -435,7 +517,7 @@ export default function AIOrderCommandCenter() {
             {recommendations.length > 0 && (
               <button
                 onClick={createAllPOs}
-                disabled={loadingAction === 'create-all'}
+                disabled={loadingAction !== null}
                 style={{
                   padding: '10px 24px',
                   backgroundColor: ABEL_NAVY,
@@ -444,8 +526,8 @@ export default function AIOrderCommandCenter() {
                   borderRadius: '6px',
                   fontSize: '14px',
                   fontWeight: 600,
-                  cursor: loadingAction === 'create-all' ? 'not-allowed' : 'pointer',
-                  opacity: loadingAction === 'create-all' ? 0.7 : 1,
+                  cursor: loadingAction !== null ? 'not-allowed' : 'pointer',
+                  opacity: loadingAction !== null ? 0.7 : 1,
                 }}
               >
                 {loadingAction === 'create-all' ? 'Creating...' : 'Create All POs'}
@@ -683,7 +765,7 @@ export default function AIOrderCommandCenter() {
                   <div style={{ padding: '16px' }}>
                     <button
                       onClick={() => createPO(recIdx, rec.vendorName)}
-                      disabled={loadingAction === `po-${recIdx}`}
+                      disabled={loadingAction !== null}
                       style={{
                         width: '100%',
                         padding: '12px',
@@ -694,8 +776,8 @@ export default function AIOrderCommandCenter() {
                         fontSize: '14px',
                         fontWeight: 600,
                         cursor:
-                          loadingAction === `po-${recIdx}` ? 'not-allowed' : 'pointer',
-                        opacity: loadingAction === `po-${recIdx}` ? 0.7 : 1,
+                          loadingAction !== null ? 'not-allowed' : 'pointer',
+                        opacity: loadingAction !== null ? 0.7 : 1,
                       }}
                     >
                       {loadingAction === `po-${recIdx}` ? 'Creating...' : 'Create PO'}
@@ -730,7 +812,7 @@ export default function AIOrderCommandCenter() {
             {autoConfirmableCount > 0 && (
               <button
                 onClick={confirmAllOrders}
-                disabled={loadingAction === 'confirm-all'}
+                disabled={loadingAction !== null}
                 style={{
                   padding: '10px 24px',
                   backgroundColor: '#27AE60',
@@ -739,8 +821,8 @@ export default function AIOrderCommandCenter() {
                   borderRadius: '6px',
                   fontSize: '14px',
                   fontWeight: 600,
-                  cursor: loadingAction === 'confirm-all' ? 'not-allowed' : 'pointer',
-                  opacity: loadingAction === 'confirm-all' ? 0.7 : 1,
+                  cursor: loadingAction !== null ? 'not-allowed' : 'pointer',
+                  opacity: loadingAction !== null ? 0.7 : 1,
                 }}
               >
                 {loadingAction === 'confirm-all'
@@ -917,7 +999,7 @@ export default function AIOrderCommandCenter() {
                       >
                         <button
                           onClick={() => confirmOrder(order.orderId)}
-                          disabled={loadingAction === `order-${order.orderId}`}
+                          disabled={loadingAction !== null}
                           style={{
                             padding: '6px 12px',
                             backgroundColor: order.allItemsAvailable
@@ -929,8 +1011,8 @@ export default function AIOrderCommandCenter() {
                             fontSize: '12px',
                             fontWeight: 600,
                             cursor:
-                              loadingAction === `order-${order.orderId}` ? 'not-allowed' : 'pointer',
-                            opacity: loadingAction === `order-${order.orderId}` ? 0.7 : 1,
+                              loadingAction !== null ? 'not-allowed' : 'pointer',
+                            opacity: loadingAction !== null ? 0.7 : 1,
                           }}
                         >
                           {loadingAction === `order-${order.orderId}`

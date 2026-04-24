@@ -227,22 +227,48 @@ export default function ProductsCatalogPage() {
           <h1>Product Catalog</h1>
           <p>Browse, search, and manage your complete product catalog</p>
         </div>
-        <button
-          onClick={() => { setShowCatCleanup(true); loadCategoryPreview() }}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#C6A24E',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Clean Up Categories
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams()
+              params.set('format', 'csv')
+              if (categoryFilter) params.set('category', categoryFilter)
+              if (searchQuery) params.set('search', searchQuery)
+              if (priceFilter === 'priced') params.set('priceStatus', 'priced')
+              else if (priceFilter === 'unpriced') params.set('priceStatus', 'unpriced')
+              window.location.href = `/api/ops/products?${params.toString()}`
+            }}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#0f2a3e',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => { setShowCatCleanup(true); loadCategoryPreview() }}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#C6A24E',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Clean Up Categories
+          </button>
+        </div>
       </div>
 
       {/* Stats Bar */}

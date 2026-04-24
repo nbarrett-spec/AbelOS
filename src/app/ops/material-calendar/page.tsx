@@ -13,7 +13,8 @@ import {
   Avatar,
   Badge,
 } from '@/components/ui'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, ExternalLink, Search, Shuffle, X } from 'lucide-react'
+import { useToast } from '@/contexts/ToastContext'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RefreshCw, ExternalLink, Search, Shuffle, X, AlertCircle } from 'lucide-react'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Material Calendar — weekly/monthly grid of upcoming job delivery dates,
@@ -190,6 +191,9 @@ export default function MaterialCalendarPage() {
   const [drillJobId, setDrillJobId] = useState<string | null>(null)
   const [drillData, setDrillData] = useState<JobDrillResponse | null>(null)
   const [drillLoading, setDrillLoading] = useState(false)
+  const [drillError, setDrillError] = useState<string | null>(null)
+  const [drillReloadTick, setDrillReloadTick] = useState(0)
+  const { addToast } = useToast()
 
   // ── Range compute ───────────────────────────────────────────────────────
   const [rangeStart, rangeEnd] = useMemo(() => {
@@ -249,19 +253,37 @@ export default function MaterialCalendarPage() {
   useEffect(() => {
     if (!drillJobId) {
       setDrillData(null)
+      setDrillError(null)
       return
     }
     let cancelled = false
     setDrillLoading(true)
+    setDrillError(null)
     ;(async () => {
       try {
         const res = await fetch(`/api/ops/material-calendar/job/${drillJobId}`, {
           cache: 'no-store',
         })
-        const json: JobDrillResponse = await res.json()
-        if (!cancelled) setDrillData(json)
-      } catch (err) {
-        if (!cancelled) setDrillData(null)
+        const json = await res.json().catch(() => ({} as any))
+        if (!res.ok) {
+          const msg = (json && typeof json === 'object' && 'error' in json && json.error) || `HTTP ${res.status}`
+          throw new Error(typeof msg === 'string' ? msg : 'Failed to load job detail')
+        }
+        if (!cancelled) {
+          setDrillData(json as JobDrillResponse)
+          setDrillError(null)
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setDrillData(null)
+          const msg = err?.message ?? 'Failed to load job detail'
+          setDrillError(msg)
+          addToast({
+            type: 'error',
+            title: 'Could not load job detail',
+            message: msg,
+          })
+        }
       } finally {
         if (!cancelled) setDrillLoading(false)
       }
@@ -269,7 +291,7 @@ export default function MaterialCalendarPage() {
     return () => {
       cancelled = true
     }
-  }, [drillJobId])
+  }, [drillJobId, drillReloadTick, addToast])
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────────
   useEffect(() => {
@@ -636,33 +658,51 @@ export default function MaterialCalendarPage() {
         open={!!drillJobId}
         onClose={() => setDrillJobId(null)}
         width="wide"
-        title={drillData ? `${drillData.job.jobNumber} — ${drillData.job.builderName}` : 'Loading…'}
+        title={
+          drillData
+            ? `${drillData.job.jobNumber} — ${drillData.job.builderName}`
+            : drillError
+            ? 'Couldn\u2019t load job'
+            : drillLoading
+            ? 'Loading\u2026'
+            : 'Job detail'
+        }
         subtitle={drillData ? drillData.job.jobAddress ?? undefined : undefined}
         tabs={['details']}
         footer={
-          drillData?.job?.hyphenDeepLink ? (
-            <a
-              href={drillData.job.hyphenDeepLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[12.5px] text-[var(--signal,#b48a3a)] hover:underline"
-            >
-              Open in Hyphen <ExternalLink className="w-3 h-3" />
-            </a>
-          ) : undefined
+          <div className="flex items-center justify-between w-full gap-3">
+            {drillData?.job?.id ? (
+              <a
+                href={`/ops/jobs/${drillData.job.id}`}
+                className="inline-flex items-center gap-1 text-[12.5px] text-fg-muted hover:text-fg hover:underline"
+              >
+                View full job <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <span />
+            )}
+            {drillData?.job?.hyphenDeepLink ? (
+              <a
+                href={drillData.job.hyphenDeepLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-[12.5px] text-[var(--signal,#b48a3a)] hover:underline"
+              >
+                Open in Hyphen <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : null}
+          </div>
         }
       >
         <DrillContent
           data={drillData}
           loading={drillLoading}
+          error={drillError}
+          onRetry={() => setDrillReloadTick((t) => t + 1)}
           onApplied={() => {
             // Refetch drill + calendar after a substitute is applied
             if (drillJobId) {
-              setDrillLoading(true)
-              fetch(`/api/ops/material-calendar/job/${drillJobId}`, { cache: 'no-store' })
-                .then((r) => r.json())
-                .then((j) => setDrillData(j))
-                .finally(() => setDrillLoading(false))
+              setDrillReloadTick((t) => t + 1)
             }
             fetchCalendar()
           }}
@@ -719,10 +759,11 @@ function JobCard({ job, onClick, compact = false }: { job: CalendarJob; onClick:
   const cfg = STATUS_COLORS[job.materialStatus]
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="w-full text-left rounded-md border border-border bg-surface-elevated hover:shadow-md transition-all overflow-hidden group"
+      className="w-full text-left rounded-md border border-border bg-surface-elevated hover:shadow-md hover:ring-2 hover:ring-[var(--signal,#b48a3a)]/40 transition-all overflow-hidden group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal,#b48a3a)]/60"
       style={{ borderLeft: `3px solid ${cfg.border}` }}
-      title={`${job.jobNumber} • ${job.materialStatus}`}
+      title={`${job.jobNumber} \u2022 ${job.materialStatus} \u2022 click for details`}
     >
       <div
         className={compact ? 'px-2 py-1.5' : 'px-2.5 py-2'}
@@ -936,7 +977,19 @@ interface SubstituteOption {
   score: number
 }
 
-function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | null; loading: boolean; onApplied?: () => void }) {
+function DrillContent({
+  data,
+  loading,
+  error,
+  onRetry,
+  onApplied,
+}: {
+  data: JobDrillResponse | null
+  loading: boolean
+  error?: string | null
+  onRetry?: () => void
+  onApplied?: () => void
+}) {
   const [subRow, setSubRow] = useState<DrillRow | null>(null)
   const [subOptions, setSubOptions] = useState<SubstituteOption[]>([])
   const [subLoading, setSubLoading] = useState(false)
@@ -1004,7 +1057,29 @@ function DrillContent({ data, loading, onApplied }: { data: JobDrillResponse | n
   }, [data?.job?.id, onApplied])
 
   if (loading && !data) {
-    return <div className="text-[13px] text-fg-muted">Loading BoM…</div>
+    return <div className="text-[13px] text-fg-muted">Loading BoM\u2026</div>
+  }
+  if (error && !data) {
+    return (
+      <div className="rounded-md border border-[var(--data-negative,#EF4444)]/40 bg-[var(--data-negative-bg,rgba(239,68,68,0.08))] p-3 text-[12.5px]">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 mt-0.5 text-[var(--data-negative,#EF4444)]" />
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-[var(--data-negative,#EF4444)]">Couldn&rsquo;t load job detail</div>
+            <div className="text-fg-muted mt-0.5 break-words">{error}</div>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-2 inline-flex items-center gap-1 px-2 py-1 text-[11.5px] rounded border border-border bg-surface-elevated hover:bg-surface-muted/40 text-fg"
+              >
+                <RefreshCw className="w-3 h-3" /> Retry
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   }
   if (!data) {
     return <div className="text-[13px] text-fg-muted">No data.</div>

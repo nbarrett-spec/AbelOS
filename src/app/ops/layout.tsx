@@ -19,6 +19,7 @@ import Tooltip from '@/components/ui/Tooltip'
 import CommandMenu, { useCommandMenu } from '@/components/ui/CommandMenu'
 import ShortcutsOverlay from '@/components/ui/ShortcutsOverlay'
 import StatusBar from '@/components/ui/StatusBar'
+import { SystemPulse } from '@/components/SystemPulse'
 import LiveClock from '@/components/ui/LiveClock'
 import HealthChip from '@/components/ui/HealthChip'
 import HelpPanel from '@/components/HelpPanel'
@@ -850,6 +851,12 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
           {/* System status bar — live state, bottom of shell */}
           <StatusBarWithLive />
+
+          {/* SystemPulse — mounted hidden so its alert/readiness polling runs.
+              Drives `abel:alerts-count` listeners and keeps /api/health/ready warm. */}
+          <div className="hidden" aria-hidden="true">
+            <SystemPulse />
+          </div>
         </main>
 
         {/* Command palette (⌘K) */}

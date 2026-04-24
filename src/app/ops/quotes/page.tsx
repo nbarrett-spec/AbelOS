@@ -62,6 +62,12 @@ interface NewLineItem {
   location: string
 }
 
+interface PMOption {
+  id: string
+  firstName: string
+  lastName: string
+}
+
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-600',
   SENT: 'bg-blue-100 text-blue-700',
@@ -91,6 +97,8 @@ export default function OpsQuotesPage() {
   const [total, setTotal] = useState(0)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [pmFilter, setPmFilter] = useState('')
+  const [pms, setPms] = useState<PMOption[]>([])
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [page, setPage] = useState(1)
@@ -151,6 +159,7 @@ export default function OpsQuotesPage() {
       if (search) params.set('search', search)
       if (dateFrom) params.set('dateFrom', dateFrom)
       if (dateTo) params.set('dateTo', dateTo)
+      if (pmFilter) params.set('pmId', pmFilter)
       params.set('sortBy', sortBy)
       params.set('sortDir', sortDir)
       params.set('page', String(page))
@@ -164,9 +173,17 @@ export default function OpsQuotesPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, search, dateFrom, dateTo, sortBy, sortDir, page])
+  }, [statusFilter, search, dateFrom, dateTo, pmFilter, sortBy, sortDir, page])
 
   useEffect(() => { fetchQuotes() }, [fetchQuotes])
+
+  // Load PM roster once (for filter dropdown)
+  useEffect(() => {
+    fetch('/api/ops/pm/roster')
+      .then(r => r.json())
+      .then(d => setPms(d.pms || d.data || []))
+      .catch(() => {})
+  }, [])
 
   // Load builders when create modal opens
   useEffect(() => {
@@ -493,7 +510,18 @@ export default function OpsQuotesPage() {
         actions={
           <>
             <button
-              onClick={() => window.open('/api/ops/export?type=quotes', '_blank')}
+              onClick={() => {
+                const params = new URLSearchParams()
+                params.set('format', 'csv')
+                if (statusFilter) params.set('status', statusFilter)
+                if (search) params.set('search', search)
+                if (dateFrom) params.set('dateFrom', dateFrom)
+                if (dateTo) params.set('dateTo', dateTo)
+                if (pmFilter) params.set('pmId', pmFilter)
+                if (sortBy) params.set('sortBy', sortBy)
+                if (sortDir) params.set('sortDir', sortDir)
+                window.location.href = `/api/ops/quotes?${params.toString()}`
+              }}
               className="px-5 py-2.5 bg-gray-600 text-white rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors"
             >
               Export CSV
@@ -570,6 +598,18 @@ export default function OpsQuotesPage() {
               className="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
           )}
         </div>
+        <select
+          value={pmFilter}
+          onChange={(e) => { setPmFilter(e.target.value); setPage(1) }}
+          className="px-3 py-2 border border-border rounded-lg text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-signal/30 focus:border-signal"
+        >
+          <option value="">All PMs</option>
+          {pms.map(pm => (
+            <option key={pm.id} value={pm.id}>
+              {pm.firstName} {pm.lastName}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Quotes List */}
@@ -796,9 +836,9 @@ export default function OpsQuotesPage() {
 
       {/* ── EDIT QUOTE MODAL ──────────────────────────────────── */}
       {showEditModal && editingQuote && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center pt-10 overflow-y-auto">
-          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-3xl mx-4 mb-10">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+            <div className="px-6 py-4 border-b flex justify-between items-center shrink-0">
               <div>
                 <h2 className="text-lg font-semibold text-fg">Edit Quote</h2>
                 <p className="text-sm text-fg-muted">{editingQuote.quoteNumber} — {editingQuote.project?.builder?.companyName}</p>
@@ -806,7 +846,7 @@ export default function OpsQuotesPage() {
               <button onClick={closeEditModal} className="text-fg-subtle hover:text-fg text-xl">&times;</button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 flex-1 overflow-y-auto min-h-0 pb-8">
               {/* Quote Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -928,31 +968,31 @@ export default function OpsQuotesPage() {
                   </div>
                 </div>
               </div>
+
+              {/* AI Optimization Result */}
+              {aiResult && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🤖</span>
+                    <span className="font-semibold text-sm text-fg">AI Optimization Applied</span>
+                  </div>
+                  <p className="text-xs text-fg-muted mb-2">{aiResult.reasoning}</p>
+                  {aiResult.appliedRules.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {aiResult.appliedRules.map((rule, i) => (
+                        <span key={i} className="text-xs bg-surface px-2 py-1 rounded border border-blue-200 text-blue-700 font-medium">{rule}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-fg-muted">Margin: <strong className="text-fg">{aiResult.marginBefore.toFixed(1)}%</strong> → <strong className="text-green-600">{aiResult.marginAfter.toFixed(1)}%</strong></span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* AI Optimization Result */}
-            {aiResult && (
-              <div className="mx-6 mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🤖</span>
-                  <span className="font-semibold text-sm text-fg">AI Optimization Applied</span>
-                </div>
-                <p className="text-xs text-fg-muted mb-2">{aiResult.reasoning}</p>
-                {aiResult.appliedRules.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {aiResult.appliedRules.map((rule, i) => (
-                      <span key={i} className="text-xs bg-surface px-2 py-1 rounded border border-blue-200 text-blue-700 font-medium">{rule}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-4 text-xs">
-                  <span className="text-fg-muted">Margin: <strong className="text-fg">{aiResult.marginBefore.toFixed(1)}%</strong> → <strong className="text-green-600">{aiResult.marginAfter.toFixed(1)}%</strong></span>
-                </div>
-              </div>
-            )}
-
             {/* Footer */}
-            <div className="px-6 py-4 border-t flex justify-between items-center">
+            <div className="px-6 py-4 border-t flex justify-between items-center shrink-0 bg-surface rounded-b-2xl">
               <button
                 onClick={handleAiOptimize}
                 disabled={aiOptimizing || editItems.every(i => !i.description.trim())}
@@ -1013,9 +1053,9 @@ export default function OpsQuotesPage() {
 
       {/* ── CREATE QUOTE MODAL ────────────────────────────────── */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center pt-10 overflow-y-auto">
-          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-3xl mx-4 mb-10">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+            <div className="px-6 py-4 border-b flex justify-between items-center shrink-0">
               <div>
                 <h2 className="text-lg font-semibold text-fg">Create New Quote</h2>
                 <p className="text-sm text-fg-muted">Build a quote for a builder project</p>
@@ -1023,7 +1063,7 @@ export default function OpsQuotesPage() {
               <button onClick={() => setShowCreate(false)} className="text-fg-subtle hover:text-fg text-xl">&times;</button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 flex-1 overflow-y-auto min-h-0 pb-8">
               {/* Builder Select */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1135,7 +1175,7 @@ export default function OpsQuotesPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
+            <div className="px-6 py-4 border-t flex justify-end gap-3 shrink-0 bg-surface rounded-b-2xl">
               <button
                 onClick={() => setShowCreate(false)}
                 className="px-5 py-2.5 text-sm text-fg-muted hover:text-fg"

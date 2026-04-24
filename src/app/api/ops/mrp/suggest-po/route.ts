@@ -31,9 +31,18 @@ export async function POST(request: NextRequest) {
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, sku: true, name: true, cost: true },
+      select: { id: true, sku: true, name: true, cost: true, productType: true },
     })
     if (!product) return NextResponse.json({ error: 'product not found' }, { status: 404 })
+
+    // MRP suggestions only apply to physical inventory. Labor / service / overhead products
+    // are excluded — there's no PO to draft for them.
+    if (product.productType && product.productType !== 'PHYSICAL') {
+      return NextResponse.json(
+        { error: `MRP cannot draft a PO for ${product.productType} product (${product.sku}). Only physical inventory is eligible.` },
+        { status: 400 }
+      )
+    }
 
     if (!vendorId) {
       // Find preferred vendor by VendorProduct

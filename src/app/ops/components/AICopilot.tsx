@@ -21,6 +21,8 @@ interface Message {
   actions?: ActionableRecommendation[]
   timestamp: Date
   isLoading?: boolean
+  /** When true, the assistant ran out of tool-call iterations before finishing. */
+  truncated?: boolean
 }
 
 // Quick action suggestions based on common tasks
@@ -111,6 +113,7 @@ export default function AICopilot() {
         toolsUsed: data.toolsUsed,
         actions: actions.length > 0 ? actions : undefined,
         timestamp: new Date(),
+        truncated: Boolean(data.truncated),
       }
 
       setMessages(prev => prev.filter(m => !m.isLoading).concat(assistantMessage))
@@ -421,6 +424,11 @@ export default function AICopilot() {
                   </div>
                 ) : (
                   <>
+                    {msg.truncated && (
+                      <div className="mb-2 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-md text-[11px] text-amber-800 leading-snug">
+                        Some context was truncated. Refine your question for a complete answer.
+                      </div>
+                    )}
                     <div className="whitespace-pre-wrap">{formatContent(msg.content)}</div>
                     {msg.toolsUsed && msg.toolsUsed.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-200/50">

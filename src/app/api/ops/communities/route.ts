@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const builderId = searchParams.get('builderId') || ''
     const status = searchParams.get('status') || ''
+    const pmId = searchParams.get('pmId') || ''
 
     let communities: any[] = []
 
@@ -37,6 +38,12 @@ export async function GET(request: NextRequest) {
       if (status) {
         conditions.push(`c."status"::text = $${idx}`)
         params.push(status)
+        idx++
+      }
+
+      if (pmId) {
+        conditions.push(`EXISTS (SELECT 1 FROM "Job" jp WHERE jp."communityId" = c.id AND jp."assignedPMId" = $${idx})`)
+        params.push(pmId)
         idx++
       }
 
@@ -70,6 +77,12 @@ export async function GET(request: NextRequest) {
           idx++
         }
 
+        if (pmId) {
+          conditions.push(`EXISTS (SELECT 1 FROM "Job" jp WHERE jp."community" = bc."name" AND jp."assignedPMId" = $${idx})`)
+          params.push(pmId)
+          idx++
+        }
+
         const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
         communities = await prisma.$queryRawUnsafe(
@@ -84,17 +97,29 @@ export async function GET(request: NextRequest) {
       } catch (e2) {
         // Fall back to distinct communities from Job table
         try {
+          const jobConditions: string[] = [`j."community" IS NOT NULL`]
+          const jobParams: any[] = []
+          let jIdx = 1
+          if (search) {
+            jobConditions.push(`j."community" ILIKE $${jIdx}`)
+            jobParams.push(`%${search}%`)
+            jIdx++
+          }
+          if (pmId) {
+            jobConditions.push(`j."assignedPMId" = $${jIdx}`)
+            jobParams.push(pmId)
+            jIdx++
+          }
           communities = await prisma.$queryRawUnsafe(
             `SELECT
               j."community" AS name,
               COUNT(*)::int AS "jobCount",
               MIN(j."createdAt") AS "createdAt"
             FROM "Job" j
-            WHERE j."community" IS NOT NULL
-            ${search ? `AND j."community" ILIKE $1` : ''}
+            WHERE ${jobConditions.join(' AND ')}
             GROUP BY j."community"
             ORDER BY j."community" ASC`,
-            ...(search ? [`%${search}%`] : [])
+            ...jobParams
           )
         } catch {
           communities = []

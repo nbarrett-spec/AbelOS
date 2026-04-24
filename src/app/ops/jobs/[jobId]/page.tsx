@@ -142,6 +142,17 @@ export default function JobDetailPage() {
   const [showCoPreview, setShowCoPreview] = useState(false)
   // Material drill-down drawer — opens from header "Materials" button.
   const [showMaterialDrawer, setShowMaterialDrawer] = useState(false)
+  // 4.5 — Link-to-Order UI state. Search drawer; submit blocked until backend exists.
+  const [showLinkOrder, setShowLinkOrder] = useState(false)
+  const [linkOrderQuery, setLinkOrderQuery] = useState('')
+  const [linkOrderResults, setLinkOrderResults] = useState<any[]>([])
+  const [linkOrderSearching, setLinkOrderSearching] = useState(false)
+  // 5.5-Part-B — Installer assignment UI state. Schema has no installerId/trimVendorId/meta
+  // on Job, so the field renders as DISABLED with a "schema change required" hint.
+  // Lists are still loaded so the dropdown is testable once a column is added.
+  const [installCrews, setInstallCrews] = useState<{ id: string; name: string; crewType: string }[]>([])
+  const [trimVendors, setTrimVendors] = useState<{ id: string; name: string }[]>([])
+  const [installAssigneeChoice, setInstallAssigneeChoice] = useState<string>('')
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -213,6 +224,71 @@ export default function JobDetailPage() {
     })()
     return () => { cancel = true }
   }, [jobId])
+
+  // 5.5-Part-B — Load installer assignment options. Best-effort; endpoint
+  // failures are silent because the field is read-only until a schema column
+  // exists to write to.
+  useEffect(() => {
+    let cancel = false
+    ;(async () => {
+      try {
+        const r = await fetch('/api/ops/crews?active=true', { cache: 'no-store' })
+        if (!r.ok || cancel) return
+        const data = await r.json()
+        // Endpoint returns a bare array; filter to install-capable crews.
+        const list = Array.isArray(data) ? data : (data.crews || [])
+        const install = list.filter((c: any) =>
+          c.crewType === 'INSTALLATION' || c.crewType === 'DELIVERY_AND_INSTALL' || !c.crewType
+        )
+        if (!cancel) setInstallCrews(install.map((c: any) => ({ id: c.id, name: c.name, crewType: c.crewType || 'INSTALLATION' })))
+      } catch {
+        /* ignore — UI is disabled anyway */
+      }
+    })()
+    return () => { cancel = true }
+  }, [])
+
+  useEffect(() => {
+    let cancel = false
+    ;(async () => {
+      try {
+        // No /api/ops/trim-vendors route exists in this wave — request is
+        // expected to 404. Fall back gracefully so the dropdown still renders.
+        const r = await fetch('/api/ops/trim-vendors?active=true', { cache: 'no-store' })
+        if (!r.ok || cancel) return
+        const data = await r.json()
+        const list = Array.isArray(data) ? data : (data.trimVendors || data.data || [])
+        if (!cancel) setTrimVendors(list.map((v: any) => ({ id: v.id, name: v.name })))
+      } catch {
+        /* ignore — fallback is empty list */
+      }
+    })()
+    return () => { cancel = true }
+  }, [])
+
+  // 4.5 — Order search for the "Link to Order" drawer. Debounced light query
+  // against the existing /api/ops/orders endpoint.
+  useEffect(() => {
+    if (!showLinkOrder) return
+    const q = linkOrderQuery.trim()
+    if (q.length < 2) { setLinkOrderResults([]); return }
+    let cancel = false
+    setLinkOrderSearching(true)
+    const handle = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/ops/orders?search=${encodeURIComponent(q)}&limit=10`, { cache: 'no-store' })
+        if (!r.ok || cancel) return
+        const data = await r.json()
+        const rows = data.orders || data.data || []
+        if (!cancel) setLinkOrderResults(rows)
+      } catch {
+        if (!cancel) setLinkOrderResults([])
+      } finally {
+        if (!cancel) setLinkOrderSearching(false)
+      }
+    }, 300)
+    return () => { cancel = true; clearTimeout(handle) }
+  }, [linkOrderQuery, showLinkOrder])
 
   const loadProfitability = async () => {
     if (profitability) { setShowProfit(!showProfit); return }
@@ -849,14 +925,23 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          {/* Linked Order */}
-          {job.order && (
+          {/* Linked Order — 4.5
+              When linked: show order# (linked), status, total, optional PO/notes.
+              When NOT linked: show "Not linked to an Order" + a disabled
+              "Link to Order" action (no /api/ops/jobs/[id]/link-order route
+              exists yet — TODO below). */}
+          {job.order ? (
             <div className="bg-surface rounded-lg border p-5">
               <h2 className="text-lg font-semibold text-fg mb-4">Linked Order</h2>
               <div className="space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-xs text-fg-muted">Order #</span>
-                  <span className="text-sm font-medium text-signal">{job.order.orderNumber}</span>
+                  <Link
+                    href={`/ops/orders/${job.order.id}`}
+                    className="text-sm font-medium text-signal hover:underline"
+                  >
+                    {job.order.orderNumber} →
+                  </Link>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-xs text-fg-muted">Total</span>
@@ -872,6 +957,15 @@ export default function JobDetailPage() {
                     <span className="text-sm">{job.order.poNumber}</span>
                   </div>
                 )}
+                {/* Surface shared coding pattern when jobNumber matches orderNumber. */}
+                {job.jobNumber && job.order.orderNumber &&
+                  (job.jobNumber === job.order.orderNumber ||
+                   job.jobNumber.endsWith(job.order.orderNumber) ||
+                   job.order.orderNumber.endsWith(job.jobNumber)) && (
+                  <p className="text-[11px] text-fg-subtle italic mt-1">
+                    Job number tracks order number per shared coding.
+                  </p>
+                )}
                 {job.order.deliveryNotes && (
                   <div className="mt-2 pt-2 border-t">
                     <p className="text-xs text-fg-muted">Delivery Notes</p>
@@ -880,7 +974,117 @@ export default function JobDetailPage() {
                 )}
               </div>
             </div>
+          ) : (
+            <div className="bg-surface rounded-lg border p-5">
+              <h2 className="text-lg font-semibold text-fg mb-4">Linked Order</h2>
+              <p className="text-sm text-fg-subtle italic mb-3">Not linked to an Order</p>
+              {/* TODO: wire to /api/ops/jobs/[id]/link-order once the endpoint
+                  exists. Existing PATCH at /api/ops/jobs/[id] does NOT include
+                  `orderId` in its validFields list, so we can't repurpose it
+                  without a server-side change. UI is implemented but disabled. */}
+              <button
+                type="button"
+                disabled
+                onClick={() => setShowLinkOrder(true)}
+                title="Backend endpoint /api/ops/jobs/[id]/link-order does not exist yet"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-muted text-fg-subtle cursor-not-allowed"
+              >
+                Link to Order (backend not wired)
+              </button>
+              {showLinkOrder && (
+                <div className="mt-3 p-3 bg-surface-muted rounded-lg space-y-2">
+                  <input
+                    type="text"
+                    value={linkOrderQuery}
+                    onChange={e => setLinkOrderQuery(e.target.value)}
+                    placeholder="Search by order # or PO #"
+                    className="w-full border rounded px-3 py-2 text-sm"
+                  />
+                  {linkOrderSearching && (
+                    <p className="text-xs text-fg-subtle">Searching…</p>
+                  )}
+                  {!linkOrderSearching && linkOrderResults.length > 0 && (
+                    <ul className="max-h-48 overflow-y-auto divide-y divide-border">
+                      {linkOrderResults.map((o: any) => (
+                        <li key={o.id} className="py-2 text-sm flex items-center justify-between">
+                          <span>
+                            <span className="font-medium text-fg">{o.orderNumber}</span>
+                            {o.poNumber ? <span className="text-fg-muted ml-2">PO {o.poNumber}</span> : null}
+                            {o.builder?.companyName ? (
+                              <span className="text-fg-muted ml-2">— {o.builder.companyName}</span>
+                            ) : null}
+                          </span>
+                          <button
+                            type="button"
+                            disabled
+                            title="Cannot save — /api/ops/jobs/[id]/link-order endpoint not yet implemented"
+                            className="text-xs px-2 py-1 rounded border border-border text-fg-subtle bg-surface cursor-not-allowed"
+                          >
+                            Link
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setShowLinkOrder(false); setLinkOrderQuery(''); setLinkOrderResults([]) }}
+                    className="text-xs text-fg-muted hover:text-fg"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
           )}
+
+          {/* Assign Installer — 5.5-Part-B
+              Schema BLOCKER: Job model has no installerId / trimVendorId /
+              crewId / meta column. The PATCH endpoint at /api/ops/jobs/[id]
+              does not accept any installer field. Field renders DISABLED so
+              the UI is in place once a column is added (or
+              /api/ops/jobs/[id]/assign-installer is created). */}
+          <div className="bg-surface rounded-lg border p-5">
+            <h2 className="text-lg font-semibold text-fg mb-4">Assign Installer</h2>
+            <select
+              value={installAssigneeChoice}
+              onChange={e => setInstallAssigneeChoice(e.target.value)}
+              disabled
+              title="Cannot save — schema change required (Job has no installerId / trimVendorId / meta column)"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-muted text-fg-subtle cursor-not-allowed disabled:opacity-70"
+            >
+              <option value="">— Select installer —</option>
+              {installCrews.length > 0 && (
+                <optgroup label="In-house Crews">
+                  {installCrews.map(c => (
+                    <option key={`crew:${c.id}`} value={`crew:${c.id}`}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {trimVendors.length > 0 && (
+                <optgroup label="Third-Party Trim Vendors">
+                  {trimVendors.map(v => (
+                    <option key={`vendor:${v.id}`} value={`vendor:${v.id}`}>
+                      {v.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <p className="mt-2 text-xs text-fg-subtle">
+              Cannot save — schema change required. Job model has no
+              installer-tracking field; add <code>installerId</code> /
+              <code>trimVendorId</code> (or a <code>meta</code> JSONB column)
+              before wiring this to PATCH.
+            </p>
+            {installCrews.length === 0 && trimVendors.length === 0 && (
+              <p className="mt-1 text-xs text-fg-subtle italic">
+                No installer options loaded yet.
+              </p>
+            )}
+          </div>
 
           {/* Tasks Summary */}
           <div className="bg-surface rounded-lg border p-5">

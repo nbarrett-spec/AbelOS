@@ -186,8 +186,8 @@ export async function POST(request: NextRequest) {
 
       // Try to match sender or recipients to a builder
       const allAddresses = [email.sender, ...(email.toRecipients || []), ...(email.ccRecipients || [])]
-        .filter(Boolean)
-        .map(a => a.toLowerCase())
+        .filter((a): a is string => Boolean(a) && a.includes('@'))
+        .map(a => a.toLowerCase().trim())
 
       let builderId: string | null = null
       if (allAddresses.length > 0) {
@@ -218,8 +218,8 @@ export async function POST(request: NextRequest) {
         email.subject || '(No Subject)',
         email.body || email.snippet || null,
         email.sender || null,
-        `{${(email.toRecipients || []).map(a => `"${a}"`).join(',')}}`,
-        `{${(email.ccRecipients || []).map(a => `"${a}"`).join(',')}}`,
+        (email.toRecipients || []).filter((a: string) => a && a.trim()),
+        (email.ccRecipients || []).filter((a: string) => a && a.trim()),
         email.date ? new Date(email.date) : new Date(),
         email.hasAttachment || false,
         email.messageId,

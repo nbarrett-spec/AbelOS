@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { safeJson } from '@/lib/safe-json'
+import { toCsv } from '@/lib/csv'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/ops/inventory
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
     const zone = (searchParams.get('zone') || '').trim()
     const sort = (searchParams.get('sort') || 'name').trim()
     const dir = (searchParams.get('dir') || '').trim().toLowerCase() === 'desc' ? 'DESC' : 'ASC'
+    const format = (searchParams.get('format') || '').trim().toLowerCase()
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const offset = (page - 1) * limit
@@ -79,6 +81,101 @@ export async function GET(request: NextRequest) {
       case 'lastMovement': orderBy = `i."lastReceivedAt" ${dir === 'ASC' ? 'ASC' : 'DESC'} NULLS LAST`; break
       case 'name':
       default:            orderBy = `p."name" ${dir}`
+    }
+
+    // CSV export — same filters, no pagination (cap at 5000). Returned before
+    // the paginated rows fetch so the heavier path is skipped on export.
+    if (format === 'csv') {
+      const csvRows: any[] = await prisma.$queryRawUnsafe(`
+        SELECT
+          p."sku", p."name", p."category", p."subcategory", p."manufacturer",
+          p."basePrice", p."cost", p."leadTimeDays",
+          COALESCE(i."onHand",0)        AS "onHand",
+          COALESCE(i."committed",0)     AS "committed",
+          COALESCE(i."available",0)     AS "available",
+          COALESCE(i."onOrder",0)       AS "onOrder",
+          COALESCE(i."reorderPoint",0)  AS "reorderPoint",
+          COALESCE(i."safetyStock",0)   AS "safetyStock",
+          i."maxStock", i."unitCost",
+          i."warehouseZone", i."binLocation",
+          i."lastReceivedAt", i."lastCountedAt"
+        FROM "Product" p
+        LEFT JOIN "InventoryItem" i ON i."productId" = p."id"
+        ${whereClause}
+        ORDER BY ${orderBy}
+        LIMIT 5000
+      `, ...params)
+
+      const fmtDate = (d: any) => (d ? new Date(d).toISOString().split('T')[0] : '')
+      const num = (n: any) => (n == null ? '' : Number(n).toString())
+      const money = (n: any) => (n == null ? '' : Number(n).toFixed(2))
+      const deriveStatus = (r: any): string => {
+        const oh = Number(r.onHand) || 0
+        const sf = Number(r.safetyStock) || 0
+        const rp = Number(r.reorderPoint) || 0
+        const mx = r.maxStock == null ? null : Number(r.maxStock)
+        if (oh <= 0) return 'out'
+        if (oh <= sf) return 'critical'
+        if (oh <= rp) return 'low'
+        if (mx != null && oh > mx) return 'overstocked'
+        return 'healthy'
+      }
+
+      const rows = csvRows.map(r => ({
+        sku: r.sku ?? '',
+        name: r.name ?? '',
+        category: r.category ?? '',
+        subcategory: r.subcategory ?? '',
+        manufacturer: r.manufacturer ?? '',
+        onHand: num(r.onHand),
+        committed: num(r.committed),
+        available: num(r.available),
+        onOrder: num(r.onOrder),
+        reorderPoint: num(r.reorderPoint),
+        safetyStock: num(r.safetyStock),
+        maxStock: r.maxStock == null ? '' : num(r.maxStock),
+        unitCost: money(r.unitCost),
+        basePrice: money(r.basePrice),
+        cost: money(r.cost),
+        leadTimeDays: r.leadTimeDays ?? '',
+        zone: r.warehouseZone ?? '',
+        bin: r.binLocation ?? '',
+        status: deriveStatus(r),
+        lastReceivedAt: fmtDate(r.lastReceivedAt),
+        lastCountedAt: fmtDate(r.lastCountedAt),
+      }))
+
+      const csv = toCsv(rows, [
+        { key: 'sku', label: 'SKU' },
+        { key: 'name', label: 'Name' },
+        { key: 'category', label: 'Category' },
+        { key: 'subcategory', label: 'Subcategory' },
+        { key: 'manufacturer', label: 'Manufacturer' },
+        { key: 'onHand', label: 'On Hand' },
+        { key: 'committed', label: 'Committed' },
+        { key: 'available', label: 'Available' },
+        { key: 'onOrder', label: 'On Order' },
+        { key: 'reorderPoint', label: 'Reorder Point' },
+        { key: 'safetyStock', label: 'Safety Stock' },
+        { key: 'maxStock', label: 'Max Stock' },
+        { key: 'unitCost', label: 'Unit Cost' },
+        { key: 'basePrice', label: 'Base Price' },
+        { key: 'cost', label: 'Cost' },
+        { key: 'leadTimeDays', label: 'Lead Time (d)' },
+        { key: 'zone', label: 'Zone' },
+        { key: 'bin', label: 'Bin' },
+        { key: 'status', label: 'Status' },
+        { key: 'lastReceivedAt', label: 'Last Received' },
+        { key: 'lastCountedAt', label: 'Last Counted' },
+      ])
+
+      const filename = `inventory-${new Date().toISOString().split('T')[0]}.csv`
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
     }
 
     const limitParam = i; params.push(limit); i++
