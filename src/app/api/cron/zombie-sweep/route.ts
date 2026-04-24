@@ -43,34 +43,62 @@ export async function GET(request: NextRequest) {
   const started = Date.now()
 
   try {
+    // Mirrors the sweep in cron.ts::startCronRun — same SyncLog reconciliation
+    // logic so an inflow-sync run whose SyncLog says SUCCESS but whose CronRun
+    // never got the finishCronRun update gets correctly stamped SUCCESS
+    // (not a false FAILURE). Without this, we'd flip a completed sync's
+    // CronRun row back to FAILURE on every zombie-sweep pass — noise in
+    // /admin/crons and spurious alerts to Nate.
+    //
     // Exclude our own fresh RUNNING row. startCronRun just inserted it,
-    // and the threshold guards against self-sweep anyway, but being
-    // explicit avoids any chance of a race.
+    // and the threshold guards against self-sweep anyway, but being explicit
+    // avoids any chance of a race.
     const swept = await prisma.$queryRawUnsafe<
-      Array<{ id: string; name: string; durationMs: number; error: string }>
+      Array<{ id: string; name: string; status: string; durationMs: number; error: string }>
     >(
-      `UPDATE "CronRun"
-         SET "status" = 'FAILURE',
+      `UPDATE "CronRun" cr
+         SET "status" = CASE
+               WHEN cr."name" = 'inflow-sync' AND EXISTS (
+                 SELECT 1 FROM "SyncLog" sl
+                  WHERE sl."provider" = 'INFLOW'
+                    AND sl."status" IN ('SUCCESS','PARTIAL')
+                    AND sl."startedAt" >= cr."startedAt"
+                    AND sl."startedAt" <= cr."startedAt" + INTERVAL '10 minutes'
+               ) THEN 'SUCCESS'
+               ELSE 'FAILURE'
+             END,
              "finishedAt" = NOW(),
-             "durationMs" = EXTRACT(EPOCH FROM (NOW() - "startedAt")) * 1000,
-             "error" = 'TIMEOUT: swept by /api/cron/zombie-sweep (>${THRESHOLD_MINUTES} min in RUNNING). Likely Vercel maxDuration kill.'
-       WHERE "status" = 'RUNNING'
-         AND "id" <> $1
-         AND "startedAt" < NOW() - INTERVAL '${THRESHOLD_MINUTES} minutes'
-       RETURNING "id", "name", "durationMs", "error"`,
+             "durationMs" = EXTRACT(EPOCH FROM (NOW() - cr."startedAt")) * 1000,
+             "error" = CASE
+               WHEN cr."name" = 'inflow-sync' AND EXISTS (
+                 SELECT 1 FROM "SyncLog" sl
+                  WHERE sl."provider" = 'INFLOW'
+                    AND sl."status" IN ('SUCCESS','PARTIAL')
+                    AND sl."startedAt" >= cr."startedAt"
+                    AND sl."startedAt" <= cr."startedAt" + INTERVAL '10 minutes'
+               ) THEN NULL
+               ELSE 'TIMEOUT: swept by /api/cron/zombie-sweep (>${THRESHOLD_MINUTES} min in RUNNING). Likely Vercel maxDuration kill.'
+             END
+       WHERE cr."status" = 'RUNNING'
+         AND cr."id" <> $1
+         AND cr."startedAt" < NOW() - INTERVAL '${THRESHOLD_MINUTES} minutes'
+       RETURNING cr."id", cr."name", cr."status", cr."durationMs", cr."error"`,
       runId
     )
 
-    // Fire alerts for each swept row. Rate-limited upstream.
+    // Fire alerts only for real FAILUREs — not for SyncLog-reconciled SUCCESS
+    // rows (those finished the work, just didn't get their own finish-row).
     for (const row of swept) {
-      notifyCronFailure({
-        cronName: String(row.name),
-        error: String(row.error || 'TIMEOUT'),
-        durationMs: Number(row.durationMs) || 0,
-        runId: String(row.id),
-      }).catch((e) => {
-        logger.error('zombie_sweep_alert_failed', e, { id: row.id, name: row.name })
-      })
+      if (row.status === 'FAILURE') {
+        notifyCronFailure({
+          cronName: String(row.name),
+          error: String(row.error || 'TIMEOUT'),
+          durationMs: Number(row.durationMs) || 0,
+          runId: String(row.id),
+        }).catch((e) => {
+          logger.error('zombie_sweep_alert_failed', e, { id: row.id, name: row.name })
+        })
+      }
     }
 
     const payload = {
@@ -79,6 +107,7 @@ export async function GET(request: NextRequest) {
       swept: swept.map((r) => ({
         id: r.id,
         name: r.name,
+        reconciledStatus: r.status, // SUCCESS if SyncLog proved work completed, else FAILURE
         durationMs: Number(r.durationMs) || 0,
       })),
       thresholdMinutes: THRESHOLD_MINUTES,
