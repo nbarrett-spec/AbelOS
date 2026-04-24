@@ -14,7 +14,38 @@ import { logger } from './logger'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Abel Lumber <noreply@abellumber.com>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://app.abellumber.com' : 'http://localhost:3000')
+
+/**
+ * Return the stable public URL for user-visible links in emails.
+ *
+ * **Why this exists:** Vercel auto-assigns each deployment a unique URL like
+ * `abel-builder-platform-xxx.vercel.app` or `cle1::wb9hz-<id>.vercel.app`.
+ * If `NEXT_PUBLIC_APP_URL` is ever set to a per-deployment URL (which Vercel
+ * does by default for preview envs, and is easy to misconfigure in Prod),
+ * links embedded in emails die with `DEPLOYMENT_NOT_FOUND` as soon as a new
+ * deploy lands. That's how `/ops/setup-account?token=...` and
+ * `/ops/reset-password?token=...` broke in April 2026.
+ *
+ * Rule: only trust `NEXT_PUBLIC_APP_URL` if it is https and points at a stable
+ * alias (not vercel.app, not localhost). Otherwise fall back to the canonical
+ * production alias. Dev bypass via `LOCAL_APP_URL` for local testing.
+ */
+export function getPublicAppUrl(): string {
+  const candidate = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || '').trim()
+  const looksUnstable =
+    !candidate ||
+    !candidate.startsWith('https://') ||
+    candidate.includes('vercel.app') ||
+    candidate.includes('localhost') ||
+    candidate.includes('127.0.0.1')
+  if (!looksUnstable) return candidate.replace(/\/$/, '')
+  if (process.env.NODE_ENV !== 'production' && process.env.LOCAL_APP_URL) {
+    return process.env.LOCAL_APP_URL.replace(/\/$/, '')
+  }
+  return 'https://app.abellumber.com'
+}
+
+const APP_URL = getPublicAppUrl()
 
 interface EmailOptions {
   to: string

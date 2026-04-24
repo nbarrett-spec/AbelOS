@@ -15,11 +15,11 @@ export const maxDuration = 120
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
-import { sendInviteEmail } from '@/lib/email'
+import { sendInviteEmail, getPublicAppUrl } from '@/lib/email'
 import { randomBytes } from 'crypto'
 import { audit } from '@/lib/audit'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'
+const APP_URL = getPublicAppUrl()
 
 export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, getPublicAppUrl } from '@/lib/email'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logAudit } from '@/lib/audit'
 
@@ -67,22 +67,11 @@ export async function POST(request: NextRequest) {
         severity: 'CRITICAL',
       }).catch(() => {})
 
-      // Build reset URL.
-      // Fallback chain matches src/lib/email.ts so a missing NEXT_PUBLIC_APP_URL
-      // in Vercel prod doesn't silently produce a relative `/ops/reset-password?...`
-      // link that breaks when opened from Gmail/Outlook. Warn loudly so it shows
-      // in Vercel logs until the env var is set.
-      if (!process.env.NEXT_PUBLIC_APP_URL) {
-        console.warn(
-          '[forgot-password] NEXT_PUBLIC_APP_URL is unset — reset links will use fallback. ' +
-          'Set this in Vercel env to silence this warning.'
-        )
-      }
-      const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        (process.env.NODE_ENV === 'production'
-          ? 'https://app.abellumber.com'
-          : 'http://localhost:3000')
+      // Build reset URL via getPublicAppUrl() — this refuses any vercel.app /
+      // per-deployment URL from NEXT_PUBLIC_APP_URL and falls back to the
+      // canonical https://app.abellumber.com alias. See src/lib/email.ts for
+      // the full rationale (DEPLOYMENT_NOT_FOUND breakage in April 2026).
+      const baseUrl = getPublicAppUrl()
       const resetUrl = `${baseUrl}/ops/reset-password?token=${resetToken}`
 
       // Send password reset email

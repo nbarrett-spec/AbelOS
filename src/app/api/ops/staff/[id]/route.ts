@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/staff-auth'
 import { randomUUID } from 'crypto'
-import { sendInviteEmail, sendStaffPasswordResetEmail } from '@/lib/email'
+import { sendInviteEmail, sendStaffPasswordResetEmail, getPublicAppUrl } from '@/lib/email'
 import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -413,7 +413,7 @@ export async function POST(
         id
       )
 
-      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/setup-account?token=${inviteToken}`
+      const inviteUrl = `${getPublicAppUrl()}/ops/setup-account?token=${inviteToken}`
 
       // Send email (non-blocking)
       try {
@@ -447,7 +447,7 @@ export async function POST(
         id
       )
 
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/reset-password?token=${resetToken}`
+      const resetUrl = `${getPublicAppUrl()}/ops/reset-password?token=${resetToken}`
 
       // Send email (non-blocking)
       try {

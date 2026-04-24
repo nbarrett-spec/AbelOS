@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import { audit } from '@/lib/audit'
+import { getPublicAppUrl } from '@/lib/email'
 
 // Extract role from header
 function getStaffRole(request: NextRequest): string | null {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         member.id
       )
 
-      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/setup-account?token=${inviteToken}`
+      const inviteUrl = `${getPublicAppUrl()}/ops/setup-account?token=${inviteToken}`
 
       fixedStaff.push({
         id: member.id,
