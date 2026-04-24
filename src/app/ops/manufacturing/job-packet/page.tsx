@@ -728,6 +728,186 @@ export default function JobPacketPage() {
             <div style={{ minHeight: 40 }}></div>
           </div>
         </div>
+
+        {/* ════════════════════════════════════════════════════════════════
+            QC / PUNCH WALKER SHEET — Site walkthrough after delivery
+        ════════════════════════════════════════════════════════════════ */}
+        <div className="page-break" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>QC / PUNCH WALK SHEET</h2>
+              <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Post-delivery site inspection &amp; punch items</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName} — {data.job.community || ''} {data.job.lotBlock ? `Lot ${data.job.lotBlock}` : ''}</div>
+            </div>
+          </div>
+
+          {/* Walk info */}
+          <table style={{ marginBottom: 16 }}>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 700, width: '18%', background: '#F9FAFB' }}>Address</td>
+                <td colSpan={3}>{data.job.jobAddress || '________________________________'}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Walk Date</td>
+                <td style={{ width: '32%' }}>______ / ______ / ______</td>
+                <td style={{ fontWeight: 700, background: '#F9FAFB', width: '18%' }}>Inspector</td>
+                <td>________________________________</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Walk Type</td>
+                <td colSpan={3}>
+                  <span style={{ marginRight: 20 }}><span className="check-box" style={{ marginRight: 6 }} /> Post-Install QC</span>
+                  <span style={{ marginRight: 20 }}><span className="check-box" style={{ marginRight: 6 }} /> Builder Punch Walk</span>
+                  <span style={{ marginRight: 20 }}><span className="check-box" style={{ marginRight: 6 }} /> Warranty / Callback</span>
+                  <span><span className="check-box" style={{ marginRight: 6 }} /> Final Walk</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Room-by-room inspection grid */}
+          <div className="section-header">ROOM-BY-ROOM INSPECTION</div>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', width: '3%' }}>#</th>
+                <th style={{ textAlign: 'left', width: '18%' }}>Room / Location</th>
+                <th style={{ textAlign: 'left', width: '25%' }}>Door / Item</th>
+                <th style={{ textAlign: 'center', width: '5%' }}>OK</th>
+                <th style={{ textAlign: 'center', width: '5%' }}>Fix</th>
+                <th style={{ textAlign: 'left', width: '32%' }}>Issue / Notes</th>
+                <th style={{ textAlign: 'center', width: '6%' }}>Photo</th>
+                <th style={{ textAlign: 'center', width: '6%' }}>Done</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Pre-fill with order items if available, plus blank rows for write-in */}
+              {data.orderItems.slice(0, 20).map((item: any, i: number) => (
+                <tr key={`item-${i}`}>
+                  <td style={{ fontSize: 10, color: '#9CA3AF' }}>{i + 1}</td>
+                  <td></td>
+                  <td style={{ fontSize: 11 }}>{item.productName || item.description} <span style={{ fontSize: 9, color: '#9CA3AF' }}>({item.sku})</span></td>
+                  <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                  <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                  <td></td>
+                  <td style={{ textAlign: 'center', fontSize: 10, color: '#9CA3AF' }}>Y / N</td>
+                  <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                </tr>
+              ))}
+              {/* Extra blank rows for write-in items */}
+              {Array.from({ length: Math.max(5, 25 - Math.min(data.orderItems.length, 20)) }).map((_, i) => (
+                <tr key={`blank-${i}`}>
+                  <td style={{ fontSize: 10, color: '#9CA3AF' }}>{Math.min(data.orderItems.length, 20) + i + 1}</td>
+                  <td></td>
+                  <td></td>
+                  <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                  <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                  <td></td>
+                  <td style={{ textAlign: 'center', fontSize: 10, color: '#9CA3AF' }}>Y / N</td>
+                  <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Common defect checklist */}
+          <div className="avoid-break" style={{ marginTop: 16 }}>
+            <div className="sub-header">COMMON DEFECT CHECKLIST</div>
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: '4%', textAlign: 'center' }}>☐</th>
+                  <th style={{ textAlign: 'left' }}>Defect Type</th>
+                  <th style={{ textAlign: 'center', width: '8%' }}>Count</th>
+                  <th style={{ textAlign: 'left', width: '40%' }}>Notes / Locations</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  'Door slab damage (dents, scratches, chips)',
+                  'Jamb damage or out of square',
+                  'Wrong handing installed',
+                  'Hardware missing or wrong finish',
+                  'Hinge alignment / binding / sagging',
+                  'Weatherstrip / seal gap (exterior)',
+                  'Lockset / deadbolt function failure',
+                  'Casing / trim damage or misalignment',
+                  'Wrong size delivered',
+                  'Paint / stain touch-up needed',
+                  'Threshold / sweep issue',
+                  'Other (write in)',
+                ].map((defect, di) => (
+                  <tr key={di}>
+                    <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                    <td style={{ fontWeight: 500, fontSize: 11 }}>{defect}</td>
+                    <td style={{ textAlign: 'center' }}></td>
+                    <td></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Summary & disposition */}
+          <div className="avoid-break" style={{ marginTop: 16 }}>
+            <div className="sub-header">DISPOSITION</div>
+            <table>
+              <tbody>
+                <tr>
+                  <td style={{ width: '25%', fontWeight: 700, background: '#F9FAFB' }}>Overall Result</td>
+                  <td>
+                    <span style={{ marginRight: 24 }}><span className="check-box" style={{ marginRight: 6 }} /> PASS — No issues</span>
+                    <span style={{ marginRight: 24 }}><span className="check-box" style={{ marginRight: 6 }} /> CONDITIONAL — Minor punch items</span>
+                    <span><span className="check-box" style={{ marginRight: 6 }} /> FAIL — Major rework required</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Total Punch Items</td>
+                  <td>________</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Return Trip Needed?</td>
+                  <td>
+                    <span style={{ marginRight: 24 }}><span className="check-box" style={{ marginRight: 6 }} /> Yes — Est. date: ______________</span>
+                    <span><span className="check-box" style={{ marginRight: 6 }} /> No</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Additional notes */}
+          <div style={{ marginTop: 16, border: '1px solid #D1D5DB', borderRadius: 4, padding: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8 }}>ADDITIONAL NOTES / BUILDER COMMENTS</div>
+            <div style={{ minHeight: 60, borderBottom: '1px solid #E5E7EB' }}></div>
+            <div style={{ minHeight: 40 }}></div>
+          </div>
+
+          {/* Sign-offs */}
+          <div style={{ marginTop: 20, display: 'flex', gap: 40, fontSize: 12, marginBottom: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>QC Inspector / Punch Walker</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Builder Rep / Site Super</div>
+            </div>
+            <div style={{ width: 120 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Date</div>
+            </div>
+          </div>
+
+          {/* Scan prompt */}
+          <div style={{ marginTop: 12, padding: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 4, fontSize: 11, textAlign: 'center', color: '#1E40AF' }}>
+            <strong>📱 Scan this sheet when complete</strong> — Go to <strong>app.abellumber.com/ops/scan</strong> to photograph this page and auto-enter results into Abel OS
+          </div>
+        </div>
       </div>
     </>
   )
