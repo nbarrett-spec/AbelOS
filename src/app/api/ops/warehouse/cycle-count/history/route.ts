@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (authError) return authError
 
   try {
-    const rows: any[] = await prisma.$queryRawUnsafe(`
+    const rows = await prisma.$queryRawUnsafe<any[]>(`
       SELECT
         b.id,
         b."weekStart",

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Try OPEN first; fall back to most-recent-of-any-status.
-    const batchRows: any[] = await prisma.$queryRawUnsafe(`
+    const batchRows = await prisma.$queryRawUnsafe<any[]>(`
       SELECT
         b.id,
         b."weekStart",
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     const batch = batchRows[0]
-    const lineRows: any[] = await prisma.$queryRawUnsafe(
+    const lineRows = await prisma.$queryRawUnsafe<any[]>(
       `
       SELECT
         l.id,
