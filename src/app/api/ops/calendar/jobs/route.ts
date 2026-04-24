@@ -42,6 +42,7 @@ interface CalendarEvent {
   community: string | null
   builderName: string
   status: string
+  jobType: string | null
   dateKind: DateKind
   date: string // ISO YYYY-MM-DD
   materialsStatus: MaterialsStatus
@@ -161,6 +162,7 @@ export async function GET(request: NextRequest) {
         community: true,
         builderName: true,
         status: true,
+        scopeType: true, // schema column — surfaced as `jobType` in response for UI compat
         assignedPMId: true,
         scheduledDate: true,
       },
@@ -215,6 +217,7 @@ export async function GET(request: NextRequest) {
           community: true,
           builderName: true,
           status: true,
+          scopeType: true, // MUST match `jobs` select above — typeof jobs leaks shape
           assignedPMId: true,
           scheduledDate: true,
         },
@@ -336,6 +339,7 @@ export async function GET(request: NextRequest) {
           community: job.community,
           builderName: job.builderName,
           status: job.status,
+          jobType: job.scopeType,
           dateKind: 'start',
           date: toYmd(job.scheduledDate),
           materialsStatus: mat,
@@ -352,6 +356,7 @@ export async function GET(request: NextRequest) {
           community: job.community,
           builderName: job.builderName,
           status: job.status,
+          jobType: job.scopeType,
           dateKind: 'close',
           date: toYmd(close),
           materialsStatus: mat,

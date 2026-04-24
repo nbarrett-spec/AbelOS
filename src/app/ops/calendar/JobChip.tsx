@@ -21,9 +21,46 @@ export interface JobChipEvent {
   community: string | null
   builderName: string
   status: CalendarEventStatus
+  jobType: string | null
   dateKind: DateKind
   date: string
   materialsStatus: MaterialsStatus
+}
+
+// ── Job Type color coding ─────────────────────────────────────────────────
+// Each job type gets a distinct color for calendar visual differentiation.
+export const JOB_TYPE_COLORS: Record<string, string> = {
+  TRIM_1:          '#3B82F6', // blue
+  TRIM_1_INSTALL:  '#2563EB', // darker blue
+  TRIM_2:          '#8B5CF6', // purple
+  TRIM_2_INSTALL:  '#7C3AED', // darker purple
+  DOORS:           '#F59E0B', // amber
+  DOOR_INSTALL:    '#D97706', // darker amber
+  HARDWARE:        '#10B981', // emerald
+  HARDWARE_INSTALL:'#059669', // darker emerald
+  FINAL_FRONT:     '#EF4444', // red
+  FINAL_FRONT_INSTALL: '#DC2626', // darker red
+  QC_WALK:         '#06B6D4', // cyan
+  PUNCH:           '#F97316', // orange
+  WARRANTY:        '#EC4899', // pink
+  CUSTOM:          '#6B7280', // gray
+}
+
+export const JOB_TYPE_LABELS: Record<string, string> = {
+  TRIM_1: 'Trim 1',
+  TRIM_1_INSTALL: 'Trim 1 Install',
+  TRIM_2: 'Trim 2',
+  TRIM_2_INSTALL: 'Trim 2 Install',
+  DOORS: 'Doors',
+  DOOR_INSTALL: 'Door Install',
+  HARDWARE: 'Hardware',
+  HARDWARE_INSTALL: 'Hardware Install',
+  FINAL_FRONT: 'Final Front',
+  FINAL_FRONT_INSTALL: 'Final Front Install',
+  QC_WALK: 'QC Walk',
+  PUNCH: 'Punch List',
+  WARRANTY: 'Warranty',
+  CUSTOM: 'Custom',
 }
 
 // Map the 13 JobStatus enum values into the 4 buckets the UX spec calls out.
@@ -96,12 +133,16 @@ export default function JobChip({
   onClick?: () => void
 }) {
   const bucket = bucketStatus(event.status)
-  const rail = RAIL_COLORS[bucket]
+  // Use job type color for the rail when available; fall back to status bucket color
+  const rail = event.jobType && JOB_TYPE_COLORS[event.jobType]
+    ? JOB_TYPE_COLORS[event.jobType]
+    : RAIL_COLORS[bucket]
   const matColor = MATERIALS_COLOR[event.materialsStatus]
   const matLabel = MATERIALS_LABEL[event.materialsStatus]
   const bucketLabel = BUCKET_LABEL[bucket]
+  const typeLabel = event.jobType ? JOB_TYPE_LABELS[event.jobType] || event.jobType : null
 
-  const title = `${event.jobNumber} · ${event.builderName}${event.community ? ' · ' + event.community : ''}\n${bucketLabel} · ${matLabel}${event.dateKind === 'close' ? '\nClosing date' : ''}`
+  const title = `${event.jobNumber}${typeLabel ? ' (' + typeLabel + ')' : ''} · ${event.builderName}${event.community ? ' · ' + event.community : ''}\n${bucketLabel} · ${matLabel}${event.dateKind === 'close' ? '\nClosing date' : ''}`
 
   return (
     <button
@@ -118,6 +159,17 @@ export default function JobChip({
           >
             {event.jobNumber}
           </span>
+          {typeLabel && (
+            <span
+              className="shrink-0 font-mono tracking-wide uppercase px-1 rounded text-[8px]"
+              style={{
+                color: rail,
+                background: `${rail}22`,
+              }}
+            >
+              {JOB_TYPE_LABELS[event.jobType!]?.replace(/\s+/g, '').slice(0, 3).toUpperCase() || event.jobType}
+            </span>
+          )}
           {event.dateKind === 'close' && (
             <span
               className="shrink-0 font-mono tracking-wide uppercase px-1 rounded text-[8px]"
@@ -152,4 +204,8 @@ export default function JobChip({
 }
 
 // Named exports for legend etc.
+// JOB_TYPE_COLORS and JOB_TYPE_LABELS are already `export const` at declaration
+// sites (lines 32, 49) — adding them to this re-export list is a duplicate
+// and fails Next.js build with TS2484/TS2323. Keep the list to the four
+// symbols that don't have inline exports.
 export { RAIL_COLORS, BUCKET_LABEL, MATERIALS_COLOR, MATERIALS_LABEL }
