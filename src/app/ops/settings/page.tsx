@@ -1,6 +1,43 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
+import { Settings as SettingsIcon } from 'lucide-react'
+import DensityToggle from '@/components/ui/DensityToggle'
+
+type FontSize = 'small' | 'default' | 'large'
+const FONT_SIZE_KEY = 'aegis-font-size'
+
+const FONT_SIZE_PX: Record<FontSize, string> = {
+  small: '14.4px',
+  default: '16px',
+  large: '17.6px',
+}
+
+function readStoredFontSize(): FontSize {
+  if (typeof window === 'undefined') return 'default'
+  try {
+    const raw = window.localStorage.getItem(FONT_SIZE_KEY)
+    return raw === 'small' || raw === 'large' || raw === 'default' ? raw : 'default'
+  } catch {
+    return 'default'
+  }
+}
+
+function applyFontSize(size: FontSize) {
+  if (typeof document === 'undefined') return
+  document.documentElement.style.fontSize = FONT_SIZE_PX[size]
+}
+
+function persistFontSize(size: FontSize) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(FONT_SIZE_KEY, size)
+  } catch {
+    /* noop — private mode / quota */
+  }
+}
 
 interface Toast {
   message: string
@@ -35,6 +72,21 @@ export default function SettingsPage() {
   const [companyChanges, setCompanyChanges] = useState<Partial<SystemSettings>>({})
   const [systemChanges, setSystemChanges] = useState<Partial<SystemSettings>>({})
   const [notificationChanges, setNotificationChanges] = useState<Partial<SystemSettings>>({})
+
+  // Tier 9.3 — Font size scaling. Hydrate from localStorage on mount; the inline
+  // bootstrap script in app/layout.tsx applies the same value before React boots
+  // so there is no FOUC.
+  const [fontSize, setFontSize] = useState<FontSize>('default')
+
+  useEffect(() => {
+    setFontSize(readStoredFontSize())
+  }, [])
+
+  const handleFontSizeChange = (size: FontSize) => {
+    setFontSize(size)
+    applyFontSize(size)
+    persistFontSize(size)
+  }
 
   useEffect(() => {
     loadSettings()
@@ -169,26 +221,30 @@ export default function SettingsPage() {
 
   if (!settings) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: '#e74c3c' }}>
-        <p>Failed to load settings</p>
+      <div className="p-8">
+        <EmptyState
+          icon={<SettingsIcon />}
+          title="Failed to load settings"
+          description="Settings could not be retrieved. Try reloading the page."
+          size="full"
+        />
       </div>
     )
   }
 
   return (
-    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', padding: '2rem' }}>
+    <div className="bg-canvas min-h-screen p-8">
       {/* Toast Notifications */}
       <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {toasts.map((toast) => (
           <div
             key={toast.id}
+            className={toast.type === 'success' ? 'bg-data-positive text-fg-on-accent' : 'bg-data-negative text-fg-on-accent'}
             style={{
               padding: '0.75rem 1rem',
               borderRadius: '4px',
-              color: WHITE,
               fontWeight: '500',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              backgroundColor: toast.type === 'success' ? '#22c55e' : '#ef4444',
             }}
           >
             {toast.message}
@@ -198,10 +254,7 @@ export default function SettingsPage() {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: BLUE, margin: 0 }}>Settings</h1>
-          <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.95rem' }}>Manage system configuration and preferences</p>
-        </div>
+        <PageHeader title="Settings" description="Manage system configuration and preferences" />
 
         {/* Quick Links */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -215,8 +268,8 @@ export default function SettingsPage() {
           >
             <div style={{ fontSize: '2rem' }}>🎨</div>
             <div>
-              <div style={{ fontWeight: '600', color: BLUE, fontSize: '1rem' }}>Appearance & Layout</div>
-              <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.25rem' }}>Theme, colors, font size, dashboard layout</div>
+              <div className="text-fg" style={{ fontWeight: '600', fontSize: '1rem' }}>Appearance & Layout</div>
+              <div className="text-fg-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>Theme, colors, font size, dashboard layout</div>
             </div>
           </a>
           <a href="/ops/profile" style={{
@@ -229,16 +282,80 @@ export default function SettingsPage() {
           >
             <div style={{ fontSize: '2rem' }}>👤</div>
             <div>
-              <div style={{ fontWeight: '600', color: BLUE, fontSize: '1rem' }}>My Profile</div>
-              <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.25rem' }}>Name, email, password, avatar</div>
+              <div className="text-fg" style={{ fontWeight: '600', fontSize: '1rem' }}>My Profile</div>
+              <div className="text-fg-muted" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>Name, email, password, avatar</div>
             </div>
           </a>
+        </div>
+
+        {/* Display Preferences (Tier 9.2 / 9.3) — density + text-size; persisted to localStorage,
+            density also syncs to /api/ops/staff/preferences via DensityToggle */}
+        <div style={{ backgroundColor: WHITE, borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 className="text-fg" style={{ fontSize: '1.3rem', fontWeight: '600', margin: '0 0 1.5rem 0' }}>Display Preferences</h2>
+
+          {/* Density */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1.25rem', borderBottom: '1px solid #eee', marginBottom: '1.25rem' }}>
+            <div>
+              <p className="text-fg" style={{ margin: 0, fontWeight: '500' }}>Density</p>
+              <p className="text-fg-muted" style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>
+                Controls vertical spacing across the app. Sets <code>data-density</code> on the document root.
+              </p>
+            </div>
+            <DensityToggle />
+          </div>
+
+          {/* Text size — Tier 9.3 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p className="text-fg" style={{ margin: 0, fontWeight: '500' }}>Text size</p>
+              <p className="text-fg-muted" style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>
+                Scales the root font size for the whole app. Persists in this browser only.
+              </p>
+            </div>
+            <div role="radiogroup" aria-label="Text size" style={{ display: 'inline-flex', gap: '0.5rem' }}>
+              {([
+                { value: 'small' as FontSize, label: 'Small', sub: '90%' },
+                { value: 'default' as FontSize, label: 'Default', sub: '100%' },
+                { value: 'large' as FontSize, label: 'Large', sub: '110%' },
+              ]).map(({ value, label, sub }) => {
+                const active = fontSize === value
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => handleFontSizeChange(value)}
+                    style={{
+                      padding: '0.4rem 0.75rem',
+                      border: `2px solid ${active ? ORANGE : '#d1d5db'}`,
+                      borderRadius: '6px',
+                      backgroundColor: active ? ORANGE : WHITE,
+                      color: active ? WHITE : BLUE,
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      lineHeight: 1.2,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'border-color 0.2s, background-color 0.2s',
+                    }}
+                  >
+                    <span>{label}</span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.85 }}>{sub}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Company Profile */}
         <div style={{ backgroundColor: WHITE, borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: '600', color: BLUE, margin: 0 }}>Company Profile</h2>
+            <h2 className="text-fg" style={{ fontSize: '1.3rem', fontWeight: '600', margin: 0 }}>Company Profile</h2>
             {Object.keys(companyChanges).length > 0 && (
               <button
                 onClick={() => saveSection('company', companyChanges)}
@@ -330,7 +447,7 @@ export default function SettingsPage() {
         {/* System Defaults */}
         <div style={{ backgroundColor: WHITE, borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: '600', color: BLUE, margin: 0 }}>System Defaults</h2>
+            <h2 className="text-fg" style={{ fontSize: '1.3rem', fontWeight: '600', margin: 0 }}>System Defaults</h2>
             {Object.keys(systemChanges).length > 0 && (
               <button
                 onClick={() => saveSection('system', systemChanges)}
@@ -413,7 +530,7 @@ export default function SettingsPage() {
         {/* Notification Settings */}
         <div style={{ backgroundColor: WHITE, borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: '600', color: BLUE, margin: 0 }}>Notification Settings</h2>
+            <h2 className="text-fg" style={{ fontSize: '1.3rem', fontWeight: '600', margin: 0 }}>Notification Settings</h2>
             {Object.keys(notificationChanges).length > 0 && (
               <button
                 onClick={() => saveSection('notifications', notificationChanges)}
@@ -450,8 +567,8 @@ export default function SettingsPage() {
                 }}
               >
                 <div>
-                  <p style={{ margin: 0, fontWeight: '500', color: BLUE }}>{label}</p>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>{desc}</p>
+                  <p className="text-fg" style={{ margin: 0, fontWeight: '500' }}>{label}</p>
+                  <p className="text-fg-muted" style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>{desc}</p>
                 </div>
                 <label
                   style={{
@@ -475,7 +592,7 @@ export default function SettingsPage() {
 
         {/* Integration Status */}
         <div style={{ backgroundColor: WHITE, borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: '600', color: BLUE, margin: '0 0 1.5rem 0' }}>Integration Status</h2>
+          <h2 className="text-fg" style={{ fontSize: '1.3rem', fontWeight: '600', margin: '0 0 1.5rem 0' }}>Integration Status</h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
             {/* Gmail/SMTP */}
@@ -487,7 +604,7 @@ export default function SettingsPage() {
                 border: '2px solid #ddd',
               }}
             >
-              <h3 style={{ margin: '0 0 0.75rem 0', color: BLUE, fontSize: '1.1rem' }}>Gmail/SMTP</h3>
+              <h3 className="text-fg" style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem' }}>Gmail/SMTP</h3>
               <div
                 style={{
                   display: 'inline-block',
@@ -528,7 +645,7 @@ export default function SettingsPage() {
                 border: '2px solid #ddd',
               }}
             >
-              <h3 style={{ margin: '0 0 0.75rem 0', color: BLUE, fontSize: '1.1rem' }}>Bolt/Inflow</h3>
+              <h3 className="text-fg" style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem' }}>Bolt/Inflow</h3>
               <div
                 style={{
                   display: 'inline-block',

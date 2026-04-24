@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Package } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Category {
   id: string
@@ -191,22 +194,26 @@ export default function CatalogManagementPage() {
   if (migrationRequired) {
     return (
       <div style={{ padding: 32, maxWidth: 800, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}>Catalog Management</h1>
-        <div style={{
-          marginTop: 32, padding: 40, backgroundColor: 'white', borderRadius: 16,
-          border: '2px dashed #C6A24E', textAlign: 'center',
-        }}>
+        <PageHeader title="Catalog Management" />
+        <div
+          className="border-signal"
+          style={{
+            marginTop: 32, padding: 40, backgroundColor: 'white', borderRadius: 16,
+            borderWidth: 2, borderStyle: 'dashed', textAlign: 'center',
+          }}
+        >
           <p style={{ fontSize: 48, marginBottom: 12 }}>🔧</p>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}>Product Expansion Migration Required</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1f2937', marginBottom: 8 }}>Product Expansion Migration Required</h2>
           <p style={{ fontSize: 14, color: '#6b7280', maxWidth: 500, margin: '0 auto 24px' }}>
             The ProductCategory and Supplier tables haven&apos;t been created yet.
             Run the product expansion migration to set up categories, suppliers, and the builder application system.
           </p>
           <button
             onClick={runMigration}
+            className="bg-signal"
             style={{
-              padding: '12px 32px', borderRadius: 12, backgroundColor: '#C6A24E',
-              color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              padding: '12px 32px', borderRadius: 12,
+              color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer',
             }}
           >
             Run Product Expansion Migration
@@ -223,21 +230,21 @@ export default function CatalogManagementPage() {
 
   return (
     <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937' }}>Catalog Management</h1>
-          <p style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
-            Manage product categories, suppliers, and catalog structure
-          </p>
-        </div>
-        <Link href="/ops/products" style={{
-          padding: '8px 16px', borderRadius: 8, backgroundColor: '#0f2a3e', color: 'white',
-          fontSize: 13, fontWeight: 500, textDecoration: 'none',
-        }}>
-          View Products
-        </Link>
-      </div>
+      <PageHeader
+        title="Catalog Management"
+        description="Manage product categories, suppliers, and catalog structure"
+        actions={
+          <Link
+            href="/ops/products"
+            style={{
+              padding: '8px 16px', borderRadius: 8, backgroundColor: '#0f2a3e', color: 'white',
+              fontSize: 13, fontWeight: 500, textDecoration: 'none',
+            }}
+          >
+            View Products
+          </Link>
+        }
+      />
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, backgroundColor: '#f3f4f6', borderRadius: 10, padding: 4, width: 'fit-content' }}>
@@ -267,8 +274,9 @@ export default function CatalogManagementPage() {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
             <button
               onClick={() => setShowNewCat(true)}
+              className="bg-signal"
               style={{
-                padding: '8px 20px', borderRadius: 8, backgroundColor: '#C6A24E', color: 'white',
+                padding: '8px 20px', borderRadius: 8, color: 'white',
                 border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               }}
             >
@@ -279,9 +287,12 @@ export default function CatalogManagementPage() {
           {loading ? (
             <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading...</div>
           ) : categories.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 60, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-              <p style={{ fontSize: 18, fontWeight: 600, color: '#1f2937' }}>No categories found</p>
-              <p style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>Run the product expansion migration to seed categories</p>
+            <div style={{ backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb' }}>
+              <EmptyState
+                icon={<Package className="w-8 h-8 text-fg-subtle" />}
+                title="No categories found"
+                description="Run the product expansion migration to seed categories"
+              />
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -298,7 +309,7 @@ export default function CatalogManagementPage() {
                       <span style={{ fontSize: 24 }}>{cat.icon || '📦'}</span>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>{cat.name}</h3>
+                          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1f2937' }}>{cat.name}</h3>
                           {!cat.active && (
                             <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 11, backgroundColor: '#FEE2E2', color: '#991B1B' }}>
                               Inactive
@@ -310,11 +321,11 @@ export default function CatalogManagementPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                       <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: 18, fontWeight: 700, color: '#0f2a3e' }}>{cat.liveProductCount || 0}</p>
+                        <p style={{ fontSize: 18, fontWeight: 600, color: '#0f2a3e' }}>{cat.liveProductCount || 0}</p>
                         <p style={{ fontSize: 11, color: '#9ca3af' }}>Products</p>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: 18, fontWeight: 700, color: '#10B981' }}>{Math.round((cat.marginTarget || 0.35) * 100)}%</p>
+                        <p style={{ fontSize: 18, fontWeight: 600, color: '#10B981' }}>{Math.round((cat.marginTarget || 0.35) * 100)}%</p>
                         <p style={{ fontSize: 11, color: '#9ca3af' }}>Target Margin</p>
                       </div>
                       {cat.children && cat.children.length > 0 && (
@@ -363,7 +374,7 @@ export default function CatalogManagementPage() {
               { label: 'Distributors', value: supplierStats.distributors, color: '#6366F1' },
             ].map(s => (
               <div key={s.label} style={{ padding: 16, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-                <p style={{ fontSize: 26, fontWeight: 700, color: s.color }}>{s.value}</p>
+                <p style={{ fontSize: 26, fontWeight: 600, color: s.color }}>{s.value}</p>
                 <p style={{ fontSize: 12, color: '#6b7280' }}>{s.label}</p>
               </div>
             ))}
@@ -389,8 +400,9 @@ export default function CatalogManagementPage() {
             </select>
             <button
               onClick={() => setShowNewSupplier(true)}
+              className="bg-signal"
               style={{
-                padding: '8px 20px', borderRadius: 8, backgroundColor: '#C6A24E', color: 'white',
+                padding: '8px 20px', borderRadius: 8, color: 'white',
                 border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginLeft: 'auto',
               }}
             >
@@ -406,7 +418,7 @@ export default function CatalogManagementPage() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>{sup.name}</h3>
+                    <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1f2937' }}>{sup.name}</h3>
                     <span style={{
                       padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                       backgroundColor: sup.type === 'MANUFACTURER' ? '#FEF3C7' : '#EBF5FF',
@@ -450,8 +462,11 @@ export default function CatalogManagementPage() {
           </div>
 
           {suppliers.length === 0 && !loading && (
-            <div style={{ textAlign: 'center', padding: 60, backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-              <p style={{ fontSize: 18, fontWeight: 600, color: '#1f2937' }}>No suppliers found</p>
+            <div style={{ backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb' }}>
+              <EmptyState
+                icon={<Package className="w-8 h-8 text-fg-subtle" />}
+                title="No suppliers found"
+              />
             </div>
           )}
         </div>
@@ -461,7 +476,7 @@ export default function CatalogManagementPage() {
       {showNewCat && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ backgroundColor: 'white', borderRadius: 16, padding: 32, maxWidth: 500, width: '100%' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>New Product Category</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>New Product Category</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>Name *</label>
@@ -491,7 +506,7 @@ export default function CatalogManagementPage() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
               <button onClick={() => setShowNewCat(false)} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={createCategory} disabled={!newCat.name} style={{ padding: '8px 20px', borderRadius: 8, backgroundColor: '#C6A24E', color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newCat.name ? 1 : 0.5 }}>Create</button>
+              <button onClick={createCategory} disabled={!newCat.name} className="bg-signal" style={{ padding: '8px 20px', borderRadius: 8, color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newCat.name ? 1 : 0.5 }}>Create</button>
             </div>
           </div>
         </div>
@@ -501,7 +516,7 @@ export default function CatalogManagementPage() {
       {showNewSupplier && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ backgroundColor: 'white', borderRadius: 16, padding: 32, maxWidth: 560, width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>New Supplier</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>New Supplier</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
@@ -577,7 +592,7 @@ export default function CatalogManagementPage() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
               <button onClick={() => setShowNewSupplier(false)} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={createSupplier} disabled={!newSupplier.name || !newSupplier.code} style={{ padding: '8px 20px', borderRadius: 8, backgroundColor: '#C6A24E', color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newSupplier.name && newSupplier.code ? 1 : 0.5 }}>Create Supplier</button>
+              <button onClick={createSupplier} disabled={!newSupplier.name || !newSupplier.code} className="bg-signal" style={{ padding: '8px 20px', borderRadius: 8, color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', opacity: newSupplier.name && newSupplier.code ? 1 : 0.5 }}>Create Supplier</button>
             </div>
           </div>
         </div>

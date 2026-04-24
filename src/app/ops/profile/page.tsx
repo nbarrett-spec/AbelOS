@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface StaffProfile {
   id: string
@@ -182,7 +183,7 @@ export default function StaffProfilePage() {
     return (
       <div className="p-6 max-w-3xl mx-auto">
         <div className="flex items-center justify-center py-16">
-          <div className="w-6 h-6 border-3 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-3 border-signal border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     )
@@ -192,35 +193,34 @@ export default function StaffProfilePage() {
     <div className="p-6 max-w-3xl mx-auto">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[#0f2a3e] text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+        <div className="fixed top-4 right-4 z-50 bg-surface-elev text-fg-inverse px-4 py-2 rounded-lg shadow-lg text-sm">
           {toast}
         </div>
       )}
 
-      <h1 className="text-2xl font-bold text-[#1B2A4A] mb-1">My Profile</h1>
-      <p className="text-gray-500 text-sm mb-6">Manage your account and security settings</p>
+      <PageHeader title="My Profile" description="Manage your account and security settings" />
 
       {/* Account Info (read-only) */}
-      <div className="bg-white rounded-lg border p-6 mb-6">
-        <h2 className="text-lg font-semibold text-[#1B2A4A] mb-4">Account Information</h2>
+      <div className="bg-surface rounded-lg border border-border p-6 mb-6">
+        <h2 className="text-lg font-semibold text-fg mb-4">Account Information</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wide">Email</label>
+            <label className="text-xs text-fg-muted uppercase tracking-wide">Email</label>
             <p className="font-medium">{profile?.email}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wide">Department</label>
+            <label className="text-xs text-fg-muted uppercase tracking-wide">Department</label>
             <p className="font-medium">{DEPT_LABELS[profile?.department || ''] || profile?.department}</p>
           </div>
           <div className="col-span-2">
-            <label className="text-xs text-gray-500 uppercase tracking-wide">
+            <label className="text-xs text-fg-muted uppercase tracking-wide">
               {(profile?.roles?.length || 0) > 1 ? 'Roles' : 'Role'}
             </label>
             <div className="flex flex-wrap gap-2 mt-1">
               {(profile?.roles?.length ? profile.roles : [profile?.role].filter(Boolean)).map((r) => (
                 <span
                   key={r}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#0f2a3e]/10 text-[#0f2a3e]"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-signal-subtle text-signal"
                 >
                   {ROLE_LABELS[r || ''] || r}
                 </span>
@@ -228,21 +228,21 @@ export default function StaffProfilePage() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wide">Staff ID</label>
-            <p className="font-mono text-xs text-gray-400">{profile?.id}</p>
+            <label className="text-xs text-fg-muted uppercase tracking-wide">Staff ID</label>
+            <p className="font-mono text-xs text-fg-subtle">{profile?.id}</p>
           </div>
         </div>
       </div>
 
       {/* Editable Profile */}
-      <div className="bg-white rounded-lg border p-6 mb-6">
+      <div className="bg-surface rounded-lg border border-border p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[#1B2A4A]">Profile Details</h2>
+          <h2 className="text-lg font-semibold text-fg">Profile Details</h2>
           {profileChanged && (
             <button
               onClick={saveProfile}
               disabled={savingProfile}
-              className="bg-[#C6A24E] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#A8882A] transition disabled:opacity-50"
+              className="bg-signal text-fg-on-accent px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-signal-hover transition disabled:opacity-50"
             >
               {savingProfile ? 'Saving...' : 'Save Changes'}
             </button>
@@ -250,40 +250,40 @@ export default function StaffProfilePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">First Name</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">First Name</label>
             <input
               type="text"
               value={firstName}
               onChange={e => setFirstName(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Last Name</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">Last Name</label>
             <input
               type="text"
               value={lastName}
               onChange={e => setLastName(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">Phone</label>
             <input
               type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
               placeholder="(940) 555-1234"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">Title</label>
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
               placeholder="e.g. Senior Estimator"
             />
           </div>
@@ -291,14 +291,14 @@ export default function StaffProfilePage() {
       </div>
 
       {/* Digest Settings */}
-      <div id="digest" className="bg-white rounded-lg border p-6 mb-6">
-        <h2 className="text-lg font-semibold text-[#1B2A4A] mb-4">Digest Settings</h2>
+      <div id="digest" className="bg-surface rounded-lg border border-border p-6 mb-6">
+        <h2 className="text-lg font-semibold text-fg mb-4">Digest Settings</h2>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-fg">
               Daily digest email (6 AM CT)
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-fg-muted mt-1">
               One email per day with everything on your plate — inbox, tasks, deliveries, invoices —
               scoped to your role. Skipped automatically when there's nothing to act on.
             </p>
@@ -311,50 +311,50 @@ export default function StaffProfilePage() {
               onChange={e => toggleDigestOptOut(!e.target.checked)}
               className="sr-only peer"
             />
-            <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-[#C6A24E]/30 peer-checked:bg-[#C6A24E] after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition peer-checked:after:translate-x-5" />
+            <div className="relative w-11 h-6 bg-surface-muted rounded-full peer peer-focus:ring-2 peer-focus:ring-signal/30 peer-checked:bg-signal after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-surface after:border after:border-border after:rounded-full after:h-5 after:w-5 after:transition peer-checked:after:translate-x-5" />
           </label>
         </div>
       </div>
 
       {/* Change Password */}
-      <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-lg font-semibold text-[#1B2A4A] mb-4">Change Password</h2>
+      <div className="bg-surface rounded-lg border border-border p-6">
+        <h2 className="text-lg font-semibold text-fg mb-4">Change Password</h2>
         <div className="space-y-4 max-w-sm">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Current Password</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">Current Password</label>
             <input
               type="password"
               value={currentPassword}
               onChange={e => setCurrentPassword(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">New Password</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">New Password</label>
             <input
               type="password"
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
               placeholder="Min 8 characters"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Confirm New Password</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1">Confirm New Password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm"
             />
             {confirmPassword && newPassword !== confirmPassword && (
-              <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+              <p className="text-data-negative text-xs mt-1">Passwords do not match</p>
             )}
           </div>
           <button
             onClick={changePassword}
             disabled={savingPassword || !currentPassword || !newPassword || newPassword !== confirmPassword}
-            className="bg-[#0f2a3e] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#153d5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-surface-elev text-fg-inverse px-5 py-2 rounded-lg text-sm font-medium hover:bg-surface-floating transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {savingPassword ? 'Changing...' : 'Change Password'}
           </button>

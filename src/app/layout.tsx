@@ -181,6 +181,11 @@ export default function RootLayout({
                 } catch(e) {
                   document.documentElement.setAttribute('data-design', 'glass');
                 }
+                try {
+                  var fs = localStorage.getItem('aegis-font-size');
+                  var px = fs === 'small' ? '14.4px' : fs === 'large' ? '17.6px' : '16px';
+                  document.documentElement.style.fontSize = px;
+                } catch(e) {}
               })();
             `,
           }}

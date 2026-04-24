@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Search, Star, MapPin, Phone, Mail, Globe, Shield, Users } from 'lucide-react'
+import { Plus, Search, Star, MapPin, Phone, Mail, Globe, Shield, Users, Hammer } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Trade {
   id: string; companyName: string; tradeType: string; contactName: string;
@@ -78,16 +80,17 @@ export default function TradeFinderPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Trade Finder</h1>
-          <p className="text-sm text-gray-500 mt-1">Find and manage trusted subcontractors and trade partners in DFW</p>
-        </div>
-        <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
-          <Plus className="w-4 h-4" /> Add Trade
-        </button>
-      </div>
+      <PageHeader
+        title="Trade Finder"
+        description="Find and manage trusted subcontractors and trade partners in DFW"
+        actions={
+          <button onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
+            <Plus className="w-4 h-4" /> Add Trade
+          </button>
+        }
+      />
+
 
       {/* Search & Filters */}
       <div className="flex items-center gap-3 mb-6">
@@ -115,12 +118,13 @@ export default function TradeFinderPage() {
 
       {/* Trade Cards */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading trades...</div>
+        <div className="text-center py-12 text-fg-subtle">Loading trades...</div>
       ) : trades.length === 0 ? (
-        <div className="text-center py-16">
-          <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No trades found. Add your first trade partner to get started.</p>
-        </div>
+        <EmptyState
+          icon={<Hammer className="w-8 h-8 text-fg-subtle" />}
+          title="No trades found"
+          description="Add your first trade partner to get started."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {trades.map(trade => (
@@ -179,7 +183,7 @@ export default function TradeFinderPage() {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-4">Add Trade Partner</h2>
+            <h2 className="text-lg font-semibold mb-4">Add Trade Partner</h2>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>

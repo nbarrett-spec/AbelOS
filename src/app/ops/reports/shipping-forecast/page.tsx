@@ -195,7 +195,7 @@ export default function ShippingForecastPage() {
             </div>
             <div className="bg-white rounded-xl border p-5">
               <p className="text-sm text-gray-500">Total Revenue</p>
-              <p className="text-3xl font-bold text-[#C6A24E] mt-1">{fmtCurrency(totalRevenue)}</p>
+              <p className="text-3xl font-bold text-signal mt-1">{fmtCurrency(totalRevenue)}</p>
               <p className="text-xs text-gray-400 mt-1">Across all orders</p>
             </div>
             <div className="bg-white rounded-xl border p-5">

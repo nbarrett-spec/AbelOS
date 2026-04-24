@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Inbox } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Inquiry {
   id: string
@@ -179,11 +181,12 @@ export default function TakeoffInquiriesPage() {
       {loading ? (
         <p style={{ color: '#9ca3af', textAlign: 'center', padding: 40 }}>Loading inquiries...</p>
       ) : inquiries.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>
-          <p style={{ fontSize: 48 }}>📨</p>
-          <p style={{ fontSize: 16, marginTop: 8 }}>No takeoff inquiries{filter ? ` with status "${STATUS_CONFIG[filter]?.label}"` : ''}</p>
-          <p style={{ fontSize: 13 }}>Inquiries from AI takeoffs will appear here for assignment</p>
-        </div>
+        <EmptyState
+          icon={<Inbox className="w-8 h-8 text-fg-subtle" />}
+          title={`No takeoff inquiries${filter ? ` with status "${STATUS_CONFIG[filter]?.label}"` : ''}`}
+          description="Inquiries from AI takeoffs will appear here for assignment"
+          size="default"
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {inquiries.map(inquiry => {

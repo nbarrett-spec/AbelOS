@@ -117,11 +117,18 @@ export default function SopQuickAccess({
                 </div>
                 <span className="text-gray-400 text-xs mt-0.5">{expanded ? '−' : '+'}</span>
               </button>
-              {expanded && s.summary && (
-                <div className="px-3 pb-3 pt-0">
-                  <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {s.summary}
-                  </p>
+              {s.summary && (
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
+                    <div className="px-3 pb-3 pt-0">
+                      <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        {s.summary}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </li>

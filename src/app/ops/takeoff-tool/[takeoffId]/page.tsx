@@ -202,7 +202,7 @@ export default function TakeoffReviewPage() {
         </div>
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold text-gray-900">
               {takeoff.project?.name || 'Unnamed project'}
             </h1>
             <p className="text-gray-500 text-sm mt-1">

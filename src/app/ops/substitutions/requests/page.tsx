@@ -1,6 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
+import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
+import { ArrowLeftRight } from 'lucide-react'
 
 interface SubRequest {
   id: string
@@ -33,24 +37,14 @@ interface SubRequest {
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'ALL'
 
-const STATUS_STYLES: Record<string, { bg: string; fg: string }> = {
-  PENDING: { bg: 'bg-amber-50', fg: 'text-amber-800' },
-  APPROVED: { bg: 'bg-emerald-50', fg: 'text-emerald-800' },
-  APPLIED: { bg: 'bg-emerald-50', fg: 'text-emerald-800' },
-  REJECTED: { bg: 'bg-red-50', fg: 'text-red-800' },
-}
-
 function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] ?? {
-    bg: 'bg-gray-100',
-    fg: 'text-gray-700',
-  }
+  // APPLIED is a success/done state in this domain; the canonical helper
+  // doesn't know it, so map it explicitly. Other statuses go through the helper.
+  const variant = status === 'APPLIED' ? 'success' : getStatusBadgeVariant(status)
   return (
-    <span
-      className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${s.bg} ${s.fg}`}
-    >
+    <Badge variant={variant} size="sm">
       {status}
-    </span>
+    </Badge>
   )
 }
 
@@ -155,23 +149,23 @@ export default function SubstitutionRequestsPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-semibold text-fg">
-            Substitution Approval Queue
-          </h1>
-          <p className="text-[12px] text-fg-muted mt-0.5">
-            CONDITIONAL substitutes wait here for PM approval before inventory
-            is re-allocated.
-          </p>
-        </div>
-        <button
-          onClick={load}
-          className="px-3 py-1.5 text-[12px] border border-border rounded hover:bg-surface-muted/40"
-        >
-          Refresh
-        </button>
-      </div>
+      <PageHeader
+        title="Substitution Approval Queue"
+        description="CONDITIONAL substitutes wait here for PM approval before inventory is re-allocated."
+        crumbs={[
+          { label: 'Ops', href: '/ops' },
+          { label: 'Substitutions', href: '/ops/substitutions' },
+          { label: 'Requests' },
+        ]}
+        actions={
+          <button
+            onClick={load}
+            className="px-3 py-1.5 text-[12px] border border-border rounded hover:bg-surface-muted/40"
+          >
+            Refresh
+          </button>
+        }
+      />
 
       <div className="flex gap-2 mb-3">
         {(
@@ -182,7 +176,7 @@ export default function SubstitutionRequestsPage() {
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 text-[12px] rounded border transition ${
               filter === s
-                ? 'border-fg bg-fg text-bg'
+                ? 'border-fg bg-fg text-fg-inverse'
                 : 'border-border hover:border-fg-muted hover:bg-surface-muted/40'
             }`}
           >
@@ -226,18 +220,20 @@ export default function SubstitutionRequestsPage() {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td
-                  colSpan={9}
-                  className="px-3 py-6 text-center text-fg-muted italic"
-                >
-                  No {filter.toLowerCase()} substitution requests.
+                <td colSpan={9} className="px-3 py-6">
+                  <EmptyState
+                    size="compact"
+                    icon={<ArrowLeftRight className="w-6 h-6 text-fg-subtle" />}
+                    title="No requests"
+                    description={`No ${filter.toLowerCase()} substitution requests.`}
+                  />
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
                 <tr
                   key={r.id}
-                  className="border-t border-border hover:bg-surface-muted/20"
+                  className="border-t border-border hover:bg-row-hover transition-colors"
                 >
                   <td className="px-3 py-2">
                     <a
@@ -316,14 +312,14 @@ export default function SubstitutionRequestsPage() {
                     {r.status === 'PENDING' ? (
                       <div className="flex gap-1">
                         <button
-                          className="px-2 py-1 text-[11px] rounded border border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                          className="px-2 py-1 text-[11px] rounded border border-data-positive/40 text-data-positive-fg hover:bg-data-positive-bg disabled:opacity-50"
                           disabled={busyId === r.id}
                           onClick={() => approve(r)}
                         >
                           {busyId === r.id ? '…' : 'Approve'}
                         </button>
                         <button
-                          className="px-2 py-1 text-[11px] rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                          className="px-2 py-1 text-[11px] rounded border border-data-negative/40 text-data-negative-fg hover:bg-data-negative-bg disabled:opacity-50"
                           disabled={busyId === r.id}
                           onClick={() => {
                             setRejectTarget(r)
@@ -353,7 +349,7 @@ export default function SubstitutionRequestsPage() {
           }}
         >
           <div
-            className="bg-bg border border-border rounded-lg shadow-xl w-[480px] max-w-[92vw]"
+            className="bg-surface border border-border rounded-lg shadow-xl w-[480px] max-w-[92vw]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-4 py-3 border-b border-border">
@@ -370,7 +366,7 @@ export default function SubstitutionRequestsPage() {
                 Reason (sent to requester)
               </label>
               <textarea
-                className="w-full mt-1 border border-border rounded px-2 py-1.5 text-[12.5px] bg-bg"
+                className="w-full mt-1 border border-border rounded px-2 py-1.5 text-[12.5px] bg-surface"
                 rows={4}
                 value={rejectNote}
                 onChange={(e) => setRejectNote(e.target.value)}
@@ -386,7 +382,7 @@ export default function SubstitutionRequestsPage() {
                 Cancel
               </button>
               <button
-                className="px-3 py-1.5 text-[12px] rounded border border-red-400 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                className="px-3 py-1.5 text-[12px] rounded border border-data-negative/50 text-data-negative-fg hover:bg-data-negative-bg disabled:opacity-50"
                 disabled={!!busyId || !rejectNote.trim()}
                 onClick={reject}
               >

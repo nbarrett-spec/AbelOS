@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Sprout } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 const TIER_COLORS: Record<string, string> = {
   HOT: '#e74c3c',
@@ -28,16 +31,16 @@ const SEGMENT_COLORS: Record<string, string> = {
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
     <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
-      <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
+      <div className="text-[13px] text-fg-muted mb-1">{label}</div>
+      <div className="text-2xl font-semibold" style={{ color: color || '#0f2a3e' }}>{value}</div>
+      {sub && <div className="text-xs text-fg-subtle mt-0.5">{sub}</div>}
     </div>
   )
 }
 
 function Badge({ text, color }: { text: string; color: string }) {
   return (
-    <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: color + '22', color, border: `1px solid ${color}44` }}>
+    <span className="inline-block text-[11px] font-semibold" style={{ padding: '2px 10px', borderRadius: 12, background: color + '22', color, border: `1px solid ${color}44` }}>
       {text}
     </span>
   )
@@ -51,7 +54,7 @@ function ScoreBar({ score, max = 100 }: { score: number; max?: number }) {
       <div style={{ flex: 1, height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4 }} />
       </div>
-      <span style={{ fontSize: 12, fontWeight: 600, color, minWidth: 28 }}>{score}</span>
+      <span className="text-xs font-semibold" style={{ color, minWidth: 28 }}>{score}</span>
     </div>
   )
 }
@@ -80,19 +83,22 @@ export default function LeadScoringPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Lead Scoring & Customer Intelligence</h1>
-      <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>RFM-based scoring, lifetime value analysis, churn prediction, and growth opportunities</p>
+      <PageHeader
+        title="Lead Scoring & Customer Intelligence"
+        description="RFM-based scoring, lifetime value analysis, churn prediction, and growth opportunities"
+      />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            className="text-[13px] cursor-pointer"
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontWeight: tab === t.id ? 600 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {loading ? <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>Loading...</div> : (
+      {loading ? <div className="text-center py-16 text-fg-subtle">Loading...</div> : (
         <>
           {tab === 'dashboard' && data && <DashboardView data={data} />}
           {tab === 'lead-scores' && data && <LeadScoresView data={data} />}
@@ -119,14 +125,14 @@ function DashboardView({ data }: { data: any }) {
         <KPICard label="Active Deals" value={Number(p.activeDeals || 0)} sub={`$${Number(p.dealPipelineValue || 0).toLocaleString()}`} color="#8e44ad" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Revenue Segments</h3>
+      <h3 className="text-base font-semibold mb-3" style={{ color: '#0f2a3e' }}>Revenue Segments</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
         {(data.segments || []).map((s: any) => (
           <div key={s.segment} style={{ background: '#fff', borderRadius: 10, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', borderTop: `3px solid ${SEGMENT_COLORS[s.segment] || '#999'}` }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: SEGMENT_COLORS[s.segment] || '#999' }}>{s.segment}</div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{Number(s.builderCount)}</div>
-            <div style={{ fontSize: 12, color: '#666' }}>Revenue: ${Number(s.segmentRevenue || 0).toLocaleString()}</div>
-            <div style={{ fontSize: 12, color: '#999' }}>Avg: ${Number(s.avgSpend || 0).toLocaleString()}</div>
+            <div className="text-sm font-semibold" style={{ color: SEGMENT_COLORS[s.segment] || '#999' }}>{s.segment}</div>
+            <div className="text-xl font-semibold mt-1">{Number(s.builderCount)}</div>
+            <div className="text-xs text-fg-muted">Revenue: ${Number(s.segmentRevenue || 0).toLocaleString()}</div>
+            <div className="text-xs text-fg-subtle">Avg: ${Number(s.avgSpend || 0).toLocaleString()}</div>
           </div>
         ))}
       </div>
@@ -162,21 +168,24 @@ function LeadScoresView({ data }: { data: any }) {
           </thead>
           <tbody>
             {(data.builders || []).slice(0, 50).map((b: any, i: number) => (
-              <tr key={b.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+              <tr key={b.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
                 <td style={{ padding: '10px 14px' }}>
-                  <div style={{ fontWeight: 600 }}>{b.companyName}</div>
-                  <div style={{ fontSize: 11, color: '#999' }}>{b.contactName}</div>
+                  <div className="font-semibold">{b.companyName}</div>
+                  <div className="text-[11px] text-fg-subtle">{b.contactName}</div>
                 </td>
                 <td style={{ padding: '10px 14px' }}><Badge text={b.leadTier} color={TIER_COLORS[b.leadTier] || '#999'} /></td>
                 <td style={{ padding: '10px 14px', width: 140 }}><ScoreBar score={Number(b.leadScore)} /></td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.orderCount)}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(b.totalSpend || 0).toLocaleString()}</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.totalSpend || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.avgOrderValue || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{b.lastOrderDate ? new Date(b.lastOrderDate).toLocaleDateString() : '—'}</td>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>{b.lastOrderDate ? new Date(b.lastOrderDate).toLocaleDateString() : '—'}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.quoteCount)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.quoteConversionRate || 0).toFixed(0)}%</td>
               </tr>
             ))}
+            {(data.builders || []).length === 0 && (
+              <tr><td colSpan={9}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No leads yet" description="Lead scores will appear here once builders start placing orders." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -211,12 +220,12 @@ function CLVView({ data }: { data: any }) {
           </thead>
           <tbody>
             {(data.builders || []).slice(0, 40).map((b: any, i: number) => (
-              <tr key={b.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+              <tr key={b.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
                 <td style={{ padding: '10px 14px' }}>
-                  <div style={{ fontWeight: 600 }}>{b.companyName}</div>
-                  <div style={{ fontSize: 11, color: '#999' }}>{b.contactName}</div>
+                  <div className="font-semibold">{b.companyName}</div>
+                  <div className="text-[11px] text-fg-subtle">{b.contactName}</div>
                 </td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#8e44ad' }}>${Number(b.clv3Year || 0).toLocaleString()}</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right', color: '#8e44ad' }}>${Number(b.clv3Year || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.projectedAnnualValue || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.monthlyRevenueRate || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.totalRevenue || 0).toLocaleString()}</td>
@@ -225,6 +234,9 @@ function CLVView({ data }: { data: any }) {
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.monthsAsCustomer || 0)}</td>
               </tr>
             ))}
+            {(data.builders || []).length === 0 && (
+              <tr><td colSpan={8}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No CLV data" description="Lifetime value figures appear here as orders accumulate." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -259,24 +271,27 @@ function ChurnView({ data }: { data: any }) {
           </thead>
           <tbody>
             {(data.builders || []).filter((b: any) => b.churnRisk !== 'HEALTHY').slice(0, 40).map((b: any, i: number) => (
-              <tr key={b.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+              <tr key={b.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
                 <td style={{ padding: '10px 14px' }}>
-                  <div style={{ fontWeight: 600 }}>{b.companyName}</div>
-                  <div style={{ fontSize: 11, color: '#999' }}>{b.contactName}</div>
+                  <div className="font-semibold">{b.companyName}</div>
+                  <div className="text-[11px] text-fg-subtle">{b.contactName}</div>
                 </td>
                 <td style={{ padding: '10px 14px' }}><Badge text={b.churnRisk?.replace('_', ' ')} color={RISK_COLORS[b.churnRisk] || '#999'} /></td>
                 <td style={{ padding: '10px 14px', width: 130 }}><ScoreBar score={Number(b.riskScore)} /></td>
                 <td style={{ padding: '10px 14px', textAlign: 'right', color: Number(b.daysSinceLastOrder) > 90 ? '#e74c3c' : '#333' }}>
                   {b.daysSinceLastOrder ?? '—'}
                 </td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(b.totalSpend || 0).toLocaleString()}</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.totalSpend || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.orderCount || 0)}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>
                   <div>{b.email}</div>
-                  <div style={{ color: '#999' }}>{b.phone}</div>
+                  <div className="text-fg-subtle">{b.phone}</div>
                 </td>
               </tr>
             ))}
+            {(data.builders || []).filter((b: any) => b.churnRisk !== 'HEALTHY').length === 0 && (
+              <tr><td colSpan={7}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No churn risk" description="All builders look healthy — no at-risk accounts." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -289,8 +304,8 @@ function GrowthView({ data }: { data: any }) {
     <div>
       <KPICard label="Total Upsell Potential" value={`$${Number(data.totalPotentialRevenue || 0).toLocaleString()}`} color="#27ae60" />
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#0f2a3e' }}>Win-Back Targets</h3>
-      <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Inactive builders with $5K+ past spend — prime for re-engagement</p>
+      <h3 className="text-base font-semibold" style={{ margin: '24px 0 12px', color: '#0f2a3e' }}>Win-Back Targets</h3>
+      <p className="text-[13px] text-fg-muted mb-3">Inactive builders with $5K+ past spend — prime for re-engagement</p>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -304,20 +319,23 @@ function GrowthView({ data }: { data: any }) {
           </thead>
           <tbody>
             {(data.winBack || []).map((b: any, i: number) => (
-              <tr key={b.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
-                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.companyName}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#e74c3c' }}>${Number(b.pastSpend || 0).toLocaleString()}</td>
+              <tr key={b.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+                <td className="font-semibold" style={{ padding: '10px 14px' }}>{b.companyName}</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right', color: '#e74c3c' }}>${Number(b.pastSpend || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.pastOrders)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{b.daysSinceLastOrder}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{b.email}<br/><span style={{ color: '#999' }}>{b.phone}</span></td>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>{b.email}<br/><span className="text-fg-subtle">{b.phone}</span></td>
               </tr>
             ))}
+            {(data.winBack || []).length === 0 && (
+              <tr><td colSpan={5}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No win-back targets" description="No inactive builders with significant past spend." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#0f2a3e' }}>Upsell Opportunities</h3>
-      <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Builders ordering below segment average — room to grow order value</p>
+      <h3 className="text-base font-semibold" style={{ margin: '24px 0 12px', color: '#0f2a3e' }}>Upsell Opportunities</h3>
+      <p className="text-[13px] text-fg-muted mb-3">Builders ordering below segment average — room to grow order value</p>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -332,21 +350,24 @@ function GrowthView({ data }: { data: any }) {
           </thead>
           <tbody>
             {(data.upsell || []).map((b: any, i: number) => (
-              <tr key={b.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
-                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.companyName}</td>
+              <tr key={b.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+                <td className="font-semibold" style={{ padding: '10px 14px' }}>{b.companyName}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.avgOrderValue || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', color: '#999' }}>${Number(b.segmentAvg || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', color: '#C6A24E' }}>${Number(b.upsellGap || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#27ae60' }}>${Number(b.potentialRevenue || 0).toLocaleString()}</td>
+                <td className="text-fg-subtle" style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.segmentAvg || 0).toLocaleString()}</td>
+                <td className="text-signal" style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.upsellGap || 0).toLocaleString()}</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right', color: '#27ae60' }}>${Number(b.potentialRevenue || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.orderCount)}</td>
               </tr>
             ))}
+            {(data.upsell || []).length === 0 && (
+              <tr><td colSpan={6}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No upsell opportunities" description="No builders ordering below segment average." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, margin: '24px 0 12px', color: '#0f2a3e' }}>Cross-Sell Gaps</h3>
-      <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Builders buying from 1-3 categories — opportunity to expand product mix</p>
+      <h3 className="text-base font-semibold" style={{ margin: '24px 0 12px', color: '#0f2a3e' }}>Cross-Sell Gaps</h3>
+      <p className="text-[13px] text-fg-muted mb-3">Builders buying from 1-3 categories — opportunity to expand product mix</p>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -359,13 +380,16 @@ function GrowthView({ data }: { data: any }) {
           </thead>
           <tbody>
             {(data.crossSell || []).map((b: any, i: number) => (
-              <tr key={b.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
-                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{b.companyName}</td>
+              <tr key={b.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+                <td className="font-semibold" style={{ padding: '10px 14px' }}>{b.companyName}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(b.totalSpend || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(b.categoryCount)}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{(b.purchasedCategories || []).join(', ')}</td>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>{(b.purchasedCategories || []).join(', ')}</td>
               </tr>
             ))}
+            {(data.crossSell || []).length === 0 && (
+              <tr><td colSpan={4}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No cross-sell gaps" description="All builders already buy across multiple categories." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -378,7 +402,7 @@ function EngagementView({ data }: { data: any }) {
   const maxRev = Math.max(1, ...timeline.map((t: any) => Number(t.revenue || 0)))
   return (
     <div>
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#0f2a3e' }}>12-Month Engagement Timeline</h3>
+      <h3 className="text-base font-semibold mb-4" style={{ color: '#0f2a3e' }}>12-Month Engagement Timeline</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -393,12 +417,12 @@ function EngagementView({ data }: { data: any }) {
           </thead>
           <tbody>
             {timeline.map((t: any, i: number) => (
-              <tr key={i} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
-                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{new Date(t.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</td>
+              <tr key={i} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+                <td className="font-semibold" style={{ padding: '10px 14px' }}>{new Date(t.month).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(t.newBuilders)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(t.firstOrders)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(t.totalOrders)}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>${Number(t.revenue || 0).toLocaleString()}</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>${Number(t.revenue || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px' }}>
                   <div style={{ height: 16, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ width: `${(Number(t.revenue || 0) / maxRev) * 100}%`, height: '100%', background: '#0f2a3e', borderRadius: 4 }} />
@@ -406,6 +430,9 @@ function EngagementView({ data }: { data: any }) {
                 </td>
               </tr>
             ))}
+            {timeline.length === 0 && (
+              <tr><td colSpan={6}><EmptyState icon={<Sprout className="w-8 h-8 text-fg-subtle" />} title="No engagement data" description="Monthly engagement will appear here once orders are flowing." /></td></tr>
+            )}
           </tbody>
         </table>
       </div>

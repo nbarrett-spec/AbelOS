@@ -576,7 +576,11 @@ export default function CommunicationLogPage() {
                   </div>
 
                   {/* Expanded Content */}
-                  {isExpanded && (
+                  <div
+                    className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                    style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                  >
+                    <div className="overflow-hidden min-h-0">
                     <div className="px-5 pb-4 border-t border-border pt-3">
                       <div className="text-xs text-fg-muted space-y-1 mb-3">
                         {log.fromAddress && (
@@ -638,7 +642,8 @@ export default function CommunicationLogPage() {
                         </div>
                       )}
                     </div>
-                  )}
+                    </div>
+                  </div>
                 </div>
               )
             })}

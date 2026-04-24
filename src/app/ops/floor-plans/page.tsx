@@ -2,6 +2,9 @@
 
 import Image from 'next/image'
 import { useEffect, useState, useRef } from 'react'
+import { Map } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface FloorPlan {
   id: string
@@ -196,19 +199,18 @@ export default function FloorPlansPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Floor Plans</h1>
-          <p className="text-sm text-gray-500 mt-1">Upload, manage, and link floor plans to projects, takeoffs, and quotes</p>
-        </div>
-        <button
-          onClick={() => { setUploadOpen(true); resetUploadForm() }}
-          className="px-4 py-2.5 bg-[#0f2a3e] text-white text-sm rounded-lg hover:bg-[#0a1a28] font-medium"
-        >
-          + Upload Floor Plan
-        </button>
-      </div>
+      <PageHeader
+        title="Floor Plans"
+        description="Upload, manage, and link floor plans to projects, takeoffs, and quotes"
+        actions={
+          <button
+            onClick={() => { setUploadOpen(true); resetUploadForm() }}
+            className="px-4 py-2.5 bg-[#0f2a3e] text-white text-sm rounded-lg hover:bg-[#0a1a28] font-medium"
+          >
+            + Upload Floor Plan
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -251,11 +253,11 @@ export default function FloorPlansPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f2a3e]" />
           </div>
         ) : floorPlans.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">📐</p>
-            <p className="text-lg font-medium">No floor plans yet</p>
-            <p className="text-sm mt-1">Upload your first floor plan to get started</p>
-          </div>
+          <EmptyState
+            icon={<Map className="w-8 h-8 text-fg-subtle" />}
+            title="No floor plans yet"
+            description="Upload your first floor plan to get started."
+          />
         ) : (
           <>
             <table className="w-full">
@@ -272,7 +274,7 @@ export default function FloorPlansPage() {
               </thead>
               <tbody className="divide-y">
                 {floorPlans.map((fp) => (
-                  <tr key={fp.id} className="hover:bg-gray-50">
+                  <tr key={fp.id} className="hover:bg-row-hover">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{getFileIcon(fp.fileType)}</span>

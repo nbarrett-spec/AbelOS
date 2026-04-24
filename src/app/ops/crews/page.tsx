@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Hammer } from 'lucide-react'
 import { CreateCrewModal } from '../components/CreateCrewModal'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
+import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 
 interface StaffMember {
   id: string
@@ -118,7 +122,7 @@ export default function CrewsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C6A24E]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-signal" />
       </div>
     )
   }
@@ -148,44 +152,42 @@ export default function CrewsPage() {
     <div className="space-y-6">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-surface'
         }`}>
           {toast}
         </div>
       )}
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Crew Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage delivery and installation crews
-          </p>
-        </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A] transition-colors font-medium"
-        >
-          + Create Crew
-        </button>
-      </div>
+      <PageHeader
+        title="Crew Management"
+        description="Manage delivery and installation crews"
+        crumbs={[{ label: 'Ops', href: '/ops' }, { label: 'Crews' }]}
+        actions={
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2 bg-signal text-white rounded-lg hover:bg-signal-hover transition-colors font-medium"
+          >
+            + Create Crew
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total Crews</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{crews.length}</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-2">{crews.length}</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Active</p>
-          <p className="text-2xl font-bold text-green-600 mt-2">{activeCount}</p>
+          <p className="text-2xl font-semibold text-green-600 mt-2">{activeCount}</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Inactive</p>
-          <p className="text-2xl font-bold text-red-600 mt-2">{inactiveCount}</p>
+          <p className="text-2xl font-semibold text-red-600 mt-2">{inactiveCount}</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total Members</p>
-          <p className="text-2xl font-bold text-[#1E3A5F] mt-2">{totalMembers}</p>
+          <p className="text-2xl font-semibold text-[#1E3A5F] mt-2">{totalMembers}</p>
         </div>
       </div>
 
@@ -198,7 +200,7 @@ export default function CrewsPage() {
               placeholder="Search crews by name or member..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-signal"
             />
           </div>
         </div>
@@ -213,7 +215,7 @@ export default function CrewsPage() {
                 onClick={() => setStatusFilter(status)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   statusFilter === status
-                    ? 'bg-[#C6A24E] text-white'
+                    ? 'bg-signal text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -231,7 +233,7 @@ export default function CrewsPage() {
                 onClick={() => setTypeFilter(type)}
                 className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                   typeFilter === type
-                    ? 'bg-[#C6A24E] text-white'
+                    ? 'bg-signal text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -245,8 +247,12 @@ export default function CrewsPage() {
       {/* Crews Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filtered.length === 0 ? (
-          <div className="col-span-full bg-white rounded-lg border p-8 text-center text-gray-500">
-            No crews found
+          <div className="col-span-full bg-white rounded-lg border">
+            <EmptyState
+              icon={<Hammer className="w-8 h-8 text-fg-subtle" />}
+              title="No crews found"
+              description="Create a delivery or installation crew to get started"
+            />
           </div>
         ) : (
           filtered.map((crew) => (
@@ -262,7 +268,7 @@ export default function CrewsPage() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">{crew.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{crew.name}</h3>
                     <div className="flex gap-2 mt-2">
                       <span
                         className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${
@@ -271,13 +277,9 @@ export default function CrewsPage() {
                       >
                         {CREW_TYPE_LABELS[crew.crewType]}
                       </span>
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${
-                          STATUS_COLORS[String(crew.active)]
-                        }`}
-                      >
+                      <Badge variant={getStatusBadgeVariant(crew.active ? 'active' : 'inactive')}>
                         {crew.active ? 'Active' : 'Inactive'}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -372,7 +374,7 @@ function CrewDetailModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">{crew.name}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{crew.name}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
@@ -387,7 +389,7 @@ function CrewDetailModal({
               <div>
                 <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Crew Name</label>
                 <input value={editName} onChange={(e) => setEditName(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A24E]" />
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-signal" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Type</label>
@@ -405,7 +407,7 @@ function CrewDetailModal({
               </div>
               <div className="flex gap-2">
                 <button onClick={handleSave}
-                  className="px-4 py-2 text-sm font-medium bg-[#C6A24E] text-white rounded-lg hover:bg-[#D46D1A]">
+                  className="px-4 py-2 text-sm font-medium bg-signal text-white rounded-lg hover:bg-signal-hover">
                   Save Changes
                 </button>
                 <button onClick={() => setEditing(false)}
@@ -428,9 +430,9 @@ function CrewDetailModal({
               <div>
                 <p className="text-xs text-gray-500 uppercase font-semibold">Status</p>
                 <p className="text-sm mt-1">
-                  <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${STATUS_COLORS[String(crew.active)]}`}>
+                  <Badge variant={getStatusBadgeVariant(crew.active ? 'active' : 'inactive')}>
                     {crew.active ? 'Active' : 'Inactive'}
-                  </span>
+                  </Badge>
                 </p>
               </div>
 
@@ -463,7 +465,7 @@ function CrewDetailModal({
                         <p className="text-xs text-gray-500 mt-0.5">{member.staff.email}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-white bg-[#C6A24E] px-2.5 py-1 rounded flex-shrink-0">
+                        <span className="text-xs font-medium text-white bg-signal px-2.5 py-1 rounded flex-shrink-0">
                           {member.role}
                         </span>
                         <button

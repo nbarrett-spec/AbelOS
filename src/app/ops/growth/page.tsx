@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { TrendingUp } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 const TYPE_LABELS: Record<string, string> = {
   CROSS_SELL: 'Cross-Sell',
@@ -27,15 +30,15 @@ const EFFORT_COLORS: Record<string, string> = {
 function KPICard({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
-      <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
+      <div className="text-xs text-fg-muted mb-1">{label}</div>
+      <div className="text-2xl font-semibold" style={{ color: color || '#0f2a3e' }}>{value}</div>
     </div>
   )
 }
 
 function Badge({ text, color }: { text: string; color: string }) {
   return (
-    <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: color + '22', color, border: `1px solid ${color}44` }}>
+    <span className="inline-block text-[12px] font-semibold" style={{ padding: '3px 12px', borderRadius: 12, background: color + '22', color, border: `1px solid ${color}44` }}>
       {text}
     </span>
   )
@@ -158,13 +161,15 @@ export default function GrowthOpportunitiesPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Growth Opportunities</h1>
-      <p style={{ color: '#666', fontSize: 14, marginBottom: 24 }}>Revenue expansion signals from live data — cross-sell, volume growth, win-back, pricing, and new account activation</p>
+      <PageHeader
+        title="Growth Opportunities"
+        description="Revenue expansion signals from live data — cross-sell, volume growth, win-back, pricing, and new account activation"
+      />
 
       {error && (
         <div style={{ background: '#fee', border: '1px solid #fcc', borderRadius: 10, padding: 16, marginBottom: 24, color: '#c00' }}>
-          <p style={{ fontWeight: 600 }}>Error Loading Opportunities</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>{error}</p>
+          <p className="font-semibold">Error Loading Opportunities</p>
+          <p className="text-[13px] mt-1">{error}</p>
         </div>
       )}
 
@@ -181,8 +186,8 @@ export default function GrowthOpportunitiesPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 16, alignItems: 'end' }}>
           {/* Type Filter */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#666', display: 'block', marginBottom: 6 }}>Type</label>
-            <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13 }}>
+            <label className="block text-xs font-semibold text-fg-muted mb-1.5">Type</label>
+            <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full text-[13px]" style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd' }}>
               <option value="ALL">All Types</option>
               <option value="CROSS_SELL">Cross-Sell</option>
               <option value="VOLUME_UPGRADE">Volume Upgrade</option>
@@ -194,8 +199,8 @@ export default function GrowthOpportunitiesPage() {
 
           {/* Effort Filter */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#666', display: 'block', marginBottom: 6 }}>Effort</label>
-            <select value={filterEffort} onChange={e => setFilterEffort(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13 }}>
+            <label className="block text-xs font-semibold text-fg-muted mb-1.5">Effort</label>
+            <select value={filterEffort} onChange={e => setFilterEffort(e.target.value)} className="w-full text-[13px]" style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd' }}>
               <option value="ALL">All Efforts</option>
               <option value="LOW">Low Effort</option>
               <option value="MEDIUM">Medium Effort</option>
@@ -205,17 +210,21 @@ export default function GrowthOpportunitiesPage() {
 
           {/* Search */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#666', display: 'block', marginBottom: 6 }}>Search</label>
-            <input type="text" placeholder="Search by builder, product, or title..." value={searchText} onChange={e => setSearchText(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13 }} />
+            <label className="block text-xs font-semibold text-fg-muted mb-1.5">Search</label>
+            <input type="text" placeholder="Search by builder, product, or title..." value={searchText} onChange={e => setSearchText(e.target.value)} className="w-full text-[13px]" style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd' }} />
           </div>
         </div>
       </div>
 
       {/* Opportunities List */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>Loading opportunities...</div>
+        <div className="text-center py-16 text-fg-subtle">Loading opportunities...</div>
       ) : filteredOps.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>No opportunities match your filters.</div>
+        <EmptyState
+          icon={<TrendingUp className="w-8 h-8 text-fg-subtle" />}
+          title="No growth opportunities"
+          description="No opportunities match your filters."
+        />
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
           {filteredOps.filter(opp => !dismissedIds.has(opp.id)).map(opp => (
@@ -239,13 +248,13 @@ function OpportunityCard({ opportunity, isApproved, onApprove, onDismiss }: { op
           <Badge text={opportunity.effort} color={effortColor} />
         </div>
 
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>{opportunity.title}</h3>
+        <h3 className="text-base font-semibold mb-2" style={{ color: '#0f2a3e' }}>{opportunity.title}</h3>
 
-        <p style={{ fontSize: 13, color: '#666', marginBottom: 12, lineHeight: 1.5 }}>{opportunity.description}</p>
+        <p className="text-[13px] text-fg-muted mb-3 leading-relaxed">{opportunity.description}</p>
 
         {/* Entity Info */}
         {(opportunity.builderName || opportunity.productName) && (
-          <div style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>
+          <div className="text-xs text-fg-subtle mb-3">
             {opportunity.builderName && <span>Builder: <strong>{opportunity.builderName}</strong></span>}
             {opportunity.productName && <span>Product: <strong>{opportunity.productName}</strong></span>}
           </div>
@@ -254,16 +263,16 @@ function OpportunityCard({ opportunity, isApproved, onApprove, onDismiss }: { op
         {/* Impact */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
           <div>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>Estimated Impact</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#27ae60' }}>${(opportunity.estimatedImpact / 1000).toFixed(0)}K</div>
+            <div className="text-[11px] text-fg-subtle mb-1">Estimated Impact</div>
+            <div className="text-lg font-semibold" style={{ color: '#27ae60' }}>${(opportunity.estimatedImpact / 1000).toFixed(0)}K</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>Priority Score</div>
+            <div className="text-[11px] text-fg-subtle mb-1">Priority Score</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ flex: 1, height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
                 <div style={{ width: `${opportunity.priority}%`, height: '100%', background: color, borderRadius: 3 }} />
               </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color, minWidth: 32 }}>{opportunity.priority}</span>
+              <span className="text-[13px] font-semibold" style={{ color, minWidth: 32 }}>{opportunity.priority}</span>
             </div>
           </div>
         </div>
@@ -272,16 +281,16 @@ function OpportunityCard({ opportunity, isApproved, onApprove, onDismiss }: { op
       {/* Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 140 }}>
         {isApproved ? (
-          <div style={{ padding: '12px 16px', background: '#27ae60', color: '#fff', borderRadius: 6, fontSize: 13, fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <div className="text-[13px] font-semibold text-center" style={{ padding: '12px 16px', background: '#27ae60', color: '#fff', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span>✓</span>
             Approved
           </div>
         ) : (
           <>
-            <button onClick={onApprove} style={{ padding: '10px 16px', background: '#0f2a3e', color: '#fff', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={onApprove} className="text-[13px] font-semibold cursor-pointer" style={{ padding: '10px 16px', background: '#0f2a3e', color: '#fff', borderRadius: 6, border: 'none' }}>
               Approve
             </button>
-            <button onClick={onDismiss} style={{ padding: '10px 16px', background: '#f5f5f5', color: '#666', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={onDismiss} className="text-[13px] font-semibold cursor-pointer text-fg-muted" style={{ padding: '10px 16px', background: '#f5f5f5', borderRadius: 6, border: '1px solid #ddd' }}>
               Dismiss
             </button>
           </>

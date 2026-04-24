@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Lock } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ──────────────────────────────────────────────────────────────────
 // TYPES
@@ -300,48 +303,47 @@ export default function DocumentVaultPage() {
     >
       {/* Drag overlay */}
       {dragOver && (
-        <div className="fixed inset-0 bg-blue-500/20 border-4 border-dashed border-blue-500 z-50 flex items-center justify-center pointer-events-none rounded-xl">
-          <div className="bg-white p-8 rounded-xl shadow-2xl text-center">
+        <div className="fixed inset-0 bg-signal-subtle border-4 border-dashed border-signal z-50 flex items-center justify-center pointer-events-none rounded-xl">
+          <div className="bg-surface p-8 rounded-xl shadow-elevation-3 text-center">
             <div className="text-5xl mb-3">📂</div>
-            <div className="text-xl font-bold text-gray-800">Drop files to upload</div>
-            <div className="text-gray-500 mt-1">PDF, images, documents up to 25MB</div>
+            <div className="text-xl font-semibold text-fg">Drop files to upload</div>
+            <div className="text-fg-muted mt-1">PDF, images, documents up to 25MB</div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Document Vault</h1>
-          <p className="text-gray-500 mt-1">Central repository for all business documents</p>
-        </div>
-        <button
-          onClick={() => setUploadModal(true)}
-          className="px-5 py-2.5 text-white rounded-lg font-medium flex items-center gap-2"
-          style={{ backgroundColor: '#C6A24E' }}
-        >
-          <span className="text-lg">+</span> Upload Documents
-        </button>
-      </div>
+      <PageHeader
+        title="Document Vault"
+        description="Central repository for all business documents"
+        actions={
+          <button
+            onClick={() => setUploadModal(true)}
+            className="px-5 py-2.5 text-fg-on-accent rounded-lg font-medium flex items-center gap-2 bg-signal hover:bg-signal-hover transition-colors"
+          >
+            <span className="text-lg">+</span> Upload Documents
+          </button>
+        }
+      />
 
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white border rounded-xl p-4">
-            <div className="text-2xl font-bold" style={{ color: '#0f2a3e' }}>{summary.activeDocuments}</div>
-            <div className="text-sm text-gray-500">Active Documents</div>
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="text-2xl font-semibold text-fg">{summary.activeDocuments}</div>
+            <div className="text-sm text-fg-muted">Active Documents</div>
           </div>
-          <div className="bg-white border rounded-xl p-4">
-            <div className="text-2xl font-bold" style={{ color: '#C6A24E' }}>{formatFileSize(summary.totalSizeBytes)}</div>
-            <div className="text-sm text-gray-500">Total Storage</div>
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="text-2xl font-semibold text-signal">{formatFileSize(summary.totalSizeBytes)}</div>
+            <div className="text-sm text-fg-muted">Total Storage</div>
           </div>
-          <div className="bg-white border rounded-xl p-4">
-            <div className="text-2xl font-bold" style={{ color: '#27AE60' }}>{summary.ordersWithDocs}</div>
-            <div className="text-sm text-gray-500">Orders with Docs</div>
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="text-2xl font-semibold text-data-positive">{summary.ordersWithDocs}</div>
+            <div className="text-sm text-fg-muted">Orders with Docs</div>
           </div>
-          <div className="bg-white border rounded-xl p-4">
-            <div className="text-2xl font-bold" style={{ color: '#8E44AD' }}>{summary.buildersWithDocs}</div>
-            <div className="text-sm text-gray-500">Builders with Docs</div>
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="text-2xl font-semibold text-fg">{summary.buildersWithDocs}</div>
+            <div className="text-sm text-fg-muted">Builders with Docs</div>
           </div>
         </div>
       )}
@@ -351,7 +353,7 @@ export default function DocumentVaultPage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => { setCategory(''); setPage(1) }}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${!category ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${!category ? 'bg-fg text-canvas' : 'bg-surface-muted text-fg-muted hover:bg-row-hover'}`}
           >
             All ({total})
           </button>
@@ -361,7 +363,7 @@ export default function DocumentVaultPage() {
               <button
                 key={bc.category}
                 onClick={() => { setCategory(bc.category === category ? '' : bc.category); setPage(1) }}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${category === bc.category ? 'text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${category === bc.category ? 'text-white' : 'text-fg-muted hover:bg-row-hover'}`}
                 style={category === bc.category ? { backgroundColor: info.color } : {}}
               >
                 {info.icon} {info.label} ({bc.count})
@@ -379,11 +381,11 @@ export default function DocumentVaultPage() {
             placeholder="Search documents by name, description, or tag..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2.5 border border-border bg-surface text-fg rounded-lg focus:ring-2 focus:ring-signal focus:border-signal"
           />
-          <span className="absolute left-3 top-3 text-gray-400">🔍</span>
+          <span className="absolute left-3 top-3 text-fg-subtle">🔍</span>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-600">
+        <label className="flex items-center gap-2 text-sm text-fg-muted">
           <input
             type="checkbox"
             checked={showArchived}
@@ -393,7 +395,7 @@ export default function DocumentVaultPage() {
           Show archived
         </label>
         {selected.size > 0 && (
-          <button onClick={handleBulkArchive} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100">
+          <button onClick={handleBulkArchive} className="px-3 py-2 bg-data-negative-bg text-data-negative-fg rounded-lg text-sm font-medium hover:bg-row-hover">
             Archive {selected.size} selected
           </button>
         )}
@@ -401,26 +403,27 @@ export default function DocumentVaultPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div className="mb-4 p-3 bg-data-negative-bg border border-border text-data-negative-fg rounded-lg">
           {error}
-          <button onClick={() => setError(null)} className="ml-3 text-red-500 hover:text-red-700">Dismiss</button>
+          <button onClick={() => setError(null)} className="ml-3 text-data-negative-fg hover:opacity-75">Dismiss</button>
         </div>
       )}
 
       {/* Document table */}
-      <div className="bg-white border rounded-xl overflow-hidden">
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-gray-400">Loading documents...</div>
+          <div className="p-12 text-center text-fg-subtle">Loading documents...</div>
         ) : documents.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="text-5xl mb-3">📂</div>
-            <div className="text-gray-500 font-medium">No documents yet</div>
-            <div className="text-gray-400 text-sm mt-1">Upload files or drag and drop anywhere on this page</div>
-          </div>
+          <EmptyState
+            icon={<Lock className="w-10 h-10 text-fg-subtle" />}
+            title="No documents yet"
+            description="Upload files or drag and drop anywhere on this page"
+            size="full"
+          />
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b text-left" style={{ backgroundColor: '#F8FAFC' }}>
+              <tr className="border-b border-border text-left bg-surface-muted">
                 <th className="p-3 w-8">
                   <input
                     type="checkbox"
@@ -432,12 +435,12 @@ export default function DocumentVaultPage() {
                     className="rounded"
                   />
                 </th>
-                <th className="p-3 font-semibold text-gray-600">Document</th>
-                <th className="p-3 font-semibold text-gray-600">Category</th>
-                <th className="p-3 font-semibold text-gray-600">Linked To</th>
-                <th className="p-3 font-semibold text-gray-600">Size</th>
-                <th className="p-3 font-semibold text-gray-600">Uploaded</th>
-                <th className="p-3 font-semibold text-gray-600 text-right">Actions</th>
+                <th className="p-3 font-semibold text-fg-muted">Document</th>
+                <th className="p-3 font-semibold text-fg-muted">Category</th>
+                <th className="p-3 font-semibold text-fg-muted">Linked To</th>
+                <th className="p-3 font-semibold text-fg-muted">Size</th>
+                <th className="p-3 font-semibold text-fg-muted">Uploaded</th>
+                <th className="p-3 font-semibold text-fg-muted text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -445,7 +448,7 @@ export default function DocumentVaultPage() {
                 const catInfo = getCategoryInfo(doc.category)
                 const links = entityLabels[doc.id] || []
                 return (
-                  <tr key={doc.id} className="border-b hover:bg-gray-50 transition">
+                  <tr key={doc.id} className="border-b border-border hover:bg-row-hover transition">
                     <td className="p-3">
                       <input
                         type="checkbox"
@@ -460,12 +463,12 @@ export default function DocumentVaultPage() {
                         <div>
                           <button
                             onClick={() => openDetail(doc)}
-                            className="font-medium text-gray-900 hover:text-blue-600 text-left"
+                            className="font-medium text-fg hover:text-signal text-left"
                           >
                             {doc.fileName}
                           </button>
                           {doc.description && (
-                            <div className="text-xs text-gray-400 truncate max-w-[250px]">{doc.description}</div>
+                            <div className="text-xs text-fg-subtle truncate max-w-[250px]">{doc.description}</div>
                           )}
                         </div>
                       </div>
@@ -481,29 +484,29 @@ export default function DocumentVaultPage() {
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
                         {links.length > 0 ? links.map(l => (
-                          <span key={l} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{l}</span>
-                        )) : <span className="text-gray-300 text-xs">None</span>}
+                          <span key={l} className="px-1.5 py-0.5 bg-surface-muted text-fg-muted rounded text-xs">{l}</span>
+                        )) : <span className="text-fg-subtle text-xs">None</span>}
                       </div>
                     </td>
-                    <td className="p-3 text-gray-500">{formatFileSize(doc.fileSize)}</td>
+                    <td className="p-3 text-fg-muted">{formatFileSize(doc.fileSize)}</td>
                     <td className="p-3">
-                      <div className="text-gray-600 text-xs">{formatDate(doc.createdAt)}</div>
-                      {doc.uploadedByName && <div className="text-gray-400 text-xs">{doc.uploadedByName}</div>}
+                      <div className="text-fg-muted text-xs">{formatDate(doc.createdAt)}</div>
+                      {doc.uploadedByName && <div className="text-fg-subtle text-xs">{doc.uploadedByName}</div>}
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <a
                           href={`/api/ops/documents/vault/${doc.id}?mode=download`}
-                          className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium hover:bg-blue-100"
+                          className="px-2 py-1 bg-data-info-bg text-data-info-fg rounded text-xs font-medium hover:bg-row-hover"
                         >
                           Download
                         </a>
                         {doc.isArchived ? (
-                          <button onClick={() => handleRestore(doc.id)} className="px-2 py-1 bg-green-50 text-green-600 rounded text-xs font-medium hover:bg-green-100">
+                          <button onClick={() => handleRestore(doc.id)} className="px-2 py-1 bg-data-positive-bg text-data-positive-fg rounded text-xs font-medium hover:bg-row-hover">
                             Restore
                           </button>
                         ) : (
-                          <button onClick={() => handleArchive(doc.id)} className="px-2 py-1 bg-gray-50 text-gray-500 rounded text-xs font-medium hover:bg-gray-100">
+                          <button onClick={() => handleArchive(doc.id)} className="px-2 py-1 bg-surface-muted text-fg-muted rounded text-xs font-medium hover:bg-row-hover">
                             Archive
                           </button>
                         )}
@@ -518,22 +521,22 @@ export default function DocumentVaultPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t bg-gray-50">
-            <div className="text-sm text-gray-500">
+          <div className="flex items-center justify-between p-4 border-t border-border bg-surface-muted">
+            <div className="text-sm text-fg-muted">
               Showing {(page - 1) * 30 + 1}-{Math.min(page * 30, total)} of {total}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-40"
+                className="px-3 py-1 border border-border rounded text-sm disabled:opacity-40"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-40"
+                className="px-3 py-1 border border-border rounded text-sm disabled:opacity-40"
               >
                 Next
               </button>
@@ -545,31 +548,31 @@ export default function DocumentVaultPage() {
       {/* ──────── UPLOAD MODAL ──────── */}
       {uploadModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => !uploading && setUploadModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-900">Upload Documents</h2>
-              <p className="text-gray-500 text-sm mt-1">PDF, images, spreadsheets, documents up to 25MB each</p>
+          <div className="bg-surface rounded-2xl shadow-elevation-3 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-semibold text-fg">Upload Documents</h2>
+              <p className="text-fg-muted text-sm mt-1">PDF, images, spreadsheets, documents up to 25MB each</p>
             </div>
             <div className="p-6 space-y-4">
               {/* File picker */}
               <div
-                className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 transition"
+                className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-signal transition"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {selectedFiles.length > 0 ? (
                   <div>
-                    <div className="text-lg font-medium text-gray-800">{selectedFiles.length} file(s) selected</div>
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-lg font-medium text-fg">{selectedFiles.length} file(s) selected</div>
+                    <div className="text-sm text-fg-muted mt-1">
                       {selectedFiles.map(f => f.name).join(', ')}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-fg-subtle mt-1">
                       Total: {formatFileSize(selectedFiles.reduce((s, f) => s + f.size, 0))}
                     </div>
                   </div>
                 ) : (
                   <div>
                     <div className="text-4xl mb-2">📁</div>
-                    <div className="text-gray-500">Click to select files or drag & drop</div>
+                    <div className="text-fg-muted">Click to select files or drag & drop</div>
                   </div>
                 )}
                 <input
@@ -584,11 +587,11 @@ export default function DocumentVaultPage() {
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-sm font-medium text-fg mb-1">Category</label>
                 <select
                   value={uploadCategory}
                   onChange={e => setUploadCategory(e.target.value)}
-                  className="w-full border rounded-lg p-2.5"
+                  className="w-full border border-border bg-surface text-fg rounded-lg p-2.5"
                 >
                   {CATEGORIES.map(c => (
                     <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
@@ -598,36 +601,36 @@ export default function DocumentVaultPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                <label className="block text-sm font-medium text-fg mb-1">Description (optional)</label>
                 <input
                   type="text"
                   value={uploadDescription}
                   onChange={e => setUploadDescription(e.target.value)}
                   placeholder="Brief description of these documents"
-                  className="w-full border rounded-lg p-2.5"
+                  className="w-full border border-border bg-surface text-fg rounded-lg p-2.5"
                 />
               </div>
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated, optional)</label>
+                <label className="block text-sm font-medium text-fg mb-1">Tags (comma-separated, optional)</label>
                 <input
                   type="text"
                   value={uploadTags}
                   onChange={e => setUploadTags(e.target.value)}
                   placeholder="e.g. toll-brothers, phase-2, exterior"
-                  className="w-full border rounded-lg p-2.5"
+                  className="w-full border border-border bg-surface text-fg rounded-lg p-2.5"
                 />
               </div>
 
               {/* Entity linking */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Link to (type)</label>
+                  <label className="block text-sm font-medium text-fg mb-1">Link to (type)</label>
                   <select
                     value={uploadEntityType}
                     onChange={e => setUploadEntityType(e.target.value)}
-                    className="w-full border rounded-lg p-2.5"
+                    className="w-full border border-border bg-surface text-fg rounded-lg p-2.5"
                   >
                     <option value="">None</option>
                     <option value="Builder">Builder</option>
@@ -641,31 +644,30 @@ export default function DocumentVaultPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Entity ID</label>
+                  <label className="block text-sm font-medium text-fg mb-1">Entity ID</label>
                   <input
                     type="text"
                     value={uploadEntityId}
                     onChange={e => setUploadEntityId(e.target.value)}
                     placeholder="ID of linked record"
-                    className="w-full border rounded-lg p-2.5"
+                    className="w-full border border-border bg-surface text-fg rounded-lg p-2.5"
                     disabled={!uploadEntityType}
                   />
                 </div>
               </div>
             </div>
-            <div className="p-6 border-t flex justify-end gap-3">
+            <div className="p-6 border-t border-border flex justify-end gap-3">
               <button
                 onClick={() => { setUploadModal(false); setSelectedFiles([]) }}
                 disabled={uploading}
-                className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50"
+                className="px-4 py-2 border border-border rounded-lg text-fg-muted hover:bg-row-hover"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpload}
                 disabled={uploading || selectedFiles.length === 0}
-                className="px-5 py-2 text-white rounded-lg font-medium disabled:opacity-50"
-                style={{ backgroundColor: '#0f2a3e' }}
+                className="px-5 py-2 text-fg-on-accent rounded-lg font-medium disabled:opacity-50 bg-signal hover:bg-signal-hover transition-colors"
               >
                 {uploading ? 'Uploading...' : `Upload ${selectedFiles.length} file(s)`}
               </button>
@@ -677,20 +679,20 @@ export default function DocumentVaultPage() {
       {/* ──────── DETAIL DRAWER ──────── */}
       {detailDoc && (
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end" onClick={() => setDetailDoc(null)}>
-          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b sticky top-0 bg-white z-10">
+          <div className="bg-surface w-full max-w-md h-full overflow-y-auto shadow-elevation-3" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border sticky top-0 bg-surface z-10">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">{detailDoc.fileName}</h2>
-                  <div className="text-sm text-gray-500 mt-1">{formatFileSize(detailDoc.fileSize)} &middot; {detailDoc.fileType.toUpperCase()}</div>
+                  <h2 className="text-lg font-semibold text-fg">{detailDoc.fileName}</h2>
+                  <div className="text-sm text-fg-muted mt-1">{formatFileSize(detailDoc.fileSize)} &middot; {detailDoc.fileType.toUpperCase()}</div>
                 </div>
-                <button onClick={() => setDetailDoc(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <button onClick={() => setDetailDoc(null)} className="text-fg-subtle hover:text-fg text-2xl">&times;</button>
               </div>
             </div>
             <div className="p-6 space-y-5">
               {/* Preview for images */}
               {detailDoc.mimeType.startsWith('image/') && (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border border-border rounded-lg overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/api/ops/documents/vault/${detailDoc.id}?mode=download`}
@@ -705,7 +707,7 @@ export default function DocumentVaultPage() {
               {/* Metadata */}
               <div className="space-y-3">
                 <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase">Category</div>
+                  <div className="text-xs font-medium text-fg-muted uppercase">Category</div>
                   <div className="mt-0.5">
                     <span className="px-2 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: getCategoryInfo(detailDoc.category).color }}>
                       {getCategoryInfo(detailDoc.category).icon} {getCategoryInfo(detailDoc.category).label}
@@ -714,48 +716,48 @@ export default function DocumentVaultPage() {
                 </div>
                 {detailDoc.description && (
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase">Description</div>
-                    <div className="mt-0.5 text-gray-700">{detailDoc.description}</div>
+                    <div className="text-xs font-medium text-fg-muted uppercase">Description</div>
+                    <div className="mt-0.5 text-fg">{detailDoc.description}</div>
                   </div>
                 )}
                 {detailDoc.tags.length > 0 && (
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase">Tags</div>
+                    <div className="text-xs font-medium text-fg-muted uppercase">Tags</div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {detailDoc.tags.map(t => (
-                        <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{t}</span>
+                        <span key={t} className="px-2 py-0.5 bg-surface-muted text-fg-muted rounded-full text-xs">{t}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase">Uploaded</div>
-                  <div className="mt-0.5 text-gray-700">
+                  <div className="text-xs font-medium text-fg-muted uppercase">Uploaded</div>
+                  <div className="mt-0.5 text-fg">
                     {formatDate(detailDoc.createdAt)}
-                    {detailDoc.uploadedByName && <span className="text-gray-400"> by {detailDoc.uploadedByName}</span>}
+                    {detailDoc.uploadedByName && <span className="text-fg-subtle"> by {detailDoc.uploadedByName}</span>}
                   </div>
                 </div>
 
                 {/* Entity links */}
                 {(entityLabels[detailDoc.id] || []).length > 0 && (
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase">Linked Records</div>
+                    <div className="text-xs font-medium text-fg-muted uppercase">Linked Records</div>
                     <div className="mt-1 space-y-1">
-                      {detailDoc.builderId && <div className="text-sm text-blue-600">Builder: {detailDoc.builderId}</div>}
-                      {detailDoc.orderId && <div className="text-sm text-blue-600">Order: {detailDoc.orderId}</div>}
-                      {detailDoc.jobId && <div className="text-sm text-blue-600">Job: {detailDoc.jobId}</div>}
-                      {detailDoc.quoteId && <div className="text-sm text-blue-600">Quote: {detailDoc.quoteId}</div>}
-                      {detailDoc.invoiceId && <div className="text-sm text-blue-600">Invoice: {detailDoc.invoiceId}</div>}
-                      {detailDoc.dealId && <div className="text-sm text-blue-600">Deal: {detailDoc.dealId}</div>}
-                      {detailDoc.vendorId && <div className="text-sm text-blue-600">Vendor: {detailDoc.vendorId}</div>}
+                      {detailDoc.builderId && <div className="text-sm text-signal">Builder: {detailDoc.builderId}</div>}
+                      {detailDoc.orderId && <div className="text-sm text-signal">Order: {detailDoc.orderId}</div>}
+                      {detailDoc.jobId && <div className="text-sm text-signal">Job: {detailDoc.jobId}</div>}
+                      {detailDoc.quoteId && <div className="text-sm text-signal">Quote: {detailDoc.quoteId}</div>}
+                      {detailDoc.invoiceId && <div className="text-sm text-signal">Invoice: {detailDoc.invoiceId}</div>}
+                      {detailDoc.dealId && <div className="text-sm text-signal">Deal: {detailDoc.dealId}</div>}
+                      {detailDoc.vendorId && <div className="text-sm text-signal">Vendor: {detailDoc.vendorId}</div>}
                     </div>
                   </div>
                 )}
 
                 {/* Storage info */}
                 <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase">Storage</div>
-                  <div className="mt-0.5 text-gray-500 text-sm">
+                  <div className="text-xs font-medium text-fg-muted uppercase">Storage</div>
+                  <div className="mt-0.5 text-fg-muted text-sm">
                     {detailDoc.storageType === 'DATABASE' && 'PostgreSQL (embedded)'}
                     {detailDoc.storageType === 'VERCEL_BLOB' && 'Vercel Blob (cloud)'}
                     {detailDoc.storageType === 'EXTERNAL' && 'External URL'}
@@ -768,14 +770,13 @@ export default function DocumentVaultPage() {
               <div className="flex gap-2">
                 <a
                   href={`/api/ops/documents/vault/${detailDoc.id}?mode=download`}
-                  className="flex-1 text-center px-4 py-2 text-white rounded-lg font-medium text-sm"
-                  style={{ backgroundColor: '#0f2a3e' }}
+                  className="flex-1 text-center px-4 py-2 text-fg-on-accent rounded-lg font-medium text-sm bg-signal hover:bg-signal-hover transition-colors"
                 >
                   Download
                 </a>
                 <button
                   onClick={() => { handleArchive(detailDoc.id); setDetailDoc(null) }}
-                  className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50"
+                  className="px-4 py-2 border border-border text-data-negative-fg rounded-lg text-sm hover:bg-data-negative-bg"
                 >
                   Archive
                 </button>
@@ -784,14 +785,14 @@ export default function DocumentVaultPage() {
               {/* Activity log */}
               {detailActivity.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-2">Activity</div>
+                  <div className="text-xs font-medium text-fg-muted uppercase mb-2">Activity</div>
                   <div className="space-y-2">
                     {detailActivity.map((a: any) => (
                       <div key={a.id} className="flex items-start gap-2 text-xs">
-                        <span className="text-gray-400 whitespace-nowrap">{new Date(a.createdAt).toLocaleString()}</span>
-                        <span className="font-medium text-gray-600">{a.action}</span>
-                        {a.staffName && <span className="text-gray-400">by {a.staffName}</span>}
-                        {a.details && <span className="text-gray-400">&middot; {a.details}</span>}
+                        <span className="text-fg-subtle whitespace-nowrap">{new Date(a.createdAt).toLocaleString()}</span>
+                        <span className="font-medium text-fg-muted">{a.action}</span>
+                        {a.staffName && <span className="text-fg-subtle">by {a.staffName}</span>}
+                        {a.details && <span className="text-fg-subtle">&middot; {a.details}</span>}
                       </div>
                     ))}
                   </div>

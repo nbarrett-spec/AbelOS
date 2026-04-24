@@ -124,7 +124,11 @@ export default function ContractsPage() {
                 </div>
 
                 {/* Pricing Tiers */}
-                {isExpanded && (
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f3f4f6' }}>
                     <h4 style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', marginBottom: 8 }}>PRICING TIERS</h4>
                     {contract.pricingTiers.length === 0 ? (
@@ -159,7 +163,8 @@ export default function ContractsPage() {
                       </table>
                     )}
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             )
           })}

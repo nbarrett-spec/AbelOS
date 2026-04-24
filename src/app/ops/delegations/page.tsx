@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useToast } from '@/contexts/ToastContext'
+import { ListChecks } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
+import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 
 const REASONS = [
   { value: 'VACATION', label: 'Vacation', icon: '🏖️' },
@@ -126,47 +130,47 @@ export default function DelegationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-surface-elev border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Workload Delegation</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage vacation coverage, out-of-office handoffs, and workload transfers</p>
-        </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#A8882A] transition flex items-center gap-2"
-        >
-          <span>+</span> New Delegation
-        </button>
-      </div>
+      <PageHeader
+        title="Workload Delegation"
+        description="Manage vacation coverage, out-of-office handoffs, and workload transfers"
+        crumbs={[{ label: 'Ops', href: '/ops' }, { label: 'Delegations' }]}
+        actions={
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 bg-signal text-white rounded-lg text-sm font-medium hover:bg-signal-hover transition flex items-center gap-2"
+          >
+            <span>+</span> New Delegation
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-white rounded-lg border p-4">
-          <p className="text-2xl font-bold text-gray-900">{stats.total || 0}</p>
+          <p className="text-2xl font-semibold text-gray-900">{stats.total || 0}</p>
           <p className="text-[10px] text-gray-500 uppercase font-medium">Total</p>
         </div>
         <div className="bg-green-50 rounded-lg border border-green-200 p-4">
-          <p className="text-2xl font-bold text-green-700">{stats.active || 0}</p>
+          <p className="text-2xl font-semibold text-green-700">{stats.active || 0}</p>
           <p className="text-[10px] text-green-600 uppercase font-medium">Active Now</p>
         </div>
         <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-          <p className="text-2xl font-bold text-blue-700">{stats.scheduled || 0}</p>
+          <p className="text-2xl font-semibold text-blue-700">{stats.scheduled || 0}</p>
           <p className="text-[10px] text-blue-600 uppercase font-medium">Scheduled</p>
         </div>
         <div className="bg-gray-50 rounded-lg border p-4">
-          <p className="text-2xl font-bold text-gray-600">{stats.completed || 0}</p>
+          <p className="text-2xl font-semibold text-gray-600">{stats.completed || 0}</p>
           <p className="text-[10px] text-gray-500 uppercase font-medium">Completed</p>
         </div>
         <div className="bg-red-50 rounded-lg border border-red-200 p-4">
-          <p className="text-2xl font-bold text-red-600">{stats.cancelled || 0}</p>
+          <p className="text-2xl font-semibold text-red-600">{stats.cancelled || 0}</p>
           <p className="text-[10px] text-red-500 uppercase font-medium">Cancelled</p>
         </div>
       </div>
@@ -204,7 +208,7 @@ export default function DelegationsPage() {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-              filter === f.key ? 'border-[#C6A24E] text-[#C6A24E]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              filter === f.key ? 'border-signal text-signal' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             {f.label}
@@ -215,10 +219,11 @@ export default function DelegationsPage() {
       {/* Delegation List */}
       <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="px-6 py-12 text-center text-gray-500">
-            <p className="text-lg mb-1">No delegations found</p>
-            <p className="text-sm text-gray-400">Create a new delegation to set up workload coverage</p>
-          </div>
+          <EmptyState
+            icon={<ListChecks className="w-8 h-8 text-fg-subtle" />}
+            title="No delegations found"
+            description="Create a new delegation to set up workload coverage"
+          />
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -234,7 +239,6 @@ export default function DelegationsPage() {
             </thead>
             <tbody>
               {filtered.map(d => {
-                const st = STATUS_STYLES[d.status] || STATUS_STYLES.SCHEDULED
                 const reasonInfo = REASONS.find(r => r.value === d.reason)
                 return (
                   <tr key={d.id} className="border-t hover:bg-blue-50/30">
@@ -263,9 +267,7 @@ export default function DelegationsPage() {
                       {SCOPES.find(s => s.value === d.scope)?.label || d.scope}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${st.bg} ${st.text}`}>
-                        {d.status}
-                      </span>
+                      <Badge variant={getStatusBadgeVariant(d.status)}>{d.status}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       {(d.status === 'SCHEDULED' || d.status === 'ACTIVE') && (
@@ -298,7 +300,7 @@ export default function DelegationsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Who is out of office?</label>
                 <select value={delegatorId} onChange={e => setDelegatorId(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-[#C6A24E]">
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-signal focus:border-signal">
                   <option value="">Select staff member...</option>
                   {staffList.map(s => (
                     <option key={s.id} value={s.id}>
@@ -312,7 +314,7 @@ export default function DelegationsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Who will cover their work?</label>
                 <select value={delegateId} onChange={e => setDelegateId(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C6A24E] focus:border-[#C6A24E]">
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-signal focus:border-signal">
                   <option value="">Select covering staff...</option>
                   {staffList.filter(s => s.id !== delegatorId).map(s => (
                     <option key={s.id} value={s.id}>
@@ -367,7 +369,7 @@ export default function DelegationsPage() {
               <button
                 onClick={createDelegation}
                 disabled={saving || !delegatorId || !delegateId || !startDate || !endDate}
-                className="px-4 py-2 bg-[#C6A24E] text-white rounded-lg text-sm font-medium hover:bg-[#A8882A] disabled:opacity-50"
+                className="px-4 py-2 bg-signal text-white rounded-lg text-sm font-medium hover:bg-signal-hover disabled:opacity-50"
               >
                 {saving ? 'Creating...' : 'Create Delegation'}
               </button>

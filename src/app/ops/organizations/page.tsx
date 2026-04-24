@@ -583,7 +583,11 @@ export default function OrganizationsPage() {
                 </div>
 
                 {/* Expanded Details Row */}
-                {isExpanded && (
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
                   <div style={{
                     padding: '20px',
                     backgroundColor: '#f9fafb',
@@ -868,7 +872,8 @@ export default function OrganizationsPage() {
                       </Link>
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             )
           })}

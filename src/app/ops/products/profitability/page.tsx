@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Package } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface ProductProfitScore {
   productId: string
@@ -173,8 +176,11 @@ export default function ProductProfitabilityPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-brand">Product Profitability</h1>
-          <p className="text-gray-600 mt-1">A-F grades across margin, revenue, volume, and trend</p>
+          <PageHeader
+            title="Product Profitability"
+            description="A-F grades across margin, revenue, volume, and trend"
+            className="mb-0"
+          />
         </div>
       </div>
 
@@ -377,49 +383,49 @@ export default function ProductProfitabilityPage() {
                   <th className="px-3 py-3 text-left font-semibold text-gray-700">SKU</th>
                   <th className="px-3 py-3 text-left font-semibold text-gray-700">Name</th>
                   <th className="px-3 py-3 text-left font-semibold text-gray-700">Category</th>
-                  <th className="px-3 py-3 text-center cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('compositeScore')}>
+                  <th className="px-3 py-3 text-center cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('compositeScore')}>
                     <div className="font-semibold text-gray-700">Grade</div>
                     {sortBy === 'compositeScore' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('basePrice')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('basePrice')}>
                     <div className="font-semibold text-gray-700">Base Price</div>
                     {sortBy === 'basePrice' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('cost')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('cost')}>
                     <div className="font-semibold text-gray-700">Cost</div>
                     {sortBy === 'cost' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('marginDollar')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('marginDollar')}>
                     <div className="font-semibold text-gray-700">Margin $</div>
                     {sortBy === 'marginDollar' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('marginPct')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('marginPct')}>
                     <div className="font-semibold text-gray-700">Margin %</div>
                     {sortBy === 'marginPct' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('unitsSold12mo')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('unitsSold12mo')}>
                     <div className="font-semibold text-gray-700">12mo Units</div>
                     {sortBy === 'unitsSold12mo' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('revenue12mo')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('revenue12mo')}>
                     <div className="font-semibold text-gray-700">12mo Revenue</div>
                     {sortBy === 'revenue12mo' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
                     )}
                   </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('grossProfit12mo')}>
+                  <th className="px-3 py-3 text-right cursor-pointer hover:bg-surface-muted" onClick={() => toggleSort('grossProfit12mo')}>
                     <div className="font-semibold text-gray-700">Gross Profit</div>
                     {sortBy === 'grossProfit12mo' && (
                       <div className="text-xs text-gray-500">{sortDir === 'desc' ? '↓' : '↑'}</div>
@@ -434,7 +440,7 @@ export default function ProductProfitabilityPage() {
                 <tbody key={product.productId} className="divide-y divide-gray-200">
                     <tr
                       onClick={() => setExpandedProduct(expandedProduct === product.productId ? null : product.productId)}
-                      className="hover:bg-gray-50 cursor-pointer divide-x divide-gray-200"
+                      className="hover:bg-row-hover cursor-pointer divide-x divide-gray-200"
                     >
                       <td className="px-3 py-3 text-gray-600 font-mono text-xs">{product.sku}</td>
                       <td className="px-3 py-3 font-medium text-gray-900">{product.name}</td>
@@ -516,7 +522,7 @@ export default function ProductProfitabilityPage() {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Left: Score Breakdown */}
                             <div>
-                              <h4 className="font-bold text-brand mb-4">Score Breakdown</h4>
+                              <h4 className="font-semibold text-brand mb-4">Score Breakdown</h4>
                               <div className="space-y-3">
                                 <div className="flex justify-between items-center pb-2 border-b border-gray-300">
                                   <span className="text-gray-700">Margin Score (40%)</span>
@@ -573,7 +579,7 @@ export default function ProductProfitabilityPage() {
 
                             {/* Right: Inventory & Suggested Action */}
                             <div>
-                              <h4 className="font-bold text-brand mb-4">Inventory & Action</h4>
+                              <h4 className="font-semibold text-brand mb-4">Inventory & Action</h4>
                               <div className="space-y-3 text-sm">
                                 <div className="flex justify-between pb-2 border-b border-gray-300">
                                   <span className="text-gray-700">On Hand</span>
@@ -599,7 +605,7 @@ export default function ProductProfitabilityPage() {
                                 </div>
 
                                 <div className="pt-4 bg-abel-cream rounded p-3">
-                                  <h5 className="font-bold text-brand mb-2">Suggested Action</h5>
+                                  <h5 className="font-semibold text-brand mb-2">Suggested Action</h5>
                                   <ul className="text-xs space-y-1 text-gray-700">
                                     {product.marginPct < 0 && (
                                       <li>• Reprice immediately — losing money on each sale</li>
@@ -636,9 +642,11 @@ export default function ProductProfitabilityPage() {
           </div>
 
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-sm">No products match your filters.</p>
-            </div>
+            <EmptyState
+              icon={<Package className="w-8 h-8 text-fg-subtle" />}
+              title="No items match your filters"
+              description="Try adjusting your search, category, grade, or flag filters."
+            />
           )}
         </div>
       </div>

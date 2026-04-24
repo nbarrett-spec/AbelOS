@@ -438,46 +438,51 @@ function OrderCard({
           </div>
         </div>
 
-        {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-fg-muted mb-2">Items ({order.itemCount})</p>
-              <div className="space-y-2">
-                {order.itemPreview.map((item, i) => (
-                  <div key={i} className="text-sm text-fg-muted">• {item}</div>
-                ))}
-                {order.itemPreview.length > 10 && (
-                  <div className="text-sm text-fg-muted">+{order.itemPreview.length - 10} more</div>
+        <div
+          className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+          style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden min-h-0">
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-fg-muted mb-2">Items ({order.itemCount})</p>
+                <div className="space-y-2">
+                  {order.itemPreview.map((item, i) => (
+                    <div key={i} className="text-sm text-fg-muted">• {item}</div>
+                  ))}
+                  {order.itemPreview.length > 10 && (
+                    <div className="text-sm text-fg-muted">+{order.itemPreview.length - 10} more</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-3">
+                {isCompleted && (
+                  <>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        onReorder()
+                      }}
+                      className="flex-1 bg-accent hover:bg-accent-hover text-fg-on-accent font-semibold text-sm py-2 rounded transition"
+                    >
+                      Reorder
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        setShowSaveTemplate(true)
+                      }}
+                      className="flex-1 bg-brand hover:bg-brand-hover text-fg-on-accent font-semibold text-sm py-2 rounded transition"
+                    >
+                      Save as template
+                    </button>
+                  </>
                 )}
               </div>
             </div>
-
-            <div className="flex gap-2 pt-3">
-              {isCompleted && (
-                <>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation()
-                      onReorder()
-                    }}
-                    className="flex-1 bg-accent hover:bg-accent-hover text-fg-on-accent font-semibold text-sm py-2 rounded transition"
-                  >
-                    Reorder
-                  </button>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation()
-                      setShowSaveTemplate(true)
-                    }}
-                    className="flex-1 bg-brand hover:bg-brand-hover text-fg-on-accent font-semibold text-sm py-2 rounded transition"
-                  >
-                    Save as template
-                  </button>
-                </>
-              )}
-            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Save Template Modal */}

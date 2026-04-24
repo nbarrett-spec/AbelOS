@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, MapPin, Users, Building2, Briefcase } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Location {
   id: string; name: string; code: string; type: string; address: string;
@@ -42,24 +44,25 @@ export default function LocationsPage() {
 
   return (
     <div className="p-6 max-w-[1200px] mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Locations</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage warehouse and branch locations for multi-site operations</p>
-        </div>
-        <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
-          <Plus className="w-4 h-4" /> Add Location
-        </button>
-      </div>
+      <PageHeader
+        title="Locations"
+        description="Manage warehouse and branch locations for multi-site operations"
+        actions={
+          <button onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
+            <Plus className="w-4 h-4" /> Add Location
+          </button>
+        }
+      />
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading locations...</div>
+        <div className="text-center py-12 text-fg-subtle">Loading locations...</div>
       ) : locations.length === 0 ? (
-        <div className="text-center py-16">
-          <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No locations configured. Run the platform upgrade migration to initialize.</p>
-        </div>
+        <EmptyState
+          icon={<Building2 className="w-8 h-8 text-fg-subtle" />}
+          title="No locations configured"
+          description="Run the platform upgrade migration to initialize."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {locations.map(loc => (
@@ -110,7 +113,7 @@ export default function LocationsPage() {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-4">Add Location</h2>
+            <h2 className="text-lg font-semibold mb-4">Add Location</h2>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>

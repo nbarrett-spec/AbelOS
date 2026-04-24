@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { AlertCircle, CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Clock, Loader2, XCircle, Receipt } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
+import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 
 interface Candidate {
   id: string
@@ -142,33 +145,16 @@ export default function AutoPOPage() {
     }
   }
 
-  const getStatusColor = (
-    status: string
-  ): string => {
-    switch (status?.toUpperCase()) {
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800'
-      case 'ORDERED':
-        return 'bg-blue-100 text-blue-800'
-      case 'RECEIVED':
-        return 'bg-green-100 text-green-800'
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
   const getStatusIcon = (status: string) => {
     switch (status?.toUpperCase()) {
       case 'DRAFT':
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-3 w-3" />
       case 'ORDERED':
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-3 w-3" />
       case 'RECEIVED':
-        return <CheckCircle2 className="h-4 w-4" />
+        return <CheckCircle2 className="h-3 w-3" />
       case 'CANCELLED':
-        return <XCircle className="h-4 w-4" />
+        return <XCircle className="h-3 w-3" />
       default:
         return null
     }
@@ -193,21 +179,23 @@ export default function AutoPOPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-8">
-        <h1 className="text-3xl font-bold text-gray-900">Auto-PO Generation</h1>
-        <p className="mt-2 text-gray-600">
-          Create purchase orders automatically when stock falls below reorder points.
-        </p>
-      </div>
-
+    <div className="min-h-screen bg-canvas">
       <div className="px-6 py-8">
+        <PageHeader
+          title="Auto-PO Generation"
+          description="Create purchase orders automatically when stock falls below reorder points."
+          crumbs={[
+            { label: 'Ops', href: '/ops' },
+            { label: 'Purchasing', href: '/ops/purchasing' },
+            { label: 'Auto-PO' },
+          ]}
+        />
+
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+          <div className="mb-6 rounded-lg border border-data-negative/30 bg-data-negative-bg p-4 text-data-negative-fg">
             <div className="flex items-start">
-              <AlertCircle className="mr-3 h-5 w-5 flex-shrink-0 text-red-600" />
+              <AlertCircle className="mr-3 h-5 w-5 flex-shrink-0 text-data-negative" />
               <div>{error}</div>
             </div>
           </div>
@@ -215,9 +203,9 @@ export default function AutoPOPage() {
 
         {/* Success Message */}
         {successMessage && (
-          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
+          <div className="mb-6 rounded-lg border border-data-positive/30 bg-data-positive-bg p-4 text-data-positive-fg">
             <div className="flex items-start">
-              <CheckCircle2 className="mr-3 h-5 w-5 flex-shrink-0 text-green-600" />
+              <CheckCircle2 className="mr-3 h-5 w-5 flex-shrink-0 text-data-positive" />
               <div>{successMessage}</div>
             </div>
           </div>
@@ -229,59 +217,59 @@ export default function AutoPOPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-32 animate-pulse rounded-lg bg-gray-200"
+                className="h-32 animate-pulse rounded-lg bg-surface-elev"
               />
             ))}
           </div>
         ) : data ? (
           <div className="mb-8 grid gap-4 md:grid-cols-3">
             {/* Needs Reorder */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="rounded-lg border border-border bg-surface p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-fg-muted">
                     Needs Reorder
                   </p>
-                  <p className="mt-2 text-3xl font-bold text-signal">
+                  <p className="mt-2 text-3xl font-semibold text-signal">
                     {data.stats.needsReorder}
                   </p>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-amber-100 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-lg bg-signal-subtle flex items-center justify-center">
                   <AlertCircle className="h-6 w-6 text-signal" />
                 </div>
               </div>
             </div>
 
             {/* Out of Stock */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="rounded-lg border border-border bg-surface p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-fg-muted">
                     Out of Stock
                   </p>
-                  <p className="mt-2 text-3xl font-bold text-red-600">
+                  <p className="mt-2 text-3xl font-semibold text-data-negative">
                     {data.stats.outOfStock}
                   </p>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-red-100 flex items-center justify-center">
-                  <XCircle className="h-6 w-6 text-red-600" />
+                <div className="h-12 w-12 rounded-lg bg-data-negative-bg flex items-center justify-center">
+                  <XCircle className="h-6 w-6 text-data-negative" />
                 </div>
               </div>
             </div>
 
             {/* Total Tracked */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="rounded-lg border border-border bg-surface p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-fg-muted">
                     Total Tracked
                   </p>
-                  <p className="mt-2 text-3xl font-bold text-gray-900">
+                  <p className="mt-2 text-3xl font-semibold text-fg">
                     {data.stats.totalTracked}
                   </p>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <CheckCircle2 className="h-6 w-6 text-gray-400" />
+                <div className="h-12 w-12 rounded-lg bg-surface-muted flex items-center justify-center">
+                  <CheckCircle2 className="h-6 w-6 text-fg-subtle" />
                 </div>
               </div>
             </div>
@@ -289,26 +277,26 @@ export default function AutoPOPage() {
         ) : null}
 
         {/* Candidates Section */}
-        <div className="mb-8 rounded-lg border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+        <div className="mb-8 rounded-lg border border-border bg-surface">
+          <div className="border-b border-border px-6 py-4">
+            <h2 className="text-lg font-semibold text-fg">
               Reorder Candidates
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-fg-muted">
               Products at or below reorder point
             </p>
           </div>
 
           {loading ? (
             <div className="px-6 py-12 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-400" />
-              <p className="mt-2 text-gray-600">Loading candidates...</p>
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-fg-subtle" />
+              <p className="mt-2 text-fg-muted">Loading candidates...</p>
             </div>
           ) : data && data.candidates.length > 0 ? (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b border-gray-200 bg-gray-50">
+                  <thead className="border-b border-border bg-surface-muted/40">
                     <tr>
                       <th className="px-6 py-3 text-left">
                         <input
@@ -318,36 +306,36 @@ export default function AutoPOPage() {
                             selectedProducts.size === data.candidates.length
                           }
                           onChange={handleSelectAll}
-                          className="h-4 w-4 rounded border-gray-300 text-signal focus:ring-amber-500"
+                          className="h-4 w-4 rounded border-border text-signal focus:ring-signal"
                           aria-label="Select all candidates"
                         />
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                         Product
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                         SKU
                       </th>
-                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-fg-muted">
                         Current Stock
                       </th>
-                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-fg-muted">
                         Reorder Pt
                       </th>
-                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-fg-muted">
                         Reorder Qty
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                         Supplier
                       </th>
-                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-fg-muted">
                         Est. Cost
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-border">
                     {data.candidates.map((candidate) => (
-                      <tr key={candidate.id} className="hover:bg-gray-50">
+                      <tr key={candidate.id} className="hover:bg-row-hover transition-colors">
                         <td className="px-6 py-4">
                           <input
                             type="checkbox"
@@ -355,29 +343,29 @@ export default function AutoPOPage() {
                             onChange={() =>
                               handleSelectProduct(candidate.id)
                             }
-                            className="h-4 w-4 rounded border-gray-300 text-signal focus:ring-amber-500"
+                            className="h-4 w-4 rounded border-border text-signal focus:ring-signal"
                             aria-label={`Select ${candidate.name}`}
                           />
                         </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 text-sm font-medium text-fg">
                           {candidate.name}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-4 text-sm text-fg-muted">
                           {candidate.sku}
                         </td>
-                        <td className="px-6 py-4 text-right text-sm text-gray-900">
+                        <td className="px-6 py-4 text-right text-sm text-fg">
                           {candidate.currentStock}
                         </td>
-                        <td className="px-6 py-4 text-right text-sm text-gray-900">
+                        <td className="px-6 py-4 text-right text-sm text-fg">
                           {candidate.reorderPoint}
                         </td>
-                        <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 text-right text-sm font-medium text-fg">
                           {candidate.reorderQty}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-4 text-sm text-fg-muted">
                           {candidate.vendorName || '—'}
                         </td>
-                        <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 text-right text-sm font-medium text-fg">
                           {formatCurrency(
                             candidate.reorderQty * candidate.unitCost
                           )}
@@ -389,8 +377,8 @@ export default function AutoPOPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="border-t border-gray-200 px-6 py-4 flex gap-3 justify-between">
-                <p className="text-sm text-gray-600 py-2">
+              <div className="border-t border-border px-6 py-4 flex gap-3 justify-between">
+                <p className="text-sm text-fg-muted py-2">
                   {selectedProducts.size > 0
                     ? `${selectedProducts.size} selected`
                     : 'No products selected'}
@@ -401,7 +389,7 @@ export default function AutoPOPage() {
                     disabled={
                       selectedProducts.size === 0 || generating
                     }
-                    className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-fg hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {generating ? (
                       <>
@@ -417,7 +405,7 @@ export default function AutoPOPage() {
                     disabled={
                       data.candidates.length === 0 || generating
                     }
-                    className="inline-flex items-center rounded-lg bg-signal px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center rounded-lg bg-signal px-4 py-2 text-sm font-medium text-fg-on-accent hover:bg-signal-hover disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {generating ? (
                       <>
@@ -432,85 +420,76 @@ export default function AutoPOPage() {
               </div>
             </>
           ) : (
-            <div className="px-6 py-12 text-center">
-              <CheckCircle2 className="mx-auto h-12 w-12 text-green-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900">
-                All stocked
-              </h3>
-              <p className="mt-1 text-gray-600">
-                No products are below their reorder points.
-              </p>
-            </div>
+            <EmptyState
+              icon={<Receipt className="w-8 h-8 text-fg-subtle" />}
+              title="All stocked"
+              description="No products are below their reorder points."
+            />
           )}
         </div>
 
         {/* Recent POs Section */}
-        <div className="rounded-lg border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border border-border bg-surface">
+          <div className="border-b border-border px-6 py-4">
+            <h2 className="text-lg font-semibold text-fg">
               Recent Auto-Generated POs
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-fg-muted">
               Last 30 days
             </p>
           </div>
 
           {loading ? (
             <div className="px-6 py-12 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-400" />
-              <p className="mt-2 text-gray-600">Loading POs...</p>
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-fg-subtle" />
+              <p className="mt-2 text-fg-muted">Loading POs...</p>
             </div>
           ) : data && data.recentPOs.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="border-b border-gray-200 bg-gray-50">
+                <thead className="border-b border-border bg-surface-muted/40">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                       PO Number
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                       Supplier
                     </th>
-                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-fg-muted">
                       Lines
                     </th>
-                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-fg-muted">
                       Total
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-fg-muted">
                       Date
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-border">
                   {data.recentPOs.map((po) => (
-                    <tr key={po.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <tr key={po.id} className="hover:bg-row-hover transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-fg">
                         {po.poNumber}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-fg-muted">
                         {po.vendorName || '—'}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm text-gray-900">
+                      <td className="px-6 py-4 text-right text-sm text-fg">
                         {po.lineCount}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 text-right text-sm font-medium text-fg">
                         {formatCurrency(po.total)}
                       </td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(
-                            po.status
-                          )}`}
-                        >
-                          {getStatusIcon(po.status)}
+                        <Badge variant={getStatusBadgeVariant(po.status)} icon={getStatusIcon(po.status)}>
                           {po.status}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-fg-muted">
                         {formatDate(po.createdAt)}
                       </td>
                     </tr>
@@ -519,15 +498,11 @@ export default function AutoPOPage() {
               </table>
             </div>
           ) : (
-            <div className="px-6 py-12 text-center">
-              <Clock className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900">
-                No POs yet
-              </h3>
-              <p className="mt-1 text-gray-600">
-                Auto-generated POs will appear here.
-              </p>
-            </div>
+            <EmptyState
+              icon={<Receipt className="w-8 h-8 text-fg-subtle" />}
+              title="No POs yet"
+              description="Auto-generated POs will appear here."
+            />
           )}
         </div>
       </div>

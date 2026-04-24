@@ -383,7 +383,7 @@ export default function LiveMapPage() {
       {/* Top Bar */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2.5 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
             Live Operations Map
           </h1>
           <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ export default function LiveMapPage() {
         {selected && (
           <div className="w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 overflow-y-auto shadow-xl z-[1000]">
             <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                 {selected.type === 'job' ? 'Job Details' : 'Truck Details'}
               </h2>
               <button
@@ -509,7 +509,7 @@ function JobPanel({ job }: { job: GeocodedJob }) {
           </span>
           <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{job.jobNumber}</span>
         </div>
-        <h3 className="text-base font-bold text-gray-900 dark:text-white">{job.builderName}</h3>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">{job.builderName}</h3>
         {job.community && (
           <p className="text-sm text-gray-600 dark:text-gray-400">{job.community}{job.lotBlock ? ` — ${job.lotBlock}` : ''}</p>
         )}
@@ -591,7 +591,7 @@ function TruckPanel({ truck }: { truck: TruckLocation }) {
             <span className="text-xs text-gray-500 dark:text-gray-400">{Math.round(truck.speed)} mph</span>
           )}
         </div>
-        <h3 className="text-base font-bold text-gray-900 dark:text-white">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           {truck.crew?.name || truck.crewName || `Crew ${truck.crewId.slice(-4)}`}
         </h3>
         {truck.crew?.vehiclePlate && (

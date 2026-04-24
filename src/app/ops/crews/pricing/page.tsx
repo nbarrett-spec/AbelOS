@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Hammer } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface SubcontractorPricing {
   id: string
@@ -701,14 +703,11 @@ export default function SubcontractorPricingPage() {
       {/* Pricing Table */}
       <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
         {filtered.length === 0 ? (
-          <div style={{
-            padding: '2rem',
-            textAlign: 'center',
-            color: '#6B7280',
-            fontSize: '0.875rem'
-          }}>
-            No pricing agreements found
-          </div>
+          <EmptyState
+            icon={<Hammer className="w-8 h-8 text-fg-subtle" />}
+            title="No pricing agreements found"
+            description="Add a crew or subcontractor pricing agreement to get started"
+          />
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{

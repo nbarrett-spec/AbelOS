@@ -323,7 +323,11 @@ export default function HomeownerPortal() {
                 </div>
 
                 {/* Upgrade Options */}
-                {isExpanded && (
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
                   <div className="border-t border-gray-100 px-5 py-4 bg-gradient-to-br from-gray-50 to-white">
                     {loadingUpgrades === selection.id ? (
                       <div className="flex items-center justify-center py-6">
@@ -508,7 +512,8 @@ export default function HomeownerPortal() {
                       </div>
                     )}
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             )
           })

@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Search } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 const NAVY = '#0f2a3e'
 const ORANGE = '#C6A24E'
@@ -43,13 +45,13 @@ export default function SEODashboardPage() {
     return <span style={{ fontWeight: '600', color }}>{rank}</span>
   }
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Loading SEO dashboard...</div>
+  if (loading) return <div className="text-center py-10 text-fg-muted">Loading SEO dashboard...</div>
 
   return (
     <div style={{ padding: 0, minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       <div style={{ backgroundColor: NAVY, color: 'white', padding: '30px 40px', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 8px 0' }}>SEO & Content Dashboard</h1>
-        <p style={{ fontSize: '14px', color: '#ccc', margin: 0 }}>Keyword rankings, content performance, and publishing pipeline</p>
+        <h1 className="text-2xl font-semibold" style={{ margin: '0 0 8px 0' }}>SEO & Content Dashboard</h1>
+        <p className="text-sm" style={{ color: '#ccc', margin: 0 }}>Keyword rankings, content performance, and publishing pipeline</p>
       </div>
 
       {/* Summary Cards */}
@@ -63,8 +65,8 @@ export default function SEODashboardPage() {
           { label: 'Conversions', value: contentStats.totalConversions || 0, color: ORANGE },
         ].map((c, i) => (
           <div key={i} style={{ backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px', padding: '15px' }}>
-            <div style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase', marginBottom: '6px' }}>{c.label}</div>
-            <div style={{ fontSize: '22px', fontWeight: 'bold', color: c.color }}>{c.value}</div>
+            <div className="text-[11px] text-fg-muted uppercase mb-1.5">{c.label}</div>
+            <div className="text-xl font-semibold" style={{ color: c.color }}>{c.value}</div>
           </div>
         ))}
       </div>
@@ -72,11 +74,10 @@ export default function SEODashboardPage() {
       {/* Tabs */}
       <div style={{ padding: '0 40px 15px', display: 'flex', gap: '8px' }}>
         {(['keywords', 'content'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} style={{
+          <button key={t} onClick={() => setActiveTab(t)} className="text-sm font-medium capitalize cursor-pointer" style={{
             padding: '10px 20px', borderRadius: '4px', border: '1px solid #ddd',
             backgroundColor: activeTab === t ? NAVY : 'white',
             color: activeTab === t ? 'white' : '#333',
-            cursor: 'pointer', fontSize: '14px', fontWeight: '500', textTransform: 'capitalize',
           }}>
             {t === 'keywords' ? `Keywords (${keywords.length})` : `Content (${content.length})`}
           </button>
@@ -92,41 +93,41 @@ export default function SEODashboardPage() {
                 <thead>
                   <tr style={{ backgroundColor: '#f9f9f9', borderBottom: '2px solid #ddd' }}>
                     {['Keyword', 'Volume', 'Difficulty', 'Rank', 'Change', 'Intent', 'Linked Content'].map(h => (
-                      <th key={h} style={{ padding: '12px 10px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#666' }}>{h}</th>
+                      <th key={h} className="text-xs font-semibold text-fg-muted" style={{ padding: '12px 10px', textAlign: 'left' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {keywords.map(kw => (
-                    <tr key={kw.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '10px', fontSize: '13px', fontWeight: '500' }}>{kw.keyword}</td>
-                      <td style={{ padding: '10px', fontSize: '13px' }}>{kw.searchVolume?.toLocaleString()}</td>
+                    <tr key={kw.id} className="hover:bg-row-hover" style={{ borderBottom: '1px solid #eee' }}>
+                      <td className="text-[13px] font-medium" style={{ padding: '10px' }}>{kw.keyword}</td>
+                      <td className="text-[13px]" style={{ padding: '10px' }}>{kw.searchVolume?.toLocaleString()}</td>
                       <td style={{ padding: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <div style={{ width: '40px', height: '6px', backgroundColor: '#eee', borderRadius: '3px', overflow: 'hidden' }}>
                             <div style={{ width: `${kw.difficulty}%`, height: '100%', backgroundColor: difficultyColor(kw.difficulty) }} />
                           </div>
-                          <span style={{ fontSize: '12px', color: '#666' }}>{kw.difficulty}</span>
+                          <span className="text-xs text-fg-muted">{kw.difficulty}</span>
                         </div>
                       </td>
                       <td style={{ padding: '10px' }}>{rankBadge(kw.currentRank)}</td>
-                      <td style={{ padding: '10px', fontSize: '13px' }}>
+                      <td className="text-[13px]" style={{ padding: '10px' }}>
                         {kw.rankChange != null ? (
-                          <span style={{ color: kw.rankChange > 0 ? '#27ae60' : kw.rankChange < 0 ? '#c0392b' : '#666', fontWeight: '500' }}>
+                          <span className="font-medium" style={{ color: kw.rankChange > 0 ? '#27ae60' : kw.rankChange < 0 ? '#c0392b' : '#666' }}>
                             {kw.rankChange > 0 ? `↑${kw.rankChange}` : kw.rankChange < 0 ? `↓${Math.abs(kw.rankChange)}` : '—'}
                           </span>
                         ) : '—'}
                       </td>
                       <td style={{ padding: '10px' }}>
-                        <span style={{
-                          padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: '500',
+                        <span className="text-[11px] font-medium" style={{
+                          padding: '2px 6px', borderRadius: '3px',
                           backgroundColor: kw.intent === 'COMMERCIAL' ? '#e8f5e9' : kw.intent === 'TRANSACTIONAL' ? '#fff3e0' : kw.intent === 'LOCAL' ? '#e3f2fd' : '#f5f5f5',
                           color: kw.intent === 'COMMERCIAL' ? '#2e7d32' : kw.intent === 'TRANSACTIONAL' ? '#e65100' : kw.intent === 'LOCAL' ? '#1565c0' : '#666',
                         }}>
                           {kw.intent}
                         </span>
                       </td>
-                      <td style={{ padding: '10px', fontSize: '12px', color: kw.linkedContentTitle ? NAVY : '#999' }}>
+                      <td className="text-xs" style={{ padding: '10px', color: kw.linkedContentTitle ? NAVY : '#999' }}>
                         {kw.linkedContentTitle || 'Not linked'}
                       </td>
                     </tr>
@@ -134,7 +135,13 @@ export default function SEODashboardPage() {
                 </tbody>
               </table>
             </div>
-            {keywords.length === 0 && <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>No keywords tracked yet</div>}
+            {keywords.length === 0 && (
+              <EmptyState
+                icon={<Search className="w-8 h-8 text-fg-subtle" />}
+                title="No keywords tracked yet"
+                description="Track keywords to monitor your search rankings and traffic."
+              />
+            )}
           </div>
         </div>
       )}
@@ -148,27 +155,27 @@ export default function SEODashboardPage() {
                 <thead>
                   <tr style={{ backgroundColor: '#f9f9f9', borderBottom: '2px solid #ddd' }}>
                     {['Title', 'Type', 'Status', 'Views', 'Conversions', 'Published'].map(h => (
-                      <th key={h} style={{ padding: '12px 10px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#666' }}>{h}</th>
+                      <th key={h} className="text-xs font-semibold text-fg-muted" style={{ padding: '12px 10px', textAlign: 'left' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {content.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '10px', fontSize: '13px', fontWeight: '500', color: NAVY }}>{c.title}</td>
-                      <td style={{ padding: '10px', fontSize: '12px' }}>{c.contentType}</td>
+                    <tr key={c.id} className="hover:bg-row-hover" style={{ borderBottom: '1px solid #eee' }}>
+                      <td className="text-[13px] font-medium" style={{ padding: '10px', color: NAVY }}>{c.title}</td>
+                      <td className="text-xs" style={{ padding: '10px' }}>{c.contentType}</td>
                       <td style={{ padding: '10px' }}>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: '3px', fontSize: '11px', fontWeight: '600',
+                        <span className="text-[11px] font-semibold" style={{
+                          padding: '3px 8px', borderRadius: '3px',
                           backgroundColor: c.status === 'PUBLISHED' ? '#d4edda' : c.status === 'REVIEW' ? '#fff3cd' : '#f5f5f5',
                           color: c.status === 'PUBLISHED' ? '#155724' : c.status === 'REVIEW' ? '#856404' : '#666',
                         }}>
                           {c.status}
                         </span>
                       </td>
-                      <td style={{ padding: '10px', fontSize: '13px' }}>{c.pageViews.toLocaleString()}</td>
-                      <td style={{ padding: '10px', fontSize: '13px', fontWeight: '500', color: c.conversions > 0 ? '#27ae60' : '#999' }}>{c.conversions}</td>
-                      <td style={{ padding: '10px', fontSize: '12px', color: '#666' }}>
+                      <td className="text-[13px]" style={{ padding: '10px' }}>{c.pageViews.toLocaleString()}</td>
+                      <td className="text-[13px] font-medium" style={{ padding: '10px', color: c.conversions > 0 ? '#27ae60' : '#999' }}>{c.conversions}</td>
+                      <td className="text-xs text-fg-muted" style={{ padding: '10px' }}>
                         {c.publishedAt ? new Date(c.publishedAt).toLocaleDateString() : '—'}
                       </td>
                     </tr>
@@ -176,7 +183,13 @@ export default function SEODashboardPage() {
                 </tbody>
               </table>
             </div>
-            {content.length === 0 && <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>No content yet. The Marketing Agent will generate content based on keyword opportunities.</div>}
+            {content.length === 0 && (
+              <EmptyState
+                icon={<Search className="w-8 h-8 text-fg-subtle" />}
+                title="No content yet"
+                description="The Marketing Agent will generate content based on keyword opportunities."
+              />
+            )}
           </div>
         </div>
       )}

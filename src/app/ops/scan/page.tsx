@@ -169,7 +169,7 @@ export default function ScanPage() {
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0f2a3e', margin: '0 0 4px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0f2a3e', margin: '0 0 4px' }}>
           📱 Scan Job Packet Sheet
         </h1>
         <p style={{ fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.5 }}>

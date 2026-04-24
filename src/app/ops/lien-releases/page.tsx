@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, FileText, Clock, CheckCircle, PenTool, DollarSign, Search } from 'lucide-react'
+import { Plus, FileText, Clock, CheckCircle, PenTool, DollarSign, Search, FileCheck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface LienRelease {
   id: string; jobId: string; jobNumber: string; builderName: string; jobAddress: string;
@@ -81,16 +83,17 @@ export default function LienReleasesPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Lien Releases</h1>
-          <p className="text-sm text-gray-500 mt-1">Conditional and unconditional lien release tracking</p>
-        </div>
-        <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
-          <Plus className="w-4 h-4" /> New Lien Release
-        </button>
-      </div>
+      <PageHeader
+        title="Lien Releases"
+        description="Conditional and unconditional lien release tracking"
+        actions={
+          <button onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28]">
+            <Plus className="w-4 h-4" /> New Lien Release
+          </button>
+        }
+      />
+
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
@@ -151,13 +154,18 @@ export default function LienReleasesPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-fg-subtle">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">
-                No lien releases found.
+              <tr><td colSpan={7} className="py-6">
+                <EmptyState
+                  icon={<FileCheck className="w-8 h-8 text-fg-subtle" />}
+                  title="No lien releases found"
+                  description="Create one to start tracking releases."
+                  size="compact"
+                />
               </td></tr>
             ) : filtered.map(lr => (
-              <tr key={lr.id} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr key={lr.id} className="border-b border-gray-100 hover:bg-row-hover">
                 <td className="py-3 px-4">
                   <div className="font-medium text-gray-900">{lr.jobNumber || '—'}</div>
                   <div className="text-xs text-gray-500 truncate max-w-[200px]">{lr.jobAddress}</div>
@@ -197,7 +205,7 @@ export default function LienReleasesPage() {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-4">New Lien Release</h2>
+            <h2 className="text-lg font-semibold mb-4">New Lien Release</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Job ID</label>

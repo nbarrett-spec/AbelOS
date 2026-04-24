@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FileText } from 'lucide-react';
+import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
   { id: 'funnel', label: 'Conversion Funnel', icon: '📊' },
@@ -41,18 +43,18 @@ export default function QuoteConversionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-[#1e3a5f] text-white px-8 py-8">
-        <h1 className="text-3xl font-bold">Quote Conversion Tracking</h1>
+    <div className="min-h-screen bg-canvas">
+      <div className="bg-surface-elevated text-white px-8 py-8">
+        <h1 className="text-3xl font-semibold">Quote Conversion Tracking</h1>
         <p className="text-blue-100 mt-2">Find where quotes die and recover lost revenue</p>
       </div>
 
-      <div className="bg-white border-b border-gray-200 px-8">
+      <div className="bg-surface border-b border-border px-8">
         <div className="flex gap-1 -mb-px overflow-x-auto">
           {TABS.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id ? 'border-[#C6A24E] text-[#C6A24E]' : 'border-transparent text-gray-500 hover:text-gray-700'
+                activeTab === tab.id ? 'border-signal text-signal' : 'border-transparent text-fg-muted hover:text-fg'
               }`}>
               <span className="mr-1">{tab.icon}</span> {tab.label}
             </button>
@@ -62,7 +64,7 @@ export default function QuoteConversionPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-gray-500">Analyzing quote data...</div>
+          <div className="flex items-center justify-center py-20 text-fg-muted">Analyzing quote data...</div>
         ) : data ? (
           <>
             {activeTab === 'funnel' && <FunnelTab data={data} />}
@@ -71,7 +73,14 @@ export default function QuoteConversionPage() {
             {activeTab === 'recovery' && <RecoveryTab data={data} />}
             {activeTab === 'trends' && <TrendsTab data={data} />}
           </>
-        ) : null}
+        ) : (
+          <EmptyState
+            icon={<FileText className="w-8 h-8 text-fg-subtle" />}
+            title="No conversion data"
+            description="Conversion analytics will appear once quotes are created"
+            size="full"
+          />
+        )}
       </div>
     </div>
   );
@@ -92,24 +101,24 @@ function FunnelTab({ data }: { data: any }) {
         <KPI label="Avg Time to Convert" value={`${ttc.avgDays || '—'} days`} sub={`Min: ${ttc.minDays || '—'}d / Max: ${ttc.maxDays || '—'}d`} color="green" />
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Quote Status Funnel</h2>
+      <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+        <h2 className="text-lg font-semibold text-fg mb-6">Quote Status Funnel</h2>
         <div className="space-y-4">
           {funnel.map((f: any, i: number) => {
             const pct = maxCount > 0 ? (Number(f.count) / maxCount) * 100 : 0;
             return (
               <div key={i} className="flex items-center gap-4">
-                <div className="w-24 text-sm font-medium text-gray-700 shrink-0">{f.status}</div>
-                <div className="flex-1 bg-gray-100 rounded-full h-10 overflow-hidden relative">
+                <div className="w-24 text-sm font-medium text-fg shrink-0">{f.status}</div>
+                <div className="flex-1 bg-surface-muted rounded-full h-10 overflow-hidden relative">
                   <div
                     className={`h-full rounded-full ${STATUS_COLORS[f.status] || 'bg-gray-300'}`}
                     style={{ width: `${Math.max(pct, 3)}%` }}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-800">
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-fg">
                     {f.count} quotes ({fmt$(f.totalValue)})
                   </span>
                 </div>
-                <div className="w-24 text-right text-sm text-gray-500">~{f.avgAge}d avg</div>
+                <div className="w-24 text-right text-sm text-fg-muted">~{f.avgAge}d avg</div>
               </div>
             );
           })}
@@ -123,22 +132,22 @@ function BuilderTab({ data }: { data: any }) {
   const builders = data.builders || [];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Conversion by Builder</h2>
+    <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="px-6 py-4 border-b border-border">
+        <h2 className="text-lg font-semibold text-fg">Conversion by Builder</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-surface-muted border-b border-border">
             <tr>
               {['Builder', 'Total Quotes', 'Converted', 'Expired', 'Pending', 'Rate', 'Quoted Value', 'Converted Value', 'Lost Value'].map((h) => (
-                <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
+                <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {builders.map((b: any, i: number) => (
-              <tr key={i} className="hover:bg-gray-50">
+              <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">{b.companyName}</td>
                 <td className="px-4 py-2 text-sm">{fmtN(b.totalQuotes)}</td>
                 <td className="px-4 py-2 text-sm text-green-600 font-medium">{fmtN(b.converted)}</td>
@@ -169,23 +178,23 @@ function CategoryTab({ data }: { data: any }) {
   const cats = data.categories || [];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Conversion by Product Category</h2>
-        <p className="text-sm text-gray-500 mt-1">Which product categories convert best from quotes to orders</p>
+    <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="px-6 py-4 border-b border-border">
+        <h2 className="text-lg font-semibold text-fg">Conversion by Product Category</h2>
+        <p className="text-sm text-fg-muted mt-1">Which product categories convert best from quotes to orders</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-surface-muted border-b border-border">
             <tr>
               {['Category', 'Quotes Containing', 'Ordered', 'Rate', 'Total Quoted', 'Converted Value', 'Avg Unit Price'].map((h) => (
-                <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
+                <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {cats.map((c: any, i: number) => (
-              <tr key={i} className="hover:bg-gray-50">
+              <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">{c.category}</td>
                 <td className="px-4 py-2 text-sm">{fmtN(c.quotesContaining)}</td>
                 <td className="px-4 py-2 text-sm text-green-600">{fmtN(c.orderedQuotes)}</td>
@@ -221,23 +230,23 @@ function RecoveryTab({ data }: { data: any }) {
         <p className="text-green-600 text-sm mt-1">{recoverable.length} recently expired/stale quotes that could be revived with outreach</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recoverable Quotes</h2>
-          <p className="text-sm text-gray-500 mt-1">Expired or stale quotes from the last 60 days worth $500+</p>
+      <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-fg">Recoverable Quotes</h2>
+          <p className="text-sm text-fg-muted mt-1">Expired or stale quotes from the last 60 days worth $500+</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-surface-muted border-b border-border">
               <tr>
                 {['Builder', 'Project', 'Amount', 'Status', 'Days Old', 'Recent Orders', 'Email', 'Phone'].map((h) => (
-                  <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
+                  <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {recoverable.map((r: any, i: number) => (
-                <tr key={i} className="hover:bg-gray-50">
+                <tr key={i} className="hover:bg-row-hover">
                   <td className="px-4 py-2 text-sm font-medium">{r.companyName}</td>
                   <td className="px-4 py-2 text-sm">{r.projectName || '—'}</td>
                   <td className="px-4 py-2 text-sm font-semibold">{fmt$(r.totalAmount)}</td>
@@ -245,7 +254,7 @@ function RecoveryTab({ data }: { data: any }) {
                   <td className="px-4 py-2 text-sm">{r.daysSinceCreated}d</td>
                   <td className="px-4 py-2 text-sm">{r.recentOrders > 0 ?
                     <span className="text-green-600">{r.recentOrders} (active)</span> :
-                    <span className="text-gray-400">None</span>}
+                    <span className="text-fg-subtle">None</span>}
                   </td>
                   <td className="px-4 py-2 text-sm text-blue-600">{r.contactEmail || '—'}</td>
                   <td className="px-4 py-2 text-sm">{r.contactPhone || '—'}</td>
@@ -257,7 +266,7 @@ function RecoveryTab({ data }: { data: any }) {
       </div>
 
       {neverOrdered.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-orange-200 overflow-hidden">
+        <div className="bg-surface rounded-lg shadow-sm border border-orange-200 overflow-hidden">
           <div className="bg-orange-500 text-white px-6 py-3 font-semibold">
             {neverOrdered.length} Builders Quoted But Never Ordered
           </div>
@@ -266,7 +275,7 @@ function RecoveryTab({ data }: { data: any }) {
               <thead className="bg-orange-50 border-b border-orange-200">
                 <tr>
                   {['Builder', 'Quotes Sent', 'Total Quoted', 'Last Quote', 'Email'].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -293,22 +302,22 @@ function TrendsTab({ data }: { data: any }) {
   const monthly = data.monthly || [];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Monthly Conversion Trends</h2>
+    <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="px-6 py-4 border-b border-border">
+        <h2 className="text-lg font-semibold text-fg">Monthly Conversion Trends</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-surface-muted border-b border-border">
             <tr>
               {['Month', 'Total Quotes', 'Converted', 'Expired', 'Rate', 'Total Value', 'Converted Value'].map((h) => (
-                <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-900">{h}</th>
+                <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {monthly.map((m: any, i: number) => (
-              <tr key={i} className="hover:bg-gray-50">
+              <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
                   {new Date(m.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </td>
@@ -340,9 +349,9 @@ function KPI({ label, value, sub, color }: { label: string; value: string; sub: 
   const tc: Record<string, string> = { green: 'text-green-700', red: 'text-red-700', yellow: 'text-yellow-700', blue: 'text-blue-700', orange: 'text-orange-700' };
   return (
     <div className={`rounded-lg shadow-sm border p-6 ${bg[color] || bg.blue}`}>
-      <p className="text-gray-600 text-sm font-medium mb-2">{label}</p>
-      <p className={`text-3xl font-bold ${tc[color] || tc.blue}`}>{value}</p>
-      <p className="text-gray-500 text-xs mt-2">{sub}</p>
+      <p className="text-fg-muted text-sm font-medium mb-2">{label}</p>
+      <p className={`text-3xl font-semibold ${tc[color] || tc.blue}`}>{value}</p>
+      <p className="text-fg-muted text-xs mt-2">{sub}</p>
     </div>
   );
 }

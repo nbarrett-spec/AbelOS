@@ -2,7 +2,9 @@
 // Product Catalog v2 — renamed from Product Image Management
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
+import { Package } from 'lucide-react'
 import { getProductImageUrl, isUsingPlaceholder } from '@/lib/product-images'
+import EmptyState from '@/components/ui/EmptyState'
 import './products.css'
 
 interface Product {
@@ -214,7 +216,7 @@ export default function ProductsCatalogPage() {
     <div className="products-page">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm text-white ${
-          toastType === 'error' ? 'bg-red-600' : 'bg-[#0f2a3e]'
+          toastType === 'error' ? 'bg-red-600' : 'bg-surface'
         }`}>
           {toast}
         </div>
@@ -338,9 +340,11 @@ export default function ProductsCatalogPage() {
         {loading ? (
           <div className="loading">Loading products...</div>
         ) : products.length === 0 ? (
-          <div className="empty-state">
-            <p>No products found. Try adjusting your filters.</p>
-          </div>
+          <EmptyState
+            icon={<Package className="w-8 h-8 text-fg-subtle" />}
+            title="No items match your filters"
+            description="Try adjusting your search, category, or price filters."
+          />
         ) : (
           <>
             {viewMode === 'grid' ? (

@@ -235,7 +235,7 @@ export default function TakeoffReviewDetailPage() {
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{takeoff.project?.name}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{takeoff.project?.name}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {takeoff.project?.builder?.companyName} &middot;
             {takeoff.project?.planName || 'No plan'} &middot;
@@ -327,7 +327,7 @@ export default function TakeoffReviewDetailPage() {
                 const vals = editValues[item.id] || {}
 
                 return (
-                  <div key={item.id} className={`px-4 py-3 ${isEditing ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
+                  <div key={item.id} className={`px-4 py-3 ${isEditing ? 'bg-blue-50/50' : 'hover:bg-row-hover'}`}>
                     {isEditing ? (
                       /* Edit Mode */
                       <div className="space-y-3">

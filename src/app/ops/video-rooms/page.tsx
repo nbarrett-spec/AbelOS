@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
+import { Video } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface VideoRoom {
   roomId: string
@@ -188,7 +191,7 @@ export default function VideoRoomsPage() {
         <div className="max-w-4xl mx-auto p-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-semibold text-gray-900 mb-2">
               {activeRoom.type === 'video' ? '📹' : '🎤'} {activeRoom.name}
             </h1>
             <p className="text-gray-600">
@@ -297,11 +300,10 @@ export default function VideoRoomsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Video & Voice Rooms</h1>
-          <p className="text-gray-600">Start instant team calls</p>
-        </div>
+        <PageHeader
+          title="Video & Voice Rooms"
+          description="Start instant team calls"
+        />
 
         {/* Quick Launch Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -372,7 +374,7 @@ export default function VideoRoomsPage() {
         {/* Active Rooms */}
         {activeRooms.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Active Rooms</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Active Rooms</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {activeRooms.map(room => (
                 <div key={room.roomId} className="bg-white rounded-lg shadow-md p-4">
@@ -411,7 +413,7 @@ export default function VideoRoomsPage() {
         {/* Recent Rooms */}
         {recentRooms.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Rooms</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Recent Rooms</h2>
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <table className="w-full">
                 <thead style={{ backgroundColor: `${BRAND_COLORS.walnut}15` }}>
@@ -435,7 +437,7 @@ export default function VideoRoomsPage() {
                 </thead>
                 <tbody className="divide-y">
                   {recentRooms.map(room => (
-                    <tr key={room.roomId} className="hover:bg-gray-50">
+                    <tr key={room.roomId} className="hover:bg-row-hover">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {room.name}
                       </td>
@@ -461,14 +463,12 @@ export default function VideoRoomsPage() {
 
         {/* Empty state */}
         {!loading && activeRooms.length === 0 && recentRooms.length === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <div className="text-5xl mb-4">📞</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No Rooms Yet
-            </h3>
-            <p className="text-gray-600">
-              Create a room above to start a video or voice call with your team.
-            </p>
+          <div className="bg-white rounded-lg shadow-md">
+            <EmptyState
+              icon={<Video className="w-8 h-8 text-fg-subtle" />}
+              title="No Rooms Yet"
+              description="Create a room above to start a video or voice call with your team."
+            />
           </div>
         )}
       </div>

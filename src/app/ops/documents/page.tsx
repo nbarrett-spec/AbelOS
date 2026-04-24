@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Files } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface ApiDocument {
   name: string
@@ -70,21 +73,21 @@ export default function DocumentsPage() {
     }
   }
 
-  const getTypeColor = (type: string): { bg: string; text: string } => {
+  const getTypeBadgeClass = (type: string): string => {
     const normalizedType = type.toLowerCase()
     switch (normalizedType) {
       case 'xlsx':
-        return { bg: '#e8f5e9', text: '#2e7d32' }
+        return 'bg-data-positive-bg text-data-positive-fg'
       case 'docx':
-        return { bg: '#e3f2fd', text: '#1565c0' }
+        return 'bg-data-info-bg text-data-info-fg'
       case 'pdf':
-        return { bg: '#ffebee', text: '#c62828' }
+        return 'bg-data-negative-bg text-data-negative-fg'
       case 'pptx':
-        return { bg: '#f3e5f5', text: '#6a1b9a' }
+        return 'bg-signal-subtle text-accent-fg'
       case 'csv':
-        return { bg: '#fff3e0', text: '#e65100' }
+        return 'bg-data-warning-bg text-data-warning-fg'
       default:
-        return { bg: '#f5f5f5', text: '#424242' }
+        return 'bg-surface-muted text-fg-muted'
     }
   }
 
@@ -129,58 +132,34 @@ export default function DocumentsPage() {
       .filter(dept => dept.docs.length > 0)
   }
 
-  const getTypeFilterCounts = (): Record<string, number> => {
-    if (!data) return {}
-    const counts: Record<string, number> = { All: data.totalDocuments }
-    Object.entries(data.byType).forEach(([type, count]) => {
-      counts[type.charAt(0).toUpperCase() + type.slice(1)] = count
-    })
-    return counts
-  }
-
-  const typeFilterCounts = getFilteredDocuments().length > 0 ? getTypeFilterCounts() : {}
   const filteredDepts = getFilteredDocuments()
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0f2a3e', margin: 0 }}>
-            Document Center
-          </h1>
-          {data && (
-            <div style={{ fontSize: '14px', color: '#666', fontWeight: 500 }}>
+    <div className="p-8 max-w-[1400px] mx-auto">
+      <PageHeader
+        title="Document Center"
+        description="Browse departmental documents and resources"
+        actions={
+          data ? (
+            <div className="text-sm text-fg-muted font-medium">
               {data.totalDocuments} document{data.totalDocuments !== 1 ? 's' : ''}
             </div>
-          )}
-        </div>
-        <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '24px' }}>
-          Browse departmental documents and resources
-        </p>
+          ) : undefined
+        }
+      />
 
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search documents by name or tags..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            border: '1px solid #d1d5db',
-            fontSize: '14px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-            boxSizing: 'border-box',
-            marginBottom: '24px',
-          }}
-        />
-      </div>
+      {/* Search */}
+      <input
+        type="text"
+        placeholder="Search documents by name or tags..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full px-4 py-3 rounded-lg border border-border bg-surface text-fg text-sm shadow-elev-1 box-border mb-6"
+      />
 
       {/* Filter Tabs */}
       {data && data.totalDocuments > 0 && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div className="flex gap-2 mb-6 flex-wrap">
           {['All', 'Spreadsheet', 'Document', 'PDF', 'Presentation'].map(type => {
             let apiType = type.toLowerCase()
             if (type === 'Spreadsheet') apiType = 'xlsx'
@@ -195,21 +174,16 @@ export default function DocumentsPage() {
 
             if (type !== 'All' && count === 0) return null
 
+            const isActive = selectedType === type
             return (
               <button
                 key={type}
                 onClick={() => setSelectedType(type)}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: selectedType === type ? `2px solid #C6A24E` : '1px solid #d1d5db',
-                  backgroundColor: selectedType === type ? '#fff9f0' : 'white',
-                  color: selectedType === type ? '#C6A24E' : '#6b7280',
-                  fontWeight: selectedType === type ? 600 : 500,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                className={`px-4 py-2.5 rounded-lg text-sm cursor-pointer transition-all ${
+                  isActive
+                    ? 'border-2 border-signal bg-signal-subtle text-signal font-semibold'
+                    : 'border border-border bg-surface text-fg-muted font-medium hover:bg-row-hover'
+                }`}
               >
                 {type} ({count})
               </button>
@@ -220,207 +194,121 @@ export default function DocumentsPage() {
 
       {/* Loading State */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '60px 32px', color: '#9ca3af' }}>
-          <p style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</p>
-          <p style={{ fontSize: '16px', fontWeight: 500 }}>Loading documents...</p>
+        <div className="text-center py-16 px-8 text-fg-subtle">
+          <p className="text-2xl mb-3">⏳</p>
+          <p className="text-base font-medium">Loading documents...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && !loading && (
-        <div style={{ textAlign: 'center', padding: '60px 32px', color: '#991b1b' }}>
-          <p style={{ fontSize: '24px', marginBottom: '12px' }}>⚠️</p>
-          <p style={{ fontSize: '16px', fontWeight: 500 }}>Error loading documents</p>
-          <p style={{ fontSize: '14px', marginTop: '8px' }}>{error}</p>
+        <div className="text-center py-16 px-8 text-data-negative-fg">
+          <p className="text-2xl mb-3">⚠️</p>
+          <p className="text-base font-medium">Error loading documents</p>
+          <p className="text-sm mt-2">{error}</p>
         </div>
       )}
 
       {/* Empty State */}
       {!loading && data && (filteredDepts.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 32px', color: '#9ca3af' }}>
-          <p style={{ fontSize: '48px', marginBottom: '12px' }}>📭</p>
-          <p style={{ fontSize: '16px', fontWeight: 500, marginBottom: '4px' }}>No documents found</p>
-          <p style={{ fontSize: '14px' }}>
-            {data.totalDocuments === 0
+        <EmptyState
+          icon={<Files className="w-10 h-10 text-fg-subtle" />}
+          title="No documents found"
+          description={
+            data.totalDocuments === 0
               ? 'No documents are available yet'
-              : 'Try adjusting your search or filter criteria'}
-          </p>
-        </div>
+              : 'Try adjusting your search or filter criteria'
+          }
+          size="full"
+        />
       ) : (
         /* Departments with Accordion */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {filteredDepts.map(dept => (
-            <div
-              key={dept.department}
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Department Header */}
+        <div className="flex flex-col gap-4">
+          {filteredDepts.map(dept => {
+            const isOpen = expandedDepartments.has(dept.department)
+            return (
               <div
-                onClick={() => toggleDepartment(dept.department)}
-                style={{
-                  padding: '16px',
-                  backgroundColor: '#f9fafb',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  borderBottom: expandedDepartments.has(dept.department)
-                    ? `2px solid #0f2a3e`
-                    : 'none',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f3f4f6'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f9fafb'
-                }}
+                key={dept.department}
+                className="bg-surface rounded-lg border border-border overflow-hidden"
               >
-                <div style={{ flex: 1 }}>
-                  <h3
+                {/* Department Header */}
+                <div
+                  onClick={() => toggleDepartment(dept.department)}
+                  className={`p-4 bg-surface-muted cursor-pointer flex justify-between items-center transition-all hover:bg-row-hover ${
+                    isOpen ? 'border-b-2 border-signal' : ''
+                  }`}
+                >
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-fg m-0 mb-1">
+                      {dept.department}
+                    </h3>
+                    <p className="text-xs text-fg-muted m-0">
+                      {dept.description} • {dept.docs.length} document
+                      {dept.docs.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div
+                    className="text-xl ml-4 text-fg-muted"
                     style={{
-                      fontSize: '16px',
-                      fontWeight: 600,
-                      color: '#0f2a3e',
-                      margin: '0 0 4px 0',
+                      transition: 'transform 0.2s',
+                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     }}
                   >
-                    {dept.department}
-                  </h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '0' }}>
-                    {dept.description} • {dept.docs.length} document
-                    {dept.docs.length !== 1 ? 's' : ''}
-                  </p>
+                    ▼
+                  </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: '20px',
-                    transition: 'transform 0.2s',
-                    transform: expandedDepartments.has(dept.department)
-                      ? 'rotate(180deg)'
-                      : 'rotate(0deg)',
-                    marginLeft: '16px',
-                  }}
-                >
-                  ▼
-                </div>
-              </div>
 
-              {/* Department Documents */}
-              {expandedDepartments.has(dept.department) && (
-                <div style={{ padding: '0' }}>
-                  {dept.docs.map((doc, idx) => {
-                    const typeColor = getTypeColor(doc.type)
-                    return (
-                      <div
-                        key={`${doc.path}-${idx}`}
-                        style={{
-                          padding: '12px 16px',
-                          borderTop: idx > 0 ? '1px solid #f3f4f6' : 'none',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          transition: 'background-color 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#f9fafb'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'white'
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              marginBottom: '6px',
-                            }}
-                          >
-                            <span style={{ fontSize: '18px' }}>
-                              {getFileIcon(doc.type)}
-                            </span>
+                {/* Department Documents */}
+                {isOpen && (
+                  <div>
+                    {dept.docs.map((doc, idx) => {
+                      return (
+                        <div
+                          key={`${doc.path}-${idx}`}
+                          className={`px-4 py-3 flex justify-between items-center transition-colors hover:bg-row-hover ${
+                            idx > 0 ? 'border-t border-border' : ''
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-lg">
+                                {getFileIcon(doc.type)}
+                              </span>
+                              <span className="text-sm font-semibold text-fg break-words">
+                                {doc.name}
+                              </span>
+                            </div>
+                            {doc.tags.length > 0 && (
+                              <div className="flex gap-1.5 flex-wrap">
+                                {doc.tags.map(tag => (
+                                  <span
+                                    key={tag}
+                                    className="inline-block text-[11px] bg-surface-muted text-fg-muted px-2 py-0.5 rounded"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-3 items-center ml-4 whitespace-nowrap">
                             <span
-                              style={{
-                                fontSize: '14px',
-                                fontWeight: 600,
-                                color: '#1f2937',
-                                wordBreak: 'break-word',
-                              }}
+                              className={`inline-block px-2.5 py-1 rounded text-[11px] font-semibold ${getTypeBadgeClass(doc.type)}`}
                             >
-                              {doc.name}
+                              {doc.type.toUpperCase()}
+                            </span>
+                            <span className="text-xs text-fg-muted">
+                              {formatFileSize(doc.size)}
                             </span>
                           </div>
-                          {doc.tags.length > 0 && (
-                            <div
-                              style={{
-                                display: 'flex',
-                                gap: '6px',
-                                flexWrap: 'wrap',
-                              }}
-                            >
-                              {doc.tags.map(tag => (
-                                <span
-                                  key={tag}
-                                  style={{
-                                    display: 'inline-block',
-                                    fontSize: '11px',
-                                    backgroundColor: '#f3f4f6',
-                                    color: '#6b7280',
-                                    padding: '2px 8px',
-                                    borderRadius: '4px',
-                                  }}
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '12px',
-                            alignItems: 'center',
-                            marginLeft: '16px',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          <span
-                            style={{
-                              display: 'inline-block',
-                              padding: '4px 10px',
-                              backgroundColor: typeColor.bg,
-                              color: typeColor.text,
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {doc.type.toUpperCase()}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '12px',
-                              color: '#6b7280',
-                            }}
-                          >
-                            {formatFileSize(doc.size)}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       ))}
     </div>

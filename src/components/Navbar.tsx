@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Bell } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getInitials } from '@/lib/utils'
 import { useTheme } from '@/contexts/ThemeContext'
 import GlobalSearch from '@/components/GlobalSearch'
+import { Badge } from '@/components/ui/Badge'
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -71,6 +73,39 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<BuilderNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const notifRef = useRef<HTMLDivElement>(null)
+
+  // System alerts bell (Tier 8.4) — count fed by `abel:alerts-count` window
+  // event (e.g. dispatched by SystemPulse when alerts refresh). Defaults to 0.
+  const [alertsCount, setAlertsCount] = useState(0)
+  const [alertsBump, setAlertsBump] = useState(0) // bump on change to retrigger animation
+  const prevAlertsRef = useRef(0)
+
+  useEffect(() => {
+    function onAlertsCount(e: Event) {
+      const detail = (e as CustomEvent<{ count?: number } | number | undefined>).detail
+      const next =
+        typeof detail === 'number'
+          ? detail
+          : typeof detail === 'object' && detail && typeof detail.count === 'number'
+          ? detail.count
+          : 0
+      const safe = Math.max(0, Math.floor(next))
+      if (safe !== prevAlertsRef.current) {
+        prevAlertsRef.current = safe
+        setAlertsCount(safe)
+        setAlertsBump((b) => b + 1)
+      }
+    }
+    window.addEventListener('abel:alerts-count', onAlertsCount as EventListener)
+    return () => window.removeEventListener('abel:alerts-count', onAlertsCount as EventListener)
+  }, [])
+
+  const handleAlertsClick = () => {
+    if (typeof window !== 'undefined') {
+      // RecentActivityDrawer (mounted in ops/layout.tsx) listens for this
+      window.dispatchEvent(new CustomEvent('abel:open-activity'))
+    }
+  }
 
   // Close search and notif dropdowns on click outside
   useEffect(() => {
@@ -303,6 +338,29 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* System Alerts Bell (Tier 8.4) — driven by `abel:alerts-count` event */}
+            {builder && (
+              <button
+                onClick={handleAlertsClick}
+                className="p-2 hover:bg-surface/10 rounded-lg transition relative"
+                title={alertsCount > 0 ? `${alertsCount} active system alert${alertsCount === 1 ? '' : 's'}` : 'System alerts'}
+                aria-label="Open system alerts"
+              >
+                <Bell className="h-5 w-5 text-fg-muted" />
+                {alertsCount > 0 && (
+                  <Badge
+                    key={alertsBump}
+                    variant="danger"
+                    size="xs"
+                    className="absolute -top-0.5 -right-0.5 px-1 min-w-[16px] animate-[scaleIn_200ms_ease-out]"
+                    aria-label={`${alertsCount} alerts`}
+                  >
+                    {alertsCount > 99 ? '99+' : alertsCount}
+                  </Badge>
+                )}
+              </button>
             )}
 
             {/* Notification Bell */}

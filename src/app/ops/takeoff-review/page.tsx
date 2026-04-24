@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { ClipboardList } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default function TakeoffReviewListPage() {
   const [takeoffs, setTakeoffs] = useState<any[]>([])
@@ -44,14 +47,10 @@ export default function TakeoffReviewListPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Takeoff Review</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Review AI-generated takeoffs, adjust items, and push to quotes
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Takeoff Review"
+        description="Review AI-generated takeoffs, adjust items, and push to quotes"
+      />
 
       {/* Status Filters */}
       <div className="flex gap-2 mb-4 flex-wrap">
@@ -93,9 +92,12 @@ export default function TakeoffReviewListPage() {
           <div className="w-8 h-8 border-4 border-[#0f2a3e] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : takeoffs.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          No takeoffs found. Takeoffs are created when builders upload blueprints.
-        </div>
+        <EmptyState
+          icon={<ClipboardList className="w-8 h-8 text-fg-subtle" />}
+          title="No takeoffs"
+          description="Takeoffs are created when builders upload blueprints."
+          size="default"
+        />
       ) : (
         <div className="space-y-3">
           {takeoffs.map(t => (

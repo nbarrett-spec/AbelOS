@@ -273,7 +273,11 @@ export default function BuilderApplicationsPage() {
                 </div>
 
                 {/* Expanded Detail */}
-                {isExpanded && (
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
                   <div style={{ borderTop: '1px solid #f3f4f6', padding: 20 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                       {/* Contact Info */}
@@ -401,7 +405,8 @@ export default function BuilderApplicationsPage() {
                       </div>
                     )}
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             )
           })}

@@ -472,7 +472,7 @@ function OrderPipeline({ byStatus }: { byStatus: Record<string, { count: number;
         const pct = totalOrders > 0 ? (count / totalOrders) * 100 : 0
         return (
           <Link key={stage.key} href={`/ops/orders?status=${stage.key}`} className="block">
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-row-hover transition-colors group">
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
               <span className="text-sm text-gray-600 w-[100px] group-hover:text-brand group-hover:font-medium">{stage.label}</span>
               <div className="flex-1 bg-gray-100 rounded-full h-2.5">
@@ -516,7 +516,7 @@ function RecentOrdersList({ orders }: { orders: DashboardData['recentOrders'] })
     <div className="space-y-2">
       {orders.map((order) => (
         <Link key={order.id} href={`/ops/orders/${order.id}`} className="block">
-          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-row-hover transition-colors group">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate group-hover:text-brand">{order.builderName}</p>
               <p className="text-xs text-gray-500">{order.orderNumber}</p>
@@ -538,7 +538,7 @@ function PaymentRow({ label, count, amount, color }: { label: string; count: num
 
   return (
     <Link href={`/ops/orders?payment=${label.toUpperCase()}`} className="block">
-      <div className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+      <div className="flex justify-between items-center p-2 rounded-lg hover:bg-row-hover transition-colors group">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 group-hover:text-brand group-hover:font-medium">{label}</span>
           <span className="text-xs text-gray-400">({count})</span>
@@ -551,7 +551,7 @@ function PaymentRow({ label, count, amount, color }: { label: string; count: num
 
 function MetricItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-2 rounded-lg hover:bg-gray-50 transition-colors">
+    <div className="p-2 rounded-lg hover:bg-row-hover transition-colors">
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-sm font-semibold text-gray-900 mt-1">{value}</p>
     </div>

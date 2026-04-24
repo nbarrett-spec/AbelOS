@@ -558,7 +558,11 @@ export default function PMMaterialDashboard() {
                 </button>
 
                 {/* Expanded detail */}
-                {isExpanded && (
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
                   <div className="border-t border-border px-4 pt-4 pb-4">
                     {job.bom.length === 0 ? (
                       <p className="text-sm text-fg-muted py-2">
@@ -652,7 +656,8 @@ export default function PMMaterialDashboard() {
                       )}
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             )
           })

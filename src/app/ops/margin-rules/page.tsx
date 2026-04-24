@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { DollarSign } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Rule {
   id: string
@@ -90,15 +93,10 @@ export default function MarginRulesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold" style={{ color: '#0f2a3e' }}>
-          Margin Protection Rules
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Monitor pricing floors, enforce margin minimums, and catch low-margin quotes before they hurt profitability.
-        </p>
-      </div>
+      <PageHeader
+        title="Margin Protection Rules"
+        description="Monitor pricing floors, enforce margin minimums, and catch low-margin quotes before they hurt profitability."
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -161,7 +159,7 @@ export default function MarginRulesPage() {
       {/* Rules Table */}
       <div className="bg-white rounded-lg shadow mb-8">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
+          <h2 className="text-lg font-semibold" style={{ color: '#0f2a3e' }}>
             Active Rules
           </h2>
         </div>
@@ -179,7 +177,7 @@ export default function MarginRulesPage() {
             </thead>
             <tbody>
               {data.rules.map((rule) => (
-                <tr key={rule.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr key={rule.id} className="border-b border-gray-200 hover:bg-row-hover">
                   <td className="px-6 py-4 font-semibold" style={{ color: '#0f2a3e' }}>
                     {rule.name}
                   </td>
@@ -216,7 +214,7 @@ export default function MarginRulesPage() {
         {/* Product Margin Health */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
+            <h3 className="text-lg font-semibold" style={{ color: '#0f2a3e' }}>
               Product Margin Health
             </h3>
           </div>
@@ -258,14 +256,19 @@ export default function MarginRulesPage() {
         {/* Rule Impact */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
+            <h3 className="text-lg font-semibold" style={{ color: '#0f2a3e' }}>
               Recent Activity
             </h3>
           </div>
           <div className="px-6 py-6">
             <div className="space-y-3">
               {data.violations.length === 0 ? (
-                <p className="text-gray-500 text-sm">No violations in the past 30 days.</p>
+                <EmptyState
+                  icon={<DollarSign className="w-8 h-8 text-fg-subtle" />}
+                  title="No violations"
+                  description="No quotes have crossed the margin floor in the past 30 days."
+                  size="compact"
+                />
               ) : (
                 <>
                   <p className="text-xs text-gray-500 font-semibold uppercase mb-4">
@@ -297,7 +300,7 @@ export default function MarginRulesPage() {
       {data.violations.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold" style={{ color: '#0f2a3e' }}>
+            <h3 className="text-lg font-semibold" style={{ color: '#0f2a3e' }}>
               Recent Margin Violations
             </h3>
             <p className="text-sm text-gray-600 mt-1">Quotes below 15% margin floor (last 30 days)</p>
@@ -316,7 +319,7 @@ export default function MarginRulesPage() {
               </thead>
               <tbody>
                 {data.violations.map((v) => (
-                  <tr key={v.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <tr key={v.id} className="border-b border-gray-200 hover:bg-row-hover">
                     <td className="px-6 py-4 font-mono font-semibold" style={{ color: '#0f2a3e' }}>
                       {v.quoteNumber}
                     </td>

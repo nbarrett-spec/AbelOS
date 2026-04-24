@@ -646,7 +646,11 @@ export default function CollectionsActionCenter() {
                     </div>
 
                     {/* Activity history — expanded view */}
-                    {isExpanded && (
+                    <div
+                      className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                      style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                    >
+                      <div className="overflow-hidden min-h-0">
                       <div className="px-4 py-3 border-t border-border-subtle bg-canvas">
                         <div className="flex items-center justify-between mb-2">
                           <div className="eyebrow text-[10px] text-fg-muted">Activity history</div>
@@ -693,7 +697,8 @@ export default function CollectionsActionCenter() {
                           </ul>
                         )}
                       </div>
-                    )}
+                      </div>
+                    </div>
                   </div>
                 )
               })}

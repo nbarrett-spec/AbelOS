@@ -483,8 +483,12 @@ export default function OpsOrdersPage() {
                 </div>
 
                 {/* Expanded Detail */}
-                {isExpanded && (
-                  <div className="border-t border-border bg-surface-muted/40 px-5 py-4 animate-slide-down">
+                <div
+                  className="grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300 motion-safe:ease-out"
+                  style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden min-h-0">
+                  <div className="border-t border-border bg-surface-muted/40 px-5 py-4">
                     {/* Info Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                       <div className="panel p-3">
@@ -633,7 +637,8 @@ export default function OpsOrdersPage() {
                       )}
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             )
           })}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { DollarSign } from 'lucide-react';
+import EmptyState from '@/components/ui/EmptyState';
 
 interface OverviewData {
   productHealth: {
@@ -140,11 +142,11 @@ export default function PricingEnginePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[#1e3a5f] text-white px-8 py-8">
+      <div className="bg-surface text-fg px-8 py-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Smart Pricing Engine</h1>
-            <p className="text-blue-100 mt-2">AI-powered margin analysis and optimization</p>
+            <h1 className="text-3xl font-semibold">Smart Pricing Engine</h1>
+            <p className="text-fg-muted mt-2">AI-powered margin analysis and optimization</p>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -166,7 +168,7 @@ export default function PricingEnginePage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-[#C6A24E] text-[#C6A24E]'
+                  ? 'border-signal text-signal'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -354,7 +356,7 @@ function AlertsTab({ data }: { data: AlertData }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.missingCost.items.slice(0, 20).map((item, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-row-hover">
                     <td className="px-4 py-2 text-sm font-mono">{item.sku}</td>
                     <td className="px-4 py-2 text-sm">{item.name}</td>
                     <td className="px-4 py-2 text-sm">{item.category}</td>
@@ -392,7 +394,7 @@ function BuilderMarginsTab({ data }: { data: BuilderMarginData }) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.builders.map((b, i) => (
-                <tr key={i} className="hover:bg-gray-50">
+                <tr key={i} className="hover:bg-row-hover">
                   <td className="px-4 py-2 text-sm font-medium">{b.companyName}</td>
                   <td className="px-4 py-2 text-sm">{formatNum(b.orderCount)}</td>
                   <td className="px-4 py-2 text-sm">{formatCurrency(b.totalRevenue)}</td>
@@ -435,7 +437,7 @@ function BuilderMarginsTab({ data }: { data: BuilderMarginData }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.discountAnalysis.map((d, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-row-hover">
                     <td className="px-4 py-2 text-sm font-medium">{d.companyName}</td>
                     <td className="px-4 py-2 text-sm">{formatNum(d.customPriceCount)}</td>
                     <td className="px-4 py-2 text-sm">
@@ -481,7 +483,7 @@ function CategoryMarginsTab({ data }: { data: CategoryMarginData }) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.catalogMargins.map((c, i) => (
-                <tr key={i} className="hover:bg-gray-50">
+                <tr key={i} className="hover:bg-row-hover">
                   <td className="px-4 py-2 text-sm font-medium">{c.category}</td>
                   <td className="px-4 py-2 text-sm">{formatNum(c.productCount)}</td>
                   <td className="px-4 py-2 text-sm">{formatCurrency(c.avgCost)}</td>
@@ -529,7 +531,7 @@ function CategoryMarginsTab({ data }: { data: CategoryMarginData }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.soldMargins.map((s, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-row-hover">
                     <td className="px-4 py-2 text-sm font-medium">{s.category}</td>
                     <td className="px-4 py-2 text-sm">{formatNum(s.lineItems)}</td>
                     <td className="px-4 py-2 text-sm">{formatCurrency(s.revenue)}</td>
@@ -589,7 +591,7 @@ function OpportunitiesTab({ data }: { data: OpportunityData }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.priceIncreaseTargets.items.map((item, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-row-hover">
                     <td className="px-4 py-2 text-sm font-mono">{item.sku}</td>
                     <td className="px-4 py-2 text-sm">{item.name}</td>
                     <td className="px-4 py-2 text-sm">{item.category}</td>
@@ -623,7 +625,7 @@ function OpportunitiesTab({ data }: { data: OpportunityData }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.overDiscounted.items.map((d, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-row-hover">
                     <td className="px-4 py-2 text-sm font-medium">{d.companyName}</td>
                     <td className="px-4 py-2 text-sm">{d.customPriceCount}</td>
                     <td className="px-4 py-2 text-sm text-red-600 font-medium">{formatPct(d.avgDiscountPct)}</td>
@@ -655,7 +657,7 @@ function OpportunitiesTab({ data }: { data: OpportunityData }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.crossSellGaps.items.map((g, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-row-hover">
                     <td className="px-4 py-2 text-sm font-medium">{g.companyName}</td>
                     <td className="px-4 py-2 text-sm">
                       {(g.purchasedCategories || []).map((c: string) => (

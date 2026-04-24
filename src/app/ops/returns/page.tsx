@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { PackageX } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -266,21 +268,11 @@ export default function ReturnsPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#f9f9f9',
-            borderRadius: '8px',
-            border: '1px dashed #ddd',
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: NAVY, marginBottom: '8px' }}>
-              No returns found
-            </h3>
-            <p style={{ fontSize: '14px', color: '#666' }}>
-              {search ? 'Try adjusting your search filters' : 'Create a new return to get started'}
-            </p>
-          </div>
+          <EmptyState
+            icon={<PackageX className="w-8 h-8 text-fg-subtle" />}
+            title="No returns found"
+            description={search ? 'Try adjusting your search filters' : 'Create a new return to get started'}
+          />
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #ddd' }}>

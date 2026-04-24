@@ -490,7 +490,7 @@ export default function ReportsPage() {
         </div>
         <div className="bg-white rounded-xl border p-5">
           <p className="text-sm text-gray-500">Avg Order Value</p>
-          <p className="text-3xl font-bold text-[#C6A24E] mt-1">{fmtCurrency(rev.avgOrderValue)}</p>
+          <p className="text-3xl font-bold text-signal mt-1">{fmtCurrency(rev.avgOrderValue)}</p>
           <p className="text-xs text-gray-400 mt-1">{fmt(rev.completedOrders)} completed</p>
         </div>
         <div className="bg-white rounded-xl border p-5">
@@ -586,7 +586,7 @@ export default function ReportsPage() {
                 <div key={b.companyName} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                      i === 0 ? 'bg-[#C6A24E]' : i === 1 ? 'bg-[#0f2a3e]' : 'bg-gray-400'
+                      i === 0 ? 'bg-signal' : i === 1 ? 'bg-[#0f2a3e]' : 'bg-gray-400'
                     }`}>{i + 1}</span>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{b.companyName}</p>

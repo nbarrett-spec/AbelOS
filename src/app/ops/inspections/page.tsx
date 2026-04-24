@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { CheckCircle, Plus, Clock, AlertTriangle, XCircle, Search, Filter, ClipboardList } from 'lucide-react'
+import { CheckCircle, Plus, Clock, AlertTriangle, XCircle, Search, Filter, ClipboardList, ClipboardCheck } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Inspection {
   id: string; templateName: string; templateCode: string; category: string;
@@ -88,16 +90,17 @@ export default function InspectionsPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inspections</h1>
-          <p className="text-sm text-gray-500 mt-1">Pre-install, post-install, QC, and delivery inspections</p>
-        </div>
-        <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28] transition-colors">
-          <Plus className="w-4 h-4" /> New Inspection
-        </button>
-      </div>
+      <PageHeader
+        title="Inspections"
+        description="Pre-install, post-install, QC, and delivery inspections"
+        actions={
+          <button onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-[#0f2a3e] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a1a28] transition-colors">
+            <Plus className="w-4 h-4" /> New Inspection
+          </button>
+        }
+      />
+
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
@@ -156,13 +159,18 @@ export default function InspectionsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-fg-subtle">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">
-                No inspections found. Create one to get started.
+              <tr><td colSpan={7} className="py-6">
+                <EmptyState
+                  icon={<ClipboardCheck className="w-8 h-8 text-fg-subtle" />}
+                  title="No inspections found"
+                  description="Create one to get started."
+                  size="compact"
+                />
               </td></tr>
             ) : filtered.map(insp => (
-              <tr key={insp.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+              <tr key={insp.id} className="border-b border-gray-100 hover:bg-row-hover cursor-pointer">
                 <td className="py-3 px-4">
                   <div className="font-medium text-gray-900">{insp.templateName || 'Custom'}</div>
                   <div className="text-xs text-gray-500">{insp.category}</div>
@@ -195,7 +203,7 @@ export default function InspectionsPage() {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreate(false)}>
           <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-4">New Inspection</h2>
+            <h2 className="text-lg font-semibold mb-4">New Inspection</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>

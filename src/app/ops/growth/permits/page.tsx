@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { TrendingUp } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 const NAVY = '#0f2a3e'
 const ORANGE = '#C6A24E'
@@ -128,19 +130,19 @@ export default function PermitsPage() {
       <div style={{ backgroundColor: NAVY, color: 'white', padding: '30px 40px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 8px 0' }}>
+            <h1 className="text-2xl font-semibold" style={{ margin: '0 0 8px 0' }}>
               Building Permit Monitor
             </h1>
-            <p style={{ fontSize: '14px', color: '#ccc', margin: 0 }}>
+            <p className="text-sm" style={{ color: '#ccc', margin: 0 }}>
               Track new building permits, research builders, and convert leads into customers
             </p>
           </div>
           <button
             onClick={() => setShowImport(!showImport)}
+            className="text-sm font-semibold cursor-pointer"
             style={{
               backgroundColor: ORANGE, color: 'white', border: 'none',
-              padding: '10px 20px', borderRadius: '4px', cursor: 'pointer',
-              fontSize: '14px', fontWeight: 'bold',
+              padding: '10px 20px', borderRadius: '4px',
             }}
           >
             Import Permits
@@ -159,21 +161,22 @@ export default function PermitsPage() {
       {showImport && (
         <div style={{ padding: '0 40px 20px' }}>
           <div style={{ backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px', padding: '20px' }}>
-            <h3 style={{ margin: '0 0 10px', color: NAVY, fontSize: '14px' }}>Import Permits (CSV format)</h3>
-            <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px' }}>
+            <h3 className="text-sm font-semibold" style={{ margin: '0 0 10px', color: NAVY }}>Import Permits (CSV format)</h3>
+            <p className="text-xs text-fg-muted" style={{ margin: '0 0 10px' }}>
               Format: Permit#, Address, City, Builder Name, Project Type (RESIDENTIAL/COMMERCIAL), Estimated Value
             </p>
             <textarea
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
               placeholder="BP-2026-001, 123 Oak Lane, Austin, Smith Homes, RESIDENTIAL, 450000"
-              style={{ width: '100%', height: '120px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '13px', fontFamily: 'monospace' }}
+              className="text-[13px] font-mono"
+              style={{ width: '100%', height: '120px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
             />
             <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-              <button onClick={handleImport} style={{ backgroundColor: NAVY, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+              <button onClick={handleImport} className="text-[13px] cursor-pointer" style={{ backgroundColor: NAVY, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>
                 Import
               </button>
-              <button onClick={() => setShowImport(false)} style={{ backgroundColor: '#eee', color: '#333', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+              <button onClick={() => setShowImport(false)} className="text-[13px] cursor-pointer" style={{ backgroundColor: '#eee', color: '#333', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>
                 Cancel
               </button>
             </div>
@@ -184,8 +187,8 @@ export default function PermitsPage() {
       {/* Pipeline Summary */}
       <div style={{ padding: '0 40px 20px', display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
         <div style={{ backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px', padding: '15px', textAlign: 'center' }}>
-          <div style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase', marginBottom: '6px' }}>Total Permits</div>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: NAVY }}>{pipelineTotal}</div>
+          <div className="text-[11px] text-fg-muted uppercase mb-1.5">Total Permits</div>
+          <div className="text-xl font-semibold" style={{ color: NAVY }}>{pipelineTotal}</div>
         </div>
         {['NEW', 'RESEARCHED', 'OUTREACH_SENT', 'CONVERTED', 'DISQUALIFIED'].map(status => {
           const item = pipeline.find(p => p.status === status)
@@ -194,16 +197,17 @@ export default function PermitsPage() {
             <div
               key={status}
               onClick={() => { setStatusFilter(statusFilter === status ? '' : status); setPage(1) }}
+              className="cursor-pointer"
               style={{
                 backgroundColor: statusFilter === status ? sc.bg : 'white',
                 border: `1px solid ${statusFilter === status ? sc.color : '#ddd'}`,
-                borderRadius: '4px', padding: '15px', textAlign: 'center', cursor: 'pointer',
+                borderRadius: '4px', padding: '15px', textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase', marginBottom: '6px' }}>
+              <div className="text-[11px] text-fg-muted uppercase mb-1.5">
                 {status.replace('_', ' ')}
               </div>
-              <div style={{ fontSize: '22px', fontWeight: 'bold', color: sc.color }}>{item?.count || 0}</div>
+              <div className="text-xl font-semibold" style={{ color: sc.color }}>{item?.count || 0}</div>
             </div>
           )
         })}
@@ -213,11 +217,13 @@ export default function PermitsPage() {
       <div style={{ padding: '0 40px 20px' }}>
         <div style={{ backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>Loading...</div>
+            <div className="text-center py-10 text-fg-subtle">Loading...</div>
           ) : permits.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-              No permits found. Import permits to get started.
-            </div>
+            <EmptyState
+              icon={<TrendingUp className="w-8 h-8 text-fg-subtle" />}
+              title="No permits found"
+              description="Import permits to get started."
+            />
           ) : (
             <>
               <div style={{ overflowX: 'auto' }}>
@@ -225,7 +231,7 @@ export default function PermitsPage() {
                   <thead>
                     <tr style={{ backgroundColor: '#f9f9f9', borderBottom: '2px solid #ddd' }}>
                       {['Status', 'Permit #', 'Address', 'City', 'Builder', 'Type', 'Value', 'Filed', 'Actions'].map(h => (
-                        <th key={h} style={{ padding: '12px 10px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#666' }}>{h}</th>
+                        <th key={h} className="text-xs font-semibold text-fg-muted" style={{ padding: '12px 10px', textAlign: 'left' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -233,45 +239,48 @@ export default function PermitsPage() {
                     {permits.map(p => {
                       const sc = statusColor(p.status)
                       return (
-                        <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <tr key={p.id} className="hover:bg-row-hover" style={{ borderBottom: '1px solid #eee' }}>
                           <td style={{ padding: '10px' }}>
-                            <span style={{ padding: '3px 8px', borderRadius: '3px', fontSize: '11px', fontWeight: '600', backgroundColor: sc.bg, color: sc.color }}>
+                            <span className="text-[11px] font-semibold" style={{ padding: '3px 8px', borderRadius: '3px', backgroundColor: sc.bg, color: sc.color }}>
                               {p.status}
                             </span>
                           </td>
-                          <td style={{ padding: '10px', fontSize: '12px', fontFamily: 'monospace' }}>{p.permitNumber || '—'}</td>
-                          <td style={{ padding: '10px', fontSize: '13px', fontWeight: '500' }}>{p.address}</td>
-                          <td style={{ padding: '10px', fontSize: '12px' }}>{p.city || '—'}</td>
+                          <td className="text-xs font-mono" style={{ padding: '10px' }}>{p.permitNumber || '—'}</td>
+                          <td className="text-[13px] font-medium" style={{ padding: '10px' }}>{p.address}</td>
+                          <td className="text-xs" style={{ padding: '10px' }}>{p.city || '—'}</td>
                           <td style={{ padding: '10px' }}>
-                            <div style={{ fontSize: '13px', fontWeight: '500', color: NAVY }}>{p.builderName || '—'}</div>
+                            <div className="text-[13px] font-medium" style={{ color: NAVY }}>{p.builderName || '—'}</div>
                             {p.builderFound && (
-                              <div style={{ fontSize: '11px', color: '#27ae60' }}>✓ Existing customer</div>
+                              <div className="text-[11px]" style={{ color: '#27ae60' }}>✓ Existing customer</div>
                             )}
                           </td>
-                          <td style={{ padding: '10px', fontSize: '12px' }}>{p.projectType}</td>
-                          <td style={{ padding: '10px', fontSize: '13px', fontWeight: '500' }}>
+                          <td className="text-xs" style={{ padding: '10px' }}>{p.projectType}</td>
+                          <td className="text-[13px] font-medium" style={{ padding: '10px' }}>
                             {p.estimatedValue > 0 ? `$${p.estimatedValue.toLocaleString()}` : '—'}
                           </td>
-                          <td style={{ padding: '10px', fontSize: '12px', color: '#666' }}>
+                          <td className="text-xs text-fg-muted" style={{ padding: '10px' }}>
                             {p.filingDate ? new Date(p.filingDate).toLocaleDateString() : '—'}
                           </td>
                           <td style={{ padding: '10px' }}>
                             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                               {p.status === 'NEW' && (
                                 <button onClick={() => handleStatusUpdate(p.id, 'RESEARCHED')}
-                                  style={{ backgroundColor: ORANGE, color: 'white', border: 'none', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>
+                                  className="text-[11px] cursor-pointer"
+                                  style={{ backgroundColor: ORANGE, color: 'white', border: 'none', padding: '4px 8px', borderRadius: '3px' }}>
                                   Mark Researched
                                 </button>
                               )}
                               {(p.status === 'RESEARCHED') && (
                                 <button onClick={() => handleStatusUpdate(p.id, 'OUTREACH_SENT')}
-                                  style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>
+                                  className="text-[11px] cursor-pointer"
+                                  style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '3px' }}>
                                   Send Outreach
                                 </button>
                               )}
                               {p.status !== 'CONVERTED' && p.status !== 'DISQUALIFIED' && (
                                 <button onClick={() => handleStatusUpdate(p.id, 'DISQUALIFIED')}
-                                  style={{ backgroundColor: '#eee', color: '#666', border: 'none', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>
+                                  className="text-[11px] cursor-pointer text-fg-muted"
+                                  style={{ backgroundColor: '#eee', border: 'none', padding: '4px 8px', borderRadius: '3px' }}>
                                   DQ
                                 </button>
                               )}
@@ -287,12 +296,14 @@ export default function PermitsPage() {
               {/* Pagination */}
               <div style={{ padding: '15px', display: 'flex', justifyContent: 'center', gap: '10px', borderTop: '1px solid #eee' }}>
                 <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
-                  style={{ padding: '6px 12px', backgroundColor: page === 1 ? '#eee' : NAVY, color: page === 1 ? '#999' : 'white', border: 'none', borderRadius: '3px', cursor: page === 1 ? 'not-allowed' : 'pointer', fontSize: '12px' }}>
+                  className="text-xs"
+                  style={{ padding: '6px 12px', backgroundColor: page === 1 ? '#eee' : NAVY, color: page === 1 ? '#999' : 'white', border: 'none', borderRadius: '3px', cursor: page === 1 ? 'not-allowed' : 'pointer' }}>
                   Prev
                 </button>
-                <span style={{ fontSize: '12px', color: '#666', padding: '6px 12px' }}>Page {page} of {totalPages}</span>
+                <span className="text-xs text-fg-muted" style={{ padding: '6px 12px' }}>Page {page} of {totalPages}</span>
                 <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}
-                  style={{ padding: '6px 12px', backgroundColor: page === totalPages ? '#eee' : NAVY, color: page === totalPages ? '#999' : 'white', border: 'none', borderRadius: '3px', cursor: page === totalPages ? 'not-allowed' : 'pointer', fontSize: '12px' }}>
+                  className="text-xs"
+                  style={{ padding: '6px 12px', backgroundColor: page === totalPages ? '#eee' : NAVY, color: page === totalPages ? '#999' : 'white', border: 'none', borderRadius: '3px', cursor: page === totalPages ? 'not-allowed' : 'pointer' }}>
                   Next
                 </button>
               </div>

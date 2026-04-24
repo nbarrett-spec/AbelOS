@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { Users } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface StaffMember {
   id: string
@@ -620,7 +622,13 @@ export default function StaffManagementPage() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>No staff found</td></tr>
+                <tr><td colSpan={8} style={{ padding: 0 }}>
+                  <EmptyState
+                    icon={<Users className="w-8 h-8 text-fg-subtle" />}
+                    title="No staff found"
+                    description="Adjust the filter or search to find a team member"
+                  />
+                </td></tr>
               )}
             </tbody>
           </table>

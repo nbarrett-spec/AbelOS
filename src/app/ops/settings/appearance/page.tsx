@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import PageHeader from '@/components/ui/PageHeader';
+import EmptyState from '@/components/ui/EmptyState';
+import { Palette } from 'lucide-react';
 
 interface Preferences {
   theme: 'light' | 'dark' | 'system';
@@ -246,8 +249,12 @@ export default function AppearancePage() {
 
   if (!preferences) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center', color: '#666' }}>
-        Loading preferences...
+      <div className="p-8">
+        <EmptyState
+          icon={<Palette />}
+          title="Loading preferences..."
+          size="full"
+        />
       </div>
     );
   }
@@ -255,23 +262,18 @@ export default function AppearancePage() {
   const accentColor = preferences.accentColor || '#C6A24E';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <div className="bg-canvas min-h-screen">
       {/* Header with breadcrumb */}
-      <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb', padding: '16px 24px' }}>
+      <div className="bg-surface border-b border-border" style={{ padding: '16px 24px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '16px' }}>
-            <Link href="/ops/settings" style={{ color: accentColor, textDecoration: 'none', fontWeight: '500' }}>
-              Settings
-            </Link>
-            <span style={{ color: '#999' }}>/</span>
-            <span style={{ color: '#666', fontWeight: '500' }}>Appearance</span>
-          </div>
-          <h1 style={{ margin: '0', fontSize: '32px', fontWeight: '700', color: '#1a1a1a' }}>
-            Appearance & Layout
-          </h1>
-          <p style={{ margin: '8px 0 0 0', color: '#666', fontSize: '16px' }}>
-            Customize how the platform looks and feels for your needs
-          </p>
+          <PageHeader
+            title="Appearance & Layout"
+            description="Customize how the platform looks and feels for your needs"
+            crumbs={[
+              { label: 'Settings', href: '/ops/settings' },
+              { label: 'Appearance' },
+            ]}
+          />
         </div>
       </div>
 
@@ -318,10 +320,10 @@ export default function AppearancePage() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
         {/* Section 1: Theme Selection */}
         <div style={{ marginBottom: '48px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px 0' }}>
+          <h2 className="text-fg" style={{ fontSize: '20px', fontWeight: '600', margin: '0 0 8px 0' }}>
             Theme Selection
           </h2>
-          <p style={{ color: '#666', fontSize: '14px', margin: '0 0 24px 0' }}>
+          <p className="text-fg-muted" style={{ fontSize: '14px', margin: '0 0 24px 0' }}>
             Choose how the interface should appear
           </p>
 
@@ -369,8 +371,8 @@ export default function AppearancePage() {
                   <div style={{ height: '12px', backgroundColor: '#d1d5db', borderRadius: '4px', width: '80%' }} />
                 </div>
               </div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>Light</h3>
-              <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>Bright and easy on the eyes</p>
+              <h3 className="text-fg" style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>Light</h3>
+              <p className="text-fg-subtle" style={{ margin: '0', fontSize: '12px' }}>Bright and easy on the eyes</p>
             </div>
 
             {/* Dark Theme */}
@@ -416,8 +418,8 @@ export default function AppearancePage() {
                   <div style={{ height: '12px', backgroundColor: '#404055', borderRadius: '4px', width: '80%' }} />
                 </div>
               </div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>Dark</h3>
-              <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>Reduces eye strain at night</p>
+              <h3 className="text-fg" style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>Dark</h3>
+              <p className="text-fg-subtle" style={{ margin: '0', fontSize: '12px' }}>Reduces eye strain at night</p>
             </div>
 
             {/* System Theme */}
@@ -479,24 +481,24 @@ export default function AppearancePage() {
                   <div style={{ textAlign: 'center', fontSize: '10px' }}>Dark</div>
                 </div>
               </div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>System</h3>
-              <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>Matches your OS settings</p>
+              <h3 className="text-fg" style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>System</h3>
+              <p className="text-fg-subtle" style={{ margin: '0', fontSize: '12px' }}>Matches your OS settings</p>
             </div>
           </div>
         </div>
 
         {/* Section 2: Accent Color Picker */}
         <div style={{ marginBottom: '48px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px 0' }}>
+          <h2 className="text-fg" style={{ fontSize: '20px', fontWeight: '600', margin: '0 0 8px 0' }}>
             Accent Color
           </h2>
-          <p style={{ color: '#666', fontSize: '14px', margin: '0 0 24px 0' }}>
+          <p className="text-fg-muted" style={{ fontSize: '14px', margin: '0 0 24px 0' }}>
             Select the primary accent color used throughout the interface
           </p>
 
           {/* Preset colors */}
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', margin: '0 0 12px 0' }}>
+            <h3 className="text-fg" style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>
               Preset Colors
             </h3>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -549,7 +551,7 @@ export default function AppearancePage() {
 
           {/* Custom color input */}
           <div>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', margin: '0 0 12px 0' }}>
+            <h3 className="text-fg" style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>
               Custom Hex Color
             </h3>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -591,16 +593,16 @@ export default function AppearancePage() {
 
         {/* Section 3: Display Preferences */}
         <div style={{ marginBottom: '48px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px 0' }}>
+          <h2 className="text-fg" style={{ fontSize: '20px', fontWeight: '600', margin: '0 0 8px 0' }}>
             Display Preferences
           </h2>
-          <p style={{ color: '#666', fontSize: '14px', margin: '0 0 24px 0' }}>
+          <p className="text-fg-muted" style={{ fontSize: '14px', margin: '0 0 24px 0' }}>
             Adjust how information is displayed throughout the platform
           </p>
 
           {/* Font Size */}
           <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', margin: '0 0 12px 0' }}>
+            <h3 className="text-fg" style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>
               Font Size
             </h3>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -641,10 +643,10 @@ export default function AppearancePage() {
           <div style={{ marginBottom: '32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', margin: '0' }}>
+                <h3 className="text-fg" style={{ fontSize: '14px', fontWeight: '600', margin: '0' }}>
                   Compact Mode
                 </h3>
-                <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>
+                <p className="text-fg-muted" style={{ fontSize: '12px', margin: '4px 0 0 0' }}>
                   Reduces padding for a denser layout
                 </p>
               </div>
@@ -680,7 +682,7 @@ export default function AppearancePage() {
 
           {/* Sidebar State */}
           <div>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', margin: '0 0 12px 0' }}>
+            <h3 className="text-fg" style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>
               Sidebar Default State
             </h3>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -720,10 +722,10 @@ export default function AppearancePage() {
 
         {/* Section 4: Dashboard Layout */}
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px 0' }}>
+          <h2 className="text-fg" style={{ fontSize: '20px', fontWeight: '600', margin: '0 0 8px 0' }}>
             Dashboard Layout
           </h2>
-          <p style={{ color: '#666', fontSize: '14px', margin: '0 0 24px 0' }}>
+          <p className="text-fg-muted" style={{ fontSize: '14px', margin: '0 0 24px 0' }}>
             Customize which sections appear and their order on your dashboard
           </p>
 
@@ -810,7 +812,7 @@ export default function AppearancePage() {
 
                   {/* Section name */}
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a1a', margin: '0' }}>
+                    <h4 className="text-fg" style={{ fontSize: '14px', fontWeight: '600', margin: '0' }}>
                       {section.name}
                     </h4>
                   </div>

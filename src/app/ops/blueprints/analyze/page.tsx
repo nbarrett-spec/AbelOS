@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { BlueprintAnalysis } from '@/lib/blueprint-ai'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface UploadedFile {
   file: File
@@ -169,13 +170,10 @@ export default function BlueprintAnalyzePage() {
 
   return (
     <div className="max-w-6xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Blueprint Analysis</h1>
-        <p className="text-gray-500 mt-2">
-          Upload a floor plan to automatically generate material takeoffs using AI vision analysis.
-        </p>
-      </div>
+      <PageHeader
+        title="Blueprint Analysis"
+        description="Upload a floor plan to automatically generate material takeoffs using AI vision analysis."
+      />
 
       {/* Upload Section */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">

@@ -25,7 +25,15 @@ const config: Config = {
         surface:          'var(--surface)',
         'surface-muted':  'var(--surface-muted)',
         'surface-elev':   'var(--surface-elevated)',
+        // Alias — many V5 sweep files use `surface-elevated` (the CSS var name)
+        // instead of `surface-elev` (the Tailwind key). Wire both to the same var
+        // so `bg-surface-elevated` / `border-surface-elevated` also compile.
+        'surface-elevated': 'var(--surface-elevated)',
         'surface-floating': 'var(--surface-floating)',
+        // Row hover — subtle gold tint applied on data-table `<tr>` + list `<li>`
+        // hover. Agents across wave V5 wrote `hover:bg-row-hover`; give them a
+        // real utility rather than a silent-no-style.
+        'row-hover':      'rgba(198, 162, 78, 0.06)',
         border:           'var(--border)',
         'border-strong':  'var(--border-strong)',
 

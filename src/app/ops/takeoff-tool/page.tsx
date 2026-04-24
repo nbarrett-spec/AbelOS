@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Ruler } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface RecentTakeoff {
   id: string
@@ -83,13 +86,10 @@ export default function TakeoffToolLandingPage() {
 
   return (
     <div className="max-w-6xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">AI Takeoff Tool</h1>
-        <p className="text-gray-500 mt-2 max-w-2xl">
-          Upload a blueprint PDF, let the model extract doors, windows and trim,
-          then review + approve. Draft Sales Order generated at the end.
-        </p>
-      </div>
+      <PageHeader
+        title="AI Takeoff Tool"
+        description="Upload a blueprint PDF, let the model extract doors, windows and trim, then review + approve. Draft Sales Order generated at the end."
+      />
 
       {/* Drop zone */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -166,9 +166,12 @@ export default function TakeoffToolLandingPage() {
         {loadingRecent ? (
           <div className="p-6 text-gray-500 text-sm">Loading…</div>
         ) : recent.length === 0 ? (
-          <div className="p-6 text-gray-500 text-sm">
-            No takeoffs yet. Upload a blueprint above to get started.
-          </div>
+          <EmptyState
+            icon={<Ruler className="w-8 h-8 text-fg-subtle" />}
+            title="No takeoffs"
+            description="Upload a blueprint above to get started."
+            size="default"
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -185,7 +188,7 @@ export default function TakeoffToolLandingPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {recent.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50">
+                  <tr key={t.id} className="hover:bg-row-hover">
                     <td className="px-6 py-3 font-medium text-gray-900">
                       {t.projectName || t.blueprintName || 'Untitled'}
                     </td>

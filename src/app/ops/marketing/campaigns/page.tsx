@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Megaphone } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: '#95a5a6',
@@ -13,16 +16,16 @@ const STATUS_COLORS: Record<string, string> = {
 function KPICard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
     <div style={{ background: '#fff', borderRadius: 10, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color || '#0f2a3e'}` }}>
-      <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || '#0f2a3e' }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{sub}</div>}
+      <div className="text-[13px] text-fg-muted mb-1">{label}</div>
+      <div className="text-2xl font-semibold" style={{ color: color || '#0f2a3e' }}>{value}</div>
+      {sub && <div className="text-xs text-fg-subtle mt-0.5">{sub}</div>}
     </div>
   )
 }
 
 function Badge({ text, color }: { text: string; color: string }) {
   return (
-    <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: color + '22', color, border: `1px solid ${color}44` }}>
+    <span className="inline-block text-[11px] font-semibold" style={{ padding: '2px 10px', borderRadius: 12, background: color + '22', color, border: `1px solid ${color}44` }}>
       {text}
     </span>
   )
@@ -51,19 +54,22 @@ export default function MarketingCampaignsPage() {
 
   return (
     <div style={{ padding: '24px 32px', maxWidth: 1400 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2a3e', marginBottom: 4 }}>Marketing Automation</h1>
-      <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>Campaign management, builder segmentation, drip sequences, and engagement tracking</p>
+      <PageHeader
+        title="Marketing Automation"
+        description="Campaign management, builder segmentation, drip sequences, and engagement tracking"
+      />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
+            className="text-[13px] cursor-pointer"
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontWeight: tab === t.id ? 600 : 500, background: tab === t.id ? '#0f2a3e' : '#f0f0f0', color: tab === t.id ? '#fff' : '#444' }}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {loading ? <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>Loading...</div> : (
+      {loading ? <div className="text-center py-16 text-fg-subtle">Loading...</div> : (
         <>
           {tab === 'dashboard' && data && <DashboardView data={data} />}
           {tab === 'campaigns' && data && <CampaignsView data={data} />}
@@ -95,37 +101,37 @@ function DashboardView({ data }: { data: any }) {
         <KPICard label="Conversions" value={Number(s.totalConversions || 0)} color="#e74c3c" />
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Recent Campaigns</h3>
+      <h3 className="text-base font-semibold mb-3" style={{ color: '#0f2a3e' }}>Recent Campaigns</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#f8f9fa' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Campaign</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Status</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Segment</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Recipients</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Sent</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Opens</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Date</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Campaign</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Status</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Segment</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Recipients</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Sent</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Opens</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Date</th>
             </tr>
           </thead>
           <tbody>
             {(data.recentCampaigns || []).map((c: any, i: number) => (
-              <tr key={c.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+              <tr key={c.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
                 <td style={{ padding: '10px 14px' }}>
-                  <div style={{ fontWeight: 600 }}>{c.name}</div>
-                  <div style={{ fontSize: 11, color: '#999' }}>{c.subject}</div>
+                  <div className="font-semibold">{c.name}</div>
+                  <div className="text-[11px] text-fg-subtle">{c.subject}</div>
                 </td>
                 <td style={{ padding: '10px 14px' }}><Badge text={c.status} color={STATUS_COLORS[c.status] || '#999'} /></td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{c.targetSegment || '—'}</td>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>{c.targetSegment || '—'}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.recipientCount || 0)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.sentCount || 0)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.openCount || 0)}</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{c.sentAt ? new Date(c.sentAt).toLocaleDateString() : c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>{c.sentAt ? new Date(c.sentAt).toLocaleDateString() : c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
               </tr>
             ))}
             {(data.recentCampaigns || []).length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No campaigns yet. Use Templates to create your first campaign.</td></tr>
+              <tr><td colSpan={7}><EmptyState icon={<Megaphone className="w-8 h-8 text-fg-subtle" />} title="No campaigns yet" description="Use Templates to create your first campaign." /></td></tr>
             )}
           </tbody>
         </table>
@@ -141,34 +147,34 @@ function CampaignsView({ data }: { data: any }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#f8f9fa' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Campaign</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Type</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Status</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Recipients</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Open %</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Click %</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Conv %</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Sent</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Campaign</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Type</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Status</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Recipients</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Open %</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Click %</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Conv %</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Sent</th>
             </tr>
           </thead>
           <tbody>
             {(data.campaigns || []).map((c: any, i: number) => (
-              <tr key={c.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+              <tr key={c.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
                 <td style={{ padding: '10px 14px' }}>
-                  <div style={{ fontWeight: 600 }}>{c.name}</div>
-                  <div style={{ fontSize: 11, color: '#999' }}>{c.subject}</div>
+                  <div className="font-semibold">{c.name}</div>
+                  <div className="text-[11px] text-fg-subtle">{c.subject}</div>
                 </td>
                 <td style={{ padding: '10px 14px' }}>{c.type}</td>
                 <td style={{ padding: '10px 14px' }}><Badge text={c.status} color={STATUS_COLORS[c.status] || '#999'} /></td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.recipientCount || 0)}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: Number(c.openRate) > 25 ? '#27ae60' : '#e74c3c' }}>{c.openRate}%</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right', color: Number(c.openRate) > 25 ? '#27ae60' : '#e74c3c' }}>{c.openRate}%</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{c.clickRate}%</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{c.conversionRate}%</td>
-                <td style={{ padding: '10px 14px', fontSize: 12 }}>{c.sentAt ? new Date(c.sentAt).toLocaleDateString() : '—'}</td>
+                <td className="text-xs" style={{ padding: '10px 14px' }}>{c.sentAt ? new Date(c.sentAt).toLocaleDateString() : '—'}</td>
               </tr>
             ))}
             {(data.campaigns || []).length === 0 && (
-              <tr><td colSpan={8} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No campaigns created yet.</td></tr>
+              <tr><td colSpan={8}><EmptyState icon={<Megaphone className="w-8 h-8 text-fg-subtle" />} title="No campaigns created yet" /></td></tr>
             )}
           </tbody>
         </table>
@@ -187,31 +193,35 @@ function SegmentsView({ data }: { data: any }) {
   }
   return (
     <div>
-      <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Pre-built audience segments for targeted campaigns. Click a segment to use it when creating a campaign.</p>
+      <p className="text-sm text-fg-muted mb-5">Pre-built audience segments for targeted campaigns. Click a segment to use it when creating a campaign.</p>
 
+      {(data.segments || []).length === 0 ? (
+        <EmptyState icon={<Megaphone className="w-8 h-8 text-fg-subtle" />} title="No segments yet" description="Audience segments will appear here as builders are imported." />
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
         {(data.segments || []).map((s: any) => (
           <div key={s.key} style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', borderTop: `4px solid ${SEGMENT_COLORS[s.key] || '#999'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#0f2a3e' }}>{s.name}</h3>
-              <span style={{ fontSize: 24, fontWeight: 700, color: SEGMENT_COLORS[s.key] || '#999' }}>{s.count}</span>
+              <h3 className="text-base font-semibold" style={{ margin: 0, color: '#0f2a3e' }}>{s.name}</h3>
+              <span className="text-2xl font-semibold" style={{ color: SEGMENT_COLORS[s.key] || '#999' }}>{s.count}</span>
             </div>
-            <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>{s.description}</p>
+            <p className="text-[13px] text-fg-muted mb-3">{s.description}</p>
 
             {s.builders && s.builders.length > 0 && (
-              <div style={{ maxHeight: 150, overflowY: 'auto', fontSize: 12, borderTop: '1px solid #eee', paddingTop: 8 }}>
+              <div className="text-xs" style={{ maxHeight: 150, overflowY: 'auto', borderTop: '1px solid #eee', paddingTop: 8 }}>
                 {s.builders.slice(0, 8).map((b: any) => (
                   <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ fontWeight: 600 }}>{b.companyName}</span>
-                    <span style={{ color: '#999' }}>{b.email}</span>
+                    <span className="font-semibold">{b.companyName}</span>
+                    <span className="text-fg-subtle">{b.email}</span>
                   </div>
                 ))}
-                {s.builders.length > 8 && <div style={{ color: '#999', paddingTop: 4 }}>+{s.count - 8} more...</div>}
+                {s.builders.length > 8 && <div className="text-fg-subtle pt-1">+{s.count - 8} more...</div>}
               </div>
             )}
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
@@ -221,15 +231,18 @@ function TemplatesView({ data }: { data: any }) {
 
   return (
     <div>
-      <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Ready-to-launch campaign templates. Configure and deploy to your target segments.</p>
+      <p className="text-sm text-fg-muted mb-5">Ready-to-launch campaign templates. Configure and deploy to your target segments.</p>
 
+      {(data.templates || []).length === 0 ? (
+        <EmptyState icon={<Megaphone className="w-8 h-8 text-fg-subtle" />} title="No templates available" description="Campaign templates will appear here." />
+      ) : (
       <div style={{ display: 'grid', gap: 20 }}>
         {(data.templates || []).map((t: any) => (
           <div key={t.id} style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#0f2a3e' }}>{t.name}</h3>
-                <p style={{ fontSize: 13, color: '#666', margin: '4px 0' }}>{t.description}</p>
+                <h3 className="text-lg font-semibold" style={{ margin: 0, color: '#0f2a3e' }}>{t.name}</h3>
+                <p className="text-[13px] text-fg-muted" style={{ margin: '4px 0' }}>{t.description}</p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <Badge text={t.type} color={TYPE_COLORS[t.type] || '#999'} />
@@ -240,10 +253,10 @@ function TemplatesView({ data }: { data: any }) {
             <div style={{ display: 'grid', gap: 8 }}>
               {(t.emails || []).map((e: any, i: number) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#f8f9fa', borderRadius: 8 }}>
-                  <div style={{ minWidth: 50, fontSize: 12, fontWeight: 700, color: '#8e44ad' }}>Day {e.day}</div>
+                  <div className="text-xs font-semibold" style={{ minWidth: 50, color: '#8e44ad' }}>Day {e.day}</div>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{e.subject}</div>
-                    <div style={{ fontSize: 12, color: '#999' }}>{e.preview}</div>
+                    <div className="text-[13px] font-semibold">{e.subject}</div>
+                    <div className="text-xs text-fg-subtle">{e.preview}</div>
                   </div>
                 </div>
               ))}
@@ -251,6 +264,7 @@ function TemplatesView({ data }: { data: any }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
@@ -260,16 +274,16 @@ function PerformanceView({ data }: { data: any }) {
     <div>
       {(data.byType || []).length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Performance by Type</h3>
+          <h3 className="text-base font-semibold mb-3" style={{ color: '#0f2a3e' }}>Performance by Type</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 24 }}>
             {(data.byType || []).map((t: any) => (
               <div key={t.type} style={{ background: '#fff', borderRadius: 10, padding: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f2a3e', marginBottom: 8 }}>{t.type}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+                <div className="text-sm font-semibold mb-2" style={{ color: '#0f2a3e' }}>{t.type}</div>
+                <div className="text-[13px]" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div>Campaigns: <strong>{Number(t.campaignCount)}</strong></div>
                   <div>Sent: <strong>{Number(t.totalSent).toLocaleString()}</strong></div>
                   <div>Open Rate: <strong style={{ color: '#27ae60' }}>{t.avgOpenRate}%</strong></div>
-                  <div>Click Rate: <strong style={{ color: '#C6A24E' }}>{t.avgClickRate}%</strong></div>
+                  <div>Click Rate: <strong className="text-signal">{t.avgClickRate}%</strong></div>
                 </div>
               </div>
             ))}
@@ -277,36 +291,36 @@ function PerformanceView({ data }: { data: any }) {
         </>
       )}
 
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#0f2a3e' }}>Campaign Results</h3>
+      <h3 className="text-base font-semibold mb-3" style={{ color: '#0f2a3e' }}>Campaign Results</h3>
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#f8f9fa' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600 }}>Campaign</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Sent</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Opens</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Open %</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Clicks</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Click %</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Conversions</th>
-              <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>Conv %</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'left' }}>Campaign</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Sent</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Opens</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Open %</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Clicks</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Click %</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Conversions</th>
+              <th className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right' }}>Conv %</th>
             </tr>
           </thead>
           <tbody>
             {(data.campaigns || []).map((c: any, i: number) => (
-              <tr key={c.id} style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
-                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{c.name}</td>
+              <tr key={c.id} className="hover:bg-row-hover" style={{ borderTop: '1px solid #eee', background: i % 2 ? '#fafafa' : '#fff' }}>
+                <td className="font-semibold" style={{ padding: '10px 14px' }}>{c.name}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.sentCount || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.openCount || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: Number(c.openRate) > 25 ? '#27ae60' : '#e74c3c' }}>{c.openRate}%</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right', color: Number(c.openRate) > 25 ? '#27ae60' : '#e74c3c' }}>{c.openRate}%</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.clickCount || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{c.clickRate}%</td>
                 <td style={{ padding: '10px 14px', textAlign: 'right' }}>{Number(c.convertCount || 0)}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: '#8e44ad' }}>{c.conversionRate}%</td>
+                <td className="font-semibold" style={{ padding: '10px 14px', textAlign: 'right', color: '#8e44ad' }}>{c.conversionRate}%</td>
               </tr>
             ))}
             {(data.campaigns || []).length === 0 && (
-              <tr><td colSpan={8} style={{ padding: 30, textAlign: 'center', color: '#999' }}>No sent campaigns yet. Performance data will appear here after campaigns are sent.</td></tr>
+              <tr><td colSpan={8}><EmptyState icon={<Megaphone className="w-8 h-8 text-fg-subtle" />} title="No sent campaigns yet" description="Performance data will appear here after campaigns are sent." /></td></tr>
             )}
           </tbody>
         </table>
