@@ -294,6 +294,7 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'material-confirm-checkpoint', schedule: '0 13 * * *', description: 'T-7 Material Confirm Checkpoint: PM sign-off gate for jobs delivering within 7 days; auto-escalates to Clint at T-3' },
   { name: 'collections-ladder', schedule: '0 13 * * *', description: 'Daily collections ladder (Day 15/30/45/60): friendly reminder → past-due email → final notice → account hold; writes CollectionAction + InboxItem per trigger' },
   { name: 'cycle-count-schedule', schedule: '0 11 * * 1', description: 'Weekly cycle-count scheduler (Mon 6 AM CT): picks top-20 risk-weighted SKUs, creates CycleCountBatch + 20 lines, assigns WAREHOUSE_LEAD, nudges via InboxItem CYCLE_COUNT_WEEKLY' },
+  { name: 'gold-stock-monitor', schedule: '0 5 * * *', description: 'Daily gold-stock kit sweep: any ACTIVE kit with currentQty < minQty creates GOLD_STOCK_BUILD_READY (all parts on-hand) or GOLD_STOCK_COMPONENTS_SHORT InboxItem' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {
