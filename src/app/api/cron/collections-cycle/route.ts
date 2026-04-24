@@ -28,6 +28,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ── Kill switch: collections cycle is OFF until explicitly enabled ──
+  if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      reason: 'Collections cycle disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
+    })
+  }
+
   const runId = await startCronRun('collections-cycle', 'schedule')
   const started = Date.now()
 

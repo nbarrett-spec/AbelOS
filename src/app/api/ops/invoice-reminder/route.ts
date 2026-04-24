@@ -18,6 +18,15 @@ export async function POST(request: NextRequest) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  // ── Kill switch: invoice reminders are OFF until explicitly enabled ──
+  if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
+    return NextResponse.json({
+      ok: false,
+      disabled: true,
+      reason: 'Collections emails disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
+    }, { status: 503 })
+  }
+
   try {
     // Audit log
     audit(request, 'CREATE', 'InvoiceReminder', undefined, { method: 'POST' }).catch(() => {})

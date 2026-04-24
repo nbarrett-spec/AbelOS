@@ -450,6 +450,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ── Kill switch: collections ladder is OFF until explicitly enabled ──
+  if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      reason: 'Collections ladder disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
+    })
+  }
+
   return withCronRun('collections-ladder', async () => {
     const result = await runLadder()
     logger.info('collections_ladder_complete', result)
