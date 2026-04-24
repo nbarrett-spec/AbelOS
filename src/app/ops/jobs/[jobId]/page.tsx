@@ -11,12 +11,18 @@ import AllocationPanel from './AllocationPanel'
 import MaterialConfirmBanner from './MaterialConfirmBanner'
 import MaterialDrawer from './MaterialDrawer'
 import CoPreviewSheet from './CoPreviewSheet'
+import ChangeOrderInbox from './ChangeOrderInbox'
+import DeliverySignOff from './DeliverySignOff'
 
 // Feature flags — default ON unless explicitly 'off'. Evaluated at bundle time.
 const HYPHEN_PANEL_ENABLED =
   process.env.NEXT_PUBLIC_FEATURE_HYPHEN_PANEL !== 'off'
 const MATERIAL_DRAWER_ENABLED =
   process.env.NEXT_PUBLIC_FEATURE_MATERIAL_DRAWER !== 'off'
+const CO_INBOX_ENABLED =
+  process.env.NEXT_PUBLIC_FEATURE_CO_INBOX !== 'off'
+const DELIVERY_SIGNOFF_ENABLED =
+  process.env.NEXT_PUBLIC_FEATURE_DELIVERY_SIGNOFF !== 'off'
 
 const STATUS_COLORS: Record<string, string> = {
   CREATED: '#95A5A6',
@@ -486,6 +492,7 @@ export default function JobDetailPage() {
       {activeTab === 'documents' && (
         <div className="mb-6 space-y-6">
           <HyphenDocumentsTab jobId={jobId} />
+          {CO_INBOX_ENABLED && <ChangeOrderInbox jobId={jobId} />}
           {HYPHEN_PANEL_ENABLED && <HyphenPanel jobId={jobId} />}
         </div>
       )}
@@ -807,6 +814,9 @@ export default function JobDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Delivery & Install PM Sign-off — Wave-D (D9). */}
+          {DELIVERY_SIGNOFF_ENABLED && <DeliverySignOff jobId={jobId} />}
         </div>
 
         {/* Right Column */}
