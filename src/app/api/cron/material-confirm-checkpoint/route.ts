@@ -8,6 +8,11 @@ import { startCronRun, finishCronRun } from '@/lib/cron'
 import { sendMaterialConfirmRequestEmail } from '@/lib/email/material-confirm-request'
 import { sendMaterialEscalationEmail } from '@/lib/email/material-escalation'
 import { logger } from '@/lib/logger'
+import {
+  computeJobMaterialStatus,
+  type JobMaterialStatus,
+  type MaterialStatusLine,
+} from '@/lib/mrp/atp'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // T-7 Material Confirm Checkpoint
@@ -118,9 +123,10 @@ async function runCheckpoint(dryRun: boolean) {
     for (const job of pass1Jobs) {
       try {
         const status = await computeJobMaterialStatus(job.id)
+        const reason = summarizeStatus(status)
         const daysToDelivery = daysFromNow(job.scheduledDate)
 
-        if (status.status === 'GREEN') {
+        if (status.overallStatus === 'GREEN') {
           if (!dryRun) await autoConfirmJob(job.id)
           result.autoConfirmed += 1
           continue
@@ -129,7 +135,7 @@ async function runCheckpoint(dryRun: boolean) {
         // AMBER or RED — needs PM. Open an InboxItem (one per Job at a time)
         // and email the PM. If the PM doesn't exist we still create the
         // inbox item so Clint's queue on the escalation pass picks it up.
-        const priority = status.status === 'RED' ? 'CRITICAL' : 'HIGH'
+        const priority = status.overallStatus === 'RED' ? 'CRITICAL' : 'HIGH'
         const dueBy = new Date(job.scheduledDate)
         dueBy.setUTCDate(dueBy.getUTCDate() - 3)
         const alreadyOpen = await inboxItemExists(
@@ -147,7 +153,7 @@ async function runCheckpoint(dryRun: boolean) {
             type: 'MATERIAL_CONFIRM_REQUIRED',
             source: 'material-confirm-checkpoint',
             title: `Confirm materials for ${job.jobNumber} — delivers in ${daysToDelivery}d`,
-            description: `${status.status}: ${status.reason}`,
+            description: `${status.overallStatus}: ${reason}`,
             priority,
             entityType: 'Job',
             entityId: job.id,
@@ -156,9 +162,10 @@ async function runCheckpoint(dryRun: boolean) {
             actionData: {
               jobId: job.id,
               jobNumber: job.jobNumber,
-              materialStatus: status.status,
-              statusReason: status.reason,
+              materialStatus: status.overallStatus,
+              statusReason: reason,
               daysToDelivery,
+              totalShortageValue: status.totalShortageValue,
             },
           })
         }
@@ -169,7 +176,7 @@ async function runCheckpoint(dryRun: boolean) {
           // which from a PM's perspective is the same "needs your eyes" bucket
           // as AMBER.
           const emailMaterialStatus: 'AMBER' | 'RED' =
-            status.status === 'RED' ? 'RED' : 'AMBER'
+            status.overallStatus === 'RED' ? 'RED' : 'AMBER'
           const emailRes = await sendMaterialConfirmRequestEmail({
             to: job.pmEmail,
             pmFirstName: job.pmFirstName || 'there',
@@ -181,7 +188,7 @@ async function runCheckpoint(dryRun: boolean) {
             scheduledDate: new Date(job.scheduledDate),
             daysToDelivery,
             materialStatus: emailMaterialStatus,
-            statusReason: status.reason,
+            statusReason: reason,
           })
           if (!emailRes.success) {
             result.emailFailures.push({
@@ -230,6 +237,7 @@ async function runCheckpoint(dryRun: boolean) {
           continue
         }
         const status = await computeJobMaterialStatus(job.id)
+        const reason = summarizeStatus(status)
         const daysToDelivery = daysFromNow(job.scheduledDate)
 
         if (!dryRun) {
@@ -248,7 +256,7 @@ async function runCheckpoint(dryRun: boolean) {
             type: 'MATERIAL_ESCALATION_CLINT',
             source: 'material-confirm-checkpoint',
             title: `ESCALATION: Material confirm missed — ${job.jobNumber}`,
-            description: `${status.status}: ${status.reason}. PM did not confirm by T-3.`,
+            description: `${status.overallStatus}: ${reason}. PM did not confirm by T-3.`,
             priority: 'CRITICAL',
             entityType: 'Job',
             entityId: job.id,
@@ -257,9 +265,10 @@ async function runCheckpoint(dryRun: boolean) {
             actionData: {
               jobId: job.id,
               jobNumber: job.jobNumber,
-              materialStatus: status.status,
-              statusReason: status.reason,
+              materialStatus: status.overallStatus,
+              statusReason: reason,
               daysToDelivery,
+              totalShortageValue: status.totalShortageValue,
               trigger: 'AUTO_TIMEOUT',
               assignedPMId: job.assignedPMId,
             },
@@ -297,7 +306,7 @@ async function runCheckpoint(dryRun: boolean) {
           // happens we downgrade to UNKNOWN so the recipient sees the
           // conservative thing.
           const emailMaterialStatus: 'AMBER' | 'RED' | 'UNKNOWN' =
-            status.status === 'GREEN' ? 'UNKNOWN' : status.status
+            status.overallStatus === 'GREEN' ? 'UNKNOWN' : status.overallStatus
           for (const r of recipients) {
             const emailRes = await sendMaterialEscalationEmail({
               to: r.email,
@@ -310,7 +319,7 @@ async function runCheckpoint(dryRun: boolean) {
               scheduledDate: new Date(job.scheduledDate),
               daysToDelivery,
               materialStatus: emailMaterialStatus,
-              statusReason: status.reason,
+              statusReason: reason,
               escalationReason: 'auto-escalated (T-3 timeout)',
               pmName: [job.pmFirstName, job.pmLastName].filter(Boolean).join(' ') || null,
               trigger: 'AUTO_TIMEOUT',
@@ -395,133 +404,53 @@ async function findNateEmail(): Promise<string | null> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Inline material-status computation (GREEN / AMBER / RED)
+// Material-status summary
 //
-// If the sibling agent ships `src/lib/mrp/atp.ts::computeJobMaterialStatus`
-// this helper stays correct-but-dumb; prefer the shared one when available.
-// We can't import at call-time without knowing the shape, so we hand-roll
-// here against the shape we need:
-//   GREEN  — every OrderItem on the Job's Order has enough available inventory
-//            (including BoM-component coverage) to cover qty
-//   AMBER  — partial coverage: at least one shortfall < 100% but > 0%
-//   RED    — at least one component completely short (0% or near-zero)
+// The canonical ATP/material-status engine lives at `src/lib/mrp/atp.ts` and
+// returns a rich `JobMaterialStatus` (per-product lines with required/allocated
+// /shortfall/recommendation). This cron only needs a single overall status and
+// a human-readable one-liner for the InboxItem description + PM/escalation
+// emails. `summarizeStatus` converts the rich shape into that one-liner so the
+// two surfaces stay in sync.
 //
-// "available" uses InventoryItem.available (onHand - committed), which already
-// nets out any outstanding Job commitments. That means once Materials are
-// LOCKED for this Job, the commitment counts against us — so a Job that's
-// already reserved its own inventory will still show GREEN here because the
-// numerator for THIS job's coverage is its own committed bucket, not available.
-// Rather than try to model that edge perfectly, we use a simpler heuristic:
-// a job in status >= MATERIALS_LOCKED is treated as at least AMBER and only
-// GREEN when every line item's product has committed >= qty in its inventory
-// row — meaning the Job's locks are actually reflected in the commitments.
+// UNKNOWN → no BoM/order lines we could evaluate; treat as "needs eyes" just
+//           like AMBER downstream (email templates normalize the same way).
+// GREEN   → everything allocated or covered by projected ATP — no humans needed.
+// AMBER   → incoming PO covers the shortfall but not yet in hand.
+// RED     → projected ATP < shortfall; real stockout risk.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type MatStatus = 'GREEN' | 'AMBER' | 'RED' | 'UNKNOWN'
-
-interface MaterialStatusResult {
-  status: MatStatus
-  reason: string
-  shortfalls: Array<{ sku: string; name: string; needed: number; available: number }>
+function summarizeStatus(s: JobMaterialStatus): string {
+  if (s.overallStatus === 'UNKNOWN') {
+    return 'no order items on linked order (or job has no order)'
+  }
+  // Consider only non-GREEN lines for the reason — GREEN lines don't need
+  // mentioning. (The shared fn returns all lines by default; we filter here
+  // rather than pass `shortagesOnly` so `totalShortageValue` stays honest.)
+  const problem: MaterialStatusLine[] = s.lines.filter((l) => l.status !== 'GREEN')
+  if (problem.length === 0) {
+    const n = s.lines.length
+    return `all ${n} line item${n === 1 ? '' : 's'} covered`
+  }
+  // Sort so RED lines surface first, then by biggest shortfall.
+  problem.sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'RED' ? -1 : 1
+    return b.shortfall - a.shortfall
+  })
+  const top = problem[0]
+  const extra = problem.length - 1
+  const topName = top.sku || top.productName || top.productId
+  const needed = top.required
+  const have = Math.max(0, top.allocated + top.projectedATP)
+  const head =
+    `${problem.length} shortfall${problem.length === 1 ? '' : 's'}: ` +
+    `${topName} needs ${fmtQty(needed)}, has ${fmtQty(have)}`
+  return extra > 0 ? `${head} (+${extra} more)` : head
 }
 
-export async function computeJobMaterialStatus(
-  jobId: string
-): Promise<MaterialStatusResult> {
-  try {
-    // Pull the Job's OrderItems once, then join to inventory + BoM.
-    // Fully-expanded BoM is beyond this cron's scope; we check top-level
-    // products first, then descend one level for components if the product
-    // has a BoM. Non-manufactured items (no BoM) are covered in the top-level
-    // loop.
-    const orderItems: Array<{
-      productId: string
-      sku: string | null
-      name: string | null
-      quantity: number
-      onHand: number | null
-      committed: number | null
-      available: number | null
-    }> = await prisma.$queryRawUnsafe(
-      `
-      SELECT
-        oi."productId",
-        COALESCE(p."sku", '') AS "sku",
-        COALESCE(p."name", oi."description") AS "name",
-        oi."quantity" AS "quantity",
-        inv."onHand" AS "onHand",
-        inv."committed" AS "committed",
-        inv."available" AS "available"
-      FROM "Job" j
-      JOIN "OrderItem" oi ON oi."orderId" = j."orderId"
-      LEFT JOIN "Product" p ON p."id" = oi."productId"
-      LEFT JOIN "InventoryItem" inv ON inv."productId" = oi."productId"
-      WHERE j."id" = $1
-      `,
-      jobId
-    )
-
-    if (orderItems.length === 0) {
-      return {
-        status: 'UNKNOWN',
-        reason: 'no order items on linked order (or job has no order)',
-        shortfalls: [],
-      }
-    }
-
-    const shortfalls: MaterialStatusResult['shortfalls'] = []
-    let anyPartial = false
-    let anyZero = false
-
-    for (const item of orderItems) {
-      const available = Number(item.available ?? item.onHand ?? 0)
-      const needed = Number(item.quantity || 0)
-      if (needed <= 0) continue
-      if (available >= needed) continue
-      if (available <= 0) {
-        anyZero = true
-        shortfalls.push({
-          sku: item.sku || item.productId,
-          name: item.name || item.productId,
-          needed,
-          available: Math.max(0, available),
-        })
-      } else {
-        anyPartial = true
-        shortfalls.push({
-          sku: item.sku || item.productId,
-          name: item.name || item.productId,
-          needed,
-          available,
-        })
-      }
-    }
-
-    if (shortfalls.length === 0) {
-      return {
-        status: 'GREEN',
-        reason: `all ${orderItems.length} line item${orderItems.length === 1 ? '' : 's'} covered`,
-        shortfalls: [],
-      }
-    }
-
-    const status: MatStatus = anyZero ? 'RED' : anyPartial ? 'AMBER' : 'AMBER'
-    const topShortfall = shortfalls[0]
-    const extraCount = shortfalls.length - 1
-    const reason =
-      `${shortfalls.length} shortfall${shortfalls.length === 1 ? '' : 's'}: ` +
-      `${topShortfall.sku} needs ${topShortfall.needed}, has ${topShortfall.available}` +
-      (extraCount > 0 ? ` (+${extraCount} more)` : '')
-
-    return { status, reason, shortfalls }
-  } catch (e: any) {
-    logger.error('material_status_compute_failed', e, { jobId })
-    return {
-      status: 'UNKNOWN',
-      reason: `compute error: ${e.message}`,
-      shortfalls: [],
-    }
-  }
+function fmtQty(n: number): string {
+  // Integers get no decimals; fractional quantities get 2.
+  return Number.isInteger(n) ? String(n) : n.toFixed(2)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
