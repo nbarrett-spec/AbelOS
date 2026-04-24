@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     )
 
     const newStaff = createdStaff[0]
-    const inviteUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/setup-account?token=${inviteToken}`
+    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/setup-account?token=${inviteToken}`
 
     // Send invitation email (non-blocking — don't fail if email service is down)
     try {

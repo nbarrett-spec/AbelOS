@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         member.id
       )
 
-      const inviteUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/setup-account?token=${inviteToken}`
+      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/ops/setup-account?token=${inviteToken}`
 
       fixedStaff.push({
         id: member.id,

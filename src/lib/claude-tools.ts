@@ -1016,7 +1016,7 @@ async function toolCheckInventoryLevels(input: Record<string, any>): Promise<str
 
 async function toolReorderRecommendations(): Promise<string> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-tool', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({ action: 'reorder_recommendations' }),
@@ -1054,7 +1054,7 @@ async function toolReorderRecommendations(): Promise<string> {
 
 async function toolDemandForecast(): Promise<string> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-tool', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({ action: 'demand_forecast' }),
@@ -1068,7 +1068,7 @@ async function toolDemandForecast(): Promise<string> {
 
 async function toolBestBuyAnalysis(input: Record<string, any>): Promise<string> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-tool', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({ action: 'best_buy_analysis' }),
@@ -1193,7 +1193,7 @@ async function toolCreateProcurementPO(input: Record<string, any>): Promise<stri
   try {
     const { supplier_id, items, priority, notes } = input
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/procurement/purchase-orders`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/procurement/purchase-orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-assistant', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({
@@ -1224,7 +1224,7 @@ async function toolCreateProcurementPO(input: Record<string, any>): Promise<stri
 
 async function toolDailyBriefing(staffRoles: string[]): Promise<string> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/ai/daily-briefing`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/ai/daily-briefing`, {
       headers: { 'x-staff-id': 'ai-tool', 'x-staff-role': staffRoles.join(',') },
     })
     if (res.ok) return JSON.stringify(await res.json())
@@ -1236,7 +1236,7 @@ async function toolDailyBriefing(staffRoles: string[]): Promise<string> {
 
 async function toolSupplierScorecard(): Promise<string> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/procurement/ai-assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-tool', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({ action: 'supplier_scorecard' }),
