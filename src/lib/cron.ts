@@ -58,41 +58,76 @@ export async function startCronRun(
 ): Promise<string> {
   try {
     await ensureTable()
-    // Watchdog sweep: mark any stale RUNNING row of this cron name as FAILURE.
-    // Vercel hard-kills functions at their maxDuration (300s for us) without
-    // letting userland run a finally block, so finishCronRun() never fires and
-    // rows sit in RUNNING forever. Sweeping at the top of the next run keeps
-    // CronRun honest. 15-minute threshold is comfortably past our 5-minute
-    // longest cron, so anything older is definitely dead.
+    // Watchdog sweep: mark any stale RUNNING row as FAILURE (or SUCCESS if
+    // SyncLog proves the work completed).
     //
-    // We use UPDATE ... RETURNING so we can fire cron-failure alerts for each
-    // swept row (same path as an explicit FAILURE in finishCronRun). That way
-    // Vercel hard-kills are just as visible as thrown errors — the whole point
-    // of the alerting hook.
+    // Vercel hard-kills functions at their maxDuration without running finally
+    // blocks, so finishCronRun() never fires and rows sit in RUNNING forever.
+    //
+    // Three changes vs. the previous name-scoped sweep:
+    //
+    // 1. SWEEP IS GLOBAL (no WHERE "name" = $1). A stuck row used to sit in
+    //    RUNNING until the SAME cron fired again — up to 60 min for hourly
+    //    jobs. On 2026-04-23 a shortage-forecast zombie at 19:10 sat RUNNING
+    //    while other crons ran every 5-10 min past it. Now every cron start
+    //    vacuums every OTHER cron's graves too.
+    //
+    // 2. 10-minute threshold: Vercel's maxDuration on our longest crons is
+    //    300-600s. 10 min covers that plus network slack, tight enough that
+    //    zombies get cleaned up within one cron cycle instead of an hour.
+    //
+    // 3. SYNC-LOG RECONCILIATION: some crons (notably inflow-sync) write
+    //    their SyncLog row BEFORE Vercel kills the function, so the business
+    //    work actually succeeded even though CronRun never got updated. We
+    //    cross-check SyncLog before stamping FAILURE; if SyncLog has a
+    //    SUCCESS/PARTIAL row inside the RUNNING window, mark the CronRun
+    //    SUCCESS instead (no false-FAILURE alert for Nate).
+    //
+    // UPDATE ... RETURNING lets us fire cron-failure alerts for each
+    // genuinely-failed swept row.
     const swept: any[] = await prisma.$queryRawUnsafe(
-      `UPDATE "CronRun"
-         SET "status" = 'FAILURE',
+      `UPDATE "CronRun" cr
+         SET "status" = CASE
+               WHEN cr."name" = 'inflow-sync' AND EXISTS (
+                 SELECT 1 FROM "SyncLog" sl
+                  WHERE sl."provider" = 'INFLOW'
+                    AND sl."status" IN ('SUCCESS','PARTIAL')
+                    AND sl."startedAt" >= cr."startedAt"
+                    AND sl."startedAt" <= cr."startedAt" + INTERVAL '10 minutes'
+               ) THEN 'SUCCESS'
+               ELSE 'FAILURE'
+             END,
              "finishedAt" = NOW(),
-             "durationMs" = EXTRACT(EPOCH FROM (NOW() - "startedAt")) * 1000,
-             "error" = 'TIMEOUT: run never completed (swept by next run). Likely Vercel 300s kill.'
-       WHERE "name" = $1
-         AND "status" = 'RUNNING'
-         AND "startedAt" < NOW() - INTERVAL '15 minutes'
-       RETURNING "id", "name", "durationMs", "error"`,
-      name
+             "durationMs" = EXTRACT(EPOCH FROM (NOW() - cr."startedAt")) * 1000,
+             "error" = CASE
+               WHEN cr."name" = 'inflow-sync' AND EXISTS (
+                 SELECT 1 FROM "SyncLog" sl
+                  WHERE sl."provider" = 'INFLOW'
+                    AND sl."status" IN ('SUCCESS','PARTIAL')
+                    AND sl."startedAt" >= cr."startedAt"
+                    AND sl."startedAt" <= cr."startedAt" + INTERVAL '10 minutes'
+               ) THEN NULL
+               ELSE 'TIMEOUT: run never completed (swept by watchdog). Likely Vercel maxDuration kill.'
+             END
+       WHERE cr."status" = 'RUNNING'
+         AND cr."startedAt" < NOW() - INTERVAL '10 minutes'
+       RETURNING cr."id", cr."name", cr."status", cr."durationMs", cr."error"`
     )
     if (Array.isArray(swept) && swept.length > 0) {
       for (const row of swept) {
-        // Fire-and-forget alert — rate-limited upstream so mass sweeps don't
-        // spam Nate.
-        notifyCronFailure({
-          cronName: String(row.name),
-          error: String(row.error || 'TIMEOUT'),
-          durationMs: Number(row.durationMs) || 0,
-          runId: String(row.id),
-        }).catch((e) => {
-          logger.error('cron_sweep_alert_failed', e, { id: row.id, name: row.name })
-        })
+        // Only alert on real FAILURE. SyncLog-reconciled SUCCESS rows are
+        // not failures — they finished their work, Vercel just killed them
+        // before finishCronRun() could fire.
+        if (row.status === 'FAILURE') {
+          notifyCronFailure({
+            cronName: String(row.name),
+            error: String(row.error || 'TIMEOUT'),
+            durationMs: Number(row.durationMs) || 0,
+            runId: String(row.id),
+          }).catch((e) => {
+            logger.error('cron_sweep_alert_failed', e, { id: row.id, name: row.name })
+          })
+        }
       }
     }
     const id = 'cr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
@@ -234,6 +269,7 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'run-automations', schedule: '0 8,13,17 * * 1-5', description: 'Run scheduled business automations' },
   { name: 'mrp-nightly', schedule: '0 4 * * *', description: 'Nightly MRP projection + PO recommendations' },
   { name: 'webhook-retry', schedule: '*/5 * * * *', description: 'Retry dead-lettered outbound webhooks' },
+  { name: 'zombie-sweep', schedule: '*/10 * * * *', description: 'Sweep stale RUNNING CronRun rows (belt-and-suspenders to the watchdog in startCronRun)' },
   { name: 'uptime-probe', schedule: '*/5 * * * *', description: 'Self-probe /api/health/ready and record uptime history' },
   { name: 'observability-gc', schedule: '0 3 * * *', description: 'Prune ClientError / SlowQueryLog / SecurityEvent retention' },
   { name: 'process-outreach', schedule: '*/10 * * * *', description: 'Process due outreach enrollment steps (auto-send + semi-auto review)' },

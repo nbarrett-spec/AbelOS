@@ -12,7 +12,13 @@
  */
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+// Bumped from 300 → 800 (Vercel Pro ceiling is 900s). Product sync durations
+// drifted from ~100s to ~280s over April 2026 as the InFlow catalog grew;
+// adding inventory (~110s) + PO (~10s) + SO (~10s) sequentially pushed every
+// run past the old 300s kill ceiling, which is why every CronRun row from
+// 18:00 UTC onward looked like a TIMEOUT failure even though SyncLog showed
+// SUCCESS. Budget-aware skipping below gives us a second line of defence.
+export const maxDuration = 800
 
 import { NextRequest, NextResponse } from 'next/server'
 import {
@@ -22,6 +28,12 @@ import {
   syncSalesOrders as syncInflowSalesOrders,
 } from '@/lib/integrations/inflow'
 import { startCronRun, finishCronRun } from '@/lib/cron'
+
+// Soft time budget (ms). After each sync phase, check remaining budget and
+// skip the next phase if we're running hot — the skipped phase will run on
+// the next hourly cron. Keeps us comfortably under Vercel's maxDuration so
+// finishCronRun() can actually fire and CronRun doesn't go zombie.
+const TIME_BUDGET_MS = 700_000
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
@@ -36,30 +48,46 @@ export async function GET(request: NextRequest) {
   const started = Date.now()
 
   try {
-    // console.log('[InFlow Sync] Starting scheduled sync...')
-
     const startTime = Date.now()
-    const results = []
+    const results: any[] = []
+    const skipped: string[] = []
 
-    // Sync products first (creates/updates product records)
-    // console.log('[InFlow Sync] Syncing products...')
+    // Budget gate — if fewer than `minMsNeeded` remain, skip this phase.
+    const elapsed = () => Date.now() - startTime
+    const budgetOkay = (minMsNeeded: number) => elapsed() + minMsNeeded < TIME_BUDGET_MS
+
+    // 1. Products — creates/updates product records. Typically 200-300s.
+    //    Always run: downstream phases depend on Product rows existing.
     const productResult = await syncInflowProducts()
     results.push(productResult)
 
-    // Sync inventory levels (updates quantities on existing products)
-    // console.log('[InFlow Sync] Syncing inventory...')
-    const inventoryResult = await syncInflowInventory()
-    results.push(inventoryResult)
+    // 2. Inventory — updates quantities on existing products. Typically ~110s.
+    //    Skip if we're already past budget; runs next hour.
+    let inventoryResult: any = null
+    if (budgetOkay(150_000)) {
+      inventoryResult = await syncInflowInventory()
+      results.push(inventoryResult)
+    } else {
+      skipped.push('inventory')
+    }
 
-    // Sync purchase orders
-    // console.log('[InFlow Sync] Syncing purchase orders...')
-    const poResult = await syncInflowPurchaseOrders()
-    results.push(poResult)
+    // 3. Purchase orders — ~10s, cheap.
+    let poResult: any = null
+    if (budgetOkay(30_000)) {
+      poResult = await syncInflowPurchaseOrders()
+      results.push(poResult)
+    } else {
+      skipped.push('purchaseOrders')
+    }
 
-    // Sync sales orders
-    // console.log('[InFlow Sync] Syncing sales orders...')
-    const soResult = await syncInflowSalesOrders()
-    results.push(soResult)
+    // 4. Sales orders — ~10s, cheap.
+    let soResult: any = null
+    if (budgetOkay(30_000)) {
+      soResult = await syncInflowSalesOrders()
+      results.push(soResult)
+    } else {
+      skipped.push('salesOrders')
+    }
 
     const duration = Date.now() - startTime
 
@@ -69,17 +97,16 @@ export async function GET(request: NextRequest) {
       totalUpdated: results.reduce((sum, r) => sum + (r.recordsUpdated || 0), 0),
       totalFailed: results.reduce((sum, r) => sum + (r.recordsFailed || 0), 0),
       anyFailures: results.some(r => r.status === 'FAILED'),
+      skippedPhases: skipped,
     }
-
-    // console.log(
-    //   `[InFlow Sync] Completed in ${duration}ms — ${summary.totalProcessed} records processed, ${summary.totalCreated} created, ${summary.totalUpdated} updated`
-    // )
 
     const payload = {
       success: !summary.anyFailures,
       message: summary.anyFailures
         ? 'InFlow sync completed with errors'
-        : 'InFlow sync completed successfully',
+        : skipped.length > 0
+          ? `InFlow sync partial: skipped ${skipped.join(', ')} (time budget exceeded)`
+          : 'InFlow sync completed successfully',
       duration_ms: duration,
       summary,
       results,

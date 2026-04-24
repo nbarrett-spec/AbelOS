@@ -1,18 +1,33 @@
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { startCronRun, finishCronRun } from '@/lib/cron'
 import {
-  computeAllActiveJobsMaterialStatus,
+  computeJobMaterialStatus,
   type MaterialStatusLine,
   type JobMaterialStatus,
 } from '@/lib/mrp/atp'
 
+// Leave 60s of headroom below Vercel's 300s hard-kill so finishCronRun()
+// is guaranteed to commit. 2026-04-23 had 3 zombie rows because the body
+// walked every active job in a single CTE and blew past 300s; per-job loop
+// with this budget gets under consistently.
+const TIME_BUDGET_MS = 240_000
+
+// Per-run job cap. We sort active jobs by soonest scheduledDate first so
+// urgent shortages always get covered; leftovers roll to the next 4-hour
+// run. Set high enough that a healthy week clears the backlog and low
+// enough that no single run can't finish scanning it.
+const MAX_JOBS_PER_RUN = 200
+
 interface ShortageForecastResult {
   asOf: string
   jobsScanned: number
+  jobsTotalActive: number
+  jobsRemainingNextRun: number
   redLines: number
   amberLines: number
   recommendationsCreated: number
@@ -21,6 +36,8 @@ interface ShortageForecastResult {
   materialWatchUpserts: number
   inboxItemsCreated: number
   totalShortageValue: number
+  budgetExhausted: boolean
+  durationMs: number
   errors: string[]
 }
 
@@ -63,6 +80,8 @@ async function runShortageForecast(
   const result: ShortageForecastResult = {
     asOf: new Date().toISOString(),
     jobsScanned: 0,
+    jobsTotalActive: 0,
+    jobsRemainingNextRun: 0,
     redLines: 0,
     amberLines: 0,
     recommendationsCreated: 0,
@@ -71,15 +90,60 @@ async function runShortageForecast(
     materialWatchUpserts: 0,
     inboxItemsCreated: 0,
     totalShortageValue: 0,
+    budgetExhausted: false,
+    durationMs: 0,
     errors: [],
   }
 
   try {
-    const statuses: JobMaterialStatus[] = await computeAllActiveJobsMaterialStatus()
-    result.jobsScanned = statuses.length
+    // Pull the most urgent active jobs first (soonest scheduledDate).
+    // Capped at MAX_JOBS_PER_RUN; anything past the cap rolls to the next
+    // 4-hour run. Order is deterministic so the tail always gets its turn.
+    const jobRows = await prisma.$queryRawUnsafe<Array<{ id: string; scheduledDate: Date | null }>>(
+      `SELECT "id", "scheduledDate"
+         FROM "Job"
+        WHERE "status" NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')
+          AND "scheduledDate" IS NOT NULL
+          AND "orderId" IS NOT NULL
+        ORDER BY "scheduledDate" ASC
+        LIMIT $1`,
+      MAX_JOBS_PER_RUN + 1
+    )
 
-    for (const job of statuses) {
+    // Separate totalActive count (for observability) by a cheap COUNT —
+    // sending the full rowset back is enough for the current cap.
+    const totalRow = await prisma.$queryRawUnsafe<Array<{ cnt: bigint }>>(
+      `SELECT COUNT(*)::bigint AS cnt
+         FROM "Job"
+        WHERE "status" NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')
+          AND "scheduledDate" IS NOT NULL
+          AND "orderId" IS NOT NULL`
+    )
+    result.jobsTotalActive = Number(totalRow[0]?.cnt ?? 0)
+
+    const hasOverflow = jobRows.length > MAX_JOBS_PER_RUN
+    const jobsThisRun = hasOverflow ? jobRows.slice(0, MAX_JOBS_PER_RUN) : jobRows
+
+    for (const jobRow of jobsThisRun) {
+      // Time-budget check BEFORE the heavy per-job CTE runs. If we're past
+      // the budget, stop cleanly so finishCronRun() has room to commit
+      // instead of getting hard-killed by Vercel mid-write.
+      if (Date.now() - started > TIME_BUDGET_MS) {
+        result.budgetExhausted = true
+        break
+      }
+
+      let job: JobMaterialStatus
+      try {
+        job = await computeJobMaterialStatus(jobRow.id)
+      } catch (err: any) {
+        result.errors.push(`job=${jobRow.id}: compute failed: ${err?.message || String(err)}`)
+        continue
+      }
+
+      result.jobsScanned++
       result.totalShortageValue += job.totalShortageValue
+
       for (const line of job.lines) {
         if (line.status === 'AMBER') result.amberLines++
         else if (line.status === 'RED') result.redLines++
@@ -105,16 +169,32 @@ async function runShortageForecast(
       }
     }
 
+    result.jobsRemainingNextRun = Math.max(
+      0,
+      result.jobsTotalActive - result.jobsScanned
+    )
+    result.durationMs = Date.now() - started
+
+    // Partial coverage or per-job errors are still SUCCESS — SmartPO
+    // inserts are idempotent and the next run picks up the rest.
+    // Mark FAILURE only if EVERY job failed or the run itself threw.
+    const isFailure =
+      result.jobsScanned === 0 && jobsThisRun.length > 0 && result.errors.length > 0
+
     await finishCronRun(
       runId,
-      result.errors.length > 0 ? 'FAILURE' : 'SUCCESS',
-      Date.now() - started,
-      { result, error: result.errors.length > 0 ? result.errors.join('; ').slice(0, 3800) : undefined }
+      isFailure ? 'FAILURE' : 'SUCCESS',
+      result.durationMs,
+      {
+        result,
+        error: result.errors.length > 0 ? result.errors.join('; ').slice(0, 3800) : undefined,
+      }
     )
     return NextResponse.json(result)
   } catch (error: any) {
     result.errors.push(`fatal: ${error?.message || String(error)}`)
-    await finishCronRun(runId, 'FAILURE', Date.now() - started, {
+    result.durationMs = Date.now() - started
+    await finishCronRun(runId, 'FAILURE', result.durationMs, {
       result,
       error: error?.message || String(error),
     })
