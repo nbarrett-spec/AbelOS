@@ -17,6 +17,7 @@ import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
 import Tooltip from '@/components/ui/Tooltip'
 import CommandMenu, { useCommandMenu } from '@/components/ui/CommandMenu'
+import ShortcutsOverlay from '@/components/ui/ShortcutsOverlay'
 import StatusBar from '@/components/ui/StatusBar'
 import LiveClock from '@/components/ui/LiveClock'
 import HealthChip from '@/components/ui/HealthChip'
@@ -399,15 +400,16 @@ function SidebarSection({
                 key={item.href}
                 href={item.href}
                 onClick={onNavigate}
+                aria-current={isActive ? 'page' : undefined}
                 className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 group ${
                   isActive
-                    ? 'bg-signal/10 text-fg border-l-[3px] border-c1 ml-0 pl-[9px]'
-                    : 'text-fg-subtle hover:text-fg hover:bg-white/[0.04] border-l-[3px] border-transparent'
+                    ? 'bg-surface-elevated text-signal border-l-2 border-signal pl-[10px]'
+                    : 'text-fg-subtle hover:text-fg hover:bg-white/[0.04] border-l-2 border-transparent'
                 }`}
               >
                 <IconComponent
                   className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-c1' : 'text-fg-subtle group-hover:text-fg-muted'
+                    isActive ? 'text-signal' : 'text-fg-subtle group-hover:text-fg-muted'
                   }`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
@@ -449,7 +451,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [inboxCount, setInboxCount] = useState<number | null>(null)
+  const [headerScrolled, setHeaderScrolled] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const cmdMenu = useCommandMenu()
 
   const isAuthPage =
@@ -479,6 +483,20 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  // Scroll-linked header shadow — listen on the scroll container, since
+  // the page itself doesn't scroll (overflow-hidden on <main>).
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    function onScroll() {
+      const y = el?.scrollTop ?? 0
+      setHeaderScrolled(y > 20)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    onScroll() // sync initial state
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [staff])
 
   const fetchSession = useCallback(async () => {
     if (isAuthPage) {
@@ -569,7 +587,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         <aside
           className={`${
             collapsed ? 'lg:w-[4.5rem]' : 'lg:w-[16rem]'
-          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-glass-border side-panel ${
+          } fixed lg:static inset-y-0 left-0 z-50 w-[16rem] transition-[width,transform] duration-base ease-out flex flex-col border-r border-[rgba(198,162,78,0.06)] shadow-[1px_0_8px_rgba(5,13,22,0.15)] side-panel ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
@@ -694,7 +712,12 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
         {/* ── Main content area ──────────────────────────────── */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="h-[3.25rem] border-b border-glass-border px-4 sm:px-6 flex items-center justify-between shrink-0 relative z-10" style={{ background: 'var(--glass)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)' }}>
+          <header
+            className={`h-[3.25rem] border-b border-glass-border px-4 sm:px-6 flex items-center justify-between shrink-0 relative z-10 transition-shadow duration-200 ${
+              headerScrolled ? 'shadow-md' : ''
+            }`}
+            style={{ background: 'var(--glass)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)' }}
+          >
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}
               <button
@@ -809,11 +832,18 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           <LivePulse />
 
           {/* Content area */}
-          <div className="flex-1 overflow-auto bg-canvas relative">
+          <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-canvas relative">
             <AegisBackground variant="full" orbCount={3} doorBlueprint />
             <PortalBackground portal="ops" />
             <PageBackground section={getSectionForPath(pathname)} />
-            <div className="relative z-[1] p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
+            {/* Tier 6.1 — header gradient strip (200px tall, fades to transparent) */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-0 right-0 h-[200px] z-0"
+              style={{ background: 'linear-gradient(to bottom, rgba(10, 26, 40, 0.5), transparent)' }}
+            />
+            {/* Tier 7.1 — page transition. key={pathname} re-fires animate-enter on every route change. */}
+            <div key={pathname} className="relative z-[1] p-5 lg:p-7 max-w-7xl mx-auto animate-enter">
               {children}
             </div>
           </div>
@@ -824,6 +854,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
         {/* Command palette (⌘K) */}
         <CommandMenu open={cmdMenu.open} onClose={() => cmdMenu.setOpen(false)} />
+
+        {/* Keyboard shortcuts cheat sheet (?) */}
+        <ShortcutsOverlay />
 
         {/* AI Copilot */}
         {staff && <AICopilot />}

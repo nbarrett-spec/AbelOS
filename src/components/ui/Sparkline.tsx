@@ -1,12 +1,13 @@
 'use client'
 
-import { useId, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 // ── Aegis v2 "Drafting Room" Sparkline ───────────────────────────────────
 // 48×16 default, gold/walnut stroke, 1.5px line, gradient fill 20%→0,
 // 3px last-point dot, optional hover tooltip.
 // Preserves forecast overlay from v1 API.
+// Adds optional draw-in animation (Tier 5.3).
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface SparklineProps {
@@ -26,6 +27,8 @@ export interface SparklineProps {
   label?: string
   /** Format the tooltip value */
   formatValue?: (v: number) => string
+  /** Animate the stroke draw-in on mount. Defaults to true. Respects prefers-reduced-motion. */
+  animate?: boolean
 }
 
 export function Sparkline({
@@ -41,15 +44,20 @@ export function Sparkline({
   className,
   label,
   formatValue,
+  animate = true,
 }: SparklineProps) {
   const gradId = useId().replace(/:/g, '')
   const svgRef = useRef<SVGSVGElement>(null)
+  const actualPathRef = useRef<SVGPolylineElement>(null)
   const [hover, setHover] = useState<{
     x: number
     y: number
     value: number
     index: number
   } | null>(null)
+  const [actualLen, setActualLen] = useState<number | null>(null)
+  const [drawn, setDrawn] = useState(false)
+  const [reduceMotion, setReduceMotion] = useState(false)
 
   const lineColor = color ?? 'var(--signal, var(--gold))'
 
@@ -66,6 +74,37 @@ export function Sparkline({
     })
     return { points: pts, pad: p }
   }, [data, width, height])
+
+  // Measure path lengths and trigger the draw-in after first paint.
+  useEffect(() => {
+    if (!animate) {
+      setActualLen(null)
+      setDrawn(true)
+      return
+    }
+
+    // useEffect is client-only, but guard anyway for safety.
+    if (typeof window === 'undefined') return
+
+    const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setReduceMotion(prefersReduce)
+
+    if (prefersReduce) {
+      setActualLen(null)
+      setDrawn(true)
+      return
+    }
+
+    const aLen = actualPathRef.current?.getTotalLength?.() ?? 0
+    setActualLen(aLen > 0 ? aLen : null)
+    setDrawn(false)
+
+    // Flip drawn=true on the next frame so the transition runs from offset=len → 0.
+    const raf = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setDrawn(true))
+    })
+    return () => window.cancelAnimationFrame(raf)
+  }, [animate, data, width, height, forecastFromIndex])
 
   if (!data || data.length < 2) {
     return (
@@ -110,6 +149,29 @@ export function Sparkline({
     setHover({ x: px, y: py, value: data[idx], index: idx })
   }
 
+  // Animation styling: when animating and not reduced-motion, set dasharray to
+  // the path length and offset it to hide the stroke; flip the offset to 0 to
+  // draw the line in. When animate=false or prefers-reduced-motion, skip
+  // dash math entirely so the stroke renders normally.
+  const animateActive = animate && !reduceMotion
+  const actualDashStyle: React.CSSProperties =
+    animateActive && actualLen != null
+      ? {
+          strokeDasharray: actualLen,
+          strokeDashoffset: drawn ? 0 : actualLen,
+          transition: 'stroke-dashoffset 600ms ease-out',
+        }
+      : {}
+  // The forecast polyline already uses strokeDasharray="3 2" for its dashed
+  // visual; layering a dashoffset draw-in on top of that doesn't render
+  // cleanly. Instead, fade the forecast in after the actual line draws.
+  const forecastDashStyle: React.CSSProperties = animateActive
+    ? {
+        opacity: drawn ? 1 : 0,
+        transition: 'opacity 300ms ease-out 500ms',
+      }
+    : {}
+
   return (
     <span className={cn('relative inline-block', className)} style={{ width, height }}>
       <svg
@@ -140,12 +202,14 @@ export function Sparkline({
         )}
         {actualPoints.length > 1 && (
           <polyline
+            ref={actualPathRef}
             points={toStr(actualPoints)}
             fill="none"
             stroke={lineColor}
             strokeWidth={1.5}
             strokeLinecap="round"
             strokeLinejoin="round"
+            style={actualDashStyle}
           />
         )}
         {forecastPoints.length > 1 && (
@@ -157,6 +221,7 @@ export function Sparkline({
             strokeDasharray="3 2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            style={forecastDashStyle}
           />
         )}
         {showDot && lastPoint && (

@@ -8,7 +8,7 @@
 // Chart: inline SVG (no recharts dep). Same-day-shippable > library-perfect.
 // ──────────────────────────────────────────────────────────────────────────
 
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { MonthlyRollup, MonthlyFinancialRow, YtdTotals } from '@/lib/finance/monthly-rollup'
 
 // ── Formatters ─────────────────────────────────────────────────────────────
@@ -302,6 +302,16 @@ export function FinancialLineChart({
   const padding = { top: 20, right: 16, bottom: 32, left: 56 }
   const width = 900 // viewBox width — scales via CSS
 
+  // ── Series color tokens (Tier 8.6) ───────────────────────────────────────
+  // 3 series → chart-1, chart-2, chart-3
+  const COLOR_REVENUE = 'var(--chart-1)' // blue
+  const COLOR_COGS = 'var(--chart-2)' // gold
+  const COLOR_GP = 'var(--chart-3)' // green
+
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const [hover, setHover] = useState<{ x: number; index: number } | null>(null)
+
   const revenue = months.map((m) => m.revenue)
   const cogs = months.map((m) => m.cogs)
   const gp = months.map((m) => m.gp)
@@ -316,7 +326,8 @@ export function FinancialLineChart({
   const innerW = width - padding.left - padding.right
   const innerH = height - padding.top - padding.bottom
 
-  const xAt = (i: number) => padding.left + (i / (months.length - 1)) * innerW
+  const xAt = (i: number) =>
+    months.length > 1 ? padding.left + (i / (months.length - 1)) * innerW : padding.left + innerW / 2
   const yAt = (v: number) => padding.top + innerH - ((v - min) / range) * innerH
 
   const path = (series: number[]) =>
@@ -324,6 +335,40 @@ export function FinancialLineChart({
 
   // y-axis tick values — 5 ticks
   const ticks = Array.from({ length: 5 }, (_, i) => min + (range * i) / 4)
+
+  // ── Tooltip handlers (Tier 5.5) ──────────────────────────────────────────
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (months.length === 0) return
+    const svg = svgRef.current
+    const wrapper = wrapperRef.current
+    if (!svg || !wrapper) return
+
+    const wrapperRect = wrapper.getBoundingClientRect()
+    const cursorPxX = e.clientX - wrapperRect.left
+
+    // Map pixel-X within wrapper to viewBox X (svg scales with width)
+    const svgRect = svg.getBoundingClientRect()
+    if (svgRect.width === 0) return
+    const cursorSvgX = ((e.clientX - svgRect.left) / svgRect.width) * width
+
+    // Find closest data index by SVG-space distance
+    let closestIdx = 0
+    let closestDist = Infinity
+    for (let i = 0; i < months.length; i++) {
+      const dist = Math.abs(xAt(i) - cursorSvgX)
+      if (dist < closestDist) {
+        closestDist = dist
+        closestIdx = i
+      }
+    }
+    setHover({ x: cursorPxX, index: closestIdx })
+  }
+
+  const handleMouseLeave = () => setHover(null)
+
+  const hovered = hover && months[hover.index] ? months[hover.index] : null
+  const tooltipMask = '••••'
+  const tt = (n: number) => (restricted ? tooltipMask : fmtMoneyCompact(n))
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -334,17 +379,24 @@ export function FinancialLineChart({
         </div>
         <div className="flex items-center gap-3 text-[11px] font-medium">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-0.5 bg-[#0f2a3e]" /> Revenue
+            <span className="inline-block w-3 h-0.5" style={{ backgroundColor: COLOR_REVENUE }} /> Revenue
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-0.5 bg-[#C6A24E]" /> COGS
+            <span className="inline-block w-3 h-0.5" style={{ backgroundColor: COLOR_COGS }} /> COGS
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-0.5 bg-[#27AE60]" /> GP
+            <span className="inline-block w-3 h-0.5" style={{ backgroundColor: COLOR_GP }} /> GP
           </span>
         </div>
       </div>
+      <div
+        ref={wrapperRef}
+        className="relative"
+        onMouseMove={months.length > 0 ? handleMouseMove : undefined}
+        onMouseLeave={handleMouseLeave}
+      >
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
         className="w-full"
         style={{ height }}
@@ -412,21 +464,21 @@ export function FinancialLineChart({
         {/* COGS area + line */}
         <path
           d={`${path(cogs)} L ${xAt(months.length - 1)} ${yAt(min)} L ${xAt(0)} ${yAt(min)} Z`}
-          fill="#C6A24E"
+          fill={COLOR_COGS}
           opacity={0.08}
         />
-        <path d={path(cogs)} fill="none" stroke="#C6A24E" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path(cogs)} fill="none" stroke={COLOR_COGS} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
 
         {/* GP line */}
-        <path d={path(gp)} fill="none" stroke="#27AE60" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path(gp)} fill="none" stroke={COLOR_GP} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
 
         {/* Revenue area + line (on top) */}
         <path
           d={`${path(revenue)} L ${xAt(months.length - 1)} ${yAt(min)} L ${xAt(0)} ${yAt(min)} Z`}
-          fill="#0f2a3e"
+          fill={COLOR_REVENUE}
           opacity={0.08}
         />
-        <path d={path(revenue)} fill="none" stroke="#0f2a3e" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path(revenue)} fill="none" stroke={COLOR_REVENUE} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
 
         {/* revenue point dots */}
         {months.map((m, i) => {
@@ -437,11 +489,66 @@ export function FinancialLineChart({
               cx={xAt(i)}
               cy={yAt(m.revenue)}
               r={m.month === currentMonth ? 4 : 2.5}
-              fill="#0f2a3e"
+              fill={COLOR_REVENUE}
             />
           )
         })}
+
+        {/* hover crosshair (Tier 5.5) */}
+        {hovered && hover && (
+          <g pointerEvents="none">
+            <line
+              x1={xAt(hover.index)}
+              x2={xAt(hover.index)}
+              y1={padding.top}
+              y2={height - padding.bottom}
+              stroke="#0f2a3e"
+              strokeWidth={1}
+              opacity={0.45}
+            />
+            <circle cx={xAt(hover.index)} cy={yAt(hovered.revenue)} r={3.5} fill={COLOR_REVENUE} stroke="#fff" strokeWidth={1} />
+            <circle cx={xAt(hover.index)} cy={yAt(hovered.cogs)} r={3.5} fill={COLOR_COGS} stroke="#fff" strokeWidth={1} />
+            <circle cx={xAt(hover.index)} cy={yAt(hovered.gp)} r={3.5} fill={COLOR_GP} stroke="#fff" strokeWidth={1} />
+          </g>
+        )}
       </svg>
+
+      {/* hover tooltip (Tier 5.5) */}
+      {hovered && hover && (
+        <div
+          className="pointer-events-none absolute top-1 z-10 rounded-md border border-gray-200 bg-white shadow-md px-3 py-2 text-[11px] font-mono tabular-nums"
+          style={{
+            left: Math.min(Math.max(hover.x + 12, 4), (wrapperRef.current?.clientWidth ?? 0) - 160),
+            minWidth: 140,
+          }}
+        >
+          <div className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 mb-1">
+            {hovered.monthLabel}
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-gray-700">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: COLOR_REVENUE }} />
+              Revenue
+            </span>
+            <span className="font-semibold text-gray-900">{tt(hovered.revenue)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-gray-700">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: COLOR_COGS }} />
+              COGS
+            </span>
+            <span className="font-semibold text-gray-900">{tt(hovered.cogs)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-gray-700">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: COLOR_GP }} />
+              Gross Profit
+            </span>
+            <span className="font-semibold text-gray-900">{tt(hovered.gp)}</span>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   )
 }

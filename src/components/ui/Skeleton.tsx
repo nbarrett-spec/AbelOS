@@ -18,6 +18,12 @@ export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   rounded?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   /** When true, fade out 80ms (use when content is ready). */
   ready?: boolean
+  /**
+   * Visual style:
+   *  - 'default'   → shimmer-capable filled rectangle (uses `.skeleton` class from globals.css)
+   *  - 'blueprint' → dashed blue drafting-tint border, transparent fill, pulsing edge
+   */
+  variant?: 'default' | 'blueprint'
 }
 
 export function Skeleton({
@@ -25,18 +31,46 @@ export function Skeleton({
   height = 'h-4',
   rounded = 'sm',
   ready = false,
+  variant = 'default',
   className,
   style,
   ...props
 }: SkeletonProps) {
   const roundClass =
     rounded === 'full' ? 'rounded-full' : `rounded-${rounded === 'xs' ? '[2px]' : rounded}`
+
+  // Blueprint variant: dashed drafting-blue border, transparent fill, pulsing edge.
+  // `animate-pulse` is wrapped by Tailwind's motion-safe (disabled under prefers-reduced-motion).
+  if (variant === 'blueprint') {
+    return (
+      <div
+        {...props}
+        aria-hidden
+        className={cn(
+          'block transition-opacity border border-dashed border-[rgba(100,160,220,0.2)] bg-transparent motion-safe:animate-pulse',
+          width,
+          height,
+          roundClass,
+          ready ? 'opacity-0' : 'opacity-100',
+          className,
+        )}
+        style={{
+          transitionDuration: '80ms',
+          transitionTimingFunction: 'var(--ease)',
+          ...style,
+        }}
+      />
+    )
+  }
+
+  // Default variant: apply the global `.skeleton` shimmer class.
+  // Shimmer keyframes + prefers-reduced-motion handling live in globals.css.
   return (
     <div
       {...props}
       aria-hidden
       className={cn(
-        'block transition-opacity',
+        'skeleton block transition-opacity',
         width,
         height,
         roundClass,
@@ -44,7 +78,6 @@ export function Skeleton({
         className,
       )}
       style={{
-        background: 'var(--bg-sunken, var(--surface-muted))',
         transitionDuration: '80ms',
         transitionTimingFunction: 'var(--ease)',
         ...style,

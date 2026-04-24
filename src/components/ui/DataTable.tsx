@@ -73,6 +73,9 @@ export interface DataTableProps<T> {
   virtualize?: boolean
   /** Viewport max-height for the scroll container */
   maxHeight?: number | string
+  /** Apply staggered entrance animation to rendered rows (default: true).
+   *  Capped at 10 rows / 400ms total. Auto-disabled under prefers-reduced-motion. */
+  animateRows?: boolean
 }
 
 const ROW_HEIGHT: Record<'compact' | 'default' | 'comfortable', number> = {
@@ -136,10 +139,23 @@ export function DataTable<T>({
   keyboardNav = true,
   virtualize,
   maxHeight = 600,
+  animateRows = true,
   ...props
 }: DataTableProps<T>) {
   const rowHeight = ROW_HEIGHT[density]
   const shouldVirtualize = virtualize ?? data.length > 50
+
+  // Detect prefers-reduced-motion at mount (client-only, no SSR mismatch).
+  const [reduceMotion, setReduceMotion] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReduceMotion(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches)
+    mq.addEventListener?.('change', handler)
+    return () => mq.removeEventListener?.('change', handler)
+  }, [])
+  const staggerEnabled = animateRows && !reduceMotion
 
   const getKey = useCallback(
     (row: T, index: number): string => {
@@ -215,6 +231,10 @@ export function DataTable<T>({
     const k = getKey(row, i)
     const selected = selectedKeys?.has(k) ?? false
     const focused = focusIdx === i
+    // Stagger: cap at index 9 (10th row) → 360ms; total span ≤ 400ms.
+    const staggerDelayMs = staggerEnabled ? Math.min(i, 9) * 40 : 0
+    const rowStyle: React.CSSProperties = { height: rowHeight }
+    if (staggerEnabled) rowStyle.animationDelay = `${staggerDelayMs}ms`
     return (
       <tr
         key={k}
@@ -222,8 +242,12 @@ export function DataTable<T>({
         data-focused={focused || undefined}
         onClick={onRowClick ? () => onRowClick(row, i) : undefined}
         onMouseEnter={keyboardNav ? () => setFocusIdx(i) : undefined}
-        className={cn('aegis-dt-row group/row', onRowClick && 'cursor-pointer')}
-        style={{ height: rowHeight }}
+        className={cn(
+          'aegis-dt-row group/row',
+          onRowClick && 'cursor-pointer',
+          staggerEnabled && 'animate-enter',
+        )}
+        style={rowStyle}
       >
         {columns.map((col) => {
           let content: ReactNode

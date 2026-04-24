@@ -88,6 +88,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       data-variant={resolvedVariant}
       className={cn(
         'aegis-btn',
+        'active:scale-[0.98] transition-transform duration-75',
         `aegis-btn--${resolvedVariant}`,
         iconOnly ? iconOnlySizes[size] : sizes[size],
         fullWidth && 'w-full',
@@ -219,20 +220,20 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
           border-color: var(--fg-muted);
         }
 
-        /* ── Danger: ember gradient ────────────────────────────────────── */
+        /* ── Danger: semantic negative token ───────────────────────────── */
         .aegis-btn--danger {
-          background: linear-gradient(3deg, #c6604f, #9b3826);
-          color: #fff;
+          background: var(--data-negative);
+          color: var(--data-negative-fg);
           box-shadow:
             0 1px 3px rgba(0, 0, 0, 0.3),
-            0 0 16px rgba(182, 78, 61, 0.18);
+            0 0 16px color-mix(in srgb, var(--data-negative) 18%, transparent);
         }
         .aegis-btn--danger:hover:not(:disabled) {
           transform: translateY(-1px);
           filter: brightness(1.1);
           box-shadow:
             0 2px 4px rgba(0, 0, 0, 0.3),
-            0 0 20px rgba(182, 78, 61, 0.28);
+            0 0 20px color-mix(in srgb, var(--data-negative) 28%, transparent);
         }
 
         @media (prefers-reduced-motion: reduce) {

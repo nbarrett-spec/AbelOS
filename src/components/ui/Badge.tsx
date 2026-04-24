@@ -15,6 +15,8 @@ const variants = {
   warning:  'bg-data-warning-bg  text-data-warning-fg  border-transparent',
   info:     'bg-data-info-bg     text-data-info-fg     border-transparent',
   neutral:  'bg-surface-muted    text-fg-muted         border-border',
+  // Gold accent — derived from signal tokens
+  signal:   'bg-signal-subtle    text-accent-fg        border-transparent',
   // Legacy aliases retained
   brand:    'bg-brand-subtle     text-accent-fg        border-transparent',
   orange:   'bg-signal-subtle    text-accent-fg        border-transparent',
@@ -39,6 +41,7 @@ const DOT_COLORS: Record<keyof typeof variants, string> = {
   warning:  'bg-signal',
   info:     'bg-data-info',
   neutral:  'bg-fg-subtle',
+  signal:   'bg-signal',
   brand:    'bg-brand',
   orange:   'bg-signal',
   forecast: 'bg-forecast',
@@ -75,17 +78,13 @@ export function Badge({
       {...props}
       className={cn(
         'inline-flex items-center justify-center font-mono font-semibold uppercase leading-none',
-        'tabular-nums whitespace-nowrap',
+        'tabular-nums whitespace-nowrap tracking-wider',
         pill ? 'rounded-full' : 'rounded-sm',
         'border',
         variants[variant],
         sizes[size],
         className,
       )}
-      style={{
-        letterSpacing: '0.06em',
-        ...(props.style ?? {}),
-      }}
     >
       {dot && (
         <span
@@ -137,6 +136,61 @@ export function StatusBadge({ status, size = 'sm', label, className }: StatusBad
       {label ?? config.label}
     </Badge>
   )
+}
+
+// ── Canonical status → variant mapping ────────────────────────────────────
+// Maps free-form status strings to the canonical Badge variant per the
+// Aegis visual plan (Tier 4.8). Case-insensitive and tolerant of common
+// separators (hyphen, underscore, space).
+const STATUS_VARIANT_MAP: Record<string, BadgeVariant> = {
+  // success
+  active: 'success',
+  online: 'success',
+  paid: 'success',
+  completed: 'success',
+  complete: 'success',
+  delivered: 'success',
+  ok: 'success',
+  success: 'success',
+  // warning
+  pending: 'warning',
+  inprogress: 'warning',
+  processing: 'warning',
+  partial: 'warning',
+  unpaid: 'warning',
+  warning: 'warning',
+  // danger
+  cancelled: 'danger',
+  canceled: 'danger',
+  failed: 'danger',
+  failure: 'danger',
+  overdue: 'danger',
+  error: 'danger',
+  stalled: 'danger',
+  danger: 'danger',
+  // neutral
+  draft: 'neutral',
+  inactive: 'neutral',
+  archived: 'neutral',
+  closed: 'neutral',
+  refunded: 'neutral',
+  neutral: 'neutral',
+}
+
+/**
+ * Canonicalize a free-form status string into a Badge variant.
+ * Unknown statuses fall through to `neutral`.
+ *
+ * @example
+ *   getStatusBadgeVariant('active')        // 'success'
+ *   getStatusBadgeVariant('IN_PROGRESS')   // 'warning'
+ *   getStatusBadgeVariant('cancelled')     // 'danger'
+ *   getStatusBadgeVariant('whatever')      // 'neutral'
+ */
+export function getStatusBadgeVariant(status: string): BadgeVariant {
+  if (!status) return 'neutral'
+  const key = String(status).toLowerCase().replace(/[\s_-]+/g, '')
+  return STATUS_VARIANT_MAP[key] ?? 'neutral'
 }
 
 export default Badge

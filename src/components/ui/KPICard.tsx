@@ -1,10 +1,11 @@
 'use client'
 
-import { type ReactNode } from 'react'
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 import Sparkline from './Sparkline'
 import NumberFlow from './NumberFlow'
+import AnimatedCounter from './AnimatedCounter'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -25,10 +26,22 @@ export interface KPICardProps {
   /** Indicates this KPI is a forecast/projected value (shows dashed border hint) */
   forecast?: boolean
   loading?: boolean
+  /** Click handler — when set, card renders as button with keyboard support */
   onClick?: () => void
   className?: string
   /** Extra badge slot (top-right) — e.g. "LIVE" or time-window */
   badge?: ReactNode
+  /**
+   * Count-up animation on mount (Tier 5.1). Default true.
+   * When false, the value is rendered raw (no count-up) — useful for legacy
+   * callers or values that are already animated upstream.
+   */
+  animateValue?: boolean
+  /**
+   * Delay (ms) before count-up begins. Default 0. Consumers stagger this
+   * across a row of KPICards (0 / 100 / 200 / 300) to get a wave effect.
+   */
+  animateDelay?: number
 }
 
 // Legacy accent names map to semantic ones
@@ -71,12 +84,156 @@ const ACCENT_ICON_BG: Record<string, string> = {
   neutral:  'bg-surface-muted text-fg-muted',
 }
 
+// ── Delayed-start count-up wrapper ────────────────────────────────────────
+// Renders the raw-formatted string until `delay` ms have elapsed, then
+// swaps to AnimatedCounter which counts 0 → target with an ease-out curve.
+// This gives a staggered "wave" when several KPICards mount together.
+function DelayedCounter({
+  value,
+  delay,
+  format,
+  prefix,
+  suffix,
+  placeholder,
+}: {
+  value: number
+  delay: number
+  format?: (n: number) => string
+  prefix?: string
+  suffix?: string
+  /** What to show before the counter starts — defaults to "0" / formatted zero. */
+  placeholder?: ReactNode
+}) {
+  const [armed, setArmed] = useState(delay <= 0)
+
+  useEffect(() => {
+    if (delay <= 0) return
+    const id = setTimeout(() => setArmed(true), delay)
+    return () => clearTimeout(id)
+  }, [delay])
+
+  if (!armed) {
+    // Hold at zero (or the caller-provided placeholder) until the delay fires.
+    // Using the same formatter keeps the character width stable to avoid layout shift.
+    const zeroText = format ? format(0) : '0'
+    return (
+      <span className="tabular-nums">
+        {placeholder ?? `${prefix ?? ''}${zeroText}${suffix ?? ''}`}
+      </span>
+    )
+  }
+
+  return (
+    <AnimatedCounter
+      value={value}
+      format={format}
+      prefix={prefix}
+      suffix={suffix}
+    />
+  )
+}
+
 // ── Smart value renderer ──────────────────────────────────────────────────
-// If the value is a number, render via NumberFlow (integer).
-// If the value is a string matching a known numeric format ($X, X%, $X.XK, X,XXX),
-// parse and render via NumberFlow with appropriate format.
-// Otherwise, render as-is (e.g. for "—", "N/A", or ReactNodes).
-function renderValue(value: string | number | ReactNode): ReactNode {
+// If `animate` is false, fall back to the legacy NumberFlow-based renderer
+// (which also animates digit rolls, but doesn't count up from zero on mount).
+// If `animate` is true, parse the value and wrap the numeric part in
+// AnimatedCounter (via DelayedCounter) so it counts up from 0 on first render.
+// Non-numeric values (ReactNodes, "—", "N/A") pass through unchanged.
+function renderValue(
+  value: string | number | ReactNode,
+  animate: boolean,
+  delay: number,
+): ReactNode {
+  // Non-animated path = existing behavior (NumberFlow digit-roll, no count-up)
+  if (!animate) {
+    return renderValueLegacy(value)
+  }
+
+  if (typeof value === 'number') {
+    return <DelayedCounter value={value} delay={delay} />
+  }
+  if (typeof value !== 'string') {
+    return value
+  }
+
+  const s = value.trim()
+  if (!s || s === '—' || s === 'N/A' || /^[•]+$/.test(s)) return value
+
+  // Currency compact: $1.2M / $42K / $4.2K
+  const compactCurrency = s.match(/^\$(-?\d+(?:\.\d+)?)([MKB])$/i)
+  if (compactCurrency) {
+    const num = parseFloat(compactCurrency[1])
+    const unit = compactCurrency[2].toUpperCase()
+    const multiplier = unit === 'M' ? 1_000_000 : unit === 'K' ? 1_000 : 1_000_000_000
+    const target = num * multiplier
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }).format(n)
+    return <DelayedCounter value={target} delay={delay} format={fmt} />
+  }
+
+  // Currency full: $1,234.56 / $1234
+  const fullCurrency = s.match(/^\$(-?[\d,]+(?:\.\d+)?)$/)
+  if (fullCurrency) {
+    const num = parseFloat(fullCurrency[1].replace(/,/g, ''))
+    if (Number.isFinite(num)) {
+      const fmt = (n: number) =>
+        new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(n)
+      return <DelayedCounter value={num} delay={delay} format={fmt} />
+    }
+  }
+
+  // Percentage: 23.4% / +12.5% / -3.2%
+  const pct = s.match(/^([+\-]?\d+(?:\.\d+)?)%$/)
+  if (pct) {
+    const num = parseFloat(pct[1])
+    if (Number.isFinite(num)) {
+      const fmt = (n: number) =>
+        new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 1,
+        }).format(n)
+      return <DelayedCounter value={num} delay={delay} format={fmt} suffix="%" />
+    }
+  }
+
+  // Plain integer or comma-int: 1,847 / 42
+  const plainInt = s.match(/^(-?[\d,]+)$/)
+  if (plainInt) {
+    const num = parseFloat(plainInt[1].replace(/,/g, ''))
+    if (Number.isFinite(num)) {
+      return <DelayedCounter value={num} delay={delay} />
+    }
+  }
+
+  // Decimal with suffix unit: "4.2 days" / "120 units"
+  const numWithUnit = s.match(/^(-?\d+(?:\.\d+)?)\s+(.+)$/)
+  if (numWithUnit) {
+    const num = parseFloat(numWithUnit[1])
+    if (Number.isFinite(num)) {
+      const fmt = (n: number) =>
+        new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 1,
+        }).format(n)
+      return <DelayedCounter value={num} delay={delay} format={fmt} suffix={` ${numWithUnit[2]}`} />
+    }
+  }
+
+  return value
+}
+
+// ── Legacy renderer (NumberFlow-based, no count-up) ───────────────────────
+function renderValueLegacy(value: string | number | ReactNode): ReactNode {
   if (typeof value === 'number') {
     return <NumberFlow value={value} format="integer" />
   }
@@ -87,7 +244,6 @@ function renderValue(value: string | number | ReactNode): ReactNode {
   const s = value.trim()
   if (!s || s === '—' || s === 'N/A' || /^[•]+$/.test(s)) return value
 
-  // Currency compact: $1.2M / $42K / $4.2K
   const compactCurrency = s.match(/^\$(-?\d+(?:\.\d+)?)([MKB])$/i)
   if (compactCurrency) {
     const num = parseFloat(compactCurrency[1])
@@ -107,7 +263,6 @@ function renderValue(value: string | number | ReactNode): ReactNode {
     )
   }
 
-  // Currency full: $1,234.56 / $1234
   const fullCurrency = s.match(/^\$(-?[\d,]+(?:\.\d+)?)$/)
   if (fullCurrency) {
     const num = parseFloat(fullCurrency[1].replace(/,/g, ''))
@@ -116,7 +271,6 @@ function renderValue(value: string | number | ReactNode): ReactNode {
     }
   }
 
-  // Percentage: 23.4% / +12.5% / -3.2%
   const pct = s.match(/^([+\-]?\d+(?:\.\d+)?)%$/)
   if (pct) {
     const num = parseFloat(pct[1])
@@ -132,7 +286,6 @@ function renderValue(value: string | number | ReactNode): ReactNode {
     }
   }
 
-  // Plain integer or comma-int: 1,847 / 42
   const plainInt = s.match(/^(-?[\d,]+)$/)
   if (plainInt) {
     const num = parseFloat(plainInt[1].replace(/,/g, ''))
@@ -141,7 +294,6 @@ function renderValue(value: string | number | ReactNode): ReactNode {
     }
   }
 
-  // Decimal with suffix unit: "4.2 days" / "120 units"
   const numWithUnit = s.match(/^(-?\d+(?:\.\d+)?)\s+(.+)$/)
   if (numWithUnit) {
     const num = parseFloat(numWithUnit[1])
@@ -187,6 +339,8 @@ export default function KPICard({
   onClick,
   className,
   badge,
+  animateValue = true,
+  animateDelay = 0,
 }: KPICardProps) {
   if (loading) return <KPICardSkeleton className={className} />
 
@@ -201,14 +355,30 @@ export default function KPICard({
   const interactive = !!onClick
   const Tag = interactive ? 'button' : 'div'
 
+  // Keyboard handler: fire onClick on Enter/Space when rendered as a
+  // non-button element. (When Tag='button' the browser handles this natively,
+  // but we still want Space to fire when the card is a div with role=button.)
+  const handleKeyDown = interactive
+    ? (e: KeyboardEvent<HTMLElement>) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault()
+          onClick?.()
+        }
+      }
+    : undefined
+
   return (
     <Tag
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
       className={cn(
         'relative glass-card overflow-hidden text-left w-full',
         'px-4 pt-4 pb-4',
         'flex flex-col gap-1',
-        'transition-[border-color,box-shadow] duration-fast ease-out',
+        'transition-[border-color,box-shadow,transform] duration-150 ease-out',
+        'hover:scale-[1.01]',
         interactive && 'cursor-pointer hover:border-border-strong hover:shadow-elevation-2',
         forecast && 'border-dashed',
         className
@@ -233,7 +403,7 @@ export default function KPICard({
       {/* Value + sparkline */}
       <div className="flex items-end justify-between gap-3 mt-1">
         <div className="min-w-0">
-          <div className="metric metric-lg truncate">{renderValue(value)}</div>
+          <div className="metric metric-lg truncate">{renderValue(value, animateValue, animateDelay)}</div>
           {(delta || subtitle) && (
             <div className="flex items-center gap-2 mt-1.5 min-w-0">
               {delta && (

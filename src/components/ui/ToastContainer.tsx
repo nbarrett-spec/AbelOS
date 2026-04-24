@@ -185,9 +185,13 @@ function ToastItem({ toast, index, onRemove }: ToastItemProps) {
           }
         }
         @media (prefers-reduced-motion: reduce) {
-          .aegis-toast {
-            animation-duration: 120ms !important;
-            transition-duration: 120ms !important;
+          .aegis-toast,
+          .aegis-toast[data-entering='true'],
+          .aegis-toast[data-exiting='true'] {
+            animation: none !important;
+            transition: none !important;
+            opacity: 1;
+            transform: translateY(-${offsetY}px) rotate(${rotation}deg);
           }
         }
       `}</style>

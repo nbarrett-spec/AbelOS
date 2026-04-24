@@ -25,8 +25,19 @@ const config: Config = {
         surface:          'var(--surface)',
         'surface-muted':  'var(--surface-muted)',
         'surface-elev':   'var(--surface-elevated)',
+        'surface-floating': 'var(--surface-floating)',
         border:           'var(--border)',
         'border-strong':  'var(--border-strong)',
+
+        // ── Chart palette (aligns with globals.css --chart-1..6) ──────────
+        chart: {
+          1: 'var(--chart-1)',
+          2: 'var(--chart-2)',
+          3: 'var(--chart-3)',
+          4: 'var(--chart-4)',
+          5: 'var(--chart-5)',
+          6: 'var(--chart-6)',
+        },
         fg: {
           DEFAULT:   'var(--fg)',
           muted:     'var(--fg-muted)',
@@ -217,6 +228,11 @@ const config: Config = {
         'elevation-4': 'var(--elev-4)',
         'elevation-5': 'var(--elev-4)',
         'elevation-glow': 'var(--elev-glow)',
+        // Two-layer elevation pattern (aligns with globals.css --elev-1..4)
+        'elev-1': '0 1px 2px rgba(5, 13, 22, 0.20), 0 4px 12px rgba(5, 13, 22, 0.10)',
+        'elev-2': '0 2px 4px rgba(5, 13, 22, 0.22), 0 8px 24px rgba(5, 13, 22, 0.14)',
+        'elev-3': '0 4px 8px rgba(5, 13, 22, 0.25), 0 16px 40px rgba(5, 13, 22, 0.18)',
+        'elev-4': '0 8px 16px rgba(5, 13, 22, 0.28), 0 24px 56px rgba(5, 13, 22, 0.22)',
         'inset-1':     'inset 0 1px 2px rgba(0, 0, 0, 0.08)',
         'glass':       'var(--glass-shadow)',
         'glass-hover': 'var(--glass-hover)',

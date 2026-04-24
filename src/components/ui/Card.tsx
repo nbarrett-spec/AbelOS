@@ -58,6 +58,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         paddings[padding],
         rounded && roundeds[rounded],
         forecast && 'border-dashed',
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]',
         className
       )}
       {...props}

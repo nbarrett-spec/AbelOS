@@ -3,19 +3,34 @@
 import { useState, Suspense, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+import { AlertCircle, CheckCircle2, KeyRound, ArrowRight } from 'lucide-react'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Progress from '@/components/ui/Progress'
 
-// Password strength scoring — simple heuristic, no dependency
-function scorePassword(pw: string): { score: 0 | 1 | 2 | 3 | 4; label: string; color: string } {
-  if (!pw) return { score: 0, label: '', color: 'bg-gray-200' }
-  let score = 0
-  if (pw.length >= 8) score++
-  if (pw.length >= 12) score++
-  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++
-  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++
-  const bounded = Math.min(4, score) as 0 | 1 | 2 | 3 | 4
-  const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'] as const
-  const colors = ['bg-gray-200', 'bg-red-500', 'bg-signal', 'bg-blue-500', 'bg-green-500']
-  return { score: bounded, label: labels[bounded], color: colors[bounded] }
+// ── Password strength (visual-only, does NOT gate submission) ─────────────
+// Formula per Tier 1.4:
+//   length >= 8        → +25%
+//   has uppercase      → +25%
+//   has number         → +25%
+//   has special char   → +25%
+function calcStrength(pw: string): number {
+  if (!pw) return 0
+  let pct = 0
+  if (pw.length >= 8) pct += 25
+  if (/[A-Z]/.test(pw)) pct += 25
+  if (/\d/.test(pw)) pct += 25
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(pw)) pct += 25
+  return pct
+}
+
+function strengthMeta(pct: number): { label: string; color: 'danger' | 'warning' | 'orange' | 'green' } {
+  if (pct === 0) return { label: '', color: 'danger' }
+  if (pct <= 25) return { label: 'Weak', color: 'danger' }
+  if (pct <= 50) return { label: 'Fair', color: 'warning' }
+  if (pct <= 75) return { label: 'Good', color: 'orange' }
+  return { label: 'Strong', color: 'green' }
 }
 
 function ResetPasswordInner() {
@@ -25,13 +40,13 @@ function ResetPasswordInner() {
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [capsLockOn, setCapsLockOn] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
-  const strength = useMemo(() => scorePassword(password), [password])
+  const strengthPct = useMemo(() => calcStrength(password), [password])
+  const meta = strengthMeta(strengthPct)
   const mismatch = confirmPassword.length > 0 && password !== confirmPassword
 
   const handleCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -76,26 +91,34 @@ function ResetPasswordInner() {
     }
   }
 
+  // ── Invalid / missing token ─────────────────────────────────────────────
   if (!token) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="w-full max-w-md text-center">
-          <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-navy mb-2">Invalid Reset Link</h1>
-          <p className="text-gray-500 mb-6">
-            This password reset link is missing or invalid. It may have expired. Please request a new one.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/forgot-password" className="btn-accent inline-block">
-              Request New Link
-            </Link>
-            <Link href="/login" className="btn-outline inline-block">
-              Back to Sign In
-            </Link>
+      <div className="min-h-screen flex relative overflow-hidden">
+        <div className="flex-1 flex items-center justify-center bg-canvas p-6 sm:p-10">
+          <div className="w-full max-w-md text-center animate-enter">
+            <div className="w-16 h-16 mx-auto bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-full flex items-center justify-center mb-5">
+              <AlertCircle className="w-8 h-8 text-danger-500" aria-hidden="true" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+              Invalid reset link
+            </h1>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              This password reset link is missing or invalid. It may have expired.
+              Please request a new one.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 justify-center">
+              <Link href="/forgot-password">
+                <Button variant="accent" size="lg">
+                  Request new link
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline" size="lg">
+                  Back to sign in
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -103,125 +126,173 @@ function ResetPasswordInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-brand p-12 flex-col justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-signal rounded-xl flex items-center justify-center font-bold text-white">
-            AB
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* ── Left panel: immersive Drafting Room experience ────────── */}
+      <div className="hidden lg:flex lg:w-[55%] relative bg-navy overflow-hidden">
+        {/* Layered background */}
+        <div className="absolute inset-0">
+          {/* Gradient base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-deep via-navy to-navy-mid" />
+
+          {/* Drafting grid */}
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: `linear-gradient(rgba(198,162,78,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(198,162,78,0.3) 1px, transparent 1px)`,
+              backgroundSize: '40px 40px',
+            }}
+          />
+
+          {/* Warm gold glow from bottom-right */}
+          <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-gold/15 rounded-full blur-[120px]" />
+          <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-navy-light/30 rounded-full blur-[100px]" />
+
+          {/* Floating wood grain lines */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grain" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+                <path d="M0 20 Q50 15 100 22 Q150 30 200 18" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 60 Q40 55 90 65 Q140 70 200 58" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 100 Q60 95 110 105 Q160 110 200 98" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 140 Q30 135 80 145 Q130 150 200 138" stroke="white" strokeWidth="0.5" fill="none" />
+                <path d="M0 180 Q50 175 100 185 Q150 190 200 178" stroke="white" strokeWidth="0.5" fill="none" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grain)" />
+          </svg>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+          {/* Logo */}
+          <div className="animate-enter">
+            <div className="flex items-center gap-3">
+              <Image src="/icon-192.png" alt="Abel Lumber" width={40} height={40} className="rounded-xl" />
+              <span className="text-xl font-bold text-white tracking-tight">Abel Lumber</span>
+            </div>
           </div>
-          <span className="text-white font-semibold text-xl">Abel Builder</span>
-        </div>
-        <div>
-          <h2 className="text-4xl font-bold text-white leading-tight">
-            Set a new password
-          </h2>
-          <p className="mt-4 text-white/60 text-lg">
-            Choose a strong password for your account.
-          </p>
-        </div>
-        <div className="text-white/30 text-sm">
-          Abel Lumber &middot; Builder Platform
+
+          {/* Hero copy */}
+          <div className="max-w-md">
+            <h1 className="animate-enter animate-enter-delay-1 text-4xl xl:text-5xl font-bold text-white leading-[1.1] tracking-tight">
+              Set a new
+              <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-light">
+                password,
+              </span>
+              <span className="block mt-1">stay protected.</span>
+            </h1>
+            <p className="animate-enter animate-enter-delay-2 mt-6 text-lg text-white/60 leading-relaxed max-w-sm">
+              Choose a strong password. A mix of letters, numbers and symbols is best.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="animate-enter animate-enter-delay-4 text-sm text-white/30">
+            Door & Trim Specialists &middot; Gainesville, TX
+          </div>
         </div>
       </div>
 
-      {/* Right Panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      {/* ── Right panel: reset form ────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center bg-canvas p-6 sm:p-10">
         <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden mb-10 animate-enter">
+            <div className="flex items-center gap-3">
+              <Image src="/icon-192.png" alt="Abel Lumber" width={36} height={36} className="rounded-xl" />
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Abel Lumber</span>
+            </div>
+          </div>
+
           {success ? (
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+            <div className="text-center animate-enter">
+              <div className="w-16 h-16 mx-auto bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-full flex items-center justify-center mb-5">
+                <CheckCircle2 className="w-8 h-8 text-success-500" aria-hidden="true" />
               </div>
-              <h1 className="text-2xl font-bold text-navy mb-2">Password updated!</h1>
-              <p className="text-gray-500 mb-6">
-                Your password has been reset successfully. Redirecting you to sign in…
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                Password updated
+              </h1>
+              <p className="mt-2 text-gray-500 dark:text-gray-400">
+                Your password has been reset successfully. Redirecting you to sign in&hellip;
               </p>
-              <Link href="/login" className="btn-accent inline-block">
-                Sign In Now
-              </Link>
+              <div className="mt-8">
+                <Link href="/login">
+                  <Button variant="accent" size="lg" fullWidth>
+                    Sign in now
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-navy mb-1">Create new password</h1>
-              <p className="text-gray-500 mb-8">
-                Use at least 8 characters. A mix of letters, numbers and symbols is strongest.
-              </p>
+              {/* Form header */}
+              <div className="animate-enter animate-enter-delay-1">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  Create new password
+                </h2>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">
+                  Use at least 8 characters. Mix letters, numbers and symbols for best protection.
+                </p>
+              </div>
 
+              {/* Error */}
               {error && (
                 <div
                   role="alert"
                   aria-live="polite"
-                  className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100"
+                  className="mt-6 flex items-start gap-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-xl px-4 py-3.5 animate-[slideDown_200ms_ease-out]"
                 >
-                  {error}
+                  <AlertCircle className="w-5 h-5 text-danger-500 shrink-0 mt-0.5" />
+                  <p className="text-sm text-danger-700 dark:text-danger-400">{error}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5 animate-enter animate-enter-delay-2" noValidate>
                 <div>
-                  <label htmlFor="password" className="label">New password</label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      name="password"
-                      className="input pr-12"
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="new-password"
-                      placeholder="At least 8 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyUp={handleCapsLock}
-                      onKeyDown={handleCapsLock}
-                      required
-                      minLength={8}
-                      aria-required="true"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(s => !s)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      aria-pressed={showPassword}
-                      tabIndex={-1}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-signal transition"
-                    >
-                      {showPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  {/* Strength bar */}
+                  <Input
+                    label="New password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyUp={handleCapsLock}
+                    onKeyDown={handleCapsLock}
+                    required
+                    minLength={8}
+                    aria-required="true"
+                    autoFocus
+                    size="lg"
+                  />
+
+                  {/* Strength bar — visual only, does not block submit */}
                   {password.length > 0 && (
-                    <div className="mt-2" aria-live="polite">
-                      <div className="flex gap-1 h-1.5" aria-hidden="true">
-                        {[1, 2, 3, 4].map(i => (
-                          <div
-                            key={i}
-                            className={`flex-1 rounded-full transition-colors ${i <= strength.score ? strength.color : 'bg-gray-200'}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Strength: <span className="font-medium text-gray-700">{strength.label}</span>
+                    <div className="mt-2.5" aria-live="polite">
+                      <Progress
+                        value={strengthPct}
+                        color={meta.color}
+                        size="sm"
+                        animated
+                      />
+                      <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        Strength: <span className="font-medium text-gray-700 dark:text-gray-300">{meta.label}</span>
                       </p>
                     </div>
                   )}
+
                   {capsLockOn && (
-                    <p className="mt-1.5 text-xs text-signal" aria-live="polite">
-                      <span className="inline-block w-2 h-2 rounded-full bg-signal mr-1.5 align-middle" />
+                    <p className="mt-1.5 text-xs text-warning-600 dark:text-warning-400 flex items-center gap-1.5" aria-live="polite">
+                      <span className="w-1.5 h-1.5 rounded-full bg-warning-500 animate-pulse" />
                       Caps Lock is on
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="label">Confirm password</label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    className="input"
-                    type={showPassword ? 'text' : 'password'}
+                  <Input
+                    label="Confirm password"
+                    type="password"
                     autoComplete="new-password"
                     placeholder="Type it again"
                     value={confirmPassword}
@@ -232,28 +303,50 @@ function ResetPasswordInner() {
                     minLength={8}
                     aria-required="true"
                     aria-invalid={mismatch}
+                    size="lg"
                   />
                   {mismatch && (
-                    <p className="mt-1.5 text-xs text-red-600" aria-live="polite">
+                    <p className="mt-1.5 text-xs text-danger-600 dark:text-danger-400" aria-live="polite">
                       Passwords don&apos;t match yet.
                     </p>
                   )}
                 </div>
 
-                <button
+                <Button
                   type="submit"
+                  variant="accent"
+                  size="lg"
+                  fullWidth
+                  loading={loading}
                   disabled={loading || password.length < 8 || password !== confirmPassword}
-                  className="btn-accent w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  icon={!loading ? <KeyRound className="w-4.5 h-4.5" /> : undefined}
+                  className="mt-2 !py-3.5 text-base font-semibold shadow-lg shadow-gold/20 hover:shadow-xl hover:shadow-gold/30 hover:scale-[1.01] active:scale-[0.99] transition-all"
                 >
-                  {loading ? 'Resetting…' : 'Reset Password'}
-                </button>
+                  {loading ? 'Resetting…' : 'Reset password'}
+                </Button>
               </form>
 
-              <p className="mt-8 text-center text-sm text-gray-500">
-                Remember your password?{' '}
-                <Link href="/login" className="text-signal font-medium hover:underline">
-                  Sign in
+              {/* Divider */}
+              <div className="animate-enter animate-enter-delay-3 mt-8 flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+                <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Remember your password?</span>
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+              </div>
+
+              {/* Back to sign in */}
+              <div className="animate-enter animate-enter-delay-4 mt-6">
+                <Link
+                  href="/login"
+                  className="group flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                >
+                  Back to sign in
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
+              </div>
+
+              {/* Footer */}
+              <p className="animate-enter animate-enter-delay-5 mt-10 text-center text-xs text-gray-400 dark:text-gray-500">
+                By resetting your password, you agree to our Terms of Service and Privacy Policy
               </p>
             </>
           )}
@@ -265,7 +358,13 @@ function ResetPasswordInner() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">Loading…</p></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-canvas">
+          <p className="text-fg-muted text-sm">Loading…</p>
+        </div>
+      }
+    >
       <ResetPasswordInner />
     </Suspense>
   )

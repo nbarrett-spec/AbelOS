@@ -215,7 +215,7 @@ export default function SignupPage() {
                   id="companyName"
                   name="companyName"
                   autoComplete="organization"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   placeholder="Your Building Company"
                   value={form.companyName}
                   onChange={(e) => updateForm('companyName', e.target.value)}
@@ -232,7 +232,7 @@ export default function SignupPage() {
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   placeholder="(555) 123-4567"
                   value={form.phone}
                   onChange={(e) => updateForm('phone', e.target.value)}
@@ -262,7 +262,7 @@ export default function SignupPage() {
                   id="contactName"
                   name="contactName"
                   autoComplete="name"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   placeholder="John Smith"
                   value={form.contactName}
                   onChange={(e) => updateForm('contactName', e.target.value)}
@@ -276,7 +276,7 @@ export default function SignupPage() {
                 <input
                   id="email"
                   name="email"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -296,7 +296,7 @@ export default function SignupPage() {
                   <input
                     id="password"
                     name="password"
-                    className="input pr-16"
+                    className="input pr-16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     placeholder="Min. 8 chars, 1 uppercase, 1 number"
@@ -346,7 +346,7 @@ export default function SignupPage() {
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   placeholder="Re-enter password"
@@ -396,7 +396,7 @@ export default function SignupPage() {
                 <input
                   id="licenseNumber"
                   name="licenseNumber"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   placeholder="Your business license #"
                   value={form.licenseNumber}
                   onChange={(e) => updateForm('licenseNumber', e.target.value)}
@@ -407,7 +407,7 @@ export default function SignupPage() {
                 <input
                   id="taxId"
                   name="taxId"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   placeholder="Your Tax ID"
                   value={form.taxId}
                   onChange={(e) => updateForm('taxId', e.target.value)}
@@ -419,7 +419,7 @@ export default function SignupPage() {
                   id="taxExempt"
                   checked={form.taxExempt}
                   onChange={(e) => updateForm('taxExempt', e.target.checked)}
-                  className="w-4 h-4"
+                  className="w-4 h-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                 />
                 <label htmlFor="taxExempt" className="text-sm text-gray-700">
                   Tax Exempt Status
@@ -431,7 +431,7 @@ export default function SignupPage() {
                   id="address"
                   name="address"
                   autoComplete="street-address"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   placeholder="123 Main St"
                   value={form.address}
                   onChange={(e) => updateForm('address', e.target.value)}
@@ -444,7 +444,7 @@ export default function SignupPage() {
                     id="city"
                     name="city"
                     autoComplete="address-level2"
-                    className="input"
+                    className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                     placeholder="Austin"
                     value={form.city}
                     onChange={(e) => updateForm('city', e.target.value)}
@@ -458,7 +458,7 @@ export default function SignupPage() {
                     inputMode="numeric"
                     autoComplete="postal-code"
                     pattern="\d{5}(-\d{4})?"
-                    className="input"
+                    className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                     placeholder="78701"
                     value={form.zip}
                     onChange={(e) => updateForm('zip', e.target.value)}
@@ -471,7 +471,7 @@ export default function SignupPage() {
                   id="state"
                   name="state"
                   autoComplete="address-level1"
-                  className="input"
+                  className="input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
                   value={form.state}
                   onChange={(e) => updateForm('state', e.target.value)}
                 >
