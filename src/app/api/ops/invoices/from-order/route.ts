@@ -89,6 +89,9 @@ export async function POST(request: NextRequest) {
     const invId = `inv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 
     await prisma.$transaction(async (tx) => {
+      // DRAFT invoices have NULL issuedAt by policy (consistent with
+      // src/lib/cascades/order-lifecycle.ts onOrderDelivered). issuedAt
+      // gets stamped at promotion (PATCH status='ISSUED' or first payment).
       await tx.$executeRawUnsafe(`
         INSERT INTO "Invoice" (
           "id", "invoiceNumber", "builderId", "orderId", "jobId", "createdById",
@@ -99,7 +102,7 @@ export async function POST(request: NextRequest) {
           $1, $2, $3, $4, $5, $6,
           $7, $8, $9, 0, $9,
           'DRAFT'::"InvoiceStatus", '${paymentTerm}'::"PaymentTerm",
-          NOW(), '${dueDate.toISOString()}'::timestamptz,
+          NULL, '${dueDate.toISOString()}'::timestamptz,
           $10, NOW(), NOW()
         )
       `,

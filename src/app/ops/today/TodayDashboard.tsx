@@ -320,11 +320,9 @@ export default function TodayDashboard({
     async (taskId: string) => {
       setCompletingTaskId(taskId)
       try {
-        // TODO: replace with real endpoint once /api/ops/tasks/[id]/complete
-        //       is shipped. For now attempt the POST and optimistically
-        //       dismiss on 2xx; on 404 / failure, still dismiss client-side
-        //       so the PM can move on (server-side state will correct on
-        //       next refresh).
+        // POST /api/ops/tasks/[id]/complete; optimistically dismiss client-side
+        // even on transient failure so the PM can move on. The next refresh
+        // will reconcile against server state.
         let serverOk = false
         try {
           const res = await fetch(

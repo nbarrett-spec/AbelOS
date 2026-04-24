@@ -271,3 +271,73 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
+
+// POST /api/builder/onboarding
+// Final submission of the onboarding wizard at /dashboard/onboarding.
+// Persists the company-info fields onto the Builder row (company name,
+// address, contact). Catalog/delivery/credit preferences are captured
+// in the audit log for ops follow-up — there's no dedicated preferences
+// table yet, and adding one is out of scope here.
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json().catch(() => ({} as any))
+    const company = body?.company ?? {}
+    const credit = body?.credit ?? {}
+    const catalog = body?.catalog ?? {}
+    const delivery = body?.delivery ?? {}
+
+    // Update the Builder profile with whatever company fields the user
+    // filled in. Only overwrite when the form provided a non-empty value
+    // so a partial submission doesn't blank out existing data.
+    const updates: Record<string, string> = {}
+    if (typeof company.name === 'string' && company.name.trim()) updates.companyName = company.name.trim()
+    if (typeof company.address === 'string' && company.address.trim()) updates.address = company.address.trim()
+    if (typeof company.city === 'string' && company.city.trim()) updates.city = company.city.trim()
+    if (typeof company.state === 'string' && company.state.trim()) updates.state = company.state.trim().toUpperCase().slice(0, 2)
+    if (typeof company.zip === 'string' && company.zip.trim()) updates.zip = company.zip.trim()
+    if (typeof company.contactName === 'string' && company.contactName.trim()) updates.contactName = company.contactName.trim()
+    if (typeof company.contactPhone === 'string' && company.contactPhone.trim()) updates.phone = company.contactPhone.trim()
+
+    const keys = Object.keys(updates)
+    if (keys.length > 0) {
+      // Build a parameterised UPDATE — column names are pulled from the
+      // whitelist above so they're safe to interpolate.
+      const setClause = keys.map((k, i) => `"${k}" = $${i + 2}`).join(', ')
+      const values = keys.map(k => updates[k])
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Builder" SET ${setClause} WHERE id = $1`,
+        session.builderId,
+        ...values
+      )
+    }
+
+    auditBuilder(
+      session.builderId,
+      session.companyName || updates.companyName || 'Unknown',
+      'UPDATE',
+      'BuilderOnboarding',
+    ).catch(() => {})
+
+    return NextResponse.json({
+      success: true,
+      message: 'Onboarding submitted',
+      updatedFields: keys,
+      preferencesCaptured: {
+        creditLimitRequested: credit?.creditLimit ?? null,
+        catalogCategories: Object.keys(catalog).filter(k => catalog[k]),
+        deliveryDays: Array.isArray(delivery?.preferredDays) ? delivery.preferredDays : [],
+      },
+    })
+  } catch (error) {
+    console.error('Failed to submit onboarding:', error)
+    return NextResponse.json(
+      { error: 'Failed to submit onboarding' },
+      { status: 500 }
+    )
+  }
+}

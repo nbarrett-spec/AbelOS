@@ -201,15 +201,15 @@ export default function SalesPortal() {
           <p className="text-2xl mb-2">☀️</p>
           <p className="text-sm font-medium text-gray-900">Morning Briefing</p>
         </Link>
-        <Link href="/deals" className="bg-white rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-surface-elev transition-all p-4 text-center">
+        <Link href="/ops/sales/pipeline" className="bg-white rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-surface-elev transition-all p-4 text-center">
           <p className="text-2xl mb-2">📊</p>
           <p className="text-sm font-medium text-gray-900">View Pipeline</p>
         </Link>
-        <Link href="/deals/new" className="bg-white rounded-xl border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all p-4 text-center">
-          <p className="text-2xl mb-2">🆕</p>
-          <p className="text-sm font-medium text-gray-900">Create Deal</p>
+        <Link href="/ops/sales/pipeline" className="bg-white rounded-xl border border-gray-200 hover:bg-green-50 hover:border-[#27AE60] transition-all p-4 text-center">
+          <p className="text-2xl mb-2">📊</p>
+          <p className="text-sm font-medium text-gray-900">All Deals</p>
         </Link>
-        <Link href="/quotes" className="bg-white rounded-xl border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all p-4 text-center">
+        <Link href="/ops/quotes" className="bg-white rounded-xl border border-gray-200 hover:bg-purple-50 hover:border-purple-500 transition-all p-4 text-center">
           <p className="text-2xl mb-2">📋</p>
           <p className="text-sm font-medium text-gray-900">My Quotes</p>
         </Link>
@@ -217,7 +217,7 @@ export default function SalesPortal() {
           <p className="text-2xl mb-2">📈</p>
           <p className="text-sm font-medium text-gray-900">Sales Scorecard</p>
         </Link>
-        <Link href="/reports" className="bg-white rounded-xl border border-gray-200 hover:bg-pink-50 hover:border-pink-500 transition-all p-4 text-center">
+        <Link href="/ops/reports" className="bg-white rounded-xl border border-gray-200 hover:bg-pink-50 hover:border-pink-500 transition-all p-4 text-center">
           <p className="text-2xl mb-2">📊</p>
           <p className="text-sm font-medium text-gray-900">View Reports</p>
         </Link>
@@ -229,7 +229,7 @@ export default function SalesPortal() {
         <div className="lg:col-span-2 bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Active Deals</h2>
-            <Link href="/deals" className="text-sm text-surface-elev hover:text-signal">
+            <Link href="/ops/sales/pipeline" className="text-sm text-surface-elev hover:text-signal">
               View All →
             </Link>
           </div>
@@ -240,12 +240,12 @@ export default function SalesPortal() {
               icon={<Handshake className="w-6 h-6 text-fg-subtle" />}
               title="No active deals yet"
               description="Create your first deal to get started."
-              action={{ label: 'Create deal', href: '/deals/new' }}
+              action={{ label: 'Open pipeline', href: '/ops/sales/pipeline' }}
             />
           ) : (
             <div className="space-y-3">
               {myDeals.map(deal => (
-                <Link key={deal.id} href={`/deals/${deal.id}`}>
+                <Link key={deal.id} href={`/ops/sales/deals/${deal.id}`}>
                   <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-surface-elev hover:bg-blue-50 transition-all">
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">{deal.companyName}</p>

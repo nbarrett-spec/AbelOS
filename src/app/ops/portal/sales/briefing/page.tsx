@@ -201,7 +201,7 @@ export default function SalesBriefingPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Quotes Expiring Soon</h2>
-            <Link href="/quotes" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
+            <Link href="/ops/quotes" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
               View Quotes →
             </Link>
           </div>
@@ -240,7 +240,7 @@ export default function SalesBriefingPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Follow-Ups Due</h2>
-            <Link href="/deals" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
+            <Link href="/ops/sales/pipeline" className="text-sm text-[#0f2a3e] hover:text-[#C6A24E]">
               View All →
             </Link>
           </div>

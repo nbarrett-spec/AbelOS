@@ -93,9 +93,11 @@ export async function POST(request: NextRequest) {
         reference || null
       )
 
-      // Update Invoice status to PAID and set paidAt
+      // Update Invoice status to PAID and set paidAt.
+      // Backfill issuedAt if NULL — invoices going DRAFT→PAID via batch-pay
+      // would otherwise have a NULL issuedAt forever (audit 2026-04-24).
       await prisma.$executeRawUnsafe(
-        `UPDATE "Invoice" SET "status" = 'PAID', "paidAt" = NOW(), "amountPaid" = $1, "balanceDue" = 0, "updatedAt" = NOW() WHERE "id" = $2`,
+        `UPDATE "Invoice" SET "status" = 'PAID', "paidAt" = NOW(), "issuedAt" = COALESCE("issuedAt", NOW()), "amountPaid" = $1, "balanceDue" = 0, "updatedAt" = NOW() WHERE "id" = $2`,
         invoice.total,
         invoice.id
       )

@@ -555,7 +555,7 @@ export default function SalesDashboardPage() {
                 <p className="text-gray-400 text-sm">No recent activity</p>
               ) : (
                 activities.map((activity) => (
-                  <Link key={activity.id} href={`/ops/sales/deals`}>
+                  <Link key={activity.id} href={`/ops/sales/pipeline`}>
                     <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                       <span className="text-2xl flex-shrink-0">{activity.icon}</span>
                       <div className="flex-1 min-w-0">

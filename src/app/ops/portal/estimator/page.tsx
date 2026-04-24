@@ -118,7 +118,7 @@ export default function EstimatorPortalPage() {
         <div className="bg-white rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Takeoffs Awaiting Review</h2>
-            <Link href="/ops/takeoffs" className="text-sm text-[#16A085] hover:text-[#138D75]">
+            <Link href="/ops/takeoff-review" className="text-sm text-[#16A085] hover:text-[#138D75]">
               View All →
             </Link>
           </div>
@@ -135,7 +135,7 @@ export default function EstimatorPortalPage() {
               {data.takeoffsToReview.slice(0, 6).map((t: any) => (
                 <Link
                   key={t.id}
-                  href={`/ops/takeoffs/${t.id}`}
+                  href={`/ops/takeoff-review/${t.id}`}
                   className="block p-3 rounded-lg border hover:border-[#16A085] transition-all"
                 >
                   <div className="flex items-start justify-between mb-1">

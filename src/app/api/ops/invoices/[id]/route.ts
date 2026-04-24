@@ -126,7 +126,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (status !== undefined) {
       setClauses.push(`"status" = '${status}'::"InvoiceStatus"`)
-      if (status === 'ISSUED') setClauses.push(`"issuedAt" = NOW()`)
+      // Stamp issuedAt the first time an invoice leaves DRAFT for any
+      // billable state. Audit (2026-04-24) found issuedAt stale since
+      // 3/23 because workflows often skip the explicit ISSUED step
+      // (DRAFT → SENT, DRAFT → PARTIALLY_PAID, etc.). COALESCE preserves
+      // any explicit value the caller passed in via `issuedAt`.
+      if (status && status !== 'DRAFT' && status !== 'VOID') {
+        setClauses.push(`"issuedAt" = COALESCE("issuedAt", NOW())`)
+      }
       if (status === 'PAID') setClauses.push(`"paidAt" = NOW()`)
     }
     if (notes !== undefined) {

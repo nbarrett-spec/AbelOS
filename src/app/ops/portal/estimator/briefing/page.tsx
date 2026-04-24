@@ -103,7 +103,7 @@ export default function EstimatorBriefingPage() {
             {data.lowConfidenceTakeoffs.slice(0, 4).map((t: any) => (
               <Link
                 key={t.id}
-                href={`/ops/takeoffs/${t.id}`}
+                href={`/ops/takeoff-review/${t.id}`}
                 className="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 rounded hover:bg-yellow-300 transition"
               >
                 {t.projectName} ({t.confidenceScore}%)
@@ -144,7 +144,7 @@ export default function EstimatorBriefingPage() {
           ) : (
             <div className="space-y-2">
               {data.takeoffsToReview.slice(0, 8).map((t: any) => (
-                <Link key={t.id} href={`/ops/takeoffs/${t.id}`} className="block p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition border border-gray-200 hover:border-[#16A085]">
+                <Link key={t.id} href={`/ops/takeoff-review/${t.id}`} className="block p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition border border-gray-200 hover:border-[#16A085]">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-gray-900">{t.projectName}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded font-medium text-white ${

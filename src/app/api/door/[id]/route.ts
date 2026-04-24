@@ -1,11 +1,23 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { safeJson } from '@/lib/safe-json'
+import { requireStaffAuth } from '@/lib/api-auth'
+import { audit } from '@/lib/audit'
+import type { StaffRole } from '@/lib/permissions'
+import { parseRoles } from '@/lib/permissions'
+import { logger } from '@/lib/logger'
 
 // Door Identity API — Public + Staff
 // GET: Fetch door info (public for homeowner view, enriched for staff)
-// POST: Record events (staff only — QC, staging, delivery, install, bay moves)
+// POST: Record events
+//   - `request_service` is PUBLIC (homeowner-facing — keep open).
+//   - All other 7 mutation branches are STAFF-ONLY, gated by cookie auth.
+//     The previous implementation read `staffId`/`staffName` from the request
+//     body and trusted the values, which let anyone with the URL mark a door
+//     INSTALLED, REASSIGNED, etc., and forge the staff name on the audit
+//     trail. Audit A#1 — see docs/AUDIT-A-MUTATION-SAFETY.md.
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -47,7 +59,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     `, door.id)
 
     // Check if requester is staff (has auth cookie)
-    const isStaff = request.cookies.get('ops_auth')?.value ? true : false
+    const isStaff = request.cookies.get('abel_staff_session')?.value
+      || request.cookies.get('ops_auth')?.value
+      ? true
+      : false
 
     // Get BOM snapshot components
     let bomComponents: any[] = []
@@ -161,14 +176,130 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Allowed roles per action (gate) — broadest baseline first, narrower per
+// branch as needed. ADMIN is implicitly allowed by requireStaffAuth.
+// ──────────────────────────────────────────────────────────────────────────
+const STAFF_ACTIONS = new Set([
+  'qc_pass', 'qc_fail', 'move_to_bay', 'stage', 'deliver', 'install', 'reassign_order',
+])
+
+const ROLES_BY_ACTION: Record<string, StaffRole[]> = {
+  qc_pass:        ['QC_INSPECTOR', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'MANAGER', 'ADMIN'],
+  qc_fail:        ['QC_INSPECTOR', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'MANAGER', 'ADMIN'],
+  move_to_bay:    ['WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'MANAGER', 'ADMIN'],
+  stage:          ['WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'MANAGER', 'ADMIN'],
+  deliver:        ['DRIVER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'MANAGER', 'ADMIN'],
+  install:        ['INSTALLER', 'WAREHOUSE_LEAD', 'MANAGER', 'ADMIN'],
+  reassign_order: ['MANAGER', 'PROJECT_MANAGER', 'ADMIN'],
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Input validation — zod schemas per action. Body shape is validated AFTER
+// auth so we don't leak action-vocabulary to anonymous callers.
+// ──────────────────────────────────────────────────────────────────────────
+const optStr = (max = 1000) => z.string().max(max).optional().nullable()
+
+const ActionSchemas = {
+  qc_pass:     z.object({ action: z.literal('qc_pass'),     notes: optStr(2000) }),
+  qc_fail:     z.object({ action: z.literal('qc_fail'),     notes: optStr(2000) }),
+  move_to_bay: z.object({ action: z.literal('move_to_bay'), bayId: z.string().min(1).max(200), reason: optStr(500) }),
+  stage:       z.object({ action: z.literal('stage'),       notes: optStr(2000) }),
+  deliver:     z.object({ action: z.literal('deliver'),     notes: optStr(2000) }),
+  install: z.object({
+    action: z.literal('install'),
+    address: optStr(500),
+    city: optStr(120),
+    state: optStr(2),
+    zip: optStr(20),
+    notes: optStr(2000),
+    homeownerName: optStr(200),
+    homeownerEmail: optStr(320),
+    homeownerPhone: optStr(40),
+  }),
+  reassign_order: z.object({
+    action: z.literal('reassign_order'),
+    newOrderId: z.string().min(1).max(200),
+    reason: optStr(500),
+  }),
+  request_service: z.object({
+    action: z.literal('request_service'),
+    name: optStr(200),
+    email: optStr(320),
+    phone: optStr(40),
+    issueType: optStr(80),
+    description: z.string().min(1).max(4000),
+    isWarrantyClaim: z.boolean().optional(),
+  }),
+} as const
+
+type Action = keyof typeof ActionSchemas
+
 // POST: Record lifecycle events
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params
-    const body = await request.json()
-    const { action, staffId, staffName, ...data } = body
 
-    // Find door
+    // ── 1. Parse body (no trust on staffId/staffName) ──
+    let raw: any
+    try {
+      raw = await request.json()
+    } catch {
+      return safeJson({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    if (!raw || typeof raw !== 'object') {
+      return safeJson({ error: 'Body must be a JSON object' }, { status: 400 })
+    }
+
+    const action = typeof raw.action === 'string' ? raw.action : ''
+    if (!action) {
+      return safeJson({ error: 'action is required' }, { status: 400 })
+    }
+    if (!(action in ActionSchemas)) {
+      return safeJson({ error: `Unknown action: ${action}` }, { status: 400 })
+    }
+
+    // ── 2. Auth gate — `request_service` is public (homeowner). All other
+    //       branches require a valid staff session AND an allowed role. ──
+    let staffId = 'public'
+    let staffName: string | undefined
+    let staffRole: string | undefined
+
+    if (STAFF_ACTIONS.has(action)) {
+      const allowedRoles = ROLES_BY_ACTION[action] || []
+      const auth = await requireStaffAuth(request, { allowedRoles })
+      if (auth.error) return auth.error
+      const session = auth.session
+      // Belt-and-suspenders: if cookie-fallback path was used, requireStaffAuth's
+      // path-based canAccessAPI() check is skipped, but allowedRoles is enforced.
+      // Re-verify the session role intersects the allowed set so this branch can
+      // never run without an allowed role even if the auth helper changes.
+      const roles = parseRoles(session.roles || session.role)
+      const hasAdmin = roles.includes('ADMIN')
+      const hasAllowed = roles.some(r => allowedRoles.includes(r as StaffRole))
+      if (!hasAdmin && !hasAllowed) {
+        return safeJson({ error: 'Insufficient permissions for this action' }, { status: 403 })
+      }
+      staffId = session.staffId
+      staffName = `${session.firstName || ''} ${session.lastName || ''}`.trim()
+        || request.headers.get('x-staff-firstname')
+        || session.email
+        || 'Staff'
+      staffRole = session.role
+    }
+
+    // ── 3. Strict body validation per-action (post-auth) ──
+    const schema = ActionSchemas[action as Action]
+    const parsed = schema.safeParse(raw)
+    if (!parsed.success) {
+      return safeJson(
+        { error: 'Invalid request body', details: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
+    const data = parsed.data as any
+
+    // ── 4. Find door ──
     const doors: any[] = await prisma.$queryRawUnsafe(`
       SELECT id, status, "bayId", "productId", "jobId"
       FROM "DoorIdentity"
@@ -184,7 +315,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const eventId = `de_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
     const now = new Date()
 
-    switch (action) {
+    // Helper: insert a DoorEvent row using the AUTHENTICATED staff identity.
+    // For the public homeowner path we leave performedBy/performedByName NULL
+    // (matches the original `request_service` behavior).
+    const performedBy = STAFF_ACTIONS.has(action) ? staffId : null
+    const performedByName = STAFF_ACTIONS.has(action) ? (staffName || null) : null
+
+    switch (action as Action) {
       case 'qc_pass': {
         await prisma.$executeRawUnsafe(`
           UPDATE "DoorIdentity"
@@ -195,7 +332,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", notes, "createdAt")
           VALUES ($1, $2, 'QC_PASSED', $3, 'QC_PASSED', $4, $5, $6, $7)
-        `, eventId, door.id, door.status, staffId, staffName, data.notes || null, now)
+        `, eventId, door.id, door.status, performedBy, performedByName, data.notes || null, now)
+
+        await audit(request, 'DOOR_QC_PASS', 'DoorIdentity', door.id, {
+          previousStatus: door.status,
+          newStatus: 'QC_PASSED',
+          notes: data.notes || null,
+          eventId,
+          staffRole,
+        }, 'INFO').catch(() => {})
 
         return safeJson({ success: true, newStatus: 'QC_PASSED' })
       }
@@ -210,14 +355,21 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", notes, "createdAt")
           VALUES ($1, $2, 'QC_FAILED', $3, 'QC_FAILED', $4, $5, $6, $7)
-        `, eventId, door.id, door.status, staffId, staffName, data.notes || null, now)
+        `, eventId, door.id, door.status, performedBy, performedByName, data.notes || null, now)
+
+        await audit(request, 'DOOR_QC_FAIL', 'DoorIdentity', door.id, {
+          previousStatus: door.status,
+          newStatus: 'QC_FAILED',
+          notes: data.notes || null,
+          eventId,
+          staffRole,
+        }, 'WARN').catch(() => {})
 
         return safeJson({ success: true, newStatus: 'QC_FAILED' })
       }
 
       case 'move_to_bay': {
         const { bayId } = data
-        if (!bayId) return safeJson({ error: 'bayId required' }, { status: 400 })
 
         // Verify bay exists
         const bays: any[] = await prisma.$queryRawUnsafe(`
@@ -233,7 +385,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "BayMovement" (id, "doorId", "fromBayId", "toBayId", "movedBy", "movedByName", reason, "createdAt")
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        `, moveId, door.id, door.bayId || null, bay.id, staffId, staffName, data.reason || null, now)
+        `, moveId, door.id, door.bayId || null, bay.id, performedBy, performedByName, data.reason || null, now)
 
         // Update door location and status
         const newStatus = door.status === 'PRODUCTION' || door.status === 'QC_PASSED' ? 'STORED' : door.status
@@ -256,7 +408,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", "bayId", notes, "createdAt")
           VALUES ($1, $2, 'BAY_MOVE', $3, $4, $5, $6, $7, $8, $9)
-        `, eventId, door.id, door.status, newStatus, staffId, staffName, bay.id, `Moved to ${bay.bayNumber}`, now)
+        `, eventId, door.id, door.status, newStatus, performedBy, performedByName, bay.id, `Moved to ${bay.bayNumber}`, now)
+
+        await audit(request, 'DOOR_BAY_MOVE', 'DoorIdentity', door.id, {
+          previousStatus: door.status,
+          newStatus,
+          fromBayId: door.bayId || null,
+          toBayId: bay.id,
+          bayNumber: bay.bayNumber,
+          reason: data.reason || null,
+          moveId,
+          eventId,
+          staffRole,
+        }, 'INFO').catch(() => {})
 
         return safeJson({ success: true, newStatus, bay: bay.bayNumber })
       }
@@ -271,7 +435,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", notes, "createdAt")
           VALUES ($1, $2, 'STAGED', $3, 'STAGED', $4, $5, $6, $7)
-        `, eventId, door.id, door.status, staffId, staffName, data.notes || null, now)
+        `, eventId, door.id, door.status, performedBy, performedByName, data.notes || null, now)
+
+        await audit(request, 'DOOR_STAGE', 'DoorIdentity', door.id, {
+          previousStatus: door.status,
+          newStatus: 'STAGED',
+          notes: data.notes || null,
+          eventId,
+          staffRole,
+        }, 'INFO').catch(() => {})
 
         return safeJson({ success: true, newStatus: 'STAGED' })
       }
@@ -296,7 +468,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", notes, "createdAt")
           VALUES ($1, $2, 'DELIVERED', $3, 'DELIVERED', $4, $5, $6, $7)
-        `, eventId, door.id, door.status, staffId, staffName, data.notes || null, now)
+        `, eventId, door.id, door.status, performedBy, performedByName, data.notes || null, now)
+
+        await audit(request, 'DOOR_DELIVER', 'DoorIdentity', door.id, {
+          previousStatus: door.status,
+          newStatus: 'DELIVERED',
+          notes: data.notes || null,
+          fromBayId: door.bayId || null,
+          eventId,
+          staffRole,
+        }, 'INFO').catch(() => {})
 
         return safeJson({ success: true, newStatus: 'DELIVERED' })
       }
@@ -340,13 +521,30 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", notes, "createdAt")
           VALUES ($1, $2, 'INSTALLED', $3, 'INSTALLED', $4, $5, $6, $7)
-        `, eventId, door.id, door.status, staffId, staffName, `Installed at ${data.address || 'address pending'}`, now)
+        `, eventId, door.id, door.status, performedBy, performedByName, `Installed at ${data.address || 'address pending'}`, now)
+
+        await audit(request, 'DOOR_INSTALL', 'DoorIdentity', door.id, {
+          previousStatus: door.status,
+          newStatus: 'INSTALLED',
+          warrantyPolicyId: policyId,
+          warrantyStart,
+          warrantyEnd,
+          installAddress: data.address || null,
+          installCity: data.city || null,
+          installState: data.state || 'TX',
+          installZip: data.zip || null,
+          homeownerName: data.homeownerName || null,
+          eventId,
+          staffRole,
+        }, 'WARN').catch(() => {})
 
         return safeJson({ success: true, newStatus: 'INSTALLED', warrantyEnd })
       }
 
       case 'reassign_order': {
         const { newOrderId, reason } = data
+        const previousOrderId = (door as any).orderId || null
+
         await prisma.$executeRawUnsafe(`
           UPDATE "DoorIdentity" SET "orderId" = $1, "updatedAt" = $2 WHERE id = $3
         `, newOrderId, now, door.id)
@@ -354,13 +552,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$executeRawUnsafe(`
           INSERT INTO "DoorEvent" (id, "doorId", "eventType", "previousStatus", "newStatus", "performedBy", "performedByName", notes, "createdAt")
           VALUES ($1, $2, 'REASSIGNED', $3, $3, $4, $5, $6, $7)
-        `, eventId, door.id, door.status, staffId, staffName, reason || `Reassigned to order ${newOrderId}`, now)
+        `, eventId, door.id, door.status, performedBy, performedByName, reason || `Reassigned to order ${newOrderId}`, now)
+
+        await audit(request, 'DOOR_REASSIGN_ORDER', 'DoorIdentity', door.id, {
+          status: door.status,
+          previousOrderId,
+          newOrderId,
+          reason: reason || null,
+          eventId,
+          staffRole,
+        }, 'WARN').catch(() => {})
 
         return safeJson({ success: true, newOrderId })
       }
 
       case 'request_service': {
-        // This can be called by homeowners (no staff auth needed)
+        // PUBLIC branch — homeowners scanning the NFC tag. No staff auth.
         const srId = `sr_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
 
         await prisma.$executeRawUnsafe(`
@@ -378,11 +585,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
         return safeJson({ success: true, serviceRequestId: srId })
       }
-
-      default:
-        return safeJson({ error: `Unknown action: ${action}` }, { status: 400 })
     }
+
+    // Unreachable — schema check above guarantees a known action.
+    return safeJson({ error: `Unknown action: ${action}` }, { status: 400 })
   } catch (error: any) {
+    // Log the full error server-side for forensics; return a sanitized
+    // payload to the caller so we don't leak Postgres / stack details.
+    try {
+      logger.error('door_post_failed', error, {
+        doorId: params?.id,
+      })
+    } catch {}
+    // eslint-disable-next-line no-console
     console.error('Door POST error:', error)
     return safeJson({ error: 'Failed to process door action' }, { status: 500 })
   }

@@ -72,11 +72,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         VALUES ($1, $2, $3, '${method}'::"PaymentMethod", $4, $5, NOW())
       `, payId, id, amount, reference || null, notes || null)
 
-      // Update invoice
+      // Update invoice. Backfill issuedAt when the invoice first becomes
+      // billable — a payment against a DRAFT implicitly issues it. Audit
+      // 2026-04-24: many invoices reached PARTIALLY_PAID/PAID directly
+      // without going through the ISSUED PATCH, leaving issuedAt NULL.
       await tx.$executeRawUnsafe(`
         UPDATE "Invoice"
         SET "amountPaid" = $1, "balanceDue" = $2,
             "status" = '${newStatus}'::"InvoiceStatus",
+            "issuedAt" = COALESCE("issuedAt", NOW()),
             "updatedAt" = NOW() ${paidAtClause}
         WHERE "id" = $3
       `, newAmountPaid, Math.max(0, newBalanceDue), id)

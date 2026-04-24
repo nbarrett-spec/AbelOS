@@ -354,14 +354,21 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Job APIs — PM + warehouse lead added
   '/api/ops/jobs': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'WAREHOUSE_LEAD'],
 
+  // Tasks API — covers /api/ops/tasks/[id]/complete (Today dashboard) and any
+  // future task surface. Most staff need to mark their own tasks complete.
+  // Cross-ref: src/app/api/ops/tasks/[id]/complete/route.ts
+  '/api/ops/tasks': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'QC_INSPECTOR', 'INSTALLER', 'DRIVER'],
+
   // Product/Inventory APIs — PM added
   '/api/ops/products': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'WAREHOUSE_LEAD'],
   '/api/ops/product-categories': ['ADMIN', 'MANAGER', 'PURCHASING'],
   '/api/ops/suppliers': ['ADMIN', 'MANAGER', 'PURCHASING'],
   '/api/ops/inventory': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
 
-  // PO APIs — PM added for visibility
-  '/api/ops/purchase-orders': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING'],
+  // PO APIs — PM added for visibility.
+  // Repointed from stale '/api/ops/purchase-orders' to the real path under
+  // /procurement/. See docs/AUDIT-API-REPORT.md ("Stale API_ACCESS entries").
+  '/api/ops/procurement/purchase-orders': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING'],
 
   // Manufacturing — PM added
   '/api/ops/manufacturing': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'QC_INSPECTOR'],
@@ -429,8 +436,9 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Pricing APIs — PM added
   '/api/ops/pricing': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
 
-  // Communication APIs
-  '/api/ops/communication-log': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ACCOUNTING'],
+  // Communication APIs — real route is plural 'communication-logs'.
+  // Singular form was a typo; renamed per docs/AUDIT-API-REPORT.md.
+  '/api/ops/communication-logs': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ACCOUNTING'],
 
   // Executive APIs — open to all (sensitive data filtered at field level)
   '/api/ops/executive': ALL_ROLES,
@@ -517,8 +525,9 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Settings APIs — admin only (appearance prefs handled by /api/ops/preferences)
   '/api/ops/settings': ['ADMIN'],
 
-  // Migration endpoint — admin only
-  '/api/ops/run-migration': ['ADMIN'],
+  // (Removed stale '/api/ops/run-migration' — no such route exists.
+  // See docs/AUDIT-API-REPORT.md "Stale API_ACCESS entries". Real migration
+  // endpoints are under '/api/ops/migrate-*' and '/api/ops/auth/run-migrations'.)
 
   // Data Repair APIs — ADMIN + ACCOUNTING only. Endpoints mutate Order
   // headers per reviewer approval; no other role needs access.
@@ -526,6 +535,53 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // System Health metrics — ADMIN only.
   '/api/ops/admin/health-metrics': ['ADMIN'],
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Portal-affected route prefixes added per docs/AUDIT-API-REPORT.md
+  // ("HIGH PRIORITY — API_ACCESS registry gaps"). Without these, every
+  // non-ADMIN staff member 403'd on inspections, KPIs, MRP, warehouse,
+  // sales-briefing, lien-releases, trim-vendors, projects/standup, etc.
+  // canAccessAPI() uses longest-prefix match, so adding shorter prefixes
+  // here does not shadow existing more-specific entries (e.g. the existing
+  // '/api/ops/warehouse/picks' still wins over '/api/ops/warehouse').
+  // ──────────────────────────────────────────────────────────────────────
+
+  // MRP module — daily-output, forecast, projection, shortage-summary,
+  // stockouts, suggest-po, production-queue, demand-heatmap, draft-pos,
+  // bom-explode/[orderId], job-materials/[jobId], etc. (12 routes total).
+  '/api/ops/mrp': ['ADMIN', 'MANAGER', 'PURCHASING'],
+
+  // Trim-vendor module — purchasing's vendor list for trim/door specials.
+  '/api/ops/trim-vendors': ['ADMIN', 'MANAGER', 'PURCHASING'],
+
+  // QC inspections module — templates, photos, [id] CRUD.
+  '/api/ops/inspections': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'PROJECT_MANAGER'],
+
+  // KPIs page (everyone in office/management; matches /ops/kpis page rule).
+  '/api/ops/kpis': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+
+  // Lien-release queue — accounting-driven, leadership oversight.
+  '/api/ops/lien-releases': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+
+  // Warehouse module (Gunner's team) — bays, cross-dock, daily-plan,
+  // pick-verify, picks-for-job, ready-to-pick. Existing more-specific
+  // entries '/api/ops/warehouse/picks*' and '/cycle-count' still take
+  // precedence via longest-prefix match.
+  '/api/ops/warehouse': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
+
+  // Daily warehouse briefing.
+  '/api/ops/warehouse-briefing': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH'],
+
+  // Daily sales briefing + scorecard.
+  '/api/ops/sales-briefing': ['ADMIN', 'MANAGER', 'SALES_REP'],
+  '/api/ops/sales-scorecard': ['ADMIN', 'MANAGER', 'SALES_REP'],
+
+  // Projects/standup — project timeline, command-center, PM standup feed.
+  '/api/ops/projects': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+  '/api/ops/standup': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+
+  // Inbox — triage queue feed (page is ALL_ROLES, scoped server-side).
+  '/api/ops/inbox': ALL_ROLES,
 }
 
 export function canAccessAPI(role: StaffRole | StaffRole[], pathname: string): boolean {

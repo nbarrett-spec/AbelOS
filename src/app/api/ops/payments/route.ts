@@ -235,9 +235,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Backfill issuedAt when the invoice first becomes billable. If a
+      // payment lands against a DRAFT invoice, the act of accepting payment
+      // implicitly issues it. Audit 2026-04-24: many invoices reached
+      // PARTIALLY_PAID/PAID without ever passing through the ISSUED PATCH
+      // step, leaving issuedAt NULL.
       await prisma.$executeRawUnsafe(
         `UPDATE "Invoice"
-         SET "amountPaid" = $1, "balanceDue" = $2, "status" = $3::"InvoiceStatus", "updatedAt" = NOW()
+         SET "amountPaid" = $1, "balanceDue" = $2, "status" = $3::"InvoiceStatus",
+             "issuedAt" = COALESCE("issuedAt", NOW()),
+             "updatedAt" = NOW()
          WHERE "id" = $4`,
         newAmountPaid,
         newBalanceDue,
