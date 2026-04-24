@@ -31,7 +31,8 @@ export async function allocateForJob(jobId: string): Promise<AllocateResult> {
 
   // Check the job exists and has an order
   const jobRows: any[] = await prisma.$queryRawUnsafe(
-    `SELECT "id", "orderId", "status"::text AS status
+    `SELECT "id", "orderId", "status"::text AS status,
+            "communityId"
        FROM "Job" WHERE "id" = $1 LIMIT 1`,
     jobId
   )
@@ -46,6 +47,67 @@ export async function allocateForJob(jobId: string): Promise<AllocateResult> {
   // closed. Cron sweeps these as a belt-and-suspenders.
   if (['CLOSED', 'COMPLETE', 'INVOICED', 'DELIVERED'].includes(String(job.status))) {
     return { ...base, skipped: true, reason: `terminal_status:${job.status}` }
+  }
+
+  // ── Gold Stock fast path ──
+  // If this Job's plan has an ACTIVE GoldStockKit with ON_HAND instances, try
+  // to consume a single pre-built kit instead of bill-of-material allocating.
+  // We match by (builder, planId) derived from the Order → Quote → FloorPlan
+  // chain since Job itself doesn't carry planId.
+  try {
+    const kitMatch: any[] = await prisma.$queryRawUnsafe(
+      `SELECT k."id" AS "kitId"
+         FROM "Job" j
+         JOIN "Order" o ON o."id" = j."orderId"
+         LEFT JOIN "Quote" q ON q."id" = o."quoteId"
+         JOIN "GoldStockKit" k
+              ON k."status" = 'ACTIVE'
+             AND k."builderId" = o."builderId"
+             AND (k."planId" = q."floorPlanId" OR q."floorPlanId" IS NULL)
+         WHERE j."id" = $1
+         ORDER BY (k."planId" = q."floorPlanId") DESC NULLS LAST
+         LIMIT 1`,
+      jobId
+    )
+    if (kitMatch.length > 0) {
+      const kitId = kitMatch[0].kitId
+      const free: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "GoldStockInstance"
+          WHERE "kitId" = $1 AND "status" = 'ON_HAND'
+          ORDER BY "builtAt" ASC LIMIT 1`,
+        kitId
+      )
+      if (free.length > 0) {
+        const instanceId = free[0].id
+        await prisma.$executeRawUnsafe(
+          `UPDATE "GoldStockInstance"
+             SET "status" = 'ALLOCATED', "allocatedToJobId" = $1
+             WHERE "id" = $2 AND "status" = 'ON_HAND'`,
+          jobId,
+          instanceId
+        )
+        await prisma.$executeRawUnsafe(
+          `UPDATE "GoldStockKit"
+             SET "currentQty" = GREATEST(0, "currentQty" - 1)
+             WHERE "id" = $1`,
+          kitId
+        )
+        // Denormalize the flag so the UI renders ready-to-go.
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Job"
+             SET "allMaterialsAllocated" = true, "updatedAt" = NOW()
+             WHERE "id" = $1`,
+          jobId
+        )
+        return {
+          ...base,
+          skipped: true,
+          reason: `gold_stock:${kitId}:${instanceId}`,
+        }
+      }
+    }
+  } catch {
+    // Fall through to normal allocation if the fast-path probe errors.
   }
 
   // BoM-expand demand (same recursive walk as src/lib/mrp.ts)

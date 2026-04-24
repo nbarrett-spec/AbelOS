@@ -211,6 +211,9 @@ export default function WarehousePortal() {
           >
             + Start Pick
           </button>
+          <Link href="/ops/portal/warehouse/gold-stock" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            Gold Stock
+          </Link>
           <Link href="/ops/jobs" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
             All Jobs
           </Link>
