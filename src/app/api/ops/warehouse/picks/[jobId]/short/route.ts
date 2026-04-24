@@ -14,18 +14,19 @@ import { audit } from '@/lib/audit'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { pickId: string } }
+  { params }: { params: { jobId: string } }
 ) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
   try {
-    audit(request, 'UPDATE', 'Warehouse', params.pickId, {
+    // NOTE: routed under [jobId] for Next.js slug uniqueness, but the URL
+    // segment is semantically a MaterialPick.id. Treat it as pickId locally.
+    const pickId = params.jobId
+    audit(request, 'UPDATE', 'Warehouse', pickId, {
       method: 'POST',
       action: 'short',
     }).catch(() => {})
-
-    const { pickId } = params
     const body = await request.json().catch(() => ({}))
     const reason: string = (body?.reason || '').toString().trim() || 'Warehouse short-pick'
     const shortQty: number | null =

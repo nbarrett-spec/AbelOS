@@ -43,13 +43,13 @@ interface ClearedItem {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { poId: string } },
+  { params }: { params: { id: string } },
 ) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
   try {
-    const { poId } = params
+    const poId = params.id
     if (!poId) {
       return NextResponse.json({ error: 'poId is required' }, { status: 400 })
     }
