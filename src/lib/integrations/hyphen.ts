@@ -322,9 +322,11 @@ export async function syncPayments(): Promise<SyncResult> {
           const newBalanceDue = Math.max(0, (Number(inv.total) || 0) - newAmountPaid)
           const isPaid = newBalanceDue <= 0
 
-          // Update invoice payment status
+          // Update invoice payment status. Backfill issuedAt — a Hyphen
+          // payment notification implicitly issues a DRAFT invoice (audit
+          // 2026-04-24).
           await prisma.$executeRawUnsafe(
-            `UPDATE "Invoice" SET "amountPaid" = $1, "balanceDue" = $2, "status" = CASE WHEN $3 THEN 'PAID'::status ELSE "status" END, "paidAt" = CASE WHEN $3 THEN NOW() ELSE "paidAt" END, "updatedAt" = NOW() WHERE "id" = $4`,
+            `UPDATE "Invoice" SET "amountPaid" = $1, "balanceDue" = $2, "status" = CASE WHEN $3 THEN 'PAID'::status ELSE "status" END, "paidAt" = CASE WHEN $3 THEN NOW() ELSE "paidAt" END, "issuedAt" = COALESCE("issuedAt", NOW()), "updatedAt" = NOW() WHERE "id" = $4`,
             newAmountPaid, newBalanceDue, isPaid, inv.id
           )
 
@@ -534,7 +536,8 @@ export async function handlePaymentNotification(notification: HyphenPaymentNotif
         },
       })
 
-      // Update invoice
+      // Update invoice. Backfill issuedAt — a Hyphen payment notification
+      // implicitly issues a DRAFT invoice (audit 2026-04-24).
       const newPaid = invoice.amountPaid + notification.amount
       const newBalance = invoice.total - newPaid
       await (prisma as any).invoice.update({
@@ -544,6 +547,7 @@ export async function handlePaymentNotification(notification: HyphenPaymentNotif
           balanceDue: newBalance,
           status: newBalance <= 0 ? 'PAID' : 'PARTIALLY_PAID',
           paidAt: newBalance <= 0 ? new Date() : null,
+          issuedAt: invoice.issuedAt ?? new Date(notification.paymentDate),
         },
       })
 

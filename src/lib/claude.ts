@@ -50,6 +50,10 @@ export interface ClaudeResponse {
  * Send a message to Claude with optional tools.
  * Handles the full tool-use loop: if Claude wants to call a tool,
  * we execute it and feed the result back until Claude produces a final text response.
+ *
+ * Returns `truncated: true` when the tool-use loop hits MAX_ITERATIONS without
+ * arriving at a final text response — the caller should surface this to the UI
+ * so the user knows context was clipped.
  */
 export async function sendMessage(opts: {
   systemPrompt: string
@@ -57,19 +61,23 @@ export async function sendMessage(opts: {
   tools?: ClaudeTool[]
   executeTool?: (name: string, input: Record<string, any>) => Promise<string>
   maxTokens?: number
-}): Promise<{ text: string; toolCalls: Array<{ name: string; input: any; result: string }> }> {
+  maxIterations?: number
+}): Promise<{ text: string; toolCalls: Array<{ name: string; input: any; result: string }>; truncated?: boolean }> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     throw new Error('ANTHROPIC_API_KEY is not configured. Add it to .env.local to enable the AI assistant.')
   }
 
-  const { systemPrompt, tools, executeTool, maxTokens = 4096 } = opts
+  const { systemPrompt, tools, executeTool, maxTokens = 4096, maxIterations } = opts
   let messages = [...opts.messages]
   const toolCalls: Array<{ name: string; input: any; result: string }> = []
+  // Track the most recent partial-text response so we can surface it if we run out of iterations.
+  let lastPartialText = ''
 
-  // Tool-use loop: keep calling Claude until we get a final text response
+  // Tool-use loop: keep calling Claude until we get a final text response.
+  // Bumped from 5 -> 10 to give tool-heavy chats more headroom (BUGFIX 2.6).
   let iterations = 0
-  const MAX_ITERATIONS = 5
+  const MAX_ITERATIONS = Math.min(Math.max(maxIterations ?? 10, 1), 20)
 
   while (iterations < MAX_ITERATIONS) {
     iterations++
@@ -105,6 +113,14 @@ export async function sendMessage(opts: {
     }
 
     const result: ClaudeResponse = await response.json()
+
+    // Capture any text in this turn so we can return it as a partial answer if the loop ends.
+    const partialText = result.content
+      .filter(b => b.type === 'text')
+      .map(b => b.text || '')
+      .join('\n')
+      .trim()
+    if (partialText) lastPartialText = partialText
 
     // If Claude wants to use tools, execute them and continue the loop
     if (result.stop_reason === 'tool_use' && executeTool) {
@@ -152,7 +168,16 @@ export async function sendMessage(opts: {
     return { text, toolCalls }
   }
 
-  return { text: 'I reached my processing limit for this request. Please try a simpler question or break it into parts.', toolCalls }
+  // Hit the iteration cap — tool-call loop exhausted before a final answer.
+  // Friendlier message per BUGFIX 2.6 spec, plus any partial text Claude produced
+  // along the way so the user isn't left empty-handed.
+  const limitMessage =
+    'This question needed more steps than I can do in one turn. ' +
+    'Try breaking it into parts, or specify a tighter scope (e.g., "just for Pulte", "only this week").'
+  const text = lastPartialText
+    ? `${lastPartialText}\n\n${limitMessage}`
+    : limitMessage
+  return { text, toolCalls, truncated: true }
 }
 
 /**

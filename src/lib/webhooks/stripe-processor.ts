@@ -28,7 +28,9 @@ export async function processStripeEvent(event: any): Promise<void> {
 
       // console.log(`Payment received: Invoice ${invoiceNumber}, Amount: $${amountPaid}`)
 
-      // Update invoice: add payment amount, update status
+      // Update invoice: add payment amount, update status.
+      // Backfill issuedAt — a Stripe checkout completion implicitly issues
+      // the invoice if it was still in DRAFT (audit 2026-04-24).
       await prisma.$queryRawUnsafe(`
         UPDATE "Invoice"
         SET "amountPaid" = LEAST("amountPaid" + $1, total),
@@ -41,6 +43,7 @@ export async function processStripeEvent(event: any): Promise<void> {
               WHEN "balanceDue" - $1 <= 0 THEN NOW()
               ELSE "paidAt"
             END,
+            "issuedAt" = COALESCE("issuedAt", NOW()),
             "updatedAt" = NOW()
         WHERE id = $2
       `, amountPaid, invoiceId)

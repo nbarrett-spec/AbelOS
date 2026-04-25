@@ -19,6 +19,19 @@ function sqlSafe(input: unknown): string {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Response-size caps (BUGFIX 2.6) — keep tool replies bounded so the
+// chat agent doesn't exhaust the per-turn token budget on a single tool call.
+// ──────────────────────────────────────────────────────────────────────────
+const MAX_TOOL_LIMIT = 50
+
+/** Clamp a caller-supplied limit to a sane range. */
+function clampLimit(raw: any, fallback: number): number {
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n <= 0) return fallback
+  return Math.min(Math.floor(n), MAX_TOOL_LIMIT)
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Tool Definitions (schemas that Claude sees)
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -512,11 +525,14 @@ export async function executeTool(
 // ──────────────────────────────────────────────────────────────────────────
 
 async function toolSearchOrders(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
-  const { query, status, limit = 10 } = input
+  const { query, status } = input
+  // Default 25, hard cap 50 (BUGFIX 2.6) — keeps response payloads bounded.
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE 1=1'
   if (status) where += ` AND o."status"::text = '${sqlSafe(status)}'`
   if (query) where += ` AND (o."orderNumber" ILIKE '%${sqlSafe(query)}%' OR b."companyName" ILIKE '%${sqlSafe(query)}%' OR b."contactName" ILIKE '%${sqlSafe(query)}%')`
 
+  // Summary-only columns — no nested line items / large fields.
   const rows = await prisma.$queryRawUnsafe(`
     SELECT o.id, o."orderNumber", o.status, o.total, o."createdAt",
            o."deliveryDate", o."paymentStatus",
@@ -525,12 +541,14 @@ async function toolSearchOrders(input: Record<string, any>, canViewFinancials: b
     LEFT JOIN "Builder" b ON o."builderId" = b.id
     ${where}
     ORDER BY o."createdAt" DESC
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
     count: rows.length,
+    limit,
     orders: rows.map(r => ({
+      id: r.id,
       orderNumber: r.orderNumber,
       status: r.status,
       total: canViewFinancials ? Number(r.total) : '[restricted]',
@@ -544,7 +562,8 @@ async function toolSearchOrders(input: Record<string, any>, canViewFinancials: b
 }
 
 async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
-  const { query, status, limit = 10 } = input
+  const { query, status } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE 1=1'
   if (status) where += ` AND b."status"::text = '${sqlSafe(status)}'`
   if (query) where += ` AND (b."companyName" ILIKE '%${sqlSafe(query)}%' OR b."contactName" ILIKE '%${sqlSafe(query)}%' OR b.email ILIKE '%${sqlSafe(query)}%')`
@@ -557,7 +576,7 @@ async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
     FROM "Builder" b
     ${where}
     ORDER BY b."companyName"
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
@@ -576,7 +595,8 @@ async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
 }
 
 async function toolSearchInvoices(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
-  const { query, status, overdue_only, limit = 10 } = input
+  const { query, status, overdue_only } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE 1=1'
   if (status) where += ` AND i."status"::text = '${sqlSafe(status)}'`
   if (overdue_only) where += ` AND i."status"::text = 'OVERDUE'`
@@ -590,7 +610,7 @@ async function toolSearchInvoices(input: Record<string, any>, canViewFinancials:
     LEFT JOIN "Builder" b ON i."builderId" = b.id
     ${where}
     ORDER BY i."dueDate" ASC
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
@@ -608,7 +628,8 @@ async function toolSearchInvoices(input: Record<string, any>, canViewFinancials:
 }
 
 async function toolSearchProducts(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
-  const { query, category, limit = 10 } = input
+  const { query, category } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE p.active = true'
   if (category) where += ` AND p.category ILIKE '%${sqlSafe(category)}%'`
   if (query) where += ` AND (p.name ILIKE '%${sqlSafe(query)}%' OR p.sku ILIKE '%${sqlSafe(query)}%' OR p.category ILIKE '%${sqlSafe(query)}%')`
@@ -619,7 +640,7 @@ async function toolSearchProducts(input: Record<string, any>, canViewFinancials:
     FROM "Product" p
     ${where}
     ORDER BY p.name
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
@@ -637,7 +658,8 @@ async function toolSearchProducts(input: Record<string, any>, canViewFinancials:
 }
 
 async function toolSearchPOs(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
-  const { query, status, limit = 10 } = input
+  const { query, status } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE 1=1'
   if (status) where += ` AND po."status"::text = '${sqlSafe(status)}'`
   if (query) where += ` AND (po."poNumber" ILIKE '%${sqlSafe(query)}%' OR v.name ILIKE '%${sqlSafe(query)}%')`
@@ -650,7 +672,7 @@ async function toolSearchPOs(input: Record<string, any>, canViewFinancials: bool
     LEFT JOIN "Vendor" v ON po."vendorId" = v.id
     ${where}
     ORDER BY po."createdAt" DESC
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
@@ -693,10 +715,39 @@ async function toolJobPipeline(input: Record<string, any>): Promise<string> {
   const active = rows.filter((r: any) => r.status !== 'COMPLETE' && r.status !== 'CANCELLED')
     .reduce((s: number, r: any) => s + r.count, 0)
 
+  // BUGFIX 2.6: when caller asks for details, return at most 20 recent active jobs
+  // with summary fields only — never full nested relations.
+  let recentJobs: Array<Record<string, any>> | undefined
+  if (input?.include_details) {
+    try {
+      const detailRows = await prisma.$queryRawUnsafe(`
+        SELECT j."id", j."jobNumber", j."status", j."builderName",
+               j."community", j."jobAddress", j."scheduledDate",
+               j."createdAt"
+        FROM "Job" j
+        WHERE j."status"::text NOT IN ('COMPLETE', 'CANCELLED')
+        ORDER BY j."createdAt" DESC
+        LIMIT 20
+      `) as any[]
+      recentJobs = detailRows.map(r => ({
+        jobNumber: r.jobNumber,
+        status: r.status,
+        builder: r.builderName,
+        community: r.community,
+        address: r.jobAddress,
+        scheduledDate: r.scheduledDate,
+      }))
+    } catch {
+      // Schema may differ across environments — soft-fail without breaking the summary.
+      recentJobs = undefined
+    }
+  }
+
   return JSON.stringify({
     totalJobs: total,
     activeJobs: active,
     pipeline: rows.map(r => ({ status: r.status, count: r.count })),
+    ...(recentJobs && { recentJobs }),
   })
 }
 
@@ -832,7 +883,8 @@ function toolCreatePO(input: Record<string, any>): string {
 }
 
 async function toolInventoryStatus(input: Record<string, any>): Promise<string> {
-  const { product_query, low_stock_only, limit = 20 } = input
+  const { product_query } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE p.active = true'
   if (product_query) {
     const q = sqlSafe(product_query)
@@ -844,7 +896,7 @@ async function toolInventoryStatus(input: Record<string, any>): Promise<string> 
     FROM "Product" p
     ${where}
     ORDER BY p.name
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
@@ -859,7 +911,8 @@ async function toolInventoryStatus(input: Record<string, any>): Promise<string> 
 }
 
 async function toolSearchVendors(input: Record<string, any>): Promise<string> {
-  const { query, limit = 10 } = input
+  const { query } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE v.active = true'
   if (query) {
     const q = sqlSafe(query)
@@ -873,7 +926,7 @@ async function toolSearchVendors(input: Record<string, any>): Promise<string> {
     FROM "Vendor" v
     ${where}
     ORDER BY v.name
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
@@ -923,7 +976,8 @@ async function toolStaffDirectory(input: Record<string, any>): Promise<string> {
 }
 
 async function toolGetQuotes(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
-  const { query, status, limit = 10 } = input
+  const { query, status } = input
+  const limit = clampLimit(input.limit, 25)
   let where = 'WHERE 1=1'
   if (status) where += ` AND q."status"::text = '${sqlSafe(status)}'`
   if (query) where += ` AND (q."quoteNumber" ILIKE '%${sqlSafe(query)}%')`
@@ -934,7 +988,7 @@ async function toolGetQuotes(input: Record<string, any>, canViewFinancials: bool
     FROM "Quote" q
     ${where}
     ORDER BY q."createdAt" DESC
-    LIMIT ${Number(limit)}
+    LIMIT ${limit}
   `) as any[]
 
   return JSON.stringify({
