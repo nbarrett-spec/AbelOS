@@ -1,15 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import ExplodedDoor from '@/components/ExplodedDoor'
 
 export default function Home(): JSX.Element {
-  const [mounted, setMounted] = useState<boolean>(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>): void => {
     const href = e.currentTarget.getAttribute('href')
     if (href?.startsWith('#')) {
@@ -22,16 +16,9 @@ export default function Home(): JSX.Element {
   return (
     <div className="min-h-screen bg-[#0a1628] text-white overflow-hidden">
       <style>{`
-        @keyframes orbPulse {
-          0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
-          50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.25; }
-        }
         @keyframes gradient-shift {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
-        }
-        .orb-animation {
-          animation: orbPulse 6s ease-in-out infinite;
         }
         .smooth-scroll {
           scroll-behavior: smooth;
@@ -71,55 +58,53 @@ export default function Home(): JSX.Element {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-20 overflow-hidden">
-        {/* Animated Gradient Orb Background */}
-        {mounted && (
-          <div
-            className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-500/30 via-orange-500/20 to-amber-600/30 rounded-full blur-3xl orb-animation"
-            style={{
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
-        )}
+      {/* Hero Section — two-column on lg+, single column below */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-20 overflow-hidden">
+        <div className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: text content */}
+          <div className="text-center lg:text-left">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
+              <div className="w-2 h-2 rounded-full bg-signal-hover animate-pulse" />
+              <span className="text-sm font-medium text-signal-hover">
+                AI-Powered Blueprint Intelligence
+              </span>
+            </div>
 
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8">
-            <div className="w-2 h-2 rounded-full bg-signal-hover animate-pulse" />
-            <span className="text-sm font-medium text-signal-hover">
-              AI-Powered Blueprint Intelligence
-            </span>
+            {/* Headline */}
+            <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-4">
+              Upload a Blueprint.
+            </h1>
+            <h2 className="text-5xl md:text-6xl font-bold text-signal-hover leading-tight mb-8">
+              Get a Quote in Minutes.
+            </h2>
+
+            {/* Subtitle */}
+            <p className="text-lg text-white/60 max-w-xl mb-12 leading-relaxed">
+              Abel's AI reads your blueprints, generates accurate material takeoffs, and produces instant quotes—with your custom pricing and flexible payment terms.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Link
+                href="/apply"
+                className="bg-signal hover:bg-signal-hover text-black font-semibold px-8 py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg shadow-amber-500/20"
+              >
+                Apply for Builder Account
+              </Link>
+              <a
+                href="#how-it-works"
+                onClick={handleNavigation}
+                className="border border-white/20 hover:bg-white/5 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all duration-200"
+              >
+                See How It Works
+              </a>
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">
-            Upload a Blueprint.
-          </h1>
-          <h2 className="text-5xl md:text-7xl font-bold text-signal-hover leading-tight mb-8">
-            Get a Quote in Minutes.
-          </h2>
-
-          {/* Subtitle */}
-          <p className="text-lg text-white/60 max-w-2xl mx-auto mb-12 leading-relaxed">
-            Abel's AI reads your blueprints, generates accurate material takeoffs, and produces instant quotes—with your custom pricing and flexible payment terms. Built for builders who demand precision.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link
-              href="/apply"
-              className="bg-signal hover:bg-signal-hover text-black font-semibold px-8 py-4 rounded-xl text-lg transition-colors duration-200 shadow-lg shadow-amber-500/20"
-            >
-              Apply for Builder Account
-            </Link>
-            <a
-              href="#how-it-works"
-              onClick={handleNavigation}
-              className="border border-white/20 hover:bg-white/5 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all duration-200"
-            >
-              See How It Works
-            </a>
+          {/* Right: exploded door — hidden below lg, takes the space the orb used to occupy */}
+          <div className="hidden lg:block">
+            <ExplodedDoor variant="hero" autoPlay loop loopInterval={6000} />
           </div>
         </div>
       </section>

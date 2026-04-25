@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Wrench } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
+import ExplodedDoor from '@/components/ExplodedDoor'
 
 export default function BOMManagementPage() {
   const [parents, setParents] = useState<any[]>([])
@@ -293,13 +294,18 @@ export default function BOMManagementPage() {
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-xl border p-6">
-              <EmptyState
-                size="full"
-                icon={<Wrench className="w-10 h-10 text-fg-subtle" />}
-                title="Select a product to view or edit its BOM"
-                description="Choose from the left panel, or pick a product to set up a new BOM"
-              />
+            <div className="space-y-6">
+              <div className="flex justify-center py-4">
+                <ExplodedDoor variant="compact" autoPlay />
+              </div>
+              <div className="bg-white rounded-xl border p-6">
+                <EmptyState
+                  size="full"
+                  icon={<Wrench className="w-10 h-10 text-fg-subtle" />}
+                  title="Select a product to view or edit its BOM"
+                  description="Choose from the left panel, or pick a product to set up a new BOM. Click the door above to see how a 3080 2-panel prehung breaks down."
+                />
+              </div>
             </div>
           )}
         </div>
