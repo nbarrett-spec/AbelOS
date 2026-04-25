@@ -24,9 +24,9 @@
   --grad-subtle: linear-gradient(135deg, var(--c1), var(--c2));
 
   /* ── Blueprint primitives ────────────────────────────────────────────── */
-  --bp-fine:       rgba(79,70,229,0.045);    /* thin grid lines */
-  --bp-major:      rgba(79,70,229,0.075);    /* thick grid lines */
-  --bp-annotation: rgba(79,70,229,0.15);     /* callout/dimension lines */
+  --bp-fine:       rgba(79,70,229,0.09);     /* thin grid lines — bumped for light-mode visibility */
+  --bp-major:      rgba(79,70,229,0.15);     /* thick grid lines — bumped for light-mode visibility */
+  --bp-annotation: rgba(79,70,229,0.25);     /* callout/dimension lines — bumped */
   --bp-redline:    rgba(239,68,68,0.6);      /* change/alert markup */
 
   /* ── Legacy Drafting Room primitives (backward compat aliases) ────── */
@@ -73,8 +73,8 @@
   --glass:         rgba(255,255,255,0.72);
   --glass-border:  rgba(79,70,229,0.14);
   --glass-blur:    blur(24px) saturate(1.4);
-  --glass-shadow:  0 10px 44px rgba(30,58,138,0.10), 0 0 0 1px rgba(79,70,229,0.03);
-  --glass-hover:   0 28px 80px rgba(30,58,138,0.16), 0 0 0 1px rgba(79,70,229,0.06);
+  --glass-shadow:  0 10px 44px rgba(30,58,138,0.14), 0 0 0 1px rgba(79,70,229,0.08);
+  --glass-hover:   0 28px 80px rgba(30,58,138,0.20), 0 0 0 1px rgba(79,70,229,0.12);
 
   /* ── Typography stacks ──────────────────────────────────────────────── */
   --font-sans-stack:    'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -173,20 +173,20 @@
 
 /* ── Layer 2: Semantic tokens (LIGHT — cool blueprint paper) ─────────────── */
 :root {
-  --canvas:             #F0F4FA;
+  --canvas:             #E8EDF6;
   --surface:            #FFFFFF;
-  --surface-muted:      #E8ECF4;
+  --surface-muted:      #DEE4F0;
   --surface-elevated:   #FFFFFF;
   --surface-floating:   #FFFFFF;
   --surface-inverse:    #080D1A;
 
-  --border:             rgba(30,58,138,0.06);
-  --border-strong:      rgba(30,58,138,0.12);
+  --border:             rgba(30,58,138,0.12);
+  --border-strong:      rgba(30,58,138,0.22);
   --border-focus:       var(--c1);
 
   --fg:                 #0F172A;
-  --fg-muted:           #475569;
-  --fg-subtle:          #94A3B8;
+  --fg-muted:           #3D4F63;
+  --fg-subtle:          #6B7C8F;
   --fg-inverse:         #FFFFFF;
   --fg-on-accent:       #FFFFFF;
 
@@ -231,9 +231,9 @@
   --grid-ink:           var(--bp-fine);
 
   /* Grid / tabular */
-  --row-hover:          rgba(79,70,229,0.03);
-  --row-selected:       rgba(79,70,229,0.06);
-  --grid-line:          rgba(30,58,138,0.06);
+  --row-hover:          rgba(79,70,229,0.05);
+  --row-selected:       rgba(79,70,229,0.08);
+  --grid-line:          rgba(30,58,138,0.10);
 
   /* Elevation */
   --elev-1: var(--shadow-1);
@@ -261,9 +261,9 @@ html.dark {
   --c4: #2DD4BF;   /* teal-300 */
 
   /* Blueprint grid brighter in dark — visible but not overwhelming */
-  --bp-fine:       rgba(99,102,241,0.07);
-  --bp-major:      rgba(99,102,241,0.12);
-  --bp-annotation: rgba(99,102,241,0.26);
+  --bp-fine:       rgba(99,102,241,0.09);
+  --bp-major:      rgba(99,102,241,0.15);
+  --bp-annotation: rgba(99,102,241,0.30);
   --bp-redline:    rgba(248,113,113,0.65);
 
   /* Glass system — deeper frosting in dark, strong panel separation */
