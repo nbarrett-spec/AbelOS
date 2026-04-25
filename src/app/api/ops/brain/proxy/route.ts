@@ -87,13 +87,17 @@ async function proxyToBrain(request: NextRequest, method: string) {
       'User-Agent': 'AbelOS-Proxy/1.0',
     }
 
-    // Add Cloudflare Access service token if configured
+    // Add Cloudflare Access service token if configured (legacy — still honored
+    // while CF Access is in the path; no-op after cutover).
     const cfClientId = process.env.CF_ACCESS_CLIENT_ID
     const cfClientSecret = process.env.CF_ACCESS_CLIENT_SECRET
     if (cfClientId && cfClientSecret) {
       headers['CF-Access-Client-Id'] = cfClientId
       headers['CF-Access-Client-Secret'] = cfClientSecret
     }
+    // Add app-level Brain API key (new primary machine-to-machine auth).
+    const brainApiKey = process.env.BRAIN_API_KEY
+    if (brainApiKey) headers['X-API-Key'] = brainApiKey
 
     // Forward the request
     const fetchOptions: RequestInit = {

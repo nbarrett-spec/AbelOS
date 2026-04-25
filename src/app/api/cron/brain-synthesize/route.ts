@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
     headers['CF-Access-Client-Id'] = cfId
     headers['CF-Access-Client-Secret'] = cfSecret
   }
+  const brainApiKey = process.env.BRAIN_API_KEY
+  if (brainApiKey) headers['X-API-Key'] = brainApiKey
 
   const stages = ['ingest', 'polish', 'narrate'] as const
   const results: Array<{ stage: string; status: number; ok: boolean }> = []

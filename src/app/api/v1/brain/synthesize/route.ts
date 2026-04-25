@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
     headers['CF-Access-Client-Id'] = cfId
     headers['CF-Access-Client-Secret'] = cfSecret
   }
+  const brainApiKey = process.env.BRAIN_API_KEY
+  if (brainApiKey) headers['X-API-Key'] = brainApiKey
 
   const results: Array<{ stage: string; status: number; ok: boolean; body?: unknown }> = []
   for (const stage of stages) {

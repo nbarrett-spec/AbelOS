@@ -86,6 +86,8 @@ function cfHeaders(): Record<string, string> {
     h['CF-Access-Client-Id'] = id
     h['CF-Access-Client-Secret'] = secret
   }
+  const brainKey = process.env.BRAIN_API_KEY
+  if (brainKey) h['X-API-Key'] = brainKey
   return h
 }
 

@@ -60,6 +60,10 @@ export async function verifyEngineToken(req: NextRequest): Promise<EngineAuth> {
  *   NUC_URL                  public base URL (e.g. https://nuc.abellumber.com).
  *                            Legacy NUC_TAILSCALE_URL is still read as a fallback.
  *   NUC_AGENT_TOKEN          must match COORDINATOR_API_KEY on the NUC
+ *   BRAIN_API_KEY            (optional) shared secret for the Brain's new
+ *                            app-level auth middleware (AUTH_API_KEY on the NUC).
+ *                            Sent as X-API-Key. Coexists with CF Access during
+ *                            the cutover window.
  *   CF_ACCESS_CLIENT_ID      (optional) CF Access service-token client ID
  *   CF_ACCESS_CLIENT_SECRET  (optional) CF Access service-token client secret
  */
@@ -82,6 +86,14 @@ export async function forwardToNuc(
         }
       : {}
 
+  // X-API-Key header for the Brain's app-level auth middleware. When this env
+  // var is set, outbound requests carry both auth modes so we can flip CF
+  // Access off without coordinated code/env changes.
+  const brainApiKey = process.env.BRAIN_API_KEY
+  const appAuthHeaders: Record<string, string> = brainApiKey
+    ? { 'X-API-Key': brainApiKey }
+    : {}
+
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort(), init?.timeoutMs ?? 65_000)
   try {
@@ -91,6 +103,7 @@ export async function forwardToNuc(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
         ...cfAccessHeaders,
+        ...appAuthHeaders,
         ...(init?.headers || {}),
       },
       signal: controller.signal,

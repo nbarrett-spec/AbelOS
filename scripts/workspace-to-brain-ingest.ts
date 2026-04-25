@@ -24,6 +24,7 @@ const ROOT = path.resolve(__dirname, '..', '..')
 const BRAIN_URL = process.env.NUC_BRAIN_URL || 'https://brain.abellumber.com'
 const CF_ID = process.env.CF_ACCESS_CLIENT_ID
 const CF_SECRET = process.env.CF_ACCESS_CLIENT_SECRET
+const BRAIN_API_KEY = process.env.BRAIN_API_KEY
 
 // CLI: --dir <path> can be passed multiple times to limit ingestion to specific folders
 function getDirArgs(): string[] {
@@ -220,14 +221,18 @@ function fileToEvent(absPath: string): BrainEvent | null {
 }
 
 async function postBatch(events: BrainEvent[]): Promise<{ status: number; body: string }> {
-  if (!CF_ID || !CF_SECRET) throw new Error('CF Access creds missing in env')
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (CF_ID && CF_SECRET) {
+    headers['CF-Access-Client-Id'] = CF_ID
+    headers['CF-Access-Client-Secret'] = CF_SECRET
+  }
+  if (BRAIN_API_KEY) headers['X-API-Key'] = BRAIN_API_KEY
+  if (!headers['X-API-Key'] && !headers['CF-Access-Client-Id']) {
+    throw new Error('Either BRAIN_API_KEY or CF_ACCESS_CLIENT_* must be set')
+  }
   const r = await fetch(`${BRAIN_URL}/brain/ingest/batch`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'CF-Access-Client-Id': CF_ID,
-      'CF-Access-Client-Secret': CF_SECRET,
-    },
+    headers,
     body: JSON.stringify(events),
     signal: AbortSignal.timeout(60_000),
   })
@@ -238,7 +243,8 @@ async function postBatch(events: BrainEvent[]): Promise<{ status: number; body: 
 async function main() {
   console.log(`Workspace → Brain ingestion — mode: ${DRY_RUN ? 'DRY-RUN' : 'COMMIT'}`)
   console.log(`Brain URL: ${BRAIN_URL}`)
-  console.log(`CF Access creds: ${CF_ID && CF_SECRET ? 'present' : 'MISSING (will fail in commit mode)'}`)
+  const hasAuth = (CF_ID && CF_SECRET) || BRAIN_API_KEY
+  console.log(`Auth: ${BRAIN_API_KEY ? 'BRAIN_API_KEY' : ''}${BRAIN_API_KEY && CF_ID ? ' + ' : ''}${CF_ID && CF_SECRET ? 'CF Access' : ''}${hasAuth ? '' : 'MISSING (will fail in commit mode)'}`)
   console.log()
 
   // Collect targets — if --dir overrides given, honor those; else default to memory/brain/strategic
