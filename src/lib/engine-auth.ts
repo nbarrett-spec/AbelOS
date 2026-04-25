@@ -90,6 +90,11 @@ export async function forwardToNuc(
   // var is set, outbound requests carry both auth modes so we can flip CF
   // Access off without coordinated code/env changes.
   const brainApiKey = process.env.BRAIN_API_KEY
+  // Send both X-API-Key (works direct-to-NUC) and Authorization Bearer (works
+  // through CF; CF strips X-API-Key on the brain.abellumber.com hostname).
+  // forwardToNuc already sets Authorization for the NUC_AGENT_TOKEN, so for
+  // brain-targeted callers using BRAIN_API_KEY we use X-API-Key only here —
+  // the brain-facing routes set their own Authorization header explicitly.
   const appAuthHeaders: Record<string, string> = brainApiKey
     ? { 'X-API-Key': brainApiKey }
     : {}

@@ -97,7 +97,10 @@ async function proxyToBrain(request: NextRequest, method: string) {
     }
     // Add app-level Brain API key (new primary machine-to-machine auth).
     const brainApiKey = process.env.BRAIN_API_KEY
-    if (brainApiKey) headers['X-API-Key'] = brainApiKey
+    if (brainApiKey) {
+      headers['X-API-Key'] = brainApiKey
+      headers['Authorization'] = `Bearer ${brainApiKey}` // CF strips X-API-Key
+    }
 
     // Forward the request
     const fetchOptions: RequestInit = {

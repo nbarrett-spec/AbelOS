@@ -41,7 +41,10 @@ async function brainFetch(path: string, timeout = 25000): Promise<any> {
     headers['CF-Access-Client-Secret'] = cfClientSecret
   }
   const brainApiKey = process.env.BRAIN_API_KEY
-  if (brainApiKey) headers['X-API-Key'] = brainApiKey
+  if (brainApiKey) {
+    headers['X-API-Key'] = brainApiKey
+    headers['Authorization'] = `Bearer ${brainApiKey}` // CF strips X-API-Key
+  }
 
   const response = await fetch(`${BRAIN_BASE_URL}/brain/${path}`, {
     method: 'GET',

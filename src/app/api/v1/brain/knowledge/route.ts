@@ -43,7 +43,10 @@ export async function GET(req: NextRequest) {
     headers['CF-Access-Client-Secret'] = cfSecret
   }
   const brainApiKey = process.env.BRAIN_API_KEY
-  if (brainApiKey) headers['X-API-Key'] = brainApiKey
+  if (brainApiKey) {
+    headers['X-API-Key'] = brainApiKey
+    headers['Authorization'] = `Bearer ${brainApiKey}` // CF strips X-API-Key
+  }
 
   try {
     const res = await fetch(`${BRAIN_BASE_URL}${path}${tail}`, {

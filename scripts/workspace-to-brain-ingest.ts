@@ -226,7 +226,10 @@ async function postBatch(events: BrainEvent[]): Promise<{ status: number; body: 
     headers['CF-Access-Client-Id'] = CF_ID
     headers['CF-Access-Client-Secret'] = CF_SECRET
   }
-  if (BRAIN_API_KEY) headers['X-API-Key'] = BRAIN_API_KEY
+  if (BRAIN_API_KEY) {
+    headers['X-API-Key'] = BRAIN_API_KEY
+    headers['Authorization'] = `Bearer ${BRAIN_API_KEY}` // CF strips X-API-Key
+  }
   if (!headers['X-API-Key'] && !headers['CF-Access-Client-Id']) {
     throw new Error('Either BRAIN_API_KEY or CF_ACCESS_CLIENT_* must be set')
   }
