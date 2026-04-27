@@ -163,6 +163,38 @@ export async function onOrderConfirmed(orderId: string): Promise<CascadeResult> 
       }
     }
 
+    // ── Phase 3B.2: Check inventory on confirm ───────────────────────────
+    // Flags backorder/shortage situations as soon as an order is confirmed
+    // so the PM and warehouse can react before production starts. Read-only
+    // signal — never blocks the cascade.
+    if (await isSystemAutomationEnabled('order.confirmed.check_inventory')) {
+      try {
+        const shortages: any[] = await prisma.$queryRawUnsafe(
+          `SELECT oi."productId", oi."description", oi."quantity" AS "needed",
+                  COALESCE(ii."onHand", 0) AS "onHand"
+           FROM "OrderItem" oi
+           LEFT JOIN "InventoryItem" ii ON ii."productId" = oi."productId"
+           WHERE oi."orderId" = $1
+             AND oi."productId" IS NOT NULL
+             AND COALESCE(ii."onHand", 0) < oi."quantity"`,
+          orderId,
+        )
+        if (shortages.length > 0) {
+          await safeInboxInsert({
+            type: 'BACKORDER_ALERT',
+            source: 'order-lifecycle',
+            title: `Backorder alert — ${shortages.length} item${shortages.length === 1 ? '' : 's'} short on ${order.orderNumber}`,
+            description: `${order.builderName || 'Builder'} order has ${shortages.length} short item${shortages.length === 1 ? '' : 's'}. Review and trigger purchasing or substitution.`,
+            priority: 'HIGH',
+            entityType: 'Order',
+            entityId: orderId,
+          })
+        }
+      } catch (err) {
+        logger.error('cascade_check_inventory_failed', err as Error, { orderId })
+      }
+    }
+
     // Create task — assigned PM schedules delivery. Only fires if a PM is
     // already assigned to the Job; otherwise the inbox item handles claim
     // routing.
@@ -356,6 +388,86 @@ export async function onOrderComplete(orderId: string): Promise<CascadeResult> {
 }
 
 /**
+ * onOrderCancelled — fires when an Order moves to CANCELLED.
+ * Phase 3B.7: voids any DRAFT invoice and releases reserved inventory back
+ * to onHand. Both actions gated by their own SystemAutomation toggles so
+ * they default to OFF; admins flip them on once they trust the behavior.
+ *
+ * IMPORTANT: only voids DRAFT invoices. ISSUED, SENT, or PARTIALLY_PAID
+ * invoices need manual handling (credit memos, refunds) — those workflows
+ * shouldn't be auto-voided.
+ */
+export async function onOrderCancelled(orderId: string): Promise<CascadeResult> {
+  try {
+    let voidedInvoiceId: string | null = null
+    let releasedItemCount = 0
+
+    // ── Toggle: order.cancelled.void_draft_invoice ────────────────────────
+    if (await isSystemAutomationEnabled('order.cancelled.void_draft_invoice')) {
+      try {
+        const drafts: any[] = await prisma.$queryRawUnsafe(
+          `SELECT "id" FROM "Invoice"
+           WHERE "orderId" = $1 AND "status"::text = 'DRAFT'
+           LIMIT 1`,
+          orderId,
+        )
+        if (drafts[0]?.id) {
+          voidedInvoiceId = drafts[0].id
+          await prisma.$executeRawUnsafe(
+            `UPDATE "Invoice"
+             SET "status" = 'VOID'::"InvoiceStatus", "updatedAt" = NOW()
+             WHERE "id" = $1`,
+            voidedInvoiceId,
+          )
+        }
+      } catch (err) {
+        logger.error('cascade_cancel_void_invoice_failed', err as Error, { orderId })
+      }
+    }
+
+    // ── Toggle: order.cancelled.release_inventory ─────────────────────────
+    // Walks OrderItems, increments InventoryItem.onHand by the order qty.
+    // No-op for OrderItems with no productId (custom line items / labor).
+    if (await isSystemAutomationEnabled('order.cancelled.release_inventory')) {
+      try {
+        const items: any[] = await prisma.$queryRawUnsafe(
+          `SELECT "productId", "quantity"
+           FROM "OrderItem"
+           WHERE "orderId" = $1 AND "productId" IS NOT NULL`,
+          orderId,
+        )
+        for (const item of items) {
+          try {
+            await prisma.$executeRawUnsafe(
+              `UPDATE "InventoryItem"
+               SET "onHand" = "onHand" + $1, "updatedAt" = NOW()
+               WHERE "productId" = $2`,
+              Number(item.quantity || 0),
+              item.productId,
+            )
+            releasedItemCount++
+          } catch {
+            // best-effort per-item — keep going on partial failure
+          }
+        }
+      } catch (err) {
+        logger.error('cascade_cancel_release_inventory_failed', err as Error, { orderId })
+      }
+    }
+
+    return {
+      ok: true,
+      action: 'onOrderCancelled',
+      detail: `voided=${voidedInvoiceId ? 1 : 0} released=${releasedItemCount}`,
+      invoiceId: voidedInvoiceId || undefined,
+    }
+  } catch (e: any) {
+    logger.error('cascade_onOrderCancelled_failed', e, { orderId })
+    return { ok: false, action: 'onOrderCancelled', detail: e?.message }
+  }
+}
+
+/**
  * Hub dispatcher — call this from any route that mutates Order.status and
  * we'll pick the right cascade(s) based on the new status. Idempotent.
  */
@@ -373,6 +485,9 @@ export async function runOrderStatusCascades(orderId: string, newStatus: string 
     if (s === 'COMPLETE') {
       await onOrderConfirmed(orderId)
       await onOrderComplete(orderId)
+    }
+    if (s === 'CANCELLED') {
+      await onOrderCancelled(orderId)
     }
   } catch (e: any) {
     logger.error('runOrderStatusCascades_failed', e, { orderId, newStatus })
