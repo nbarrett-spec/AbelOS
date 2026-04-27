@@ -465,6 +465,10 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Procurement intelligence — PM added
   '/api/ops/procurement-intelligence': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING'],
   '/api/ops/automations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD', 'ACCOUNTING', 'SALES_REP'],
+  // System automations control core platform behavior (cascades, staff
+  // notifications, builder emails). Restricted to ADMIN/MANAGER. Phase 2
+  // of AUTOMATIONS-HANDOFF.md.
+  '/api/ops/system-automations': ['ADMIN', 'MANAGER'],
   '/api/ops/ai/daily-briefing': ALL_ROLES,
   '/api/ops/ai/chat': ALL_ROLES,
   '/api/ops/ai': ALL_ROLES,
