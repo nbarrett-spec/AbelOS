@@ -738,3 +738,26 @@ export async function getManagers(): Promise<string[]> {
     return []
   }
 }
+
+/**
+ * Resolve a real Staff ID to use as `creatorId` on system-generated Tasks.
+ * `Task.creatorId` is FK Restrict on Staff so a literal 'system' string
+ * would fail. Picks first active admin/manager, falls back to any active
+ * staff. Returns null only if Staff is empty (shouldn't happen in prod).
+ */
+export async function getSystemCreatorId(): Promise<string | null> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Staff"
+       WHERE "active" = true AND "role"::text IN ('ADMIN', 'MANAGER')
+       ORDER BY "createdAt" ASC LIMIT 1`,
+    )
+    if (rows[0]?.id) return rows[0].id
+    const fallback: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Staff" WHERE "active" = true ORDER BY "createdAt" ASC LIMIT 1`,
+    )
+    return fallback[0]?.id || null
+  } catch {
+    return null
+  }
+}

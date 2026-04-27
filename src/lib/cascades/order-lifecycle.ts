@@ -14,6 +14,12 @@
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { isSystemAutomationEnabled } from '@/lib/system-automations'
+import {
+  notifyStaff,
+  getStaffByRole,
+  getAssignedPM,
+  getSystemCreatorId,
+} from '@/lib/notifications'
 
 type CascadeResult = {
   ok: boolean
@@ -104,6 +110,90 @@ export async function onOrderConfirmed(orderId: string): Promise<CascadeResult> 
         entityType: jobId ? 'Job' : 'Order',
         entityId: jobId || orderId,
       })
+    }
+
+    // ── Phase 3 staff notifications + tasks ──────────────────────────────
+    // All fire-and-forget. Each gated by its own SystemAutomation toggle.
+    // Failures here must never roll back the order confirmation.
+
+    // Notify warehouse leads — order confirmed, prep stock + production
+    if (await isSystemAutomationEnabled('order.confirmed.notify_warehouse')) {
+      try {
+        const warehouseLeads = await getStaffByRole('WAREHOUSE_LEAD')
+        if (warehouseLeads.length > 0) {
+          const itemRows: any[] = await prisma.$queryRawUnsafe(
+            `SELECT COUNT(*)::int AS cnt FROM "OrderItem" WHERE "orderId" = $1`,
+            orderId,
+          )
+          const itemCount = itemRows[0]?.cnt ?? 0
+          notifyStaff({
+            staffIds: warehouseLeads,
+            type: 'JOB_UPDATE',
+            title: `Order ${order.orderNumber} confirmed — ${itemCount} item${itemCount === 1 ? '' : 's'}`,
+            body: `${order.builderName || 'Builder'} order confirmed. Check stock and begin production.`,
+            link: `/ops/orders/${orderId}`,
+          }).catch(() => {})
+        }
+      } catch (err) {
+        logger.error('cascade_notify_warehouse_failed', err as Error, { orderId })
+      }
+    }
+
+    // Notify accounting — heads-up on incoming invoice
+    if (await isSystemAutomationEnabled('order.confirmed.notify_accounting')) {
+      try {
+        const accounting = await getStaffByRole('ACCOUNTING')
+        if (accounting.length > 0) {
+          const totalRow: any[] = await prisma.$queryRawUnsafe(
+            `SELECT "total", "paymentTerm"::text AS "paymentTerm" FROM "Order" WHERE "id" = $1`,
+            orderId,
+          )
+          const total = Number(totalRow[0]?.total || 0)
+          const paymentTerm = totalRow[0]?.paymentTerm || 'NET_15'
+          notifyStaff({
+            staffIds: accounting,
+            type: 'JOB_UPDATE',
+            title: `Order ${order.orderNumber} confirmed — expect invoice on delivery`,
+            body: `${order.builderName || 'Builder'}, $${total.toLocaleString()}, terms ${paymentTerm}. Invoice will auto-create on delivery.`,
+            link: `/ops/orders/${orderId}`,
+          }).catch(() => {})
+        }
+      } catch (err) {
+        logger.error('cascade_notify_accounting_failed', err as Error, { orderId })
+      }
+    }
+
+    // Create task — assigned PM schedules delivery. Only fires if a PM is
+    // already assigned to the Job; otherwise the inbox item handles claim
+    // routing.
+    if (jobId && (await isSystemAutomationEnabled('order.confirmed.task_schedule'))) {
+      try {
+        const pmId = await getAssignedPM(orderId)
+        const creatorId = await getSystemCreatorId()
+        if (pmId && creatorId) {
+          const taskId = `tsk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "Task" (
+              "id", "assigneeId", "creatorId", "jobId", "title", "description",
+              "priority", "status", "category", "dueDate",
+              "createdAt", "updatedAt", "createdById"
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6,
+              'HIGH'::"TaskPriority", 'TODO'::"TaskStatus", 'GENERAL'::"TaskCategory",
+              (NOW() + INTERVAL '2 days'),
+              NOW(), NOW(), $3
+            )`,
+            taskId,
+            pmId,
+            creatorId,
+            jobId,
+            `Schedule delivery for Job ${jobNumber || ''}`.trim(),
+            `${order.builderName || 'Builder'} — order ${order.orderNumber} confirmed. Coordinate delivery date and assign crew.`,
+          )
+        }
+      } catch (err) {
+        logger.error('cascade_task_schedule_failed', err as Error, { orderId })
+      }
     }
 
     return {
