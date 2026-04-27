@@ -634,6 +634,10 @@ export default function MaterialCalendarPage() {
               rangeStart={rangeStart}
               jobsByDay={jobsByDay}
               onJobClick={setDrillJobId}
+              onSelectDate={(d) => {
+                setAnchorDate(d)
+                setView('day')
+              }}
             />
           ) : view === 'day' ? (
             <DayView
@@ -648,6 +652,10 @@ export default function MaterialCalendarPage() {
               anchorDate={anchorDate}
               jobsByDay={jobsByDay}
               onJobClick={setDrillJobId}
+              onSelectDate={(d) => {
+                setAnchorDate(d)
+                setView('day')
+              }}
             />
           )}
         </main>
@@ -760,8 +768,13 @@ function JobCard({ job, onClick, compact = false }: { job: CalendarJob; onClick:
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="w-full text-left rounded-md border border-border bg-surface-elevated hover:shadow-md hover:ring-2 hover:ring-[var(--signal,#b48a3a)]/40 transition-all overflow-hidden group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal,#b48a3a)]/60"
+      onClick={(e) => {
+        // Defensive: stop bubble so any future day-cell drill handler
+        // doesn't double-fire, and ensure this click always wins.
+        e.stopPropagation()
+        if (job.jobId) onClick()
+      }}
+      className="relative z-[2] pointer-events-auto w-full text-left rounded-md border border-border bg-surface-elevated hover:shadow-md hover:ring-2 hover:ring-[var(--signal,#b48a3a)]/40 transition-all overflow-hidden group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal,#b48a3a)]/60"
       style={{ borderLeft: `3px solid ${cfg.border}` }}
       title={`${job.jobNumber} \u2022 ${job.materialStatus} \u2022 click for details`}
     >
@@ -808,10 +821,12 @@ function WeekView({
   rangeStart,
   jobsByDay,
   onJobClick,
+  onSelectDate,
 }: {
   rangeStart: Date
   jobsByDay: Map<string, CalendarJob[]>
   onJobClick: (id: string) => void
+  onSelectDate?: (d: Date) => void
 }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(rangeStart, i))
   const today = new Date()
@@ -828,14 +843,19 @@ function WeekView({
               isToday ? 'border-[var(--signal,#b48a3a)]' : 'border-border'
             }`}
           >
-            <div className={`px-2.5 py-1.5 border-b border-border flex items-center justify-between ${isToday ? 'bg-[var(--signal,#b48a3a)]/10' : ''}`}>
+            <button
+              type="button"
+              onClick={() => onSelectDate?.(d)}
+              title="Open day view"
+              className={`relative z-[2] pointer-events-auto w-full px-2.5 py-1.5 border-b border-border flex items-center justify-between cursor-pointer hover:bg-surface-muted/40 transition-colors text-left ${isToday ? 'bg-[var(--signal,#b48a3a)]/10' : ''}`}
+            >
               <span className="text-[11px] font-medium text-fg-muted">
                 {fmtDayShort(d)}
               </span>
               <span className="font-mono tabular-nums text-[13px] text-fg">
                 {fmtDayNumOnly(d)}
               </span>
-            </div>
+            </button>
             <div className="p-1.5 space-y-1.5 flex-1">
               {jobs.length === 0 ? (
                 <div className="text-[10.5px] text-fg-subtle italic py-2 text-center">—</div>
@@ -885,12 +905,14 @@ function MonthView({
   anchorDate,
   jobsByDay,
   onJobClick,
+  onSelectDate,
 }: {
   rangeStart: Date
   rangeEnd: Date
   anchorDate: Date
   jobsByDay: Map<string, CalendarJob[]>
   onJobClick: (id: string) => void
+  onSelectDate?: (d: Date) => void
 }) {
   const dayCount = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)) + 1
   const days = Array.from({ length: dayCount }, (_, i) => addDays(rangeStart, i))
@@ -923,7 +945,12 @@ function MonthView({
                 inMonth ? 'border-border bg-surface-muted/20' : 'border-border/40 bg-transparent opacity-60'
               } ${isToday ? 'ring-1 ring-[var(--signal,#b48a3a)]' : ''}`}
             >
-              <div className="px-1.5 py-0.5 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => onSelectDate?.(d)}
+                title="Open day view"
+                className="relative z-[2] pointer-events-auto px-1.5 py-0.5 flex items-center justify-between cursor-pointer hover:bg-surface-muted/40 transition-colors w-full text-left"
+              >
                 <span className={`font-mono tabular-nums text-[11px] ${inMonth ? 'text-fg' : 'text-fg-subtle'}`}>
                   {fmtDayNumOnly(d)}
                 </span>
@@ -932,15 +959,23 @@ function MonthView({
                     {jobs.length}
                   </span>
                 )}
-              </div>
+              </button>
               <div className="px-1 pb-1 space-y-0.5 flex-1 overflow-hidden">
                 {jobs.slice(0, 3).map(j => (
                   <JobCard key={j.jobId} job={j} onClick={() => onJobClick(j.jobId)} compact />
                 ))}
                 {jobs.length > 3 && (
-                  <div className="text-[10px] text-fg-muted text-center">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectDate?.(d)
+                    }}
+                    title="Show all jobs for this day"
+                    className="relative z-[2] pointer-events-auto w-full text-[10px] text-fg-muted hover:text-fg hover:underline text-center cursor-pointer"
+                  >
                     +{jobs.length - 3} more
-                  </div>
+                  </button>
                 )}
                 {jobs.length > 0 && (
                   <div className="flex items-center gap-1 pt-0.5 text-[9px] font-mono tabular-nums">
@@ -1082,7 +1117,28 @@ function DrillContent({
     )
   }
   if (!data) {
-    return <div className="text-[13px] text-fg-muted">No data.</div>
+    return (
+      <div className="rounded-md border border-border bg-surface-muted/20 p-3 text-[12.5px]">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 mt-0.5 text-fg-muted" />
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-fg">Job detail unavailable</div>
+            <div className="text-fg-muted mt-0.5">
+              The drill-down API returned no payload. This usually clears on retry.
+            </div>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-2 inline-flex items-center gap-1 px-2 py-1 text-[11.5px] rounded border border-border bg-surface-elevated hover:bg-surface-muted/40 text-fg"
+              >
+                <RefreshCw className="w-3 h-3" /> Retry
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const { job, summary, rows } = data

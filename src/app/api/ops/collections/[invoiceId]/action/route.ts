@@ -183,7 +183,24 @@ export async function POST(
             originalDueDate: dueDate,
             daysPastDue,
           }
-          try {
+          // ── Kill switch: collection emails are OFF by default ─────────────
+          // Same gate the cron paths use (collections-ladder, collections-cycle,
+          // collections-email, invoice-reminder). This staff-initiated action
+          // route was missing it — a single accidental click on Dawn's "Send
+          // Day-15" button would have emailed the builder. Now hard-gated.
+          //
+          // The action LOG still records (for audit/history). Only the email
+          // dispatch is skipped. UI gets emailResult { attempted: false,
+          // killed: true } so it can show "Email skipped — collections emails
+          // are disabled by env flag" to the staff member.
+          if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
+            emailResult = {
+              attempted: false,
+              success: false,
+              error: 'Collections emails disabled (set COLLECTIONS_EMAILS_ENABLED=true in env to enable)',
+              killed: true,
+            } as any
+          } else try {
             let res: { success: boolean; error?: string }
             if (templateKey === 'DAY_15') res = await sendDay15ReminderEmail(baseParams)
             else if (templateKey === 'DAY_30') res = await sendDay30PastDueEmail(baseParams)

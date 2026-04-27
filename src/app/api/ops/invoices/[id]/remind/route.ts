@@ -13,6 +13,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
+  // ── Kill switch: builder invoice emails are OFF until explicitly enabled ──
+  if (process.env.BUILDER_INVOICE_EMAILS_ENABLED !== 'true') {
+    return NextResponse.json({
+      success: false,
+      disabled: true,
+      reason: 'Builder invoice emails disabled (set BUILDER_INVOICE_EMAILS_ENABLED=true to enable)',
+    }, { status: 503 })
+  }
+
   try {
     const { id } = params
 

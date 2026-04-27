@@ -166,8 +166,10 @@ export async function middleware(request: NextRequest) {
     }
 
     // Verify the JWT is valid (basic check — role checks happen at page/API level)
+    let executivePayload: Awaited<ReturnType<typeof jwtVerify>>['payload'] | null = null
     try {
-      await jwtVerify(staffCookie.value, JWT_SECRET)
+      const verified = await jwtVerify(staffCookie.value, JWT_SECRET)
+      executivePayload = verified.payload
     } catch {
       // Invalid/expired token — clear and redirect to login
       const loginUrl = new URL('/ops/login', request.url)
@@ -175,6 +177,30 @@ export async function middleware(request: NextRequest) {
       const response = NextResponse.redirect(loginUrl)
       response.cookies.delete(STAFF_COOKIE)
       return withRequestId(response, requestId)
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // EXECUTIVE PAGES — /ops/executive/*
+    // Restricted to ADMIN / MANAGER / ACCOUNTING (mirrors permissions.ts
+    // ROUTE_ACCESS). Gated here in middleware so non-leadership roles
+    // (PMs, sales, floor) never see a flash of the dashboard chrome
+    // before the client-side redirect fires.
+    // ────────────────────────────────────────────────────────────────
+    if (pathname === '/ops/executive' || pathname.startsWith('/ops/executive/')) {
+      const role = executivePayload.role as string
+      const roles = ((executivePayload.roles as string) || role)
+        .split(',')
+        .map((r: string) => r.trim())
+      const allowed = roles.some((r) => r === 'ADMIN' || r === 'MANAGER' || r === 'ACCOUNTING')
+      if (!allowed) {
+        logSecurityEventFromEdge(request, requestId, 'ACCESS_DENIED', {
+          reason: 'non_leadership_accessing_executive',
+          scope: 'ops_executive',
+          staffId: executivePayload.staffId as string,
+          role,
+        })
+        return withRequestId(NextResponse.redirect(new URL('/ops/today', request.url)), requestId)
+      }
     }
 
     return withRequestId(

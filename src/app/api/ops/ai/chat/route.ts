@@ -81,7 +81,8 @@ Always include the action reasoning in your text message as well.`
 
     // Send to Claude with tool support.
     // maxTokens 4096 (per Anthropic guidance for tool-heavy chats) and
-    // maxIterations 10 give tool-heavy questions room to complete (BUGFIX 2.6).
+    // maxIterations 15 give tool-heavy questions room to complete
+    // (F5-AI-DEEPER: bumped from 10 → 15 with final-pass nudge in claude.ts).
     const result = await sendMessage({
       systemPrompt,
       messages: claudeMessages,
@@ -90,7 +91,7 @@ Always include the action reasoning in your text message as well.`
         return await executeTool(toolName, toolInput, staffRoles, hasFinancialAccess)
       },
       maxTokens: 4096,
-      maxIterations: 10,
+      maxIterations: 15,
     })
 
     // Parse actions from the response text if present

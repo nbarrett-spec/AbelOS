@@ -19,16 +19,38 @@ function sqlSafe(input: unknown): string {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Response-size caps (BUGFIX 2.6) — keep tool replies bounded so the
-// chat agent doesn't exhaust the per-turn token budget on a single tool call.
+// Response-size caps (BUGFIX 2.6 + F5-AI-DEEPER) — keep tool replies bounded
+// so the chat agent doesn't exhaust the per-turn token budget on a single
+// tool call. The token-budget cap is the real ceiling users hit, not the
+// iteration count.
 // ──────────────────────────────────────────────────────────────────────────
 const MAX_TOOL_LIMIT = 50
+
+/** Hard byte cap per tool response. Anything over this gets truncated with a marker. */
+const MAX_TOOL_RESPONSE_BYTES = 12_000
 
 /** Clamp a caller-supplied limit to a sane range. */
 function clampLimit(raw: any, fallback: number): number {
   const n = Number(raw)
   if (!Number.isFinite(n) || n <= 0) return fallback
   return Math.min(Math.floor(n), MAX_TOOL_LIMIT)
+}
+
+/**
+ * Cap a JSON string at MAX_TOOL_RESPONSE_BYTES. If oversize, returns a
+ * structured truncation marker so Claude knows to ask for narrower data
+ * instead of trying to parse a half-truncated JSON blob.
+ */
+function capResponse(json: string, toolName: string): string {
+  if (json.length <= MAX_TOOL_RESPONSE_BYTES) return json
+  return JSON.stringify({
+    _truncated: true,
+    _tool: toolName,
+    _originalBytes: json.length,
+    _capBytes: MAX_TOOL_RESPONSE_BYTES,
+    note: `Response from ${toolName} was ${json.length} bytes — too large to return in full. Ask a more specific question (filter by category/status/date) to get a complete answer.`,
+    preview: json.slice(0, 2000),
+  })
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -544,21 +566,23 @@ async function toolSearchOrders(input: Record<string, any>, canViewFinancials: b
     LIMIT ${limit}
   `) as any[]
 
-  return JSON.stringify({
+  // F5-AI-DEEPER: drop internal id (CUID — not useful to the LLM) and trim
+  // ISO timestamps to date-only to cut bytes per row.
+  const out = JSON.stringify({
     count: rows.length,
     limit,
     orders: rows.map(r => ({
-      id: r.id,
       orderNumber: r.orderNumber,
       status: r.status,
       total: canViewFinancials ? Number(r.total) : '[restricted]',
       builder: r.builder_name,
       contact: r.builder_contact,
-      createdAt: r.createdAt,
-      deliveryDate: r.deliveryDate,
+      created: r.createdAt ? String(r.createdAt).slice(0, 10) : null,
+      deliveryDate: r.deliveryDate ? String(r.deliveryDate).slice(0, 10) : null,
       paymentStatus: r.paymentStatus,
     })),
   })
+  return capResponse(out, 'search_orders')
 }
 
 async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
@@ -579,7 +603,7 @@ async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
     LIMIT ${limit}
   `) as any[]
 
-  return JSON.stringify({
+  return capResponse(JSON.stringify({
     count: rows.length,
     builders: rows.map(r => ({
       companyName: r.companyName,
@@ -591,7 +615,7 @@ async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
       orderCount: r.order_count,
       quoteCount: r.quote_count,
     })),
-  })
+  }), 'search_builders')
 }
 
 async function toolSearchInvoices(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
@@ -613,18 +637,18 @@ async function toolSearchInvoices(input: Record<string, any>, canViewFinancials:
     LIMIT ${limit}
   `) as any[]
 
-  return JSON.stringify({
+  return capResponse(JSON.stringify({
     count: rows.length,
     invoices: rows.map(r => ({
       invoiceNumber: r.invoiceNumber,
       status: r.status,
       total: canViewFinancials ? Number(r.total) : '[restricted]',
       balanceDue: canViewFinancials ? Number(r.balanceDue) : '[restricted]',
-      dueDate: r.dueDate,
-      issuedAt: r.issuedAt,
+      dueDate: r.dueDate ? String(r.dueDate).slice(0, 10) : null,
+      issuedAt: r.issuedAt ? String(r.issuedAt).slice(0, 10) : null,
       builder: r.builder_name,
     })),
-  })
+  }), 'search_invoices')
 }
 
 async function toolSearchProducts(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
@@ -1047,7 +1071,7 @@ async function toolCheckInventoryLevels(input: Record<string, any>): Promise<str
       FROM "InventoryItem"
     `) as any[]
 
-    return JSON.stringify({
+    return capResponse(JSON.stringify({
       summary: stats[0],
       items: rows.map((r: any) => ({
         product: r.productName,
@@ -1062,7 +1086,7 @@ async function toolCheckInventoryLevels(input: Record<string, any>): Promise<str
         status: r.stockStatus,
         value: Number(r.unitCost || 0) * (r.quantityOnHand || 0),
       })),
-    })
+    }), 'check_inventory_levels')
   } catch {
     return JSON.stringify({ error: 'Inventory system not set up yet. Visit Procurement Intelligence to initialize.' })
   }
@@ -1077,7 +1101,7 @@ async function toolReorderRecommendations(): Promise<string> {
     })
     if (res.ok) {
       const data = await res.json()
-      return JSON.stringify(data)
+      return capResponse(JSON.stringify(data), 'get_reorder_recommendations')
     }
     // Fallback: direct query
     const items = await prisma.$queryRawUnsafe(`
@@ -1113,7 +1137,7 @@ async function toolDemandForecast(): Promise<string> {
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-tool', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({ action: 'demand_forecast' }),
     })
-    if (res.ok) return JSON.stringify(await res.json())
+    if (res.ok) return capResponse(JSON.stringify(await res.json()), 'get_demand_forecast')
     return JSON.stringify({ error: 'Failed to generate demand forecast' })
   } catch {
     return JSON.stringify({ error: 'Procurement system not initialized.' })
@@ -1134,7 +1158,7 @@ async function toolBestBuyAnalysis(input: Record<string, any>): Promise<string> 
           c.category?.toLowerCase().includes(input.category.toLowerCase())
         )
       }
-      return JSON.stringify(data)
+      return capResponse(JSON.stringify(data), 'get_best_buy_analysis')
     }
     return JSON.stringify({ error: 'Failed to run best buy analysis' })
   } catch {
@@ -1170,7 +1194,7 @@ async function toolSearchSuppliers(input: Record<string, any>): Promise<string> 
       LIMIT 20
     `, ...params) as any[]
 
-    return JSON.stringify({
+    return capResponse(JSON.stringify({
       count: rows.length,
       suppliers: rows.map((r: any) => ({
         id: r.id,
@@ -1188,7 +1212,7 @@ async function toolSearchSuppliers(input: Record<string, any>): Promise<string> 
         productCount: r.productCount,
         spend12mo: Number(r.spend12mo || 0),
       })),
-    })
+    }), 'search_suppliers')
   } catch {
     return JSON.stringify({ error: 'Supplier database not initialized. Visit Procurement Intelligence page first.' })
   }
@@ -1281,7 +1305,7 @@ async function toolDailyBriefing(staffRoles: string[]): Promise<string> {
     const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://app.abellumber.com'}/api/ops/ai/daily-briefing`, {
       headers: { 'x-staff-id': 'ai-tool', 'x-staff-role': staffRoles.join(',') },
     })
-    if (res.ok) return JSON.stringify(await res.json())
+    if (res.ok) return capResponse(JSON.stringify(await res.json()), 'get_daily_briefing')
     return JSON.stringify({ error: 'Failed to generate daily briefing' })
   } catch {
     return JSON.stringify({ error: 'Daily briefing service unavailable' })
@@ -1295,7 +1319,7 @@ async function toolSupplierScorecard(): Promise<string> {
       headers: { 'Content-Type': 'application/json', 'x-staff-id': 'ai-tool', 'x-staff-role': 'ADMIN' },
       body: JSON.stringify({ action: 'supplier_scorecard' }),
     })
-    if (res.ok) return JSON.stringify(await res.json())
+    if (res.ok) return capResponse(JSON.stringify(await res.json()), 'get_supplier_scorecard')
     return JSON.stringify({ error: 'Failed to generate supplier scorecards' })
   } catch {
     return JSON.stringify({ error: 'Procurement system not initialized.' })

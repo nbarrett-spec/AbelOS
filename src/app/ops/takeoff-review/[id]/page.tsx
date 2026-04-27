@@ -373,18 +373,32 @@ export default function TakeoffReviewDetailPage() {
                             {productResults.length > 0 && (
                               <div className="absolute z-10 mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto w-72">
                                 {productResults.map((p: any) => (
-                                  <button
+                                  <div
                                     key={p.id}
-                                    onClick={() => {
-                                      setEditValues((prev: any) => ({ ...prev, [item.id]: { ...vals, productId: p.id } }))
-                                      setProductSearch(`${p.sku} — ${p.name}`)
-                                      setProductResults([])
-                                    }}
-                                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-xs border-b"
+                                    className="flex items-center border-b hover:bg-gray-50"
                                   >
-                                    <span className="font-medium">{p.sku}</span> — {p.name}
-                                    <span className="text-gray-400 ml-2">${p.basePrice?.toFixed(2)}</span>
-                                  </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditValues((prev: any) => ({ ...prev, [item.id]: { ...vals, productId: p.id } }))
+                                        setProductSearch(`${p.sku} — ${p.name}`)
+                                        setProductResults([])
+                                      }}
+                                      className="flex-1 text-left px-3 py-2 text-xs"
+                                    >
+                                      <span className="font-medium">{p.sku}</span> — {p.name}
+                                      <span className="text-gray-400 ml-2">${p.basePrice?.toFixed(2)}</span>
+                                    </button>
+                                    <Link
+                                      href={`/ops/products/${p.id}`}
+                                      onClick={e => e.stopPropagation()}
+                                      className="px-2 py-2 text-signal hover:underline text-xs"
+                                      title="View product"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      View
+                                    </Link>
+                                  </div>
                                 ))}
                               </div>
                             )}

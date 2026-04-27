@@ -75,17 +75,30 @@ export async function sendMessage(opts: {
   let lastPartialText = ''
 
   // Tool-use loop: keep calling Claude until we get a final text response.
-  // Bumped from 5 -> 10 to give tool-heavy chats more headroom (BUGFIX 2.6).
+  // 5 -> 10 (BUGFIX 2.6) -> 15 (F5-AI-DEEPER): tool-heavy chats need more
+  // headroom; the real cap users hit is the per-turn TOKEN budget, not the
+  // iteration count. The iteration ceiling is just a safety stop.
   let iterations = 0
-  const MAX_ITERATIONS = Math.min(Math.max(maxIterations ?? 10, 1), 20)
+  const MAX_ITERATIONS = Math.min(Math.max(maxIterations ?? 15, 1), 20)
+
+  // F5-AI-DEEPER: when we get within REMAINING_NUDGE iterations of the cap,
+  // append a system-style instruction to the next user message asking Claude
+  // to wrap up. This nudges synthesis instead of more tool fishing.
+  const REMAINING_NUDGE = 2
 
   while (iterations < MAX_ITERATIONS) {
     iterations++
 
+    const remaining = MAX_ITERATIONS - iterations
+    const effectiveSystemPrompt =
+      remaining <= REMAINING_NUDGE
+        ? `${systemPrompt}\n\nIMPORTANT: You have only ${remaining + 1} tool-call rounds left this turn. Stop calling tools and write the final answer based on the data you've already gathered. If you don't have enough data, say so explicitly and suggest a tighter follow-up question.`
+        : systemPrompt
+
     const body: Record<string, any> = {
       model: MODEL,
       max_tokens: maxTokens,
-      system: systemPrompt,
+      system: effectiveSystemPrompt,
       messages: messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -169,14 +182,17 @@ export async function sendMessage(opts: {
   }
 
   // Hit the iteration cap — tool-call loop exhausted before a final answer.
-  // Friendlier message per BUGFIX 2.6 spec, plus any partial text Claude produced
-  // along the way so the user isn't left empty-handed.
+  // F5-AI-DEEPER: also surface which tools ran so the user can see what *was*
+  // accomplished and ask a tighter follow-up.
+  const toolsUsedList = toolCalls.length > 0
+    ? `\n\nWhat I gathered before stopping:\n${toolCalls.map(tc => `- ${tc.name.replace(/_/g, ' ')}`).join('\n')}`
+    : ''
   const limitMessage =
     'This question needed more steps than I can do in one turn. ' +
     'Try breaking it into parts, or specify a tighter scope (e.g., "just for Pulte", "only this week").'
   const text = lastPartialText
-    ? `${lastPartialText}\n\n${limitMessage}`
-    : limitMessage
+    ? `${lastPartialText}\n\n${limitMessage}${toolsUsedList}`
+    : `${limitMessage}${toolsUsedList}`
   return { text, toolCalls, truncated: true }
 }
 

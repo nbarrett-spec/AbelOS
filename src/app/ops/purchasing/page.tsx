@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   ShoppingCart, Package, CheckCircle2, Clock, RefreshCw, Search, Sparkles,
   AlertTriangle, TrendingUp, Zap, Plus, Truck, ChevronDown, ChevronUp, Receipt,
-  Download, ArrowUpDown, ArrowUp, ArrowDown,
+  Download,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Card, CardHeader, CardTitle, CardDescription, CardBody,
@@ -303,13 +303,6 @@ export default function PurchaseOrdersPage() {
       setSortBy(key)
       setSortDir('desc')
     }
-  }
-
-  const SortIcon = ({ k }: { k: string }) => {
-    if (sortBy !== k) return <ArrowUpDown className="w-3 h-3 inline ml-1 text-fg-subtle" />
-    return sortDir === 'asc'
-      ? <ArrowUp className="w-3 h-3 inline ml-1 text-accent" />
-      : <ArrowDown className="w-3 h-3 inline ml-1 text-accent" />
   }
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -770,15 +763,15 @@ export default function PurchaseOrdersPage() {
           rowKey={(o) => o.id}
           onRowClick={(o) => { window.location.href = `/ops/purchasing/${o.id}` }}
           keyboardNav
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={toggleSort}
           empty={<EmptyState icon={<Receipt className="w-8 h-8 text-fg-subtle" />} title="No POs to display" description="Adjust filters or use AI Generate POs to seed the pipeline." />}
           columns={[
             {
               key: 'poNumber',
-              header: (
-                <button onClick={() => toggleSort('poNumber')} className="text-left">
-                  PO# <SortIcon k="poNumber" />
-                </button>
-              ),
+              header: 'PO#',
+              sortable: true,
               cell: (o) => (
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-semibold text-fg">{o.poNumber}</span>
@@ -806,11 +799,8 @@ export default function PurchaseOrdersPage() {
             },
             {
               key: 'total',
-              header: (
-                <button onClick={() => toggleSort('total')} className="text-right w-full">
-                  Total <SortIcon k="total" />
-                </button>
-              ),
+              header: 'Total',
+              sortable: true,
               numeric: true,
               heatmap: true,
               heatmapValue: (o) => o.totalCost,
@@ -824,11 +814,8 @@ export default function PurchaseOrdersPage() {
             },
             {
               key: 'status',
-              header: (
-                <button onClick={() => toggleSort('status')} className="text-left">
-                  Status <SortIcon k="status" />
-                </button>
-              ),
+              header: 'Status',
+              sortable: true,
               cell: (o) => (
                 <Badge variant={getStatusBadgeVariant(o.status)} size="sm">
                   {o.status.replace(/_/g, ' ')}
@@ -837,11 +824,8 @@ export default function PurchaseOrdersPage() {
             },
             {
               key: 'createdAt',
-              header: (
-                <button onClick={() => toggleSort('createdAt')} className="text-left">
-                  Created <SortIcon k="createdAt" />
-                </button>
-              ),
+              header: 'Created',
+              sortable: true,
               hideOnMobile: true,
               cell: (o) => o.createdAt
                 ? <span className="tabular-nums text-fg-muted">{new Date(o.createdAt).toLocaleDateString()}</span>
@@ -850,6 +834,7 @@ export default function PurchaseOrdersPage() {
             {
               key: 'expectedDate',
               header: 'ETA',
+              sortable: true,
               hideOnMobile: true,
               cell: (o) => o.expectedDate
                 ? <span className="tabular-nums text-fg-muted">{new Date(o.expectedDate).toLocaleDateString()}</span>

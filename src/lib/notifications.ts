@@ -112,7 +112,10 @@ export async function sendBuilderNotification(event: NotificationEvent) {
     )
 
     // Queue email if provided
-    if (event.email) {
+    // ── Kill switch: ALL builder-facing emails are OFF until explicitly enabled ──
+    // Set BUILDER_INVOICE_EMAILS_ENABLED=true in env to re-enable email queueing.
+    // In-app notifications (above) still work — only outbound email is suppressed.
+    if (event.email && process.env.BUILDER_INVOICE_EMAILS_ENABLED === 'true') {
       const emailId = 'email_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
       await prisma.$executeRawUnsafe(
         `INSERT INTO "EmailQueue" (id, "toEmail", subject, "htmlBody", "createdAt", "updatedAt")

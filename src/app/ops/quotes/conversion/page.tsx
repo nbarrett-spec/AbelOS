@@ -151,7 +151,7 @@ function BuilderTab({ data }: { data: any }) {
               <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
                   {b.builderId ? (
-                    <Link href={`/ops/accounts/${b.builderId}`} className="text-signal hover:underline">
+                    <Link href={`/ops/accounts/${b.builderId}`} className="text-signal hover:underline cursor-pointer">
                       {b.companyName}
                     </Link>
                   ) : (
@@ -206,9 +206,12 @@ function CategoryTab({ data }: { data: any }) {
               <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
                   {c.category && c.category !== 'Unknown' ? (
+                    // TODO(filter-wiring): /ops/products does not yet read ?category= from URL on mount —
+                    // current page only filters via the in-page select. Next wave: hydrate `categoryFilter`
+                    // state from useSearchParams() so this drilldown actually filters the catalog.
                     <Link
                       href={`/ops/products?category=${encodeURIComponent(c.category)}`}
-                      className="text-signal hover:underline"
+                      className="text-signal hover:underline cursor-pointer"
                     >
                       {c.category}
                     </Link>
@@ -259,7 +262,7 @@ function RecoveryTab({ data }: { data: any }) {
           <table className="w-full">
             <thead className="bg-surface-muted border-b border-border">
               <tr>
-                {['Builder', 'Project', 'Amount', 'Status', 'Days Old', 'Recent Orders', 'Email', 'Phone'].map((h) => (
+                {['Quote #', 'Builder', 'Project', 'Amount', 'Status', 'Days Old', 'Recent Orders', 'Email', 'Phone'].map((h) => (
                   <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
                 ))}
               </tr>
@@ -267,9 +270,21 @@ function RecoveryTab({ data }: { data: any }) {
             <tbody className="divide-y divide-border">
               {recoverable.map((r: any, i: number) => (
                 <tr key={i} className="hover:bg-row-hover">
+                  <td className="px-4 py-2 text-sm font-mono">
+                    {r.quoteNumber ? (
+                      // TODO(filter-wiring): /ops/quotes does not yet read ?search= from URL on mount —
+                      // current page only filters via the in-page search input. Next wave: hydrate `search`
+                      // state from useSearchParams() so this drilldown actually filters the list.
+                      <Link href={`/ops/quotes?search=${encodeURIComponent(r.quoteNumber)}`} className="text-signal hover:underline cursor-pointer">
+                        {r.quoteNumber}
+                      </Link>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-sm font-medium">
                     {r.builderId ? (
-                      <Link href={`/ops/accounts/${r.builderId}`} className="text-signal hover:underline">
+                      <Link href={`/ops/accounts/${r.builderId}`} className="text-signal hover:underline cursor-pointer">
                         {r.companyName}
                       </Link>
                     ) : (
@@ -277,15 +292,15 @@ function RecoveryTab({ data }: { data: any }) {
                     )}
                   </td>
                   <td className="px-4 py-2 text-sm">{r.projectName || '—'}</td>
-                  <td className="px-4 py-2 text-sm font-semibold">{fmt$(r.totalAmount)}</td>
+                  <td className="px-4 py-2 text-sm font-semibold">{fmt$(r.total)}</td>
                   <td className="px-4 py-2 text-sm">{r.status}</td>
                   <td className="px-4 py-2 text-sm">{r.daysSinceCreated}d</td>
                   <td className="px-4 py-2 text-sm">{r.recentOrders > 0 ?
                     <span className="text-green-600">{r.recentOrders} (active)</span> :
                     <span className="text-fg-subtle">None</span>}
                   </td>
-                  <td className="px-4 py-2 text-sm text-blue-600">{r.contactEmail || '—'}</td>
-                  <td className="px-4 py-2 text-sm">{r.contactPhone || '—'}</td>
+                  <td className="px-4 py-2 text-sm text-blue-600">{r.email || '—'}</td>
+                  <td className="px-4 py-2 text-sm">{r.phone || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -312,7 +327,7 @@ function RecoveryTab({ data }: { data: any }) {
                   <tr key={i} className="hover:bg-orange-50">
                     <td className="px-4 py-2 text-sm font-medium">
                       {n.builderId ? (
-                        <Link href={`/ops/accounts/${n.builderId}`} className="text-signal hover:underline">
+                        <Link href={`/ops/accounts/${n.builderId}`} className="text-signal hover:underline cursor-pointer">
                           {n.companyName}
                         </Link>
                       ) : (
@@ -322,7 +337,7 @@ function RecoveryTab({ data }: { data: any }) {
                     <td className="px-4 py-2 text-sm">{n.quoteCount}</td>
                     <td className="px-4 py-2 text-sm font-semibold">{fmt$(n.totalQuoted)}</td>
                     <td className="px-4 py-2 text-sm">{n.lastQuoteDate ? new Date(n.lastQuoteDate).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-2 text-sm text-blue-600">{n.contactEmail || '—'}</td>
+                    <td className="px-4 py-2 text-sm text-blue-600">{n.email || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -364,7 +379,10 @@ function TrendsTab({ data }: { data: any }) {
               <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
                   {monthStr ? (
-                    <Link href={`/ops/quotes?month=${monthStr}`} className="text-signal hover:underline">
+                    // TODO(filter-wiring): /ops/quotes does not yet read ?month= from URL —
+                    // current page only exposes dateFrom/dateTo via in-page inputs. Next wave:
+                    // hydrate dateFrom/dateTo from useSearchParams() (compute month → first/last day).
+                    <Link href={`/ops/quotes?month=${monthStr}`} className="text-signal hover:underline cursor-pointer">
                       {monthLabel}
                     </Link>
                   ) : (

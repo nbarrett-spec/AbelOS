@@ -77,22 +77,41 @@ export async function POST(request: NextRequest) {
       return safeJson({ error: 'File and projectId are required' }, { status: 400 })
     }
 
-    // Validate type
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Validate extension first (some browsers don't set file.type for TIFF)
+    const nameParts = file.name.split('.')
+    const ext = nameParts.length > 1 ? '.' + nameParts.pop()!.toLowerCase() : ''
+    const extOk = ALLOWED_EXTENSIONS.includes(ext)
+
+    // Validate MIME — accept if either type or extension matches.
+    // Some browsers report file.type='' for TIFF and other less-common types,
+    // so falling through to extension validation prevents valid files being
+    // rejected.
+    const mimeOk = ALLOWED_TYPES.includes(file.type)
+    if (!mimeOk && !extOk) {
       return safeJson(
         { error: 'Invalid file type. Accepted: PDF, PNG, JPEG, TIFF, WebP' },
         { status: 400 }
       )
     }
-
-    // Validate extension
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase()
-    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    if (!extOk) {
       return safeJson(
-        { error: 'Invalid file extension' },
+        { error: 'Invalid file extension. Accepted: .pdf, .png, .jpg, .jpeg, .tif, .tiff, .webp' },
         { status: 400 }
       )
     }
+
+    // Resolve MIME for storage. If browser didn't supply one, derive from ext
+    // so the serve route can return a proper Content-Type later.
+    const EXT_TO_MIME: Record<string, string> = {
+      '.pdf': 'application/pdf',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.tif': 'image/tiff',
+      '.tiff': 'image/tiff',
+      '.webp': 'image/webp',
+    }
+    const resolvedMime = mimeOk ? file.type : (EXT_TO_MIME[ext] || 'application/octet-stream')
 
     // Validate size
     if (file.size > MAX_FILE_SIZE) {
@@ -108,7 +127,10 @@ export async function POST(request: NextRequest) {
       return safeJson({ error: 'Project not found' }, { status: 404 })
     }
 
-    // Save file to disk
+    // Save file to disk.
+    // TODO: switch to Vercel Blob for prod persistence. process.cwd() on Vercel
+    // points at /var/task which is read-only at runtime — local-disk writes will
+    // fail or vanish on cold start. Works in dev because cwd is the project root.
     const builderId = project[0].builderId
     const uploadDir = path.join(process.cwd(), 'uploads', 'floor-plans', builderId, projectId)
     await mkdir(uploadDir, { recursive: true })
@@ -140,7 +162,7 @@ export async function POST(request: NextRequest) {
       file.name,
       fileUrl,
       file.size,
-      file.type,
+      resolvedMime,
       version,
       notes || null,
       staffId

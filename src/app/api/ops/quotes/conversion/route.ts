@@ -159,7 +159,7 @@ async function getRecoveryOpportunities() {
   // Recently expired or stale quotes that could be recovered
   const recoverable: any[] = await prisma.$queryRawUnsafe(`
     SELECT
-      q.id, q.status, q."total", q."createdAt", q."validUntil",
+      q.id, q."quoteNumber", q.status, q."total", q."createdAt", q."validUntil",
       b.id as "builderId", b."companyName", b.email, b.phone,
       p.name as "projectName",
       EXTRACT(DAY FROM (NOW() - q."createdAt"))::int as "daysSinceCreated",
@@ -196,7 +196,7 @@ async function getRecoveryOpportunities() {
     generatedAt: new Date().toISOString(),
     recoverable,
     neverOrdered,
-    totalRecoverableValue: recoverable.reduce((sum, r) => sum + Number(r.totalAmount || 0), 0),
+    totalRecoverableValue: recoverable.reduce((sum, r) => sum + Number(r.total || 0), 0),
   });
 }
 

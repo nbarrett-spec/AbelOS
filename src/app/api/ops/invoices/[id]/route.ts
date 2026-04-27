@@ -176,7 +176,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await audit(request, 'UPDATE', 'Invoice', id, { status, notes, issuedAt, dueDate })
 
     // Send notification when invoice is issued or sent to builder
-    if (status === 'ISSUED' || status === 'SENT') {
+    // ── Kill switch: builder invoice emails are OFF until explicitly enabled ──
+    // Set BUILDER_INVOICE_EMAILS_ENABLED=true in env to re-enable.
+    if ((status === 'ISSUED' || status === 'SENT') && process.env.BUILDER_INVOICE_EMAILS_ENABLED === 'true') {
       try {
         const builderRows: any[] = await prisma.$queryRawUnsafe(
           `SELECT email FROM "Builder" WHERE id = $1`, inv.builderId
