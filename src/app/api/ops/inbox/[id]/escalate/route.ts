@@ -13,11 +13,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { audit, getStaffFromHeaders } from '@/lib/audit'
+import { requireStaffAuth } from '@/lib/api-auth'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // R7 — only ADMIN/MANAGER/PROJECT_MANAGER may escalate (re-assign).
+  const auth = await requireStaffAuth(request, {
+    allowedRoles: ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+  })
+  if (auth.error) return auth.error
+
   const { id } = await params
   try {
     const body = await request.json().catch(() => ({}))

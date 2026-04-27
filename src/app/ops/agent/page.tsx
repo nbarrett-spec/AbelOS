@@ -36,6 +36,7 @@ export default function AgentDashboard() {
   const [channelFilter, setChannelFilter] = useState('')
   const [scrStatusFilter, setScrStatusFilter] = useState('PENDING')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedConv, setSelectedConv] = useState<string | null>(null)
   const [convMessages, setConvMessages] = useState<any[]>([])
   const [staffId, setStaffId] = useState<string | null>(null)
@@ -73,6 +74,7 @@ export default function AgentDashboard() {
     try {
       if (tab === 'overview' || tab === 'conversations') {
         const statsRes = await fetch('/api/ops/agent?view=stats')
+        if (!statsRes.ok) throw new Error(`stats ${statsRes.status}`)
         const statsData = await statsRes.json()
         setStats(statsData.stats)
       }
@@ -81,15 +83,22 @@ export default function AgentDashboard() {
         if (statusFilter) params.set('status', statusFilter)
         if (channelFilter) params.set('channel', channelFilter)
         const res = await fetch(`/api/ops/agent?${params}`)
+        if (!res.ok) throw new Error(`conversations ${res.status}`)
         const data = await res.json()
         setConversations(data.conversations || [])
       }
       if (tab === 'schedule-requests' || tab === 'overview') {
         const res = await fetch(`/api/ops/agent?view=schedule-requests&status=${scrStatusFilter}`)
+        if (!res.ok) throw new Error(`schedule-requests ${res.status}`)
         const data = await res.json()
         setScheduleRequests(data.requests || [])
       }
-    } catch (e) { console.error(e) }
+      // Successful load — clear any previous error banner
+      setError(null)
+    } catch (e) {
+      console.error('[Agent] loadData failed:', e)
+      setError('Could not load agent data. Polling will keep retrying — check connection or refresh.')
+    }
     setLoading(false)
   }, [tab, statusFilter, channelFilter, scrStatusFilter])
 
@@ -175,6 +184,16 @@ export default function AgentDashboard() {
           Refresh
         </button>
       </div>
+
+      {/* Error banner — stale-state warning when polling/load fails */}
+      {error && (
+        <div role="alert" style={{ background: '#FDEDEC', border: '1px solid #E74C3C', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ color: '#922B21', fontSize: '14px', fontWeight: 500 }}>{error}</div>
+          <button onClick={loadData} style={{ background: '#E74C3C', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '2px solid #e5e7eb', paddingBottom: '0' }}>

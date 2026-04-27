@@ -450,18 +450,38 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // ── Kill switch: collections ladder is OFF until explicitly enabled ──
-  if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      reason: 'Collections ladder disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
-    })
-  }
-
+  // 2026-04-27 fix: wrapper moved UP so the kill-switch path also writes a
+  // CronRun row. Previously the kill-switch returned before withCronRun() ever
+  // ran, which is why /admin/crons showed "never fired" despite a daily
+  // schedule (zero rows in CronRun for 30+ days). Mirror pm-daily-digest's
+  // pattern: SUCCESS skipped=true on kill-switch off so observability stays
+  // honest.
   return withCronRun('collections-ladder', async () => {
+    // ── Kill switch: collections ladder is OFF until explicitly enabled ──
+    if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        skippedCount: 1,
+        notes: 'Kill switch off: COLLECTIONS_EMAILS_ENABLED !== "true"',
+        reason: 'Collections ladder disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
+      })
+    }
+
     const result = await runLadder()
     logger.info('collections_ladder_complete', result)
-    return NextResponse.json({ success: true, ...result, timestamp: new Date().toISOString() })
+    return NextResponse.json({
+      success: true,
+      processed: result.invoicesScanned,
+      succeeded: result.actionsFired,
+      failed: result.errors,
+      skipped: result.alreadyDoneSkipped,
+      notes: `${result.actionsFired} actions fired (D15:${result.byStep.DAY_15} D30:${result.byStep.DAY_30} D45:${result.byStep.DAY_45} D60:${result.byStep.DAY_60}); ${result.emailsSent} emails sent, ${result.inboxCreated} inbox items created`,
+      ...result,
+      timestamp: new Date().toISOString(),
+    })
   })
 }

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET  /api/admin/errors           → recent errors + stats
@@ -168,6 +169,14 @@ export async function DELETE(request: NextRequest) {
         `DELETE FROM "${table}" WHERE "id" = $1`,
         id
       )
+      await audit(
+        request,
+        'ADMIN_ERROR_LOG_DELETE',
+        table,
+        id,
+        { source, table, mode: 'row', id },
+        'CRITICAL'
+      ).catch(() => {})
       return NextResponse.json({ success: true, deleted: 'row' })
     }
     // Bulk-dismiss all rows sharing a digest
@@ -175,6 +184,14 @@ export async function DELETE(request: NextRequest) {
       `DELETE FROM "${table}" WHERE "digest" = $1`,
       digest
     )
+    await audit(
+      request,
+      'ADMIN_ERROR_LOG_DELETE',
+      table,
+      digest ?? undefined,
+      { source, table, mode: 'digest', digest, count: result },
+      'CRITICAL'
+    ).catch(() => {})
     return NextResponse.json({ success: true, deleted: 'digest', count: result })
   } catch (e: any) {
     return NextResponse.json(

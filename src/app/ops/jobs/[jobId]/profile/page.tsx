@@ -217,7 +217,7 @@ export default function JobProfilePage() {
 
       {/* ── Tab Content ────────────────────────────────────────────────── */}
       <div className="p-6">
-        {activeTab === 'overview' && <OverviewTab job={job} builder={builder} community={community} phaseSummary={phaseSummary} invoices={invoices} />}
+        {activeTab === 'overview' && <OverviewTab job={job} builder={builder} community={community} phaseSummary={phaseSummary} invoices={invoices} setActiveTab={setActiveTab} />}
         {activeTab === 'phases' && <PhasesTab phases={job.phases || []} phaseSummary={phaseSummary} jobId={jobId} />}
         {activeTab === 'deliveries' && <DeliveriesTab deliveries={job.deliveries || []} />}
         {activeTab === 'invoices' && <InvoicesTab invoices={invoices || []} order={job.order} changeOrders={changeOrders || []} />}
@@ -255,7 +255,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 // ── Overview Tab ─────────────────────────────────────────────────────────
 
-function OverviewTab({ job, builder, community, phaseSummary, invoices }: any) {
+function OverviewTab({ job, builder, community, phaseSummary, invoices, setActiveTab }: any) {
   return (
     <div className="space-y-5">
       {/* Key Stats */}
@@ -354,7 +354,7 @@ function OverviewTab({ job, builder, community, phaseSummary, invoices }: any) {
 
       {/* Phase Progress (compact) */}
       {phaseSummary.totalPhases > 0 && (
-        <SectionCard title="Billing Phases" action={<button onClick={() => {}} className="text-xs font-semibold text-blue-600 hover:underline">View All →</button>}>
+        <SectionCard title="Billing Phases" action={<button onClick={() => setActiveTab?.('phases')} className="text-xs font-semibold text-blue-600 hover:underline">View All →</button>}>
           <div className="space-y-2">
             {(job.phases || []).map((phase: any) => (
               <div key={phase.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800 last:border-0">

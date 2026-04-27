@@ -55,8 +55,12 @@ export default function AuditLogPage() {
   // Detail modal
   const [selected, setSelected] = useState<AuditLog | null>(null)
 
+  // Surfaceable load error (vs. silent "no events found")
+  const [error, setError] = useState<string | null>(null)
+
   const fetchLogs = useCallback(async (newOffset: number = 0) => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       params.set('limit', String(limit))
@@ -71,6 +75,9 @@ export default function AuditLogPage() {
         fetch(`/api/ops/audit?${params}`),
         fetch('/api/ops/audit?view=stats'),
       ])
+      if (!logsRes.ok || !statsRes.ok) {
+        throw new Error(`audit fetch failed (logs ${logsRes.status} / stats ${statsRes.status})`)
+      }
       const logsData = await logsRes.json()
       const statsData = await statsRes.json()
 
@@ -78,7 +85,10 @@ export default function AuditLogPage() {
       setTotal(logsData.total || 0)
       setOffset(newOffset)
       setStats(statsData.stats || null)
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error('[Audit] fetchLogs failed:', e)
+      setError('Could not load the audit trail. The service may be unavailable — try refreshing.')
+    }
     setLoading(false)
   }, [search, entity, severity, startDate, endDate])
 
@@ -110,6 +120,16 @@ export default function AuditLogPage() {
           Refresh
         </button>
       </div>
+
+      {/* Error banner — distinguishes "API down" from "no events found" */}
+      {error && (
+        <div role="alert" style={{ background: '#FDEDEC', border: '1px solid #E74C3C', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ color: '#922B21', fontSize: '14px', fontWeight: 500 }}>{error}</div>
+          <button onClick={() => fetchLogs(offset)} style={{ background: '#E74C3C', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Stats Cards */}
       {stats && (

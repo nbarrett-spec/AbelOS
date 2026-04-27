@@ -375,12 +375,44 @@ export async function GET(request: NextRequest) {
           ? 'One or more InFlow sync operations failed'
           : undefined,
     })
+
+    // Bump IntegrationConfig.lastSyncAt so the integrations dashboard shows
+    // a fresh timestamp after each successful run. Schema has no `lastError`
+    // field — the closest is `lastSyncStatus` ('SUCCESS' | 'PARTIAL' | 'FAILED').
+    // Wrapped in try/catch so a missing config row never fails the cron.
+    try {
+      await (prisma as any).integrationConfig.update({
+        where: { provider: 'INFLOW' },
+        data: {
+          lastSyncAt: new Date(),
+          lastSyncStatus: cronFailed ? 'FAILED' : (partial ? 'PARTIAL' : 'SUCCESS'),
+        },
+      })
+    } catch {
+      // Best-effort — dashboard freshness is non-critical to the data sync.
+    }
+
     return NextResponse.json(payload)
   } catch (error) {
     console.error('[InFlow Sync] Error:', error)
     await finishCronRun(runId, 'FAILURE', Date.now() - started, {
       error: error instanceof Error ? error.message : String(error),
     })
+
+    // Mirror the success-path bump on hard failures so the dashboard shows
+    // both that we ran AND that the run failed.
+    try {
+      await (prisma as any).integrationConfig.update({
+        where: { provider: 'INFLOW' },
+        data: {
+          lastSyncAt: new Date(),
+          lastSyncStatus: 'FAILED',
+        },
+      })
+    } catch {
+      // Best-effort.
+    }
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',

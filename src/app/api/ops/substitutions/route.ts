@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { parseRoles } from '@/lib/permissions'
 import { ensureSubstitutionRequestTable } from '@/lib/substitution-requests'
+import { logger } from '@/lib/logger'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/substitutions
@@ -123,7 +124,8 @@ export async function GET(request: NextRequest) {
       const placeholders = builderIds
         .map((_, i) => `$${params.length + i + 1}`)
         .join(', ')
-      whereParts.push(`j."builderId" IN (${placeholders})`)
+      // Job has no builderId column on prod — builder is reached via Order.
+      whereParts.push(`o."builderId" IN (${placeholders})`)
       params.push(...builderIds)
     }
 
@@ -147,9 +149,9 @@ export async function GET(request: NextRequest) {
          sr."createdAt",
          sr."appliedAt",
          j."jobNumber",
-         j."builderId",
+         o."builderId" AS "builderId",
          j."assignedPMId",
-         b.name       AS "builderName",
+         COALESCE(b."companyName", j."builderName") AS "builderName",
          po.sku       AS "originalSku",
          po.name      AS "originalName",
          ps.sku       AS "substituteSku",
@@ -163,7 +165,8 @@ export async function GET(request: NextRequest) {
          EXTRACT(EPOCH FROM (NOW() - sr."createdAt")) / 86400.0 AS "daysPending"
        FROM "SubstitutionRequest" sr
        LEFT JOIN "Job"     j  ON j.id  = sr."jobId"
-       LEFT JOIN "Builder" b  ON b.id  = j."builderId"
+       LEFT JOIN "Order"   o  ON o.id  = j."orderId"
+       LEFT JOIN "Builder" b  ON b.id  = o."builderId"
        LEFT JOIN "Product" po ON po.id = sr."originalProductId"
        LEFT JOIN "Product" ps ON ps.id = sr."substituteProductId"
        LEFT JOIN "ProductSubstitution" psub
@@ -192,7 +195,8 @@ export async function GET(request: NextRequest) {
       const placeholders = builderIds
         .map((_, i) => `$${countParams.length + i + 1}`)
         .join(', ')
-      countWhereParts.push(`j."builderId" IN (${placeholders})`)
+      // Job has no builderId column on prod — builder is reached via Order.
+      countWhereParts.push(`o."builderId" IN (${placeholders})`)
       countParams.push(...builderIds)
     }
     const countWhere =
@@ -213,7 +217,8 @@ export async function GET(request: NextRequest) {
              AND sr."approvedAt" >= NOW() - INTERVAL '30 days'
          ) AS rejected30d
        FROM "SubstitutionRequest" sr
-       LEFT JOIN "Job" j ON j.id = sr."jobId"
+       LEFT JOIN "Job"   j ON j.id = sr."jobId"
+       LEFT JOIN "Order" o ON o.id = j."orderId"
        ${countWhere}`,
       ...countParams
     )
@@ -286,14 +291,15 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (err: any) {
-    // If the table genuinely doesn't exist yet (e.g. fresh env where
-    // ensureSubstitutionRequestTable somehow didn't run) — return an empty
-    // queue rather than a 500 so the page can render its "not initialized"
-    // state gracefully.
+    // If the SubstitutionRequest *table* genuinely doesn't exist yet (e.g.
+    // fresh env where ensureSubstitutionRequestTable somehow didn't run) —
+    // return an empty queue so the page can render its "not initialized"
+    // state gracefully. Narrowed to relation-missing only — the previous
+    // /does not exist/i regex was eating column-mismatch errors and silently
+    // hiding real bugs (see SCAN-A1-API-RUNTIME).
     const msg = err?.message || ''
     const isMissingTable =
-      /relation .*SubstitutionRequest.* does not exist/i.test(msg) ||
-      /does not exist/i.test(msg)
+      /relation .*SubstitutionRequest.* does not exist/i.test(msg)
 
     if (isMissingTable) {
       return NextResponse.json({
@@ -306,7 +312,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.error('[api/ops/substitutions GET]', err)
+    logger.error('[api/ops/substitutions GET] failed', err, {
+      scope: effectiveScope,
+      status,
+    })
     return NextResponse.json(
       {
         error: 'Failed to load substitution queue',

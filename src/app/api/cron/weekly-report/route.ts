@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail, wrap } from '@/lib/email'
+import { withCronRun } from '@/lib/cron'
 
 interface MetricsResult {
   revenueSummary: {
@@ -276,14 +277,15 @@ function generateHTML(metrics: MetricsResult): string {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    // Auth check
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  // Auth check (kept outside the wrapper so 401s never log as cron runs).
+  const authHeader = request.headers.get('authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const metrics: MetricsResult = {
+  return withCronRun('weekly-report', async () => {
+    try {
+      const metrics: MetricsResult = {
       revenueSummary: {
         thisWeek: 0,
         lastWeek: 0,
@@ -464,23 +466,23 @@ export async function GET(request: NextRequest) {
       html: wrap(html),
     })
 
-    return NextResponse.json({
-      success: true,
-      message: 'Weekly report sent successfully',
-      metrics,
-      sentTo: ['n.barrett@abellumber.com', 'clint@abellumber.com'],
-      subject,
-    })
-  } catch (error) {
-    console.error('[weekly-report] Error:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 },
-    )
-  }
+      // Two recipients × one report = 2 sends. Both succeeded if we got here.
+      return NextResponse.json({
+        success: true,
+        processed: 2,
+        succeeded: 2,
+        failed: 0,
+        skipped: 0,
+        notes: `Weekly report sent to Nate + Clint for week of ${weekStart}`,
+        message: 'Weekly report sent successfully',
+        metrics,
+        sentTo: ['n.barrett@abellumber.com', 'clint@abellumber.com'],
+        subject,
+      })
+    } catch (error) {
+      console.error('[weekly-report] Error:', error)
+      // Re-throw so withCronRun records FAILURE with the message.
+      throw error instanceof Error ? error : new Error(String(error))
+    }
+  })
 }

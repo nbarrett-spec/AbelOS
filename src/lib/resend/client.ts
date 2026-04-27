@@ -183,6 +183,17 @@ export type SendEmailResult = SendEmailOk | SendEmailFail
  *     audit hiccup.
  */
 export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
+  // ── EMAILS_GLOBAL_KILL — launch-day insurance switch ──────────────────────
+  // Mirrors the gate in src/lib/email.ts. Set EMAILS_GLOBAL_KILL=true in
+  // Vercel to silence every outbound email regardless of per-feature gates.
+  if (process.env.EMAILS_GLOBAL_KILL === 'true') {
+    logger.warn('email_global_kill_active', { subject: args.subject, to: args.to })
+    return {
+      ok: false,
+      error: 'EMAILS_GLOBAL_KILL=true — outbound email suppressed',
+    }
+  }
+
   const from = args.from || getDefaultFrom()
   const baseTags: Array<{ name: string; value: string }> = [
     { name: 'source', value: 'aegis' },

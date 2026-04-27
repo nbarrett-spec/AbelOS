@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { muteAlert, unmuteAlert, listMutes } from '@/lib/alert-mutes'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // /api/admin/alert-mute
@@ -80,6 +81,22 @@ export async function POST(request: NextRequest) {
   if (!result.ok) {
     return NextResponse.json(result, { status: 500 })
   }
+
+  await audit(
+    request,
+    'ADMIN_ALERT_MUTE',
+    'Alert',
+    alertId,
+    {
+      alertId,
+      durationHours,
+      mutedUntil: result.mutedUntil,
+      reason: reason ?? null,
+      mutedBy,
+    },
+    'WARN'
+  ).catch(() => {})
+
   return NextResponse.json({
     ok: true,
     alertId,
@@ -106,5 +123,15 @@ export async function DELETE(request: NextRequest) {
   if (!result.ok) {
     return NextResponse.json(result, { status: 500 })
   }
+
+  await audit(
+    request,
+    'ADMIN_ALERT_UNMUTE',
+    'Alert',
+    alertId,
+    { alertId },
+    'WARN'
+  ).catch(() => {})
+
   return NextResponse.json({ ok: true, alertId })
 }

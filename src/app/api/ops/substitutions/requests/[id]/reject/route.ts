@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { requireStaffAuth } from '@/lib/api-auth'
 import { ensureSubstitutionRequestTable } from '@/lib/substitution-requests'
 import { sendSubstitutionDecisionEmail } from '@/lib/email/substitution-approved'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/substitutions/requests/[id]/reject
@@ -95,6 +96,26 @@ export async function POST(
       approverId,
       note
     )
+
+    await audit(
+      request,
+      'REJECT_SUBSTITUTION',
+      'SubstitutionRequest',
+      id,
+      {
+        requestId: id,
+        jobId: req_.jobId,
+        jobNumber: req_.jobNumber ?? null,
+        originalProductId: req_.originalProductId,
+        originalSku: req_.originalSku ?? null,
+        substituteProductId: req_.substituteProductId,
+        substituteSku: req_.substituteSku ?? null,
+        quantity: Number(req_.quantity),
+        approverId,
+        rejectionNote: note,
+      },
+      'WARN'
+    ).catch(() => {})
 
     // Notify requester (non-fatal)
     try {

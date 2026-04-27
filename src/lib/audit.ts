@@ -90,6 +90,13 @@ export async function logAudit(params: {
   userAgent?: string
   severity?: AuditSeverity
 }): Promise<string> {
+  // Defensive defaults — never let a bad payload throw before the try/catch.
+  // Empty entity/action would silently violate NOT NULL and we'd swallow it.
+  // Coerce here so a minor caller bug yields a recoverable "unknown" row
+  // instead of a black hole.
+  const safeEntity = (params.entity && params.entity.trim()) || 'unknown'
+  const safeAction = (params.action && params.action.trim()) || 'UNKNOWN'
+
   try {
     await ensureTable()
     const id = 'aud' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
@@ -108,25 +115,43 @@ export async function logAudit(params: {
       ? { ...(params.details || {}), staffName: params.staffName }
       : params.details || {}
 
+    // Pre-serialize details with a BigInt-safe replacer. Without this, a
+    // caller passing { total: BigInt(...) } in details (rare but possible
+    // from finance routes) would throw at JSON.stringify and we'd swallow
+    // the whole row. Unknown serialization issues become a stringified note
+    // so the row still lands.
+    let detailsJson: string
+    try {
+      detailsJson = JSON.stringify(mergedDetails, (_k, v) =>
+        typeof v === 'bigint' ? v.toString() : v
+      )
+    } catch (serErr) {
+      detailsJson = JSON.stringify({
+        _serialization_failed: true,
+        _error: serErr instanceof Error ? serErr.message : String(serErr),
+        _keys: Object.keys(mergedDetails || {}),
+      })
+    }
+
     await prisma.$queryRawUnsafe(
       `INSERT INTO "AuditLog" ("id", "staffId", "action", "entity", "entityId", "details", "ipAddress", "userAgent", "severity", "createdAt")
        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, NOW())`,
       id,
       staffIdForDb,
-      params.action,
-      params.entity,
+      safeAction,
+      safeEntity,
       params.entityId || null,
-      JSON.stringify(mergedDetails),
+      detailsJson,
       params.ipAddress || null,
       params.userAgent || null,
       params.severity || 'INFO'
     )
     // Fan out a live event. Never blocks; never throws.
     publishEvent({
-      topic: topicFor(params.entity),
-      entity: params.entity,
+      topic: topicFor(safeEntity),
+      entity: safeEntity,
       entityId: params.entityId,
-      action: params.action,
+      action: safeAction,
       staffId: params.staffId,
       at: new Date().toISOString(),
       id,
@@ -138,15 +163,25 @@ export async function logAudit(params: {
     // future regression (schema drift, enum change, FK addition) will surface.
     // Use console.warn in addition to logger.error so it's visible in every
     // runtime (Next.js server, cron, webhook) regardless of log transport.
+    //
+    // Include the full payload (action+entity+entityId+detail keys+staffId)
+    // so a 42703-style "column X does not exist" or FK violation tells us
+    // exactly which call site triggered it, without leaking sensitive
+    // payload values into Sentry/ServerError.
     const msg = e instanceof Error ? e.message : String(e)
-    // eslint-disable-next-line no-console
-    console.warn('[audit] insert failed:', msg, {
-      action: params.action,
-      entity: params.entity,
+    const detailKeys = params.details ? Object.keys(params.details) : []
+    const errCtx = {
+      action: safeAction,
+      entity: safeEntity,
       entityId: params.entityId,
-    })
+      staffId: params.staffId,
+      detailKeys,
+      severity: params.severity || 'INFO',
+    }
+    // eslint-disable-next-line no-console
+    console.warn('[audit] insert failed:', msg, errCtx)
     try {
-      logger.error('audit_log_write_failed', e, { action: params.action, entity: params.entity })
+      logger.error('audit_log_write_failed', e, errCtx)
     } catch {}
     return ''
   }

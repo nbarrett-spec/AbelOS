@@ -8,6 +8,7 @@ import {
   runAllocationSwap,
 } from '@/lib/substitution-requests'
 import { sendSubstitutionRequestEmail } from '@/lib/email/substitution-request'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/products/[productId]/substitutes/apply
@@ -97,13 +98,16 @@ export async function POST(
       await ensureSubstitutionRequestTable()
 
       // Grab job + product + staff context for the notification email.
+      // Job has no builderId column on prod — builder is reached via Order,
+      // with the denormalized Job.builderName text as a fallback.
       const jobRow: any[] = await prisma.$queryRawUnsafe(
         `SELECT j.id,
                 j."jobNumber",
                 j."assignedPMId",
-                b.name AS "builderName"
+                COALESCE(b."companyName", j."builderName") AS "builderName"
            FROM "Job" j
-           LEFT JOIN "Builder" b ON b.id = j."builderId"
+           LEFT JOIN "Order"   o ON o.id = j."orderId"
+           LEFT JOIN "Builder" b ON b.id = o."builderId"
           WHERE j.id = $1
           LIMIT 1`,
         jobId
@@ -212,6 +216,29 @@ export async function POST(
         )
       }
 
+      await audit(
+        request,
+        'APPLY_SUBSTITUTE_REQUESTED',
+        'SubstitutionRequest',
+        request_.id,
+        {
+          requestId: request_.id,
+          jobId,
+          jobNumber: jobRow[0].jobNumber ?? null,
+          originalProductId: productId,
+          originalSku: origProduct?.sku ?? null,
+          substituteProductId,
+          substituteSku: subProduct?.sku ?? null,
+          quantity,
+          allocationId: allocationId ?? null,
+          substitutionType: sub.substitutionType ?? null,
+          compatibility,
+          requestedById: staffId,
+          reason: reason ?? null,
+        },
+        'WARN'
+      ).catch(() => {})
+
       return NextResponse.json({
         ok: true,
         pending: true,
@@ -238,6 +265,25 @@ export async function POST(
         noteSuffix,
       })
     })
+
+    await audit(
+      request,
+      'APPLY_SUBSTITUTE',
+      'Allocation',
+      result?.newAllocation?.id ?? allocationId ?? undefined,
+      {
+        jobId,
+        originalProductId: productId,
+        substituteProductId,
+        quantity,
+        substitutionType: sub.substitutionType ?? null,
+        compatibility,
+        previousAllocationId: allocationId ?? null,
+        newAllocationId: result?.newAllocation?.id ?? null,
+        staffId,
+      },
+      'WARN'
+    ).catch(() => {})
 
     return NextResponse.json({
       ok: true,

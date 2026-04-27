@@ -8,8 +8,23 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import type { GmailMessage, GmailWatchResponse, SyncResult } from './types'
 import * as crypto from 'crypto'
+
+/**
+ * Sanitize an address list before it goes into a Postgres String[] column.
+ * Drops empty/whitespace and anything without "@" (display-name fragments
+ * like `"werner` produced when a Gmail header has a quoted name with an
+ * internal comma — that pattern was the root cause of cron failures
+ * (~28% of gmail-sync runs) with `22P02 malformed array literal`).
+ */
+function sanitizeAddressList(addrs: string[] | null | undefined): string[] {
+  if (!addrs) return []
+  return addrs
+    .map(a => (typeof a === 'string' ? a.trim() : ''))
+    .filter(a => a.length > 0 && a.includes('@'))
+}
 
 const GOOGLE_API = 'https://www.googleapis.com/gmail/v1'
 const GOOGLE_OAUTH = 'https://oauth2.googleapis.com/token'
@@ -286,39 +301,53 @@ export async function syncAllAccounts(
 
           const direction = parsed.from.includes('@abellumber.com') ? 'OUTBOUND' : 'INBOUND'
 
-          await prisma.$executeRawUnsafe(
-            `INSERT INTO "CommunicationLog" (
-              "channel", "direction", "subject", "body", "bodyHtml", "fromAddress",
-              "toAddresses", "ccAddresses", "sentAt", "status",
-              "hasAttachments", "attachmentCount", "gmailMessageId", "gmailThreadId",
-              "builderId", "organizationId", "staffId", "syncAccount"
-            ) VALUES (
-              'EMAIL'::"CommChannel", $1::"CommDirection", $2, $3, $4, $5,
-              $6::text[], $7::text[], $8, 'SYNCED'::"CommLogStatus",
-              $9, $10, $11, $12, $13, $14, $15, $16
-            )`,
-            direction,
-            parsed.subject || '(No Subject)',
-            parsed.body || null,
-            parsed.bodyHtml || null,
-            parsed.from,
-            `{${parsed.to.map(a => `"${a}"`).join(',')}}`,
-            `{${parsed.cc.map(a => `"${a}"`).join(',')}}`,
-            parsed.date ? new Date(parsed.date) : new Date(),
-            parsed.hasAttachments,
-            parsed.attachments.length,
-            parsed.id,
-            parsed.threadId,
-            match.builderId,
-            match.organizationId,
-            match.staffId,
-            userEmail
-          )
-          totalCreated++
+          // Switched from $executeRawUnsafe + hand-rolled `{"a","b"}` array
+          // literals to prisma.communicationLog.create() — Prisma binds JS
+          // arrays to text[] columns natively and quotes/escapes correctly.
+          // The old path failed with `22P02 malformed array literal` whenever
+          // a Gmail header had a quoted display name with an internal comma
+          // (split on ',' upstream produced an entry like `"werner` which
+          // then double-quoted to `""werner` inside `{}`). That accounted
+          // for ~28% of gmail-sync cron failures (121/426 in 14d).
+          try {
+            await (prisma as any).communicationLog.create({
+              data: {
+                channel: 'EMAIL',
+                direction,
+                subject: parsed.subject || '(No Subject)',
+                body: parsed.body || null,
+                bodyHtml: parsed.bodyHtml || null,
+                fromAddress: parsed.from,
+                toAddresses: sanitizeAddressList(parsed.to),
+                ccAddresses: sanitizeAddressList(parsed.cc),
+                sentAt: parsed.date ? new Date(parsed.date) : new Date(),
+                status: 'SYNCED',
+                hasAttachments: parsed.hasAttachments,
+                attachmentCount: parsed.attachments.length,
+                gmailMessageId: parsed.id,
+                gmailThreadId: parsed.threadId,
+                builderId: match.builderId,
+                organizationId: match.organizationId,
+                staffId: match.staffId,
+                syncAccount: userEmail,
+              },
+            })
+            totalCreated++
+          } catch (insertErr: any) {
+            totalFailed++
+            const msgSlice = insertErr?.message?.slice(0, 200) || String(insertErr).slice(0, 200)
+            firstError = firstError || `Message ${msgId} (${userEmail}) insert failed: ${msgSlice}`
+            logger.error('[Gmail Sync] CommunicationLog insert failed', insertErr, {
+              msgId,
+              userEmail,
+              toCount: parsed.to?.length ?? 0,
+              ccCount: parsed.cc?.length ?? 0,
+            })
+          }
         } catch (err: any) {
           totalFailed++
-          firstError = firstError || `Message ${msgId} (${userEmail}) insert failed: ${err?.message?.slice(0, 200) || String(err).slice(0, 200)}`
-          console.error(`[Gmail Sync] Message ${msgId} error for ${userEmail}:`, err)
+          firstError = firstError || `Message ${msgId} (${userEmail}) fetch/parse failed: ${err?.message?.slice(0, 200) || String(err).slice(0, 200)}`
+          logger.error('[Gmail Sync] message fetch/parse error', err, { msgId, userEmail })
         }
       }
     } catch (err: any) {
@@ -503,8 +532,8 @@ export async function syncEmails(maxResults: number = 50): Promise<SyncResult> {
             body: parsed.body,
             bodyHtml: parsed.bodyHtml,
             fromAddress: parsed.from,
-            toAddresses: parsed.to,
-            ccAddresses: parsed.cc,
+            toAddresses: sanitizeAddressList(parsed.to),
+            ccAddresses: sanitizeAddressList(parsed.cc),
             gmailMessageId: parsed.id,
             gmailThreadId: parsed.threadId,
             sentAt: new Date(parsed.date),
@@ -519,7 +548,7 @@ export async function syncEmails(maxResults: number = 50): Promise<SyncResult> {
         created++
       } catch (err) {
         failed++
-        console.error(`Gmail message sync error for ${msgId}:`, err)
+        logger.error('Gmail message sync error', err, { msgId })
       }
     }
 
@@ -645,8 +674,8 @@ export async function handlePushNotification(historyId: string) {
           body: parsed.body,
           bodyHtml: parsed.bodyHtml,
           fromAddress: parsed.from,
-          toAddresses: parsed.to,
-          ccAddresses: parsed.cc,
+          toAddresses: sanitizeAddressList(parsed.to),
+          ccAddresses: sanitizeAddressList(parsed.cc),
           gmailMessageId: parsed.id,
           gmailThreadId: parsed.threadId,
           sentAt: new Date(parsed.date),
@@ -666,7 +695,7 @@ export async function handlePushNotification(historyId: string) {
       data: { gmailHistoryId: historyId },
     })
   } catch (error) {
-    console.error('Gmail push notification handler error:', error)
+    logger.error('Gmail push notification handler error', error)
   }
 }
 

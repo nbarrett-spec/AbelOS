@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { audit } from '@/lib/audit'
+import { requireDevAdmin } from '@/lib/api-auth'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/import-bolt — Import scraped Bolt Tech data into Abel platform
@@ -12,6 +13,10 @@ import { audit } from '@/lib/audit'
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // R7 — gate destructive bulk import to ADMIN-only (prod-blocked).
+  const authError = requireDevAdmin(request)
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {

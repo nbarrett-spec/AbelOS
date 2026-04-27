@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { ensureSubstitutionRequestTable } from '@/lib/substitution-requests'
+import { logger } from '@/lib/logger'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/substitutions/requests
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
          sr."appliedAt",
          j."jobNumber",
          j."assignedPMId",
-         b.name      AS "builderName",
+         COALESCE(b."companyName", j."builderName") AS "builderName",
          po.sku       AS "originalSku",
          po.name      AS "originalName",
          ps.sku       AS "substituteSku",
@@ -65,7 +66,8 @@ export async function GET(request: NextRequest) {
          rs.email       AS "requesterEmail"
        FROM "SubstitutionRequest" sr
        LEFT JOIN "Job"     j  ON j.id  = sr."jobId"
-       LEFT JOIN "Builder" b  ON b.id  = j."builderId"
+       LEFT JOIN "Order"   o  ON o.id  = j."orderId"
+       LEFT JOIN "Builder" b  ON b.id  = o."builderId"
        LEFT JOIN "Product" po ON po.id = sr."originalProductId"
        LEFT JOIN "Product" ps ON ps.id = sr."substituteProductId"
        LEFT JOIN "ProductSubstitution" psub
@@ -113,7 +115,7 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (err: any) {
-    console.error('[substitutions/requests GET]', err)
+    logger.error('[substitutions/requests GET] failed', err, { status })
     return NextResponse.json(
       { error: 'Failed to load substitution requests', details: err?.message },
       { status: 500 }

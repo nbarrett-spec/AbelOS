@@ -8,6 +8,7 @@ import {
   markWebhookProcessed,
   markWebhookFailed,
 } from '@/lib/webhook'
+import { logAudit } from '@/lib/audit'
 
 // POST /api/webhooks/gmail — Handle Gmail Pub/Sub push notifications
 //
@@ -81,6 +82,28 @@ export async function POST(request: NextRequest) {
     if (idem.status === 'duplicate') {
       return NextResponse.json({ received: true, duplicate: true })
     }
+
+    // Forensic trail — record the inbound push before async processing kicks off.
+    await logAudit({
+      staffId: 'webhook:gmail',
+      action: 'GMAIL_PUSH_NOTIFICATION',
+      entity: 'Webhook',
+      entityId: eventId,
+      details: {
+        provider: 'gmail',
+        eventType: 'push_notification',
+        emailAddress,
+        historyId,
+        messageId: message.messageId ?? null,
+        webhookEventDbId: idem.id,
+      },
+      ipAddress:
+        request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+      severity: 'INFO',
+    }).catch(() => {})
 
     // Process the notification asynchronously
     handlePushNotification(historyId)

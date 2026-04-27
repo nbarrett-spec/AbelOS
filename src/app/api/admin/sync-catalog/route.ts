@@ -3,6 +3,7 @@ export const maxDuration = 300 // 5 minutes
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 import * as XLSX from 'xlsx'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -204,6 +205,30 @@ export async function POST(request: NextRequest) {
         bomEntries: bomCount[0]?.count,
       }
     }
+
+    await audit(
+      request,
+      'ADMIN_SYNC_CATALOG',
+      'Product',
+      undefined,
+      {
+        dryRun,
+        skipBom,
+        bomOnly,
+        catalogPath,
+        sheets,
+        products: results.products
+          ? {
+              upserted: results.products.upserted,
+              skipped: results.products.skipped,
+              errors: results.products.errors,
+            }
+          : null,
+        bom: results.bom,
+        validation: results.validation,
+      },
+      'WARN'
+    ).catch(() => {})
 
     return NextResponse.json({
       success: true,

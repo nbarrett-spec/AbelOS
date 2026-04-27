@@ -110,16 +110,41 @@ function extractErrorDetails(err: unknown): LogEntry['err'] | undefined {
 }
 
 /**
- * Send error to Sentry if available
+ * Send error to Sentry if configured.
+ *
+ * Sentry is wired via `sentry.{server,client,edge}.config.ts` + the
+ * `register()` hook in `src/instrumentation.ts`. We import `@sentry/nextjs`
+ * directly here (the prior `globalThis.Sentry` shim was dead — nothing ever
+ * assigned to it, so 100% of structured errors silently bypassed Sentry).
+ *
+ * Gated on the same env vars Sentry's own configs read (`SENTRY_DSN` for
+ * server/edge, `NEXT_PUBLIC_SENTRY_DSN` for client) so a missing DSN is a
+ * no-op rather than a `Sentry.init was not called` warning.
  */
-function sendToSentry(level: Level, msg: string, err: unknown): void {
+function sendToSentry(level: Level, msg: string, err: unknown, ctx: LogContext): void {
   try {
-    const sentry = (globalThis as any).Sentry;
-    if (!sentry) return;
-
-    if (level === 'error' && err) {
-      sentry.captureException(err instanceof Error ? err : new Error(msg));
+    if (
+      !process.env.SENTRY_DSN &&
+      !process.env.NEXT_PUBLIC_SENTRY_DSN
+    ) {
+      return;
     }
+
+    if (level !== 'error') return;
+
+    // Lazy require avoids pulling Sentry into bundles that never log errors
+    // and keeps logger.ts importable from edge/middleware contexts where
+    // a static `import` would fail in unusual build configurations.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Sentry = require('@sentry/nextjs') as typeof import('@sentry/nextjs');
+
+    const captured = err instanceof Error ? err : new Error(msg);
+    const extra: Record<string, unknown> = { ...ctx };
+    if (err !== undefined && !(err instanceof Error)) {
+      extra.rawError = err;
+    }
+
+    Sentry.captureException(captured, { extra });
   } catch {
     // Silently fail; don't break logging if Sentry fails
   }
@@ -155,7 +180,7 @@ function log(
 
   // Send to Sentry on error level
   if (level === 'error') {
-    sendToSentry(level, msg, err);
+    sendToSentry(level, msg, err, ctx);
   }
 }
 

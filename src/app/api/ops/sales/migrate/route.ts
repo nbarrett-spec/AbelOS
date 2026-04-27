@@ -2,6 +2,7 @@ import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireDevAdmin } from '@/lib/api-auth'
 
 // GET /api/ops/sales/migrate — Check existing table columns
 export async function GET() {
@@ -20,6 +21,10 @@ export async function GET() {
 
 // POST /api/ops/sales/migrate — Create sales tables if they don't exist
 export async function POST(request: NextRequest) {
+  // R7 — DDL endpoint: ADMIN-only and prod-blocked.
+  const authError = requireDevAdmin(request)
+  if (authError) return authError
+
   const results: { step: string; status: string; error?: string }[] = []
 
   async function runStep(name: string, sql: string) {

@@ -268,8 +268,10 @@ export default function CashCommandCenter() {
                       <td className="px-3 py-2 text-right font-numeric text-sm font-semibold">{USD(r.total)}</td>
                       <td className="px-3 py-2 text-right">
                         <button
-                          onClick={() => sendCollectionEmail(r.builderId, r.builderName)}
-                          className="text-[11px] text-accent-fg hover:underline"
+                          disabled
+                          aria-disabled="true"
+                          title="Not yet wired — /api/ops/collections/send-email endpoint is pending. Use the Collections cycle workflow in the meantime."
+                          className="text-[11px] text-fg-muted cursor-not-allowed opacity-50"
                         >
                           Send collection
                         </button>

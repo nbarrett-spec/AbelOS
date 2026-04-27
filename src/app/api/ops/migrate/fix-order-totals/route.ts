@@ -2,6 +2,7 @@ import { audit } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireDevAdmin } from '@/lib/api-auth'
 
 /**
  * POST /api/ops/migrate/fix-order-totals
@@ -16,6 +17,10 @@ import { prisma } from '@/lib/prisma'
  * Safe to run multiple times.
  */
 export async function POST(request: NextRequest) {
+  // R7 — destructive Order.total rewrite: ADMIN-only and prod-blocked.
+  const authError = requireDevAdmin(request)
+  if (authError) return authError
+
   try {
     audit(request, 'RUN_MIGRATE_FIX_ORDER_TOTALS', 'Database', undefined, { migration: 'RUN_MIGRATE_FIX_ORDER_TOTALS' }, 'CRITICAL').catch(() => {})
     const results: string[] = []

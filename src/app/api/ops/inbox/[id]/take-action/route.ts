@@ -21,6 +21,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { audit } from '@/lib/audit'
+import { checkStaffAuth } from '@/lib/api-auth'
+import { parseRoles, StaffRole } from '@/lib/permissions'
+
+// R7 — per-type role allowlists. If the inbox item maps to a financially
+// sensitive surface (PO approval, collections, credit alert), only roles that
+// already have access to that downstream API may execute the action. Roles
+// not listed here fall through to the default "any authenticated staff" path.
+const TYPE_ROLE_GATES: Record<string, StaffRole[]> = {
+  PO_APPROVAL: ['ADMIN', 'MANAGER', 'PURCHASING'],
+  MRP_RECOMMENDATION: ['ADMIN', 'MANAGER', 'PURCHASING'],
+  COLLECTION_ACTION: ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
+  CREDIT_ALERT: ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  QC_ALERT: ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'WAREHOUSE_LEAD', 'PROJECT_MANAGER'],
+  IMPROVEMENT_PRICING: ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
+  IMPROVEMENT_REVENUE: ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],
+  IMPROVEMENT_CASHFLOW: ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  IMPROVEMENT_COST: ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  FINANCIAL_IMPROVEMENT: ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  IMPROVEMENT_SUPPLIER: ['ADMIN', 'MANAGER', 'PURCHASING'],
+}
 
 function buildRedirect(type: string, item: any): string | null {
   const entityId = item?.entityId
@@ -86,6 +106,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // R7 — baseline: must be a logged-in staff member.
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
   const { id } = await params
   try {
     const existing = await prisma.$queryRawUnsafe<any[]>(
@@ -97,6 +121,22 @@ export async function POST(
     }
 
     const item = existing[0]
+
+    // R7 — per-type role gate (PO approvals, collections, etc. need stricter roles).
+    const requiredRoles = TYPE_ROLE_GATES[item.type as string]
+    if (requiredRoles) {
+      const rolesStr = request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || ''
+      const callerRoles = parseRoles(rolesStr)
+      const allowed = callerRoles.includes('ADMIN' as StaffRole) ||
+        callerRoles.some(r => requiredRoles.includes(r))
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'Insufficient permissions for this inbox item type' },
+          { status: 403 }
+        )
+      }
+    }
+
     const redirectTo = buildRedirect(item.type, item)
 
     await audit(request, 'TAKE_ACTION', 'InboxItem', id, {

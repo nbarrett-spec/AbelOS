@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail, wrap } from '@/lib/email'
 import crypto from 'crypto'
+import { withCronRun } from '@/lib/cron'
 
 interface OverdueInvoice {
   id: string
@@ -34,18 +35,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // ── Kill switch: collections emails are OFF until explicitly enabled ──
-  if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      reason: 'Collections emails disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
-    })
-  }
+  return withCronRun('collections-email', async () => {
+    // ── Kill switch: collections emails are OFF until explicitly enabled ──
+    // Recorded as SUCCESS skipped=true so /admin/crons shows the cron is alive
+    // even when the kill switch is on (mirrors pm-daily-digest pattern).
+    if (process.env.COLLECTIONS_EMAILS_ENABLED !== 'true') {
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        skippedCount: 1,
+        notes: 'Kill switch off: COLLECTIONS_EMAILS_ENABLED !== "true"',
+        reason: 'Collections emails disabled (set COLLECTIONS_EMAILS_ENABLED=true to enable)',
+      })
+    }
 
-  try {
-    // Query overdue invoices with builder contact info
-    const overdueInvoices = await prisma.$queryRawUnsafe<OverdueInvoice[]>(`
+    try {
+      // Query overdue invoices with builder contact info
+      const overdueInvoices = await prisma.$queryRawUnsafe<OverdueInvoice[]>(`
       SELECT
         i."id",
         i."invoiceNumber",
@@ -68,6 +77,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'No overdue invoices found',
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        skipped: 0,
+        notes: 'No overdue invoices found in scan window',
         emailsSent: { friendly: 0, firm: 0, warning: 0, hold: 0 },
         totalOutstanding: 0,
         timestamp: new Date().toISOString(),
@@ -98,11 +112,14 @@ export async function GET(request: NextRequest) {
 
     const emailsSent = { friendly: 0, firm: 0, warning: 0, hold: 0 }
     let totalOutstanding = 0
+    let failedSends = 0
+    let skippedNoEmail = 0
 
     // Send one email per builder with their tier
     for (const builder of builderMap.values()) {
       if (!builder.contactEmail) {
         console.warn(`No contact email for builder ${builder.builderId}`)
+        skippedNoEmail++
         continue
       }
 
@@ -152,27 +169,30 @@ export async function GET(request: NextRequest) {
           `Failed to send email to ${builder.contactEmail} for builder ${builder.builderId}:`,
           emailError
         )
+        failedSends++
       }
     }
 
+    const totalSent = emailsSent.friendly + emailsSent.firm + emailsSent.warning + emailsSent.hold
     return NextResponse.json({
       success: true,
       message: 'Collections emails sent successfully',
+      processed: builderMap.size,
+      succeeded: totalSent,
+      failed: failedSends,
+      skipped: skippedNoEmail,
+      notes: `${totalSent}/${builderMap.size} sent (friendly:${emailsSent.friendly} firm:${emailsSent.firm} warning:${emailsSent.warning} hold:${emailsSent.hold}); ${skippedNoEmail} skipped no-email; ${failedSends} send-fail`,
       emailsSent,
       totalOutstanding: parseFloat(totalOutstanding.toFixed(2)),
       buildersProcessed: builderMap.size,
       timestamp: new Date().toISOString(),
     })
-  } catch (error) {
-    console.error('[Collections Email Cron] Error:', error)
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('[Collections Email Cron] Error:', error)
+      // Re-throw so withCronRun marks the run FAILURE.
+      throw error instanceof Error ? error : new Error(String(error))
+    }
+  })
 }
 
 function determineTier(daysOverdue: number): CollectionTier {

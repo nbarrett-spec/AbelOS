@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 // ============================================================================
 // INTERFACES & TYPES
@@ -403,6 +404,8 @@ interface QuickActionButtonProps {
   variant?: 'primary' | 'secondary' | 'danger';
   onClick: () => void;
   size?: 'sm' | 'md';
+  disabled?: boolean;
+  title?: string;
 }
 
 function QuickActionButton({
@@ -410,6 +413,8 @@ function QuickActionButton({
   variant = 'secondary',
   onClick,
   size = 'sm',
+  disabled = false,
+  title,
 }: QuickActionButtonProps) {
   const colors: Record<string, { bg: string; text: string; border: string }> = {
     primary: {
@@ -436,6 +441,9 @@ function QuickActionButton({
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-disabled={disabled || undefined}
       style={{
         padding,
         backgroundColor: style.bg,
@@ -444,16 +452,19 @@ function QuickActionButton({
         borderRadius: '6px',
         fontSize,
         fontWeight: '600',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s ease',
         whiteSpace: 'nowrap',
+        opacity: disabled ? 0.5 : 1,
       }}
       onMouseEnter={(e) => {
+        if (disabled) return;
         const el = e.currentTarget as HTMLButtonElement;
         el.style.opacity = '0.9';
         el.style.transform = 'translateY(-1px)';
       }}
       onMouseLeave={(e) => {
+        if (disabled) return;
         const el = e.currentTarget as HTMLButtonElement;
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
@@ -469,6 +480,7 @@ function QuickActionButton({
 // ============================================================================
 
 function HotLeadsSection({ leads, isLoading }: { leads: Lead[]; isLoading: boolean }) {
+  const router = useRouter();
   if (isLoading) {
     return (
       <div
@@ -681,19 +693,28 @@ function HotLeadsSection({ leads, isLoading }: { leads: Lead[]; isLoading: boole
                         label="Call"
                         variant="secondary"
                         size="sm"
-                        onClick={() => {}}
+                        disabled={!lead.phone}
+                        title={lead.phone ? `Call ${lead.phone}` : 'No phone on file'}
+                        onClick={() => {
+                          if (lead.phone) window.location.href = `tel:${lead.phone}`;
+                        }}
                       />
                       <QuickActionButton
                         label="Email"
                         variant="secondary"
                         size="sm"
-                        onClick={() => {}}
+                        disabled={!lead.email}
+                        title={lead.email ? `Email ${lead.email}` : 'No email on file'}
+                        onClick={() => {
+                          if (lead.email) window.location.href = `mailto:${lead.email}`;
+                        }}
                       />
                       <QuickActionButton
                         label="Deal"
                         variant="primary"
                         size="sm"
-                        onClick={() => {}}
+                        title="Open pipeline filtered to this builder"
+                        onClick={() => router.push(`/ops/sales/pipeline?builderId=${lead.id}`)}
                       />
                     </div>
                   </td>
@@ -923,6 +944,7 @@ function QuoteFollowUpSection({
   quotes: Quote[];
   isLoading: boolean;
 }) {
+  const router = useRouter();
   if (isLoading) {
     return (
       <div
@@ -1101,18 +1123,23 @@ function QuoteFollowUpSection({
                           label="Follow Up"
                           variant="primary"
                           size="sm"
-                          onClick={() => {}}
+                          title="Open quote in Quotes list"
+                          onClick={() => router.push(`/ops/quotes?id=${quote.id}`)}
                         />
                         <QuickActionButton
                           label="Won"
                           variant="secondary"
                           size="sm"
+                          disabled
+                          title="Not yet implemented — no quote status PATCH endpoint"
                           onClick={() => {}}
                         />
                         <QuickActionButton
                           label="Lost"
                           variant="danger"
                           size="sm"
+                          disabled
+                          title="Not yet implemented — no quote status PATCH endpoint"
                           onClick={() => {}}
                         />
                       </div>
@@ -1139,6 +1166,7 @@ function AtRiskAccountsSection({
   accounts: ChurnRiskLead[];
   isLoading: boolean;
 }) {
+  const router = useRouter();
   if (isLoading) {
     return (
       <div
@@ -1302,7 +1330,8 @@ function AtRiskAccountsSection({
             </div>
 
             <button
-              onClick={() => {}}
+              onClick={() => router.push(`/ops/accounts/${account.id}`)}
+              title="Open account profile"
               style={{
                 width: '100%',
                 padding: '8px 12px',
@@ -1472,6 +1501,7 @@ function ActivityFeedSection({
 // ============================================================================
 
 export default function SalesCommandCenter() {
+  const router = useRouter();
   const [data, setData] = useState<{
     kpis: KPIData;
     leads: Lead[];
@@ -1981,7 +2011,8 @@ export default function SalesCommandCenter() {
             </div>
 
             <button
-              onClick={() => {}}
+              onClick={() => router.push('/ops/sales/outreach')}
+              title="Open the outreach dashboard"
               style={{
                 marginTop: '12px',
                 padding: '12px 16px',

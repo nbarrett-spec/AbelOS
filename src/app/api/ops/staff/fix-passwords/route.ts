@@ -5,28 +5,20 @@ import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import { audit } from '@/lib/audit'
 import { getPublicAppUrl } from '@/lib/email'
-
-// Extract role from header
-function getStaffRole(request: NextRequest): string | null {
-  return request.headers.get('x-staff-role')
-}
+import { requireStaffAuth } from '@/lib/api-auth'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/staff/fix-passwords — Fix employees with bad password hashes
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // R7 — migrate from inline header check to standard auth helper. ADMIN-only.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN'] })
+  if (auth.error) return auth.error
+
   try {
     // Audit log
     audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
-
-    const role = getStaffRole(request)
-    if (role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Only ADMIN can fix passwords.' },
-        { status: 403 }
-      )
-    }
 
     // Find all staff with the literal string 'hashed_password_here'
     const brokenStaff: any[] = await (prisma as any).$queryRawUnsafe(

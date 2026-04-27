@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as XLSX from 'xlsx';
+import { checkStaffAuth } from '@/lib/api-auth';
 
 const BOX_EXPORT_PATH = path.resolve(process.cwd(), '..', 'Abel Door & Trim_ DFW Box Export', 'Abel Door & Trim_ DFW');
 
@@ -153,6 +154,12 @@ function getDrivers(): Driver[] {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse<FleetResponse>> {
+  // R7 — Fleet response includes driver DOB + DL number (PII).
+  // canAccessAPI() gates this on the existing /api/ops/fleet API_ACCESS entry
+  // (ADMIN, MANAGER, PROJECT_MANAGER, DRIVER, WAREHOUSE_LEAD).
+  const authError = checkStaffAuth(request);
+  if (authError) return authError as NextResponse<FleetResponse>;
+
   try {
     const vehicles = getVehicles();
     const drivers = getDrivers();

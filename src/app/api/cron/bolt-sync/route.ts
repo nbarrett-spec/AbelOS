@@ -32,6 +32,24 @@ import {
 import { startCronRun, finishCronRun } from '@/lib/cron'
 
 export async function GET(request: NextRequest) {
+  // DISABLED 2026-04-21 — Pulte account closed; Abel migrating off ECI Bolt.
+  // De-registered from vercel.json same day. Route kept for re-enable path
+  // (restore vercel.json entry + insert IntegrationConfig row). Until then we
+  // short-circuit BEFORE auth so any stray caller (manual or stale schedule)
+  // gets a clear 410 instead of running the sync logic.
+  return NextResponse.json(
+    {
+      success: false,
+      disabled: true,
+      reason: 'ECI Bolt sync retired 2026-04-21 (Pulte account lost; migration off Bolt). Restore vercel.json entry and IntegrationConfig row to re-enable.',
+    },
+    { status: 410 },
+  )
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Original sync logic preserved below for reference. Unreachable while
+  // the early return above is in place.
+  // ──────────────────────────────────────────────────────────────────────
   // Verify cron secret
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET

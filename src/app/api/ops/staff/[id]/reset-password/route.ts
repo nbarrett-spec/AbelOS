@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { requireStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 
 // POST /api/ops/staff/[id]/reset-password — Admin resets a staff member's password
@@ -11,8 +11,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authError = checkStaffAuth(request)
-  if (authError) return authError
+  // R7 — only ADMIN/MANAGER may force-reset another user's password.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN', 'MANAGER'] })
+  if (auth.error) return auth.error
 
   try {
     // Audit log

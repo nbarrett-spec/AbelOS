@@ -14,16 +14,21 @@ export default function SEODashboardPage() {
   const [contentStats, setContentStats] = useState<any>({})
   const [activeTab, setActiveTab] = useState<'keywords' | 'content'>('keywords')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
     setLoading(true)
+    setError(null)
     try {
       const [kwRes, contentRes] = await Promise.all([
         fetch('/api/agent-hub/seo/keywords'),
         fetch('/api/agent-hub/seo/content'),
       ])
+      if (!kwRes.ok && !contentRes.ok) {
+        throw new Error(`SEO fetch failed (kw ${kwRes.status} / content ${contentRes.status})`)
+      }
       if (kwRes.ok) {
         const d = await kwRes.json()
         setKeywords(d.data || [])
@@ -34,7 +39,13 @@ export default function SEODashboardPage() {
         setContent(d.data || [])
         setContentStats(d.stats || {})
       }
-    } catch (err) { console.error(err) }
+      if (!kwRes.ok || !contentRes.ok) {
+        setError(`Partial load — ${!kwRes.ok ? 'keywords' : 'content'} unavailable. Some sections may be empty.`)
+      }
+    } catch (err) {
+      console.error('[SEO] loadData failed:', err)
+      setError('Could not load the SEO dashboard. The service may be unavailable — try refreshing.')
+    }
     finally { setLoading(false) }
   }
 
@@ -53,6 +64,16 @@ export default function SEODashboardPage() {
         <h1 className="text-2xl font-semibold" style={{ margin: '0 0 8px 0' }}>SEO & Content Dashboard</h1>
         <p className="text-sm" style={{ color: '#ccc', margin: 0 }}>Keyword rankings, content performance, and publishing pipeline</p>
       </div>
+
+      {/* Error banner — surface API failures instead of silently rendering "0" cards */}
+      {error && (
+        <div role="alert" style={{ margin: '0 40px 16px', background: '#FDEDEC', border: '1px solid #E74C3C', borderRadius: '6px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ color: '#922B21', fontSize: '14px', fontWeight: 500 }}>{error}</div>
+          <button onClick={loadData} style={{ background: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div style={{ padding: '0 40px 20px', display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>

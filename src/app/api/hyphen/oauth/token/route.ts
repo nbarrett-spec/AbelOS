@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { issueHyphenAccessToken, parseBasicAuth, HYPHEN_TOKEN_TTL_SECONDS } from '@/lib/hyphen/auth'
 import { oauthLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/hyphen/oauth/token
@@ -101,6 +102,27 @@ export async function POST(request: NextRequest) {
     const status = result.error === 'invalid_client' ? 401 : result.error === 'invalid_request' ? 400 : 500
     return errorResponse(status, result.error, result.description)
   }
+
+  // Forensic trail for every successful token mint. NEVER log access_token or
+  // clientSecret — only the clientId, scope, and TTL.
+  await logAudit({
+    staffId: `hyphen:${clientId}`,
+    action: 'HYPHEN_TOKEN_ISSUED',
+    entity: 'HyphenCredential',
+    entityId: clientId,
+    details: {
+      clientId,
+      scope: result.scope || scope || null,
+      expiresInSeconds: result.expiresInSeconds || HYPHEN_TOKEN_TTL_SECONDS,
+      grantType: 'client_credentials',
+    },
+    ipAddress:
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+    severity: 'WARN',
+  }).catch(() => {})
 
   return NextResponse.json(
     {

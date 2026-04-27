@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { audit } from '@/lib/audit'
 
 export async function GET(
   request: NextRequest,
@@ -143,6 +144,15 @@ export async function PATCH(
       taxExempt,
       status,
     } = body
+
+    // Snapshot the row before mutation so the audit trail can show before→after.
+    const beforeRows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT id, "companyName", "contactName", email, phone, address, city, state, zip,
+              "licenseNumber", "paymentTerm", "creditLimit", "taxExempt", status
+         FROM "Builder" WHERE id = $1 LIMIT 1`,
+      id
+    )
+    const before = beforeRows?.[0] ?? null
 
     // Validate paymentTerm if provided
     if (paymentTerm) {
@@ -301,6 +311,46 @@ export async function PATCH(
         { status: 404 }
       )
     }
+
+    // Build a focused diff so the audit row shows only what actually changed.
+    const trackedFields = [
+      'companyName',
+      'contactName',
+      'email',
+      'phone',
+      'address',
+      'city',
+      'state',
+      'zip',
+      'licenseNumber',
+      'paymentTerm',
+      'creditLimit',
+      'taxExempt',
+      'status',
+    ] as const
+    const changes: Record<string, { from: any; to: any }> = {}
+    if (before) {
+      for (const f of trackedFields) {
+        const beforeVal = (before as any)[f]
+        const afterVal = (updatedBuilder as any)[f]
+        if (afterVal !== undefined && String(beforeVal ?? '') !== String(afterVal ?? '')) {
+          changes[f] = { from: beforeVal ?? null, to: afterVal ?? null }
+        }
+      }
+    }
+
+    await audit(
+      request,
+      'ADMIN_EDIT_BUILDER',
+      'Builder',
+      id,
+      {
+        builderId: id,
+        changedFields: Object.keys(changes),
+        changes,
+      },
+      'CRITICAL'
+    ).catch(() => {})
 
     return NextResponse.json({
       builder: updatedBuilder,

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import { getPublicAppUrl } from '@/lib/email'
+import { requireDevAdmin } from '@/lib/api-auth'
 
 /**
  * POST /api/ops/migrate/employee-onboarding
@@ -14,6 +15,10 @@ import { getPublicAppUrl } from '@/lib/email'
  * Safe to run multiple times (uses IF NOT EXISTS).
  */
 export async function POST(request: NextRequest) {
+  // R7 — DDL endpoint: ADMIN-only and prod-blocked.
+  const authError = requireDevAdmin(request)
+  if (authError) return authError
+
   try {
     audit(request, 'RUN_MIGRATE_EMPLOYEE_ONBOARDING', 'Database', undefined, { migration: 'RUN_MIGRATE_EMPLOYEE_ONBOARDING' }, 'CRITICAL').catch(() => {})
     const results: string[] = []

@@ -260,11 +260,13 @@ export interface CronSummary {
 export const REGISTERED_CRONS: Array<{ name: string; schedule: string; description: string }> = [
   { name: 'quote-followups', schedule: '0 9 * * 1-5', description: 'Send follow-up emails on stale quotes' },
   { name: 'agent-opportunities', schedule: '0 14 * * 1-5', description: 'AI agent opportunity scoring' },
-  { name: 'inflow-sync', schedule: '0 * * * *', description: 'Hourly InFlow inventory sync' },
+  // Schedule synced to vercel.json 2026-04-27 (was '0 * * * *' — hourly drift; vercel.json runs every 15m).
+  { name: 'inflow-sync', schedule: '*/15 * * * *', description: 'InFlow inventory sync (every 15m)' },
   // bolt-sync: DISABLED 2026-04-23 — Abel migrating off ECI Bolt, no IntegrationConfig. InboxItem cmobj8d8000006bldzouh2hu3.
   // { name: 'bolt-sync', schedule: '30 * * * *', description: 'Hourly Bolt inventory sync' },
   { name: 'hyphen-sync', schedule: '15 * * * *', description: 'Hourly Hyphen BuildPro/SupplyPro sync' },
-  { name: 'bpw-sync', schedule: '45 * * * *', description: 'Hourly BPW sync' },
+  // bpw-sync: DISABLED 2026-04-21 — Pulte account closed 2026-04-20, BPW provider obsolete. Removed from vercel.json same day.
+  // { name: 'bpw-sync', schedule: '45 * * * *', description: 'Hourly BPW sync' },
   { name: 'buildertrend-sync', schedule: '15 */2 * * *', description: 'BuilderTrend schedule items + material selections (2h cadence)' },
   { name: 'run-automations', schedule: '0 8,13,17 * * 1-5', description: 'Run scheduled business automations' },
   { name: 'mrp-nightly', schedule: '0 4 * * *', description: 'Nightly MRP projection + PO recommendations' },
@@ -280,11 +282,12 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'data-quality', schedule: '0 2 * * *', description: 'Nightly data quality watchdog: detect violations, auto-fix resolved issues' },
   { name: 'data-quality-watchdog', schedule: '0 12 * * *', description: 'Phase 4.5 integrity watchdog: FK orphans, math drift, impossible states → InboxItem type=DATA_QUALITY' },
   // Drift fix 2026-04-22: routes exist and fire, so register them so /admin/crons stops flagging "missing"
-  { name: 'nuc-alerts', schedule: '*/5 * * * *', description: 'Poll NUC engine for new alerts and funnel to inbox' },
-  { name: 'morning-briefing', schedule: '0 6 * * 1-5', description: 'Daily ops/exec morning briefing email' },
-  { name: 'collections-email', schedule: '0 10 * * 1-5', description: 'Send scheduled collections emails (past-due + follow-ups)' },
-  { name: 'weekly-report', schedule: '0 8 * * 1', description: 'Weekly KPI + health report for Nate' },
-  { name: 'pm-daily-tasks', schedule: '0 7 * * 1-5', description: 'PM daily task generator (jobs needing attention)' },
+  // Schedules synced to vercel.json 2026-04-27 — vercel.json is source of truth (it's what executes).
+  { name: 'nuc-alerts', schedule: '0 */6 * * *', description: 'Poll NUC engine for new alerts and funnel to inbox (every 6h)' },
+  { name: 'morning-briefing', schedule: '0 12 * * 1-5', description: 'Daily ops/exec morning briefing email (7 AM CT)' },
+  { name: 'collections-email', schedule: '0 14 * * 1-5', description: 'Send scheduled collections emails (past-due + follow-ups)' },
+  { name: 'weekly-report', schedule: '0 13 * * 1', description: 'Weekly KPI + health report for Nate (Monday 8 AM CT)' },
+  { name: 'pm-daily-tasks', schedule: '30 11 * * 1-5', description: 'PM daily task generator (jobs needing attention)' },
   { name: 'financial-snapshot', schedule: '0 6 * * *', description: 'Daily financial snapshot (cash, AR, DSO, aging)' },
   { name: 'vendor-scorecard-daily', schedule: '15 6 * * *', description: 'Daily vendor reliability scorecard snapshots (rolling 90d on-time/slip, grade A-D, MRP safety-stock multiplier)' },
   { name: 'brain-sync', schedule: '0 */4 * * *', description: 'Push Aegis deltas to NUC brain (non-staff tables)' },

@@ -17,11 +17,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { audit } from '@/lib/audit'
+import { checkStaffAuth } from '@/lib/api-auth'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET: Fetch inbox items via raw SQL
 // ──────────────────────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
+  // R7 — gate inbox feed on the canAccessAPI prefix entry (ALL_ROLES).
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
   try {
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status')
@@ -72,6 +77,10 @@ export async function GET(request: NextRequest) {
 // POST: Create new inbox item
 // ──────────────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
+  // R7 — authenticated staff only; canAccessAPI gates by role.
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -115,6 +124,12 @@ export async function POST(request: NextRequest) {
 // PATCH: Update inbox item (approve/reject/snooze)
 // ──────────────────────────────────────────────────────────────────────────
 export async function PATCH(request: NextRequest) {
+  // R7 — APPROVE/REJECT touches financial inbox items (PO approvals,
+  // collection actions). Gate on ADMIN/MANAGER + the role the item type
+  // belongs to. Per-type role checks happen below after we read the row.
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { itemId, action, notes, snoozedUntil } = body

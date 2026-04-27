@@ -5,32 +5,22 @@ import { hashPassword } from '@/lib/staff-auth'
 import { randomUUID } from 'crypto'
 import { sendInviteEmail, getPublicAppUrl } from '@/lib/email'
 import { audit } from '@/lib/audit'
-
-// Extract role from header (middleware sets x-staff-role)
-function getStaffRole(request: NextRequest): string | null {
-  return request.headers.get('x-staff-role')
-}
-
-// Check if user has required role
-function hasRequiredRole(role: string | null): boolean {
-  return role === 'ADMIN' || role === 'MANAGER'
-}
+import { requireStaffAuth } from '@/lib/api-auth'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/staff — List all staff with onboarding status
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
+  // R7 — migrate from inline header check to the standard auth helper.
+  // /api/ops/staff API_ACCESS prefix is [ADMIN, MANAGER]; canAccessAPI runs
+  // automatically inside requireStaffAuth.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN', 'MANAGER'] })
+  if (auth.error) return auth.error
+
   try {
-    const role = getStaffRole(request)
-    const allRoles = (request.headers.get('x-staff-roles') || role || '').split(',').map(r => r.trim())
+    const allRoles = (request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || '').split(',').map(r => r.trim())
     const isAdmin = allRoles.includes('ADMIN')
-    if (!hasRequiredRole(role)) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Only ADMIN or MANAGER can list staff.' },
-        { status: 403 }
-      )
-    }
 
     // Get all staff with onboarding status + hierarchy + comp
     const staff: any[] = await (prisma as any).$queryRawUnsafe(`
@@ -113,17 +103,13 @@ export async function GET(request: NextRequest) {
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // R7 — migrate from inline header check to standard auth helper.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN', 'MANAGER'] })
+  if (auth.error) return auth.error
+
   try {
     // Audit log
     audit(request, 'CREATE', 'Staff', undefined, { method: 'POST' }).catch(() => {})
-
-    const role = getStaffRole(request)
-    if (!hasRequiredRole(role)) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Only ADMIN or MANAGER can create staff.' },
-        { status: 403 }
-      )
-    }
 
     const body = await request.json()
     const { firstName, lastName, email, phone, staffRole, department, title, hireDate } = body

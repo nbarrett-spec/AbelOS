@@ -3,7 +3,7 @@ export const maxDuration = 120
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { requireStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { hashPassword } from '@/lib/staff-auth'
 import { randomUUID } from 'crypto'
@@ -86,14 +86,9 @@ function buildOverrides(role: string): Record<string, boolean> {
 }
 
 export async function POST(request: NextRequest) {
-  const authError = checkStaffAuth(request)
-  if (authError) return authError
-
-  // ADMIN only
-  const role = request.headers.get('x-staff-role')
-  if (role !== 'ADMIN') {
-    return NextResponse.json({ error: 'ADMIN only' }, { status: 403 })
-  }
+  // R7 — migrate from inline ADMIN header check to standard auth helper.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN'] })
+  if (auth.error) return auth.error
 
   try {
     const body = await request.json().catch(() => ({}))

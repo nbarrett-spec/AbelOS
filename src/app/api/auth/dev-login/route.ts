@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createToken, setSessionCookie } from '@/lib/auth'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { audit } from '@/lib/audit'
 
 /**
  * DEV-ONLY: Test login endpoint that bypasses password verification.
@@ -71,6 +72,21 @@ export async function POST(request: NextRequest) {
       companyName: builder.companyName,
     })
     await setSessionCookie(token, true)
+
+    await audit(
+      request,
+      'DEV_LOGIN',
+      'Builder',
+      builder.id,
+      {
+        builderId: builder.id,
+        builderEmail: builder.email,
+        companyName: builder.companyName,
+        nodeEnv: process.env.NODE_ENV ?? 'unknown',
+        method: email ? 'explicit-email' : 'first-active',
+      },
+      'CRITICAL'
+    ).catch(() => {})
 
     return NextResponse.json({
       success: true,

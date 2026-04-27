@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { getStaffFromHeaders } from '@/lib/audit'
+import { checkStaffAuth } from '@/lib/api-auth'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Role → visible inbox-types map
@@ -91,6 +92,10 @@ function typesForRoles(roles: string[]): string[] | 'ALL' {
 }
 
 export async function GET(request: NextRequest) {
+  // R7 — gate on /api/ops/inbox prefix (ALL_ROLES); the body is then scoped by role.
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
   try {
     const staff = getStaffFromHeaders(request.headers)
     const rolesHeader = request.headers.get('x-staff-roles') || staff.role

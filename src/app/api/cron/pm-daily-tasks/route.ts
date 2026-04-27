@@ -347,12 +347,16 @@ export async function GET(request: NextRequest) {
 
       try {
         // 2a: Jobs scheduled today assigned to this PM
+        // Job has no builderId column on prod — builder is reached via Order.
+        // Fall back to Job.builderName text when the Job is not yet linked
+        // to an Order (older jobs imported before Order linkage).
         const jobs = await prisma.$queryRawUnsafe<ScheduledJob[]>(`
           SELECT j."jobNumber", j."jobAddress" AS "address", j.status::text,
-                 b."companyName" AS "builderName",
+                 COALESCE(b."companyName", j."builderName") AS "builderName",
                  c."name" AS "communityName"
           FROM "Job" j
-          LEFT JOIN "Builder" b ON b.id = j."builderId"
+          LEFT JOIN "Order" o ON o.id = j."orderId"
+          LEFT JOIN "Builder" b ON b.id = o."builderId"
           LEFT JOIN "Community" c ON c.id = j."communityId"
           WHERE j."assignedPMId" = $1
             AND j."scheduledDate"::date = CURRENT_DATE

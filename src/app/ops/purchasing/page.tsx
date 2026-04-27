@@ -113,6 +113,7 @@ export default function PurchaseOrdersPage() {
   const [pms, setPms] = useState<PMOption[]>([])
   const [builders, setBuilders] = useState<BuilderOption[]>([])
   const [vendors, setVendors] = useState<VendorOption[]>([])
+  const [filterLoadError, setFilterLoadError] = useState<string | null>(null)
 
   // All POs sort
   const [sortBy, setSortBy] = useState<string>('createdAt')
@@ -195,7 +196,10 @@ export default function PurchaseOrdersPage() {
         const list = (d?.pms || d?.data || []) as PMOption[]
         setPms(list)
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[Purchasing] purchasing_dropdown_load_failed:pm_roster', err)
+        setFilterLoadError('Could not load filter options — refresh the page')
+      })
 
     // Builders
     fetch('/api/ops/builders?limit=200')
@@ -208,7 +212,10 @@ export default function PurchaseOrdersPage() {
             .sort((a, b) => a.companyName.localeCompare(b.companyName)),
         )
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[Purchasing] purchasing_dropdown_load_failed:builders', err)
+        setFilterLoadError('Could not load filter options — refresh the page')
+      })
 
     // Vendors
     fetch('/api/ops/vendors?limit=200')
@@ -221,7 +228,10 @@ export default function PurchaseOrdersPage() {
             .sort((a, b) => a.name.localeCompare(b.name)),
         )
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[Purchasing] purchasing_dropdown_load_failed:vendors', err)
+        setFilterLoadError('Could not load filter options — refresh the page')
+      })
   }, [])
 
   useEffect(() => {
@@ -346,6 +356,26 @@ export default function PurchaseOrdersPage() {
           </>
         }
       />
+
+      {/* ── Filter dropdown load error ───────────────────────────────── */}
+      {filterLoadError && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-md border border-data-negative/30 bg-data-negative/5 px-3 py-2 text-sm text-fg"
+        >
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-data-negative flex-shrink-0" />
+          <div className="flex-1">
+            <div className="font-medium">{filterLoadError}</div>
+            <div className="text-xs text-fg-muted">PM, builder, or vendor filter could not be loaded — filtering may be incomplete.</div>
+          </div>
+          <button
+            onClick={() => { setFilterLoadError(null); window.location.reload() }}
+            className="btn btn-secondary btn-sm"
+          >
+            <RefreshCw className="w-3 h-3" /> Refresh
+          </button>
+        </div>
+      )}
 
       {/* ── Top KPIs ──────────────────────────────────────────────────── */}
       {stats && (

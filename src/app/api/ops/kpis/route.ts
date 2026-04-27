@@ -57,11 +57,21 @@ export async function GET(request: NextRequest) {
     const deliveriesData = deliveriesThisMonth[0] || { total: 0, completed: 0, late: 0 }
 
     // 2. On-time delivery rate (trailing 30 days from as-of)
+    // Compare actual completion to the SCHEDULED date (the commitment), not
+    // updatedAt+1day which is trivially true and made this metric report a
+    // fake near-100% on-time rate (caught in SCAN-A1).
+    // A delivery is on-time if it completed on or before its scheduledDate.
+    // If scheduledDate is null we exclude the row from the denominator (no
+    // commitment to measure against).
     const onTimeDeliveries: any[] = await prisma.$queryRawUnsafe(
       `
       SELECT
-        COUNT(*)::int as total_delivered,
-        COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL AND "completedAt" <= "updatedAt" + interval '1 day')::int as on_time
+        COUNT(*) FILTER (WHERE "scheduledDate" IS NOT NULL)::int as total_delivered,
+        COUNT(*) FILTER (
+          WHERE "completedAt" IS NOT NULL
+            AND "scheduledDate" IS NOT NULL
+            AND "completedAt"::date <= "scheduledDate"::date
+        )::int as on_time
       FROM "Delivery"
       WHERE status::text = 'COMPLETE'
         AND "completedAt" >= $1::timestamp - interval '30 days'

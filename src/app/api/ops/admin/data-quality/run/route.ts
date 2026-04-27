@@ -8,9 +8,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { audit } from '@/lib/audit'
+import { requireStaffAuth } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
-  // TODO: add session/role check to verify the caller is an admin
+  // R7 — TODO resolved: ADMIN-only session check (prod-safe).
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN'] })
+  if (auth.error) return auth.error
+
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) {
     return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })

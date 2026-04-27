@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { mapCategory } from '@/lib/product-categories'
 import { audit } from '@/lib/audit'
+import { requireDevAdmin } from '@/lib/api-auth'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/products/cleanup — Remap all product categories
@@ -53,6 +54,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // R7 — gate destructive category re-mapping to ADMIN-only (prod-blocked).
+  const authError = requireDevAdmin(request)
+  if (authError) return authError
+
   try {
     audit(request, 'CREATE', 'ProductCleanup', undefined, { method: 'POST' }).catch(() => {})
 

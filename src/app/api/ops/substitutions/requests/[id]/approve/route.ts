@@ -8,6 +8,7 @@ import {
   runAllocationSwap,
 } from '@/lib/substitution-requests'
 import { sendSubstitutionDecisionEmail } from '@/lib/email/substitution-approved'
+import { audit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST /api/ops/substitutions/requests/[id]/approve
@@ -120,6 +121,29 @@ export async function POST(
 
       return swap
     })
+
+    await audit(
+      request,
+      'APPROVE_SUBSTITUTION',
+      'SubstitutionRequest',
+      id,
+      {
+        requestId: id,
+        jobId: req_.jobId,
+        jobNumber: req_.jobNumber ?? null,
+        originalProductId: req_.originalProductId,
+        originalSku: req_.originalSku ?? null,
+        substituteProductId: req_.substituteProductId,
+        substituteSku: req_.substituteSku ?? null,
+        quantity: Number(req_.quantity),
+        substitutionType: req_.substitutionType ?? null,
+        approverId,
+        previousAllocationId: req_.originalAllocationId ?? null,
+        newAllocationId: result?.newAllocation?.id ?? null,
+        note: body.note ?? null,
+      },
+      'WARN'
+    ).catch(() => {})
 
     // Notify the requester (non-fatal)
     try {

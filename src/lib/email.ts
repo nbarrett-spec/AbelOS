@@ -60,6 +60,18 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<{ success: boolean; id?: string; error?: string }> {
   const { to, subject, html, replyTo } = options
 
+  // ── EMAILS_GLOBAL_KILL — launch-day insurance switch ──────────────────────
+  // One env flag suppresses every outbound email regardless of per-feature
+  // gates. Set EMAILS_GLOBAL_KILL=true in Vercel to silence the platform
+  // instantly. SCAN-A9 found 8 builder-facing send paths without individual
+  // kill switches (incl. one that ships temp passwords) — this is the
+  // backstop until each is gated. Mirror gate also lives in
+  // src/lib/resend/client.ts sendEmail().
+  if (process.env.EMAILS_GLOBAL_KILL === 'true') {
+    logger.warn('email_global_kill_active', { to, subject })
+    return { success: false, error: 'EMAILS_GLOBAL_KILL=true — outbound email suppressed' }
+  }
+
   // If no API key, log warning and return failure so callers know email wasn't sent
   if (!RESEND_API_KEY) {
     logger.warn('email_service_not_configured', { to, subject })

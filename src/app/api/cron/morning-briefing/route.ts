@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail, wrap } from '@/lib/email'
+import { withCronRun } from '@/lib/cron'
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -10,72 +11,78 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    // Fetch all metrics
-    const [revenue, orders, ar, pipeline, alerts, schedule] = await Promise.all([
-      fetchRevenueMetrics(),
-      fetchOrdersMetrics(),
-      fetchARHealth(),
-      fetchPipelineMetrics(),
-      fetchAlerts(),
-      fetchTodaySchedule(),
-    ])
+  return withCronRun('morning-briefing', async () => {
+    try {
+      // Fetch all metrics
+      const [revenue, orders, ar, pipeline, alerts, schedule] = await Promise.all([
+        fetchRevenueMetrics(),
+        fetchOrdersMetrics(),
+        fetchARHealth(),
+        fetchPipelineMetrics(),
+        fetchAlerts(),
+        fetchTodaySchedule(),
+      ])
 
-    // Format date for email subject
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const dateStr = yesterday.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    })
+      // Format date for email subject
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const dateStr = yesterday.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
 
-    // Build HTML email
-    const html = buildBriefingHTML({
-      yesterday: yesterday,
-      revenue,
-      orders,
-      ar,
-      pipeline,
-      alerts,
-      schedule,
-    })
-
-    // Wrap in template and send
-    const wrappedHtml = wrap(html)
-    await sendEmail({
-      to: 'n.barrett@abellumber.com,clint@abellumber.com',
-      subject: `☀️ Abel Morning Brief — ${dateStr}`,
-      html: wrappedHtml,
-    })
-
-    console.log('[morning-briefing] Email sent successfully', {
-      revenue,
-      orders,
-      ar,
-      pipeline,
-      alerts,
-      schedule,
-    })
-
-    return NextResponse.json({
-      success: true,
-      metrics: {
+      // Build HTML email
+      const html = buildBriefingHTML({
+        yesterday: yesterday,
         revenue,
         orders,
         ar,
         pipeline,
         alerts,
         schedule,
-      },
-    })
-  } catch (error) {
-    console.error('[morning-briefing] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate briefing', details: String(error) },
-      { status: 500 }
-    )
-  }
+      })
+
+      // Wrap in template and send
+      const wrappedHtml = wrap(html)
+      await sendEmail({
+        to: 'n.barrett@abellumber.com,clint@abellumber.com',
+        subject: `☀️ Abel Morning Brief — ${dateStr}`,
+        html: wrappedHtml,
+      })
+
+      console.log('[morning-briefing] Email sent successfully', {
+        revenue,
+        orders,
+        ar,
+        pipeline,
+        alerts,
+        schedule,
+      })
+
+      // 1 email send per run; we count it as "processed" with 1 succeeded.
+      return NextResponse.json({
+        success: true,
+        processed: 1,
+        succeeded: 1,
+        failed: 0,
+        skipped: 0,
+        notes: `Morning brief emailed to Nate + Clint for ${dateStr}`,
+        metrics: {
+          revenue,
+          orders,
+          ar,
+          pipeline,
+          alerts,
+          schedule,
+        },
+      })
+    } catch (error) {
+      console.error('[morning-briefing] Error:', error)
+      // Re-throw so withCronRun marks the run FAILURE.
+      throw error instanceof Error ? error : new Error(String(error))
+    }
+  })
 }
 
 async function fetchRevenueMetrics() {

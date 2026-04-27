@@ -9,6 +9,7 @@ import {
   markWebhookProcessed,
   markWebhookFailed,
 } from '@/lib/webhook'
+import { logAudit } from '@/lib/audit'
 
 // POST /api/webhooks/inflow — Handle InFlow webhook events
 //
@@ -68,6 +69,27 @@ export async function POST(request: NextRequest) {
     if (idem.status === 'duplicate') {
       return NextResponse.json({ received: true, duplicate: true })
     }
+
+    // Forensic trail — record the inbound event before handing off to the
+    // processor so we can correlate audit ↔ webhook event even if processing fails.
+    await logAudit({
+      staffId: 'webhook:inflow',
+      action: 'INFLOW_EVENT',
+      entity: 'Webhook',
+      entityId: eventId,
+      details: {
+        provider: 'inflow',
+        eventType,
+        eventId,
+        webhookEventDbId: idem.id,
+      },
+      ipAddress:
+        request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+      severity: 'INFO',
+    }).catch(() => {})
 
     try {
       await handleInflowWebhook(eventType, body.data || body)

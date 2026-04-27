@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { checkStaffAuth } from '@/lib/api-auth'
+import { checkStaffAuth, requireStaffAuth } from '@/lib/api-auth'
 import { hashPassword } from '@/lib/staff-auth'
 import { randomUUID } from 'crypto'
 import { sendInviteEmail, sendStaffPasswordResetEmail, getPublicAppUrl } from '@/lib/email'
@@ -99,8 +99,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authError = checkStaffAuth(request)
-  if (authError) return authError
+  // R7 — explicit role check: only ADMIN/MANAGER mutate Staff records.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN', 'MANAGER'] })
+  if (auth.error) return auth.error
 
   try {
     // Audit log
@@ -374,8 +375,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const authError = checkStaffAuth(request)
-  if (authError) return authError
+  // R7 — explicit role check: only ADMIN/MANAGER may resend invites or reset.
+  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN', 'MANAGER'] })
+  if (auth.error) return auth.error
 
   try {
     // Audit log

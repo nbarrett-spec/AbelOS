@@ -582,6 +582,86 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Inbox — triage queue feed (page is ALL_ROLES, scoped server-side).
   '/api/ops/inbox': ALL_ROLES,
+
+  // ──────────────────────────────────────────────────────────────────────
+  // R7 — Pile B P0/P1 default-deny holes (per docs/SCAN-A6-PERMISSION-COVERAGE.md).
+  // Each entry below was a route that called `checkStaffAuth` but had no
+  // matching API_ACCESS prefix and therefore 403'd every non-ADMIN.
+  // ──────────────────────────────────────────────────────────────────────
+
+  // Top-of-app surfaces — render on every page, must be reachable by all.
+  '/api/ops/dashboard': ALL_ROLES,
+  '/api/ops/me': ALL_ROLES,
+  '/api/ops/search': ALL_ROLES,
+  '/api/ops/my-day': ALL_ROLES,
+  '/api/ops/action-queue': ALL_ROLES,
+  '/api/ops/activity-log': ALL_ROLES,
+  '/api/ops/presence': ALL_ROLES,
+  '/api/ops/stream': ALL_ROLES,
+  '/api/ops/sops': ALL_ROLES,
+
+  // Office-level address book + business docs.
+  '/api/ops/contacts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'ACCOUNTING'],
+  '/api/ops/contracts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
+  '/api/ops/calendar/jobs': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'WAREHOUSE_LEAD', 'DRIVER'],
+
+  // Builder-facing surfaces (mirrors page-level rules already in ROUTE_ACCESS).
+  '/api/ops/builder-messages': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],
+  '/api/ops/credit-alerts': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
+  '/api/ops/customers/health': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ACCOUNTING'],
+
+  // Locations / trades / takeoff inquiries / divisions / phase templates —
+  // used in dropdowns on jobs/quotes/estimating pages.
+  '/api/ops/locations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  '/api/ops/trades': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'INSTALLER'],
+  '/api/ops/takeoff-inquiries': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR'],
+  '/api/ops/divisions': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
+  '/api/ops/phase-templates': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'],
+
+  // Operator agent (workflow approvals, agent conversations).
+  '/api/ops/agent': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR', 'PURCHASING'],
+
+  // Warehouse / QC surfaces.
+  '/api/ops/gold-stock': ['ADMIN', 'MANAGER', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH', 'PROJECT_MANAGER', 'PURCHASING'],
+  '/api/ops/qc-images': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'WAREHOUSE_LEAD'],
+  '/api/ops/qc-briefing': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
+  '/api/ops/qc-trends': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
+  '/api/ops/qc': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
+
+  // Estimator + accounting briefing/landing endpoints.
+  '/api/ops/estimator-briefing': ['ADMIN', 'MANAGER', 'ESTIMATOR', 'PROJECT_MANAGER'],
+  '/api/ops/accounting-briefing': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/accounting-command': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/accounting-ai': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/manufacturing-ai': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'WAREHOUSE_LEAD', 'PROJECT_MANAGER'],
+  '/api/ops/manufacturing-command': ['ADMIN', 'MANAGER', 'QC_INSPECTOR', 'WAREHOUSE_LEAD', 'PROJECT_MANAGER'],
+
+  // Hyphen integration review queue.
+  '/api/ops/hyphen': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+
+  // Cash flow optimizer (mirrors /ops/cash-flow-optimizer page rule).
+  '/api/ops/cash-flow-optimizer': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+
+  // Procurement family (excluding the existing more-specific
+  // /api/ops/procurement/purchase-orders entry).
+  '/api/ops/procurement': ['ADMIN', 'MANAGER', 'PURCHASING', 'PROJECT_MANAGER'],
+
+  // SmartPO actions (separate path from /api/ops/purchasing/smart-po).
+  '/api/ops/smartpo': ['ADMIN', 'MANAGER', 'PURCHASING'],
+
+  // Material status surfaces.
+  '/api/ops/scan-sheet': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  '/api/ops/material-watch': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  '/api/ops/shortages': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+
+  // System + admin tooling — explicit ADMIN/MANAGER (matches /ops admin pages).
+  '/api/ops/system-alerts': ['ADMIN', 'MANAGER'],
+  '/api/ops/received-orders': ['ADMIN', 'MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  '/api/ops/auto-po': ['ADMIN', 'MANAGER', 'PURCHASING', 'WAREHOUSE_LEAD'],
+  '/api/ops/admin': ['ADMIN', 'MANAGER'],
+
+  // Special-case: confirmation send on delivery (mirrors /api/ops/delivery).
+  '/api/ops/deliveries': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'DRIVER', 'WAREHOUSE_LEAD'],
 }
 
 export function canAccessAPI(role: StaffRole | StaffRole[], pathname: string): boolean {

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { withCronRun } from '@/lib/cron';
 
 // Bearer token auth for cron
 function validateCronAuth(request: NextRequest): boolean {
@@ -31,9 +32,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  try {
-    const alerts: AlertPayload[] = [];
-    let duplicatesSkipped = 0;
+  return withCronRun('nuc-alerts', async () => {
+    try {
+      const alerts: AlertPayload[] = [];
+      let duplicatesSkipped = 0;
+      let insertFailed = 0;
 
     // 1. Credit Breach Alert: Builders where AR outstanding > creditLimit
     const creditBreachResults = await prisma.$queryRawUnsafe<
@@ -247,46 +250,54 @@ export async function GET(request: NextRequest) {
     }
 
     // Bulk insert all new alerts into InboxItem
+    let inserted = 0;
     for (const alert of alerts) {
       const id = generateId('nuc_alert');
       const actionDataJson = JSON.stringify(alert.actionData || {});
 
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "InboxItem"
-         (id, type, title, body, priority, status, "entityType", "entityId", "actionData", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, 'PENDING', $6, $7, $8, NOW(), NOW())`,
-        id,
-        alert.type,
-        alert.title,
-        alert.body,
-        alert.priority,
-        alert.entityType,
-        alert.entityId,
-        actionDataJson
-      );
+      try {
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "InboxItem"
+           (id, type, title, body, priority, status, "entityType", "entityId", "actionData", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, 'PENDING', $6, $7, $8, NOW(), NOW())`,
+          id,
+          alert.type,
+          alert.title,
+          alert.body,
+          alert.priority,
+          alert.entityType,
+          alert.entityId,
+          actionDataJson
+        );
+        inserted++;
+      } catch (insertErr) {
+        console.error('[nuc-alerts] insert failed for alert', alert.type, alert.entityId, insertErr);
+        insertFailed++;
+      }
     }
 
-    return NextResponse.json(
-      {
-        generated: alerts.length,
-        skippedDuplicates: duplicatesSkipped,
-        alerts: alerts.map((a) => ({
-          type: a.type,
-          title: a.title,
-          priority: a.priority,
-        })),
-        timestamp: new Date().toISOString(),
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('[nuc-alerts cron] error:', error);
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+      return NextResponse.json(
+        {
+          generated: alerts.length,
+          skippedDuplicates: duplicatesSkipped,
+          processed: alerts.length + duplicatesSkipped,
+          succeeded: inserted,
+          failed: insertFailed,
+          skipped: duplicatesSkipped,
+          notes: `${inserted} new InboxItem rows; ${duplicatesSkipped} duplicate-suppressed; ${insertFailed} insert errors across 5 alert classes (credit-breach, stale-quote, stockout, overdue, margin)`,
+          alerts: alerts.map((a) => ({
+            type: a.type,
+            title: a.title,
+            priority: a.priority,
+          })),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error('[nuc-alerts cron] error:', error);
+      // Re-throw so withCronRun records FAILURE.
+      throw error instanceof Error ? error : new Error(String(error));
+    }
+  });
 }
