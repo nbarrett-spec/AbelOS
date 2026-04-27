@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
 import { onDeliveryComplete } from '@/lib/cascades/delivery-lifecycle'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 /**
  * POST /api/ops/delivery/[deliveryId]/complete
@@ -180,6 +181,33 @@ export async function POST(
       onDeliveryComplete(delivery.id).catch((err: any) => {
         console.error('[delivery complete] cascade failure', delivery.id, err?.message || err)
       })
+    }
+
+    // Fire user-defined automation rules (AutomationRule table) for
+    // DELIVERY_COMPLETE. Fires for both partial and full — the `status` field
+    // in the context lets rules differentiate. Fire-and-forget; failures
+    // must never block delivery completion. Best-effort context lookup —
+    // join to Job/Order to expose orderId + builderId for downstream rules.
+    try {
+      const ctxRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT d."deliveryNumber", j."orderId", o."builderId"
+         FROM "Delivery" d
+         LEFT JOIN "Job" j ON j."id" = d."jobId"
+         LEFT JOIN "Order" o ON o."id" = j."orderId"
+         WHERE d."id" = $1`,
+        delivery.id,
+      )
+      const ctx = ctxRows[0] || {}
+      fireAutomationEvent('DELIVERY_COMPLETE', delivery.id, {
+        deliveryId: delivery.id,
+        deliveryNumber: ctx.deliveryNumber || null,
+        orderId: ctx.orderId || null,
+        jobId: delivery.jobId || null,
+        builderId: ctx.builderId || null,
+        status: partialComplete ? 'PARTIAL_DELIVERY' : 'COMPLETE',
+      }).catch(() => {})
+    } catch {
+      // best-effort — never block on context fetch
     }
 
     return NextResponse.json({

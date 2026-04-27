@@ -7,6 +7,7 @@ import { notifyOrderConfirmed, notifyOrderShipped, notifyOrderDelivered } from '
 import { onDeliveryScheduled } from '@/lib/cascades/delivery-lifecycle'
 import { runOrderStatusCascades } from '@/lib/cascades/order-lifecycle'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 // GET /api/ops/orders/[id] — Get single order with all relations
 export async function GET(
@@ -115,6 +116,10 @@ export async function PATCH(
     // When a `status` (or `confirmDelivery` → DELIVERED) is coming in, load the
     // current status from the DB and validate against state-machines.ts. This
     // is the canonical pattern — see docs/STATUS_GUARD_WIRING.md.
+    //
+    // `currentStatus` is hoisted to the outer scope so the automation-event
+    // payload (fired AFTER the cascade) can include `from`/`to`.
+    let currentStatus: string | null = null
     if (status || confirmDelivery) {
       const currentRows: any[] = await prisma.$queryRawUnsafe(
         `SELECT "status"::text AS "status" FROM "Order" WHERE "id" = $1`,
@@ -123,7 +128,7 @@ export async function PATCH(
       if (currentRows.length === 0) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 })
       }
-      const currentStatus: string = currentRows[0].status
+      currentStatus = currentRows[0].status as string
       const targetStatus: string = status || 'DELIVERED'
       try {
         requireValidTransition('order', currentStatus, targetStatus)
@@ -225,6 +230,17 @@ export async function PATCH(
       runOrderStatusCascades(id, cascadeStatus).catch((err: any) => {
         console.error('[orders PATCH] cascade failure', id, cascadeStatus, err?.message || err)
       })
+
+      // Fire user-defined automation rules (AutomationRule table). Fire-and-
+      // forget — automation failures must never block an order PATCH.
+      fireAutomationEvent('ORDER_STATUS_CHANGED', id, {
+        orderId: id,
+        orderNumber: orderRows[0]?.orderNumber,
+        builderId: orderRows[0]?.builderId,
+        from: currentStatus,
+        to: cascadeStatus,
+        updatedBy: request.headers.get('x-staff-id') || 'system',
+      }).catch(() => {})
     }
 
     // ── Delivery lifecycle: create a SCHEDULED Delivery when Order → READY_TO_SHIP ──

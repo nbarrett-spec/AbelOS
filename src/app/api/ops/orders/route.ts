@@ -8,6 +8,7 @@ import { checkBuilderCreditStatus } from '@/lib/credit-hold'
 import { createTaskForOrderReceived } from '@/lib/events/task'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { toCsv } from '@/lib/csv'
+import { fireAutomationEvent } from '@/lib/automation-executor'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -517,6 +518,16 @@ export async function POST(request: NextRequest) {
     // Event: new order lands at RECEIVED — create a PM task to confirm it.
     // Fire-and-forget; task failure must never roll back the order.
     createTaskForOrderReceived(orderId).catch(() => {})
+
+    // Fire user-defined automation rules (AutomationRule table) for ORDER_CREATED.
+    // Fire-and-forget; automation failures must never block order creation.
+    fireAutomationEvent('ORDER_CREATED', orderId, {
+      orderId,
+      orderNumber,
+      builderId: finalBuilderId,
+      status: 'RECEIVED',
+      createdBy: request.headers.get('x-staff-id') || 'system',
+    }).catch(() => {})
 
     // Update project status to ORDERED if it exists
     if (quote.project_id) {
