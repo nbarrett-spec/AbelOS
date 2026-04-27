@@ -631,3 +631,110 @@ export async function notifyWarrantyUpdate(
     link: `/dashboard/warranty`,
   })
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// PHASE 3 — Staff notifications & role-based lookup helpers
+// AUTOMATIONS-HANDOFF.md §3.0
+//
+// `createNotification()` above is the single-recipient helper. `notifyStaff()`
+// is the bulk-friendly version used by cascades and the order PATCH
+// fireStaffNotifications() function. Always fire-and-forget — staff
+// notifications are best-effort and must never block the source mutation.
+// ──────────────────────────────────────────────────────────────────────────
+
+// Valid Postgres NotificationType enum values — keep in sync with
+// prisma/schema.prisma. Anything else maps to 'SYSTEM' so a typo or
+// renamed type can't crash the order PATCH route.
+const VALID_NOTIFICATION_TYPES = new Set([
+  'JOB_UPDATE',
+  'TASK_ASSIGNED',
+  'MESSAGE',
+  'PO_APPROVAL',
+  'DELIVERY_UPDATE',
+  'QC_ALERT',
+  'INVOICE_OVERDUE',
+  'SCHEDULE_CHANGE',
+  'MATERIAL_ARRIVAL',
+  'BACKORDER_UPDATE',
+  'OUTREACH_REVIEW',
+  'SYSTEM',
+])
+
+/**
+ * Send in-app notifications to one or more staff members. Fire-and-forget —
+ * each recipient is a separate INSERT; one failure doesn't stop the rest.
+ *
+ * `type` must be a NotificationType enum value (see schema). Anything else
+ * silently downgrades to 'SYSTEM' so the route handler can't be crashed by
+ * a stale type literal.
+ */
+export async function notifyStaff(params: {
+  staffIds: string[]
+  type: string
+  title: string
+  body: string
+  link?: string
+}): Promise<void> {
+  if (!params.staffIds || params.staffIds.length === 0) return
+  const safeType = VALID_NOTIFICATION_TYPES.has(params.type) ? params.type : 'SYSTEM'
+  for (const staffId of params.staffIds) {
+    try {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "Notification"
+           ("id", "staffId", "type", "title", "body", "link", "read", "createdAt")
+         VALUES (gen_random_uuid()::text, $1, $2::"NotificationType", $3, $4, $5, false, NOW())`,
+        staffId,
+        safeType,
+        params.title,
+        params.body,
+        params.link || null,
+      )
+    } catch {
+      // best-effort — never let one bad recipient block the rest
+    }
+  }
+}
+
+/** Active staff IDs for a given role. Inactive staff are excluded so
+ *  notifications don't pile up for ex-employees. */
+export async function getStaffByRole(role: string): Promise<string[]> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Staff" WHERE "role"::text = $1 AND "active" = true`,
+      role,
+    )
+    return rows.map((r) => r.id)
+  } catch {
+    return []
+  }
+}
+
+/** Resolve the assigned PM for an order via its linked Job. Returns the
+ *  first match (orders typically have ≤ 1 Job at any one time). */
+export async function getAssignedPM(orderId: string): Promise<string | null> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT j."assignedPMId" FROM "Job" j
+       WHERE j."orderId" = $1 AND j."assignedPMId" IS NOT NULL
+       LIMIT 1`,
+      orderId,
+    )
+    return rows[0]?.assignedPMId || null
+  } catch {
+    return null
+  }
+}
+
+/** All active managers (ADMIN + MANAGER roles, also active=true). Used for
+ *  high-value alerts and order-complete summaries. */
+export async function getManagers(): Promise<string[]> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Staff"
+       WHERE "role"::text IN ('ADMIN', 'MANAGER') AND "active" = true`,
+    )
+    return rows.map((r) => r.id)
+  } catch {
+    return []
+  }
+}
