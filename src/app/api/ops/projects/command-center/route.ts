@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 /**
  * GET /api/ops/projects/command-center
@@ -231,8 +232,14 @@ export async function GET(request: NextRequest) {
       | Array<{ id: string; name: string; role: string; jobCount: number; active: boolean }>
       | null = null
     if (isPrivileged || allFlag) {
-      const rosterRows: any[] = await prisma.$queryRawUnsafe(
-        `
+      // Wrapped in its own try/catch so a roster failure doesn't 500 the page.
+      // Bug fixed 2026-04-27: previous call wrapped the params as
+      // `[activeJobStatuses as any]` which Postgres saw as a 2-D text array
+      // and failed type-coercion on `status::text = ANY ($1)`. Pass the
+      // status list directly (matches the jobIds call above).
+      try {
+        const rosterRows: any[] = await prisma.$queryRawUnsafe(
+          `
           SELECT s.id, s."firstName" || ' ' || s."lastName" AS name,
                  COALESCE(s.role::text, 'STAFF') AS role, s.active,
                  COUNT(j.id)::int AS job_count
@@ -247,15 +254,24 @@ export async function GET(request: NextRequest) {
           GROUP BY s.id
           ORDER BY s.active DESC, job_count DESC, s."firstName" ASC
         `,
-        [activeJobStatuses as any],
-      )
-      pmRoster = rosterRows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        role: r.role,
-        active: r.active,
-        jobCount: r.job_count,
-      }))
+          Array.from(activeJobStatuses) as string[],
+        )
+        pmRoster = rosterRows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          role: r.role,
+          active: r.active,
+          jobCount: r.job_count,
+        }))
+      } catch (rosterErr: any) {
+        // Don't fail the page over the picker. Log + leave roster null;
+        // the UI will simply hide the picker.
+        logger.error('projects_command_center_roster_failed', rosterErr, {
+          isPrivileged,
+          allFlag,
+        })
+        pmRoster = null
+      }
     }
 
     return NextResponse.json({
@@ -277,7 +293,11 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (err: any) {
-    console.error('[projects command-center] error', err)
+    logger.error('projects_command_center_failed', err, {
+      pmFilterId,
+      isPrivileged,
+      staffId,
+    })
     return NextResponse.json({ error: err?.message || 'failed' }, { status: 500 })
   }
 }
