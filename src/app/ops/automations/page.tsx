@@ -206,6 +206,43 @@ const TEMPLATES = [
     frequency: 'ONCE_WEEKLY',
     category: 'Purchasing',
   },
+  // ── Phase 4.2 quick-create templates (handoff §4.2) ─────────────────────
+  {
+    name: 'Alert me when any order is cancelled',
+    description: 'When an order moves to CANCELLED, send an in-app notification to admins and managers so cleanup can start immediately.',
+    trigger: 'ORDER_STATUS_CHANGED',
+    roles: ['ADMIN', 'MANAGER'],
+    actions: [{ type: 'SEND_NOTIFICATION', config: { title: 'Order cancelled', conditions: { to: 'CANCELLED' } } }],
+    frequency: 'ON_TRIGGER',
+    category: 'Sales',
+  },
+  {
+    name: 'Create follow-up task when quote expires',
+    description: 'When a quote hits expiry, create a HIGH-priority follow-up task for the assigned sales rep so the lead doesn’t go cold.',
+    trigger: 'QUOTE_EXPIRED',
+    roles: ['SALES_REP', 'ESTIMATOR', 'MANAGER', 'ADMIN'],
+    actions: [{ type: 'CREATE_TASK', config: { title: 'Quote expired — re-engage builder', priority: 'HIGH' } }],
+    frequency: 'ONCE_PER_ENTITY',
+    category: 'Sales',
+  },
+  {
+    name: 'Notify ops when PO is overdue',
+    description: 'When a purchase order passes its expected receipt date, ping purchasing + the PM with the impact.',
+    trigger: 'PO_OVERDUE',
+    roles: ['PURCHASING', 'PROJECT_MANAGER', 'MANAGER', 'ADMIN'],
+    actions: [{ type: 'SEND_NOTIFICATION', config: { title: 'PO overdue — vendor follow-up needed' } }],
+    frequency: 'ONCE_PER_ENTITY',
+    category: 'Logistics',
+  },
+  {
+    name: 'Daily production stall report',
+    description: 'Every morning, AI scans orders sitting in IN_PRODUCTION longer than expected and produces a stall briefing for the PM team.',
+    trigger: 'DAILY_MORNING',
+    roles: ['PROJECT_MANAGER', 'MANAGER', 'ADMIN'],
+    actions: [{ type: 'AI_ANALYZE', config: { scope: 'production_stalls' } }, { type: 'SEND_NOTIFICATION', config: { title: 'Daily production stall report' } }],
+    frequency: 'ONCE_DAILY',
+    category: 'Project Management',
+  },
 ]
 
 export default function AutomationsPage() {
@@ -228,6 +265,17 @@ export default function AutomationsPage() {
   const [systemSeeded, setSystemSeeded] = useState(true)
   const [seeding, setSeeding] = useState(false)
   const [systemTogglingKey, setSystemTogglingKey] = useState<string | null>(null)
+
+  // Phase 4.3: viewer role — drives tab visibility. Fetched from /api/ops/me
+  // on mount. While unknown (initial load) we hide the privileged tabs and
+  // default to the Logs tab which is visible to all staff.
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userRoleLoaded, setUserRoleLoaded] = useState(false)
+
+  // Phase 4.1: log filters
+  const [logStatusFilter, setLogStatusFilter] = useState<'' | 'SUCCESS' | 'ERROR'>('')
+  const [logTriggerFilter, setLogTriggerFilter] = useState('')
+  const [logTimeFilter, setLogTimeFilter] = useState<'24h' | '7d' | 'all'>('all')
 
   // Create form state
   const [formName, setFormName] = useState('')
@@ -276,6 +324,47 @@ export default function AutomationsPage() {
   }, [])
 
   useEffect(() => { loadData(); loadSystem() }, [loadData, loadSystem])
+
+  // Phase 4.3 — load viewer role once on mount
+  useEffect(() => {
+    let cancelled = false
+    async function loadMe() {
+      try {
+        const res = await fetch('/api/ops/me')
+        if (res.ok && !cancelled) {
+          const data = await res.json()
+          setUserRole(data.role || null)
+        }
+      } catch {
+        // best-effort — fall through to userRoleLoaded with role=null
+      } finally {
+        if (!cancelled) setUserRoleLoaded(true)
+      }
+    }
+    loadMe()
+    return () => { cancelled = true }
+  }, [])
+
+  // Tab visibility per Phase 4.3:
+  //   System Automations  → ADMIN, MANAGER
+  //   Templates           → ADMIN, MANAGER, ACCOUNTING (they create rules)
+  //   Custom Rules        → ADMIN, MANAGER, ACCOUNTING
+  //   Logs                → all authenticated staff
+  // While userRole is loading we render Logs only to avoid flashing the
+  // privileged tabs at unauthorized viewers.
+  const isAdmin = userRole === 'ADMIN'
+  const isManager = userRole === 'MANAGER'
+  const isAccounting = userRole === 'ACCOUNTING'
+  const canSeeSystem = isAdmin || isManager
+  const canManageRules = isAdmin || isManager || isAccounting
+
+  // If activeTab points at a tab the viewer can't see (e.g. role just
+  // resolved and they're not admin), fall back to Logs.
+  useEffect(() => {
+    if (!userRoleLoaded) return
+    if (activeTab === 'system' && !canSeeSystem) setActiveTab('logs')
+    if ((activeTab === 'rules' || activeTab === 'templates') && !canManageRules) setActiveTab('logs')
+  }, [userRoleLoaded, canSeeSystem, canManageRules, activeTab])
 
   // Optimistic toggle — flip the row immediately, then refetch to confirm.
   async function toggleSystem(key: string, currentlyEnabled: boolean) {
@@ -434,14 +523,14 @@ export default function AutomationsPage() {
         ))}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — role-gated per Phase 4.3 */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e0e0e0' }}>
         {[
-          { key: 'system' as const, label: `System Automations (${systemRows.length})` },
-          { key: 'rules' as const, label: `Active Rules (${rules.length})` },
-          { key: 'templates' as const, label: `Templates (${TEMPLATES.length})` },
+          canSeeSystem && { key: 'system' as const, label: `System Automations (${systemRows.length})` },
+          canManageRules && { key: 'rules' as const, label: `Active Rules (${rules.length})` },
+          canManageRules && { key: 'templates' as const, label: `Templates (${TEMPLATES.length})` },
           { key: 'logs' as const, label: `Execution Log (${logs.length})` },
-        ].map(tab => (
+        ].filter(Boolean).map((tab: any) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -903,56 +992,143 @@ export default function AutomationsPage() {
         </div>
       )}
 
-      {/* ── LOGS TAB ── */}
-      {activeTab === 'logs' && (
-        <div>
-          {logs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>No execution logs yet</div>
-              <div style={{ fontSize: 13 }}>Logs will appear here as automations run</div>
-            </div>
-          ) : (
+      {/* ── LOGS TAB — Phase 4.1 filters + Recent Activity summary ── */}
+      {activeTab === 'logs' && (() => {
+        // Compute filtered set + summary stats. Client-side only since the
+        // GET endpoint already caps at 50 rows. If logs grow we'll move
+        // filtering server-side.
+        const now = Date.now()
+        const cutoffMs =
+          logTimeFilter === '24h' ? 24 * 60 * 60 * 1000 :
+          logTimeFilter === '7d' ? 7 * 24 * 60 * 60 * 1000 :
+          Number.MAX_SAFE_INTEGER
+        const filteredLogs = logs.filter(l => {
+          if (logStatusFilter && l.status !== logStatusFilter) return false
+          if (logTriggerFilter && l.trigger !== logTriggerFilter) return false
+          if (logTimeFilter !== 'all') {
+            const t = l.executedAt ? new Date(l.executedAt).getTime() : 0
+            if (now - t > cutoffMs) return false
+          }
+          return true
+        })
+        // Summary always reflects last 24h (independent of filter selection)
+        const last24h = logs.filter(l => {
+          const t = l.executedAt ? new Date(l.executedAt).getTime() : 0
+          return now - t < 24 * 60 * 60 * 1000
+        })
+        const errors24h = last24h.filter(l => l.status === 'ERROR').length
+
+        return (
+          <div>
+            {/* Recent Activity summary */}
             <div style={{
-              background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10,
-              overflow: 'hidden',
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16,
+              marginBottom: 16,
             }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e0e0e0' }}>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Time</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Rule</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Trigger</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'center', color: '#555', fontWeight: 600 }}>Actions Run</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'center', color: '#555', fontWeight: 600 }}>Status</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Error</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map(log => (
-                    <tr key={log.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={{ padding: '10px 16px', color: '#888' }}>{formatDate(log.executedAt)}</td>
-                      <td style={{ padding: '10px 16px', fontWeight: 600, color: '#0f2a3e' }}>{log.ruleName || '—'}</td>
-                      <td style={{ padding: '10px 16px' }}>{triggerLabel(log.trigger)}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{log.actionsRun}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <span style={{
-                          padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                          background: log.status === 'SUCCESS' ? '#e8f5e9' : '#ffebee',
-                          color: log.status === 'SUCCESS' ? '#2e7d32' : '#c62828',
-                        }}>
-                          {log.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px 16px', color: '#c62828', fontSize: 12 }}>{log.error || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {[
+                { label: 'Fired (24h)', value: last24h.length, color: '#0f2a3e' },
+                { label: 'Errors (24h)', value: errors24h, color: errors24h > 0 ? '#c62828' : '#27ae60' },
+                { label: 'Total logged', value: logs.length, color: '#C6A24E' },
+              ].map((stat, i) => (
+                <div key={i} style={{
+                  background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10,
+                  padding: '12px 16px',
+                }}>
+                  <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>{stat.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 600, color: stat.color }}>{stat.value}</div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <select value={logStatusFilter} onChange={e => setLogStatusFilter(e.target.value as any)}
+                style={{ padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13 }}>
+                <option value="">All statuses</option>
+                <option value="SUCCESS">Success</option>
+                <option value="ERROR">Error</option>
+              </select>
+              <select value={logTriggerFilter} onChange={e => setLogTriggerFilter(e.target.value)}
+                style={{ padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13 }}>
+                <option value="">All triggers</option>
+                {TRIGGER_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <select value={logTimeFilter} onChange={e => setLogTimeFilter(e.target.value as any)}
+                style={{ padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13 }}>
+                <option value="all">All time</option>
+                <option value="24h">Last 24h</option>
+                <option value="7d">Last 7 days</option>
+              </select>
+              {(logStatusFilter || logTriggerFilter || logTimeFilter !== 'all') && (
+                <button
+                  onClick={() => { setLogStatusFilter(''); setLogTriggerFilter(''); setLogTimeFilter('all') }}
+                  style={{
+                    padding: '8px 12px', background: '#fff', border: '1px solid #ccc',
+                    borderRadius: 6, fontSize: 12, color: '#666', cursor: 'pointer',
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+              <div style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 12, color: '#888' }}>
+                Showing {filteredLogs.length} of {logs.length}
+              </div>
+            </div>
+
+            {filteredLogs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
+                <div style={{ fontSize: 16, fontWeight: 600 }}>
+                  {logs.length === 0 ? 'No execution logs yet' : 'No logs match the current filters'}
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  {logs.length === 0
+                    ? 'Logs will appear here as automations run'
+                    : 'Try clearing the filters above'}
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10,
+                overflow: 'hidden',
+              }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e0e0e0' }}>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Time</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Rule</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Trigger</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'center', color: '#555', fontWeight: 600 }}>Actions Run</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'center', color: '#555', fontWeight: 600 }}>Status</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600 }}>Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLogs.map(log => (
+                      <tr key={log.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '10px 16px', color: '#888' }}>{formatDate(log.executedAt)}</td>
+                        <td style={{ padding: '10px 16px', fontWeight: 600, color: '#0f2a3e' }}>{log.ruleName || '—'}</td>
+                        <td style={{ padding: '10px 16px' }}>{triggerLabel(log.trigger)}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'center' }}>{log.actionsRun}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                            background: log.status === 'SUCCESS' ? '#e8f5e9' : '#ffebee',
+                            color: log.status === 'SUCCESS' ? '#2e7d32' : '#c62828',
+                          }}>
+                            {log.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 16px', color: '#c62828', fontSize: 12 }}>{log.error || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }
