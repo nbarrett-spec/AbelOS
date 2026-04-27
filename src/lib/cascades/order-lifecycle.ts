@@ -13,6 +13,7 @@
  */
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { isSystemAutomationEnabled } from '@/lib/system-automations'
 
 type CascadeResult = {
   ok: boolean
@@ -40,56 +41,77 @@ export async function onOrderConfirmed(orderId: string): Promise<CascadeResult> 
     if (orders.length === 0) return { ok: false, action: 'onOrderConfirmed', detail: 'order_not_found' }
     const order = orders[0]
 
-    // Idempotency: if a Job is already linked, do nothing.
+    // Idempotency: if a Job is already linked, return early — but still
+    // run the inbox toggle below in case Job exists yet inbox wasn't
+    // posted. Today the only caller path that creates a Job is this
+    // function, so existence implies inbox was already attempted.
     const existing: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "Job" WHERE "orderId" = $1 LIMIT 1`,
+      `SELECT "id", "jobNumber" FROM "Job" WHERE "orderId" = $1 LIMIT 1`,
       orderId
     )
     if (existing.length > 0) {
       return { ok: true, action: 'onOrderConfirmed', detail: 'job_already_linked', jobId: existing[0].id }
     }
 
-    // Derive a job number — JOB-YYYY-NNNN based on current MAX
-    const year = new Date().getFullYear()
-    const maxRow: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COALESCE(MAX(CAST(SUBSTRING("jobNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
-       FROM "Job" WHERE "jobNumber" LIKE $1`,
-      `JOB-${year}-%`
-    )
-    const nextNumber = Number(maxRow[0]?.max_num || 0) + 1
-    const jobNumber = `JOB-${year}-${String(nextNumber).padStart(4, '0')}`
+    // ── Toggle: order.confirmed.create_job ───────────────────────────────
+    let jobId: string | null = null
+    let jobNumber: string | null = null
 
-    const jobId = `job_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+    if (await isSystemAutomationEnabled('order.confirmed.create_job')) {
+      // Derive a job number — JOB-YYYY-NNNN based on current MAX
+      const year = new Date().getFullYear()
+      const maxRow: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COALESCE(MAX(CAST(SUBSTRING("jobNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
+         FROM "Job" WHERE "jobNumber" LIKE $1`,
+        `JOB-${year}-%`
+      )
+      const nextNumber = Number(maxRow[0]?.max_num || 0) + 1
+      jobNumber = `JOB-${year}-${String(nextNumber).padStart(4, '0')}`
+      jobId = `job_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "Job" (
-        "id", "jobNumber", "orderId",
-        "builderName", "scopeType", "status",
-        "scheduledDate",
-        "createdAt", "updatedAt"
-      ) VALUES (
-        $1, $2, $3,
-        $4, 'DOORS_AND_TRIM'::"ScopeType", 'CREATED'::"JobStatus",
-        $5,
-        NOW(), NOW()
-      )`,
-      jobId, jobNumber, orderId,
-      order.builderName || 'Unknown Builder',
-      order.deliveryDate ? new Date(order.deliveryDate) : null,
-    )
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "Job" (
+          "id", "jobNumber", "orderId",
+          "builderName", "scopeType", "status",
+          "scheduledDate",
+          "createdAt", "updatedAt"
+        ) VALUES (
+          $1, $2, $3,
+          $4, 'DOORS_AND_TRIM'::"ScopeType", 'CREATED'::"JobStatus",
+          $5,
+          NOW(), NOW()
+        )`,
+        jobId, jobNumber, orderId,
+        order.builderName || 'Unknown Builder',
+        order.deliveryDate ? new Date(order.deliveryDate) : null,
+      )
+    }
 
-    // Put it on the PM queue — no PM auto-assigned yet, so route to dispatch.
-    await safeInboxInsert({
-      type: 'JOB_ASSIGNMENT',
-      source: 'order-lifecycle',
-      title: `New job ${jobNumber} — ${order.builderName || 'Unknown'}`,
-      description: `Job created from confirmed order ${order.orderNumber}. Assign a PM and schedule delivery.`,
-      priority: 'MEDIUM',
-      entityType: 'Job',
-      entityId: jobId,
-    })
+    // ── Toggle: order.confirmed.pm_inbox ─────────────────────────────────
+    // Independent of Job creation. If Job was skipped, the inbox item
+    // points back at the Order so a PM can still claim it.
+    if (await isSystemAutomationEnabled('order.confirmed.pm_inbox')) {
+      await safeInboxInsert({
+        type: 'JOB_ASSIGNMENT',
+        source: 'order-lifecycle',
+        title: jobNumber
+          ? `New job ${jobNumber} — ${order.builderName || 'Unknown'}`
+          : `New order ${order.orderNumber} — ${order.builderName || 'Unknown'}`,
+        description: jobNumber
+          ? `Job created from confirmed order ${order.orderNumber}. Assign a PM and schedule delivery.`
+          : `Order ${order.orderNumber} confirmed (auto-job-creation disabled). Manually create a Job or re-enable the toggle.`,
+        priority: 'MEDIUM',
+        entityType: jobId ? 'Job' : 'Order',
+        entityId: jobId || orderId,
+      })
+    }
 
-    return { ok: true, action: 'onOrderConfirmed', detail: 'job_created', jobId }
+    return {
+      ok: true,
+      action: 'onOrderConfirmed',
+      detail: jobId ? 'job_created' : 'job_creation_disabled',
+      jobId: jobId || undefined,
+    }
   } catch (e: any) {
     logger.error('cascade_onOrderConfirmed_failed', e, { orderId })
     return { ok: false, action: 'onOrderConfirmed', detail: e?.message }
@@ -138,52 +160,65 @@ export async function onOrderDelivered(orderId: string): Promise<CascadeResult> 
       return { ok: true, action: 'onOrderDelivered', detail: 'invoice_already_exists', invoiceId: existing[0].id }
     }
 
-    const year = new Date().getFullYear()
-    const maxRow: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COALESCE(MAX(CAST(SUBSTRING("invoiceNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
-       FROM "Invoice" WHERE "invoiceNumber" LIKE $1`,
-      `INV-${year}-%`
-    )
-    const nextNumber = Number(maxRow[0]?.max_num || 0) + 1
-    const invoiceNumber = `INV-${year}-${String(nextNumber).padStart(4, '0')}`
-    const invId = `inv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-
-    // Need a createdById — try to pick any active admin; fall back to 'system'.
-    const staff: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "Staff" ORDER BY "createdAt" ASC LIMIT 1`
-    )
-    const createdById = staff[0]?.id ?? 'system'
-
+    let invId: string | null = null
     const paymentTerm = order.paymentTerm || 'NET_15'
     const dueDate = computeDueDate(paymentTerm)
 
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "Invoice" (
-        "id", "invoiceNumber", "builderId", "orderId", "jobId", "createdById",
-        "subtotal", "taxAmount", "total", "amountPaid", "balanceDue",
-        "status", "paymentTerm", "issuedAt", "dueDate",
-        "createdAt", "updatedAt"
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, 0, $9,
-        'DRAFT'::"InvoiceStatus", $10::"PaymentTerm", NULL, $11,
-        NOW(), NOW()
-      )`,
-      invId, invoiceNumber, order.builderId, orderId, jobId, createdById,
-      Number(order.subtotal || 0), Number(order.taxAmount || 0), Number(order.total || 0),
-      paymentTerm, dueDate,
-    )
+    // ── Toggle: order.delivered.create_invoice ───────────────────────────
+    if (await isSystemAutomationEnabled('order.delivered.create_invoice')) {
+      const year = new Date().getFullYear()
+      const maxRow: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COALESCE(MAX(CAST(SUBSTRING("invoiceNumber" FROM '[0-9]+$') AS INT)), 0) AS max_num
+         FROM "Invoice" WHERE "invoiceNumber" LIKE $1`,
+        `INV-${year}-%`
+      )
+      const nextNumber = Number(maxRow[0]?.max_num || 0) + 1
+      const invoiceNumber = `INV-${year}-${String(nextNumber).padStart(4, '0')}`
+      invId = `inv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 
-    // Update order payment status to INVOICED (but not PAID yet).
-    await prisma.$executeRawUnsafe(
-      `UPDATE "Order" SET "paymentStatus" = 'INVOICED'::"PaymentStatus",
-                         "dueDate" = COALESCE("dueDate", $1),
-                         "updatedAt" = NOW()
-       WHERE "id" = $2`,
-      dueDate, orderId
-    )
+      // Need a createdById — try to pick any active admin; fall back to 'system'.
+      const staff: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "Staff" ORDER BY "createdAt" ASC LIMIT 1`
+      )
+      const createdById = staff[0]?.id ?? 'system'
 
-    return { ok: true, action: 'onOrderDelivered', detail: 'invoice_created_draft', invoiceId: invId }
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "Invoice" (
+          "id", "invoiceNumber", "builderId", "orderId", "jobId", "createdById",
+          "subtotal", "taxAmount", "total", "amountPaid", "balanceDue",
+          "status", "paymentTerm", "issuedAt", "dueDate",
+          "createdAt", "updatedAt"
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9, 0, $9,
+          'DRAFT'::"InvoiceStatus", $10::"PaymentTerm", NULL, $11,
+          NOW(), NOW()
+        )`,
+        invId, invoiceNumber, order.builderId, orderId, jobId, createdById,
+        Number(order.subtotal || 0), Number(order.taxAmount || 0), Number(order.total || 0),
+        paymentTerm, dueDate,
+      )
+    }
+
+    // ── Toggle: order.delivered.set_invoiced ─────────────────────────────
+    // Independent — admins may want the invoice created without flipping
+    // paymentStatus (or vice versa) for accounting workflow reasons.
+    if (await isSystemAutomationEnabled('order.delivered.set_invoiced')) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Order" SET "paymentStatus" = 'INVOICED'::"PaymentStatus",
+                           "dueDate" = COALESCE("dueDate", $1),
+                           "updatedAt" = NOW()
+         WHERE "id" = $2`,
+        dueDate, orderId
+      )
+    }
+
+    return {
+      ok: true,
+      action: 'onOrderDelivered',
+      detail: invId ? 'invoice_created_draft' : 'invoice_creation_disabled',
+      invoiceId: invId || undefined,
+    }
   } catch (e: any) {
     logger.error('cascade_onOrderDelivered_failed', e, { orderId })
     return { ok: false, action: 'onOrderDelivered', detail: e?.message }
@@ -197,24 +232,31 @@ export async function onOrderDelivered(orderId: string): Promise<CascadeResult> 
  */
 export async function onOrderComplete(orderId: string): Promise<CascadeResult> {
   try {
-    // Ensure an invoice exists
-    const invRow: any[] = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "Invoice" WHERE "orderId" = $1 LIMIT 1`, orderId
-    )
-    if (invRow.length === 0) {
-      await onOrderDelivered(orderId)
+    // ── Toggle: order.complete.ensure_invoice ────────────────────────────
+    // Backfill safety net — only fires if no invoice exists yet AND the
+    // toggle is on. Independent of order.delivered.create_invoice (which
+    // governs the regular DELIVERED-stage path).
+    if (await isSystemAutomationEnabled('order.complete.ensure_invoice')) {
+      const invRow: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "id" FROM "Invoice" WHERE "orderId" = $1 LIMIT 1`, orderId
+      )
+      if (invRow.length === 0) {
+        await onOrderDelivered(orderId)
+      }
     }
 
-    // Advance any linked Job to COMPLETE if in earlier stage
-    await prisma.$executeRawUnsafe(
-      `UPDATE "Job"
-       SET "status" = 'COMPLETE'::"JobStatus",
-           "completedAt" = COALESCE("completedAt", NOW()),
-           "updatedAt" = NOW()
-       WHERE "orderId" = $1
-         AND "status"::text NOT IN ('COMPLETE', 'INVOICED', 'CLOSED')`,
-      orderId
-    )
+    // ── Toggle: order.complete.advance_job ───────────────────────────────
+    if (await isSystemAutomationEnabled('order.complete.advance_job')) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Job"
+         SET "status" = 'COMPLETE'::"JobStatus",
+             "completedAt" = COALESCE("completedAt", NOW()),
+             "updatedAt" = NOW()
+         WHERE "orderId" = $1
+           AND "status"::text NOT IN ('COMPLETE', 'INVOICED', 'CLOSED')`,
+        orderId
+      )
+    }
 
     return { ok: true, action: 'onOrderComplete' }
   } catch (e: any) {

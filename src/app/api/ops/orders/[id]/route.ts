@@ -8,6 +8,7 @@ import { onDeliveryScheduled } from '@/lib/cascades/delivery-lifecycle'
 import { runOrderStatusCascades } from '@/lib/cascades/order-lifecycle'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { isSystemAutomationEnabled } from '@/lib/system-automations'
 
 // GET /api/ops/orders/[id] — Get single order with all relations
 export async function GET(
@@ -206,17 +207,21 @@ export async function PATCH(
         console.warn('Notification insert skipped:', e.message?.substring(0, 100))
       }
 
-      // Send email notification for key status transitions
+      // Send email notification for key status transitions.
+      // Each branch is gated by its system-automation toggle. Note that
+      // sendBuilderNotification() also enforces BUILDER_INVOICE_EMAILS_ENABLED
+      // at the env-var level — defense in depth: both gates must be green
+      // for an email to go out.
       const bEmail = orderRows[0].builderEmail
       const bId = orderRows[0].builderId
       const oNum = orderRows[0].orderNumber
       const bName = orderRows[0].builderName || 'Builder'
       if (bEmail) {
-        if (statusLabel === 'CONFIRMED') {
+        if (statusLabel === 'CONFIRMED' && await isSystemAutomationEnabled('order.confirmed.email_builder')) {
           notifyOrderConfirmed(bId, bEmail, oNum, '', Number(orderRows[0].total || 0), 0).catch(() => {})
-        } else if (statusLabel === 'SHIPPED') {
+        } else if (statusLabel === 'SHIPPED' && await isSystemAutomationEnabled('order.shipped.email_builder')) {
           notifyOrderShipped(bId, bEmail, oNum, '').catch(() => {})
-        } else if (statusLabel === 'DELIVERED') {
+        } else if (statusLabel === 'DELIVERED' && await isSystemAutomationEnabled('order.delivered.email_builder')) {
           notifyOrderDelivered(bId, bEmail, oNum, '').catch(() => {})
         }
       }
@@ -251,7 +256,7 @@ export async function PATCH(
     // Now, when an order flips to READY_TO_SHIP, we ensure its Job has a paired
     // Delivery row in SCHEDULED state with a proper deliveryNumber and address.
     // No crew is assigned yet — Dispatch picks it up from there.
-    if (status === 'READY_TO_SHIP') {
+    if (status === 'READY_TO_SHIP' && await isSystemAutomationEnabled('order.ready.create_delivery')) {
       createScheduledDeliveryForOrder(id).catch((err: any) => {
         console.error('[orders PATCH] delivery creation failure', id, err?.message || err)
       })
