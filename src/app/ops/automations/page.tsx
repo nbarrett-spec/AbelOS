@@ -34,6 +34,18 @@ interface AutomationLog {
   executedAt: string
 }
 
+interface SystemAutomationRow {
+  id: string
+  key: string
+  name: string
+  description: string | null
+  category: string
+  enabled: boolean
+  triggerStatus: string | null
+  updatedAt: string | null
+  updatedBy: string | null
+}
+
 // Pre-built trigger types the system supports
 const TRIGGER_OPTIONS = [
   { value: 'ORDER_CREATED', label: 'New Order Created', category: 'Orders' },
@@ -200,12 +212,22 @@ export default function AutomationsPage() {
   const [rules, setRules] = useState<AutomationRule[]>([])
   const [logs, setLogs] = useState<AutomationLog[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'rules' | 'templates' | 'logs'>('rules')
+  // 'system' is the default tab — these toggles control core platform
+  // behavior (cascades, staff notifications, builder emails) and admins
+  // are most likely landing here to flip one of those.
+  const [activeTab, setActiveTab] = useState<'system' | 'rules' | 'templates' | 'logs'>('system')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [filterRole, setFilterRole] = useState('')
   const [filterTrigger, setFilterTrigger] = useState('')
   const [templateFilter, setTemplateFilter] = useState('')
+
+  // System Automations state — Phase 2.5 of AUTOMATIONS-HANDOFF.md
+  const [systemRows, setSystemRows] = useState<SystemAutomationRow[]>([])
+  const [systemGrouped, setSystemGrouped] = useState<Record<string, SystemAutomationRow[]>>({})
+  const [systemSeeded, setSystemSeeded] = useState(true)
+  const [seeding, setSeeding] = useState(false)
+  const [systemTogglingKey, setSystemTogglingKey] = useState<string | null>(null)
 
   // Create form state
   const [formName, setFormName] = useState('')
@@ -239,7 +261,49 @@ export default function AutomationsPage() {
     }
   }, [filterRole, filterTrigger])
 
-  useEffect(() => { loadData() }, [loadData])
+  const loadSystem = useCallback(async () => {
+    try {
+      const res = await fetch('/api/ops/system-automations', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setSystemRows(data.rows || [])
+        setSystemGrouped(data.grouped || {})
+        setSystemSeeded(data.seeded !== false)
+      }
+    } catch (e) {
+      console.error('Failed to load system automations:', e)
+    }
+  }, [])
+
+  useEffect(() => { loadData(); loadSystem() }, [loadData, loadSystem])
+
+  // Optimistic toggle — flip the row immediately, then refetch to confirm.
+  async function toggleSystem(key: string, currentlyEnabled: boolean) {
+    setSystemTogglingKey(key)
+    try {
+      const res = await fetch('/api/ops/system-automations', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ key, enabled: !currentlyEnabled }),
+      })
+      if (res.ok) await loadSystem()
+    } finally {
+      setSystemTogglingKey(null)
+    }
+  }
+
+  async function runSystemSeed() {
+    if (seeding) return
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/ops/system-automations/seed', {
+        method: 'POST', headers,
+      })
+      if (res.ok) await loadSystem()
+    } finally {
+      setSeeding(false)
+    }
+  }
 
   const toggleRule = async (id: string, enabled: boolean) => {
     await fetch('/api/ops/automations', {
@@ -373,6 +437,7 @@ export default function AutomationsPage() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e0e0e0' }}>
         {[
+          { key: 'system' as const, label: `System Automations (${systemRows.length})` },
           { key: 'rules' as const, label: `Active Rules (${rules.length})` },
           { key: 'templates' as const, label: `Templates (${TEMPLATES.length})` },
           { key: 'logs' as const, label: `Execution Log (${logs.length})` },
@@ -391,6 +456,142 @@ export default function AutomationsPage() {
           </button>
         ))}
       </div>
+
+      {/* ── SYSTEM AUTOMATIONS TAB ── */}
+      {activeTab === 'system' && (
+        <div>
+          {/* Warning banner */}
+          <div style={{
+            background: '#FFF8E1', border: '1px solid #F4D67A', borderRadius: 10,
+            padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#5C4815',
+          }}>
+            <strong>System automations control core platform behavior.</strong>{' '}
+            Disabling a lifecycle automation (job creation, invoice creation,
+            delivery scheduling) may cause downstream features to break.
+            Toggle changes apply within ~60 seconds (cache TTL).
+          </div>
+
+          {/* Not seeded yet — show prompt */}
+          {!systemSeeded && (
+            <div style={{
+              background: '#fff', border: '2px dashed #C6A24E', borderRadius: 10,
+              padding: 24, textAlign: 'center', marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#0f2a3e', marginBottom: 8 }}>
+                System automations not initialized
+              </div>
+              <div style={{ fontSize: 13, color: '#666', marginBottom: 16, maxWidth: 600, margin: '0 auto 16px' }}>
+                The SystemAutomation table doesn&apos;t exist yet on this database.
+                Click below to create it and seed the canonical automation rows.
+                This is idempotent — safe to run multiple times.
+              </div>
+              <button
+                onClick={runSystemSeed}
+                disabled={seeding}
+                style={{
+                  background: seeding ? '#ccc' : '#C6A24E',
+                  color: '#fff', border: 'none', borderRadius: 8,
+                  padding: '10px 24px', fontWeight: 600, cursor: seeding ? 'wait' : 'pointer',
+                  fontSize: 14,
+                }}
+              >
+                {seeding ? 'Seeding…' : 'Run Seed'}
+              </button>
+            </div>
+          )}
+
+          {/* Seeded — render grouped rows */}
+          {systemSeeded && Object.keys(systemGrouped).length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>
+              <div style={{ fontSize: 14 }}>No system automations found.</div>
+              <button
+                onClick={runSystemSeed}
+                disabled={seeding}
+                style={{
+                  marginTop: 12,
+                  background: '#0f2a3e', color: '#fff', border: 'none', borderRadius: 6,
+                  padding: '6px 16px', fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                {seeding ? 'Re-seeding…' : 'Re-seed'}
+              </button>
+            </div>
+          )}
+
+          {systemSeeded && Object.entries(systemGrouped).map(([category, rows]) => {
+            const isBuilderEmails = category === 'Builder Emails'
+            return (
+              <div key={category} style={{ marginBottom: 24 }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase',
+                  letterSpacing: 0.5, marginBottom: 8, padding: '0 4px',
+                }}>
+                  {category}
+                  {isBuilderEmails && (
+                    <span style={{ marginLeft: 8, color: '#C6A24E', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
+                      — master switch governed by BUILDER_INVOICE_EMAILS_ENABLED in Vercel env
+                    </span>
+                  )}
+                </div>
+                <div style={{
+                  background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10,
+                  overflow: 'hidden',
+                }}>
+                  {rows.map((row, idx) => (
+                    <div
+                      key={row.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        borderBottom: idx < rows.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        opacity: row.enabled ? 1 : 0.6,
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: '#0f2a3e' }}>
+                            {row.name}
+                          </span>
+                          {row.triggerStatus && (
+                            <span style={{
+                              padding: '2px 6px', background: '#EBF5FB', color: '#0f2a3e',
+                              borderRadius: 6, fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
+                            }}>
+                              {row.triggerStatus}
+                            </span>
+                          )}
+                        </div>
+                        {row.description && (
+                          <div style={{ fontSize: 12, color: '#666' }}>{row.description}</div>
+                        )}
+                        <div style={{ fontSize: 10, color: '#aaa', marginTop: 4, fontFamily: 'monospace' }}>
+                          {row.key}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toggleSystem(row.key, row.enabled)}
+                        disabled={systemTogglingKey === row.key}
+                        style={{
+                          padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                          cursor: systemTogglingKey === row.key ? 'wait' : 'pointer',
+                          border: 'none',
+                          background: row.enabled ? '#e8f5e9' : '#f5f5f5',
+                          color: row.enabled ? '#2e7d32' : '#999',
+                          minWidth: 90, textAlign: 'center',
+                        }}
+                      >
+                        {systemTogglingKey === row.key
+                          ? '…'
+                          : row.enabled ? 'Enabled' : 'Disabled'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── RULES TAB ── */}
       {activeTab === 'rules' && (
