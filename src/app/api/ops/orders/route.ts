@@ -9,6 +9,7 @@ import { createTaskForOrderReceived } from '@/lib/events/task'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { toCsv } from '@/lib/csv'
 import { fireAutomationEvent } from '@/lib/automation-executor'
+import { fireStaffNotifications } from '@/lib/order-staff-notifications'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -527,6 +528,22 @@ export async function POST(request: NextRequest) {
       builderId: finalBuilderId,
       status: 'RECEIVED',
       createdBy: request.headers.get('x-staff-id') || 'system',
+    }).catch(() => {})
+
+    // Fire staff notifications for the RECEIVED status (Phase 3). PATCH
+    // route is the canonical entry for status changes, but RECEIVED is
+    // only reached via order CREATION — so the broadcast lives here.
+    // The corresponding cascade-side staff notifications for CONFIRMED
+    // and beyond fire from runOrderStatusCascades / fireStaffNotifications
+    // in the PATCH handler.
+    fireStaffNotifications({
+      orderId,
+      orderNumber,
+      newStatus: 'RECEIVED',
+      builderId: finalBuilderId,
+      builderName: builder?.companyName || 'Builder',
+      total: Number(quote.total || 0),
+      staffId: request.headers.get('x-staff-id') || 'system',
     }).catch(() => {})
 
     // Update project status to ORDERED if it exists

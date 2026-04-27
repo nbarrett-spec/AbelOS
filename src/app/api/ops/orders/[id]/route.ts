@@ -9,6 +9,7 @@ import { runOrderStatusCascades } from '@/lib/cascades/order-lifecycle'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { isSystemAutomationEnabled } from '@/lib/system-automations'
+import { fireStaffNotifications } from '@/lib/order-staff-notifications'
 
 // GET /api/ops/orders/[id] — Get single order with all relations
 export async function GET(
@@ -176,9 +177,13 @@ export async function PATCH(
       ...(confirmDelivery && { confirmDelivery: true }),
     })
 
-    // Get builder info for notification
+    // Get builder info for notification. `total` added 2026-04-27 to fix
+    // a pre-existing bug where notifyOrderConfirmed/Shipped/Delivered were
+    // called with Number(orderRows[0].total || 0) but `total` wasn't in
+    // the SELECT, so they always got 0. Now fetched correctly + reused
+    // for the Phase 3 fireStaffNotifications context.
     const orderRows: any[] = await prisma.$queryRawUnsafe(`
-      SELECT o."id", o."orderNumber", o."builderId",
+      SELECT o."id", o."orderNumber", o."builderId", o."total",
              o."status"::text AS "status", o."paymentStatus"::text AS "paymentStatus",
              b."companyName" AS "builderName", b."email" AS "builderEmail"
       FROM "Order" o
@@ -245,6 +250,21 @@ export async function PATCH(
         from: currentStatus,
         to: cascadeStatus,
         updatedBy: request.headers.get('x-staff-id') || 'system',
+      }).catch(() => {})
+
+      // Fire staff notifications + tasks (Phase 3). Each branch is gated
+      // by its SystemAutomation toggle. Fire-and-forget. CONFIRMED's
+      // staff notifications live in the cascade (above), so the dispatcher
+      // skips that case — but it handles RECEIVED, IN_PRODUCTION,
+      // READY_TO_SHIP, SHIPPED, DELIVERED, COMPLETE, CANCELLED.
+      fireStaffNotifications({
+        orderId: id,
+        orderNumber: orderRows[0]?.orderNumber || '',
+        newStatus: cascadeStatus,
+        builderId: orderRows[0]?.builderId || '',
+        builderName: orderRows[0]?.builderName || 'Builder',
+        total: Number(orderRows[0]?.total || 0),
+        staffId: request.headers.get('x-staff-id') || 'system',
       }).catch(() => {})
     }
 
