@@ -26,21 +26,35 @@ interface MyDayResponse {
   }
 }
 
+// Abel Lumber operates on America/Chicago — hardcode it. Vercel servers run
+// in UTC, so `new Date().getHours()` returns the UTC hour and shows "Good
+// morning" at 7pm CT. Same root cause as `toLocaleDateString` showing the
+// previous day. CLAUDE.md confirms CT as the operating timezone.
+const ABEL_TZ = 'America/Chicago'
+
 function getTimeOfDayGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
+  const ctHour = parseInt(
+    new Date().toLocaleString('en-US', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: ABEL_TZ,
+    }),
+    10,
+  )
+  if (Number.isNaN(ctHour)) return 'Hello' // defensive — never crash the route
+  if (ctHour < 12) return 'Good morning'
+  if (ctHour < 18) return 'Good afternoon'
   return 'Good evening'
 }
 
 function getFormattedDate(): string {
-  const options: Intl.DateTimeFormatOptions = {
+  return new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }
-  return new Date().toLocaleDateString('en-US', options)
+    timeZone: ABEL_TZ,
+  })
 }
 
 async function queryCount(sql: string, params: any[] = []): Promise<number> {

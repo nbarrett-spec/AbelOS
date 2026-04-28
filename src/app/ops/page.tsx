@@ -131,13 +131,26 @@ export default function OpsDashboard() {
     )
   }
 
+  // Compact notation when value would otherwise truncate inside a KPICard.
+  // The KPICard component clamps long values with `truncate` (overflow-hidden +
+  // ellipsis), so $6,526,234 was rendering as "$6,526..." in the revenue
+  // card. Above $1M we switch to compact ($6.5M) which fits cleanly and the
+  // KPICard's own count-up animation handles the unit.
   const fmt = (n: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(n)
+    new Intl.NumberFormat('en-US', Math.abs(n) >= 1_000_000
+      ? {
+          style: 'currency',
+          currency: 'USD',
+          notation: 'compact',
+          maximumFractionDigits: 1,
+        }
+      : {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }
+    ).format(n)
 
   const orders = data?.orders
   const pos = data?.purchaseOrders

@@ -315,17 +315,22 @@ export default function SalesDashboardPage() {
                 .slice(0, 6)
                 .map(deal => {
                   const daysUntilClose = Math.ceil((new Date(deal.expectedCloseDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                  const isUrgent = daysUntilClose <= 7
+                  const isOverdue = daysUntilClose < 0
+                  const isUrgent = !isOverdue && daysUntilClose <= 7
                   return (
                     <Link key={deal.id} href={`/ops/sales/deals/${deal.id}`}>
-                      <div className={`bg-white rounded-lg p-4 border ${isUrgent ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-200'} hover:shadow-md transition-all cursor-pointer`}>
+                      <div className={`bg-white rounded-lg p-4 border ${isOverdue || isUrgent ? 'border-red-300 ring-1 ring-red-200' : 'border-gray-200'} hover:shadow-md transition-all cursor-pointer`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                             deal.stage === 'BID_SUBMITTED' ? 'bg-yellow-100 text-yellow-800' :
                             deal.stage === 'BID_REVIEW' ? 'bg-orange-100 text-orange-800' :
                             'bg-purple-100 text-purple-800'
                           }`}>{STAGE_NAMES[deal.stage]}</span>
-                          {isUrgent && <span className="text-xs font-bold text-red-600">Closes in {daysUntilClose}d</span>}
+                          {isOverdue ? (
+                            <span className="text-xs font-bold text-red-600">Past close ({Math.abs(daysUntilClose)}d ago)</span>
+                          ) : isUrgent ? (
+                            <span className="text-xs font-bold text-red-600">Closes in {daysUntilClose}d</span>
+                          ) : null}
                         </div>
                         <p className="font-bold text-sm text-gray-900 truncate">{deal.companyName}</p>
                         <p className="text-xs text-gray-500 mb-2">{deal.contactName}</p>
