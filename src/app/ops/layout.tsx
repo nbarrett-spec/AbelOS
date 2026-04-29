@@ -462,7 +462,8 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const isAuthPage =
     pathname === '/ops/login' ||
     pathname === '/ops/forgot-password' ||
-    pathname === '/ops/reset-password'
+    pathname === '/ops/reset-password' ||
+    pathname === '/ops/setup-account'
 
   // Close user menu on outside click
   useEffect(() => {

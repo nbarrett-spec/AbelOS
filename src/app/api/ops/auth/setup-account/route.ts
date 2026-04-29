@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       severity: 'CRITICAL',
     }).catch(() => {})
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Account setup completed successfully',
       data: {
@@ -120,6 +120,17 @@ export async function POST(request: NextRequest) {
         lastName: completedStaff.lastName,
       },
     })
+
+    // Clear any stale session cookie so the employee starts fresh at login
+    response.cookies.set('abel_staff_session', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    })
+
+    return response
   } catch (error: any) {
     console.error('Setup account error:', error)
     return NextResponse.json(
