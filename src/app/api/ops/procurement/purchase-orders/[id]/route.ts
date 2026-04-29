@@ -126,22 +126,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // ── Receive Items ───────────────────────────────────────────────────
     if (action === 'receive') {
-      const { receivedItems } = body // [{ itemId, quantityReceived }]
+      const { receivedItems } = body // [{ itemId, quantityReceived, damagedQty? }]
 
       for (const ri of receivedItems || []) {
-        // Update PO item received qty
+        // Update PO item received qty and damagedQty
         await prisma.$queryRawUnsafe(`
           UPDATE "PurchaseOrderItem"
-          SET "receivedQty" = COALESCE("receivedQty", 0) + $1, "updatedAt" = NOW()
-          WHERE "id" = $2
-        `, ri.quantityReceived, ri.itemId)
+          SET "receivedQty" = COALESCE("receivedQty", 0) + $1,
+              "damagedQty" = COALESCE("damagedQty", 0) + COALESCE($2, 0),
+              "updatedAt" = NOW()
+          WHERE "id" = $3
+        `, ri.quantityReceived, ri.damagedQty || 0, ri.itemId)
 
-        // Update inventory — recalculate available, daysOfSupply, status
+        // Get item details including quantity and productId
         const poItems = await prisma.$queryRawUnsafe(`
-          SELECT "productId", "vendorSku" FROM "PurchaseOrderItem" WHERE "id" = $1
+          SELECT "productId", "vendorSku", "quantity" FROM "PurchaseOrderItem" WHERE "id" = $1
         `, ri.itemId) as any[]
 
         if (poItems[0]?.productId) {
+          // Update inventory
           await prisma.$queryRawUnsafe(`
             UPDATE "InventoryItem"
             SET "onHand" = "onHand" + $1,
@@ -163,19 +166,87 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 "updatedAt" = NOW()
             WHERE "productId" = $2
           `, ri.quantityReceived, poItems[0].productId)
+
+          // GAP-18: Auto-create VendorReturn for damaged items
+          if ((ri.damagedQty || 0) > 0) {
+            const rmaNum = `RMA-${Date.now().toString(36).toUpperCase()}`
+            const returnId = `vr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+            const poData = await prisma.$queryRawUnsafe(`
+              SELECT "vendorId" FROM "PurchaseOrder" WHERE "id" = $1
+            `, id) as any[]
+            const vendorId = poData[0]?.vendorId
+
+            if (vendorId) {
+              await prisma.$executeRawUnsafe(`
+                INSERT INTO "VendorReturn"
+                  ("id", "returnNumber", "vendorId", "purchaseOrderId", "status",
+                   "reason", "returnType", "rmaNumber", "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4, 'PENDING', 'DAMAGED_ON_RECEIPT', 'DEFECTIVE', $5, NOW(), NOW())
+              `, returnId, rmaNum, vendorId, id, rmaNum)
+            }
+          }
         }
       }
 
-      // Check if fully received
+      // Check totals for partial/over receipt detection
       const check = await prisma.$queryRawUnsafe(`
         SELECT
           COALESCE(SUM("quantity"), 0)::int as "totalOrdered",
-          COALESCE(SUM(COALESCE("receivedQty", 0)), 0)::int as "totalReceived"
+          COALESCE(SUM(COALESCE("receivedQty", 0)), 0)::int as "totalReceived",
+          COALESCE(SUM(COALESCE("damagedQty", 0)), 0)::int as "totalDamaged"
         FROM "PurchaseOrderItem" WHERE "purchaseOrderId" = $1
       `, id) as any[]
 
-      const fullyReceived = check[0].totalReceived >= check[0].totalOrdered
-      const newStatus = fullyReceived ? 'RECEIVED' : 'PARTIALLY_RECEIVED'
+      const totalOrdered = check[0].totalOrdered
+      const totalReceived = check[0].totalReceived
+      const totalDamaged = check[0].totalDamaged
+
+      let newStatus = 'PARTIALLY_RECEIVED'
+      if (totalReceived >= totalOrdered) {
+        newStatus = 'RECEIVED'
+      } else if (totalReceived > 0) {
+        newStatus = 'PARTIALLY_RECEIVED'
+      }
+
+      // GAP-18: Create alerts for partial and over receipt
+      if (totalReceived < totalOrdered && totalReceived > 0) {
+        // Partial receipt alert
+        const alertId = `pa_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO "ProcurementAlert"
+            ("id", "type", "priority", "title", "message", "category", "status", "data", "createdAt", "updatedAt")
+          VALUES ($1, 'PARTIAL_RECEIPT', 'MEDIUM', $2, $3, 'RECEIVING', 'ACTIVE', $4::jsonb, NOW(), NOW())
+        `, alertId, `Partial receipt on PO ${(await prisma.$queryRawUnsafe('SELECT "poNumber" FROM "PurchaseOrder" WHERE "id" = $1', id) as any[])[0]?.poNumber || id}`,
+           `Received ${totalReceived} of ${totalOrdered} units`,
+           JSON.stringify({ purchaseOrderId: id, totalOrdered, totalReceived }))
+      }
+
+      if (totalReceived > totalOrdered) {
+        // Over receipt alert
+        const alertId = `pa_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO "ProcurementAlert"
+            ("id", "type", "priority", "title", "message", "category", "status", "data", "createdAt", "updatedAt")
+          VALUES ($1, 'OVER_RECEIPT', 'HIGH', $2, $3, 'RECEIVING', 'ACTIVE', $4::jsonb, NOW(), NOW())
+        `, alertId, `Over receipt on PO ${(await prisma.$queryRawUnsafe('SELECT "poNumber" FROM "PurchaseOrder" WHERE "id" = $1', id) as any[])[0]?.poNumber || id}`,
+           `Received ${totalReceived} units, expected ${totalOrdered}. Requires supervisor approval.`,
+           JSON.stringify({ purchaseOrderId: id, totalOrdered, totalReceived, requiresApproval: true }))
+      }
+
+      // GAP-18: Log quality penalty in VendorPerformanceLog if damaged
+      if (totalDamaged > 0) {
+        const poData = await prisma.$queryRawUnsafe(`
+          SELECT "vendorId", "expectedDate", "orderedAt" FROM "PurchaseOrder" WHERE "id" = $1
+        `, id) as any[]
+        const logId = `vpl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO "VendorPerformanceLog"
+            ("id", "vendorId", "purchaseOrderId", "orderedAt", "expectedDeliveryAt",
+             "actualDeliveryAt", "quantityOrdered", "damageCount", "createdAt", "updatedAt")
+          VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, NOW(), NOW())
+        `, logId, poData[0]?.vendorId, id, poData[0]?.orderedAt, poData[0]?.expectedDate,
+           totalOrdered, totalDamaged)
+      }
 
       // Guard: only advance the PO status if the transition is valid.
       const cur = await loadPOStatus(id)
@@ -199,13 +270,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       `, newStatus, staffId, id)
 
       // Fire automation event for RECEIVED status (non-blocking)
-      if (fullyReceived) {
+      if (newStatus === 'RECEIVED') {
         fireAutomationEvent('PO_RECEIVED', id).catch(e => console.warn('[Automation] event fire failed:', e))
       }
 
-      await audit(request, 'RECEIVE', 'PurchaseOrder', id, { status: newStatus, fullyReceived, itemCount: (receivedItems || []).length })
+      await audit(request, 'RECEIVE', 'PurchaseOrder', id, { status: newStatus, fullyReceived: newStatus === 'RECEIVED', itemCount: (receivedItems || []).length, totalDamaged })
 
-      return NextResponse.json({ success: true, status: newStatus, fullyReceived })
+      return NextResponse.json({ success: true, status: newStatus, fullyReceived: newStatus === 'RECEIVED' })
     }
 
     // ── Mark Paid (AP payment recording) ──────────────────────────────

@@ -14,6 +14,13 @@ import { audit } from '@/lib/audit'
  * discrepanciesFound). Also stamps InventoryItem.lastCountedAt so the same
  * SKU doesn't rotate back into next week's top-20 on the "days since count"
  * factor alone.
+ *
+ * GAP-17: If variance exceeds threshold (5 units OR 2%), auto-adjust inventory:
+ * - Update InventoryItem.onHand to counted value
+ * - Recalculate available = onHand - committed
+ * - Recalculate daysOfSupply = onHand / avgDailyUsage
+ * - Create audit trail entry
+ * - If adjustment creates shortage (available < 0), create ProcurementAlert + InboxItem
  */
 export async function POST(
   request: NextRequest,
@@ -63,7 +70,25 @@ export async function POST(
     const variance = Math.trunc(countedQty - Number(line.expectedQty || 0))
     const wasAlreadyCounted = line.status === 'COUNTED'
 
-    // Single transaction: update line + rollups + inventory timestamp.
+    // ─── GAP-17: Cycle count adjustment ───
+    // Variance threshold: 5 units OR 2% (whichever is higher)
+    const VARIANCE_THRESHOLD_QTY = 5
+    const VARIANCE_THRESHOLD_PCT = 0.02
+    const expectedQty = Number(line.expectedQty || 0)
+    const variancePercent = expectedQty > 0 ? Math.abs(variance) / expectedQty : 1
+    const exceedsThreshold =
+      Math.abs(variance) >= VARIANCE_THRESHOLD_QTY ||
+      variancePercent >= VARIANCE_THRESHOLD_PCT
+
+    // Fetch current inventory state before adjustment
+    const invItemBefore: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "onHand", "committed", "avgDailyUsage"
+         FROM "InventoryItem" WHERE "productId" = $1 LIMIT 1`,
+      line.productId
+    )
+    const invBefore = invItemBefore[0] || { onHand: 0, committed: 0, avgDailyUsage: 0 }
+
+    // Single transaction: update line + rollups + inventory adjustments + alerts
     await prisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(
         `
@@ -84,7 +109,6 @@ export async function POST(
       )
 
       // Only bump batch rollups on the first-time count transition.
-      // Re-submits overwrite the value but don't double-count the rollup.
       if (!wasAlreadyCounted) {
         await tx.$executeRawUnsafe(
           `
@@ -97,8 +121,7 @@ export async function POST(
           variance
         )
       } else {
-        // If they RE-counted and the variance flipped between zero/non-zero,
-        // reconcile the discrepancy counter so it doesn't drift.
+        // If they RE-counted and the variance flipped, reconcile counter
         const prevVariance = Math.trunc(
           Number(line.prevCountedQty ?? 0) - Number(line.expectedQty || 0)
         )
@@ -117,9 +140,102 @@ export async function POST(
         }
       }
 
-      // Stamp InventoryItem.lastCountedAt so the risk scorer ages this SKU
-      // back out of next week's rotation. Exists-guard so catalog-only
-      // products don't blow up.
+      // ─── GAP-17: Auto-adjust inventory if variance exceeds threshold ───
+      if (exceedsThreshold) {
+        const newOnHand = Math.trunc(countedQty)
+        const newAvailable = Math.max(
+          0,
+          newOnHand - Number(invBefore.committed || 0)
+        )
+        const avgDaily = Number(invBefore.avgDailyUsage || 0) || 1
+        const newDaysOfSupply = avgDaily > 0 ? newOnHand / avgDaily : 0
+
+        await tx.$executeRawUnsafe(
+          `
+          UPDATE "InventoryItem"
+             SET "onHand" = $2,
+                 "available" = $3,
+                 "daysOfSupply" = $4,
+                 "lastAdjustedAt" = NOW(),
+                 "adjustmentReason" = 'cycle_count_variance',
+                 "updatedAt" = NOW()
+           WHERE "productId" = $1
+          `,
+          line.productId,
+          newOnHand,
+          newAvailable,
+          newDaysOfSupply
+        )
+
+        // Create audit trail
+        const auditId = `ccadj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+        await tx.$executeRawUnsafe(
+          `
+          INSERT INTO "AuditLog" ("id", "entityType", "entityId", "action", "changes", "staffId", "createdAt")
+          VALUES ($1, $2, $3, $4, $5::jsonb, $6, NOW())
+          ON CONFLICT DO NOTHING
+          `,
+          auditId,
+          'InventoryItem',
+          line.productId,
+          'cycle_count_adjustment',
+          JSON.stringify({
+            expectedQty,
+            countedQty: newOnHand,
+            variance,
+            variancePercent: (variancePercent * 100).toFixed(2) + '%',
+            before: { onHand: Number(invBefore.onHand) },
+            after: { onHand: newOnHand, available: newAvailable },
+          }),
+          staffId
+        )
+
+        // Check for new shortages
+        if (newAvailable < 0) {
+          const affectedAllocs: any[] = await tx.$queryRawUnsafe(
+            `
+            SELECT DISTINCT "jobId" FROM "InventoryAllocation"
+            WHERE "productId" = $1 AND "status" IN ('RESERVED', 'PICKED')
+            LIMIT 10
+            `,
+            line.productId
+          )
+
+          for (const alloc of affectedAllocs) {
+            // Create ProcurementAlert
+            const alertId = `pca_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+            await tx.$executeRawUnsafe(
+              `
+              INSERT INTO "ProcurementAlert" ("id", "productId", "alertType", "quantity", "severity", "reason", "createdAt", "updatedAt")
+              VALUES ($1, $2, 'SHORTAGE', $3, 'HIGH', $4, NOW(), NOW())
+              ON CONFLICT DO NOTHING
+              `,
+              alertId,
+              line.productId,
+              Math.abs(newAvailable),
+              `Cycle count revealed shortage: adjustment created deficit of ${Math.abs(newAvailable)} units`
+            )
+
+            // Create InboxItem
+            const inboxId = `inbox_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+            await tx.$executeRawUnsafe(
+              `
+              INSERT INTO "InboxItem" ("id", "type", "source", "title", "description",
+                                        "priority", "status", "entityType", "entityId",
+                                        "createdAt", "updatedAt")
+               VALUES ($1, 'MRP_RECOMMENDATION', 'cycle_count', $2, $3,
+                       'HIGH', 'PENDING', 'Job', $4, NOW(), NOW())
+              `,
+              inboxId,
+              `Stock shortage discovered on job allocation`,
+              `Cycle count adjustment revealed shortage: product inventory now below committed allocations by ${Math.abs(newAvailable)} units`,
+              alloc.jobId
+            )
+          }
+        }
+      }
+
+      // Stamp InventoryItem.lastCountedAt
       await tx.$executeRawUnsafe(
         `
         UPDATE "InventoryItem"
@@ -136,6 +252,7 @@ export async function POST(
       countedQty: Math.trunc(countedQty),
       variance,
       status: 'COUNTED',
+      adjustmentApplied: exceedsThreshold,
     })
   } catch (error: any) {
     console.error('[cycle-count/line/count] error:', error)

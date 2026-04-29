@@ -6,6 +6,9 @@ import { audit } from '@/lib/audit'
 import { allocateJobMaterials, releaseJobMaterials } from '@/lib/mrp'
 import { allocateForJob, releaseForJob } from '@/lib/allocation'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { advanceAllocationStatus } from '@/lib/mrp/allocation-lifecycle'
+import { autoAllocateJob } from '@/lib/mrp/auto-allocate'
+import { generatePicksForJob } from '@/lib/mrp/auto-pick'
 
 export async function GET(
   request: NextRequest,
@@ -161,11 +164,16 @@ export async function PATCH(
 
     // Build SET clauses
     const setClauses: string[] = ['"updatedAt" = NOW()']
-    const validFields = ['builderName', 'builderContact', 'jobAddress', 'lotBlock', 'community', 'dropPlan', 'assignedPMId']
+    const validFields = ['builderName', 'builderContact', 'jobAddress', 'lotBlock', 'community', 'dropPlan', 'assignedPMId', 'orderId', 'installerId', 'trimVendorId']
 
     for (const field of validFields) {
       if (body[field] !== undefined) {
-        setClauses.push(`"${field}" = '${String(body[field]).replace(/'/g, "''")}'`)
+        if (field === 'orderId' || field === 'installerId' || field === 'trimVendorId') {
+          // These are UUIDs, needs special handling
+          setClauses.push(`"${field}" = ${body[field] ? `'${String(body[field]).replace(/'/g, "''")}'` : 'NULL'}`)
+        } else {
+          setClauses.push(`"${field}" = '${String(body[field]).replace(/'/g, "''")}'`)
+        }
       }
     }
 
@@ -203,6 +211,19 @@ export async function PATCH(
     await prisma.$executeRawUnsafe(`
       UPDATE "Job" SET ${setClauses.join(', ')} WHERE "id" = $1
     `, id)
+
+    // ── Auto-allocate when orderId is being set ──
+    // This is the #1 supply chain gap: jobs get created but inventory is never reserved.
+    // Trigger auto-allocation if orderId is being set and wasn't previously set.
+    if (body.orderId !== undefined && body.orderId && !currentJob.orderId) {
+      try {
+        const allocResult = await autoAllocateJob(id)
+        console.log(`[Job PATCH] Auto-allocated for job ${id}:`, allocResult)
+      } catch (autoAllocErr: any) {
+        console.warn('[Job PATCH] auto-allocate hook failed:', autoAllocErr?.message)
+        // Non-blocking: don't fail the job update if auto-allocate fails
+      }
+    }
 
     // ── Allocation ledger: reserve / release on lifecycle transitions ──
     // The ledger (InventoryAllocation) is the source of truth for double-
@@ -243,6 +264,37 @@ export async function PATCH(
         ) {
           await releaseForJob(id, `status:${newStatus}`)
           try { await releaseJobMaterials(id) } catch {}
+        }
+
+        // Advance allocation status based on job lifecycle
+        // GAP-2: Move allocations through their own state machine (RESERVED → PICKED → CONSUMED / RELEASED)
+        try {
+          await advanceAllocationStatus(id, newStatus)
+        } catch (lifecycleErr: any) {
+          console.warn('[Job PATCH] allocation lifecycle advance failed:', lifecycleErr?.message)
+
+    // ── GAP-3: Auto-generate picks when allocations are reserved ──
+    // When a job moves to READINESS_CHECK or MATERIALS_LOCKED with all allocations RESERVED,
+    // generate MaterialPick records so warehouse can stage the goods.
+    if (newStatus && ['READINESS_CHECK', 'MATERIALS_LOCKED'].includes(newStatus)) {
+      try {
+        // Check if there are any RESERVED allocations waiting to be picked
+        const reservedAllocs: any[] = await prisma.$queryRawUnsafe(
+          `SELECT COUNT(*)::int AS count FROM "InventoryAllocation" 
+             WHERE "jobId" = $1 AND "status" = 'RESERVED'`,
+          id
+        )
+        if ((reservedAllocs[0]?.count || 0) > 0) {
+          const pickResult = await generatePicksForJob(id)
+          if (pickResult.picksGenerated > 0) {
+            console.log(`[Job PATCH] Generated ${pickResult.picksGenerated} picks for job ${id}`)
+          }
+        }
+      } catch (pickErr: any) {
+        console.warn('[Job PATCH] auto-pick generation failed:', pickErr?.message)
+        // Non-blocking: do not fail the job update if pick generation fails
+      }
+    }
         }
       } catch (mrpErr: any) {
         console.warn('[Job PATCH] allocation hook failed:', mrpErr?.message)

@@ -467,15 +467,16 @@ export default function OpsOrdersPage() {
               <div
                 key={order.id}
                 className={cn(
-                  'border-b border-grid-line last:border-b-0 transition-colors',
+                  'border-b border-grid-line last:border-b-0 transition-colors cursor-pointer',
                   selectedIds.has(order.id) ? 'bg-accent-subtle' : 'hover:bg-row-hover',
                 )}
                 style={selectedIds.has(order.id) ? { background: 'var(--row-selected)' } : undefined}
+                onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
               >
                 {/* Header Row */}
-                <div className="px-5 py-3 cursor-pointer flex items-center gap-4">
+                <div className="px-5 py-3 flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
                   <input type="checkbox" checked={selectedIds.has(order.id)}
-                    onChange={() => toggleSelect(order.id)} onClick={(e) => e.stopPropagation()}
+                    onChange={() => toggleSelect(order.id)}
                     className="w-3.5 h-3.5 rounded-sm border-border-strong accent-accent flex-shrink-0" />
                   <div className="w-32 min-w-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
                     <span className="text-[13px] font-mono font-semibold text-fg block truncate">{order.orderNumber}</span>

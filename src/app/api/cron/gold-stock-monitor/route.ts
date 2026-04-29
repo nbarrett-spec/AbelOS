@@ -10,6 +10,14 @@ interface GoldStockMonitorResult {
   kitsChecked: number
   buildReadyItems: number
   shortItems: number
+  goldStockReplenishRecommendations: number
+  goldStockHealth: {
+    totalKits: number
+    activeKits: number
+    kitsAboveMin: number
+    kitsBelowMin: number
+    avgHealthPercent: number
+  }
   errors: string[]
 }
 
@@ -22,6 +30,10 @@ interface GoldStockMonitorResult {
  *     an InboxItem (GOLD_STOCK_BUILD_READY) assigned to the first WAREHOUSE_LEAD.
  *   - Otherwise create a GOLD_STOCK_COMPONENTS_SHORT InboxItem so purchasing
  *     can pull the missing SKUs.
+ *
+ * GAP-19: For each component below safetyStock, auto-create SmartPORecommendation
+ * with source='GOLD_STOCK_REPLENISH'. If the component has a preferred vendor,
+ * auto-set vendorId on the recommendation.
  *
  * Dedupes against existing PENDING InboxItems for the same kit so we don't
  * spam the inbox on every tick.
@@ -51,10 +63,43 @@ async function runMonitor(
     kitsChecked: 0,
     buildReadyItems: 0,
     shortItems: 0,
+    goldStockReplenishRecommendations: 0,
+    goldStockHealth: {
+      totalKits: 0,
+      activeKits: 0,
+      kitsAboveMin: 0,
+      kitsBelowMin: 0,
+      avgHealthPercent: 0,
+    },
     errors: [],
   }
 
   try {
+    // GAP-19: Health summary — all ACTIVE kits
+    const allKits: Array<{
+      id: string
+      kitCode: string
+      minQty: number
+      currentQty: number
+    }> = await prisma.$queryRawUnsafe(`
+      SELECT "id", "kitCode", "minQty", "currentQty", "status"
+      FROM "GoldStockKit"
+      WHERE "status" = 'ACTIVE'
+    `)
+    result.goldStockHealth.totalKits = allKits.length
+    result.goldStockHealth.activeKits = allKits.filter((k: any) => k.status === 'ACTIVE').length
+
+    const healthMetrics = allKits.map((k) => ({
+      kitCode: k.kitCode,
+      health: k.minQty > 0 ? Math.min(100, Math.round((k.currentQty / k.minQty) * 100)) : 100,
+      isBelowMin: k.currentQty < k.minQty,
+    }))
+    result.goldStockHealth.kitsAboveMin = healthMetrics.filter((m) => !m.isBelowMin).length
+    result.goldStockHealth.kitsBelowMin = healthMetrics.filter((m) => m.isBelowMin).length
+    result.goldStockHealth.avgHealthPercent = healthMetrics.length > 0
+      ? Math.round(healthMetrics.reduce((a, m) => a + m.health, 0) / healthMetrics.length)
+      : 100
+
     // All ACTIVE kits below minQty
     const kits: Array<{
       id: string
@@ -173,6 +218,76 @@ async function runMonitor(
             shortages,
           })
         )
+
+        // GAP-19: Auto-create SmartPORecommendation for components below safetyStock
+        if (!allAvailable) {
+          for (const shortage of shortages) {
+            try {
+              // Find the product ID and preferred vendor
+              const prodData: Array<{
+                productId: string
+                preferredVendorId: string | null
+              }> = await prisma.$queryRawUnsafe(
+                `SELECT p."id" as "productId", vp."vendorId" as "preferredVendorId"
+                 FROM "Product" p
+                 LEFT JOIN "VendorProduct" vp ON vp."productId" = p."id" AND vp."isPreferred" = true
+                 WHERE p."sku" = $1
+                 LIMIT 1`,
+                shortage.sku
+              )
+
+              if (prodData.length > 0) {
+                const prodId = prodData[0].productId
+                const vendorId = prodData[0].preferredVendorId
+
+                // Check if recommendation already exists for this product (PENDING or APPROVED)
+                const existing: Array<{ id: string }> = await prisma.$queryRawUnsafe(
+                  `SELECT "id" FROM "SmartPORecommendation"
+                   WHERE "productId" = $1 AND "status" IN ('PENDING', 'APPROVED')
+                   LIMIT 1`,
+                  prodId
+                )
+
+                if (existing.length === 0) {
+                  const recId = `spr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+                  await prisma.$executeRawUnsafe(
+                    `INSERT INTO "SmartPORecommendation"
+                      ("id", "vendorId", "productId", "recommendationType",
+                       "urgency", "triggerReason", "recommendedQty",
+                       "status", "createdAt", "updatedAt")
+                     VALUES ($1, $2, $3, 'REPLENISH', 'URGENT',
+                             $4, $5, 'PENDING', NOW(), NOW())`,
+                    recId,
+                    vendorId || '', // Will use null if no preferred vendor
+                    prodId,
+                    `Gold Stock kit component limiting factor: ${kit.kitCode} needs ${shortage.need}, have ${shortage.have}`,
+                    Math.max(1, Math.ceil(shortage.short * 1.5)) // Recommend 1.5x shortage quantity
+                  )
+                  result.goldStockReplenishRecommendations++
+
+                  // Create inbox alert for the limiting component
+                  const alertId = `ii_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+                  await prisma.$executeRawUnsafe(
+                    `INSERT INTO "InboxItem"
+                      ("id", "type", "source", "title", "description",
+                       "priority", "status", "entityType", "entityId",
+                       "assignedTo", "createdAt", "updatedAt")
+                     VALUES ($1, 'GOLD_STOCK_LIMITING_COMPONENT', 'gold-stock-monitor', $2, $3,
+                             'HIGH', 'PENDING', 'Product', $4,
+                             $5, NOW(), NOW())`,
+                    alertId,
+                    `${kit.kitCode} limited by ${shortage.sku}`,
+                    `Gold Stock kit ${kit.kitCode} limited to ${Math.floor(shortage.have / shortage.need)} complete kits. ${shortage.sku} is limiting factor (need ${shortage.need}, have ${shortage.have}).`,
+                    prodId,
+                    assignedTo // Assign to same warehouse lead or purchasing
+                  )
+                }
+              }
+            } catch (e: any) {
+              result.errors.push(`replenish recommendation for ${shortage.sku}: ${e?.message || String(e)}`)
+            }
+          }
+        }
 
         if (allAvailable) result.buildReadyItems++
         else result.shortItems++

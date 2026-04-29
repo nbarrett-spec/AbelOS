@@ -35,6 +35,7 @@ interface ShortageForecastResult {
   recommendationsSkipped: number
   materialWatchUpserts: number
   inboxItemsCreated: number
+  autoApprovedPOs: number
   totalShortageValue: number
   budgetExhausted: boolean
   durationMs: number
@@ -89,6 +90,7 @@ async function runShortageForecast(
     recommendationsSkipped: 0,
     materialWatchUpserts: 0,
     inboxItemsCreated: 0,
+    autoApprovedPOs: 0,
     totalShortageValue: 0,
     budgetExhausted: false,
     durationMs: 0,
@@ -158,9 +160,13 @@ async function runShortageForecast(
         }
 
         try {
-          await upsertRecommendation(job, line, result)
+          const recId = await upsertRecommendation(job, line, result)
           await upsertInboxItem(job, line, result)
           await upsertMaterialWatch(job, line, result)
+          // After recommendation is created/updated, check if it qualifies for auto-approve
+          if (recId) {
+            await tryAutoApprovePO(recId, result)
+          }
         } catch (err: any) {
           result.errors.push(
             `job=${job.jobId} sku=${line.sku}: ${err?.message || String(err)}`
@@ -202,15 +208,210 @@ async function runShortageForecast(
   }
 }
 
+// ─── Auto-Approve for CRITICAL, high confidence, low cost ──────────────
+
+async function tryAutoApprovePO(
+  recId: string,
+  result: ShortageForecastResult
+): Promise<void> {
+  // Fetch the recommendation
+  const rec = await prisma.$queryRawUnsafe<
+    Array<{ id: string; urgency: string; aiConfidence: number; estimatedCost: number; vendorId: string; productId: string; recommendedQty: number; relatedJobIds: any }>
+  >(
+    `
+    SELECT "id", "urgency", "aiConfidence", "estimatedCost", "vendorId", "productId", "recommendedQty", "relatedJobIds"
+    FROM "SmartPORecommendation"
+    WHERE "id" = $1 AND "status" = 'PENDING'
+    LIMIT 1
+    `,
+    recId
+  )
+
+  if (rec.length === 0) return
+
+  const r = rec[0]
+  const aiConf = r.aiConfidence || 0
+  const cost = r.estimatedCost || 0
+
+  // Criteria for auto-approve:
+  // 1. urgency = CRITICAL
+  // 2. aiConfidence > 0.85
+  // 3. estimatedCost < 2000
+  if (r.urgency !== 'CRITICAL' || aiConf <= 0.85 || cost >= 2000) {
+    return
+  }
+
+  // Auto-approve: create a draft PO from the recommendation
+  try {
+    const poId = await createDraftPOFromRecommendation(r)
+    if (poId) {
+      // Update recommendation
+      await prisma.$executeRawUnsafe(
+        `
+        UPDATE "SmartPORecommendation"
+        SET "status" = 'AUTO_APPROVED', "convertedPOId" = $1, "updatedAt" = NOW()
+        WHERE "id" = $2
+        `,
+        poId,
+        recId
+      )
+
+      // Get job numbers for notification
+      const jobIds = Array.isArray(r.relatedJobIds) ? (r.relatedJobIds as string[]) : []
+      const jobNumber = jobIds.length > 0 ? `Job ${jobIds[0]}` : 'Job'
+
+      // Create inbox notification for ops
+      const notifId = `inb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO "InboxItem" (
+          "id", "type", "source", "title", "description", "priority", "status",
+          "entityType", "entityId", "actionData", "createdAt", "updatedAt"
+        ) VALUES (
+          $1, 'PO_AUTO_APPROVED', 'shortage-forecast', $2, $3, 'HIGH', 'PENDING',
+          'PurchaseOrder', $4, $5::jsonb, NOW(), NOW()
+        )
+        `,
+        notifId,
+        `Auto-PO Created: ${poId.slice(0, 8)} (Critical Shortage)`,
+        `Auto-approved PO for critical shortage affecting ${jobNumber}. Cost: $${cost.toFixed(2)}. Verify and release to vendor.`,
+        poId,
+        JSON.stringify({
+          poId,
+          recommendationId: recId,
+          cost,
+          urgency: r.urgency,
+        })
+      )
+
+      result.autoApprovedPOs++
+    }
+  } catch (err: any) {
+    result.errors.push(`auto-approve ${recId}: ${err?.message || String(err)}`)
+  }
+}
+
+async function createDraftPOFromRecommendation(rec: {
+  id: string
+  vendorId: string
+  productId: string
+  recommendedQty: number
+  estimatedCost: number
+}): Promise<string | null> {
+  // Get vendor and product info
+  const vendor = await prisma.$queryRawUnsafe<
+    Array<{ id: string; name: string }>
+  >(
+    `SELECT "id", "name" FROM "Vendor" WHERE "id" = $1 AND active = TRUE LIMIT 1`,
+    rec.vendorId
+  )
+
+  if (vendor.length === 0) return null
+
+  const product = await prisma.$queryRawUnsafe<
+    Array<{ id: string; sku: string | null; name: string | null }>
+  >(
+    `SELECT "id", "sku", "name" FROM "Product" WHERE "id" = $1 LIMIT 1`,
+    rec.productId
+  )
+
+  if (product.length === 0) return null
+
+  const vendorProduct = await prisma.$queryRawUnsafe<
+    Array<{ vendorSku: string; vendorCost: number }>
+  >(
+    `
+    SELECT "vendorSku", "vendorCost"
+    FROM "VendorProduct"
+    WHERE "vendorId" = $1 AND "productId" = $2 AND preferred = TRUE
+    LIMIT 1
+    `,
+    rec.vendorId,
+    rec.productId
+  )
+
+  const vendorSku = vendorProduct.length > 0 ? vendorProduct[0].vendorSku : product[0].sku || 'N/A'
+  const unitCost = vendorProduct.length > 0 ? vendorProduct[0].vendorCost : (rec.estimatedCost / rec.recommendedQty)
+
+  // Generate PO number
+  const currentYear = new Date().getFullYear()
+  const lastPO = await prisma.$queryRawUnsafe<Array<{ poNumber: string }>>(
+    `
+    SELECT "poNumber" FROM "PurchaseOrder"
+    WHERE "poNumber" LIKE $1
+    ORDER BY "poNumber" DESC
+    LIMIT 1
+    `,
+    `PO-${currentYear}-%`
+  )
+
+  let nextSequence = 1
+  if (lastPO.length > 0) {
+    const parts = lastPO[0].poNumber.split('-')
+    if (parts.length === 3) {
+      const seq = parseInt(parts[2], 10)
+      if (!isNaN(seq)) nextSequence = seq + 1
+    }
+  }
+
+  const poNumber = `PO-${currentYear}-${String(nextSequence).padStart(4, '0')}`
+  const poId = `po_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+
+  // Create PurchaseOrder in DRAFT status
+  await prisma.$executeRawUnsafe(
+    `
+    INSERT INTO "PurchaseOrder" (
+      "id", "poNumber", "vendorId", "status", "subtotal", "shippingCost", "total",
+      "notes", "aiGenerated", "createdAt", "updatedAt"
+    ) VALUES (
+      $1, $2, $3, 'DRAFT', $4, 0, $5,
+      $6, TRUE, NOW(), NOW()
+    )
+    `,
+    poId,
+    poNumber,
+    rec.vendorId,
+    rec.estimatedCost,
+    rec.estimatedCost,
+    `Auto-generated from SmartPO recommendation ${rec.id}`
+  )
+
+  // Create PurchaseOrderItem
+  const itemId = `poi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+  await prisma.$executeRawUnsafe(
+    `
+    INSERT INTO "PurchaseOrderItem" (
+      "id", "purchaseOrderId", "productId", "vendorSku", "description",
+      "quantity", "unitCost", "lineTotal", "receivedQty", "damagedQty",
+      "createdAt", "updatedAt"
+    ) VALUES (
+      $1, $2, $3, $4, $5,
+      $6, $7, $8, 0, 0,
+      NOW(), NOW()
+    )
+    `,
+    itemId,
+    poId,
+    rec.productId,
+    vendorSku,
+    product[0].name || product[0].sku || 'Unknown Product',
+    rec.recommendedQty,
+    unitCost,
+    rec.estimatedCost
+  )
+
+  return poId
+}
+
 // ─── SmartPORecommendation upsert ───────────────────────────────────────
 
 async function upsertRecommendation(
   job: JobMaterialStatus,
   line: MaterialStatusLine,
   result: ShortageForecastResult
-) {
+): Promise<string | null> {
   const scheduledDate = job.scheduledDate
-  if (!scheduledDate) return
+  if (!scheduledDate) return null
 
   const leadDays = line.preferredVendorLeadDays || 14
   const requiredBy = new Date(scheduledDate.getTime() - leadDays * 86400000)
@@ -255,7 +456,7 @@ async function upsertRecommendation(
 
     if (newQty === Number(row.recommendedQty) && merged.length === related.length) {
       result.recommendationsSkipped++
-      return
+      return row.id
     }
     await prisma.$executeRawUnsafe(
       `
@@ -274,7 +475,7 @@ async function upsertRecommendation(
       row.id
     )
     result.recommendationsUpdated++
-    return
+    return row.id
   }
 
   const recId = `atp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
@@ -311,6 +512,7 @@ async function upsertRecommendation(
     `ATP forecast: required=${line.required.toFixed(0)} allocated=${line.allocated.toFixed(0)} onHand=${line.onHand} committedToOthers=${line.committedToOthers.toFixed(0)} projectedATP=${line.projectedATP.toFixed(0)} shortfall=${line.shortfall.toFixed(0)}`
   )
   result.recommendationsCreated++
+  return recId
 }
 
 // ─── InboxItem ──────────────────────────────────────────────────────────
@@ -375,6 +577,47 @@ async function upsertInboxItem(
     dueBy
   )
   result.inboxItemsCreated++
+
+  // GAP-14: Create PM-targeted notification if job has assigned PM
+  if (job.jobId && line.status === 'RED') {
+    const pmRow = await prisma.$queryRawUnsafe<Array<{ assignedPMId: string | null }>>(
+      `SELECT "assignedPMId" FROM "Job" WHERE "id" = $1 LIMIT 1`,
+      job.jobId
+    )
+    const pmId = pmRow[0]?.assignedPMId
+
+    if (pmId) {
+      const pmInboxId = `inb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+      // Create a PM-specific inbox item (could set assignedTo or use type variation)
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO "InboxItem" (
+          "id", "type", "source", "title", "description", "priority", "status",
+          "entityType", "entityId", "financialImpact",
+          "actionData", "dueBy", "createdAt", "updatedAt"
+        ) VALUES (
+          $1, 'PM_MATERIAL_ALERT', 'mrp-shortage-forecast', $2, $3, $4, 'PENDING',
+          'JobMaterialLine', $5, $6,
+          $7::jsonb, $8, NOW(), NOW()
+        )
+        `,
+        pmInboxId,
+        `Material Short: ${line.sku} for ${job.jobNumber}`,
+        `Your job ${job.jobNumber} (${job.community}) is short ${Math.round(line.shortfall)} units of ${line.productName || line.sku}. Due date: ${job.scheduledDate?.toISOString().slice(0, 10)}. Coordinate with operations to expedite.`,
+        priority,
+        entityId,
+        line.estShortageValue,
+        JSON.stringify({
+          jobId: job.jobId,
+          productId: line.productId,
+          sku: line.sku,
+          assignedPmId: pmId,
+          shortfall: line.shortfall,
+        }),
+        dueBy
+      )
+    }
+  }
 }
 
 // ─── MaterialWatch (Phase 4) ────────────────────────────────────────────

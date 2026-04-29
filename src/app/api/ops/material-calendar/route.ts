@@ -131,10 +131,22 @@ export async function GET(request: NextRequest) {
     const statusFilter = statusCsv.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) as MaterialStatus[]
 
     // ── 1. Fetch in-window jobs with minimal joins ────────────────────────
+    // NOTE: scheduledDate might be NULL for many jobs. We fetch jobs with
+    // scheduledDate in the window PLUS jobs without scheduledDate (unscheduled),
+    // then separate them for display with an "Unscheduled" section.
     const jobs = await prisma.job.findMany({
       where: {
-        scheduledDate: { gte: windowStart, lte: windowEnd },
         status: { in: ACTIVE_JOB_STATUSES as unknown as any[] },
+        OR: [
+          // Jobs with scheduledDate in window
+          {
+            scheduledDate: { gte: windowStart, lte: windowEnd },
+          },
+          // Unscheduled jobs (no scheduledDate)
+          {
+            scheduledDate: null,
+          },
+        ],
         ...(builderFilters.length > 0 && {
           builderName: { in: builderFilters },
         }),
@@ -163,7 +175,8 @@ export async function GET(request: NextRequest) {
         hyphenJobId: true,
         orderId: true,
       },
-      orderBy: { scheduledDate: 'asc' },
+      orderBy: [{ scheduledDate: 'asc' }],
+      take: 100, // Cap unscheduled jobs to avoid fetching 1000s
     })
 
     if (jobs.length === 0) {

@@ -1081,6 +1081,9 @@ model Job {
   // Assignment
   assignedPMId String?
   assignedPM   Staff?  @relation("AssignedPM", fields: [assignedPMId], references: [id], onDelete: SetNull)
+  installerId  String?
+  trimVendorId String?
+  bomVersion   Int?    @default(1)
 
   // Status tracking (from Module 2 T-72/T-48/T-24 workflow)
   status                JobStatus @default(CREATED)
@@ -1708,6 +1711,17 @@ model PurchaseOrder {
   orderedAt    DateTime?
   expectedDate DateTime? // Expected delivery from vendor
   receivedAt   DateTime?
+
+  // Payment tracking (Finance FIX-10)
+  paidAt       DateTime?
+  paidMethod   String?
+  paidReference String?
+  paidAmount   Float?
+
+  // Vendor confirmation (GAP-23)
+  vendorConfirmedAt   DateTime?
+  vendorConfirmedDate DateTime?
+  vendorPONumber      String?
 
   notes String?
 

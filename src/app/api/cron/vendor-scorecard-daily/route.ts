@@ -247,6 +247,148 @@ async function recomputeScorecards() {
   }
 }
 
+async function updateMaterialLeadTimes(): Promise<number> {
+  // GAP-12: Compute and update MaterialLeadTime records based on vendor performance
+  let alertsCreated = 0
+
+  // Get all vendor-product combinations with 3+ completed POs in the last 90 days
+  const vendorProductCombos = await prisma.$queryRawUnsafe<
+    Array<{
+      vendorId: string
+      productId: string
+      categoryName: string | null
+      completedCount: number
+      avgLeadDays: number
+      minLeadDays: number
+      maxLeadDays: number
+      stdDev: number
+    }>
+  >(
+    `
+    WITH recent_pos AS (
+      SELECT
+        po."vendorId",
+        poi."productId",
+        EXTRACT(EPOCH FROM (po."receivedAt" - po."orderedAt")) / 86400.0 AS lead_days
+      FROM "PurchaseOrder" po
+      JOIN "PurchaseOrderItem" poi ON poi."purchaseOrderId" = po.id
+      WHERE po."status" = 'RECEIVED'
+        AND po."receivedAt" IS NOT NULL
+        AND po."orderedAt" IS NOT NULL
+        AND po."receivedAt" >= NOW() - INTERVAL '90 days'
+        AND poi."productId" IS NOT NULL
+    )
+    SELECT
+      rp."vendorId",
+      rp."productId",
+      p."category" AS "categoryName",
+      COUNT(*)::int AS "completedCount",
+      ROUND(AVG(rp.lead_days)::numeric, 2)::float AS "avgLeadDays",
+      ROUND(MIN(rp.lead_days)::numeric, 2)::float AS "minLeadDays",
+      ROUND(MAX(rp.lead_days)::numeric, 2)::float AS "maxLeadDays",
+      ROUND(STDDEV_POP(rp.lead_days)::numeric, 2)::float AS "stdDev"
+    FROM recent_pos rp
+    LEFT JOIN "Product" p ON rp."productId" = p.id
+    GROUP BY rp."vendorId", rp."productId", p."category"
+    HAVING COUNT(*) >= 3
+    `
+  )
+
+  // For each combo, upsert MaterialLeadTime and check for significant increases
+  for (const combo of vendorProductCombos) {
+    const newAvgLeadDays = combo.avgLeadDays || 0
+
+    // Get previous MaterialLeadTime record for this vendor-product
+    const previous = await prisma.$queryRawUnsafe<
+      Array<{ id: string; avgLeadDays: number | null }>
+    >(
+      `
+      SELECT "id", "avgLeadDays"
+      FROM "MaterialLeadTime"
+      WHERE "vendorId" = $1 AND "productId" = $2
+      ORDER BY "createdAt" DESC
+      LIMIT 1
+      `,
+      combo.vendorId,
+      combo.productId
+    )
+
+    const previousAvgLeadDays = previous.length > 0 && previous[0].avgLeadDays ? Number(previous[0].avgLeadDays) : 0
+    const percentIncrease = previousAvgLeadDays > 0
+      ? ((newAvgLeadDays - previousAvgLeadDays) / previousAvgLeadDays) * 100
+      : 0
+
+    // Upsert MaterialLeadTime record
+    const mltId = `mlt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+    await prisma.$executeRawUnsafe(
+      `
+      INSERT INTO "MaterialLeadTime" (
+        "id", "vendorId", "productId", "productCategory",
+        "avgLeadDays", "minLeadDays", "maxLeadDays", "stdDev",
+        "sampleSize", "createdAt", "updatedAt"
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6, $7, $8,
+        $9, NOW(), NOW()
+      )
+      `,
+      mltId,
+      combo.vendorId,
+      combo.productId,
+      combo.categoryName,
+      newAvgLeadDays,
+      combo.minLeadDays,
+      combo.maxLeadDays,
+      combo.stdDev,
+      combo.completedCount
+    )
+
+    // Check for significant lead time increase (>25%)
+    if (percentIncrease > 25 && previousAvgLeadDays > 0) {
+      // Get vendor name
+      const vendor = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+        `SELECT "name" FROM "Vendor" WHERE "id" = $1 LIMIT 1`,
+        combo.vendorId
+      )
+
+      const vendorName = vendor.length > 0 ? vendor[0].name : combo.vendorId
+
+      // Create ProcurementAlert
+      const alertId = `alert_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO "ProcurementAlert" (
+          "id", type, priority, title, message, "vendorId", "relatedProductId",
+          "alertData", "createdAt", "updatedAt"
+        ) VALUES (
+          $1, 'LEAD_TIME_INCREASE', 'HIGH', $2, $3, $4, $5,
+          $6::jsonb, NOW(), NOW()
+        )
+        `,
+        alertId,
+        `Lead Time Increase: ${vendorName}`,
+        `${vendorName} lead time for ${combo.categoryName || 'products'} increased from ${previousAvgLeadDays.toFixed(1)} to ${newAvgLeadDays.toFixed(1)} days (+${percentIncrease.toFixed(1)}%). ` +
+        `Review PO delivery expectations and consider safety stock adjustments.`,
+        combo.vendorId,
+        combo.productId,
+        JSON.stringify({
+          vendorId: combo.vendorId,
+          productId: combo.productId,
+          productCategory: combo.categoryName,
+          oldAvgLeadDays: previousAvgLeadDays,
+          newAvgLeadDays,
+          percentIncrease: Math.round(percentIncrease),
+          sampleSize: combo.completedCount,
+        })
+      )
+
+      alertsCreated++
+    }
+  }
+
+  return alertsCreated
+}
+
 export async function GET(request: NextRequest) {
   const expected = getCronSecret()
   if (!expected) {
@@ -259,6 +401,11 @@ export async function GET(request: NextRequest) {
 
   return withCronRun('vendor-scorecard-daily', async () => {
     const result = await recomputeScorecards()
-    return NextResponse.json(result)
+    // GAP-12: Compute lead time feedback (non-blocking, errors don't fail the cron)
+    const alertsCreated = await updateMaterialLeadTimes().catch((err) => {
+      logger.error('vendor_lead_time_update_failed', { err: err?.message || String(err) })
+      return 0
+    })
+    return NextResponse.json({ ...result, leadTimeAlertsCreated: alertsCreated })
   })
 }

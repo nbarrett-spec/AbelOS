@@ -82,6 +82,8 @@ interface Job {
   completedAt: string | null
   createdAt: string
   updatedAt: string | null
+  installerId: string | null
+  trimVendorId: string | null
   order: {
     id: string
     orderNumber: string
@@ -147,12 +149,15 @@ export default function JobDetailPage() {
   const [linkOrderQuery, setLinkOrderQuery] = useState('')
   const [linkOrderResults, setLinkOrderResults] = useState<any[]>([])
   const [linkOrderSearching, setLinkOrderSearching] = useState(false)
-  // 5.5-Part-B — Installer assignment UI state. Schema has no installerId/trimVendorId/meta
-  // on Job, so the field renders as DISABLED with a "schema change required" hint.
-  // Lists are still loaded so the dropdown is testable once a column is added.
+  // Invoice generation state
+  const [generatingInvoice, setGeneratingInvoice] = useState(false)
+  const [invoiceError, setInvoiceError] = useState<string | null>(null)
+  // 5.5-Part-B — Installer assignment UI state. Schema now has installerId/trimVendorId
+  // on Job. Lists are loaded and the dropdown is fully functional.
   const [installCrews, setInstallCrews] = useState<{ id: string; name: string; crewType: string }[]>([])
   const [trimVendors, setTrimVendors] = useState<{ id: string; name: string }[]>([])
   const [installAssigneeChoice, setInstallAssigneeChoice] = useState<string>('')
+  const [assigningInstaller, setAssigningInstaller] = useState(false)
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -165,6 +170,14 @@ export default function JobDetailPage() {
         }
         const data = await res.json()
         setJob(data)
+        // Initialize installer choice from job data
+        if (data.installerId) {
+          setInstallAssigneeChoice(`crew:${data.installerId}`)
+        } else if (data.trimVendorId) {
+          setInstallAssigneeChoice(`vendor:${data.trimVendorId}`)
+        } else {
+          setInstallAssigneeChoice('')
+        }
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
@@ -391,6 +404,75 @@ export default function JobDetailPage() {
     }
   }
 
+  const generateInvoice = async () => {
+    if (!job) return
+    setGeneratingInvoice(true)
+    setInvoiceError(null)
+    try {
+      const res = await fetch(`/api/ops/jobs/${jobId}/generate-invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // Show success message or redirect
+        alert(`Invoice ${data.invoiceNumber} created successfully`)
+        router.push(`/ops/invoices/${data.invoiceId}`)
+      } else {
+        const err = await res.json()
+        setInvoiceError(err.error || 'Failed to generate invoice')
+      }
+    } catch (err) {
+      setInvoiceError(err instanceof Error ? err.message : 'Failed to generate invoice')
+    } finally {
+      setGeneratingInvoice(false)
+    }
+  }
+
+  const handleAssignInstaller = async (value: string) => {
+    if (!job) return
+    setInstallAssigneeChoice(value)
+
+    if (!value) {
+      // Clearing the assignment
+      setAssigningInstaller(true)
+      try {
+        const res = await fetch(`/api/ops/jobs/${jobId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ installerId: null, trimVendorId: null }),
+        })
+        if (res.ok) {
+          setJob(prev => prev ? { ...prev, installerId: null, trimVendorId: null } : prev)
+        }
+      } catch { /* ignore */ } finally {
+        setAssigningInstaller(false)
+      }
+      return
+    }
+
+    // Parse the selection: crew:id or vendor:id
+    const [type, id] = value.split(':')
+    setAssigningInstaller(true)
+    try {
+      const payload = type === 'crew'
+        ? { installerId: id, trimVendorId: null }
+        : { installerId: null, trimVendorId: id }
+
+      const res = await fetch(`/api/ops/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setJob(updated)
+      }
+    } catch { /* ignore */ } finally {
+      setAssigningInstaller(false)
+    }
+  }
+
   const formatDate = (d: string | null) => {
     if (!d) return '—'
     return new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
@@ -456,6 +538,15 @@ export default function JobDetailPage() {
               Materials
             </button>
           )}
+          {(job.status === 'COMPLETE' || job.status === 'DELIVERED') && (
+            <button
+              onClick={generateInvoice}
+              disabled={generatingInvoice}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+            >
+              {generatingInvoice ? 'Generating...' : 'Generate Invoice'}
+            </button>
+          )}
           {nextStatus && (
             <button
               onClick={advanceStatus}
@@ -494,6 +585,24 @@ export default function JobDetailPage() {
           >
             Go to QC Queue
           </Link>
+        </div>
+      )}
+
+      {/* Invoice generation error banner */}
+      {invoiceError && (
+        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-red-800">Invoice Generation Error</p>
+              <p className="text-xs text-red-700 mt-0.5">{invoiceError}</p>
+            </div>
+            <button
+              onClick={() => setInvoiceError(null)}
+              className="text-red-700 hover:text-red-900 font-semibold"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -1038,20 +1147,14 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {/* Assign Installer — 5.5-Part-B
-              Schema BLOCKER: Job model has no installerId / trimVendorId /
-              crewId / meta column. The PATCH endpoint at /api/ops/jobs/[id]
-              does not accept any installer field. Field renders DISABLED so
-              the UI is in place once a column is added (or
-              /api/ops/jobs/[id]/assign-installer is created). */}
+          {/* Assign Installer — 5.5-Part-B */}
           <div className="bg-surface rounded-lg border p-5">
             <h2 className="text-lg font-semibold text-fg mb-4">Assign Installer</h2>
             <select
               value={installAssigneeChoice}
-              onChange={e => setInstallAssigneeChoice(e.target.value)}
-              disabled
-              title="Cannot save — schema change required (Job has no installerId / trimVendorId / meta column)"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface-muted text-fg-subtle cursor-not-allowed disabled:opacity-70"
+              onChange={e => handleAssignInstaller(e.target.value)}
+              disabled={assigningInstaller}
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-fg disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <option value="">— Select installer —</option>
               {installCrews.length > 0 && (
@@ -1073,14 +1176,8 @@ export default function JobDetailPage() {
                 </optgroup>
               )}
             </select>
-            <p className="mt-2 text-xs text-fg-subtle">
-              Cannot save — schema change required. Job model has no
-              installer-tracking field; add <code>installerId</code> /
-              <code>trimVendorId</code> (or a <code>meta</code> JSONB column)
-              before wiring this to PATCH.
-            </p>
             {installCrews.length === 0 && trimVendors.length === 0 && (
-              <p className="mt-1 text-xs text-fg-subtle italic">
+              <p className="mt-2 text-xs text-fg-subtle italic">
                 No installer options loaded yet.
               </p>
             )}

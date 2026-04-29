@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { DollarSign, FileText, TrendingDown, Phone, ClipboardCheck } from 'lucide-react'
+import { DollarSign, FileText, TrendingDown, Phone, ClipboardCheck, Search } from 'lucide-react'
 import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
 import {
   FinancialYtdStrip,
@@ -14,6 +14,7 @@ import {
 } from '@/components/FinancialChart'
 import { PageHeader } from '@/components/ui'
 import { EmptyState } from '@/components/ui'
+import { RecordPaymentModal } from '@/app/ops/components/RecordPaymentModal'
 
 interface DashboardData {
   cashPosition: {
@@ -71,6 +72,13 @@ export default function FinancialDashboard() {
   // ADMIN/MANAGER/ACCOUNTING; 'denied' otherwise (triggers redirect).
   const [roleStatus, setRoleStatus] = useState<'checking' | 'allowed' | 'denied'>('checking')
 
+  // Record Payment Modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('')
+  const [invoiceSearchResults, setInvoiceSearchResults] = useState<any[]>([])
+  const [invoiceSearching, setInvoiceSearching] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null)
+
   // ── YTD / per-month rollup ──
   const currentYear = new Date().getUTCFullYear()
   const currentMonth = new Date().getUTCMonth() + 1
@@ -121,6 +129,29 @@ export default function FinancialDashboard() {
       .then((d) => { if (d && !d.error) setRollup(d) })
       .catch(() => { /* silent */ })
   }, [rollupYear])
+
+  // Invoice search for payment modal
+  useEffect(() => {
+    if (!showPaymentModal) return
+    const q = invoiceSearchQuery.trim()
+    if (q.length < 2) { setInvoiceSearchResults([]); return }
+    let cancel = false
+    setInvoiceSearching(true)
+    const handle = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/ops/invoices?search=${encodeURIComponent(q)}&limit=10&status=ISSUED,SENT,PARTIALLY_PAID`, { cache: 'no-store' })
+        if (!r.ok || cancel) return
+        const data = await r.json()
+        const invoices = data.invoices || data.data || []
+        if (!cancel) setInvoiceSearchResults(invoices)
+      } catch {
+        if (!cancel) setInvoiceSearchResults([])
+      } finally {
+        if (!cancel) setInvoiceSearching(false)
+      }
+    }, 300)
+    return () => { cancel = true; clearTimeout(handle) }
+  }, [invoiceSearchQuery, showPaymentModal])
 
   const fetchPermissions = async () => {
     try {
@@ -230,14 +261,59 @@ export default function FinancialDashboard() {
       {/* Quick Actions Strip — Dawn's shortcut bar to skip sidebar nav */}
       <div className="bg-surface rounded-lg shadow p-4 border border-border">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* RecordPaymentModal needs an invoice picker first; for now route to /ops/invoices for selection. */}
-          <button
-            onClick={() => router.push('/ops/invoices')}
-            className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-[#0f2a3e] hover:bg-[#0D2847] text-white rounded-lg font-semibold text-sm transition-colors"
-          >
-            <DollarSign className="w-4 h-4" />
-            Record Payment
-          </button>
+          {/* Record Payment with inline invoice search */}
+          <div className="relative">
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              className="w-full min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-[#0f2a3e] hover:bg-[#0D2847] text-white rounded-lg font-semibold text-sm transition-colors"
+            >
+              <DollarSign className="w-4 h-4" />
+              Record Payment
+            </button>
+            {showPaymentModal && !selectedInvoice && (
+              <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface border border-border rounded-lg shadow-xl p-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-fg-subtle" />
+                  <input
+                    type="text"
+                    value={invoiceSearchQuery}
+                    onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                    placeholder="Search invoice # or builder..."
+                    className="input pl-8 text-sm"
+                    autoFocus
+                  />
+                </div>
+                {invoiceSearching && <p className="text-xs text-fg-subtle mt-2 px-1">Searching...</p>}
+                {invoiceSearchResults.length > 0 && (
+                  <ul className="mt-2 max-h-48 overflow-y-auto divide-y divide-border">
+                    {invoiceSearchResults.map((inv: any) => (
+                      <li key={inv.id}>
+                        <button
+                          onClick={() => {
+                            setSelectedInvoice({
+                              id: inv.id,
+                              invoiceNumber: inv.invoiceNumber,
+                              total: inv.total,
+                              balanceDue: inv.balanceDue,
+                              builderName: inv.builderName,
+                            })
+                          }}
+                          className="w-full text-left px-2 py-1.5 hover:bg-surface-muted rounded text-sm flex justify-between items-center"
+                        >
+                          <span className="font-medium">{inv.invoiceNumber}</span>
+                          <span className="text-fg-subtle text-xs">{inv.builderName} — ${Number(inv.balanceDue || 0).toFixed(2)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {invoiceSearchQuery.length >= 2 && !invoiceSearching && invoiceSearchResults.length === 0 && (
+                  <p className="text-xs text-fg-subtle mt-2 px-1">No open invoices found</p>
+                )}
+                <button onClick={() => { setShowPaymentModal(false); setInvoiceSearchQuery(''); setInvoiceSearchResults([]) }} className="mt-2 text-xs text-fg-subtle hover:text-fg">Cancel</button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => router.push('/ops/invoices?create=1')}
             className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-surface-muted hover:bg-border text-fg rounded-lg font-semibold text-sm border border-border transition-colors"
@@ -594,6 +670,14 @@ export default function FinancialDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        isOpen={!!selectedInvoice}
+        invoice={selectedInvoice}
+        onClose={() => { setSelectedInvoice(null); setShowPaymentModal(false); setInvoiceSearchQuery(''); setInvoiceSearchResults([]) }}
+        onSuccess={() => { setSelectedInvoice(null); setShowPaymentModal(false); setInvoiceSearchQuery(''); setInvoiceSearchResults([]); fetchData() }}
+      />
     </div>
   )
 }

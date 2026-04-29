@@ -464,7 +464,10 @@ export async function GET(request: NextRequest) {
   // Get staff info from middleware headers
   const staffId = request.headers.get('x-staff-id') || ''
   const staffRole = request.headers.get('x-staff-role') || ''
-  const staffName = request.headers.get('x-staff-name') || 'there'
+  // Middleware sets x-staff-firstname and x-staff-lastname; fall back to 'there'
+  const firstName = request.headers.get('x-staff-firstname') || ''
+  const lastName = request.headers.get('x-staff-lastname') || ''
+  const staffName = firstName ? firstName : 'there'
 
   try {
     let roleTasks: Task[] = []

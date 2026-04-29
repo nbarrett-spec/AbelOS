@@ -165,6 +165,100 @@ async function loadMonthlyDemand(
   return result
 }
 
+// ─── Holt-Winters Triple Exponential Smoothing ──────────────────────────
+
+/**
+ * GAP-21: Holt-Winters triple exponential smoothing.
+ * Adds trend and seasonal components for better medium-term forecasts.
+ *
+ * Only used for products with 18+ months of history.
+ * For shorter history, falls back to simple exponential smoothing.
+ */
+export function holtWintersSmooth(
+  data: number[],
+  seasonLength: number = 12,
+  alpha: number = 0.3,
+  beta: number = 0.1,
+  gamma: number = 0.3
+): {
+  smoothed: number[]
+  seasonal: number[]
+  trend: number
+  residualStdDev: number
+  forecastNext: number[]
+} {
+  if (data.length < seasonLength) {
+    // Fall back: insufficient data
+    return {
+      smoothed: [],
+      seasonal: [],
+      trend: 0,
+      residualStdDev: 0,
+      forecastNext: [],
+    }
+  }
+
+  // Initialize level from first season average
+  const seasonAvg = data.slice(0, seasonLength).reduce((a, b) => a + b, 0) / seasonLength
+  let level = seasonAvg
+  let trend = 0
+
+  // Initialize seasonal indices
+  const seasonal: number[] = []
+  for (let i = 0; i < seasonLength; i++) {
+    seasonal.push(data[i] / seasonAvg)
+  }
+
+  // Smoothing
+  const smoothed: number[] = []
+  for (let t = 0; t < data.length; t++) {
+    const seasonalIdx = t % seasonLength
+    const s = seasonal[seasonalIdx] || 1
+
+    if (t === 0) {
+      smoothed.push(level * s)
+    } else {
+      // Update level
+      const prevLevel = level
+      level = alpha * (data[t] / s) + (1 - alpha) * (prevLevel + trend)
+      // Update trend
+      trend = beta * (level - prevLevel) + (1 - beta) * trend
+      // Update seasonal
+      seasonal[seasonalIdx] = gamma * (data[t] / level) + (1 - gamma) * s
+
+      smoothed.push(level * seasonal[seasonalIdx])
+    }
+  }
+
+  // Residuals for std dev
+  const residuals: number[] = []
+  for (let i = 1; i < data.length; i++) {
+    residuals.push(data[i] - smoothed[i - 1])
+  }
+  let residualStdDev = 0
+  if (residuals.length > 1) {
+    const mean = residuals.reduce((a, b) => a + b, 0) / residuals.length
+    const variance = residuals.reduce((acc, x) => acc + (x - mean) ** 2, 0) / Math.max(1, residuals.length - 1)
+    residualStdDev = Math.sqrt(Math.max(0, variance))
+  }
+
+  // Forecast next 3 periods
+  const forecastNext: number[] = []
+  for (let i = 1; i <= 3; i++) {
+    const nextSeason = seasonal[(data.length + i - 1) % seasonLength] || 1
+    const forecastValue = (level + i * trend) * nextSeason
+    forecastNext.push(Math.max(0, Math.round(forecastValue)))
+  }
+
+  return {
+    smoothed,
+    seasonal,
+    trend,
+    residualStdDev,
+    forecastNext,
+  }
+}
+
 // ─── Smoothing core ─────────────────────────────────────────────────────
 
 /**
@@ -318,13 +412,41 @@ export async function computeDemandForecast(
       continue
     }
 
-    const { smoothed, residualStdDev, smoothedLast } = exponentialSmoothing(
-      actuals.map((a) => a.quantity),
-      alpha
-    )
+    // GAP-21: Auto-select smoothing method based on data length
+    const actualValues = actuals.map((a) => a.quantity)
+    let forecastValues: number[]
+    let residualStdDev: number
+    let smoothedLast: number
+    let method: string
 
-    const forecast: ForecastPoint[] = forecastMonthKeys.map((month) => {
-      const qty = Math.max(0, Math.round(smoothedLast))
+    if (actualValues.length >= 18) {
+      // Use Holt-Winters for 18+ months
+      const hw = holtWintersSmooth(actualValues, 12, 0.3, 0.1, 0.3)
+      forecastValues = hw.forecastNext
+      residualStdDev = hw.residualStdDev
+      smoothedLast = hw.smoothed.length > 0 ? hw.smoothed[hw.smoothed.length - 1] : 0
+      method = 'HOLT_WINTERS'
+    } else {
+      // Use simple exponential smoothing
+      const exp = exponentialSmoothing(actualValues, alpha)
+      smoothedLast = exp.smoothedLast
+      residualStdDev = exp.residualStdDev
+
+      // Generate flat-forward forecast
+      forecastValues = [
+        Math.max(0, Math.round(smoothedLast)),
+        Math.max(0, Math.round(smoothedLast)),
+        Math.max(0, Math.round(smoothedLast)),
+      ]
+      method = 'EXPONENTIAL_SMOOTHING'
+    }
+
+    // GAP-20: Apply pipeline demand as a floor to each forecast month
+    const pipelineDemand = await getPipelineDemand(pid, 30)
+    const adjustedForecastValues = forecastValues.map((f) => Math.max(f, pipelineDemand))
+
+    const forecast: ForecastPoint[] = forecastMonthKeys.map((month, idx) => {
+      const qty = adjustedForecastValues[idx] || 0
       const band = Math.round(Z_80 * residualStdDev)
       return {
         month,
@@ -342,7 +464,7 @@ export async function computeDemandForecast(
       actuals,
       forecast,
       alpha,
-      method: 'EXPONENTIAL_SMOOTHING',
+      method: method as any,
       smoothedLast,
       residualStdDev,
       totalHistoricalUnits,
@@ -360,8 +482,6 @@ export async function computeDemandForecast(
         summary.errors.push(`${meta.sku}: ${err?.message || String(err)}`)
       }
     }
-    // Residuals available via products[i].residualStdDev if callers need it
-    void smoothed
   }
 
   summary.durationMs = Date.now() - started
@@ -431,11 +551,42 @@ async function bumpSafetyStock(productId: string, monthlyForecast: number): Prom
   return rows.length > 0
 }
 
+// ─── Pipeline-Aware Demand ──────────────────────────────────────────────
+
+/**
+ * GAP-20: Get pipeline demand (BoM-expanded, job-scheduled demand)
+ * within the horizon. Returns the total quantity of this component
+ * needed to fulfill jobs scheduled in the next N days.
+ */
+export async function getPipelineDemand(
+  productId: string,
+  horizonDays: number = 30
+): Promise<number> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ pipelineDemand: string }>>(
+    `
+    SELECT COALESCE(SUM(be."quantity" * oi."quantity"), 0)::int AS "pipelineDemand"
+    FROM "BomEntry" be
+    JOIN "OrderItem" oi ON oi."productId" = be."parentId"
+    JOIN "Order" o ON o."id" = oi."orderId"
+    JOIN "Job" j ON j."orderId" = o."id"
+    WHERE be."childId" = $1
+      AND j."status" NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')
+      AND (j."scheduledDate" IS NULL OR j."scheduledDate" <= NOW() + ($2 || ' days')::INTERVAL)
+    `,
+    productId,
+    horizonDays
+  )
+
+  return rows.length > 0 ? parseInt(rows[0].pipelineDemand, 10) : 0
+}
+
 // ─── Public helper for SmartPO integration ──────────────────────────────
 
 /**
  * Look up the upcoming 1-month forecast demand for a product.
  * Returns null if no DemandForecast row exists yet.
+ *
+ * GAP-20: Adjusted to include pipeline demand as a floor.
  */
 export async function getForecastDemand(
   productId: string,
@@ -455,7 +606,12 @@ export async function getForecastDemand(
     monthsAhead
   )
   if (rows.length === 0) return null
-  return rows.reduce((a, r) => a + Number(r.predictedDemand), 0)
+
+  const statisticalForecast = rows.reduce((a, r) => a + Number(r.predictedDemand), 0)
+
+  // GAP-20: Ensure we account for pipeline demand as a floor
+  const pipelineDemand = await getPipelineDemand(productId, 30)
+  return Math.max(statisticalForecast, pipelineDemand)
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────

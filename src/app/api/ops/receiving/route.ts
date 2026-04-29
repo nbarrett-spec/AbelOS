@@ -5,6 +5,26 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { requireValidTransition, transitionErrorResponse, InvalidTransitionError } from '@/lib/status-guard'
 
+/**
+ * GAP-11: Enhanced receiving → inventory → allocation cascade
+ * After receiving items:
+ * 1. Update InventoryItem: onHand += receivedQty, onOrder -= receivedQty
+ * 2. Find BACKORDERED allocations for same productId, ordered by Job.scheduledDate
+ * 3. For each BACKORDERED: if onHand >= qty, flip to RESERVED
+ * 4. For partial: split allocation — RESERVED for available, BACKORDERED for remainder
+ * 5. Create InboxItem for PM when material arrives
+ * 6. Update MaterialWatch status when all backorders satisfied
+ */
+
+interface BackorderAllocation {
+  id: string
+  jobId: string
+  quantity: number
+  jobNumber: string | null
+  scheduledDate: Date | null
+  assignedPMId: string | null
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // GET /api/ops/receiving — List POs awaiting receiving
 // ───────────────────────────────────────────────────────────────────────────
@@ -268,7 +288,7 @@ export async function POST(request: NextRequest) {
       `, purchaseOrderId)
     }
 
-    // ── AUTO-ALLOCATE: Check if any jobs are waiting for these products ──
+    // ── AUTO-ALLOCATE: Check if any jobs are waiting for these products (GAP-11) ──
     const autoAllocations: any[] = []
     const jobsAdvanced: string[] = []
     const pmNotifications: string[] = []
@@ -281,131 +301,194 @@ export async function POST(request: NextRequest) {
       const netReceived = item.receivedQty - (item.damagedQty || 0)
       if (netReceived <= 0) continue
 
-      // Find SHORT picks waiting for this product
-      const shortPicks: any[] = await prisma.$queryRawUnsafe(`
+      // Get product details for notification
+      const productInfo = await prisma.$queryRawUnsafe<Array<{ sku: string | null; name: string | null }>>(
+        `SELECT "sku", "name" FROM "Product" WHERE "id" = $1 LIMIT 1`,
+        productId
+      )
+      const productName = productInfo.length > 0 ? (productInfo[0].name || productInfo[0].sku || productId) : productId
+
+      // Find BACKORDERED InventoryAllocations for this product
+      const backorders = await prisma.$queryRawUnsafe<Array<BackorderAllocation>>(
+        `
         SELECT
-          mp.id as "pickId",
-          mp."jobId",
-          mp.quantity,
-          mp."pickedQty",
-          mp.sku,
+          ia."id",
+          ia."jobId",
+          ia.quantity,
           j."jobNumber",
-          j."assignedPMId",
-          j.status::text as "jobStatus"
-        FROM "MaterialPick" mp
-        JOIN "Job" j ON mp."jobId" = j.id
-        WHERE mp."productId" = $1
-          AND mp.status::text = 'SHORT'
+          j."scheduledDate",
+          j."assignedPMId"
+        FROM "InventoryAllocation" ia
+        JOIN "Job" j ON ia."jobId" = j.id
+        WHERE ia."productId" = $1
+          AND ia.status = 'BACKORDERED'
         ORDER BY j."scheduledDate" ASC NULLS LAST
-      `, productId)
+        `,
+        productId
+      )
 
-      // Get current available inventory for this product
-      const invResult: any[] = await prisma.$queryRawUnsafe(`
-        SELECT "onHand", "committed", "available" FROM "InventoryItem" WHERE "productId" = $1
-      `, productId)
-      let currentAvailable = invResult[0]?.available || 0
+      // Get current available inventory
+      const invResult = await prisma.$queryRawUnsafe<Array<{ onHand: number; committed: number }>>(
+        `SELECT "onHand", "committed" FROM "InventoryItem" WHERE "productId" = $1`,
+        productId
+      )
+      let currentAvailable = invResult.length > 0 ? (invResult[0].onHand - invResult[0].committed) : 0
 
-      for (const sp of shortPicks) {
+      // Process backorders in priority order (by scheduledDate)
+      const fullyReservedJobs = new Set<string>()
+
+      for (const backorder of backorders) {
         if (currentAvailable <= 0) break
-        const needed = sp.quantity - sp.pickedQty
-        if (needed <= 0) continue
 
-        const canAllocate = Math.min(needed, currentAvailable)
+        const canReserve = Math.min(backorder.quantity, currentAvailable)
 
-        // Create allocation
-        await prisma.$executeRawUnsafe(`
-          INSERT INTO "InventoryAllocation"
-          (id, "productId", "jobId", quantity, "allocationType", status, "allocatedBy", "allocatedAt", "createdAt", "updatedAt")
-          VALUES (gen_random_uuid()::text, $1, $2, $3, 'HARD', 'RESERVED', $4, NOW(), NOW(), NOW())
-        `, productId, sp.jobId, canAllocate, receivedBy || 'system')
+        // If we can fully satisfy this backorder
+        if (canReserve >= backorder.quantity) {
+          // Update allocation to RESERVED
+          await prisma.$executeRawUnsafe(
+            `
+            UPDATE "InventoryAllocation"
+            SET status = 'RESERVED', "updatedAt" = NOW()
+            WHERE "id" = $1
+            `,
+            backorder.id
+          )
 
-        // Update inventory committed/available
-        await prisma.$executeRawUnsafe(`
-          UPDATE "InventoryItem"
-          SET "committed" = "committed" + $1, "available" = "available" - $1, "updatedAt" = NOW()
-          WHERE "productId" = $2
-        `, canAllocate, productId)
+          // Update inventory committed
+          await prisma.$executeRawUnsafe(
+            `
+            UPDATE "InventoryItem"
+            SET "committed" = "committed" + $1, "updatedAt" = NOW()
+            WHERE "productId" = $2
+            `,
+            backorder.quantity,
+            productId
+          )
 
-        currentAvailable -= canAllocate
-
-        // If fully allocated, change pick status from SHORT to PENDING
-        if (canAllocate >= needed) {
-          await prisma.$executeRawUnsafe(`
-            UPDATE "MaterialPick" SET status = 'PENDING'::"PickStatus" WHERE id = $1
-          `, sp.pickId)
+          currentAvailable -= backorder.quantity
+          fullyReservedJobs.add(backorder.jobId)
 
           autoAllocations.push({
-            jobNumber: sp.jobNumber,
-            sku: sp.sku,
-            allocated: canAllocate,
-            status: 'FULLY_ALLOCATED',
+            jobNumber: backorder.jobNumber,
+            productName,
+            allocated: backorder.quantity,
+            status: 'FULLY_RESERVED',
           })
-
-          // Check if ALL picks for this job are now non-SHORT
-          const remainingShort: any[] = await prisma.$queryRawUnsafe(`
-            SELECT COUNT(*)::int as count FROM "MaterialPick"
-            WHERE "jobId" = $1 AND status::text = 'SHORT'
-          `, sp.jobId)
-
-          if (remainingShort[0]?.count === 0) {
-            // All materials now available — update job flags
-            await prisma.$executeRawUnsafe(`
-              UPDATE "Job"
-              SET "allMaterialsAllocated" = true, "updatedAt" = NOW()
-              WHERE id = $1
-            `, sp.jobId)
-
-            // Auto-advance job status if in early stage — guard the transition.
-            // CREATED → MATERIALS_LOCKED is NOT a valid direct edge in
-            // JOB_TRANSITIONS (must pass through READINESS_CHECK); skip with a
-            // warning when it would fail rather than bypass the state machine.
-            if (sp.jobStatus === 'CREATED' || sp.jobStatus === 'READINESS_CHECK') {
-              try {
-                requireValidTransition('job', sp.jobStatus, 'MATERIALS_LOCKED')
-                await prisma.$executeRawUnsafe(`
-                  UPDATE "Job"
-                  SET status = 'MATERIALS_LOCKED'::"JobStatus", "materialsLocked" = true, "updatedAt" = NOW()
-                  WHERE id = $1
-                `, sp.jobId)
-                jobsAdvanced.push(sp.jobNumber)
-              } catch (jobGuardErr) {
-                if (jobGuardErr instanceof InvalidTransitionError) {
-                  console.warn(
-                    `[receiving] skipped Job→MATERIALS_LOCKED auto-advance for ${sp.jobNumber} — invalid from ${sp.jobStatus}`,
-                  )
-                } else {
-                  throw jobGuardErr
-                }
-              }
-            }
-
-            // Notify PM
-            if (sp.assignedPMId) {
-              await prisma.$executeRawUnsafe(`
-                INSERT INTO "Notification" (id, "staffId", type, title, body, link, read, "createdAt")
-                VALUES (
-                  gen_random_uuid()::text, $1,
-                  'JOB_UPDATE'::"NotificationType",
-                  $2, $3, $4, false, NOW()
-                )
-              `,
-                sp.assignedPMId,
-                `Materials Ready — ${sp.jobNumber}`,
-                `All materials for ${sp.jobNumber} are now in stock and allocated. Job advanced to MATERIALS_LOCKED.`,
-                `/ops/jobs/${sp.jobId}`
-              )
-              pmNotifications.push(sp.jobNumber)
-            }
-          }
         } else {
-          // Partially allocated — update pick but leave as SHORT
+          // Partially satisfy: split the allocation
+          // 1. Update existing allocation to RESERVED with partial quantity
+          await prisma.$executeRawUnsafe(
+            `
+            UPDATE "InventoryAllocation"
+            SET quantity = $1, status = 'RESERVED', "updatedAt" = NOW()
+            WHERE "id" = $2
+            `,
+            canReserve,
+            backorder.id
+          )
+
+          // 2. Create new BACKORDERED allocation for the remainder
+          const remainingQty = backorder.quantity - canReserve
+          const newAllocId = `allo_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+          await prisma.$executeRawUnsafe(
+            `
+            INSERT INTO "InventoryAllocation"
+            (id, "productId", "jobId", quantity, "allocationType", status, "allocatedBy", "allocatedAt", "createdAt", "updatedAt")
+            VALUES ($1, $2, $3, $4, 'HARD', 'BACKORDERED', $5, NOW(), NOW(), NOW())
+            `,
+            newAllocId,
+            productId,
+            backorder.jobId,
+            remainingQty,
+            receivedBy || 'system'
+          )
+
+          // 3. Update inventory committed for the reserved portion
+          await prisma.$executeRawUnsafe(
+            `
+            UPDATE "InventoryItem"
+            SET "committed" = "committed" + $1, "updatedAt" = NOW()
+            WHERE "productId" = $2
+            `,
+            canReserve,
+            productId
+          )
+
+          currentAvailable = 0
+
           autoAllocations.push({
-            jobNumber: sp.jobNumber,
-            sku: sp.sku,
-            allocated: canAllocate,
-            remaining: needed - canAllocate,
-            status: 'PARTIAL',
+            jobNumber: backorder.jobNumber,
+            productName,
+            allocated: canReserve,
+            remaining: remainingQty,
+            status: 'PARTIAL_RESERVED',
           })
+        }
+      }
+
+      // Create inbox notifications for PMs
+      for (const jobId of fullyReservedJobs) {
+        const job = backorders.find((b) => b.jobId === jobId)
+        if (!job) continue
+
+        // Create InboxItem for PM: material arrived and ready to pick
+        const notifId = `inb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+        await prisma.$executeRawUnsafe(
+          `
+          INSERT INTO "InboxItem" (
+            "id", "type", "source", "title", "description", "priority", "status",
+            "entityType", "entityId", "actionData", "createdAt", "updatedAt"
+          ) VALUES (
+            $1, 'MATERIAL_ARRIVED', 'receiving-cascade', $2, $3, 'HIGH', 'PENDING',
+            'Job', $4, $5::jsonb, NOW(), NOW()
+          )
+          `,
+          notifId,
+          `Material In Stock: ${productName} (${job.jobNumber})`,
+          `${productName} has arrived and is reserved for ${job.jobNumber}. Ready to pick.`,
+          jobId,
+          JSON.stringify({ productId, jobId, productName })
+        )
+
+        // Check if ALL backordered items for this job are now satisfied
+        const remainingBackorders = await prisma.$queryRawUnsafe<Array<{ count: number }>>(
+          `
+          SELECT COUNT(*)::int as count
+          FROM "InventoryAllocation"
+          WHERE "jobId" = $1 AND status = 'BACKORDERED'
+          `,
+          jobId
+        )
+
+        if (remainingBackorders.length === 0 || remainingBackorders[0].count === 0) {
+          // Update MaterialWatch status if exists
+          await prisma.$executeRawUnsafe(
+            `
+            UPDATE "MaterialWatch"
+            SET status = 'AVAILABLE', "updatedAt" = NOW()
+            WHERE "jobId" = $1 AND status IN ('AWAITING', 'PARTIAL')
+            `,
+            jobId
+          )
+
+          // Notify PM via Notification
+          if (job.assignedPMId) {
+            await prisma.$executeRawUnsafe(
+              `
+              INSERT INTO "Notification" (id, "staffId", type, title, body, link, read, "createdAt")
+              VALUES (
+                gen_random_uuid()::text, $1,
+                'JOB_UPDATE'::"NotificationType",
+                $2, $3, $4, false, NOW()
+              )
+              `,
+              job.assignedPMId,
+              `Materials Ready — ${job.jobNumber}`,
+              `All backorders for ${job.jobNumber} are now satisfied. Materials are in stock and ready to pick.`,
+              `/ops/jobs/${jobId}`
+            )
+            pmNotifications.push(job.jobNumber || jobId)
+          }
         }
       }
     }

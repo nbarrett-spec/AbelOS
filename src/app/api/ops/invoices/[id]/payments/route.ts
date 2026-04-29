@@ -102,6 +102,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             "updatedAt" = NOW() ${paidAtClause}
         WHERE "id" = $3
       `, newAmountPaid, Math.max(0, newBalanceDue), id)
+
+      // When invoice reaches PAID status, update linked LienRelease to 'READY'
+      if (newStatus === 'PAID') {
+        await tx.$executeRawUnsafe(`
+          UPDATE "LienRelease"
+          SET "status" = 'READY', "updatedAt" = NOW()
+          WHERE "invoiceId" = $1 AND "status" = 'PENDING'
+        `, id)
+      }
     })
 
     // Fetch updated invoice with items and payments

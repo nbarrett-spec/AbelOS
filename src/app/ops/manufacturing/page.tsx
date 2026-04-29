@@ -49,8 +49,19 @@ interface DashboardData {
   }
 }
 
+interface BomCoverageData {
+  coverage: {
+    total: number
+    withBom: number
+    percentage: number
+  }
+  missingBom: { productId: string; sku: string; name: string; category: string }[]
+  brokenComponents: { parentSku: string; componentSku: string; issue: string }[]
+}
+
 export default function ManufacturingDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [bomCoverage, setBomCoverage] = useState<BomCoverageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [qcBlockedCount, setQcBlockedCount] = useState<number>(0)
@@ -96,6 +107,12 @@ export default function ManufacturingDashboard() {
         setQcBlockedCount(unique.size)
       })
       .catch(() => setQcBlockedCount(0))
+
+    // Fetch BOM coverage (fire-and-forget).
+    fetch('/api/ops/manufacturing/bom-audit')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setBomCoverage(d))
+      .catch(() => setBomCoverage(null))
   }, [])
 
   // Real-time alerts: poll the dashboard every 30s and fire toasts for new
@@ -302,6 +319,54 @@ export default function ManufacturingDashboard() {
               )}
             </div>
           </div>
+
+          {/* BOM Coverage */}
+          {bomCoverage && (
+            <div className="bg-white rounded-xl border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-fg">BOM Coverage</h2>
+                <Link
+                  href="/ops/manufacturing/bom"
+                  className="text-xs text-[#0f2a3e] hover:underline"
+                >
+                  Details →
+                </Link>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-fg-muted">Coverage</span>
+                    <span className="font-semibold text-fg">
+                      {bomCoverage.coverage.withBom}/{bomCoverage.coverage.total}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-green-500 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, bomCoverage.coverage.percentage)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-fg-muted mt-1">
+                    {Math.round(bomCoverage.coverage.percentage)}% of assembly products have BOMs
+                  </p>
+                </div>
+                {bomCoverage.missingBom.length > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                    <p className="text-xs font-semibold text-yellow-800">
+                      {bomCoverage.missingBom.length} product{bomCoverage.missingBom.length !== 1 ? 's' : ''} missing BOMs
+                    </p>
+                  </div>
+                )}
+                {bomCoverage.brokenComponents.length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded p-2">
+                    <p className="text-xs font-semibold text-red-800">
+                      {bomCoverage.brokenComponents.length} broken component{bomCoverage.brokenComponents.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Material Pick Status */}
           <div className="bg-white rounded-xl border p-6">

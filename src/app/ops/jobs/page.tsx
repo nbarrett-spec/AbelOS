@@ -505,6 +505,9 @@ export default function JobPipelinePage() {
                           <div className="bg-surface rounded-lg p-3 border border-border hover:shadow-md hover:border-signal transition-all cursor-pointer">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
+                                <p className="text-xs font-mono font-semibold text-signal truncate" title={job.jobNumber}>
+                                  {job.jobNumber}
+                                </p>
                                 <p className="text-xs font-semibold text-fg truncate">
                                   {job.builderName}
                                 </p>

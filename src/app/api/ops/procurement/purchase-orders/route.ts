@@ -5,6 +5,7 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { audit } from '@/lib/audit'
 import { toCsv } from '@/lib/csv'
+import { validatePOAgainstJobs } from '@/lib/mrp/po-validation'
 
 // ──────────────────────────────────────────────────────────────────────────
 // GET /api/ops/procurement/purchase-orders — List POs
@@ -328,12 +329,16 @@ export async function POST(request: NextRequest) {
       WHERE po.id = $1
     `, poId) as any[]
 
+    // Validate PO against job schedules (GAP-10)
+    const validation = await validatePOAgainstJobs(poId)
+    const warnings = validation.warnings.length > 0 ? validation.warnings : undefined
+
     // Fire automation event (non-blocking)
     fireAutomationEvent('PO_CREATED', poId).catch(e => console.warn('[Automation] event fire failed:', e))
 
     await audit(request, 'CREATE', 'PurchaseOrder', poId, { poNumber: poNum, vendorId: supplierId, total, itemCount: items.length })
 
-    return NextResponse.json({ purchaseOrder: pos[0], poNumber: poNum }, { status: 201 })
+    return NextResponse.json({ purchaseOrder: pos[0], poNumber: poNum, warnings }, { status: 201 })
   } catch (error) {
     console.error('PO create error:', error)
     return NextResponse.json({ error: 'Failed to create purchase order', details: String(error) }, { status: 500 })

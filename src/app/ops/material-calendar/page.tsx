@@ -380,10 +380,11 @@ export default function MaterialCalendarPage() {
   }, [data])
 
   // Bucket filtered jobs by day for grid rendering
+  // Jobs without scheduledDate are bucketed under UNSCHEDULED_JOBS key
   const jobsByDay = useMemo(() => {
     const map = new Map<string, CalendarJob[]>()
     for (const j of filteredJobs) {
-      const key = toYmd(new Date(j.scheduledDate))
+      const key = j.scheduledDate ? toYmd(new Date(j.scheduledDate)) : 'UNSCHEDULED_JOBS'
       let arr = map.get(key)
       if (!arr) {
         arr = []
@@ -659,6 +660,46 @@ export default function MaterialCalendarPage() {
             />
           )}
         </main>
+
+        {/* Unscheduled Jobs Section (GAP-16) */}
+        {jobsByDay.has('UNSCHEDULED_JOBS') && jobsByDay.get('UNSCHEDULED_JOBS')!.length > 0 && (
+          <div className="mt-8 pt-8 border-t border-border">
+            <h3 className="text-sm font-semibold text-fg mb-4">Unscheduled Jobs ({jobsByDay.get('UNSCHEDULED_JOBS')!.length})</h3>
+            <div className="grid gap-3">
+              {jobsByDay.get('UNSCHEDULED_JOBS')!.map((j) => {
+                const config = STATUS_COLORS[j.materialStatus]
+                return (
+                  <Card
+                    key={j.jobId}
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow border-2"
+                    style={{ borderColor: config.border, backgroundColor: config.bg }}
+                    onClick={() => setDrillJobId(j.jobId)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <StatusDot tone={config.dot} />
+                          <span className="font-medium text-[13px] text-fg">{j.jobNumber}</span>
+                          <span className="text-[12px] text-fg-muted">{j.builderName}</span>
+                        </div>
+                        <p className="text-[12px] text-fg-muted">
+                          {j.communityName && `${j.communityName}`}
+                          {j.jobAddress && ` • ${j.jobAddress}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={j.materialStatus === 'RED' ? 'danger' : j.materialStatus === 'AMBER' ? 'warning' : j.materialStatus === 'GREEN' ? 'success' : 'neutral'}>
+                          {config.label}
+                        </Badge>
+                        <p className="text-[11px] text-fg-muted mt-1">⚠️ No date</p>
+                      </div>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Drawer */}

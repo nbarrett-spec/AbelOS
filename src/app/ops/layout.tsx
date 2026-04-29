@@ -102,6 +102,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/ops/projects', label: 'PM Command Center', icon: '🎛️' },
       { href: '/ops/jobs', label: 'Job Pipeline', icon: '🔧' },
+      { href: '/ops/job-readiness', label: 'Job Readiness', icon: '✅' },
       { href: '/ops/material-calendar', label: 'Material Calendar', icon: '📅' },
       { href: '/ops/schedule', label: 'Schedule & Dispatch', icon: '📅' },
       { href: '/ops/crews', label: 'Crews', icon: '👷' },
