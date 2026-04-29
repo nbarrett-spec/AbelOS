@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Send, Phone, AlertTriangle, Ban, CheckSquare, MessageSquare,
   RefreshCw, Clock, Mail, ExternalLink, Filter, ArrowUpDown,
-  TrendingUp, Flame, User2, Wallet,
+  TrendingUp, Flame, User2, Wallet, DollarSign,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Badge, StatusBadge, Card, CardHeader, CardTitle,
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui'
 import { useToast } from '@/contexts/ToastContext'
 import { cn } from '@/lib/utils'
+import { RecordPaymentModal } from '@/app/ops/components/RecordPaymentModal'
 
 interface QueueRow {
   invoice: {
@@ -65,6 +66,13 @@ interface QueueRow {
     sentAt: string
     sentBy: string | null
     notes: string | null
+  }>
+  priorPayments?: Array<{
+    id: string
+    amount: number
+    method: string
+    reference: string | null
+    receivedAt: string
   }>
 }
 
@@ -132,6 +140,18 @@ const fmtShortDate = (s: string | null) => {
   return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+const fmtPhone = (raw: string | null | undefined): string => {
+  if (!raw) return ''
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`
+  }
+  return raw
+}
+
 const fmtRelative = (s: string | null) => {
   if (!s) return '—'
   const ms = Date.now() - new Date(s).getTime()
@@ -187,6 +207,15 @@ export default function CollectionsActionCenter() {
   const [sendingReminderFor, setSendingReminderFor] = useState<string | null>(null)
   const [bucketFilter, setBucketFilter] = useState<BucketKey | null>(null)
   const [builderSortKey, setBuilderSortKey] = useState<BuilderSortKey>('balance')
+
+  // FIX-17: in-place "Record Payment" — track which invoice has the modal open.
+  const [paymentInvoice, setPaymentInvoice] = useState<{
+    id: string
+    invoiceNumber: string
+    total: number
+    balanceDue: number
+    builderName: string
+  } | null>(null)
 
   useEffect(() => { fetchData() }, [])
 
@@ -438,6 +467,17 @@ export default function CollectionsActionCenter() {
       />
 
 
+      {/* FIX-17: in-place "Record Payment" modal — refetches list on success */}
+      <RecordPaymentModal
+        isOpen={paymentInvoice !== null}
+        invoice={paymentInvoice}
+        onClose={() => setPaymentInvoice(null)}
+        onSuccess={() => {
+          setPaymentInvoice(null)
+          fetchData()
+        }}
+      />
+
       {/* Action queue */}
       <Card variant="default" padding="none">
         <CardHeader>
@@ -501,19 +541,62 @@ export default function CollectionsActionCenter() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-[11px] text-fg-muted">
+                        <div className="flex items-center gap-3 mt-1 text-[11px] text-fg-muted flex-wrap">
                           {row.builder.contactName && <span>{row.builder.contactName}</span>}
-                          {row.builder.email && (
-                            <span className="flex items-center gap-1">
+                          {row.builder.email ? (
+                            <a
+                              href={`mailto:${row.builder.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 text-brand hover:underline"
+                            >
                               <Mail className="w-3 h-3" />{row.builder.email}
-                            </span>
-                          )}
-                          {row.builder.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />{row.builder.phone}
+                            </a>
+                          ) : null}
+                          {row.builder.phone ? (
+                            <a
+                              href={`tel:${row.builder.phone.replace(/\D/g, '')}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 text-brand hover:underline"
+                            >
+                              <Phone className="w-3 h-3" />{fmtPhone(row.builder.phone)}
+                            </a>
+                          ) : null}
+                          {!row.builder.email && !row.builder.phone && (
+                            <span className="flex items-center gap-1 text-data-negative">
+                              <AlertTriangle className="w-3 h-3" />No contact on file
                             </span>
                           )}
                         </div>
+                        {/* FIX-16: prior payment history inline */}
+                        {row.priorPayments && row.priorPayments.length > 0 && (
+                          <div className="mt-1.5 text-[11px] text-fg-muted flex items-center gap-1.5 flex-wrap">
+                            <DollarSign className="w-3 h-3 text-data-positive flex-shrink-0" />
+                            {row.priorPayments.length === 1 ? (
+                              <span>
+                                <span className="text-fg-subtle">Last paid:</span>{' '}
+                                <span className="text-fg">
+                                  {fmtShortDate(row.priorPayments[0].receivedAt)} — {row.priorPayments[0].method}
+                                  {row.priorPayments[0].reference ? ` #${row.priorPayments[0].reference}` : ''} —{' '}
+                                  <span className="tabular-nums" style={MONO_STYLE}>{fmtMoneyExact(row.priorPayments[0].amount)}</span>
+                                </span>
+                              </span>
+                            ) : (
+                              <>
+                                <span>
+                                  <span className="text-fg-subtle">Last paid:</span>{' '}
+                                  <span className="text-fg">
+                                    {fmtShortDate(row.priorPayments[0].receivedAt)} — {row.priorPayments[0].method}
+                                    {row.priorPayments[0].reference ? ` #${row.priorPayments[0].reference}` : ''} —{' '}
+                                    <span className="tabular-nums" style={MONO_STYLE}>{fmtMoneyExact(row.priorPayments[0].amount)}</span>
+                                  </span>
+                                </span>
+                                <Badge variant="neutral" size="xs">
+                                  {row.priorPayments.length} prior · {fmtMoneyCompact(row.priorPayments.reduce((s, p) => s + p.amount, 0))}
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Days past due */}
@@ -623,6 +706,25 @@ export default function CollectionsActionCenter() {
                         >
                           <CheckSquare className="w-3 h-3" />
                           Mark promised
+                        </button>
+                        {/* FIX-17: record a check/ACH/etc. without leaving the page */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPaymentInvoice({
+                              id: row.invoice.id,
+                              invoiceNumber: row.invoice.invoiceNumber,
+                              total: row.invoice.total,
+                              balanceDue: row.invoice.balanceDue,
+                              builderName: row.builder.name,
+                            })
+                          }}
+                          disabled={isPending}
+                          className="btn btn-secondary btn-xs"
+                          title="Record a payment received from the builder"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                          Record Payment
                         </button>
                         {row.invoice.daysPastDue >= 45 && (
                           <button

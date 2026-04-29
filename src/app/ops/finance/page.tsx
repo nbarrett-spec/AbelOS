@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { DollarSign } from 'lucide-react'
+import { DollarSign, FileText, TrendingDown, Phone, ClipboardCheck } from 'lucide-react'
 import type { MonthlyRollup } from '@/lib/finance/monthly-rollup'
 import {
   FinancialYtdStrip,
@@ -226,6 +226,48 @@ export default function FinancialDashboard() {
           />
         </div>
       )}
+
+      {/* Quick Actions Strip — Dawn's shortcut bar to skip sidebar nav */}
+      <div className="bg-surface rounded-lg shadow p-4 border border-border">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* RecordPaymentModal needs an invoice picker first; for now route to /ops/invoices for selection. */}
+          <button
+            onClick={() => router.push('/ops/invoices')}
+            className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-[#0f2a3e] hover:bg-[#0D2847] text-white rounded-lg font-semibold text-sm transition-colors"
+          >
+            <DollarSign className="w-4 h-4" />
+            Record Payment
+          </button>
+          <button
+            onClick={() => router.push('/ops/invoices?create=1')}
+            className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-surface-muted hover:bg-border text-fg rounded-lg font-semibold text-sm border border-border transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            Create Invoice
+          </button>
+          <button
+            onClick={() => router.push('/ops/finance/ar')}
+            className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-surface-muted hover:bg-border text-fg rounded-lg font-semibold text-sm border border-border transition-colors"
+          >
+            <TrendingDown className="w-4 h-4" />
+            View AR Aging
+          </button>
+          <button
+            onClick={() => router.push('/ops/collections')}
+            className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-surface-muted hover:bg-border text-fg rounded-lg font-semibold text-sm border border-border transition-colors"
+          >
+            <Phone className="w-4 h-4" />
+            Collections Queue
+          </button>
+          <button
+            onClick={() => router.push('/ops/portal/accounting/close')}
+            className="min-h-[48px] flex items-center justify-center gap-2 px-4 py-3 bg-surface-muted hover:bg-border text-fg rounded-lg font-semibold text-sm border border-border transition-colors"
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            Monthly Close
+          </button>
+        </div>
+      </div>
 
       {/* Cash Position Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">

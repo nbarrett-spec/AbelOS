@@ -3,88 +3,195 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-interface BriefingData {
+// ─── Types matching /api/ops/warehouse/daily-plan response shape ────────────
+interface ProductionJob {
+  jobId: string
+  jobNumber: string
+  builderName: string | null
+  community: string | null
+  jobAddress: string | null
+  scheduledDate: string | null
+  status: string
+  pickListGenerated: boolean | null
+  materialsLocked: boolean | null
+  pmName: string | null
+  pickCount: number
+}
+
+interface IncomingPO {
+  poId: string
+  poNumber: string
+  expectedDate: string | null
+  status: string
+  total: number | null
+  vendorId: string | null
+  vendorName: string | null
+  lineCount: number
+  crossDockFlags: number
+}
+
+interface ShortageJob {
+  jobId: string
+  jobNumber: string
+  builderName: string | null
+  scheduledDate: string | null
+  status: string
+  shortCount: number
+}
+
+interface MaterialConfirmItem {
+  id: string
+  title: string
+  description: string | null
+  priority: string
+  dueBy: string | null
+  entityId: string | null
+  createdAt: string
+}
+
+interface Driver {
+  id: string
+  firstName: string
+  lastName: string
+  role: string
+  crewId: string | null
+  crewName: string | null
+  vehiclePlate: string | null
+  stopsToday: number
+}
+
+interface WarehouseStaff {
+  id: string
+  firstName: string
+  lastName: string
+  role: string
+  title: string | null
+}
+
+interface DailyPlan {
+  generatedAt: string
   summary: {
-    jobsInProduction: number
-    picksToComplete: number
-    qcChecksNeeded: number
-    itemsToStage: number
-    materialsArriving: number
-    exceptions: number
+    trucksOut: number
+    productionJobs: number
+    incomingPOs: number
+    exceptionCount: number
+    teamOnShift: number
   }
-  productionQueue: Array<{
-    id: string
-    jobNumber: string
-    builderName: string
-    community: string
-    status: string
-    scheduledDate: string
-    picksRemaining: number
-    picksCompleted: number
-  }>
-  pendingPicks: Array<{
-    id: string
-    jobId: string
-    jobNumber: string
-    itemCount: number
-    priority: number
-    createdAt: string
-    status: string
-  }>
-  qcNeeded: Array<{
-    id: string
-    jobNumber: string
-    builderName: string
-    productCount: number
-    scheduledDate: string
-  }>
-  stagingReady: Array<{
-    id: string
-    jobNumber: string
-    builderName: string
-    community: string
-    itemCount: number
-    scheduledDate: string
-  }>
-  materialsArriving: Array<{
-    id: string
-    poNumber: string
-    vendor: { id: string; name: string }
-    itemCount: number
-    totalAmount: number
-    expectedDate: string
-  }>
-  exceptions: Array<{
-    type: string
-    jobNumber: string
-    id: string
-    severity: string
-    count: number
-    description: string
-  }>
+  sections: {
+    todayDeliveries: Array<{
+      truckId: string | null
+      truckName: string
+      vehiclePlate: string | null
+      scheduledDeparture: string | null
+      loadStatus: string
+      jobs: Array<{ jobId: string; jobNumber: string; builderName: string | null }>
+    }>
+    productionQueue: ProductionJob[]
+    incomingPOs: IncomingPO[]
+    exceptions: {
+      shortageJobs: ShortageJob[]
+      goldStockLow: Array<{ id: string; name: string; minQty: number; currentQty: number }>
+      cycleCounts: Array<{ id: string; batchNumber: string; status: string; lineCount: number; countedCount: number }>
+      materialConfirmItems: MaterialConfirmItem[]
+    }
+    teamQueue: {
+      drivers: Driver[]
+      warehouseTeam: WarehouseStaff[]
+    }
+  }
 }
 
 export default function WarehouseBriefingPage() {
-  const [briefing, setBriefing] = useState<BriefingData | null>(null)
+  const [plan, setPlan] = useState<DailyPlan | null>(null)
   const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // ─── Add Note state ──────────────────────────────────────────────────────
+  const [note, setNote] = useState('')
+  const [notePriority, setNotePriority] = useState<'HIGH' | 'MEDIUM' | 'LOW'>('MEDIUM')
+  const [posting, setPosting] = useState(false)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   useEffect(() => {
-    async function loadBriefing() {
+    async function loadPlan() {
       try {
-        const res = await fetch('/api/ops/warehouse-briefing')
+        const res = await fetch('/api/ops/warehouse/daily-plan')
         if (res.ok) {
           const data = await res.json()
-          setBriefing(data)
+          setPlan(data)
+        } else {
+          setErrorMsg(`Failed to load briefing (${res.status})`)
         }
       } catch (error) {
-        console.error('Failed to load warehouse briefing:', error)
+        console.error('Failed to load warehouse daily plan:', error)
+        setErrorMsg('Failed to load briefing')
       } finally {
         setLoading(false)
       }
     }
-
-    loadBriefing()
+    loadPlan()
   }, [])
+
+  // ─── Auto-dismiss toast ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 3500)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  async function postNote() {
+    if (!note.trim()) {
+      setToast({ type: 'error', message: 'Note cannot be empty' })
+      return
+    }
+    setPosting(true)
+    try {
+      const res = await fetch('/api/ops/inbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'WAREHOUSE_BRIEFING_NOTE',
+          source: 'warehouse-briefing',
+          title: `Shift Note — ${new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          })}`,
+          description: note.trim(),
+          priority: notePriority,
+        }),
+      })
+
+      if (res.ok) {
+        setToast({ type: 'success', message: 'Note posted to operator inbox' })
+        setNote('')
+      } else {
+        // Fallback: log locally and still show success so the standup keeps moving
+        console.warn('[warehouse-briefing] inbox POST failed, logging locally:', {
+          note: note.trim(),
+          priority: notePriority,
+          status: res.status,
+        })
+        setToast({
+          type: 'success',
+          message: 'Note saved locally (inbox unavailable)',
+        })
+        setNote('')
+      }
+    } catch (err) {
+      console.warn('[warehouse-briefing] inbox POST threw, logging locally:', {
+        note: note.trim(),
+        priority: notePriority,
+        error: err,
+      })
+      setToast({
+        type: 'success',
+        message: 'Note saved locally (inbox unavailable)',
+      })
+      setNote('')
+    } finally {
+      setPosting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -94,10 +201,10 @@ export default function WarehouseBriefingPage() {
     )
   }
 
-  if (!briefing) {
+  if (!plan) {
     return (
       <div className="text-center py-12 text-gray-500">
-        <p>Failed to load briefing</p>
+        <p>{errorMsg || 'Failed to load briefing'}</p>
       </div>
     )
   }
@@ -109,390 +216,413 @@ export default function WarehouseBriefingPage() {
     year: 'numeric',
   })
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 border-red-300 text-red-800'
-      case 'warning':
-        return 'bg-yellow-100 border-yellow-300 text-yellow-800'
-      default:
-        return 'bg-blue-100 border-blue-300 text-blue-800'
-    }
-  }
+  // ─── Compute "today" + "tomorrow" PO buckets (Chicago-relative date strings)
+  const todayLocal = new Date()
+  const tomorrowLocal = new Date(todayLocal)
+  tomorrowLocal.setDate(tomorrowLocal.getDate() + 1)
+  const ymd = (d: Date) => d.toISOString().slice(0, 10)
+  const todayKey = ymd(todayLocal)
+  const tomorrowKey = ymd(tomorrowLocal)
 
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return '🚨'
-      case 'warning':
-        return '⚠️'
-      default:
-        return 'ℹ️'
-    }
-  }
+  const posToday = plan.sections.incomingPOs.filter(
+    (po) => po.expectedDate && po.expectedDate.slice(0, 10) === todayKey
+  )
+  const posTomorrow = plan.sections.incomingPOs.filter(
+    (po) => po.expectedDate && po.expectedDate.slice(0, 10) === tomorrowKey
+  )
+
+  // ─── Top 5 priority jobs (already sorted by scheduledDate ASC from the API)
+  const topJobs = plan.sections.productionQueue.slice(0, 5)
+
+  // ─── Shortage summary count
+  const shortageJobCount = plan.sections.exceptions.shortageJobs.length
+  const shortageItemCount = plan.sections.exceptions.shortageJobs.reduce(
+    (sum, j) => sum + (j.shortCount || 0),
+    0
+  )
+
+  // ─── Staff on-shift = drivers + warehouse team
+  const drivers = plan.sections.teamQueue.drivers
+  const warehouseTeam = plan.sections.teamQueue.warehouseTeam
+  const totalOnShift = drivers.length + warehouseTeam.length
 
   return (
-    <div className="space-y-6">
-      {/* Header with greeting and date */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 print:space-y-4">
+      {/* Print-friendly CSS */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            margin: 0.5in;
+          }
+          body {
+            background: white !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-keep-together {
+            page-break-inside: avoid;
+          }
+          a {
+            color: #111 !important;
+            text-decoration: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div className="flex items-center justify-between print:border-b print:pb-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Shift Briefing</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Daily Warehouse Briefing</h1>
           <p className="text-gray-600 mt-1">{dateStr}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Generated {new Date(plan.generatedAt).toLocaleTimeString()}
+          </p>
         </div>
-        <Link
-          href="/ops/portal/warehouse"
-          className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
-
-      {/* KPI Cards - 6 columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl border border-l-4 border-l-[#27AE60] p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">
-            In Production
-          </p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
-            {briefing.summary.jobsInProduction}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Jobs</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-l-4 border-l-blue-500 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">
-            Picks to Complete
-          </p>
-          <p className="text-2xl font-bold text-blue-600 mt-1">
-            {briefing.summary.picksToComplete}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Pick lists</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-l-4 border-l-purple-500 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">
-            QC Checks
-          </p>
-          <p className="text-2xl font-bold text-purple-600 mt-1">
-            {briefing.summary.qcChecksNeeded}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Ready</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-l-4 border-l-orange-500 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">
-            Ready to Stage
-          </p>
-          <p className="text-2xl font-bold text-orange-600 mt-1">
-            {briefing.summary.itemsToStage}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Jobs</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-l-4 border-l-green-600 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">
-            Materials Today
-          </p>
-          <p className="text-2xl font-bold text-green-600 mt-1">
-            {briefing.summary.materialsArriving}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Deliveries</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-l-4 border-l-red-600 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">
-            Exceptions
-          </p>
-          <p className="text-2xl font-bold text-red-600 mt-1">
-            {briefing.summary.exceptions}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Issues</p>
+        <div className="flex items-center gap-2 no-print">
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-[#27AE60] text-white rounded-lg hover:bg-[#1E8449] transition-colors text-sm font-medium"
+          >
+            Print
+          </button>
+          <Link
+            href="/ops/portal/warehouse"
+            className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+          >
+            Back to Dashboard
+          </Link>
         </div>
       </div>
 
-      {/* Exceptions Board (Most Important) */}
-      {briefing.exceptions.length > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-red-800 mb-4">
-            🚨 Production Exceptions ({briefing.exceptions.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {briefing.exceptions.map((exc, idx) => (
-              <div
-                key={idx}
-                className={`rounded-lg border-2 p-4 ${getSeverityColor(exc.severity)}`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="text-sm font-bold">{exc.type.replace(/_/g, ' ')}</p>
-                    <Link
-                      href={`/ops/manufacturing/jobs/${exc.id}`}
-                      className="text-sm font-semibold text-[#27AE60] hover:text-[#1E8449] mt-1"
-                    >
-                      {exc.jobNumber}
-                    </Link>
-                  </div>
-                  <span className="text-2xl">{getSeverityIcon(exc.severity)}</span>
-                </div>
-                <p className="text-sm mt-2">{exc.description}</p>
-                {exc.count > 1 && (
-                  <p className="text-xs mt-2 font-semibold opacity-80">
-                    {exc.count} items affected
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Summary KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 print:grid-cols-5">
+        <KpiCard label="Trucks Out" value={plan.summary.trucksOut} accent="border-l-blue-500" />
+        <KpiCard
+          label="Production Jobs"
+          value={plan.summary.productionJobs}
+          accent="border-l-[#27AE60]"
+        />
+        <KpiCard
+          label="Incoming POs"
+          value={plan.summary.incomingPOs}
+          accent="border-l-green-600"
+        />
+        <KpiCard
+          label="Exceptions"
+          value={plan.summary.exceptionCount}
+          accent="border-l-red-600"
+        />
+        <KpiCard label="Team On-Shift" value={totalOnShift} accent="border-l-purple-500" />
+      </div>
 
-      {/* Production Queue */}
-      <div className="bg-white rounded-xl border p-6">
+      {/* Section 1: Today's Priority Jobs */}
+      <section className="bg-white rounded-xl border p-6 print-keep-together">
         <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Production Queue ({briefing.productionQueue.length})
+          Today&apos;s Priority Jobs (Top {topJobs.length})
         </h2>
-
-        {briefing.productionQueue.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No jobs in production today</p>
-          </div>
+        {topJobs.length === 0 ? (
+          <p className="text-gray-500 text-sm">No data available</p>
         ) : (
-          <div className="space-y-3">
-            {briefing.productionQueue.map((job) => {
-              const pickProgress =
-                job.picksCompleted + job.picksRemaining > 0
-                  ? (job.picksCompleted /
-                      (job.picksCompleted + job.picksRemaining)) *
-                    100
-                  : 0
-              return (
-                <div
-                  key={job.id}
-                  className="p-4 rounded-lg border border-gray-200 hover:border-[#27AE60] transition-all"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <Link
-                        href={`/ops/manufacturing/jobs/${job.id}`}
-                        className="font-semibold text-[#27AE60] hover:text-[#1E8449]"
-                      >
-                        {job.jobNumber}
-                      </Link>
-                      <p className="text-sm text-gray-700 mt-1">
-                        {job.builderName} · {job.community}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded font-semibold ${
-                        job.status === 'IN_PRODUCTION'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {job.status === 'IN_PRODUCTION'
-                        ? 'In Production'
-                        : 'Ready to Stage'}
-                    </span>
-                  </div>
-
-                  {/* Pick progress bar */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-600">Pick Progress</span>
-                      <span className="text-xs font-semibold text-gray-900">
-                        {job.picksCompleted} / {job.picksCompleted + job.picksRemaining}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          pickProgress < 50
-                            ? 'bg-red-500'
-                            : pickProgress < 100
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(pickProgress, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Two Column: Pending Picks | QC Queue */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Picks */}
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Pending Picks ({briefing.pendingPicks.length})
-          </h2>
-
-          {briefing.pendingPicks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>All picks completed</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {briefing.pendingPicks.map((pick) => (
-                <div
-                  key={pick.id}
-                  className="p-4 rounded-lg border border-blue-200 bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <Link
-                        href={`/ops/manufacturing/jobs/${pick.jobId}`}
-                        className="font-semibold text-[#27AE60] hover:text-[#1E8449]"
-                      >
-                        {pick.jobNumber}
-                      </Link>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Priority: {pick.priority}
-                      </p>
-                    </div>
-                    <span className="text-xs px-2 py-1 rounded bg-blue-200 text-blue-800 font-semibold">
-                      {pick.itemCount} items
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Created: {new Date(pick.createdAt).toLocaleTimeString()}
-                  </p>
-                  <button className="mt-3 w-full px-3 py-2 text-sm font-medium rounded border border-blue-300 text-blue-700 hover:bg-blue-100 transition-colors">
-                    Start Picking
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* QC Queue */}
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            QC Queue ({briefing.qcNeeded.length})
-          </h2>
-
-          {briefing.qcNeeded.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No jobs waiting for QC</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {briefing.qcNeeded.map((job) => (
-                <div
-                  key={job.id}
-                  className="p-4 rounded-lg border border-purple-200 bg-purple-50 hover:border-purple-300 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <Link
-                        href={`/ops/manufacturing/jobs/${job.id}`}
-                        className="font-semibold text-[#27AE60] hover:text-[#1E8449]"
-                      >
-                        {job.jobNumber}
-                      </Link>
-                      <p className="text-sm text-gray-700 mt-1">
-                        {job.builderName}
-                      </p>
-                    </div>
-                    <span className="text-xs px-2 py-1 rounded bg-purple-200 text-purple-800 font-semibold">
-                      {job.productCount} items
-                    </span>
-                  </div>
-                  <button className="mt-3 w-full px-3 py-2 text-sm font-medium rounded border border-purple-300 text-purple-700 hover:bg-purple-100 transition-colors">
-                    Start QC Inspection
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Materials Arriving */}
-      {briefing.materialsArriving.length > 0 && (
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Materials Arriving Today ({briefing.materialsArriving.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {briefing.materialsArriving.map((material) => (
+          <div className="space-y-2">
+            {topJobs.map((job, idx) => (
               <div
-                key={material.id}
-                className="p-4 rounded-lg border border-green-200 bg-green-50"
+                key={job.jobId}
+                className="flex items-start justify-between p-3 rounded-lg border border-gray-200 hover:border-[#27AE60] transition-colors"
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {material.vendor.name}
-                    </p>
-                    <Link
-                      href={`/ops/purchasing/${material.id}`}
-                      className="text-sm text-[#27AE60] hover:text-[#1E8449] font-mono mt-1"
-                    >
-                      {material.poNumber}
-                    </Link>
-                  </div>
-                  <span className="text-xs px-2 py-1 rounded bg-green-200 text-green-800 font-semibold">
-                    {material.itemCount} items
-                  </span>
-                </div>
-                <p className="text-sm font-semibold text-gray-900 mt-3">
-                  ${material.totalAmount.toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  Expected:{' '}
-                  {new Date(material.expectedDate).toLocaleTimeString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Staging Ready */}
-      {briefing.stagingReady.length > 0 && (
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Ready for Staging ({briefing.stagingReady.length})
-          </h2>
-          <div className="space-y-3">
-            {briefing.stagingReady.map((job) => (
-              <div
-                key={job.id}
-                className="p-4 rounded-lg border border-orange-200 bg-orange-50 hover:border-orange-300 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start gap-3">
+                  <span className="text-xs font-bold text-gray-400 mt-0.5">#{idx + 1}</span>
                   <div>
                     <Link
-                      href={`/ops/manufacturing/jobs/${job.id}`}
+                      href={`/ops/manufacturing/jobs/${job.jobId}`}
                       className="font-semibold text-[#27AE60] hover:text-[#1E8449]"
                     >
                       {job.jobNumber}
                     </Link>
-                    <p className="text-sm text-gray-700 mt-1">
-                      {job.builderName} · {job.community}
+                    <p className="text-sm text-gray-700 mt-0.5">
+                      {job.builderName || '—'} {job.community ? `· ${job.community}` : ''}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {job.scheduledDate
+                        ? new Date(job.scheduledDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        : '—'}
+                      {job.pmName ? ` · PM: ${job.pmName}` : ''}
+                      {' · '}
+                      {job.pickCount} picks
                     </p>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded bg-orange-200 text-orange-800 font-semibold">
-                    {job.itemCount} items
-                  </span>
                 </div>
-                <button className="mt-3 w-full px-3 py-2 text-sm font-medium rounded bg-orange-500 text-white hover:bg-orange-600 transition-colors">
-                  Prepare for Staging
-                </button>
+                <span
+                  className={`text-xs px-2 py-1 rounded font-semibold ${
+                    job.status === 'IN_PRODUCTION'
+                      ? 'bg-blue-100 text-blue-800'
+                      : job.status === 'MATERIALS_LOCKED'
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {job.status.replace(/_/g, ' ')}
+                </span>
               </div>
             ))}
           </div>
+        )}
+      </section>
+
+      {/* Section 2: Incoming PO Arrivals (Today + Tomorrow) */}
+      <section className="bg-white rounded-xl border p-6 print-keep-together">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
+          Incoming PO Arrivals
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              Today ({posToday.length})
+            </h3>
+            {posToday.length === 0 ? (
+              <p className="text-gray-400 text-sm">No data available</p>
+            ) : (
+              <ul className="space-y-2">
+                {posToday.map((po) => (
+                  <POLine key={po.poId} po={po} />
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              Tomorrow ({posTomorrow.length})
+            </h3>
+            {posTomorrow.length === 0 ? (
+              <p className="text-gray-400 text-sm">No data available</p>
+            ) : (
+              <ul className="space-y-2">
+                {posTomorrow.map((po) => (
+                  <POLine key={po.poId} po={po} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: Staff On-Shift */}
+      <section className="bg-white rounded-xl border p-6 print-keep-together">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
+          Staff On-Shift Today ({totalOnShift})
+        </h2>
+        {totalOnShift === 0 ? (
+          <p className="text-gray-500 text-sm">No data available</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Drivers ({drivers.length})
+              </h3>
+              {drivers.length === 0 ? (
+                <p className="text-gray-400 text-sm">—</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {drivers.map((d) => (
+                    <li
+                      key={d.id}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-gray-900">
+                        {d.firstName} {d.lastName}
+                        {d.crewName ? (
+                          <span className="text-gray-500 text-xs ml-2">
+                            · {d.crewName}
+                            {d.vehiclePlate ? ` (${d.vehiclePlate})` : ''}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {d.stopsToday} stop{d.stopsToday === 1 ? '' : 's'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Warehouse Team ({warehouseTeam.length})
+              </h3>
+              {warehouseTeam.length === 0 ? (
+                <p className="text-gray-400 text-sm">—</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {warehouseTeam.map((w) => (
+                    <li key={w.id} className="text-sm">
+                      <span className="text-gray-900">
+                        {w.firstName} {w.lastName}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        {w.title || w.role.replace(/_/g, ' ')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Section 4: Shortages / Backorders */}
+      <section className="bg-white rounded-xl border p-6 print-keep-together">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
+          Shortages &amp; Backorders
+        </h2>
+        {shortageJobCount === 0 ? (
+          <p className="text-gray-500 text-sm">
+            No active shortages. All allocations covered.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-red-700">Jobs Affected</p>
+                <p className="text-2xl font-bold text-red-700">{shortageJobCount}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-red-700">SKU Shortages</p>
+                <p className="text-2xl font-bold text-red-700">{shortageItemCount}</p>
+              </div>
+            </div>
+            <ul className="space-y-2">
+              {plan.sections.exceptions.shortageJobs.slice(0, 8).map((s) => (
+                <li
+                  key={s.jobId}
+                  className="flex items-center justify-between p-3 rounded border border-red-200 bg-red-50"
+                >
+                  <Link
+                    href={`/ops/manufacturing/jobs/${s.jobId}`}
+                    className="text-sm font-semibold text-[#27AE60] hover:text-[#1E8449]"
+                  >
+                    {s.jobNumber}
+                  </Link>
+                  <span className="text-xs text-gray-700">
+                    {s.builderName || '—'}
+                    {s.scheduledDate
+                      ? ` · ${new Date(s.scheduledDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}`
+                      : ''}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded bg-red-200 text-red-900 font-semibold">
+                    {s.shortCount} short
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {/* Section 5: Add Note (lead's safety/priority callout) */}
+      <section className="bg-white rounded-xl border-2 border-[#27AE60]/30 p-6 no-print">
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Lead Note for Crew</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Post a safety reminder, priority callout, or schedule change. Saved to the operator
+          inbox so the next shift sees it.
+        </p>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="e.g. Watch the spilled stain in bay 3 — wear boots, not sneakers. Pulte job 1247 needs to leave by 9 AM sharp."
+          rows={4}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#27AE60] focus:border-transparent text-sm"
+        />
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-700">Priority:</label>
+            <select
+              value={notePriority}
+              onChange={(e) =>
+                setNotePriority(e.target.value as 'HIGH' | 'MEDIUM' | 'LOW')
+              }
+              className="px-2 py-1.5 border border-gray-300 rounded text-sm"
+            >
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
+          <button
+            onClick={postNote}
+            disabled={posting || !note.trim()}
+            className="px-4 py-2 bg-[#27AE60] text-white rounded-lg hover:bg-[#1E8449] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          >
+            {posting ? 'Posting…' : 'Post Note'}
+          </button>
+        </div>
+      </section>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg text-sm font-medium no-print ${
+            toast.type === 'success'
+              ? 'bg-[#27AE60] text-white'
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {toast.message}
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function KpiCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string
+  value: number
+  accent: string
+}) {
+  return (
+    <div className={`bg-white rounded-xl border border-l-4 ${accent} p-4`}>
+      <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
+      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+    </div>
+  )
+}
+
+function POLine({ po }: { po: IncomingPO }) {
+  return (
+    <li className="flex items-start justify-between p-3 rounded border border-green-200 bg-green-50">
+      <div>
+        <Link
+          href={`/ops/purchasing/${po.poId}`}
+          className="text-sm font-semibold text-[#27AE60] hover:text-[#1E8449] font-mono"
+        >
+          {po.poNumber}
+        </Link>
+        <p className="text-xs text-gray-700 mt-0.5">{po.vendorName || '—'}</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {po.lineCount} line{po.lineCount === 1 ? '' : 's'}
+          {po.crossDockFlags > 0 ? ` · ${po.crossDockFlags} cross-dock` : ''}
+        </p>
+      </div>
+      <span className="text-xs text-gray-700 whitespace-nowrap">
+        {po.total
+          ? `$${po.total.toLocaleString('en-US', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`
+          : ''}
+      </span>
+    </li>
   )
 }

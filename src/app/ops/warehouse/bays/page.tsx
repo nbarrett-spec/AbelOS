@@ -73,6 +73,11 @@ export default function WarehouseBayMapPage() {
   // Bulk create form
   const [bulkForm, setBulkForm] = useState({ zone: 'MAIN', prefix: '', startNum: '1', endNum: '10', capacity: '20', aisle: '' })
 
+  // Bay transfer modal state
+  const [transferDoor, setTransferDoor] = useState<DoorInBay | null>(null)
+  const [transferForm, setTransferForm] = useState({ toBayId: '', reason: 'overflow', movedByName: '' })
+  const [transferring, setTransferring] = useState(false)
+
   const fetchBays = useCallback(async () => {
     try {
       const url = zoneFilter
@@ -158,6 +163,56 @@ export default function WarehouseBayMapPage() {
       addToast({ type: 'error', title: 'Error', message: e.message })
     } finally {
       setCreating(false)
+    }
+  }
+
+  function openTransfer(door: DoorInBay) {
+    setTransferDoor(door)
+    setTransferForm({ toBayId: '', reason: 'overflow', movedByName: '' })
+  }
+
+  function closeTransfer() {
+    setTransferDoor(null)
+    setTransferForm({ toBayId: '', reason: 'overflow', movedByName: '' })
+  }
+
+  async function handleTransfer() {
+    if (!transferDoor || !selectedBay || !transferForm.toBayId) return
+    setTransferring(true)
+    try {
+      const res = await fetch('/api/ops/warehouse/bay-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          doorId: transferDoor.id,
+          fromBayId: selectedBay.id,
+          toBayId: transferForm.toBayId,
+          reason: transferForm.reason,
+          movedByName: transferForm.movedByName,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        addToast({ type: 'success', title: 'Transferred', message: `Door ${transferDoor.serialNumber} moved` })
+        closeTransfer()
+        // Refresh both the bays list and the currently-open bay's door list
+        await fetchBays()
+        if (selectedBay) {
+          try {
+            const r = await fetch(`/api/ops/warehouse/bays?bayId=${selectedBay.id}`)
+            const d = await r.json()
+            setBayDoors(d.doors || [])
+          } catch {
+            setBayDoors([])
+          }
+        }
+      } else {
+        addToast({ type: 'error', title: 'Transfer failed', message: data.error || 'Failed to transfer door' })
+      }
+    } catch (e: any) {
+      addToast({ type: 'error', title: 'Error', message: e.message })
+    } finally {
+      setTransferring(false)
     }
   }
 
@@ -382,6 +437,7 @@ export default function WarehouseBayMapPage() {
                     <th style={{ textAlign: 'left', padding: '8px 12px', color: '#6B7280', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>SKU</th>
                     <th style={{ textAlign: 'left', padding: '8px 12px', color: '#6B7280', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Status</th>
                     <th style={{ textAlign: 'left', padding: '8px 12px', color: '#6B7280', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Order</th>
+                    <th style={{ textAlign: 'right', padding: '8px 12px', color: '#6B7280', fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -404,6 +460,18 @@ export default function WarehouseBayMapPage() {
                         </span>
                       </td>
                       <td style={{ padding: '8px 12px', color: '#6B7280', fontSize: 12 }}>{door.orderId || '—'}</td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                        <button
+                          onClick={() => openTransfer(door)}
+                          style={{
+                            padding: '4px 10px', background: '#0f2a3e', color: 'white',
+                            border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Transfer
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -600,6 +668,81 @@ export default function WarehouseBayMapPage() {
               <button onClick={() => setShowBulkModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
               <button onClick={handleBulkCreate} disabled={creating || !bulkForm.prefix} style={{ padding: '8px 16px', background: '#C6A24E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !bulkForm.prefix ? 0.6 : 1 }}>
                 {creating ? 'Creating...' : 'Create Bays'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bay Transfer Modal */}
+      {transferDoor && selectedBay && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 440, maxWidth: '90vw' }}>
+            <h3 className="text-fg" style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Transfer Door</h3>
+            <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>
+              Move <span style={{ fontWeight: 600, color: '#374151' }}>{transferDoor.serialNumber}</span> out of bay {selectedBay.bayNumber}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>From Bay</label>
+                <input
+                  value={`${selectedBay.bayNumber} (${selectedBay.zone})`}
+                  disabled
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13, background: '#F9FAFB', color: '#6B7280' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>To Bay *</label>
+                <select
+                  value={transferForm.toBayId}
+                  onChange={e => setTransferForm({ ...transferForm, toBayId: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                >
+                  <option value="">Select target bay...</option>
+                  {bays
+                    .filter(b => b.id !== selectedBay.id && b.active !== false)
+                    .map(b => (
+                      <option key={b.id} value={b.id}>
+                        {b.bayNumber} ({b.zone}) — {b.doorCount}/{b.capacity}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Reason</label>
+                <select
+                  value={transferForm.reason}
+                  onChange={e => setTransferForm({ ...transferForm, reason: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                >
+                  <option value="overflow">Overflow</option>
+                  <option value="ready-to-ship">Ready to ship</option>
+                  <option value="qc-failed">QC failed</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Moved By (name)</label>
+                <input
+                  value={transferForm.movedByName}
+                  onChange={e => setTransferForm({ ...transferForm, movedByName: e.target.value })}
+                  placeholder="Optional — defaults to your account"
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button onClick={closeTransfer} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              <button
+                onClick={handleTransfer}
+                disabled={transferring || !transferForm.toBayId}
+                style={{
+                  padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none',
+                  borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  opacity: transferring || !transferForm.toBayId ? 0.6 : 1
+                }}
+              >
+                {transferring ? 'Transferring...' : 'Confirm Transfer'}
               </button>
             </div>
           </div>

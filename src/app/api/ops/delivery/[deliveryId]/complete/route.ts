@@ -8,6 +8,21 @@ import { onDeliveryComplete } from '@/lib/cascades/delivery-lifecycle'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 
+// Allowed exception categories — kept in sync with the driver page dropdown.
+// Stored as a `[CATEGORY: X]` prefix in Delivery.notes (no schema column yet)
+// so this is fully non-destructive and queryable via simple LIKE filters.
+const EXCEPTION_CATEGORIES = [
+  'NONE',
+  'DAMAGE',
+  'WRONG_ITEM',
+  'CUSTOMER_COMPLAINT',
+  'VEHICLE_ISSUE',
+  'ADDRESS_ISSUE',
+  'REFUSED',
+  'OTHER',
+] as const
+type ExceptionCategory = typeof EXCEPTION_CATEGORIES[number]
+
 /**
  * POST /api/ops/delivery/[deliveryId]/complete
  *
@@ -26,11 +41,14 @@ import { fireAutomationEvent } from '@/lib/automation-executor'
  *   partialComplete?: boolean,      // if true, status → PARTIAL_DELIVERY instead of COMPLETE
  *   notes?: string,                 // free-text driver notes
  *   deliveredBy?: string,           // driver's name (auditing)
+ *   exceptionCategory?: ExceptionCategory,  // optional triage tag — see EXCEPTION_CATEGORIES
  * }
  *
  * Stores signature + photos as JSON blob in Delivery.notes until blob storage
  * is wired. sitePhotos (URLs column) remains untouched for now to avoid
  * schema churn; the base64 blob lives in notes under [PROOF-JSON] sentinel.
+ * exceptionCategory (when not NONE) is prefixed on driver notes as
+ * `[CATEGORY: X]` and emitted to the audit log for downstream triage.
  */
 export async function POST(
   request: NextRequest,
@@ -57,6 +75,15 @@ export async function POST(
     const partialComplete: boolean = body.partialComplete === true
     const notes: string | null = body.notes || null
     const deliveredBy: string | null = body.deliveredBy || null
+
+    // Normalize exception category — accept missing/unknown silently as NONE
+    // so legacy callers and any future client drift don't 400.
+    const rawCategory = typeof body.exceptionCategory === 'string' ? body.exceptionCategory : 'NONE'
+    const exceptionCategory: ExceptionCategory = (EXCEPTION_CATEGORIES as readonly string[]).includes(
+      rawCategory,
+    )
+      ? (rawCategory as ExceptionCategory)
+      : 'NONE'
 
     const now = new Date()
 
@@ -96,6 +123,12 @@ export async function POST(
 
     const newNotesParts: string[] = []
     if (delivery.notes) newNotesParts.push(delivery.notes)
+    // Tag the exception category on its own line whenever it's a real
+    // exception (anything but NONE). Keeps the existing [DRIVER] / [DAMAGED]
+    // lines untouched so older log parsers keep working.
+    if (exceptionCategory !== 'NONE') {
+      newNotesParts.push(`[CATEGORY: ${exceptionCategory}]`)
+    }
     if (notes) newNotesParts.push(`[DRIVER]: ${notes}`)
     if (damagedItems.length > 0) {
       newNotesParts.push(`[DAMAGED]: ${damagedItems.join(', ')}`)
@@ -171,6 +204,7 @@ export async function POST(
       photosCount: photos.length,
       damagedItemsCount: damagedItems.length,
       partialComplete,
+      exceptionCategory,
     })
 
     // Cross-entity cascade — on full-complete, advance the linked Order to
@@ -205,6 +239,7 @@ export async function POST(
         jobId: delivery.jobId || null,
         builderId: ctx.builderId || null,
         status: partialComplete ? 'PARTIAL_DELIVERY' : 'COMPLETE',
+        exceptionCategory,
       }).catch(() => {})
     } catch {
       // best-effort — never block on context fetch

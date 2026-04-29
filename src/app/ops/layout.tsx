@@ -36,7 +36,7 @@ import {
   Factory, Cog, CheckCircle, Banknote, Printer, Smartphone, Scale, Bot, Download, Map,
   Heart, Sparkles, Zap, Handshake, Link2, TreePine, Archive, FolderOpen, Users, User, Trophy,
   MessageSquare, MailOpen, Bell, Wallet, Landmark, Sun, ChevronLeft, ChevronRight,
-  PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown,
+  PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown, CreditCard,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '📱': Smartphone, '⚖️': Scale, '🤖': Bot, '📥': Download, '🗺️': Map,
   '❤️': Heart, '🔮': Sparkles, '⚡': Zap, '🤝': Handshake, '🔗': Link2,
   '🌲': TreePine, '🗄️': Archive, '📁': FolderOpen, '👥': Users, '👤': User,
-  '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark,
+  '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark, '💳': CreditCard,
   '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck, '💡': Sparkles, '🔬': Sparkles, '🏆': Trophy,
   '⚔️': Sparkles, '💹': TrendingUp, '🚀': TrendingUp, '🏛️': Building, '📉': TrendingUp, '🎓': FileText,
 }
@@ -220,6 +220,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/finance/cash', label: 'Cash Command Center', icon: '💹' },
       { href: '/ops/finance/modeler', label: '$1M Scenario Modeler', icon: '🧮' },
       { href: '/ops/finance/ar', label: 'Accounts Receivable', icon: '📊' },
+      { href: '/ops/finance/payments', label: 'Payment Ledger', icon: '💳' },
       { href: '/ops/finance/ap', label: 'Accounts Payable', icon: '📋' },
       { href: '/ops/finance/health', label: 'Company Health', icon: '❤️' },
       { href: '/ops/finance/bank', label: 'Bank & Credit Lines', icon: '🏦' },

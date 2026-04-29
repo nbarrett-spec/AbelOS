@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Truck } from 'lucide-react'
+import { Truck, Phone, Mail, AlertTriangle, UserCircle } from 'lucide-react'
 import { PageHeader, Card, KPICard, Badge, Button, Modal } from '@/components/ui'
 import EmptyState from '@/components/ui/EmptyState'
 
@@ -14,6 +14,16 @@ interface TodayDelivery {
   status: string
   builderName: string | null
   builderPhone?: string | null
+  // D-16: optional contact fields the API may add later. Render-defensive
+  // today (currently undefined) so we are forward-compatible without an API
+  // change. siteContactName/Email is the on-site receiver if distinct from
+  // the builder (e.g. superintendent); pmName/pmPhone is the assigned PM.
+  builderEmail?: string | null
+  siteContactName?: string | null
+  siteContactPhone?: string | null
+  siteContactEmail?: string | null
+  pmName?: string | null
+  pmPhone?: string | null
   orderNumber: string | null
   orderTotal: number | null
   jobNumber: string
@@ -23,6 +33,73 @@ interface TodayDelivery {
   completedAt: string | null
   departedAt: string | null
   arrivedAt: string | null
+}
+
+// D-14: assume a 2h delivery window unless we get explicit window-end data.
+const WINDOW_DURATION_MS = 2 * 60 * 60 * 1000
+// "Approaching" threshold — within this many ms before window start, flip yellow.
+const APPROACHING_MS = 60 * 60 * 1000
+
+type WindowState =
+  | { kind: 'none' }
+  | { kind: 'far'; label: string; startLabel: string; endLabel: string }
+  | { kind: 'approaching'; label: string; startLabel: string; endLabel: string }
+  | { kind: 'in-window'; label: string; startLabel: string; endLabel: string }
+  | { kind: 'overdue'; label: string; startLabel: string; endLabel: string }
+  | { kind: 'done'; startLabel: string; endLabel: string }
+
+function fmtTime(d: Date) {
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
+function fmtRelative(ms: number) {
+  const abs = Math.abs(ms)
+  const totalMin = Math.round(abs / 60_000)
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  if (h <= 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
+}
+
+function computeWindowState(
+  windowIso: string | null | undefined,
+  status: string,
+  now: Date,
+): WindowState {
+  if (!windowIso) return { kind: 'none' }
+  const start = new Date(windowIso)
+  if (Number.isNaN(start.getTime())) return { kind: 'none' }
+  const end = new Date(start.getTime() + WINDOW_DURATION_MS)
+  const startLabel = fmtTime(start)
+  const endLabel = fmtTime(end)
+
+  // Completed/refused stops: just show the window, don't shout.
+  if (status === 'COMPLETE' || status === 'PARTIAL_DELIVERY' || status === 'REFUSED') {
+    return { kind: 'done', startLabel, endLabel }
+  }
+
+  const t = now.getTime()
+  if (t < start.getTime()) {
+    const delta = start.getTime() - t
+    const label = `in ${fmtRelative(delta)}`
+    if (delta <= APPROACHING_MS) return { kind: 'approaching', label, startLabel, endLabel }
+    return { kind: 'far', label, startLabel, endLabel }
+  }
+  if (t < end.getTime()) {
+    return { kind: 'in-window', label: 'ON SITE NOW', startLabel, endLabel }
+  }
+  return {
+    kind: 'overdue',
+    label: `OVERDUE BY ${fmtRelative(t - end.getTime())}`,
+    startLabel,
+    endLabel,
+  }
+}
+
+// Strip phone for tel: links — keeps + and digits.
+function telHref(phone: string) {
+  return `tel:${phone.replace(/[^\d+]/g, '')}`
 }
 
 interface TodayResponse {
@@ -57,6 +134,9 @@ export default function TodayDeliveryBoard() {
   const [data, setData] = useState<TodayResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [completingId, setCompletingId] = useState<string | null>(null)
+  // D-14: tick once a minute so the "in Xh Ym" / "OVERDUE" labels update
+  // between API polls.
+  const [now, setNow] = useState(() => new Date())
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -74,6 +154,11 @@ export default function TodayDeliveryBoard() {
     const t = setInterval(load, 10_000)
     return () => clearInterval(t)
   }, [load])
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(t)
+  }, [])
 
   return (
     <div className="min-h-screen bg-canvas text-fg">
@@ -144,65 +229,75 @@ export default function TodayDeliveryBoard() {
               </div>
 
               <div className="divide-y divide-border">
-                {driver.deliveries.map((d, i) => (
-                  <div key={d.id} className="px-4 py-3 hover:bg-surface-muted/30">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-surface-muted flex items-center justify-center text-xs font-semibold">
-                          {i + 1}
+                {driver.deliveries.map((d, i) => {
+                  const windowState = computeWindowState(d.window, d.status, now)
+                  // D-16: pick the best site contact we have. Prefer an
+                  // explicit site contact, fall back to builder.
+                  const contactName = d.siteContactName || d.builderName || null
+                  const contactPhone = d.siteContactPhone || d.builderPhone || null
+                  const contactEmail = d.siteContactEmail || d.builderEmail || null
+                  const hasContact = !!(contactName || contactPhone || contactEmail)
+                  return (
+                    <div key={d.id} className="px-4 py-3 hover:bg-surface-muted/30">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-surface-muted flex items-center justify-center text-xs font-semibold">
+                            {i + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs text-fg-muted">
+                                {d.deliveryNumber}
+                              </span>
+                              <Badge variant={STATUS_TONE[d.status] || 'neutral'} size="xs">
+                                {d.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-fg">
+                              {d.builderName || '—'}{' '}
+                              <span className="text-fg-muted">· {d.orderNumber}</span>
+                            </div>
+                            <div className="text-xs text-fg-muted">{d.address || '—'}</div>
+                            {d.notes && (
+                              <div className="text-[11px] text-fg-subtle mt-1 italic">
+                                {d.notes}
+                              </div>
+                            )}
+                            <ContactBlock
+                              contactName={contactName}
+                              contactPhone={contactPhone}
+                              contactEmail={contactEmail}
+                              hasContact={hasContact}
+                              pmName={d.pmName}
+                              pmPhone={d.pmPhone}
+                            />
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-fg-muted">
-                              {d.deliveryNumber}
-                            </span>
-                            <Badge variant={STATUS_TONE[d.status] || 'neutral'} size="xs">
-                              {d.status.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-fg">
-                            {d.builderName || '—'}{' '}
-                            <span className="text-fg-muted">· {d.orderNumber}</span>
-                          </div>
-                          <div className="text-xs text-fg-muted">{d.address || '—'}</div>
-                          {d.notes && (
-                            <div className="text-[11px] text-fg-subtle mt-1 italic">
-                              {d.notes}
+                        <div className="text-right flex-shrink-0 flex flex-col items-end gap-2 min-w-[180px]">
+                          {d.orderTotal != null && (
+                            <div className="font-numeric text-sm">
+                              ${Math.round(d.orderTotal).toLocaleString()}
                             </div>
                           )}
+                          <WindowBlock state={windowState} />
+                          {d.signedBy ? (
+                            <div className="text-[11px] text-data-positive">
+                              Signed: {d.signedBy}
+                            </div>
+                          ) : d.status !== 'COMPLETE' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setCompletingId(d.id)}
+                            >
+                              Complete
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
-                      <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
-                        {d.orderTotal != null && (
-                          <div className="font-numeric text-sm">
-                            ${Math.round(d.orderTotal).toLocaleString()}
-                          </div>
-                        )}
-                        {d.window && (
-                          <div className="text-[11px] text-fg-muted">
-                            {new Date(d.window).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                        )}
-                        {d.signedBy ? (
-                          <div className="text-[11px] text-data-positive">
-                            Signed: {d.signedBy}
-                          </div>
-                        ) : d.status !== 'COMPLETE' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setCompletingId(d.id)}
-                          >
-                            Complete
-                          </Button>
-                        ) : null}
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </Card>
           ))}
@@ -218,6 +313,115 @@ export default function TodayDeliveryBoard() {
             load()
           }}
         />
+      )}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// D-14: Window column — color-coded vs current time
+// ──────────────────────────────────────────────────────────────────────────
+function WindowBlock({ state }: { state: WindowState }) {
+  if (state.kind === 'none') {
+    return (
+      <div className="text-[10px] uppercase tracking-wider text-fg-subtle">
+        No window
+      </div>
+    )
+  }
+
+  // Color tokens
+  const tone =
+    state.kind === 'in-window'
+      ? { ring: 'border-data-positive/40 bg-data-positive-bg text-data-positive-fg', dot: 'bg-data-positive' }
+      : state.kind === 'approaching'
+      ? { ring: 'border-data-warning/40 bg-data-warning-bg text-data-warning-fg', dot: 'bg-data-warning' }
+      : state.kind === 'overdue'
+      ? { ring: 'border-data-negative/40 bg-data-negative-bg text-data-negative-fg', dot: 'bg-data-negative' }
+      : state.kind === 'done'
+      ? { ring: 'border-border bg-surface-muted text-fg-muted', dot: 'bg-fg-subtle' }
+      : { ring: 'border-border bg-surface-muted/40 text-fg-muted', dot: 'bg-fg-subtle' }
+
+  return (
+    <div className={`flex flex-col items-end gap-0.5 px-2 py-1 rounded border ${tone.ring}`}>
+      {state.kind !== 'done' && (
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider leading-none">
+          <span className={`inline-block w-1.5 h-1.5 rounded-full ${tone.dot}`} />
+          {state.label}
+        </div>
+      )}
+      <div className="text-[10px] tabular-nums text-fg-muted leading-none">
+        {state.startLabel}–{state.endLabel}
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// D-16: Site contact + PM fallback. tel:/mailto: links with 44px tap targets.
+// ──────────────────────────────────────────────────────────────────────────
+function ContactBlock({
+  contactName,
+  contactPhone,
+  contactEmail,
+  hasContact,
+  pmName,
+  pmPhone,
+}: {
+  contactName: string | null
+  contactPhone: string | null
+  contactEmail: string | null
+  hasContact: boolean
+  pmName?: string | null
+  pmPhone?: string | null
+}) {
+  if (!hasContact && !pmPhone) {
+    return (
+      <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-data-warning-fg bg-data-warning-bg border border-data-warning/40 rounded px-2 py-1">
+        <AlertTriangle className="w-3 h-3" />
+        No site contact
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      {contactName && (
+        <span className="inline-flex items-center gap-1 text-[11px] text-fg-muted">
+          <UserCircle className="w-3 h-3" />
+          {contactName}
+        </span>
+      )}
+      {contactPhone && (
+        <a
+          href={telHref(contactPhone)}
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 text-xs font-medium text-accent-fg bg-signal-subtle hover:bg-signal-subtle/70 border border-transparent rounded"
+          aria-label={`Call ${contactName || 'site contact'} at ${contactPhone}`}
+        >
+          <Phone className="w-3.5 h-3.5" />
+          {contactPhone}
+        </a>
+      )}
+      {contactEmail && (
+        <a
+          href={`mailto:${contactEmail}`}
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 text-xs font-medium text-fg-muted bg-surface-muted hover:bg-surface-muted/70 border border-border rounded"
+          aria-label={`Email ${contactName || 'site contact'} at ${contactEmail}`}
+        >
+          <Mail className="w-3.5 h-3.5" />
+          Email
+        </a>
+      )}
+      {pmPhone && (
+        <a
+          href={telHref(pmPhone)}
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 text-xs font-medium text-fg-muted bg-surface hover:bg-surface-muted border border-border rounded"
+          aria-label={`Call PM ${pmName || ''}`.trim()}
+          title={pmName ? `Call PM: ${pmName}` : 'Call PM'}
+        >
+          <Phone className="w-3.5 h-3.5" />
+          Call PM{pmName ? ` (${pmName})` : ''}
+        </a>
       )}
     </div>
   )

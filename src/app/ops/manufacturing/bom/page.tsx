@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { Wrench } from 'lucide-react'
+import { Wrench, AlertTriangle, Copy, Hash, Truck, DollarSign, X } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
 import ExplodedDoor from '@/components/ExplodedDoor'
+
+type ValidationFilter = 'all' | 'duplicates' | 'zeroQty' | 'noSupplier' | 'noCost'
 
 export default function BOMManagementPage() {
   const [parents, setParents] = useState<any[]>([])
@@ -15,6 +17,7 @@ export default function BOMManagementPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [msg, setMsg] = useState('')
+  const [validationFilter, setValidationFilter] = useState<ValidationFilter>('all')
 
   // Add component form
   const [compSearch, setCompSearch] = useState('')
@@ -43,6 +46,7 @@ export default function BOMManagementPage() {
         const d = await res.json()
         setSelectedParent(d.parent)
         setComponents(d.components || [])
+        setValidationFilter('all')
       }
     } catch { /* ignore */ }
   }
@@ -107,6 +111,88 @@ export default function BOMManagementPage() {
   }
 
   const typeOptions = ['Slab', 'Jamb', 'Casing', 'Hinge', 'Lockset', 'Strike', 'Stop', 'Weatherstrip', 'Other']
+
+  // -------------------------------------------------------------
+  // Validation (read-only, client-side)
+  // Computes data-quality signals from the already-fetched BOM rows.
+  // No mutations. No API calls.
+  // -------------------------------------------------------------
+  const validation = useMemo(() => {
+    const duplicateIds = new Set<string>()
+    const zeroQtyIds = new Set<string>()
+    const noSupplierIds = new Set<string>()
+    const noCostIds = new Set<string>()
+
+    // Bucket rows by SKU to find duplicate component SKUs under the same parent.
+    const skuBuckets: Record<string, any[]> = {}
+    for (const c of components) {
+      const sku = (c?.componentSku ?? '').toString().trim()
+      if (!sku) continue
+      const key = sku.toUpperCase()
+      ;(skuBuckets[key] ||= []).push(c)
+    }
+    const duplicateSkus = new Set<string>()
+    for (const [key, rows] of Object.entries(skuBuckets)) {
+      if (rows.length > 1) {
+        duplicateSkus.add(key)
+        for (const r of rows) duplicateIds.add(r.id)
+      }
+    }
+
+    for (const c of components) {
+      const qty = Number(c?.quantity ?? 0)
+      if (!qty || qty <= 0) zeroQtyIds.add(c.id)
+
+      const supplier = c?.supplier ?? c?.componentSupplier ?? c?.preferredSupplier ?? null
+      const supplierStr = typeof supplier === 'string' ? supplier.trim() : (supplier?.name ?? '').toString().trim()
+      if (!supplierStr) noSupplierIds.add(c.id)
+
+      const cost = c?.componentCost
+      if (cost === null || cost === undefined || Number(cost) === 0) noCostIds.add(c.id)
+    }
+
+    const totalRollup = components.reduce(
+      (sum, c) => sum + (Number(c?.componentCost ?? 0) * Number(c?.quantity ?? 0)),
+      0,
+    )
+
+    return {
+      duplicateIds,
+      zeroQtyIds,
+      noSupplierIds,
+      noCostIds,
+      duplicateSkuCount: duplicateSkus.size,
+      zeroQtyCount: zeroQtyIds.size,
+      noSupplierCount: noSupplierIds.size,
+      noCostCount: noCostIds.size,
+      totalRollup,
+    }
+  }, [components])
+
+  const visibleComponents = useMemo(() => {
+    switch (validationFilter) {
+      case 'duplicates':
+        return components.filter((c) => validation.duplicateIds.has(c.id))
+      case 'zeroQty':
+        return components.filter((c) => validation.zeroQtyIds.has(c.id))
+      case 'noSupplier':
+        return components.filter((c) => validation.noSupplierIds.has(c.id))
+      case 'noCost':
+        return components.filter((c) => validation.noCostIds.has(c.id))
+      default:
+        return components
+    }
+  }, [components, validation, validationFilter])
+
+  const totalIssues =
+    validation.duplicateSkuCount +
+    validation.zeroQtyCount +
+    validation.noSupplierCount +
+    validation.noCostCount
+
+  const toggleFilter = (f: ValidationFilter) => {
+    setValidationFilter((cur) => (cur === f ? 'all' : f))
+  }
 
   if (loading) {
     return (
@@ -189,10 +275,121 @@ export default function BOMManagementPage() {
                 )}
               </div>
 
+              {/* Validation panel — read-only data-quality signals */}
+              {components.length > 0 && (
+                <div className="bg-white rounded-xl border p-6">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                      <h3 className="font-semibold text-fg flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                        Validation
+                      </h3>
+                      <p className="text-xs text-fg-subtle mt-0.5">
+                        {totalIssues === 0
+                          ? 'No data-quality issues detected on this BOM.'
+                          : 'Click a chip to filter the components table to flagged rows.'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-fg-muted uppercase tracking-wide">Cost rollup</p>
+                      <p className="text-lg font-semibold text-fg flex items-center justify-end gap-1">
+                        <DollarSign className="w-4 h-4 text-fg-subtle" />
+                        {validation.totalRollup.toFixed(2)}
+                      </p>
+                      <p className="text-[11px] text-fg-subtle">unit cost × qty, all components</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleFilter('duplicates')}
+                      disabled={validation.duplicateSkuCount === 0}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+                        validation.duplicateSkuCount === 0
+                          ? 'border-gray-200 text-fg-muted bg-gray-50 cursor-not-allowed'
+                          : validationFilter === 'duplicates'
+                            ? 'border-amber-600 bg-amber-600 text-white'
+                            : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                      }`}
+                    >
+                      <Copy className="w-3 h-3" />
+                      {validation.duplicateSkuCount} duplicate {validation.duplicateSkuCount === 1 ? 'SKU' : 'SKUs'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFilter('zeroQty')}
+                      disabled={validation.zeroQtyCount === 0}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+                        validation.zeroQtyCount === 0
+                          ? 'border-gray-200 text-fg-muted bg-gray-50 cursor-not-allowed'
+                          : validationFilter === 'zeroQty'
+                            ? 'border-red-600 bg-red-600 text-white'
+                            : 'border-red-300 bg-red-50 text-red-800 hover:bg-red-100'
+                      }`}
+                    >
+                      <Hash className="w-3 h-3" />
+                      {validation.zeroQtyCount} zero-qty {validation.zeroQtyCount === 1 ? 'line' : 'lines'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFilter('noSupplier')}
+                      disabled={validation.noSupplierCount === 0}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+                        validation.noSupplierCount === 0
+                          ? 'border-gray-200 text-fg-muted bg-gray-50 cursor-not-allowed'
+                          : validationFilter === 'noSupplier'
+                            ? 'border-orange-600 bg-orange-600 text-white'
+                            : 'border-orange-300 bg-orange-50 text-orange-800 hover:bg-orange-100'
+                      }`}
+                    >
+                      <Truck className="w-3 h-3" />
+                      {validation.noSupplierCount} missing {validation.noSupplierCount === 1 ? 'supplier' : 'suppliers'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFilter('noCost')}
+                      disabled={validation.noCostCount === 0}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+                        validation.noCostCount === 0
+                          ? 'border-gray-200 text-fg-muted bg-gray-50 cursor-not-allowed'
+                          : validationFilter === 'noCost'
+                            ? 'border-yellow-600 bg-yellow-600 text-white'
+                            : 'border-yellow-300 bg-yellow-50 text-yellow-800 hover:bg-yellow-100'
+                      }`}
+                    >
+                      <DollarSign className="w-3 h-3" />
+                      {validation.noCostCount} missing unit {validation.noCostCount === 1 ? 'cost' : 'costs'}
+                    </button>
+
+                    {validationFilter !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => setValidationFilter('all')}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-gray-300 bg-white text-xs font-medium text-fg-subtle hover:bg-gray-50"
+                      >
+                        <X className="w-3 h-3" />
+                        Clear filter
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Current Components */}
               <div className="bg-white rounded-xl border overflow-hidden">
-                <div className="bg-gray-50 px-6 py-3 border-b">
-                  <h3 className="font-semibold text-fg">Components ({components.length})</h3>
+                <div className="bg-gray-50 px-6 py-3 border-b flex items-center justify-between gap-2">
+                  <h3 className="font-semibold text-fg">
+                    Components ({components.length})
+                    {validationFilter !== 'all' && (
+                      <span className="ml-2 text-xs font-normal text-amber-700">
+                        showing {visibleComponents.length} flagged
+                      </span>
+                    )}
+                  </h3>
                 </div>
                 {components.length > 0 ? (
                   <table className="w-full text-sm">
@@ -208,33 +405,55 @@ export default function BOMManagementPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {components.map((c) => (
-                        <tr key={c.id} className="hover:bg-row-hover">
-                          <td className="px-4 py-2">
-                            <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{c.componentType || '—'}</span>
-                          </td>
-                          <td className="px-4 py-2 font-medium">{c.componentName}</td>
-                          <td className="px-4 py-2 text-fg-subtle">{c.componentSku}</td>
-                          <td className="px-4 py-2 text-center">{c.quantity}</td>
-                          <td className="px-4 py-2 text-right">${c.componentCost?.toFixed(2)}</td>
-                          <td className="px-4 py-2 text-center">
-                            <span className={c.componentAvailable > 0 ? 'text-green-600' : 'text-red-600'}>
-                              {c.componentAvailable ?? 0}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-center">
-                            <button onClick={() => removeComponent(c.id)} className="text-red-500 hover:text-red-700 text-xs">
-                              Remove
-                            </button>
+                      {visibleComponents.map((c) => {
+                        const flags: string[] = []
+                        if (validation.duplicateIds.has(c.id)) flags.push('duplicate SKU')
+                        if (validation.zeroQtyIds.has(c.id)) flags.push('zero qty')
+                        if (validation.noSupplierIds.has(c.id)) flags.push('no supplier')
+                        if (validation.noCostIds.has(c.id)) flags.push('no cost')
+                        const flagged = flags.length > 0
+                        return (
+                          <tr key={c.id} className={`hover:bg-row-hover ${flagged ? 'bg-amber-50/40' : ''}`}>
+                            <td className="px-4 py-2">
+                              <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{c.componentType || '—'}</span>
+                            </td>
+                            <td className="px-4 py-2 font-medium">
+                              {c.componentName}
+                              {flagged && (
+                                <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-700" title={flags.join(' · ')}>
+                                  ⚠ {flags.length}
+                                </span>
+                              )}
+                            </td>
+                            <td className={`px-4 py-2 text-fg-subtle ${validation.duplicateIds.has(c.id) ? 'text-amber-700 font-semibold' : ''}`}>{c.componentSku}</td>
+                            <td className={`px-4 py-2 text-center ${validation.zeroQtyIds.has(c.id) ? 'text-red-600 font-semibold' : ''}`}>{c.quantity}</td>
+                            <td className={`px-4 py-2 text-right ${validation.noCostIds.has(c.id) ? 'text-yellow-700 font-semibold' : ''}`}>${Number(c.componentCost ?? 0).toFixed(2)}</td>
+                            <td className="px-4 py-2 text-center">
+                              <span className={c.componentAvailable > 0 ? 'text-green-600' : 'text-red-600'}>
+                                {c.componentAvailable ?? 0}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <button onClick={() => removeComponent(c.id)} className="text-red-500 hover:text-red-700 text-xs">
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {visibleComponents.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-6 text-center text-fg-muted text-sm">
+                            No components match the current validation filter.
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                     <tfoot className="bg-gray-50">
                       <tr>
                         <td colSpan={4} className="px-4 py-2 font-semibold text-right">Total Component Cost:</td>
                         <td className="px-4 py-2 text-right font-semibold">
-                          ${components.reduce((sum, c) => sum + (c.componentCost * c.quantity), 0).toFixed(2)}
+                          ${validation.totalRollup.toFixed(2)}
                         </td>
                         <td colSpan={2}></td>
                       </tr>

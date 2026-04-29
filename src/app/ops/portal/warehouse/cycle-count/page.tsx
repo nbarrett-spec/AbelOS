@@ -163,17 +163,17 @@ export default function CycleCountPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Cycle Count</h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Weekly 20-SKU risk-weighted count sheet. New batch drops every Monday 6 AM CT.
           </p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/ops/portal/warehouse"
-            className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 text-sm font-medium"
+            className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 text-sm font-medium"
           >
             Back to Warehouse
           </Link>
@@ -187,7 +187,7 @@ export default function CycleCountPage() {
       )}
       {toast && (
         <div
-          className={`p-3 rounded-lg text-sm font-medium ${
+          className={`p-3 rounded-lg text-base sm:text-sm font-medium ${
             toast.type === 'success'
               ? 'bg-green-50 text-green-800 border border-green-200'
               : 'bg-red-50 text-red-800 border border-red-200'
@@ -196,7 +196,7 @@ export default function CycleCountPage() {
           {toast.text}
           <button
             onClick={() => setToast(null)}
-            className="float-right text-lg leading-none"
+            className="float-right min-h-[44px] min-w-[44px] text-2xl leading-none -my-2 -mr-2 px-2"
             aria-label="dismiss"
           >
             &times;
@@ -215,45 +215,45 @@ export default function CycleCountPage() {
       ) : (
         <>
           {/* Batch Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white rounded-xl border border-l-4 border-l-[#27AE60] p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Week Of</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <p className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold">Week Of</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 mt-1">
                 {new Date(batch.weekStart).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
                 })}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-1">
                 {batch.status === 'OPEN' ? 'Active batch' : batch.status}
               </p>
             </div>
             <div className="bg-white rounded-xl border border-l-4 border-l-[#C6A24E] p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Progress</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <p className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold">Progress</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 mt-1">
                 {batch.completedSkus}/{batch.totalSkus}
               </p>
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div
-                  className="bg-[#27AE60] h-1.5 rounded-full transition-all"
+                  className="bg-[#27AE60] h-2 rounded-full transition-all"
                   style={{ width: `${pctDone}%` }}
                 />
               </div>
             </div>
             <div className="bg-white rounded-xl border border-l-4 border-l-red-500 p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Discrepancies</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <p className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold">Discrepancies</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 mt-1">
                 {batch.discrepanciesFound}
               </p>
-              <p className="text-xs text-gray-400 mt-1">Variance &ne; 0 lines</p>
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-1">Variance &ne; 0 lines</p>
             </div>
             <div className="bg-white rounded-xl border border-l-4 border-l-blue-500 p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Assigned</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <p className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold">Assigned</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 mt-1 truncate">
                 {batch.assignedToName || 'Unassigned'}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-1">
                 Created {new Date(batch.createdAt).toLocaleDateString()}
               </p>
             </div>
@@ -265,9 +265,9 @@ export default function CycleCountPage() {
               <button
                 onClick={closeBatch}
                 disabled={!canClose || closing}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`min-h-[48px] px-6 py-3 rounded-lg text-base font-semibold transition-colors w-full sm:w-auto ${
                   canClose
-                    ? 'bg-[#27AE60] text-white hover:bg-[#229954]'
+                    ? 'bg-[#27AE60] text-white hover:bg-[#229954] active:bg-[#1e8449]'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
                 title={
@@ -283,20 +283,167 @@ export default function CycleCountPage() {
 
           {/* Lines */}
           <div className="bg-white rounded-xl border overflow-hidden">
-            <div className="p-4 border-b flex items-center justify-between">
+            <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="text-lg font-bold text-gray-900">
                 Count Sheet ({lines.length} SKUs)
               </h2>
-              <div className="flex gap-2 text-xs">
-                <span className="px-2 py-1 rounded bg-gray-100 text-gray-600">
+              <div className="flex gap-2 text-sm">
+                <span className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 font-medium">
                   Pending: {lines.filter((l) => l.status === 'PENDING').length}
                 </span>
-                <span className="px-2 py-1 rounded bg-green-100 text-green-700">
+                <span className="px-3 py-1.5 rounded bg-green-100 text-green-700 font-medium">
                   Counted: {lines.filter((l) => l.status === 'COUNTED').length}
                 </span>
               </div>
             </div>
-            <div className="overflow-x-auto">
+
+            {/* Mobile card list (visible <md) */}
+            <div className="md:hidden divide-y">
+              {lines.map((line) => {
+                const isDone = line.status === 'COUNTED'
+                const variance = line.variance
+                const hasDrift = variance != null && variance !== 0
+                return (
+                  <div
+                    key={line.id}
+                    className={`p-4 ${isDone ? 'bg-green-50/40' : ''}`}
+                  >
+                    {/* SKU + status header */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono text-2xl font-bold text-gray-900 leading-tight tracking-wide">
+                          {line.sku}
+                        </p>
+                        <p className="text-base text-gray-700 mt-1 leading-snug">
+                          {line.productName}
+                        </p>
+                        {line.binLocation && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            <span className="font-medium">Bin:</span> {line.binLocation}
+                          </p>
+                        )}
+                      </div>
+                      {isDone && (
+                        <span className="shrink-0 px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold uppercase tracking-wide">
+                          Counted
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Expected / Live / Counted strip */}
+                    <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <p className="text-[11px] text-gray-500 uppercase tracking-wide font-semibold">Expected</p>
+                        <p className="text-xl font-bold text-gray-900 mt-0.5">{line.expectedQty}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <p className="text-[11px] text-gray-500 uppercase tracking-wide font-semibold">Live</p>
+                        <p className="text-xl font-bold text-gray-700 mt-0.5">
+                          {line.liveOnHand ?? '—'}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <p className="text-[11px] text-gray-500 uppercase tracking-wide font-semibold">Counted</p>
+                        <p className="text-xl font-bold text-gray-900 mt-0.5">
+                          {isDone ? line.countedQty : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Variance — large, color-coded */}
+                    {variance != null && (
+                      <div
+                        className={`rounded-lg p-3 mb-3 text-center font-bold text-2xl ${
+                          hasDrift
+                            ? variance < 0
+                              ? 'bg-red-50 text-red-700 border-2 border-red-200'
+                              : 'bg-yellow-50 text-yellow-700 border-2 border-yellow-200'
+                            : 'bg-green-50 text-green-700 border-2 border-green-200'
+                        }`}
+                      >
+                        {hasDrift ? (
+                          <>
+                            Variance {variance > 0 ? '+' : ''}
+                            {variance}
+                          </>
+                        ) : (
+                          'Match'
+                        )}
+                      </div>
+                    )}
+
+                    {/* Input zone */}
+                    {!isDone ? (
+                      <div className="space-y-3">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="numeric"
+                          value={inputs[line.id] ?? ''}
+                          onChange={(e) =>
+                            setInputs((v) => ({ ...v, [line.id]: e.target.value }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') submitCount(line)
+                          }}
+                          className="w-full border-2 rounded-lg px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-[#27AE60] focus:border-[#27AE60]"
+                          placeholder="Enter count"
+                        />
+                        <input
+                          type="text"
+                          value={notes[line.id] ?? ''}
+                          onChange={(e) =>
+                            setNotes((v) => ({ ...v, [line.id]: e.target.value }))
+                          }
+                          className="w-full border rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#27AE60]"
+                          placeholder="Notes (optional)"
+                        />
+                        <button
+                          onClick={() => submitCount(line)}
+                          disabled={savingLineId === line.id}
+                          className="w-full min-h-[48px] px-4 py-3 bg-[#27AE60] text-white rounded-lg text-base font-semibold hover:bg-[#229954] active:bg-[#1e8449] disabled:opacity-50"
+                        >
+                          {savingLineId === line.id ? 'Saving...' : 'Submit count'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-600 flex flex-wrap gap-x-3 gap-y-1">
+                        {line.countedAt && (
+                          <span>
+                            <span className="font-medium text-gray-700">Counted:</span>{' '}
+                            {new Date(line.countedAt).toLocaleTimeString([], {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        )}
+                        {line.countedByName && (
+                          <span>
+                            <span className="font-medium text-gray-700">By:</span>{' '}
+                            {line.countedByName}
+                          </span>
+                        )}
+                        {line.notes && (
+                          <span className="block w-full mt-1">
+                            <span className="font-medium text-gray-700">Notes:</span>{' '}
+                            {line.notes}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              {lines.length === 0 && (
+                <div className="px-4 py-8 text-center text-gray-500 text-base">
+                  No count lines in this batch
+                </div>
+              )}
+            </div>
+
+            {/* Desktop table (visible md+) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b text-xs text-gray-600 uppercase">
                   <tr>
@@ -418,7 +565,7 @@ export default function CycleCountPage() {
                             <button
                               onClick={() => submitCount(line)}
                               disabled={savingLineId === line.id}
-                              className="px-3 py-1.5 bg-[#27AE60] text-white rounded-lg text-xs font-medium hover:bg-[#229954] disabled:opacity-50"
+                              className="min-h-[44px] px-4 py-2 bg-[#27AE60] text-white rounded-lg text-sm font-semibold hover:bg-[#229954] disabled:opacity-50"
                             >
                               {savingLineId === line.id ? 'Saving...' : 'Submit'}
                             </button>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   DollarSign, Wallet, TrendingUp, TrendingDown, AlertTriangle, RefreshCw,
-  Clock, Activity, ShoppingCart, ArrowUpRight,
+  Clock, Activity, ShoppingCart, ArrowUpRight, Zap,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Card, CardHeader, CardTitle, CardDescription, CardBody,
@@ -54,6 +54,14 @@ interface FinancialData {
   }>
 }
 
+interface PaymentVelocityData {
+  weeks: Array<{ weekStart: string; total: number }>
+  current: number
+  trailingAvg: number
+  trendPct: number
+  sparklineData: number[]
+}
+
 // ── Formatters ───────────────────────────────────────────────────────────
 
 const fmtMoney = (n: number) =>
@@ -70,6 +78,7 @@ const fmtMoneyCompact = (n: number) => {
 
 export default function FinancialDashboard() {
   const [data, setData] = useState<FinancialData | null>(null)
+  const [velocity, setVelocity] = useState<PaymentVelocityData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -98,10 +107,22 @@ export default function FinancialDashboard() {
   async function fetchData() {
     setRefreshing(true)
     try {
-      const res = await fetch('/api/ops/executive/financial')
-      if (!res.ok) throw new Error('Failed to fetch financial data')
-      const json = await res.json()
+      const [finRes, velRes] = await Promise.all([
+        fetch('/api/ops/executive/financial'),
+        fetch('/api/ops/executive/payment-velocity'),
+      ])
+      if (!finRes.ok) throw new Error('Failed to fetch financial data')
+      const json = await finRes.json()
       setData(json)
+      // Velocity is additive — non-fatal if it fails (e.g. role-gated 403)
+      if (velRes.ok) {
+        try {
+          const vJson = await velRes.json()
+          setVelocity(vJson)
+        } catch { /* ignore parse error */ }
+      } else {
+        setVelocity(null)
+      }
       setError(null)
       setRefreshTick(Date.now())
     } catch (err) {
@@ -147,8 +168,8 @@ export default function FinancialDashboard() {
     return (
       <div className="space-y-5">
         <PageHeader eyebrow="Executive" title="Financial" description="Cash, AR, AP, margin — exec view." />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[0,1,2,3].map(i => <KPICard key={i} title="" value="" loading />)}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {[0,1,2,3,4].map(i => <KPICard key={i} title="" value="" loading />)}
         </div>
         <div className="h-72 skeleton rounded-lg" />
       </div>
@@ -198,7 +219,7 @@ export default function FinancialDashboard() {
       />
 
       {/* ── Top KPI row ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <KPICard
           title="Cash In (7d)"
           accent="positive"
@@ -239,6 +260,34 @@ export default function FinancialDashboard() {
           icon={<Activity className="w-3.5 h-3.5" />}
           onClick={() => document.getElementById('section-vendor-spend')?.scrollIntoView({ behavior: 'smooth' })}
         />
+        {(() => {
+          // Payment Velocity — this week vs trailing 4-week average
+          const v = velocity
+          const hasData = !!v && canViewFinancials
+          const trendPct = v?.trendPct ?? 0
+          const isUp = trendPct >= 0
+          const accent: 'positive' | 'negative' | 'neutral' =
+            !hasData ? 'neutral' : isUp ? 'positive' : 'negative'
+          const deltaStr = hasData
+            ? `${isUp ? '+' : ''}${trendPct.toFixed(1)}% vs 4w avg`
+            : undefined
+          return (
+            <KPICard
+              title="Payment Velocity"
+              accent={accent}
+              value={hasData
+                ? <AnimatedNumber value={v!.current} format={fmtMoneyCompact} />
+                : restricted}
+              delta={deltaStr}
+              deltaDirection={hasData ? (isUp ? 'up' : 'down') : undefined}
+              subtitle={hasData
+                ? `4w avg ${fmtMoneyCompact(v!.trailingAvg)}`
+                : 'Awaiting data'}
+              icon={<Zap className="w-3.5 h-3.5" />}
+              sparkline={hasData ? v!.sparklineData : undefined}
+            />
+          )
+        })()}
       </div>
 
       {/* ── Drafting-line divider ─────────────────────────────────────── */}

@@ -392,6 +392,96 @@ export default function JobPacketPage() {
   const sortedPicks = getSortedPicks()
   const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
+  // ── M-11: Cut List + Hardware Pick Ticket categorization ────────────
+  // Uses simple string matching on category/description/sku since the
+  // BOM doesn't carry a strict typology. Door slabs, jamb pieces, and
+  // trim land in the cut list (anything you'd cut to length on the
+  // manufacturing floor). Hinges, locks, knobs, deadbolts, latches,
+  // strikes go to the hardware pick ticket. We pull from order items so
+  // the panel sheets carry the right level of detail (size, handing,
+  // jamb size, etc.) for the cut list, and merge in BOM components so
+  // jambs/trim/hardware components purchased per-unit also appear.
+  const cutListItems = (() => {
+    const matches = (s: string | null | undefined, words: string[]) =>
+      !!s && words.some(w => s.toLowerCase().includes(w))
+    const cutWords = ['door', 'slab', 'jamb', 'trim', 'casing', 'mould', 'molding', 'panel', 'stile', 'rail', 'sill', 'mullion']
+    const list: any[] = []
+    // Order items first — these are the primary "build" lines
+    for (const oi of (data.orderItems || [])) {
+      const cat = oi.category || ''
+      const desc = oi.productName || oi.description || ''
+      if (matches(cat, cutWords) || matches(desc, cutWords) || matches(oi.sku, cutWords)) {
+        list.push({
+          sku: oi.sku,
+          description: oi.productName || oi.description,
+          dimensions: oi.doorSize || oi.jambSize || '—',
+          handing: oi.handing || '—',
+          coreType: oi.coreType || '',
+          panelStyle: oi.panelStyle || '',
+          jambSize: oi.jambSize || '',
+          casingCode: oi.casingCode || '',
+          quantity: oi.quantity,
+          source: 'order',
+        })
+      }
+    }
+    // BOM components that are jamb/trim sub-pieces (per assembly)
+    for (const grp of (data.assemblyGroups || [])) {
+      for (const comp of grp.components) {
+        const desc = comp.description || ''
+        const sku = comp.sku || ''
+        if (matches(desc, ['jamb', 'casing', 'trim', 'mould', 'molding', 'stop', 'sill']) || matches(sku, ['jamb', 'csg', 'trim'])) {
+          list.push({
+            sku: comp.sku,
+            description: comp.description,
+            dimensions: '—',
+            handing: '—',
+            coreType: '',
+            panelStyle: '',
+            jambSize: '',
+            casingCode: '',
+            quantity: comp.quantity,
+            source: 'bom',
+            parentSku: grp.parent.sku,
+          })
+        }
+      }
+    }
+    return list
+  })()
+
+  const hardwareItems = (() => {
+    const matches = (s: string | null | undefined, words: string[]) =>
+      !!s && words.some(w => s.toLowerCase().includes(w))
+    const hwWords = ['hinge', 'lock', 'knob', 'lever', 'deadbolt', 'latch', 'strike', 'handle', 'pull', 'hardware', 'screw', 'bolt', 'fastener', 'stop', 'closer', 'kick', 'magnetic']
+    const merged: Record<string, { sku: string; description: string; quantity: number; finish: string; source: string }> = {}
+    const add = (sku: string, description: string, qty: number, finish: string, source: string) => {
+      const key = sku || description
+      if (!key) return
+      if (merged[key]) merged[key].quantity += qty
+      else merged[key] = { sku: sku || '—', description, quantity: qty, finish, source }
+    }
+    // Order item hardware lines (e.g. lockset SKUs ordered directly)
+    for (const oi of (data.orderItems || [])) {
+      const cat = oi.category || ''
+      const desc = oi.productName || oi.description || ''
+      if (matches(cat, hwWords) || matches(desc, hwWords) || matches(oi.sku, ['hng', 'lk', 'kn', 'lvr', 'db'])) {
+        add(oi.sku, desc, oi.quantity || 0, oi.hardwareFinish || '', 'order')
+      }
+    }
+    // BOM hardware components (per-assembly hardware kits)
+    for (const grp of (data.assemblyGroups || [])) {
+      for (const comp of grp.components) {
+        const desc = comp.description || ''
+        const sku = comp.sku || ''
+        if (matches(desc, hwWords) || matches(sku, ['hng', 'lk', 'kn', 'lvr', 'db'])) {
+          add(comp.sku, desc, comp.quantity || 0, '', 'bom')
+        }
+      }
+    }
+    return Object.values(merged)
+  })()
+
   return (
     <>
       {/* ── Screen-only toolbar ── */}
@@ -580,6 +670,262 @@ export default function JobPacketPage() {
               <strong>Notes:</strong> {data.job.buildSheetNotes}
             </div>
           )}
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════════
+            M-11: CUT LIST — Door slabs, jamb pieces, trim with dimensions
+        ════════════════════════════════════════════════════════════════ */}
+        <div className="page-break" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>CUT LIST</h2>
+              <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Door slabs, jamb pieces, casing & trim — cut to dimension before assembly</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName}</div>
+            </div>
+          </div>
+
+          {cutListItems.length === 0 ? (
+            <div style={{ padding: 20, textAlign: 'center', border: '1px dashed #D1D5DB', borderRadius: 4, color: '#6B7280', fontSize: 12 }}>
+              No cut-list items identified for this job.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: '4%', textAlign: 'center' }}>☐</th>
+                  <th style={{ textAlign: 'left', width: '14%' }}>SKU</th>
+                  <th style={{ textAlign: 'left' }}>Description</th>
+                  <th style={{ textAlign: 'center', width: '12%' }}>Door Size</th>
+                  <th style={{ textAlign: 'center', width: '10%' }}>Handing</th>
+                  <th style={{ textAlign: 'center', width: '10%' }}>Jamb</th>
+                  <th style={{ textAlign: 'center', width: '8%' }}>Qty</th>
+                  <th style={{ textAlign: 'center', width: '8%' }}>Cut OK</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cutListItems.map((item: any, i: number) => (
+                  <tr key={i}>
+                    <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{item.sku}</td>
+                    <td style={{ fontSize: 11 }}>
+                      {item.description}
+                      {item.coreType || item.panelStyle ? (
+                        <div style={{ fontSize: 9, color: '#6B7280', marginTop: 2 }}>
+                          {item.coreType}{item.coreType && item.panelStyle ? ' / ' : ''}{item.panelStyle}
+                          {item.casingCode ? ` / ${item.casingCode}` : ''}
+                          {item.source === 'bom' && item.parentSku ? ` (for ${item.parentSku})` : ''}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td style={{ textAlign: 'center', fontWeight: 600, fontSize: 12 }}>{item.dimensions || '—'}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{item.handing || '—'}</td>
+                    <td style={{ textAlign: 'center', fontSize: 11 }}>{item.jambSize || '—'}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 700 }}>{item.quantity}</td>
+                    <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <div style={{ marginTop: 16, padding: 10, background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: 11, color: '#92400E' }}>
+            <strong>Cutter note:</strong> Verify dimensions against build sheet for each unit before cutting. Mark each row when cut & labeled. Set aside off-cuts for pre-hung jamb assembly.
+          </div>
+
+          {/* Cutter sign-off */}
+          <div style={{ marginTop: 24, display: 'flex', gap: 40, fontSize: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Cut By (Print Name)</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Signature</div>
+            </div>
+            <div style={{ width: 120 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Date</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════════
+            M-11: HARDWARE PICK TICKET — Hinges, locks, knobs grouped for warehouse
+        ════════════════════════════════════════════════════════════════ */}
+        <div className="page-break" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>HARDWARE PICK TICKET</h2>
+              <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Hinges, locksets, knobs & accessories — grouped by SKU for warehouse pulling</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName}</div>
+            </div>
+          </div>
+
+          {hardwareItems.length === 0 ? (
+            <div style={{ padding: 20, textAlign: 'center', border: '1px dashed #D1D5DB', borderRadius: 4, color: '#6B7280', fontSize: 12 }}>
+              No hardware items identified for this job.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: '4%', textAlign: 'center' }}>☐</th>
+                  <th style={{ textAlign: 'left', width: '18%' }}>SKU</th>
+                  <th style={{ textAlign: 'left' }}>Description</th>
+                  <th style={{ textAlign: 'center', width: '14%' }}>Finish</th>
+                  <th style={{ textAlign: 'center', width: '10%' }}>Qty</th>
+                  <th style={{ textAlign: 'center', width: '10%' }}>Pulled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hardwareItems.map((item: any, i: number) => (
+                  <tr key={i}>
+                    <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 600 }}>{item.sku}</td>
+                    <td style={{ fontSize: 11 }}>{item.description}</td>
+                    <td style={{ textAlign: 'center', fontSize: 11 }}>{item.finish || '—'}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{item.quantity}</td>
+                    <td style={{ textAlign: 'center' }}><span className="check-box" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <div style={{ marginTop: 16, padding: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: 11, color: '#1E40AF' }}>
+            <strong>Picker note:</strong> Pull complete count per SKU before moving to next item. Flag any SKU with zero on-hand to PM immediately. Bag hardware per unit if assemblies require — see build sheets.
+          </div>
+
+          {/* Picker sign-off */}
+          <div style={{ marginTop: 24, display: 'flex', gap: 40, fontSize: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Picked By</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Verified By</div>
+            </div>
+            <div style={{ width: 120 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Date</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════════
+            M-11: DELIVERY INFO — Address, scheduled date, builder contact
+        ════════════════════════════════════════════════════════════════ */}
+        <div className="page-break" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '3px solid #0f2a3e', paddingBottom: 8, marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f2a3e', margin: 0 }}>DELIVERY INFO</h2>
+              <p style={{ fontSize: 11, color: '#6B7280', margin: 0 }}>Site, schedule & contact — verify before truck leaves yard</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#C6A24E' }}>{data.job.jobNumber}</div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>{data.job.builderName}</div>
+            </div>
+          </div>
+
+          {/* Big scheduled-date hero */}
+          <div style={{ border: '2px solid #0f2a3e', borderRadius: 4, padding: 16, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Scheduled Delivery</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#0f2a3e', marginTop: 4 }}>{fmtDate(data.job.scheduledDate)}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Drop Plan</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0f2a3e', marginTop: 4 }}>{(data.job as any).dropPlan || 'Single Drop'}</div>
+            </div>
+          </div>
+
+          {/* Address & site detail */}
+          <div className="section-header">SITE & ADDRESS</div>
+          <table style={{ marginBottom: 16 }}>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 700, width: '22%', background: '#F9FAFB' }}>Delivery Address</td>
+                <td colSpan={3} style={{ fontSize: 14, fontWeight: 600 }}>{data.job.jobAddress || '________________________________'}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Builder</td>
+                <td>{data.job.builderName}</td>
+                <td style={{ fontWeight: 700, background: '#F9FAFB', width: '22%' }}>Community</td>
+                <td>{data.job.community || '—'}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Lot / Block</td>
+                <td>{data.job.lotBlock || '—'}</td>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Builder PO #</td>
+                <td>{(data.job as any).bwpPoNumber || '—'}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Contacts */}
+          <div className="section-header">CONTACTS</div>
+          <table style={{ marginBottom: 16 }}>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 700, width: '22%', background: '#F9FAFB' }}>Builder Site Contact</td>
+                <td style={{ fontSize: 13 }}>{(data.job as any).builderContact || '________________________________'}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Abel PM</td>
+                <td style={{ fontSize: 13 }}>{data.job.pmName || '________________________________'}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Driver</td>
+                <td style={{ fontSize: 13 }}>________________________________</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Gate / Access Code</td>
+                <td style={{ fontSize: 13 }}>________________________________</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Load summary — what's going on the truck */}
+          <div className="section-header">LOAD SUMMARY</div>
+          <table>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 700, width: '22%', background: '#F9FAFB' }}>Total Line Items</td>
+                <td>{data.orderItems.length}</td>
+                <td style={{ fontWeight: 700, width: '22%', background: '#F9FAFB' }}>Total Units</td>
+                <td style={{ fontWeight: 700 }}>{data.orderItems.reduce((s: number, oi: any) => s + (oi.quantity || 0), 0)}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Assembly Units</td>
+                <td>{data.assemblyGroups.length}</td>
+                <td style={{ fontWeight: 700, background: '#F9FAFB' }}>Hardware SKUs</td>
+                <td>{hardwareItems.length}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Driver release sign-off */}
+          <div style={{ marginTop: 24, display: 'flex', gap: 40, fontSize: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Released By (Yard)</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Driver</div>
+            </div>
+            <div style={{ width: 140 }}>
+              <div style={{ borderBottom: '1px solid #1a1a2e', paddingBottom: 20, marginBottom: 4 }}></div>
+              <div style={{ fontWeight: 600 }}>Date / Time Out</div>
+            </div>
+          </div>
         </div>
 
         {/* ════════════════════════════════════════════════════════════════

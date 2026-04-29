@@ -68,6 +68,7 @@ export default function GoldStockPage() {
   const [buildLocation, setBuildLocation] = useState<string>('')
   const [building, setBuilding] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [atRiskOnly, setAtRiskOnly] = useState(false)
 
   const fetchList = useCallback(async () => {
     setLoading(true)
@@ -114,6 +115,42 @@ export default function GoldStockPage() {
     const onHandTotal = kits.reduce((s, k) => s + k.onHandKits, 0)
     return { total, active, below, onHandTotal }
   }, [kits])
+
+  // Days-of-supply heuristic: lead-time proxy when current qty is at/below reorder.
+  // Gold-stock rows don't carry per-SKU velocity, so we approximate using avgLeadTimeDays
+  // (rebuild lead time) scaled by stock vs. min. If lacking lead time, leave null and
+  // fall back to the onHand <= reorderPoint signal (per task rule #5).
+  const computeDaysOfSupply = useCallback((k: KitRow): number | null => {
+    if (k.avgLeadTimeDays == null || k.avgLeadTimeDays <= 0) return null
+    if (k.minQty <= 0) return k.currentQty > 0 ? k.avgLeadTimeDays : 0
+    // Rough cover: current stock as a fraction of min, times lead time.
+    const ratio = k.currentQty / k.minQty
+    return Math.max(0, Math.round(ratio * k.avgLeadTimeDays))
+  }, [])
+
+  const atRiskKits = useMemo(() => {
+    return kits
+      .filter((k) => k.status === 'ACTIVE')
+      .map((k) => ({ kit: k, dos: computeDaysOfSupply(k) }))
+      .filter(({ kit, dos }) => {
+        const belowReorder = kit.currentQty <= kit.reorderQty
+        const lowDos = dos != null && dos < 14
+        return belowReorder || lowDos
+      })
+      .sort((a, b) => {
+        // Sort by daysOfSupply ascending; nulls last.
+        if (a.dos == null && b.dos == null) return a.kit.currentQty - b.kit.currentQty
+        if (a.dos == null) return 1
+        if (b.dos == null) return -1
+        return a.dos - b.dos
+      })
+  }, [kits, computeDaysOfSupply])
+
+  const visibleKits = useMemo(() => {
+    if (!atRiskOnly) return kits
+    const atRiskIds = new Set(atRiskKits.map(({ kit }) => kit.id))
+    return kits.filter((k) => atRiskIds.has(k.id))
+  }, [kits, atRiskKits, atRiskOnly])
 
   const handleBuild = useCallback(async () => {
     if (!selectedKitId) return
@@ -229,22 +266,151 @@ export default function GoldStockPage() {
         </div>
       </div>
 
+      {/* Trending toward shortage */}
+      {atRiskKits.length > 0 && (
+        <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="p-4 border-b flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-gray-900">Trending toward shortage</h2>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                {atRiskKits.length} total at risk
+              </span>
+            </div>
+            <span className="text-xs text-gray-500">
+              days-of-supply &lt; 14 or on-hand &le; reorder
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b text-xs text-gray-600">
+                <tr>
+                  <th className="px-3 py-2 text-left font-semibold">SKU</th>
+                  <th className="px-3 py-2 text-left font-semibold">Product Name</th>
+                  <th className="px-3 py-2 text-right font-semibold">On-Hand</th>
+                  <th className="px-3 py-2 text-right font-semibold">Days of Supply</th>
+                  <th className="px-3 py-2 text-right font-semibold">Reorder Point</th>
+                  <th className="px-3 py-2 text-left font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {atRiskKits.map(({ kit, dos }) => {
+                  const critical = dos != null && dos < 7
+                  const warning = dos != null && dos >= 7 && dos < 14
+                  const rowClass = critical
+                    ? 'bg-red-50 hover:bg-red-100'
+                    : warning
+                    ? 'bg-yellow-50 hover:bg-yellow-100'
+                    : 'hover:bg-gray-50'
+                  const statusLabel = critical
+                    ? 'Critical'
+                    : warning
+                    ? 'Low'
+                    : kit.currentQty <= kit.reorderQty
+                    ? 'Below reorder'
+                    : 'At risk'
+                  const badgeClass = critical
+                    ? 'bg-red-100 text-red-700'
+                    : warning
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-orange-100 text-orange-700'
+                  return (
+                    <tr
+                      key={kit.id}
+                      className={`border-b cursor-pointer ${rowClass} ${
+                        selectedKitId === kit.id ? 'ring-1 ring-inset ring-blue-300' : ''
+                      }`}
+                      onClick={() => setSelectedKitId(kit.id)}
+                    >
+                      <td className="px-3 py-2 font-mono text-xs text-gray-900">
+                        {kit.kitCode}
+                      </td>
+                      <td className="px-3 py-2 text-gray-700">
+                        {kit.kitName}
+                        {kit.builderName && (
+                          <span className="text-xs text-gray-500 ml-1">
+                            · {kit.builderName}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                        {kit.currentQty}
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-700">
+                        {dos == null ? (
+                          <span className="text-gray-400">—</span>
+                        ) : (
+                          <span className={critical ? 'font-semibold text-red-700' : warning ? 'font-semibold text-yellow-700' : ''}>
+                            {dos}d
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-700">{kit.reorderQty}</td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${badgeClass}`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Kit table + detail */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Kit list */}
         <div className="lg:col-span-2 bg-white rounded-xl border overflow-hidden">
-          <div className="p-4 border-b flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Active Kits</h2>
-            <span className="text-xs text-gray-500">click row for detail</span>
-          </div>
-          {kits.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 text-sm">
-              No gold-stock kits defined. Run{' '}
-              <code className="font-mono text-xs bg-gray-100 px-1 rounded">
-                node scripts/seed-gold-stock-kits.mjs --commit
-              </code>{' '}
-              to seed from historical data.
+          <div className="p-4 border-b flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-gray-900">
+                {atRiskOnly ? 'At-Risk Kits' : 'Active Kits'}
+              </h2>
+              {atRiskKits.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                  {atRiskKits.length} at risk
+                </span>
+              )}
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setAtRiskOnly((v) => !v)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  atRiskOnly
+                    ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {atRiskOnly ? 'Showing at risk' : 'At Risk'}
+              </button>
+              <span className="text-xs text-gray-500">click row for detail</span>
+            </div>
+          </div>
+          {visibleKits.length === 0 ? (
+            kits.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 text-sm">
+                No gold-stock kits defined. Run{' '}
+                <code className="font-mono text-xs bg-gray-100 px-1 rounded">
+                  node scripts/seed-gold-stock-kits.mjs --commit
+                </code>{' '}
+                to seed from historical data.
+              </div>
+            ) : (
+              <div className="p-8 text-center text-gray-500 text-sm">
+                No kits match the current filter. Toggle{' '}
+                <button
+                  onClick={() => setAtRiskOnly(false)}
+                  className="underline text-[#0f2a3e] hover:text-[#0a1a28]"
+                >
+                  show all
+                </button>{' '}
+                to see every kit.
+              </div>
+            )
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -259,7 +425,7 @@ export default function GoldStockPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {kits.map((k) => {
+                  {visibleKits.map((k) => {
                     const below = k.status === 'ACTIVE' && k.currentQty < k.minQty
                     return (
                       <tr

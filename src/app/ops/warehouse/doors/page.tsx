@@ -171,15 +171,15 @@ export default function DoorRegistryPage() {
           <>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-surface-elevated text-fg"
-              style={{ padding: '8px 16px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              className="bg-surface-elevated text-fg min-h-[44px] text-sm md:text-[13px]"
+              style={{ padding: '10px 16px', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
             >
               + Tag Single Door
             </button>
             <button
               onClick={() => setShowOrderModal(true)}
-              className="text-fg"
-              style={{ padding: '8px 16px', background: '#C6A24E', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              className="text-fg min-h-[48px] md:min-h-[44px] text-sm md:text-[13px]"
+              style={{ padding: '10px 16px', background: '#C6A24E', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
             >
               + Tag From Order
             </button>
@@ -202,22 +202,28 @@ export default function DoorRegistryPage() {
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8 }}>
+        <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
           <input
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             placeholder="Search serial, NFC tag, homeowner..."
-            style={{ width: 280, padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13 }}
+            className="flex-1 md:flex-none md:w-[280px] min-h-[44px] text-base md:text-[13px]"
+            style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 8 }}
           />
-          <button type="submit" style={{ padding: '8px 14px', background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+          <button
+            type="submit"
+            className="min-h-[44px] text-sm md:text-[13px]"
+            style={{ padding: '10px 16px', background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+          >
             Search
           </button>
         </form>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setStatusFilter('')}
+            className="min-h-[44px] text-sm md:text-[11px] md:min-h-0"
             style={{
-              padding: '5px 12px', borderRadius: 16, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              padding: '8px 14px', borderRadius: 16, fontWeight: 600, cursor: 'pointer',
               background: !statusFilter ? '#0f2a3e' : 'white',
               color: !statusFilter ? 'white' : '#374151',
               border: '1px solid #E5E7EB'
@@ -227,8 +233,9 @@ export default function DoorRegistryPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
+              className="min-h-[44px] text-sm md:text-[11px] md:min-h-0"
               style={{
-                padding: '5px 12px', borderRadius: 16, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                padding: '8px 14px', borderRadius: 16, fontWeight: 600, cursor: 'pointer',
                 background: statusFilter === s ? (STATUS_COLORS[s]?.text || '#0f2a3e') : 'white',
                 color: statusFilter === s ? 'white' : '#374151',
                 border: '1px solid #E5E7EB'
@@ -238,8 +245,8 @@ export default function DoorRegistryPage() {
         </div>
       </div>
 
-      {/* Door Table */}
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+      {/* Door Table — desktop / tablet */}
+      <div className="hidden md:block" style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
@@ -308,52 +315,131 @@ export default function DoorRegistryPage() {
         </div>
       </div>
 
+      {/* Door Cards — mobile fallback */}
+      <div className="md:hidden flex flex-col gap-3">
+        {doors.length === 0 ? (
+          <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB' }}>
+            <EmptyState
+              icon={<Package className="w-8 h-8 text-fg-subtle" />}
+              title={search || statusFilter ? 'No doors match your filter' : 'No doors registered yet'}
+              description={search || statusFilter ? undefined : 'Use Tag From Order to get started.'}
+            />
+          </div>
+        ) : doors.map(door => {
+          const colors = STATUS_COLORS[door.status] || STATUS_COLORS.PRODUCTION
+          const lastDate = door.installedAt || door.deliveredAt || door.stagedAt || door.qcPassedAt || door.manufacturedAt
+          return (
+            <a
+              key={door.id}
+              href={`/door/${door.serialNumber}`}
+              className="block bg-white rounded-xl border border-[#E5E7EB] p-4 active:bg-gray-50 no-underline"
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-base font-semibold text-fg font-mono truncate">{door.serialNumber}</div>
+                  <div className="text-sm text-[#374151] mt-1 truncate">{door.productName || '—'}</div>
+                  {door.sku && <div className="text-xs text-[#9CA3AF] font-mono truncate">{door.sku}</div>}
+                </div>
+                <span
+                  className="shrink-0 text-xs font-semibold"
+                  style={{
+                    display: 'inline-block', padding: '4px 10px', borderRadius: 12,
+                    background: colors.bg, color: colors.text
+                  }}
+                >
+                  {door.status.replace('_', ' ')}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <div>
+                  <div className="text-xs text-[#6B7280] font-semibold uppercase">Bay</div>
+                  <div className="text-[#374151]">{door.bayNumber || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-[#6B7280] font-semibold uppercase">Order</div>
+                  <div className="text-[#374151] truncate">{door.orderId || '—'}</div>
+                  {door.jobId && <div className="text-xs text-[#9CA3AF] truncate">Job: {door.jobId}</div>}
+                </div>
+                <div className="col-span-2">
+                  <div className="text-xs text-[#6B7280] font-semibold uppercase">NFC Tag</div>
+                  <div
+                    className="font-mono text-xs truncate"
+                    style={{ color: door.nfcTagId ? '#374151' : '#D1D5DB' }}
+                  >
+                    {door.nfcTagId || 'not linked'}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-xs text-[#6B7280] font-semibold uppercase">Last Activity</div>
+                  <div className="text-sm text-[#6B7280]">{formatDate(lastDate)}</div>
+                </div>
+              </div>
+            </a>
+          )
+        })}
+      </div>
+
       {/* Create Single Door Modal */}
       {showCreateModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '100%' }}>
             <h3 className="text-fg" style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Tag Single Door</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Product ID *</label>
+                <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Product ID *</label>
                 <input
                   value={singleForm.productId}
                   onChange={e => setSingleForm({ ...singleForm, productId: e.target.value })}
                   placeholder="Product ID"
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                  className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                  style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Order ID</label>
+                  <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Order ID</label>
                   <input
                     value={singleForm.orderId}
                     onChange={e => setSingleForm({ ...singleForm, orderId: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                    className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                    style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Job ID</label>
+                  <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Job ID</label>
                   <input
                     value={singleForm.jobId}
                     onChange={e => setSingleForm({ ...singleForm, jobId: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                    className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                    style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                   />
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>NFC Tag ID (optional)</label>
+                <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>NFC Tag ID (optional)</label>
                 <input
                   value={singleForm.nfcTagId}
                   onChange={e => setSingleForm({ ...singleForm, nfcTagId: e.target.value })}
                   placeholder="Scan or type NFC tag UID"
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                  className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                  style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                 />
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-              <button onClick={() => setShowCreateModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleCreateSingle} disabled={creating || !singleForm.productId} style={{ padding: '8px 16px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !singleForm.productId ? 0.6 : 1 }}>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="min-h-[44px] text-sm md:text-[13px]"
+                style={{ padding: '10px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateSingle}
+                disabled={creating || !singleForm.productId}
+                className="min-h-[48px] md:min-h-[44px] text-sm md:text-[13px]"
+                style={{ padding: '10px 18px', background: '#0f2a3e', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', opacity: creating || !singleForm.productId ? 0.6 : 1 }}
+              >
                 {creating ? 'Creating...' : 'Create & Tag'}
               </button>
             </div>
@@ -363,44 +449,58 @@ export default function DoorRegistryPage() {
 
       {/* Create From Order Modal */}
       {showOrderModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '90vw' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 12, padding: 24, width: 420, maxWidth: '100%' }}>
             <h3 className="text-signal" style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Tag Doors From Order</h3>
-            <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>
+            <p className="text-sm md:text-xs" style={{ color: '#6B7280', marginBottom: 16 }}>
               Creates one door identity per unit for every item in the order
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Order ID *</label>
+                <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Order ID *</label>
                 <input
                   value={orderForm.orderId}
                   onChange={e => setOrderForm({ ...orderForm, orderId: e.target.value })}
                   placeholder="SO-XXXXX"
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                  className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                  style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Job ID</label>
+                <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Job ID</label>
                 <input
                   value={orderForm.jobId}
                   onChange={e => setOrderForm({ ...orderForm, jobId: e.target.value })}
                   placeholder="Link to job (optional)"
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                  className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                  style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Manufactured By</label>
+                <label className="text-sm md:text-xs" style={{ fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Manufactured By</label>
                 <input
                   value={orderForm.manufacturedBy}
                   onChange={e => setOrderForm({ ...orderForm, manufacturedBy: e.target.value })}
                   placeholder="Staff name or ID"
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 13 }}
+                  className="w-full text-base md:text-[13px] min-h-[44px] md:min-h-0"
+                  style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 6 }}
                 />
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-              <button onClick={() => setShowOrderModal(false)} style={{ padding: '8px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleCreateFromOrder} disabled={creating || !orderForm.orderId} style={{ padding: '8px 16px', background: '#C6A24E', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating || !orderForm.orderId ? 0.6 : 1 }}>
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="min-h-[44px] text-sm md:text-[13px]"
+                style={{ padding: '10px 16px', background: '#F3F4F6', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateFromOrder}
+                disabled={creating || !orderForm.orderId}
+                className="min-h-[48px] md:min-h-[44px] text-sm md:text-[13px]"
+                style={{ padding: '10px 18px', background: '#C6A24E', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', opacity: creating || !orderForm.orderId ? 0.6 : 1 }}
+              >
                 {creating ? 'Creating...' : 'Create Door Tags'}
               </button>
             </div>
@@ -414,7 +514,7 @@ export default function DoorRegistryPage() {
 function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div style={{ background: 'white', borderRadius: 10, padding: 14, border: '1px solid #E5E7EB' }}>
-      <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
+      <div className="text-xs md:text-[10px]" style={{ color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 600, color }}>{value}</div>
     </div>
   )

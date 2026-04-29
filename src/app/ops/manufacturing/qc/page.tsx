@@ -207,13 +207,13 @@ export default function QualityControlPage() {
                 setPrefillJobId(null)
                 setIsCreateModalOpen(true)
               }}
-              className="px-3 py-1.5 text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
+              className="px-3 py-1.5 min-h-[44px] text-sm bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors"
             >
               + New QC Check
             </button>
             <Link
               href="/ops/manufacturing"
-              className="px-3 py-1.5 text-sm text-fg-muted bg-gray-100 rounded-lg hover:bg-surface-muted"
+              className="px-3 py-1.5 min-h-[44px] inline-flex items-center text-sm text-fg-muted bg-gray-100 rounded-lg hover:bg-surface-muted"
             >
               Dashboard
             </Link>
@@ -262,15 +262,15 @@ export default function QualityControlPage() {
 
       {/* Jobs Pending QC queue (above search) */}
       <div className="bg-white rounded-xl border overflow-hidden">
-        <div className="px-4 py-3 border-b flex items-center justify-between">
+        <div className="px-4 py-3 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
           <div className="flex items-center gap-2">
             <ClipboardCheck className="w-4 h-4 text-fg-muted" />
             <h2 className="text-sm font-semibold text-fg">Jobs Pending QC</h2>
-            <span className="px-2 py-0.5 rounded bg-gray-100 text-xs text-fg-muted">
+            <span className="px-2 py-0.5 rounded bg-gray-100 text-sm text-fg-muted">
               {pending.length}
             </span>
           </div>
-          <p className="text-xs text-fg-subtle">
+          <p className="text-sm text-fg-subtle">
             STAGED or IN_PRODUCTION jobs without a PASS QC check
           </p>
         </div>
@@ -283,82 +283,118 @@ export default function QualityControlPage() {
             description="Every staged or in-production job has a passing QC check."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <SortableTh
-                    label="Job"
-                    active={pendingSortKey === 'jobNumber'}
-                    dir={pendingSortDir}
-                    onClick={() => togglePendingSort('jobNumber')}
-                  />
-                  <SortableTh
-                    label="Builder"
-                    active={pendingSortKey === 'builderName'}
-                    dir={pendingSortDir}
-                    onClick={() => togglePendingSort('builderName')}
-                  />
-                  <SortableTh
-                    label="Address"
-                    active={pendingSortKey === 'jobAddress'}
-                    dir={pendingSortDir}
-                    onClick={() => togglePendingSort('jobAddress')}
-                  />
-                  <SortableTh
-                    label="Community"
-                    active={pendingSortKey === 'community'}
-                    dir={pendingSortDir}
-                    onClick={() => togglePendingSort('community')}
-                  />
-                  <SortableTh
-                    label="Type"
-                    active={pendingSortKey === 'jobType'}
-                    dir={pendingSortDir}
-                    onClick={() => togglePendingSort('jobType')}
-                  />
-                  <SortableTh
-                    label="Scheduled"
-                    active={pendingSortKey === 'scheduledDate'}
-                    dir={pendingSortDir}
-                    onClick={() => togglePendingSort('scheduledDate')}
-                  />
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {sortedPending.map((job) => (
-                  <tr key={job.id} className="hover:bg-row-hover">
-                    <td className="px-4 py-3 text-sm">
-                      <Link
-                        href={`/ops/jobs/${job.id}`}
-                        className="text-[#0f2a3e] hover:underline font-medium"
-                      >
-                        {job.jobNumber}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">{job.builderName || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">{job.jobAddress || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">{job.community || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">{job.jobType || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">
+          <>
+            {/* Desktop table view */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <SortableTh
+                      label="Job"
+                      active={pendingSortKey === 'jobNumber'}
+                      dir={pendingSortDir}
+                      onClick={() => togglePendingSort('jobNumber')}
+                    />
+                    <SortableTh
+                      label="Builder"
+                      active={pendingSortKey === 'builderName'}
+                      dir={pendingSortDir}
+                      onClick={() => togglePendingSort('builderName')}
+                    />
+                    <SortableTh
+                      label="Address"
+                      active={pendingSortKey === 'jobAddress'}
+                      dir={pendingSortDir}
+                      onClick={() => togglePendingSort('jobAddress')}
+                    />
+                    <SortableTh
+                      label="Community"
+                      active={pendingSortKey === 'community'}
+                      dir={pendingSortDir}
+                      onClick={() => togglePendingSort('community')}
+                    />
+                    <SortableTh
+                      label="Type"
+                      active={pendingSortKey === 'jobType'}
+                      dir={pendingSortDir}
+                      onClick={() => togglePendingSort('jobType')}
+                    />
+                    <SortableTh
+                      label="Scheduled"
+                      active={pendingSortKey === 'scheduledDate'}
+                      dir={pendingSortDir}
+                      onClick={() => togglePendingSort('scheduledDate')}
+                    />
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {sortedPending.map((job) => (
+                    <tr key={job.id} className="hover:bg-row-hover">
+                      <td className="px-4 py-3 text-sm">
+                        <Link
+                          href={`/ops/jobs/${job.id}`}
+                          className="text-[#0f2a3e] hover:underline font-medium"
+                        >
+                          {job.jobNumber}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">{job.builderName || '—'}</td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">{job.jobAddress || '—'}</td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">{job.community || '—'}</td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">{job.jobType || '—'}</td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">
+                        {job.scheduledDate
+                          ? new Date(job.scheduledDate).toLocaleDateString()
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <button
+                          onClick={() => handleStartCheckForJob(job.id)}
+                          className="px-3 py-1.5 min-h-[44px] text-sm rounded-lg bg-[#0f2a3e] text-white hover:bg-[#0a1a28]"
+                        >
+                          Start QC Check
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card view */}
+            <div className="md:hidden divide-y">
+              {sortedPending.map((job) => (
+                <div key={job.id} className="px-4 py-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link
+                      href={`/ops/jobs/${job.id}`}
+                      className="text-[#0f2a3e] hover:underline font-medium text-base"
+                    >
+                      {job.jobNumber}
+                    </Link>
+                    <span className="text-sm text-fg-muted">
                       {job.scheduledDate
                         ? new Date(job.scheduledDate).toLocaleDateString()
                         : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <button
-                        onClick={() => handleStartCheckForJob(job.id)}
-                        className="px-2 py-1 text-xs rounded-lg bg-[#0f2a3e] text-white hover:bg-[#0a1a28]"
-                      >
-                        Start QC Check
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </span>
+                  </div>
+                  <div className="text-sm text-fg-muted space-y-0.5">
+                    <div>{job.builderName || '—'}</div>
+                    <div>{job.jobAddress || '—'}</div>
+                    {job.community && <div>{job.community}</div>}
+                    {job.jobType && <div className="text-fg-subtle">{job.jobType}</div>}
+                  </div>
+                  <button
+                    onClick={() => handleStartCheckForJob(job.id)}
+                    className="w-full px-3 py-2 min-h-[44px] text-sm rounded-lg bg-[#0f2a3e] text-white hover:bg-[#0a1a28]"
+                  >
+                    Start QC Check
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -369,12 +405,12 @@ export default function QualityControlPage() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search QC checks by job number or address..."
-          className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#0f2a3e]/20 focus:outline-none"
+          className="flex-1 px-3 py-2 min-h-[44px] border border-border rounded-lg text-base sm:text-sm bg-white focus:ring-2 focus:ring-[#0f2a3e]/20 focus:outline-none"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchInput('')}
-            className="px-3 py-2 text-xs rounded-lg border border-border bg-white text-fg-muted hover:bg-row-hover"
+            className="px-3 py-2 min-h-[44px] text-sm rounded-lg border border-border bg-white text-fg-muted hover:bg-row-hover"
           >
             Clear
           </button>
@@ -385,7 +421,7 @@ export default function QualityControlPage() {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => setActiveFilter('ALL')}
-          className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+          className={`px-3 py-2 min-h-[44px] text-sm rounded-full border transition-colors ${
             activeFilter === 'ALL'
               ? 'bg-[#0f2a3e] text-white border-transparent'
               : 'text-fg-muted border-border hover:border-border-strong bg-white'
@@ -399,7 +435,7 @@ export default function QualityControlPage() {
             <button
               key={type.key}
               onClick={() => setActiveFilter(type.key)}
-              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+              className={`px-3 py-2 min-h-[44px] text-sm rounded-full border transition-colors ${
                 activeFilter === type.key
                   ? 'bg-[#0f2a3e] text-white border-transparent'
                   : 'text-fg-muted border-border hover:border-border-strong bg-white'
@@ -424,77 +460,132 @@ export default function QualityControlPage() {
             }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Job</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Inspector</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Result</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Defects</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Notes</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredChecks.map((check) => (
-                  <tr key={check.id} className="hover:bg-row-hover">
-                    <td className="px-4 py-3 text-sm">
-                      {check.job ? (
-                        <Link
-                          href={`/ops/jobs/${check.job.id}`}
-                          className="text-[#0f2a3e] hover:underline font-medium"
-                        >
-                          {check.job.jobNumber}
-                        </Link>
-                      ) : (
-                        <span className="text-fg-subtle">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">
-                      {QC_TYPES.find((t) => t.key === check.checkType)?.label || check.checkType}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">
-                      {check.inspector.firstName} {check.inspector.lastName}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={getStatusBadgeVariant(check.result)} size="sm">
-                        {check.result}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">
-                      {check.defectCodes.length > 0 ? (
-                        <div className="flex gap-1 flex-wrap">
-                          {check.defectCodes.slice(0, 2).map((code) => (
-                            <span
-                              key={code}
-                              className="px-2 py-0.5 rounded text-xs bg-gray-100 text-fg-muted"
-                            >
-                              {code}
-                            </span>
-                          ))}
-                          {check.defectCodes.length > 2 && (
-                            <span className="px-2 py-0.5 text-xs text-fg-muted">
-                              +{check.defectCodes.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-fg-subtle">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate">
-                      {check.notes || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-fg-muted">
-                      {new Date(check.createdAt).toLocaleDateString()}
-                    </td>
+          <>
+            {/* Desktop table view */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Job</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Type</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Inspector</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Result</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Defects</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Notes</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-fg-muted">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredChecks.map((check) => (
+                    <tr key={check.id} className="hover:bg-row-hover">
+                      <td className="px-4 py-3 text-sm">
+                        {check.job ? (
+                          <Link
+                            href={`/ops/jobs/${check.job.id}`}
+                            className="text-[#0f2a3e] hover:underline font-medium"
+                          >
+                            {check.job.jobNumber}
+                          </Link>
+                        ) : (
+                          <span className="text-fg-subtle">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">
+                        {QC_TYPES.find((t) => t.key === check.checkType)?.label || check.checkType}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">
+                        {check.inspector.firstName} {check.inspector.lastName}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={getStatusBadgeVariant(check.result)} size="sm">
+                          {check.result}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">
+                        {check.defectCodes.length > 0 ? (
+                          <div className="flex gap-1 flex-wrap">
+                            {check.defectCodes.slice(0, 2).map((code) => (
+                              <span
+                                key={code}
+                                className="px-2 py-0.5 rounded text-sm bg-gray-100 text-fg-muted"
+                              >
+                                {code}
+                              </span>
+                            ))}
+                            {check.defectCodes.length > 2 && (
+                              <span className="px-2 py-0.5 text-sm text-fg-muted">
+                                +{check.defectCodes.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-fg-subtle">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate">
+                        {check.notes || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-fg-muted">
+                        {new Date(check.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card view */}
+            <div className="md:hidden divide-y">
+              {filteredChecks.map((check) => (
+                <div key={check.id} className="px-4 py-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    {check.job ? (
+                      <Link
+                        href={`/ops/jobs/${check.job.id}`}
+                        className="text-[#0f2a3e] hover:underline font-medium text-base"
+                      >
+                        {check.job.jobNumber}
+                      </Link>
+                    ) : (
+                      <span className="text-fg-subtle text-base">—</span>
+                    )}
+                    <Badge variant={getStatusBadgeVariant(check.result)} size="sm">
+                      {check.result}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-fg-muted space-y-0.5">
+                    <div>
+                      <span className="text-fg-subtle">Type:</span>{' '}
+                      {QC_TYPES.find((t) => t.key === check.checkType)?.label || check.checkType}
+                    </div>
+                    <div>
+                      <span className="text-fg-subtle">Inspector:</span>{' '}
+                      {check.inspector.firstName} {check.inspector.lastName}
+                    </div>
+                    <div>
+                      <span className="text-fg-subtle">Date:</span>{' '}
+                      {new Date(check.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {check.defectCodes.length > 0 && (
+                    <div className="flex gap-1 flex-wrap">
+                      {check.defectCodes.map((code) => (
+                        <span
+                          key={code}
+                          className="px-2 py-0.5 rounded text-sm bg-gray-100 text-fg-muted"
+                        >
+                          {code}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {check.notes && (
+                    <div className="text-sm text-fg-muted">{check.notes}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -554,7 +645,7 @@ function MetricCard({
     <div className={`${color} border rounded-xl p-4`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-fg-muted mb-1">{label}</p>
+          <p className="text-sm text-fg-muted mb-1">{label}</p>
           <p className={`text-2xl font-semibold ${textColor}`}>{value}</p>
         </div>
         <div className="text-3xl">{icon}</div>
@@ -577,7 +668,7 @@ function SortableTh({
   return (
     <th
       onClick={onClick}
-      className="px-4 py-3 text-left text-xs font-semibold text-fg-muted cursor-pointer select-none hover:bg-row-hover"
+      className="px-4 py-3 text-left text-sm font-semibold text-fg-muted cursor-pointer select-none hover:bg-row-hover"
     >
       <span className="inline-flex items-center gap-1">
         {label}
@@ -724,7 +815,7 @@ function CreateQCModal({
           {toast}
         </div>
       )}
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold text-fg mb-4">New Quality Check</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -734,11 +825,11 @@ function CreateQCModal({
               Job
             </label>
             {selectedJob ? (
-              <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50">
+              <div className="flex items-center justify-between px-3 py-2 min-h-[44px] border rounded-lg bg-gray-50">
                 <div className="text-sm">
                   <div className="font-medium text-fg">{selectedJob.jobNumber}</div>
                   {selectedJob.jobAddress && (
-                    <div className="text-xs text-fg-muted">{selectedJob.jobAddress}</div>
+                    <div className="text-sm text-fg-muted">{selectedJob.jobAddress}</div>
                   )}
                 </div>
                 <button
@@ -747,7 +838,7 @@ function CreateQCModal({
                     setSelectedJob(null)
                     setJobSearchInput('')
                   }}
-                  className="text-xs text-fg-muted hover:text-fg underline"
+                  className="px-2 py-2 min-h-[44px] text-sm text-fg-muted hover:text-fg underline"
                 >
                   Change
                 </button>
@@ -763,7 +854,7 @@ function CreateQCModal({
                   }}
                   onFocus={() => setShowJobDropdown(true)}
                   placeholder="Search active jobs by number or address..."
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
+                  className="w-full px-3 py-2 min-h-[44px] border rounded-lg text-base sm:text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
                 />
                 {showJobDropdown && jobSearchInput.trim().length >= 2 && (
                   <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
@@ -779,10 +870,10 @@ function CreateQCModal({
                           type="button"
                           key={j.id}
                           onClick={() => handleSelectJob(j)}
-                          className="block w-full text-left px-3 py-2 hover:bg-row-hover text-sm"
+                          className="block w-full text-left px-3 py-3 min-h-[44px] hover:bg-row-hover text-sm"
                         >
                           <div className="font-medium text-fg">{j.jobNumber}</div>
-                          <div className="text-xs text-fg-muted">
+                          <div className="text-sm text-fg-muted">
                             {j.jobAddress || '—'}
                             {j.builderName ? ` · ${j.builderName}` : ''}
                           </div>
@@ -791,7 +882,7 @@ function CreateQCModal({
                     )}
                   </div>
                 )}
-                <p className="mt-1 text-xs text-fg-subtle">
+                <p className="mt-1 text-sm text-fg-subtle">
                   Optional. Searches active (non-terminal) jobs only.
                 </p>
               </>
@@ -805,7 +896,7 @@ function CreateQCModal({
             <select
               value={formData.checkType}
               onChange={(e) => setFormData({ ...formData, checkType: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
+              className="w-full px-3 py-2 min-h-[44px] border rounded-lg text-base sm:text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
             >
               {QC_TYPES.map((type) => (
                 <option key={type.key} value={type.key}>
@@ -822,7 +913,7 @@ function CreateQCModal({
             <select
               value={formData.result}
               onChange={(e) => setFormData({ ...formData, result: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
+              className="w-full px-3 py-2 min-h-[44px] border rounded-lg text-base sm:text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
             >
               <option value="PASS">Pass</option>
               <option value="FAIL">Fail</option>
@@ -839,8 +930,23 @@ function CreateQCModal({
               value={formData.defectCodes}
               onChange={(e) => setFormData({ ...formData, defectCodes: e.target.value })}
               placeholder="e.g., D001, D002"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
+              className="w-full px-3 py-2 min-h-[44px] border rounded-lg text-base sm:text-sm focus:ring-2 focus:ring-[#0f2a3e]/20"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-fg-muted mb-1">
+              Photo (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="w-full px-3 py-2 min-h-[44px] border rounded-lg text-base sm:text-sm bg-white file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-fg-muted hover:file:bg-row-hover"
+            />
+            <p className="mt-1 text-sm text-fg-subtle">
+              Capture defect or condition photo from device camera.
+            </p>
           </div>
 
           <div>
@@ -851,7 +957,7 @@ function CreateQCModal({
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Inspection notes..."
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 resize-none"
+              className="w-full px-3 py-2 border rounded-lg text-base sm:text-sm focus:ring-2 focus:ring-[#0f2a3e]/20 resize-none"
               rows={3}
             />
           </div>
@@ -860,14 +966,14 @@ function CreateQCModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium text-fg-muted hover:bg-row-hover"
+              className="flex-1 px-4 py-2 min-h-[44px] border rounded-lg text-sm font-medium text-fg-muted hover:bg-row-hover"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-[#0f2a3e] text-white rounded-lg text-sm font-medium hover:bg-[#0a1a28] disabled:opacity-50"
+              className="flex-1 px-4 py-2 min-h-[44px] bg-[#0f2a3e] text-white rounded-lg text-sm font-medium hover:bg-[#0a1a28] disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Check'}
             </button>

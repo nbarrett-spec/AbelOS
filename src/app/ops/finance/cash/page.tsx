@@ -62,6 +62,31 @@ interface DsoCompliance {
   flaggedCount: number
 }
 
+interface ARFeed {
+  invoices: Array<{
+    id: string
+    invoiceNumber: string
+    builderId: string
+    builderName: string
+    balanceDue: number
+    dueDate: string | null
+    issuedAt: string | null
+    daysPastDue: number
+  }>
+}
+
+interface ProjectionWeek {
+  weekStart: Date
+  weekLabel: string // 'MM/DD'
+  total: number
+  invoiceCount: number
+  // weighted average builder lag for the bucket — used to label confidence
+  highConfidenceAmount: number
+  medConfidenceAmount: number
+  lowConfidenceAmount: number
+  hasConfidenceData: boolean
+}
+
 const USD = (n: number) =>
   n >= 1_000_000
     ? `$${(n / 1_000_000).toFixed(2)}M`
@@ -75,23 +100,26 @@ export default function CashCommandCenter() {
   const [ap, setAp] = useState<APSchedule | null>(null)
   const [gm, setGm] = useState<GrossMargin | null>(null)
   const [dso, setDso] = useState<DsoCompliance | null>(null)
+  const [arFeed, setArFeed] = useState<ARFeed | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function load() {
     setLoading(true)
     try {
-      const [c, a, pp, g, d] = await Promise.allSettled([
+      const [c, a, pp, g, d, f] = await Promise.allSettled([
         fetch('/api/ops/finance/cash-dashboard').then((r) => r.json()),
         fetch('/api/ops/finance/ar-heatmap').then((r) => r.json()),
         fetch('/api/ops/finance/ap-schedule').then((r) => r.json()),
         fetch('/api/ops/finance/gross-margin').then((r) => r.json()),
         fetch('/api/ops/finance/dso-compliance').then((r) => r.json()),
+        fetch('/api/ops/finance/ar').then((r) => r.json()),
       ])
       if (c.status === 'fulfilled') setCash(c.value)
       if (a.status === 'fulfilled') setAr(a.value)
       if (pp.status === 'fulfilled') setAp(pp.value)
       if (g.status === 'fulfilled') setGm(g.value)
       if (d.status === 'fulfilled') setDso(d.value)
+      if (f.status === 'fulfilled') setArFeed(f.value)
     } finally {
       setLoading(false)
     }
@@ -207,6 +235,78 @@ export default function CashCommandCenter() {
             <CashWaterfall forecast={cash.forecast} />
           </Card>
         )}
+
+        {/* Projected Cash Inflows — predicted from open invoices + builder lag */}
+        {arFeed && arFeed.invoices && arFeed.invoices.length > 0 && (() => {
+          const projection = computeInflowProjection(arFeed.invoices, dso?.rows || [])
+          if (projection.weeks.length === 0) return null
+          return (
+            <Card padding="md">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-fg">Projected cash inflows</h3>
+                  <p className="text-[11px] text-fg-muted mt-0.5">
+                    Open invoices, projected by builder payment patterns. Predicted pay date = due date + average builder lag.
+                  </p>
+                </div>
+                <div className="text-xs text-fg-muted">
+                  {projection.totalProjected > 0 ? (
+                    <>
+                      Next {projection.weeks.length} weeks:{' '}
+                      <strong className="text-fg">{USD(projection.totalProjected)}</strong>
+                      {' · '}
+                      {projection.totalCount} invoices
+                    </>
+                  ) : (
+                    'No projected inflows in window'
+                  )}
+                </div>
+              </div>
+              <ProjectedInflowsChart weeks={projection.weeks} />
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-surface-muted/50">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-fg-muted">Week of</th>
+                      <th className="text-right px-3 py-2 text-xs font-medium text-fg-muted">Projected</th>
+                      <th className="text-right px-3 py-2 text-xs font-medium text-fg-muted">Invoices</th>
+                      <th className="text-left px-3 py-2 text-xs font-medium text-fg-muted">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projection.weeks.map((w) => {
+                      const dom = dominantConfidence(w)
+                      return (
+                        <tr key={w.weekLabel} className="border-t border-border">
+                          <td className="px-3 py-2 text-sm">{w.weekLabel}</td>
+                          <td className="px-3 py-2 text-right font-numeric text-sm">{USD(w.total)}</td>
+                          <td className="px-3 py-2 text-right font-numeric text-sm">{w.invoiceCount}</td>
+                          <td className="px-3 py-2 text-sm">
+                            {w.hasConfidenceData ? (
+                              <Badge
+                                variant={dom === 'high' ? 'success' : dom === 'med' ? 'warning' : 'danger'}
+                                size="sm"
+                              >
+                                {dom === 'high' ? 'High — pays on time' : dom === 'med' ? 'Medium — some lag' : 'Low — chronically late'}
+                              </Badge>
+                            ) : (
+                              <span className="text-[11px] text-fg-subtle">No history</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {!projection.anyConfidenceData && (
+                <p className="mt-2 text-[11px] text-fg-subtle">
+                  Builder payment-lag history not yet available — projections assume invoices land on their due date.
+                </p>
+              )}
+            </Card>
+          )
+        })()}
 
         {/* AR Heatmap */}
         {ar && (
@@ -474,6 +574,234 @@ export default function CashCommandCenter() {
     void builderId
     alert(`Not implemented: collection email for ${builderName}. No backing endpoint yet.`)
   }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Inflow projection — predict payment date per open invoice using builder
+// avg DSO delta as the lag proxy. Group into the next N weekly buckets.
+// ──────────────────────────────────────────────────────────────────────────
+const INFLOW_WEEKS = 6 // 6-week horizon
+
+function startOfMonday(d: Date): Date {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  // ISO week (Mon=0). Mon JS getDay()=1 → 0; Sun=0 → 6.
+  const off = (x.getDay() + 6) % 7
+  x.setDate(x.getDate() - off)
+  return x
+}
+
+function fmtMmDd(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${m}/${dd}`
+}
+
+function computeInflowProjection(
+  invoices: ARFeed['invoices'],
+  dsoRows: DsoCompliance['rows'],
+): { weeks: ProjectionWeek[]; totalProjected: number; totalCount: number; anyConfidenceData: boolean } {
+  // builderId → lag days (positive = pays late vs. due, negative clamped to 0)
+  // Confidence: high if delta ≤ 5, med if 5–15, low if > 15 (or flagged).
+  const lagByBuilder = new Map<string, { lag: number; flagged: boolean; hasData: boolean }>()
+  for (const row of dsoRows) {
+    lagByBuilder.set(row.builderId, {
+      lag: Math.max(0, row.deltaDays),
+      flagged: row.flagged,
+      hasData: true,
+    })
+  }
+
+  const now = new Date()
+  const weekStart0 = startOfMonday(now)
+  const weeks: ProjectionWeek[] = []
+  for (let i = 0; i < INFLOW_WEEKS; i++) {
+    const ws = new Date(weekStart0)
+    ws.setDate(ws.getDate() + i * 7)
+    weeks.push({
+      weekStart: ws,
+      weekLabel: fmtMmDd(ws),
+      total: 0,
+      invoiceCount: 0,
+      highConfidenceAmount: 0,
+      medConfidenceAmount: 0,
+      lowConfidenceAmount: 0,
+      hasConfidenceData: false,
+    })
+  }
+  const horizonEnd = new Date(weekStart0)
+  horizonEnd.setDate(horizonEnd.getDate() + INFLOW_WEEKS * 7)
+
+  let totalProjected = 0
+  let totalCount = 0
+  let anyConfidenceData = false
+
+  for (const inv of invoices) {
+    if (!inv.balanceDue || inv.balanceDue <= 0) continue
+    // Reference date for projecting payment: dueDate when present, else
+    // issuedAt (treated as due immediately). If neither, skip.
+    const baseStr = inv.dueDate || inv.issuedAt
+    if (!baseStr) continue
+    const base = new Date(baseStr)
+    if (isNaN(base.getTime())) continue
+
+    const builderInfo = lagByBuilder.get(inv.builderId)
+    const lagDays = builderInfo?.lag ?? 0
+    if (builderInfo?.hasData) anyConfidenceData = true
+
+    const predicted = new Date(base)
+    predicted.setDate(predicted.getDate() + Math.round(lagDays))
+    // Past-dated predictions roll into the current week (cash you should
+    // already be chasing).
+    const projected = predicted < weekStart0 ? weekStart0 : predicted
+    if (projected >= horizonEnd) continue
+
+    const idx = Math.floor((projected.getTime() - weekStart0.getTime()) / (7 * 24 * 60 * 60 * 1000))
+    if (idx < 0 || idx >= weeks.length) continue
+
+    const wk = weeks[idx]
+    wk.total += inv.balanceDue
+    wk.invoiceCount += 1
+    totalProjected += inv.balanceDue
+    totalCount += 1
+
+    if (builderInfo?.hasData) {
+      wk.hasConfidenceData = true
+      // High: pays within 5d of due. Med: 5–15d lag. Low: >15d or flagged.
+      if (builderInfo.flagged || lagDays > 15) wk.lowConfidenceAmount += inv.balanceDue
+      else if (lagDays > 5) wk.medConfidenceAmount += inv.balanceDue
+      else wk.highConfidenceAmount += inv.balanceDue
+    }
+  }
+
+  return { weeks, totalProjected, totalCount, anyConfidenceData }
+}
+
+function dominantConfidence(w: ProjectionWeek): 'high' | 'med' | 'low' {
+  const { highConfidenceAmount: h, medConfidenceAmount: m, lowConfidenceAmount: l } = w
+  if (l >= h && l >= m) return 'low'
+  if (m >= h && m >= l) return 'med'
+  return 'high'
+}
+
+function ProjectedInflowsChart({ weeks }: { weeks: ProjectionWeek[] }) {
+  const w = 900
+  const h = 200
+  const padL = 50
+  const padR = 12
+  const padT = 12
+  const padB = 36
+  const innerW = w - padL - padR
+  const innerH = h - padT - padB
+  const n = weeks.length || 1
+  const slot = innerW / n
+  const barW = slot * 0.65
+  const max = Math.max(1, ...weeks.map((wk) => wk.total))
+
+  return (
+    <svg width={w} height={h} className="w-full" viewBox={`0 0 ${w} ${h}`}>
+      {/* y-axis baseline */}
+      <line x1={padL} y1={padT + innerH} x2={w - padR} y2={padT + innerH} stroke="var(--border)" />
+      {/* gridline at midpoint */}
+      <line
+        x1={padL}
+        y1={padT + innerH / 2}
+        x2={w - padR}
+        y2={padT + innerH / 2}
+        stroke="var(--border)"
+        strokeDasharray="2 2"
+        opacity={0.5}
+      />
+      <text x={padL - 6} y={padT + 4} fontSize="9" textAnchor="end" fill="var(--fg-subtle)" fontFamily="var(--font-numeric)">
+        {`$${Math.round(max / 1000)}k`}
+      </text>
+      <text
+        x={padL - 6}
+        y={padT + innerH / 2 + 3}
+        fontSize="9"
+        textAnchor="end"
+        fill="var(--fg-subtle)"
+        fontFamily="var(--font-numeric)"
+      >
+        {`$${Math.round(max / 2000)}k`}
+      </text>
+
+      {weeks.map((wk, i) => {
+        const x = padL + i * slot + (slot - barW) / 2
+        // Stack: high (positive), med (warning), low (negative) bottom-up so
+        // the worst stuff is most visible at the base of the bar.
+        const lowH = (wk.lowConfidenceAmount / max) * innerH
+        const medH = (wk.medConfidenceAmount / max) * innerH
+        const highH = (wk.highConfidenceAmount / max) * innerH
+        const noDataH =
+          ((wk.total - wk.lowConfidenceAmount - wk.medConfidenceAmount - wk.highConfidenceAmount) / max) * innerH
+        const baseY = padT + innerH
+
+        let yCursor = baseY
+        const segs: Array<{ amount: number; height: number; color: string; opacity: number }> = []
+        if (lowH > 0) segs.push({ amount: wk.lowConfidenceAmount, height: lowH, color: 'var(--data-negative)', opacity: 0.85 })
+        if (medH > 0) segs.push({ amount: wk.medConfidenceAmount, height: medH, color: 'var(--data-warning)', opacity: 0.85 })
+        if (highH > 0) segs.push({ amount: wk.highConfidenceAmount, height: highH, color: 'var(--data-positive)', opacity: 0.85 })
+        if (noDataH > 0) segs.push({ amount: wk.total - wk.lowConfidenceAmount - wk.medConfidenceAmount - wk.highConfidenceAmount, height: noDataH, color: 'var(--fg-subtle)', opacity: 0.4 })
+
+        return (
+          <g key={i}>
+            {segs.map((s, j) => {
+              yCursor -= s.height
+              return (
+                <rect
+                  key={j}
+                  x={x}
+                  y={yCursor}
+                  width={barW}
+                  height={Math.max(1, s.height)}
+                  fill={s.color}
+                  opacity={s.opacity}
+                  rx={2}
+                >
+                  <title>{`Week of ${wk.weekLabel}: ${USD(s.amount)}`}</title>
+                </rect>
+              )
+            })}
+            <text
+              x={x + barW / 2}
+              y={baseY + 14}
+              textAnchor="middle"
+              fontSize="10"
+              fill="var(--fg-muted)"
+              fontFamily="var(--font-numeric)"
+            >
+              {wk.weekLabel}
+            </text>
+            {wk.total > 0 && (
+              <text
+                x={x + barW / 2}
+                y={baseY - (lowH + medH + highH + noDataH) - 4}
+                textAnchor="middle"
+                fontSize="9"
+                fill="var(--fg-muted)"
+                fontFamily="var(--font-numeric)"
+              >
+                {USD(wk.total)}
+              </text>
+            )}
+          </g>
+        )
+      })}
+
+      {/* Legend */}
+      <g transform={`translate(${padL}, ${h - 6})`}>
+        <rect x={0} y={-8} width={9} height={9} fill="var(--data-positive)" opacity={0.85} rx={1.5} />
+        <text x={13} y={0} fontSize="9" fill="var(--fg-muted)">High</text>
+        <rect x={48} y={-8} width={9} height={9} fill="var(--data-warning)" opacity={0.85} rx={1.5} />
+        <text x={61} y={0} fontSize="9" fill="var(--fg-muted)">Medium</text>
+        <rect x={108} y={-8} width={9} height={9} fill="var(--data-negative)" opacity={0.85} rx={1.5} />
+        <text x={121} y={0} fontSize="9" fill="var(--fg-muted)">Low</text>
+        <rect x={155} y={-8} width={9} height={9} fill="var(--fg-subtle)" opacity={0.4} rx={1.5} />
+        <text x={168} y={0} fontSize="9" fill="var(--fg-muted)">No history</text>
+      </g>
+    </svg>
+  )
 }
 
 // ──────────────────────────────────────────────────────────────────────────

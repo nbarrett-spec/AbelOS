@@ -80,6 +80,8 @@ export async function GET(request: NextRequest) {
       dueDate: `i."dueDate" ${sortDir}`,
       issuedAt: `i."issuedAt" ${sortDir}`,
       createdAt: `i."createdAt" ${sortDir}`,
+      jobNumber: `j."jobNumber" ${sortDir}`,
+      community: `j."community" ${sortDir}`,
     }
     const orderClause = invSortMap[sortBy] || `i."createdAt" ${sortDir}`
 
@@ -88,6 +90,9 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       const csvRows: any[] = await prisma.$queryRawUnsafe(`
         SELECT i."invoiceNumber", b."companyName" AS "builderName",
+               j."jobNumber" AS "jobNumber",
+               j."community" AS "community",
+               j."jobAddress" AS "jobAddress",
                i."status"::text AS "status",
                i."paymentTerm"::text AS "paymentTerm",
                i."total", i."amountPaid",
@@ -95,6 +100,7 @@ export async function GET(request: NextRequest) {
                i."issuedAt", i."dueDate", i."paidAt", i."createdAt"
         FROM "Invoice" i
         LEFT JOIN "Builder" b ON b."id" = i."builderId"
+        LEFT JOIN "Job" j ON j."id" = i."jobId"
         ${whereClause}
         ORDER BY ${orderClause}
         LIMIT 5000
@@ -104,6 +110,9 @@ export async function GET(request: NextRequest) {
       const rows = csvRows.map(r => ({
         invoiceNumber: r.invoiceNumber,
         builder: r.builderName ?? '',
+        jobNumber: r.jobNumber ?? '',
+        community: r.community ?? '',
+        jobAddress: r.jobAddress ?? '',
         status: r.status ?? '',
         paymentTerm: r.paymentTerm ?? '',
         total: r.total != null ? Number(r.total).toFixed(2) : '',
@@ -118,6 +127,9 @@ export async function GET(request: NextRequest) {
       const csv = toCsv(rows, [
         { key: 'invoiceNumber', label: 'Invoice #' },
         { key: 'builder', label: 'Builder' },
+        { key: 'jobNumber', label: 'Job #' },
+        { key: 'community', label: 'Community' },
+        { key: 'jobAddress', label: 'Job Address' },
         { key: 'status', label: 'Status' },
         { key: 'paymentTerm', label: 'Payment Term' },
         { key: 'total', label: 'Total' },
@@ -138,7 +150,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get invoices with builder info
+    // Get invoices with builder + job info
     const invoices: any[] = await prisma.$queryRawUnsafe(`
       SELECT i."id", i."invoiceNumber", i."builderId", i."orderId", i."jobId",
              i."createdById", i."subtotal", i."taxAmount", i."total",
@@ -147,9 +159,13 @@ export async function GET(request: NextRequest) {
              i."issuedAt", i."dueDate", i."paidAt", i."notes",
              i."createdAt", i."updatedAt",
              b."companyName" AS "builderName", b."contactName" AS "builderContact",
+             j."jobNumber" AS "jobNumber",
+             j."community" AS "community",
+             j."jobAddress" AS "jobAddress",
              s."firstName" AS "createdByFirstName", s."lastName" AS "createdByLastName"
       FROM "Invoice" i
       LEFT JOIN "Builder" b ON b."id" = i."builderId"
+      LEFT JOIN "Job" j ON j."id" = i."jobId"
       LEFT JOIN "Staff" s ON s."id" = i."createdById"
       ${whereClause}
       ORDER BY ${orderClause}
@@ -161,6 +177,7 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(*)::int AS total
       FROM "Invoice" i
       LEFT JOIN "Builder" b ON b."id" = i."builderId"
+      LEFT JOIN "Job" j ON j."id" = i."jobId"
       ${whereClause}
     `, ...params)
     const total = countResult[0]?.total || 0

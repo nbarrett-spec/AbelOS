@@ -60,6 +60,15 @@ interface CollectionActionRow {
   notes: string | null
 }
 
+interface PaymentRow {
+  id: string
+  invoiceId: string
+  amount: number
+  method: string
+  reference: string | null
+  receivedAt: Date
+}
+
 function daysDiff(later: Date, earlier: Date): number {
   return Math.floor((later.getTime() - earlier.getTime()) / (1000 * 60 * 60 * 24))
 }
@@ -97,6 +106,7 @@ export async function GET(request: NextRequest) {
 
     const invoiceIds = invoices.map((i) => i.id)
     let actionsByInvoice = new Map<string, CollectionActionRow[]>()
+    let paymentsByInvoice = new Map<string, PaymentRow[]>()
     if (invoiceIds.length > 0) {
       const placeholders = invoiceIds.map((_, idx) => `$${idx + 1}`).join(', ')
       const actions = await prisma.$queryRawUnsafe<CollectionActionRow[]>(
@@ -110,6 +120,22 @@ export async function GET(request: NextRequest) {
         const list = actionsByInvoice.get(a.invoiceId) || []
         list.push(a)
         actionsByInvoice.set(a.invoiceId, list)
+      }
+
+      // Pull recent payments per invoice so the action card can show prior
+      // payment history inline (FIX-16). SELECT-only — no business logic.
+      const payments = await prisma.$queryRawUnsafe<PaymentRow[]>(
+        `SELECT "id", "invoiceId", "amount"::float AS "amount",
+                "method"::text AS "method", "reference", "receivedAt"
+         FROM "Payment"
+         WHERE "invoiceId" IN (${placeholders})
+         ORDER BY "receivedAt" DESC`,
+        ...invoiceIds,
+      )
+      for (const p of payments) {
+        const list = paymentsByInvoice.get(p.invoiceId) || []
+        list.push(p)
+        paymentsByInvoice.set(p.invoiceId, list)
       }
     }
 
@@ -189,6 +215,13 @@ export async function GET(request: NextRequest) {
           sentAt: a.sentAt.toISOString(),
           sentBy: a.sentBy,
           notes: a.notes,
+        })),
+        priorPayments: (paymentsByInvoice.get(inv.id) || []).map((p) => ({
+          id: p.id,
+          amount: Number(p.amount),
+          method: p.method,
+          reference: p.reference,
+          receivedAt: p.receivedAt.toISOString(),
         })),
       })
     }

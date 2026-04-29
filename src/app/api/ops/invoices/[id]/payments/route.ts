@@ -16,13 +16,30 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = params
     const body = await request.json()
-    const { amount, method, reference, notes } = body
+    const { amount, method, reference, notes, receivedAt } = body
 
     if (!amount || !method) {
       return NextResponse.json(
         { error: 'Missing required fields: amount, method' },
         { status: 400 }
       )
+    }
+
+    // Optional client-supplied receivedAt — backwards compatible: if absent
+    // or empty, the SQL COALESCE falls back to NOW() so existing callers
+    // (and any non-modal path) continue to work unchanged. Validate that
+    // anything we DO accept is a parseable timestamp; reject garbage rather
+    // than silently storing it.
+    let receivedAtParam: string | null = null
+    if (receivedAt !== undefined && receivedAt !== null && receivedAt !== '') {
+      const d = new Date(receivedAt)
+      if (Number.isNaN(d.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid receivedAt timestamp' },
+          { status: 400 }
+        )
+      }
+      receivedAtParam = d.toISOString()
     }
 
     // Get the invoice
@@ -66,11 +83,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const paidAtClause = newStatus === 'PAID' ? ', "paidAt" = NOW()' : ''
 
     await prisma.$transaction(async (tx) => {
-      // Create the payment
+      // Create the payment. receivedAt: if the client supplied one, use it;
+      // otherwise COALESCE falls back to NOW() preserving prior behavior.
       await tx.$executeRawUnsafe(`
         INSERT INTO "Payment" ("id", "invoiceId", "amount", "method", "reference", "notes", "receivedAt")
-        VALUES ($1, $2, $3, '${method}'::"PaymentMethod", $4, $5, NOW())
-      `, payId, id, amount, reference || null, notes || null)
+        VALUES ($1, $2, $3, '${method}'::"PaymentMethod", $4, $5, COALESCE($6::timestamp, NOW()))
+      `, payId, id, amount, reference || null, notes || null, receivedAtParam)
 
       // Update invoice. Backfill issuedAt when the invoice first becomes
       // billable — a payment against a DRAFT implicitly issues it. Audit

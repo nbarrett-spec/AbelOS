@@ -82,6 +82,14 @@ export default function PickScannerPage() {
   // the scanner area never goes blank when getUserMedia rejects.
   const [cameraError, setCameraError] = useState<string | null>(null)
 
+  // Cross-dock job IDs — jobs whose materials are flagged on incoming POs
+  // for immediate dock-door staging (do NOT put away to bin). Populated from
+  // /api/ops/warehouse/cross-dock on mount. If the fetch fails we fall back
+  // to an empty Set so the scanner stays fully functional.
+  const [crossDockJobIds, setCrossDockJobIds] = useState<Set<string>>(
+    () => new Set<string>()
+  )
+
   const scanInputRef = useRef<HTMLInputElement>(null)
   const verifyingRef = useRef(false)
 
@@ -105,6 +113,46 @@ export default function PickScannerPage() {
   useEffect(() => {
     fetchJobs()
   }, [fetchJobs])
+
+  // ── Load cross-dock job IDs ────────────────────────────────────────────
+  // Hits the same /api/ops/warehouse/cross-dock feed the receiving page uses
+  // and flattens the per-line `jobs` arrays into a single Set of job IDs.
+  // If anything goes wrong we log + leave the Set empty — picker workflow
+  // must NOT be blocked when this fetch fails.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/ops/warehouse/cross-dock')
+        if (!res.ok) {
+          console.warn(
+            '[pick-scanner] cross-dock fetch returned',
+            res.status
+          )
+          return
+        }
+        const data = await res.json()
+        const lines: Array<{ jobs?: Array<{ id?: string }> }> = Array.isArray(
+          data?.lines
+        )
+          ? data.lines
+          : []
+        const ids = new Set<string>()
+        for (const line of lines) {
+          if (!Array.isArray(line.jobs)) continue
+          for (const j of line.jobs) {
+            if (j && typeof j.id === 'string' && j.id) ids.add(j.id)
+          }
+        }
+        if (!cancelled) setCrossDockJobIds(ids)
+      } catch (err) {
+        console.warn('[pick-scanner] cross-dock fetch failed', err)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // ── Load picks for a specific job ──────────────────────────────────────
   const fetchPicks = useCallback(async (jobId: string) => {
@@ -632,12 +680,13 @@ export default function PickScannerPage() {
                       ((j.verifiedPicks + j.pickedPicks) / j.totalPicks) * 100
                     )
                   : 0
+              const isCrossDock = crossDockJobIds.has(j.id)
               return (
                 <div
                   key={j.id}
                   style={{
                     backgroundColor: '#2a2a3e',
-                    border: '1px solid #444',
+                    border: isCrossDock ? '2px solid #E74C3C' : '1px solid #444',
                     borderRadius: '0.75rem',
                     padding: '1.25rem',
                     display: 'flex',
@@ -645,6 +694,24 @@ export default function PickScannerPage() {
                     gap: '0.75rem',
                   }}
                 >
+                  {isCrossDock && (
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        alignSelf: 'flex-start',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '0.25rem',
+                        backgroundColor: '#E74C3C',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      Cross-Dock — Stage at Dock
+                    </div>
+                  )}
                   <div
                     style={{
                       display: 'flex',
@@ -764,6 +831,20 @@ export default function PickScannerPage() {
         flexDirection: 'column',
       }}
     >
+      {/* Cross-dock banner — render first so the picker sees it before any
+          other UI on this view. The banner uses the brand-red palette
+          requested in the W-15 spec (Tailwind utility classes mirror the
+          receiving-page banner). */}
+      {selectedJob && crossDockJobIds.has(selectedJob.id) && (
+        <div
+          className="bg-red-50 border-2 border-red-500 text-red-800 p-3 rounded-lg font-bold"
+          role="alert"
+          style={{ marginBottom: '1rem' }}
+        >
+          ⚠ CROSS-DOCK JOB — Stage at Dock Door, do NOT put away to bin
+        </div>
+      )}
+
       {/* Flash feedback overlay */}
       {flashFeedback && (
         <div

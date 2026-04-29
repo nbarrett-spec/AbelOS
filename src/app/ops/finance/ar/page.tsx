@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Wallet, AlertTriangle, RefreshCw, CalendarDays, TrendingDown,
-  Filter, ArrowLeft, ExternalLink, Send,
+  Filter, ArrowLeft, ExternalLink, Send, DollarSign,
 } from 'lucide-react'
 import {
   PageHeader, KPICard, Badge, StatusBadge, DataTable, EmptyState,
@@ -20,6 +20,7 @@ import {
   LiveDataIndicator,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { RecordPaymentModal } from '@/app/ops/components/RecordPaymentModal'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ interface ArData {
     d60_plus: number
     total: number
     invoiceCount: number
+    lastPaymentDate: string | null
   }>
   invoices: Array<{
     id: string
@@ -105,6 +107,7 @@ export default function ARAgingDashboardPage() {
   const [bucketFilter, setBucketFilter] = useState<BucketKey | 'all'>('all')
   const [builderDrill, setBuilderDrill] = useState<string | null>(null)
   const [refreshTick, setRefreshTick] = useState<number | null>(null)
+  const [paymentInvoice, setPaymentInvoice] = useState<any | null>(null)
 
   useEffect(() => { fetchData() }, [])
 
@@ -298,6 +301,7 @@ export default function ARAgingDashboardPage() {
                     <th className="px-3 py-2 font-medium text-right">31–60</th>
                     <th className="px-3 py-2 font-medium text-right">60+</th>
                     <th className="px-3 py-2 font-medium text-right">Total</th>
+                    <th className="px-3 py-2 font-medium text-right">Last Payment</th>
                     <th className="px-3 py-2 font-medium text-right">Action</th>
                   </tr>
                 </thead>
@@ -334,6 +338,9 @@ export default function ARAgingDashboardPage() {
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums font-semibold" style={MONO_STYLE}>
                           {fmtMoney(b.total)}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-fg-muted" style={MONO_STYLE}>
+                          {b.lastPaymentDate ? fmtShortDate(b.lastPaymentDate) : <span className="text-fg-subtle">—</span>}
                         </td>
                         <td className="px-3 py-2 text-right">
                           {overdue > 0 ? (
@@ -445,6 +452,14 @@ export default function ARAgingDashboardPage() {
             onClick: (r) => router.push(`/ops/invoices/${r.id}`),
           },
           {
+            id: 'payment',
+            icon: <DollarSign className="w-3.5 h-3.5" />,
+            label: 'Record payment',
+            shortcut: 'P',
+            onClick: (r) => setPaymentInvoice(r),
+            show: (r) => r.status !== 'PAID' && r.balanceDue > 0,
+          },
+          {
             id: 'collect',
             icon: <Send className="w-3.5 h-3.5" />,
             label: 'Open in collections',
@@ -462,6 +477,13 @@ export default function ARAgingDashboardPage() {
             secondaryAction={bucketFilter !== 'all' || builderDrill ? { label: 'Clear filters', onClick: () => { setBucketFilter('all'); setBuilderDrill(null) } } : undefined}
           />
         }
+      />
+
+      <RecordPaymentModal
+        isOpen={!!paymentInvoice}
+        invoice={paymentInvoice}
+        onClose={() => setPaymentInvoice(null)}
+        onSuccess={() => { setPaymentInvoice(null); fetchData() }}
       />
     </div>
   )

@@ -18,6 +18,9 @@ export default function DeliveryOptimizePage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [kpiDays, setKpiDays] = useState(30);
+  const [kpiData, setKpiData] = useState<any>(null);
+  const [kpiLoading, setKpiLoading] = useState(false);
 
   useEffect(() => { loadTab(activeTab); }, [activeTab]);
   const loadTab = async (tab: string) => {
@@ -28,6 +31,21 @@ export default function DeliveryOptimizePage() {
     } catch (e) { console.error('Load error:', e); }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (activeTab !== 'route-analysis') return;
+    let cancelled = false;
+    const loadKpis = async () => {
+      setKpiLoading(true);
+      try {
+        const res = await fetch(`/api/ops/delivery/kpis?days=${kpiDays}`);
+        if (res.ok && !cancelled) setKpiData(await res.json());
+      } catch (e) { console.error('KPI load error:', e); }
+      finally { if (!cancelled) setKpiLoading(false); }
+    };
+    loadKpis();
+    return () => { cancelled = true; };
+  }, [activeTab, kpiDays]);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -55,10 +73,134 @@ export default function DeliveryOptimizePage() {
             {activeTab === 'dashboard' && <DashTab data={data} />}
             {activeTab === 'performance' && <PerfTab data={data} />}
             {activeTab === 'crew-utilization' && <CrewTab data={data} />}
-            {activeTab === 'route-analysis' && <RouteTab data={data} />}
+            {activeTab === 'route-analysis' && (
+              <>
+                <RouteTab data={data} />
+                <div className="mt-6">
+                  <CrewKPILeaderboard
+                    kpiData={kpiData}
+                    loading={kpiLoading}
+                    days={kpiDays}
+                    onDaysChange={setKpiDays}
+                  />
+                </div>
+              </>
+            )}
             {activeTab === 'cost-attribution' && <CostTab data={data} />}
           </>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+function CrewKPILeaderboard({
+  kpiData,
+  loading,
+  days,
+  onDaysChange,
+}: {
+  kpiData: any;
+  loading: boolean;
+  days: number;
+  onDaysChange: (d: number) => void;
+}) {
+  const crews: any[] = kpiData?.crews || [];
+
+  // Compute relative tiers per metric for color coding (top/middle/bottom thirds).
+  // Higher is better for onTimePct + completedCount; lower is better for damagePct.
+  const tier = (values: number[], v: number, lowerIsBetter = false): 'good' | 'mid' | 'bad' => {
+    const valid = values.filter((x) => x !== null && !isNaN(x));
+    if (valid.length < 2) return 'mid';
+    const sorted = [...valid].sort((a, b) => a - b);
+    const lo = sorted[Math.floor(sorted.length / 3)];
+    const hi = sorted[Math.ceil((sorted.length * 2) / 3) - 1];
+    if (lowerIsBetter) {
+      if (v <= lo) return 'good';
+      if (v >= hi) return 'bad';
+      return 'mid';
+    }
+    if (v >= hi) return 'good';
+    if (v <= lo) return 'bad';
+    return 'mid';
+  };
+
+  const tierClass: Record<string, string> = {
+    good: 'text-green-700 font-semibold',
+    mid: 'text-yellow-700',
+    bad: 'text-red-700',
+  };
+
+  const onTimeVals = crews.map((c) => Number(c.onTimePct)).filter((v) => !isNaN(v));
+  const completedVals = crews.map((c) => Number(c.completedCount));
+  const damageVals = crews.map((c) => Number(c.damagePct));
+
+  return (
+    <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-lg font-semibold text-fg">Crew Performance Leaderboard</h2>
+          <p className="text-sm text-fg-muted mt-1">On-time %, avg stops, damage rate, completed deliveries</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-fg-muted">Range:</label>
+          <select
+            value={days}
+            onChange={(e) => onDaysChange(parseInt(e.target.value, 10))}
+            className="px-3 py-1.5 text-sm border border-border rounded-md bg-surface"
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={60}>Last 60 days</option>
+            <option value={90}>Last 90 days</option>
+          </select>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-fg-muted">Loading KPIs...</div>
+        ) : crews.length === 0 ? (
+          <EmptyState
+            icon={<Truck className="w-8 h-8 text-fg-subtle" />}
+            title="No crew activity"
+            description={`No completed deliveries in the last ${days} days.`}
+          />
+        ) : (
+          <table className="w-full">
+            <thead className="bg-surface-muted border-b border-border">
+              <tr>
+                {['Rank', 'Crew', 'On-Time %', 'Avg Stops', 'Damage %', 'Completed'].map((h) => (
+                  <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-fg">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {crews.map((c: any, i: number) => {
+                const onTime = c.onTimePct === null ? null : Number(c.onTimePct);
+                const completed = Number(c.completedCount);
+                const damage = Number(c.damagePct);
+                return (
+                  <tr key={c.crewId || i} className="hover:bg-row-hover">
+                    <td className="px-4 py-2 text-sm font-semibold text-fg-muted">#{i + 1}</td>
+                    <td className="px-4 py-2 text-sm font-medium">{c.name}</td>
+                    <td className={`px-4 py-2 text-sm ${onTime === null ? 'text-fg-muted' : tierClass[tier(onTimeVals, onTime)]}`}>
+                      {onTime === null ? '—' : `${onTime}%`}
+                    </td>
+                    <td className="px-4 py-2 text-sm">
+                      {c.avgStops === null ? '—' : c.avgStops}
+                    </td>
+                    <td className={`px-4 py-2 text-sm ${tierClass[tier(damageVals, damage, true)]}`}>
+                      {damage}%
+                    </td>
+                    <td className={`px-4 py-2 text-sm ${tierClass[tier(completedVals, completed)]}`}>
+                      {completed}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

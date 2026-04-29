@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Factory } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
+import { useManufacturingToast } from '@/hooks/useManufacturingToast'
 
 interface DashboardData {
   productionQueue: {
@@ -54,6 +55,18 @@ export default function ManufacturingDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [qcBlockedCount, setQcBlockedCount] = useState<number>(0)
 
+  const toast = useManufacturingToast()
+  // Snapshot of last-seen state for diffing on each poll. `null` = haven't
+  // seen the first response yet; we skip diffing on the very first tick so
+  // we don't fire toasts for state that already existed when the page loaded.
+  const lastSnapshotRef = useRef<{
+    qcFailIds: Set<string>
+    shortCount: number
+    jobStatusByNumber: Map<string, string>
+  } | null>(null)
+  // Guard so a slow poll doesn't double-fire if 30s elapses mid-flight.
+  const pollInFlightRef = useRef(false)
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -84,6 +97,74 @@ export default function ManufacturingDashboard() {
       })
       .catch(() => setQcBlockedCount(0))
   }, [])
+
+  // Real-time alerts: poll the dashboard every 30s and fire toasts for new
+  // QC fails, fresh material shortages, or status advances. Reuses the
+  // existing dashboard endpoint — no new API.
+  useEffect(() => {
+    let cancelled = false
+
+    const tick = async () => {
+      if (pollInFlightRef.current) return
+      pollInFlightRef.current = true
+      try {
+        const response = await fetch('/api/ops/manufacturing/dashboard')
+        if (!response.ok) return
+        const result: DashboardData = await response.json()
+        if (cancelled) return
+
+        const qcFailIds = new Set(
+          result.qualityCheckSummary.recentChecks
+            .filter((c) => c.result === 'FAIL')
+            .map((c) => c.id)
+        )
+        const shortCount = result.materialPickSummary.short
+        const jobStatusByNumber = new Map(
+          result.productionQueue.map((j) => [j.jobNumber, j.status] as const)
+        )
+
+        const prev = lastSnapshotRef.current
+        if (prev) {
+          // New QC fails since last snapshot -> red toast per job.
+          for (const check of result.qualityCheckSummary.recentChecks) {
+            if (check.result === 'FAIL' && !prev.qcFailIds.has(check.id)) {
+              toast.qcFail(check.jobNumber)
+            }
+          }
+
+          // Net-new shortages -> yellow toast. We don't have per-SKU detail
+          // on this endpoint, so surface an aggregate notice with the delta.
+          if (shortCount > prev.shortCount) {
+            const delta = shortCount - prev.shortCount
+            toast.materialShort('multiple', `${delta} new pick${delta === 1 ? '' : 's'} short`)
+          }
+
+          // Status advances within the production queue -> green toast.
+          for (const [jobNumber, status] of jobStatusByNumber) {
+            const prevStatus = prev.jobStatusByNumber.get(jobNumber)
+            if (prevStatus && prevStatus !== status) {
+              toast.jobAdvanced(jobNumber, status)
+            }
+          }
+        }
+
+        lastSnapshotRef.current = { qcFailIds, shortCount, jobStatusByNumber }
+
+        // Keep the page state in sync so banners/KPIs reflect the poll too.
+        setData(result)
+      } catch {
+        // Silent — toasts shouldn't error-spam the user.
+      } finally {
+        pollInFlightRef.current = false
+      }
+    }
+
+    const id = setInterval(tick, 30_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [toast])
 
   if (loading) {
     return (

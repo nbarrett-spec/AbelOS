@@ -55,6 +55,17 @@ export default function BuildSheetPage() {
   const [error, setError] = useState('')
   const [actionMsg, setActionMsg] = useState('')
 
+  // Local-only assembly checklist state — keyed by component id
+  const [checklist, setChecklist] = useState<Map<string, boolean>>(new Map())
+
+  const toggleChecklistItem = (id: string) => {
+    setChecklist((prev) => {
+      const next = new Map(prev)
+      next.set(id, !prev.get(id))
+      return next
+    })
+  }
+
   // Job search list
   const [searchResults, setSearchResults] = useState<any[]>([])
 
@@ -423,27 +434,27 @@ export default function BuildSheetPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.pickListGenerated)}</div>
-                <p className="text-xs text-fg-muted mt-1">Pick List Generated</p>
+                <p className="text-sm text-fg-muted mt-1">Pick List Generated</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.allMaterialsAllocated)}</div>
-                <p className="text-xs text-fg-muted mt-1">Materials Allocated</p>
+                <p className="text-sm text-fg-muted mt-1">Materials Allocated</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.allPicksVerified)}</div>
-                <p className="text-xs text-fg-muted mt-1">All Picks Verified</p>
+                <p className="text-sm text-fg-muted mt-1">All Picks Verified</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.preProductionQCPassed)}</div>
-                <p className="text-xs text-fg-muted mt-1">Pre-Production QC</p>
+                <p className="text-sm text-fg-muted mt-1">Pre-Production QC</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.finalUnitQCPassed)}</div>
-                <p className="text-xs text-fg-muted mt-1">Final Unit QC</p>
+                <p className="text-sm text-fg-muted mt-1">Final Unit QC</p>
               </div>
               <div className="text-center p-3 rounded-lg border">
                 <div className="text-2xl">{gateIcon(data.gates.preDeliveryQCPassed)}</div>
-                <p className="text-xs text-fg-muted mt-1">Pre-Delivery QC</p>
+                <p className="text-sm text-fg-muted mt-1">Pre-Delivery QC</p>
               </div>
             </div>
 
@@ -544,22 +555,41 @@ export default function BuildSheetPage() {
 
           {/* Assembly Groups (BOM-expanded picks) */}
           {data.assemblyGroups.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 build-sheet-checklist">
               <h3 className="text-lg font-semibold text-fg">Assembly Units</h3>
-              {data.assemblyGroups.map((group, idx) => (
+              {data.assemblyGroups.map((group, idx) => {
+                const totalItems = group.components.length
+                const verifiedItems = group.components.filter((c: any) => checklist.get(c.id)).length
+                const pct = totalItems > 0 ? Math.round((verifiedItems / totalItems) * 100) : 0
+                return (
                 <div key={idx} className="bg-white rounded-xl border overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-3 border-b flex items-center justify-between">
-                    <div>
-                      <span className="font-semibold text-fg">{group.parent.name}</span>
-                      <span className="text-fg-subtle ml-2 text-sm">SKU: {group.parent.sku}</span>
-                      <span className="text-fg-subtle ml-2 text-sm">Qty: {group.parent.orderQty}</span>
-                      {group.parent.doorSize && <span className="text-fg-subtle ml-2 text-sm">{group.parent.doorSize}</span>}
-                      {group.parent.handing && <span className="text-fg-subtle ml-2 text-sm">{group.parent.handing}</span>}
+                  <div className="bg-gray-50 px-6 py-3 border-b">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <span className="font-semibold text-fg">{group.parent.name}</span>
+                        <span className="text-fg-subtle ml-2 text-sm">SKU: {group.parent.sku}</span>
+                        <span className="text-fg-subtle ml-2 text-sm">Qty: {group.parent.orderQty}</span>
+                        {group.parent.doorSize && <span className="text-fg-subtle ml-2 text-sm">{group.parent.doorSize}</span>}
+                        {group.parent.handing && <span className="text-fg-subtle ml-2 text-sm">{group.parent.handing}</span>}
+                      </div>
+                      <span className="text-sm font-medium text-fg-muted">
+                        {verifiedItems} of {totalItems} items verified
+                      </span>
+                    </div>
+                    {/* Per-group checklist progress bar */}
+                    <div className="mt-2 print:hidden">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-fg-muted text-xs uppercase">
                       <tr>
+                        <th className="px-3 py-2 text-center w-10">Check</th>
                         <th className="px-4 py-2 text-left">Component</th>
                         <th className="px-4 py-2 text-left">SKU</th>
                         <th className="px-4 py-2 text-center">Need</th>
@@ -571,42 +601,79 @@ export default function BuildSheetPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {group.components.map((comp: any) => (
-                        <tr key={comp.id} className="hover:bg-row-hover">
+                      {group.components.map((comp: any) => {
+                        const checked = !!checklist.get(comp.id)
+                        return (
+                        <tr key={comp.id} className={`hover:bg-row-hover ${checked ? 'bg-green-50' : ''}`}>
+                          <td className="px-3 py-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleChecklistItem(comp.id)}
+                              aria-label={`Verify ${comp.description}`}
+                              className="checklist-box h-5 w-5 rounded border-gray-400 text-green-600 focus:ring-green-500 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-4 py-2 font-medium">{comp.description}</td>
                           <td className="px-4 py-2 text-fg-muted">{comp.sku}</td>
                           <td className="px-4 py-2 text-center">{comp.quantity}</td>
                           <td className="px-4 py-2 text-center">{comp.pickedQty}</td>
                           <td className="px-4 py-2 text-center">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor(comp.status)}`}>
+                            <span className={`px-2 py-0.5 rounded text-sm font-medium ${statusColor(comp.status)}`}>
                               {comp.status}
                             </span>
                           </td>
-                          <td className="px-4 py-2 text-center text-fg-subtle text-xs">
+                          <td className="px-4 py-2 text-center text-fg-subtle text-sm">
                             {comp.inventory?.zone || '—'}{comp.inventory?.bin ? ` / ${comp.inventory.bin}` : ''}
                           </td>
-                          <td className="px-4 py-2 text-center text-xs">
+                          <td className="px-4 py-2 text-center text-sm">
                             <span className={comp.inventory?.available >= comp.quantity ? 'text-green-600' : 'text-red-600'}>
                               {comp.inventory?.available ?? 0}
                             </span>
                           </td>
                           <td className="px-4 py-2 text-center">
                             {comp.status === 'PENDING' && (
-                              <button onClick={() => updatePickStatus([comp.id], 'PICKING')} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Pick</button>
+                              <button onClick={() => updatePickStatus([comp.id], 'PICKING')} className="text-sm px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Pick</button>
                             )}
                             {comp.status === 'PICKING' && (
-                              <button onClick={() => updatePickStatus([comp.id], 'PICKED')} className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200">Done</button>
+                              <button onClick={() => updatePickStatus([comp.id], 'PICKED')} className="text-sm px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200">Done</button>
                             )}
                             {comp.status === 'PICKED' && (
-                              <button onClick={() => updatePickStatus([comp.id], 'VERIFIED')} className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Verify</button>
+                              <button onClick={() => updatePickStatus([comp.id], 'VERIFIED')} className="text-sm px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Verify</button>
                             )}
                           </td>
                         </tr>
-                      ))}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
-              ))}
+                )
+              })}
+              {/* Print-friendly checkboxes: when printing, render as empty squares regardless of checked state */}
+              <style jsx global>{`
+                @media print {
+                  .build-sheet-checklist .checklist-box {
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    appearance: none;
+                    width: 18px;
+                    height: 18px;
+                    border: 1.5px solid #111;
+                    background: #fff !important;
+                    border-radius: 2px;
+                  }
+                  .build-sheet-checklist .checklist-box:checked {
+                    background: #fff !important;
+                  }
+                  .build-sheet-checklist .checklist-box:checked::after {
+                    content: none;
+                  }
+                  .build-sheet-checklist tr.bg-green-50 {
+                    background: #fff !important;
+                  }
+                }
+              `}</style>
             </div>
           )}
 

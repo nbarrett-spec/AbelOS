@@ -32,6 +32,13 @@ interface TrimVendor {
   updatedAt: string
 }
 
+interface ActualVsBudgetRow {
+  jobNumber: string
+  estimatedHours: number
+  actualHours: number
+  hourlyRate: number
+}
+
 type Tab = 'inhouse' | 'thirdparty'
 
 export default function LaborCostsPage() {
@@ -43,6 +50,11 @@ export default function LaborCostsPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+
+  // Actual Hours vs Budget — read-only. Tries known endpoints; degrades gracefully.
+  const [actuals, setActuals] = useState<ActualVsBudgetRow[]>([])
+  const [actualsLoading, setActualsLoading] = useState(true)
+  const [actualsError, setActualsError] = useState<string | null>(null)
 
   const fetchRates = useCallback(async () => {
     try {
@@ -69,6 +81,79 @@ export default function LaborCostsPage() {
   }, [])
 
   useEffect(() => { fetchRates() }, [fetchRates])
+
+  const fetchActuals = useCallback(async () => {
+    setActualsLoading(true)
+    setActualsError(null)
+    // Try a few likely endpoint names. M-3 production timer is not yet shipped,
+    // so absence is the expected case — fail silently into empty state.
+    const candidates = [
+      '/api/ops/manufacturing/labor-actuals',
+      '/api/ops/manufacturing/production-events/summary',
+      '/api/ops/manufacturing/job-hours',
+    ]
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url)
+        if (!res.ok) continue
+        const data = await res.json()
+        const rowsRaw: any[] | null =
+          Array.isArray(data) ? data
+          : Array.isArray(data?.rows) ? data.rows
+          : Array.isArray(data?.jobs) ? data.jobs
+          : Array.isArray(data?.actuals) ? data.actuals
+          : null
+        if (!rowsRaw) continue
+        const rows: ActualVsBudgetRow[] = rowsRaw
+          .map(r => ({
+            jobNumber: String(r.jobNumber ?? r.job_number ?? r.jobId ?? r.job ?? ''),
+            estimatedHours: Number(r.estimatedHours ?? r.estimated_hours ?? r.budgetHours ?? r.budget_hours ?? 0),
+            actualHours: Number(r.actualHours ?? r.actual_hours ?? r.hours ?? 0),
+            hourlyRate: Number(r.hourlyRate ?? r.hourly_rate ?? r.rate ?? 0),
+          }))
+          .filter(r => r.jobNumber && (r.estimatedHours > 0 || r.actualHours > 0))
+        setActuals(rows)
+        setActualsLoading(false)
+        return
+      } catch {
+        // Try the next candidate
+      }
+    }
+    // No endpoint produced data — empty state.
+    setActuals([])
+    setActualsLoading(false)
+  }, [])
+
+  useEffect(() => { fetchActuals() }, [fetchActuals])
+
+  const handleExportActualsCsv = () => {
+    const header = ['Job #', 'Estimated Hours', 'Actual Hours', 'Variance ($)', 'Variance (%)']
+    const escape = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
+    const lines = [header.join(',')]
+    for (const r of actuals) {
+      const varianceDollars = (r.actualHours - r.estimatedHours) * r.hourlyRate
+      const variancePct = r.estimatedHours > 0
+        ? ((r.actualHours - r.estimatedHours) / r.estimatedHours) * 100
+        : 0
+      lines.push([
+        escape(r.jobNumber),
+        r.estimatedHours.toFixed(2),
+        r.actualHours.toFixed(2),
+        varianceDollars.toFixed(2),
+        variancePct.toFixed(1),
+      ].join(','))
+    }
+    const csv = lines.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `labor-actuals-vs-budget-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   const handleSave = async (category: string) => {
     const edit = editing[category]
@@ -425,6 +510,14 @@ export default function LaborCostsPage() {
               color={anyChanges ? '#C0392B' : '#999'}
             />
           </div>
+
+          {/* Actual Hours vs Budget — read-only, gracefully degrades when no actuals exist */}
+          <ActualVsBudgetSection
+            rows={actuals}
+            loading={actualsLoading}
+            error={actualsError}
+            onExportCsv={handleExportActualsCsv}
+          />
         </>
       )}
 
@@ -459,6 +552,135 @@ function SummaryCard({ label, value, sub, color }: { label: string; value: strin
       <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Actual Hours vs Budget — read-only display (M-13)
+// Production timer (M-3) ships in a future wave, so empty state is expected.
+// ──────────────────────────────────────────────────────────────────────────
+
+function ActualVsBudgetSection({
+  rows,
+  loading,
+  error,
+  onExportCsv,
+}: {
+  rows: ActualVsBudgetRow[]
+  loading: boolean
+  error: string | null
+  onExportCsv: () => void
+}) {
+  const hasData = rows.length > 0
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <h2 className="text-fg" style={{ fontSize: 18, fontWeight: 600, margin: 0, color: '#0f2a3e' }}>
+            Actual Hours vs Budget
+          </h2>
+          <p className="text-fg-muted" style={{ margin: '4px 0 0', fontSize: 12, color: '#666' }}>
+            Live comparison of estimated vs. actual labor hours by job. Read-only.
+          </p>
+        </div>
+        {hasData && (
+          <button
+            onClick={onExportCsv}
+            style={{
+              padding: '7px 14px', borderRadius: 6, border: '1px solid #0f2a3e',
+              background: 'white', cursor: 'pointer', fontSize: 12,
+              color: '#0f2a3e', fontWeight: 600,
+            }}
+          >
+            Export CSV
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 24, textAlign: 'center', color: '#888', fontSize: 13 }}>
+          Loading actuals...
+        </div>
+      ) : error ? (
+        <div style={{
+          padding: '20px', textAlign: 'center', color: '#666', fontSize: 13,
+          background: '#FEF9E7', border: '1px solid #F4D03F', borderRadius: 8,
+        }}>
+          Couldn't load actuals: {error}
+        </div>
+      ) : !hasData ? (
+        <div style={{
+          padding: '40px 20px', textAlign: 'center', color: '#666', fontSize: 13,
+          background: '#F8F9FA', border: '1px dashed #D1D5DB', borderRadius: 8,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 6, color: '#0f2a3e' }}>
+            No actual hours tracked yet
+          </div>
+          <div>Production timer (M-3) ships in a future wave.</div>
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#0f2a3e' }}>
+                {['Job #', 'Estimated Hours', 'Actual Hours', 'Variance ($)', 'Variance (%)'].map((h, i) => (
+                  <th key={i} style={{
+                    padding: '10px 12px', color: 'white', fontWeight: 600,
+                    textAlign: i === 0 ? 'left' : 'right', fontSize: 12,
+                    borderBottom: '2px solid #0a1a28', whiteSpace: 'nowrap',
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, idx) => {
+                const varianceHours = r.actualHours - r.estimatedHours
+                const varianceDollars = varianceHours * r.hourlyRate
+                const variancePct = r.estimatedHours > 0
+                  ? (varianceHours / r.estimatedHours) * 100
+                  : 0
+                // Color: green if actual < budget, red if > 110% of budget (i.e. variancePct > 10)
+                const varianceColor =
+                  varianceHours < 0 ? '#1E8449'
+                  : variancePct > 10 ? '#C0392B'
+                  : '#666'
+                return (
+                  <tr key={r.jobNumber + '-' + idx} style={{
+                    background: idx % 2 === 0 ? 'white' : '#F8F9FA',
+                    borderBottom: '1px solid #E5E7EB',
+                  }}>
+                    <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0f2a3e' }}>
+                      {r.jobNumber}
+                    </td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', color: '#333' }}>
+                      {r.estimatedHours.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', color: '#333' }}>
+                      {r.actualHours.toFixed(2)}
+                    </td>
+                    <td style={{
+                      padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace',
+                      fontWeight: 600, color: varianceColor,
+                    }}>
+                      {varianceDollars >= 0 ? '+' : ''}${varianceDollars.toFixed(2)}
+                    </td>
+                    <td style={{
+                      padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace',
+                      fontWeight: 600, color: varianceColor,
+                    }}>
+                      {variancePct >= 0 ? '+' : ''}{variancePct.toFixed(1)}%
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

@@ -486,26 +486,20 @@ function JobCard({
   const [isUpdating, setIsUpdating] = useState(false)
   const [toast, setToast] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+  const [confirmLoadOpen, setConfirmLoadOpen] = useState(false)
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast(msg); setToastType(type);
     setTimeout(() => setToast(''), 3500);
   };
 
-  const getNextStatus = (currentStatus: string) => {
-    if (currentStatus === 'IN_PRODUCTION') return 'STAGED'
-    if (currentStatus === 'STAGED') return 'LOADED'
-    return currentStatus
-  }
-
-  const handleAdvanceStatus = async () => {
+  const handleAdvanceToStaged = async () => {
     try {
       setIsUpdating(true)
-      const nextStatus = getNextStatus(status)
       const response = await fetch(`/api/ops/jobs/${job.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: nextStatus,
+          status: 'STAGED',
         }),
       })
 
@@ -513,6 +507,30 @@ function JobCard({
         throw new Error('Failed to update job status')
       }
 
+      onRefresh()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update status', 'error')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleConfirmLoad = async () => {
+    try {
+      setIsUpdating(true)
+      const response = await fetch(`/api/ops/jobs/${job.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'LOADED',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update job status')
+      }
+
+      setConfirmLoadOpen(false)
       onRefresh()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to update status', 'error')
@@ -574,17 +592,27 @@ function JobCard({
       </div>
 
       {/* Action Button */}
-      {status !== 'LOADED' && (
+      {status === 'IN_PRODUCTION' && (
         <button
-          onClick={handleAdvanceStatus}
+          onClick={handleAdvanceToStaged}
           disabled={!allPicksReady || isUpdating}
-          className={`w-full px-2 py-1 rounded text-xs font-medium transition-colors ${
+          className={`w-full min-h-[44px] px-2 py-1 rounded text-xs font-medium transition-colors ${
             allPicksReady
               ? 'bg-[#0f2a3e] text-white hover:bg-[#0a1a28]'
               : 'bg-gray-200 text-fg-subtle cursor-not-allowed'
           } disabled:opacity-50`}
         >
-          {isUpdating ? 'Updating...' : status === 'IN_PRODUCTION' ? 'Move to Staging' : 'Confirm Load'}
+          {isUpdating ? 'Updating...' : 'Move to Staging'}
+        </button>
+      )}
+
+      {status === 'STAGED' && (
+        <button
+          onClick={() => setConfirmLoadOpen(true)}
+          disabled={isUpdating}
+          className="w-full min-h-[44px] px-2 py-1 rounded text-xs font-medium transition-colors bg-[#0f2a3e] text-white hover:bg-[#0a1a28] disabled:opacity-50"
+        >
+          Move to Loaded
         </button>
       )}
 
@@ -593,6 +621,134 @@ function JobCard({
           ✓ Loaded
         </div>
       )}
+
+      {confirmLoadOpen && (
+        <ConfirmLoadModal
+          job={job}
+          isSubmitting={isUpdating}
+          onClose={() => {
+            if (!isUpdating) setConfirmLoadOpen(false)
+          }}
+          onConfirm={handleConfirmLoad}
+        />
+      )}
+    </div>
+  )
+}
+
+function ConfirmLoadModal({
+  job,
+  isSubmitting,
+  onClose,
+  onConfirm,
+}: {
+  job: StagingJob
+  isSubmitting: boolean
+  onClose: () => void
+  onConfirm: () => Promise<void>
+}) {
+  const [crew, setCrew] = useState('')
+  const [vehicle, setVehicle] = useState('')
+  const [note, setNote] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isSubmitting) return
+    await onConfirm()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-fg">Move Job to Loaded</h3>
+            <p className="text-xs text-fg-muted truncate">
+              {job.jobNumber} · {job.builderName}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="p-1 rounded hover:bg-surface-muted disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4 text-fg-subtle" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          <div>
+            <label htmlFor="confirm-load-crew" className="block text-xs font-medium text-fg mb-1">
+              Crew <span className="text-fg-subtle font-normal">(optional)</span>
+            </label>
+            <input
+              id="confirm-load-crew"
+              type="text"
+              value={crew}
+              onChange={(e) => setCrew(e.target.value)}
+              placeholder="e.g. Austin / Aaron"
+              autoFocus
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-[#0f2a3e]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirm-load-vehicle" className="block text-xs font-medium text-fg mb-1">
+              Vehicle / Truck <span className="text-fg-subtle font-normal">(optional)</span>
+            </label>
+            <input
+              id="confirm-load-vehicle"
+              type="text"
+              value={vehicle}
+              onChange={(e) => setVehicle(e.target.value)}
+              placeholder="e.g. Truck 4 / F-550"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-[#0f2a3e]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirm-load-note" className="block text-xs font-medium text-fg mb-1">
+              Confirmation note <span className="text-fg-subtle font-normal">(optional)</span>
+            </label>
+            <textarea
+              id="confirm-load-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Anything the driver or PM should know…"
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-[#0f2a3e] resize-none"
+            />
+          </div>
+        </form>
+
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="min-h-[44px] px-4 py-2 rounded-lg border border-border bg-surface text-sm font-medium text-fg hover:bg-surface-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="min-h-[44px] inline-flex items-center gap-1.5 rounded-lg bg-[#0f2a3e] px-4 py-2 text-sm font-medium text-white hover:bg-[#0a1a28] disabled:opacity-50"
+          >
+            <ArrowRight className="w-4 h-4" />
+            {isSubmitting ? 'Moving…' : 'Confirm Load'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

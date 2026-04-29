@@ -14,12 +14,26 @@ interface RecordPaymentModalProps {
 const PAYMENT_METHODS = ['CHECK', 'ACH', 'WIRE', 'CREDIT_CARD', 'CASH', 'OTHER']
 
 export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: RecordPaymentModalProps) {
+  const todayStr = () => new Date().toISOString().split('T')[0]
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('CHECK')
   const [reference, setReference] = useState('')
   const [notes, setNotes] = useState('')
+  const [receivedDate, setReceivedDate] = useState<string>(todayStr())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const referenceLabel = ({
+    CHECK: 'Check Number',
+    ACH: 'ACH Confirmation #',
+    WIRE: 'Wire Reference #',
+    CREDIT_CARD: 'Transaction ID',
+    CASH: 'Receipt # (optional)',
+    OTHER: 'Reference # (optional)',
+  } as Record<string, string>)[method] || 'Reference #'
+
+  const referenceRequired = method === 'CHECK'
+  const referenceMissing = referenceRequired && !reference.trim()
 
   const handleSubmit = async () => {
     if (!invoice) return
@@ -32,10 +46,17 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
       setError(`Payment amount cannot exceed balance due ($${invoice.balanceDue.toFixed(2)})`)
       return
     }
+    if (referenceRequired && !reference.trim()) {
+      setError('Check Number is required for check payments')
+      return
+    }
 
     setSaving(true)
     setError(null)
     try {
+      // Convert YYYY-MM-DD into a full ISO timestamp at local midnight; if
+      // the input is empty, omit so the API defaults to NOW().
+      const receivedAtIso = receivedDate ? new Date(`${receivedDate}T00:00:00`).toISOString() : undefined
       const res = await fetch(`/api/ops/invoices/${invoice.id}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,6 +65,7 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
           method,
           reference: reference || undefined,
           notes: notes || undefined,
+          receivedAt: receivedAtIso,
         }),
       })
       if (!res.ok) {
@@ -64,6 +86,7 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
     setMethod('CHECK')
     setReference('')
     setNotes('')
+    setReceivedDate(todayStr())
     setError(null)
     onClose()
   }
@@ -119,6 +142,20 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
           </div>
 
           <div>
+            <label className="label">Date Received</label>
+            <input
+              type="date"
+              value={receivedDate}
+              onChange={(e) => setReceivedDate(e.target.value)}
+              className="input"
+              max={todayStr()}
+            />
+            <p className="text-xs text-fg-subtle mt-1">
+              Defaults to today. Set to the date the check or transfer actually arrived.
+            </p>
+          </div>
+
+          <div>
             <label className="label">Payment Method</label>
             <select value={method} onChange={(e) => setMethod(e.target.value)} className="input">
               {PAYMENT_METHODS.map((m) => (
@@ -128,13 +165,17 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
           </div>
 
           <div>
-            <label className="label">Reference # (optional)</label>
+            <label className="label">
+              {referenceLabel}
+              {referenceRequired && <span className="text-data-negative ml-1">*</span>}
+            </label>
             <input
               type="text"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               className="input"
-              placeholder="Check number, transaction ID..."
+              placeholder={referenceRequired ? 'Required for checks' : 'Check number, transaction ID...'}
+              required={referenceRequired}
             />
           </div>
 
@@ -152,7 +193,7 @@ export function RecordPaymentModal({ isOpen, invoice, onClose, onSuccess }: Reco
           <div className="flex gap-2 pt-2">
             <button
               onClick={handleSubmit}
-              disabled={saving}
+              disabled={saving || referenceMissing}
               className="btn btn-primary btn-sm flex-1 disabled:opacity-40"
             >
               {saving ? 'Recording...' : 'Record Payment'}

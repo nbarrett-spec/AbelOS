@@ -42,6 +42,21 @@ function mapsUrl(address: string | null): string {
   return `https://maps.google.com/?q=${encodeURIComponent(address)}`
 }
 
+// Exception categorization — drives downstream triage. Stays in sync with the
+// API route's accepted enum; if you add a value here, add it there too.
+const EXCEPTION_CATEGORIES = [
+  { value: 'NONE', label: 'No issues' },
+  { value: 'DAMAGE', label: 'Damage' },
+  { value: 'WRONG_ITEM', label: 'Wrong item' },
+  { value: 'CUSTOMER_COMPLAINT', label: 'Customer complaint' },
+  { value: 'VEHICLE_ISSUE', label: 'Vehicle issue' },
+  { value: 'ADDRESS_ISSUE', label: 'Address issue' },
+  { value: 'REFUSED', label: 'Refused' },
+  { value: 'OTHER', label: 'Other' },
+] as const
+
+type ExceptionCategory = typeof EXCEPTION_CATEGORIES[number]['value']
+
 export default function DriverStopDetailPage() {
   const router = useRouter()
   const params = useParams<{ deliveryId: string }>()
@@ -55,6 +70,7 @@ export default function DriverStopDetailPage() {
   const [notes, setNotes] = useState('')
   const [damageText, setDamageText] = useState('')
   const [hasDamage, setHasDamage] = useState(false)
+  const [exceptionCategory, setExceptionCategory] = useState<ExceptionCategory>('NONE')
   const [partialComplete, setPartialComplete] = useState(false)
   const [photos, setPhotos] = useState<string[]>([])
   const [sigHasStrokes, setSigHasStrokes] = useState(false)
@@ -127,6 +143,12 @@ export default function DriverStopDetailPage() {
       return
     }
 
+    // If the driver toggled damage on but didn't pick a more specific
+    // category, default the exception type to DAMAGE so the API/audit log
+     // sees a non-NONE value. Driver's explicit pick always wins.
+    const resolvedCategory: ExceptionCategory =
+      exceptionCategory !== 'NONE' ? exceptionCategory : hasDamage ? 'DAMAGE' : 'NONE'
+
     const payload = {
       recipientName: recipientName.trim(),
       signatureDataUrl,
@@ -135,6 +157,7 @@ export default function DriverStopDetailPage() {
       damageNotes: hasDamage ? damageText.trim() || null : null,
       partialComplete,
       notes: notes.trim() || null,
+      exceptionCategory: resolvedCategory,
     }
 
     setSubmitting(true)
@@ -345,6 +368,25 @@ export default function DriverStopDetailPage() {
               Heads up — total photo size is getting large ({Math.round(totalSize / 1024)} KB).
             </div>
           )}
+        </div>
+
+        {/* Exception category */}
+        <div>
+          <div style={labelStyle}>Exception category</div>
+          <select
+            value={exceptionCategory}
+            onChange={(e) => setExceptionCategory(e.target.value as ExceptionCategory)}
+            style={{ ...inputStyle, appearance: 'auto' }}
+          >
+            {EXCEPTION_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <div style={hintStyle}>
+            Categorize what went wrong (if anything) so the office can route it.
+          </div>
         </div>
 
         {/* Damage */}

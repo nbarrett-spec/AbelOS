@@ -253,9 +253,101 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   )
 }
 
+// ── Profitability Card (FIX-23) ──────────────────────────────────────────
+
+type ProfitabilityData = {
+  revenue: number
+  cogs: number
+  laborCost: number
+  grossMargin: { dollars: number; percent: number }
+  status: 'green' | 'yellow' | 'red' | 'empty'
+  invoiceCount: number
+}
+
+function ProfitabilityCard({ jobId }: { jobId: string }) {
+  const [data, setData] = useState<ProfitabilityData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        setLoading(true)
+        const res = await fetch(`/api/ops/jobs/${jobId}/profitability`)
+        if (!res.ok) throw new Error('Failed to load profitability')
+        const json = await res.json()
+        if (!cancelled) setData(json)
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : 'Error')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    if (jobId) load()
+    return () => {
+      cancelled = true
+    }
+  }, [jobId])
+
+  if (loading) {
+    return (
+      <SectionCard title="Profitability">
+        <div className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+      </SectionCard>
+    )
+  }
+
+  if (err || !data) {
+    return (
+      <SectionCard title="Profitability">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{err || 'Unavailable'}</p>
+      </SectionCard>
+    )
+  }
+
+  if (data.status === 'empty') {
+    return (
+      <SectionCard title="Profitability">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Profitability will calculate after invoice is created.
+        </p>
+      </SectionCard>
+    )
+  }
+
+  const pillStyle =
+    data.status === 'green'
+      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      : data.status === 'yellow'
+      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+
+  return (
+    <SectionCard title="Profitability">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
+        <Stat label="Revenue" value={formatCurrency(data.revenue)} />
+        <Stat label="COGS" value={formatCurrency(data.cogs)} />
+        <Stat label="Labor" value={formatCurrency(data.laborCost)} />
+        <Stat label="Gross Margin $" value={formatCurrency(data.grossMargin.dollars)} />
+        <div>
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Gross Margin %
+          </p>
+          <span
+            className={`inline-flex items-center mt-1 px-2.5 py-1 rounded-full text-sm font-bold ${pillStyle}`}
+          >
+            {data.grossMargin.percent.toFixed(1)}%
+          </span>
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
 // ── Overview Tab ─────────────────────────────────────────────────────────
 
-function OverviewTab({ job, builder, community, phaseSummary, invoices, setActiveTab }: any) {
+function OverviewTab({ job, jobId, builder, community, phaseSummary, invoices, setActiveTab }: any) {
   return (
     <div className="space-y-5">
       {/* Key Stats */}
@@ -267,6 +359,9 @@ function OverviewTab({ job, builder, community, phaseSummary, invoices, setActiv
         <Stat label="Installs" value={job.installations?.length || 0} />
         <Stat label="QC Checks" value={job.qualityChecks?.length || 0} />
       </div>
+
+      {/* Profitability */}
+      <ProfitabilityCard jobId={jobId} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Builder Info */}

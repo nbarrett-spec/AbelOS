@@ -8,6 +8,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 import { CreateInvoiceModal } from '../components/CreateInvoiceModal'
 import { RecordPaymentModal } from '../components/RecordPaymentModal'
+import { BatchPaymentModal, type BatchInvoice } from '../components/BatchPaymentModal'
 
 const INV_STATUSES = [
   { key: 'ALL', label: 'All' },
@@ -24,6 +25,10 @@ interface Invoice {
   invoiceNumber: string
   builderId: string
   builderName?: string
+  jobId?: string | null
+  jobNumber?: string | null
+  community?: string | null
+  jobAddress?: string | null
   total: number
   balanceDue: number
   amountPaid: number
@@ -62,6 +67,11 @@ export default function InvoicesPage() {
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null)
   const [cashFlowHealth, setCashFlowHealth] = useState<any>(null)
   const [collectionsData, setCollectionsData] = useState<any>(null)
+  // Batch-payment selection: invoice ids only — kept as a Set so toggle is
+  // O(1). The full Invoice rows we need at submit time are derived from
+  // `data.invoices` at render via the selectedInvoiceList memo below.
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
 
   const fetchCashFlowInsights = async () => {
     try {
@@ -137,6 +147,61 @@ export default function InvoicesPage() {
   ) || []
 
   const overdueCoun = data?.invoices.filter((inv) => inv.status === 'OVERDUE').length || 0
+
+  // Only unpaid invoices with a positive balance can be batched. PAID rows
+  // and zero-balance rows would just clutter the distribution preview and
+  // fail validation server-side.
+  const isBatchEligible = (inv: Invoice) =>
+    inv.status !== 'PAID' && Number(inv.balanceDue) > 0
+
+  const toggleSelected = (invoiceId: string) => {
+    setSelectedInvoices((prev) => {
+      const next = new Set(prev)
+      if (next.has(invoiceId)) next.delete(invoiceId)
+      else next.add(invoiceId)
+      return next
+    })
+  }
+
+  const eligibleInPage = filteredInvoices.filter(isBatchEligible)
+  const allEligibleSelected =
+    eligibleInPage.length > 0 && eligibleInPage.every((inv) => selectedInvoices.has(inv.id))
+  const someEligibleSelected =
+    !allEligibleSelected && eligibleInPage.some((inv) => selectedInvoices.has(inv.id))
+
+  const toggleSelectAllVisible = () => {
+    setSelectedInvoices((prev) => {
+      const next = new Set(prev)
+      if (allEligibleSelected) {
+        eligibleInPage.forEach((inv) => next.delete(inv.id))
+      } else {
+        eligibleInPage.forEach((inv) => next.add(inv.id))
+      }
+      return next
+    })
+  }
+
+  // Derive the actual selected Invoice records for the modal, plus a total.
+  const selectedInvoiceList: BatchInvoice[] = (data?.invoices || [])
+    .filter((inv) => selectedInvoices.has(inv.id) && isBatchEligible(inv))
+    .map((inv) => ({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      total: Number(inv.total),
+      balanceDue: Number(inv.balanceDue),
+      dueDate: inv.dueDate,
+      builderName: inv.builderName,
+    }))
+  const selectedBalanceTotal = selectedInvoiceList.reduce(
+    (sum, inv) => sum + Number(inv.balanceDue || 0),
+    0
+  )
+
+  const handleBatchSuccess = () => {
+    setSelectedInvoices(new Set())
+    setIsBatchModalOpen(false)
+    fetchInvoices()
+  }
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -435,6 +500,19 @@ export default function InvoicesPage() {
             <table className="w-full">
               <thead className="bg-surface-muted border-b">
                 <tr>
+                  <th className="px-3 py-3 text-left w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all eligible invoices on this page"
+                      checked={allEligibleSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someEligibleSelected
+                      }}
+                      onChange={toggleSelectAllVisible}
+                      disabled={eligibleInPage.length === 0}
+                      className="rounded border-border accent-signal"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase cursor-pointer hover:bg-row-hover"
                     onClick={() => toggleSort('invoiceNumber')}>
                     Invoice #
@@ -444,6 +522,16 @@ export default function InvoicesPage() {
                     onClick={() => toggleSort('builder')}>
                     Builder
                     <SortIcon col="builder" />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase cursor-pointer hover:bg-row-hover"
+                    onClick={() => toggleSort('jobNumber')}>
+                    Job
+                    <SortIcon col="jobNumber" />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase cursor-pointer hover:bg-row-hover"
+                    onClick={() => toggleSort('community')}>
+                    Community
+                    <SortIcon col="community" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase cursor-pointer hover:bg-row-hover"
                     onClick={() => toggleSort('total')}>
@@ -469,14 +557,42 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredInvoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-row-hover">
+                {filteredInvoices.map((invoice) => {
+                  const eligible = isBatchEligible(invoice)
+                  const checked = selectedInvoices.has(invoice.id)
+                  return (
+                  <tr key={invoice.id} className={`hover:bg-row-hover ${checked ? 'bg-signal/5' : ''}`}>
+                    <td className="px-3 py-4 w-10">
+                      {eligible ? (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select invoice ${invoice.invoiceNumber}`}
+                          checked={checked}
+                          onChange={() => toggleSelected(invoice.id)}
+                          className="rounded border-border accent-signal"
+                        />
+                      ) : (
+                        <span className="inline-block w-4 h-4" aria-hidden />
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm font-medium text-fg">
                       <Link href={`/ops/invoices/${invoice.id}`} className="hover:underline">
                         {invoice.invoiceNumber}
                       </Link>
                     </td>
                     <td className="px-6 py-4 text-sm text-fg">{invoice.builderName || 'Unknown'}</td>
+                    <td className="px-6 py-4 text-sm text-fg">
+                      {invoice.jobId && invoice.jobNumber ? (
+                        <Link href={`/ops/jobs/${invoice.jobId}`} className="text-signal hover:underline">
+                          {invoice.jobNumber}
+                        </Link>
+                      ) : (
+                        <span className="text-fg-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-fg">
+                      {invoice.community || <span className="text-fg-muted">—</span>}
+                    </td>
                     <td className="px-6 py-4 text-sm font-medium text-fg">{formatCurrency(invoice.total)}</td>
                     <td className="px-6 py-4 text-sm text-fg-muted">{invoice.dueDate ? formatDate(invoice.dueDate) : '-'}</td>
                     <td className="px-6 py-4">
@@ -496,7 +612,8 @@ export default function InvoicesPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -562,6 +679,39 @@ export default function InvoicesPage() {
         onClose={() => setPaymentInvoice(null)}
         onSuccess={fetchInvoices}
       />
+
+      <BatchPaymentModal
+        isOpen={isBatchModalOpen}
+        invoices={selectedInvoiceList}
+        onClose={() => setIsBatchModalOpen(false)}
+        onSuccess={handleBatchSuccess}
+      />
+
+      {/* Sticky batch-action bar — appears whenever 1+ invoices are checked.
+          Floats above the page footer so Dawn can scroll without losing it. */}
+      {selectedInvoiceList.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 panel panel-elevated px-5 py-3 shadow-[0_24px_48px_rgba(0,0,0,0.35)] flex items-center gap-4 bg-surface-elevated text-white">
+          <div className="text-sm">
+            <span className="font-semibold">{selectedInvoiceList.length}</span> invoice
+            {selectedInvoiceList.length === 1 ? '' : 's'} selected
+            <span className="px-2 text-white/40">·</span>
+            <span className="font-bold tabular-nums">{formatCurrency(selectedBalanceTotal)}</span>
+            <span className="text-white/60"> total balance</span>
+          </div>
+          <button
+            onClick={() => setSelectedInvoices(new Set())}
+            className="px-3 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 text-white"
+          >
+            Clear
+          </button>
+          <button
+            onClick={() => setIsBatchModalOpen(true)}
+            className="px-4 py-1.5 text-sm rounded-md bg-[#27AE60] hover:bg-[#229954] text-white font-semibold"
+          >
+            Record Batch Payment
+          </button>
+        </div>
+      )}
     </div>
   )
 }

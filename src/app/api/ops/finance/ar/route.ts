@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
       d60_plus: number
       total: number
       invoiceCount: number
+      lastPaymentDate: string | null
     }> = {}
 
     const invoicesOut: Array<{
@@ -153,6 +154,7 @@ export async function GET(request: NextRequest) {
           d60_plus: 0,
           total: 0,
           invoiceCount: 0,
+          lastPaymentDate: null,
         }
       }
       const b = byBuilder[r.builderId]
@@ -194,6 +196,25 @@ export async function GET(request: NextRequest) {
     `)
     const credit30 = Number(salesRow[0]?.sum ?? 0)
     const dso = credit30 > 0 ? Math.round((totalAR / credit30) * salesWindow) : 0
+
+    // ── Last payment date per builder ──────────────────────────────────────
+    // Most-recent Payment.receivedAt across any of that builder's invoices.
+    // Powers the "Last Payment" column in the per-builder breakdown so Dawn
+    // can see at a glance who's gone cold even if their balance still looks
+    // fine on the surface.
+    const lastPaymentRows = await prisma.$queryRawUnsafe<Array<{ builderId: string; lastPaymentDate: Date | null }>>(`
+      SELECT i2."builderId" AS "builderId", MAX(p."receivedAt") AS "lastPaymentDate"
+      FROM "Payment" p
+      JOIN "Invoice" i2 ON i2."id" = p."invoiceId"
+      WHERE i2."builderId" IS NOT NULL
+      GROUP BY i2."builderId"
+    `)
+    for (const lp of lastPaymentRows) {
+      const b = byBuilder[lp.builderId]
+      if (b && lp.lastPaymentDate) {
+        b.lastPaymentDate = new Date(lp.lastPaymentDate).toISOString()
+      }
+    }
 
     // ── Sort builders by total AR desc ─────────────────────────────────────
     const builderList = Object.values(byBuilder).sort((a, b) => b.total - a.total)
