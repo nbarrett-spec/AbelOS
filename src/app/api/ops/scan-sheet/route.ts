@@ -19,7 +19,7 @@ import { audit } from '@/lib/audit'
 // ──────────────────────────────────────────────────────────────────────────
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
-const VISION_MODEL = 'claude-sonnet-4-20250514'
+const VISION_MODEL = 'claude-sonnet-4-5'
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 const ALLOWED_MIME = new Set([

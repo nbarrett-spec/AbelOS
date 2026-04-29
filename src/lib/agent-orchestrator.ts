@@ -803,7 +803,9 @@ async function handleFollowUp(input: Record<string, any>) {
   }
 
   const message = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    // 2026-04-29: bumped from `claude-opus-4-1-20250805` (Aug 2025
+    // snapshot, deprecated). Stable alias for Opus 4.5.
+    model: 'claude-opus-4-5',
     max_tokens: 300,
     messages: [
       {

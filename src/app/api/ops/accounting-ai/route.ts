@@ -83,7 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 5. Call Claude API
     const client = new Anthropic()
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1024,
       system: systemPrompt,
       messages: [

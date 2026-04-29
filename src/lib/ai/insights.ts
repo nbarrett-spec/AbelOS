@@ -15,10 +15,13 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
 // ── Models ──────────────────────────────────────────────────────────────
-// Primary: claude-sonnet-4-5 (latest stable per working rules).
-// Fallback: 4-20250514 for older API plans.
+// Primary: claude-sonnet-4-5 (latest stable alias).
+// 2026-04-29: FALLBACK was pointing at the May-2025 dated snapshot which
+// is past Anthropic's deprecation window — using a dead model as fallback
+// would just 404. Pinned to the same alias; if Anthropic rolls a 4.5
+// regression, swap to a known-good dated snapshot here.
 export const PRIMARY_MODEL = 'claude-sonnet-4-5'
-export const FALLBACK_MODEL = 'claude-sonnet-4-20250514'
+export const FALLBACK_MODEL = 'claude-sonnet-4-5'
 
 // Approximate per-million-token pricing (USD). Sonnet 4.x.
 // These are estimates — actual spend should be reconciled against Anthropic console.

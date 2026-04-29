@@ -8,7 +8,12 @@
 import { buildSOPContextForAgent } from './sops'
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
-const MODEL = 'claude-sonnet-4-20250514'
+// Stable alias — gets the latest Sonnet 4.5 patches automatically.
+// 2026-04-29: bumped from `claude-sonnet-4-20250514` (May 2025 snapshot
+// past Anthropic's ~12 month deprecation window — every chat request was
+// failing with model_deprecated). Aligned with PRIMARY_MODEL in
+// src/lib/ai/insights.ts.
+const MODEL = 'claude-sonnet-4-5'
 
 export interface ClaudeMessage {
   role: 'user' | 'assistant'
