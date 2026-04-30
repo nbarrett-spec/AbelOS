@@ -254,6 +254,152 @@ function buildInboxEvents(items: any[]): BrainEvent[] {
   }))
 }
 
+// ── Communications (Gmail/Quo/SMS) ──────────────────────────────────────
+// Sends a per-message event so Brain can correlate to entity timelines.
+// Channel is preserved as a tag; subject + sender go into title/content.
+function buildCommunicationEvents(comms: any[]): BrainEvent[] {
+  const out: BrainEvent[] = []
+  for (const c of comms) {
+    const dir = (c.direction || '').toLowerCase()
+    const ch = (c.channel || 'email').toLowerCase()
+    const who = c.toEmail || c.fromEmail || c.toPhone || c.fromPhone || c.contactName || 'unknown'
+    const subj = (c.subject || c.summary || c.body || '').toString().slice(0, 140)
+    const evt: BrainEvent = {
+      source: ch === 'sms' || ch === 'phone' || ch === 'quo' ? 'cowork' : 'gmail',
+      source_id: `comm:${c.id}`,
+      event_type: dir === 'inbound' ? `${ch}_inbound` : `${ch}_outbound`,
+      title: `${ch.toUpperCase()} ${dir} · ${subj || who}`.slice(0, 220),
+      content: [
+        `From: ${c.fromEmail || c.fromPhone || c.fromName || '—'}`,
+        `To: ${c.toEmail || c.toPhone || c.toName || '—'}`,
+        c.subject ? `Subject: ${c.subject}` : '',
+        c.aiSummary ? `Summary: ${c.aiSummary}` : '',
+        c.body ? `Body: ${String(c.body).slice(0, 800)}` : '',
+      ].filter(Boolean).join('\n'),
+      tags: ['communication', ch, dir, c.aiSentiment].filter(Boolean) as string[],
+      raw_data: {
+        attachmentCount: c.attachmentCount,
+        hasAttachments: c.hasAttachments,
+        actionItems: c.aiActionItems,
+        communityId: c.communityId,
+      },
+      timestamp: c.sentAt?.toISOString?.() || c.createdAt?.toISOString?.(),
+      priority: dir === 'inbound' ? 'P2' : 'P3',
+    }
+    out.push(evt)
+  }
+  return out
+}
+
+// ── Builder updates ─────────────────────────────────────────────────────
+function buildBuilderEvents(builders: any[]): BrainEvent[] {
+  const out: BrainEvent[] = []
+  for (const b of builders) {
+    out.push({
+      source: 'aegis',
+      source_id: `builder:${b.id}`,
+      event_type: 'builder_updated',
+      title: `Builder updated: ${b.companyName || b.name || b.id}`.slice(0, 220),
+      content: [
+        `Builder: ${b.companyName || b.name}`,
+        b.tier ? `Tier: ${b.tier}` : '',
+        b.status ? `Status: ${b.status}` : '',
+        b.healthScore != null ? `Health: ${b.healthScore}` : '',
+        b.contactEmail ? `Contact: ${b.contactEmail}` : '',
+        b.totalRevenue != null ? `YTD revenue: $${Number(b.totalRevenue).toFixed(0)}` : '',
+      ].filter(Boolean).join('\n'),
+      tags: ['builder', b.status, b.tier].filter(Boolean) as string[],
+      timestamp: b.updatedAt?.toISOString?.(),
+      priority: 'P3',
+    })
+  }
+  return out
+}
+
+// ── Vendor updates ──────────────────────────────────────────────────────
+function buildVendorEvents(vendors: any[]): BrainEvent[] {
+  const out: BrainEvent[] = []
+  for (const v of vendors) {
+    out.push({
+      source: 'aegis',
+      source_id: `vendor:${v.id}`,
+      event_type: 'vendor_updated',
+      title: `Vendor updated: ${v.name || v.id}`.slice(0, 220),
+      content: [
+        `Vendor: ${v.name}`,
+        v.status ? `Status: ${v.status}` : '',
+        v.contactEmail ? `Contact: ${v.contactEmail}` : '',
+        v.paymentTerms ? `Terms: ${v.paymentTerms}` : '',
+        v.creditLimit != null ? `Credit limit: $${v.creditLimit}` : '',
+      ].filter(Boolean).join('\n'),
+      tags: ['vendor', v.status].filter(Boolean) as string[],
+      timestamp: v.updatedAt?.toISOString?.(),
+      priority: 'P3',
+    })
+  }
+  return out
+}
+
+// ── Pricing changes (top movers as one summary event) ──────────────────
+function buildPricingEvents(rows: any[]): BrainEvent[] {
+  if (!rows.length) return []
+  const top = rows.slice(0, 30)
+  const lines = top.map(p => {
+    const sku = p.productSku || p.productId || '?'
+    const price = p.customPrice != null ? `$${Number(p.customPrice).toFixed(2)}` : '—'
+    return `  ${sku.padEnd(14)} ${price}  builder=${p.builderId?.slice(0,12) || '?'}`
+  }).join('\n')
+  return [{
+    source: 'aegis',
+    source_id: `pricing:${Math.floor(Date.now() / 60000)}`,  // bucket per minute, dedup-safe
+    event_type: 'pricing_changes_summary',
+    title: `Pricing updates: ${rows.length} changes (${top.length} shown)`,
+    content: `Recent BuilderPricing rows updated:\n\n${lines}`,
+    tags: ['pricing', 'aegis'],
+    priority: 'P2',
+  }]
+}
+
+// ── Job lifecycle ──────────────────────────────────────────────────────
+function buildJobEvents(jobs: any[]): BrainEvent[] {
+  const out: BrainEvent[] = []
+  for (const j of jobs) {
+    out.push({
+      source: 'aegis',
+      source_id: `job:${j.id}`,
+      event_type: 'job_updated',
+      title: `Job ${j.jobNumber || j.id} ${j.builderName ? '· ' + j.builderName : ''} · ${j.status || ''}`.slice(0, 220),
+      content: [
+        `Builder: ${j.builderName || '—'}`,
+        j.status ? `Status: ${j.status}` : '',
+        j.jobAddress ? `Address: ${j.jobAddress}` : '',
+        j.community ? `Community: ${j.community}` : '',
+        j.lotBlock ? `Lot/Block: ${j.lotBlock}` : '',
+        j.bwpPoNumber ? `Builder PO: ${j.bwpPoNumber}` : '',
+      ].filter(Boolean).join('\n'),
+      tags: ['job', j.status].filter(Boolean) as string[],
+      timestamp: j.updatedAt?.toISOString?.(),
+      priority: 'P3',
+    })
+  }
+  return out
+}
+
+// ── Inventory + product summary (volume guard) ────────────────────────
+// 3000+/day product changes would flood Brain. Send one aggregate event per cycle.
+function buildInventorySummaryEvent(productCount: number, inventoryCount: number, since: Date): BrainEvent[] {
+  if (productCount === 0 && inventoryCount === 0) return []
+  return [{
+    source: 'aegis',
+    source_id: `invsummary:${Math.floor(Date.now() / 60000)}`,
+    event_type: 'inventory_summary',
+    title: `Inventory pulse: ${productCount} products · ${inventoryCount} stock changes`,
+    content: `Since ${since.toISOString()}:\n  • Product rows updated: ${productCount}\n  • InventoryItem rows updated: ${inventoryCount}`,
+    tags: ['inventory', 'inflow'],
+    priority: 'P3',
+  }]
+}
+
 function buildCollectionEvents(actions: any[]): BrainEvent[] {
   return actions.map((a) => ({
     source: 'aegis',
@@ -350,7 +496,11 @@ export async function runAegisToBrainSync(
   }
 
   // 1. Pull window data
-  const [orders, pos, inboxItems, collections] = await Promise.all([
+  const [
+    orders, pos, inboxItems, collections,
+    comms, builderUpdates, vendorUpdates, pricingChanges, jobUpdates,
+    productCount, inventoryCount,
+  ] = await Promise.all([
     prisma.order.findMany({
       where: {
         OR: [
@@ -382,6 +532,38 @@ export async function runAegisToBrainSync(
       where: { createdAt: { gte: since } },
       take: 500,
     }),
+    // CommunicationLog — Gmail/Quo/SMS landing point. Cap at 200/window so a
+    // backlog from cold-boot doesn't slam Brain with thousands of events.
+    prisma.communicationLog.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    }),
+    // Builders updated by sync (BuilderTrend/Hyphen) but not just-created
+    prisma.builder.findMany({
+      where: { updatedAt: { gte: since } },
+      take: 200,
+    }),
+    // Vendors updated (InFlow vendor sync, manual edits)
+    prisma.vendor.findMany({
+      where: { updatedAt: { gte: since } },
+      take: 200,
+    }),
+    // BuilderPricing updates — sample, since 1k+/day is too much detail.
+    // Brain gets a summary event with the top movers per cycle.
+    prisma.builderPricing.findMany({
+      where: { updatedAt: { gte: since } },
+      orderBy: { updatedAt: 'desc' },
+      take: 100,
+    }),
+    // Job lifecycle changes — Job has builderName denormalized, no relation
+    prisma.job.findMany({
+      where: { updatedAt: { gte: since } },
+      take: 100,
+    }),
+    // Product/inventory volume — sent as aggregate counts only
+    prisma.product.count({ where: { updatedAt: { gte: since } } }),
+    prisma.inventoryItem.count({ where: { updatedAt: { gte: since } } }),
   ])
 
   // 2. Transform
@@ -389,6 +571,12 @@ export async function runAegisToBrainSync(
   const poEvents = buildPOEvents(pos)
   const inboxEvents = buildInboxEvents(inboxItems)
   const collectionEvents = buildCollectionEvents(collections)
+  const commEvents = buildCommunicationEvents(comms)
+  const builderEvents = buildBuilderEvents(builderUpdates)
+  const vendorEvents = buildVendorEvents(vendorUpdates)
+  const pricingEvents = buildPricingEvents(pricingChanges)
+  const jobEvents = buildJobEvents(jobUpdates)
+  const inventorySummary = buildInventorySummaryEvent(productCount, inventoryCount, since)
 
   const byType: Record<string, number> = {}
   const allEvents: BrainEvent[] = [
@@ -396,6 +584,12 @@ export async function runAegisToBrainSync(
     ...poEvents,
     ...inboxEvents,
     ...collectionEvents,
+    ...commEvents,
+    ...builderEvents,
+    ...vendorEvents,
+    ...pricingEvents,
+    ...jobEvents,
+    ...inventorySummary,
   ]
   for (const e of allEvents) {
     byType[e.event_type] = (byType[e.event_type] || 0) + 1
