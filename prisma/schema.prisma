@@ -214,6 +214,14 @@ model BuilderContact {
   notes  String?
   active Boolean @default(true)
 
+  // Builder Portal — per-contact permission tier (separate from `role`
+  // which is job title). Computed default mapping when null:
+  //   OWNER / DIVISION_VP            → EXECUTIVE
+  //   everything else                → PM
+  // (See BUILDER-PORTAL-SPEC.md §0.1.) Migration:
+  //   prisma/migrations/20260430_add_portal_role/migration.sql
+  portalRole PortalRole @default(PM)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -232,6 +240,16 @@ enum ContactRole {
   ESTIMATOR // Builder's estimator
   ACCOUNTS_PAYABLE // AP contact
   OTHER
+}
+
+// Builder Portal permission tier. Separate from ContactRole (job title).
+// PM       — see own jobs, place quotes, view orders.
+// EXECUTIVE — additional analytics + spend visibility across communities.
+// ADMIN    — full builder-side admin (manage contacts, invoices, etc.).
+enum PortalRole {
+  PM
+  EXECUTIVE
+  ADMIN
 }
 
 // ─── COMMUNITY FLOOR PLANS ──────────────────────────────────────────────

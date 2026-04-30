@@ -45,8 +45,10 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error || `Login failed (${res.status})`)
 
+      // Builder Portal — successful login lands at /portal (not the legacy
+      // /dashboard). Honor any ?next=… query param if present and same-origin.
       const next = searchParams?.get('next')
-      router.push(next && next.startsWith('/') ? next : '/dashboard')
+      router.push(next && next.startsWith('/') ? next : '/portal')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.')
     } finally {

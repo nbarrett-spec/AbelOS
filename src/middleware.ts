@@ -27,7 +27,7 @@ function getOrCreateRequestId(request: NextRequest): string {
 // ──────────────────────────────────────────────────────────────────────────
 // Builder (customer) routes
 // ──────────────────────────────────────────────────────────────────────────
-const builderProtectedRoutes = ['/dashboard', '/projects']
+const builderProtectedRoutes = ['/dashboard', '/projects', '/portal']
 const builderAuthRoutes = ['/login', '/signup', '/forgot-password', '/reset-password']
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -621,6 +621,7 @@ export const config = {
     // Builder routes
     '/dashboard/:path*',
     '/projects/:path*',
+    '/portal/:path*',
     '/login',
     '/signup',
     '/forgot-password',

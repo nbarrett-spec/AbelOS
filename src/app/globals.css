@@ -1791,3 +1791,104 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
     margin: 0.5in 0.5in 0.6in 0.5in;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   BUILDER PORTAL — Engineered Warmth theme
+   Phase 0.4 of BUILDER-PORTAL-SPEC.md.
+   APPEND-ONLY. Tokens scoped to [data-portal] so they cannot leak into
+   /ops, /admin, /sales, /dashboard, /crew, or /executive design.
+   ════════════════════════════════════════════════════════════════════════ */
+
+[data-portal] {
+  /* Primary */
+  --portal-walnut: #3E2A1E;
+  --portal-walnut-deep: #2C1E14;
+  --portal-kiln-oak: #8B6F47;
+  --portal-charcoal: #2C2C2C;
+  --portal-cream: #F3EAD8;
+  --portal-cream-warm: #FAF5E8;
+
+  /* Accent */
+  --portal-amber: #C9822B;
+  --portal-amber-light: #D4A54A;
+  --portal-amber-glow: rgba(201, 130, 43, 0.25);
+  --portal-sky: #8CA8B8;
+  --portal-dust: #B8876B;
+  --portal-oxblood: #6E2A24;
+
+  /* Gradients */
+  --grad-amber: linear-gradient(135deg, #C9822B, #D4A54A, #C9822B);
+  --grad-gold-text: linear-gradient(135deg, #F3EAD8 30%, #D4A54A 60%, #F3EAD8 90%);
+  --grad-hero: radial-gradient(ellipse 100% 80% at 50% 40%, #4A3122 0%, #3E2A1E 45%, #2C1E14 100%);
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --glass-blur: blur(16px) saturate(180%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(62, 42, 30, 0.04), 0 1px 2px rgba(62, 42, 30, 0.06);
+  --shadow-md: 0 4px 16px rgba(62, 42, 30, 0.06), 0 2px 4px rgba(62, 42, 30, 0.04);
+  --shadow-lg: 0 12px 40px rgba(62, 42, 30, 0.08), 0 4px 12px rgba(62, 42, 30, 0.04);
+  --shadow-glow: 0 10px 40px rgba(201, 130, 43, 0.2);
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-reveal: 900ms;
+
+  /* Type */
+  --font-portal-display: 'Playfair Display', Georgia, serif;
+  --font-portal-body: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-portal-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* Surfaces */
+  --portal-bg: #FDFAF4;
+  --portal-bg-elevated: #FAF5E8;
+  --portal-bg-card: #FFFFFF;
+  --portal-border: #E8DFD0;
+  --portal-border-light: #F0E8DA;
+  --portal-text: #2C2C2C;
+  --portal-text-strong: #3E2A1E;
+  --portal-text-muted: #6B6056;
+}
+
+/* Reduced motion — disable all portal animations */
+@media (prefers-reduced-motion: reduce) {
+  [data-portal] {
+    --dur-reveal: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+  }
+  [data-portal] .aurora-blob,
+  [data-portal] .portal-particles {
+    display: none;
+  }
+  [data-portal] [data-animate] {
+    animation: none !important;
+  }
+}
+
+/* Print — clean output for portal pages */
+@media print {
+  [data-portal] .portal-sidebar,
+  [data-portal] .portal-topbar,
+  [data-portal] .portal-notification-panel,
+  [data-portal] .portal-dock,
+  [data-portal] .aurora-blob,
+  [data-portal] .portal-particles,
+  [data-portal] .scroll-progress,
+  [data-portal] .portal-marquee {
+    display: none !important;
+  }
+  [data-portal] {
+    background: white !important;
+  }
+  [data-portal] .portal-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+}
