@@ -71,15 +71,16 @@ function createJwt(key: ServiceAccountKey, scopes: string[], userEmail: string):
   return `${signingInput}.${signature}`
 }
 
-async function getAccessToken(userEmail: string): Promise<string | null> {
+// Returns either the access token, or a structured error so callers can
+// surface the precise Google Workspace failure (DwD scope misconfig, etc.).
+async function getAccessTokenOrError(userEmail: string): Promise<{ token: string } | { error: string; detail?: string }> {
   const cacheKey = `${userEmail}:cal`
   const cached = tokenCache.get(cacheKey)
-  if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) return cached.token
+  if (cached && cached.expiresAt > Date.now() + 5 * 60 * 1000) return { token: cached.token }
 
   const keyResult = loadServiceAccountKey()
   if ('error' in keyResult) {
-    console.error('[calendar] service account key error:', keyResult.error)
-    return null
+    return { error: 'service_account_key', detail: keyResult.error }
   }
 
   try {
@@ -93,20 +94,21 @@ async function getAccessToken(userEmail: string): Promise<string | null> {
       }).toString(),
     })
     if (!r.ok) {
-      console.error('[calendar] token exchange failed:', r.status, await r.text().catch(() => ''))
-      return null
+      const body = (await r.text().catch(() => '')).slice(0, 400)
+      return { error: `token_exchange_${r.status}`, detail: body }
     }
     const j = await r.json()
     const expiresInMs = (j.expires_in ?? 3600) * 1000
-    tokenCache.set(cacheKey, {
-      token: j.access_token,
-      expiresAt: Date.now() + expiresInMs,
-    })
-    return j.access_token
+    tokenCache.set(cacheKey, { token: j.access_token, expiresAt: Date.now() + expiresInMs })
+    return { token: j.access_token }
   } catch (e: any) {
-    console.error('[calendar] token error:', e?.message)
-    return null
+    return { error: 'token_fetch_threw', detail: e?.message?.slice(0, 200) }
   }
+}
+
+async function getAccessToken(userEmail: string): Promise<string | null> {
+  const r = await getAccessTokenOrError(userEmail)
+  return 'token' in r ? r.token : null
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -140,8 +142,11 @@ export async function fetchCalendarEvents(
     fetchedAt: now.toISOString(), windowFrom: timeMin, windowTo: timeMax,
   }
 
-  const token = await getAccessToken(CAL_USER)
-  if (!token) return { ...empty, error: 'no_access_token' }
+  const tokRes = await getAccessTokenOrError(CAL_USER)
+  if ('error' in tokRes) {
+    return { ...empty, error: `${tokRes.error}: ${tokRes.detail || ''}`.slice(0, 400) }
+  }
+  const token = tokRes.token
 
   try {
     const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CAL_ID)}/events`)
