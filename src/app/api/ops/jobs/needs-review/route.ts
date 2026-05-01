@@ -27,13 +27,14 @@ export async function GET(request: NextRequest) {
         `SELECT COUNT(*)::int AS total
          FROM "Job"
          WHERE "buildSheetNotes" LIKE '%NEEDS_REVIEW%'
-           AND "status"::text NOT IN ('CLOSED', 'INVOICED')`
+           AND "status"::text NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')`
       )
       const total = countRows[0]?.total || 0
       return NextResponse.json({ count: total }, { status: 200 })
     }
 
-    // Full list — active jobs only (exclude CLOSED/INVOICED since they're done)
+    // Full list — active jobs only (exclude COMPLETE/INVOICED/CLOSED since
+    // their dates can't usefully be reviewed any more — work is done.)
     const rows: any = await prisma.$queryRawUnsafe(`
       SELECT
         j."id",
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
       FROM "Job" j
       LEFT JOIN "Staff" pm ON pm."id" = j."assignedPMId"
       WHERE j."buildSheetNotes" LIKE '%NEEDS_REVIEW%'
-        AND j."status"::text NOT IN ('CLOSED', 'INVOICED')
+        AND j."status"::text NOT IN ('COMPLETE', 'CLOSED', 'INVOICED')
       ORDER BY j."scheduledDate" ASC NULLS LAST, j."createdAt" DESC
     `)
 

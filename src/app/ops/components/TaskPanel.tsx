@@ -145,6 +145,11 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [snoozeMenuFor, setSnoozeMenuFor] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
+  // BUG 3b — clicking a card (when not in bulk mode) expands it to show
+  // the full description + linked job + builder + created date.
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // BUG 3c — clearing the "Completed (last 24h)" list.
+  const [clearingCompleted, setClearingCompleted] = useState(false)
 
   const panelRef = useRef<HTMLDivElement | null>(null)
   const fabRef = useRef<HTMLButtonElement | null>(null)
@@ -396,6 +401,28 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
       else next.add(taskId)
       return next
     })
+  }
+
+  async function handleClearCompleted() {
+    if (clearingCompleted) return
+    setClearingCompleted(true)
+    try {
+      const res = await fetch('/api/ops/tasks/clear-completed', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-id': staffId,
+        },
+      })
+      if (res.ok) {
+        await fetchTasks(filter)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setClearingCompleted(false)
+    }
   }
 
   async function handleBulkAction(action: 'complete' | 'snooze' | 'cancel', dueDate?: Date) {
@@ -782,6 +809,10 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
                       onSnoozeMenuToggle={() =>
                         setSnoozeMenuFor((cur) => (cur === t.id ? null : t.id))
                       }
+                      expanded={expandedId === t.id}
+                      onToggleExpand={() =>
+                        setExpandedId((cur) => (cur === t.id ? null : t.id))
+                      }
                     />
                   )
                   return (
@@ -824,22 +855,35 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
                       )}
                       {sections.completed.length > 0 && (
                         <div>
-                          <button
-                            type="button"
-                            onClick={() => setCompletedExpanded((v) => !v)}
-                            className="w-full px-2 py-1.5 flex items-center justify-between text-[10px] uppercase tracking-wider font-semibold rounded transition-colors hover:bg-[var(--surface-muted,#F4F4F5)]"
+                          <div
+                            className="w-full px-2 py-1.5 flex items-center justify-between text-[10px] uppercase tracking-wider font-semibold rounded"
                             style={{ color: '#16A34A' }}
                           >
-                            <span className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setCompletedExpanded((v) => !v)}
+                              className="flex items-center gap-1.5 transition-colors hover:opacity-80"
+                              style={{ color: '#16A34A' }}
+                            >
                               <CheckCircle className="w-3.5 h-3.5" />
                               Completed (last 24h) · {sections.completed.length}
-                            </span>
-                            {completedExpanded ? (
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            ) : (
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                              {completedExpanded ? (
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleClearCompleted}
+                              disabled={clearingCompleted}
+                              className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors hover:bg-[var(--surface-muted,#F4F4F5)] disabled:opacity-50"
+                              style={{ color: 'var(--fg-muted, #6B7280)' }}
+                              title="Archive all completed tasks from view"
+                            >
+                              {clearingCompleted ? 'Clearing…' : 'Clear'}
+                            </button>
+                          </div>
                           {completedExpanded && (
                             <div className="mt-1 space-y-1">
                               {sections.completed.map((t) => renderTask(t, true))}
@@ -1016,6 +1060,8 @@ function TaskCard({
   onSnooze,
   snoozeMenuOpen,
   onSnoozeMenuToggle,
+  expanded,
+  onToggleExpand,
 }: {
   task: PortalTask
   flashId: string | null
@@ -1029,6 +1075,8 @@ function TaskCard({
   onSnooze?: (when: 'tomorrow' | 'next-week' | Date) => void
   snoozeMenuOpen?: boolean
   onSnoozeMenuToggle?: () => void
+  expanded?: boolean
+  onToggleExpand?: () => void
 }) {
   const dot = PRIORITY_DOT[task.priority] || PRIORITY_DOT.MEDIUM
   const cat = CATEGORY_META[task.category] || CATEGORY_META.GENERAL
@@ -1040,9 +1088,21 @@ function TaskCard({
     new Date(task.dueDate).getTime() < Date.now()
   const flashing = flashId === task.id
 
+  // BUG 3b — clickable card. In bulk mode → toggles selection.
+  // Otherwise (and not done) → toggles expanded view.
+  const cardClickable =
+    (bulkMode && !done) || (!bulkMode && !done && !!onToggleExpand)
+  const handleCardClick = bulkMode && !done
+    ? onToggleSelect
+    : !bulkMode && !done
+      ? onToggleExpand
+      : undefined
+
   return (
     <div
-      className="group rounded-lg p-2.5 mx-1 transition-colors relative"
+      className={`group rounded-lg p-2.5 mx-1 transition-colors relative ${
+        cardClickable ? 'cursor-pointer' : ''
+      }`}
       style={{
         border: selected
           ? '1px solid var(--signal, #C6A24E)'
@@ -1055,9 +1115,10 @@ function TaskCard({
         opacity: done ? 0.7 : 1,
         animation: flashing && !reducedMotion ? 'task-flash 1.2s ease-out' : undefined,
       }}
-      onClick={bulkMode && !done ? onToggleSelect : undefined}
-      role={bulkMode && !done ? 'button' : undefined}
-      tabIndex={bulkMode && !done ? 0 : undefined}
+      onClick={handleCardClick}
+      role={cardClickable ? 'button' : undefined}
+      tabIndex={cardClickable ? 0 : undefined}
+      aria-expanded={!bulkMode && !done && onToggleExpand ? !!expanded : undefined}
     >
       <div className="flex items-start gap-2">
         {bulkMode && !done && (
@@ -1093,7 +1154,7 @@ function TaskCard({
           </div>
           {task.description && !done && (
             <div
-              className="text-[11px] mt-0.5 line-clamp-1"
+              className={`text-[11px] mt-0.5 ${expanded ? 'whitespace-pre-wrap' : 'line-clamp-1'}`}
               style={{ color: 'var(--fg-muted, #6B7280)' }}
             >
               {task.description}
@@ -1143,14 +1204,58 @@ function TaskCard({
               </span>
             )}
           </div>
+          {/* BUG 3b — expanded details (full description handled above; show
+              extras here: linked job, builder full name, created date). Only
+              renders when card is expanded and not done. */}
+          {expanded && !done && (
+            <div
+              className="mt-2 pt-2 space-y-1 text-[11px]"
+              style={{
+                borderTop: '1px dashed var(--border, rgba(0,0,0,0.08))',
+                color: 'var(--fg-muted, #6B7280)',
+              }}
+            >
+              {task.job && task.jobId && (
+                <div>
+                  <a
+                    href={`/ops/jobs/${task.jobId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="underline hover:opacity-80"
+                    style={{ color: 'var(--signal, #C6A24E)' }}
+                  >
+                    Open job · {task.job.jobNumber}
+                  </a>
+                </div>
+              )}
+              {task.builder?.companyName && (
+                <div>Builder: {task.builder.companyName}</div>
+              )}
+              {task.createdAt && (
+                <div>
+                  Created:{' '}
+                  {new Date(task.createdAt).toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {/* Actions */}
+        {/* Actions — BUG 3a: always visible (no hover-gating). Stop click
+            propagation so pressing an action button doesn't also toggle the
+            card's expanded state. */}
         {!done && !bulkMode && (
-          <div className="flex items-center gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 shrink-0">
             {task.status === 'TODO' && (
               <button
                 type="button"
-                onClick={onStart}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onStart()
+                }}
                 className="w-7 h-7 rounded inline-flex items-center justify-center hover:bg-[var(--surface-muted,#F4F4F5)]"
                 title="Start"
                 aria-label="Start task"
@@ -1165,7 +1270,10 @@ function TaskCard({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={onSnoozeMenuToggle}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSnoozeMenuToggle?.()
+                  }}
                   className="w-7 h-7 rounded inline-flex items-center justify-center hover:bg-[var(--surface-muted,#F4F4F5)]"
                   title="Snooze"
                   aria-label="Snooze task"
@@ -1186,7 +1294,10 @@ function TaskCard({
             )}
             <button
               type="button"
-              onClick={onComplete}
+              onClick={(e) => {
+                e.stopPropagation()
+                onComplete()
+              }}
               className="w-7 h-7 rounded inline-flex items-center justify-center hover:bg-[var(--surface-muted,#F4F4F5)]"
               title="Complete"
               aria-label="Mark task complete"

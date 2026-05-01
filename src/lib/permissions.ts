@@ -503,6 +503,7 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/substitutions': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING', 'WAREHOUSE_LEAD'],
   '/api/ops/crew-conflicts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'WAREHOUSE_LEAD'],
   '/api/ops/readiness-check': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+  '/api/ops/job-readiness': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
 
   // Delivery Notifications
   '/api/ops/delivery-notify': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'DRIVER', 'WAREHOUSE_LEAD'],

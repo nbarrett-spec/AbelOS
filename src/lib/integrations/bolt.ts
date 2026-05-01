@@ -382,9 +382,35 @@ export async function syncWorkOrders(since?: Date): Promise<SyncResult> {
           }
         }
 
-        // Create Job from Bolt WO
+        // Create Job from Bolt WO. New naming convention is "<address> <code>"
+        // (see src/lib/job-types.ts), but Bolt WOs don't carry a jobType, so
+        // we use address-only when we have one. If no address exists fall
+        // back to the legacy JOB-BOLT-* sentinel — the backfill script can
+        // pick those up later. Per-suffix collision handling: if the address
+        // collides with an existing job, append "-2", "-3", … so we don't
+        // violate the unique constraint.
         const jobId = `job_bolt_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-        const jobNumber = `JOB-BOLT-${(wo.workOrderNumber || wo.woNumber || wo.id || '').toString().slice(-6).toUpperCase()}`
+        const addrTrimmed = (jobAddress || '').trim().replace(/\s+/g, ' ')
+        let jobNumber: string
+        if (addrTrimmed) {
+          jobNumber = addrTrimmed
+          // Resolve uniqueness — the column has a UNIQUE constraint.
+          let collision: any[] = await prisma.$queryRawUnsafe(
+            `SELECT 1 FROM "Job" WHERE "jobNumber" = $1 LIMIT 1`,
+            jobNumber,
+          )
+          let n = 2
+          while (collision.length > 0 && n < 100) {
+            jobNumber = `${addrTrimmed}-${n}`
+            collision = await prisma.$queryRawUnsafe(
+              `SELECT 1 FROM "Job" WHERE "jobNumber" = $1 LIMIT 1`,
+              jobNumber,
+            )
+            n++
+          }
+        } else {
+          jobNumber = `JOB-BOLT-${(wo.workOrderNumber || wo.woNumber || wo.id || '').toString().slice(-6).toUpperCase()}`
+        }
 
         await prisma.$executeRawUnsafe(`
           INSERT INTO "Job" (
