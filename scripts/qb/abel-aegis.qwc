@@ -11,8 +11,8 @@
     this file to Dawn (PowerShell: [guid]::NewGuid()). Surround with curly braces.
     Re-using GUIDs across installs will break QBWC.
   -->
-  <OwnerID>{REPLACE-WITH-FRESH-GUID-OWNER}</OwnerID>
-  <FileID>{REPLACE-WITH-FRESH-GUID-FILE}</FileID>
+  <OwnerID>{ad5492ec-3f67-46c4-8088-0cfe9ba690a3}</OwnerID>
+  <FileID>{8d522d8b-ebfa-4579-baf5-81989947e75d}</FileID>
   <QBType>QBFS</QBType>
   <Scheduler>
     <RunEveryNMinutes>60</RunEveryNMinutes>
