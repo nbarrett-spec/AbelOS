@@ -34,6 +34,7 @@ const DEFAULT_SHORTCUTS: Shortcut[] = [
   { group: 'Global', keys: ['G', 'P'],  label: 'Go to purchasing' },
   { group: 'Global', keys: ['G', 'A'],  label: 'Go to accounts' },
   { group: 'Global', keys: ['G', 'M'],  label: 'Go to MRP' },
+  { group: 'Global', keys: ['Shift', 'T'], label: 'Toggle task panel' },
   // Tables
   { group: 'Tables', keys: ['↑', '↓'], label: 'Move row selection' },
   { group: 'Tables', keys: ['↵'],      label: 'Open selected row' },

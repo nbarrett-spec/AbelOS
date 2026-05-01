@@ -8,6 +8,7 @@ import { canAccessRoute, type PortalOverrides } from '@/lib/permissions'
 import { NotificationBell } from './components/NotificationBell'
 import { GlobalSearch } from './components/GlobalSearch'
 import AICopilot from './components/AICopilot'
+import TaskPanel from './components/TaskPanel'
 import ThemeProvider from './components/ThemeProvider'
 import AegisBackground from '@/components/AegisBackground'
 import PortalBackground from '@/components/PortalBackground'
@@ -476,12 +477,30 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showUserMenu])
 
-  // Keyboard shortcut: Cmd+B to toggle sidebar
+  // Keyboard shortcuts:
+  //   Cmd+B  — toggle sidebar
+  //   Shift+T — toggle TaskPanel (dispatched as a custom event so TaskPanel
+  //            stays self-contained and doesn't need to be lifted into layout state)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault()
         setCollapsed((prev) => !prev)
+      }
+      // Shift+T — only fire when not typing in an input/textarea/contenteditable
+      if (e.shiftKey && (e.key === 'T' || e.key === 't')) {
+        const target = e.target as HTMLElement | null
+        const tag = target?.tagName?.toLowerCase()
+        if (
+          tag === 'input' ||
+          tag === 'textarea' ||
+          tag === 'select' ||
+          target?.isContentEditable
+        ) {
+          return
+        }
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('toggle-task-panel'))
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -876,6 +895,9 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
         {/* Help panel — floating ? button on every page */}
         <HelpPanel />
+
+        {/* Task panel — floating checklist FAB (Shift+T) */}
+        {staff && <TaskPanel staffId={staff.id} staffRole={staff.role} />}
       </div>
     </ThemeProvider>
   )
