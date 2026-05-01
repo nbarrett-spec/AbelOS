@@ -28,11 +28,22 @@ async function handle(request: NextRequest) {
   const started = Date.now()
 
   if (tenants.length === 0) {
-    const msg = 'No Hyphen tenants configured — skipping sync. Add rows to HyphenTenant (preferred) or IntegrationConfig with provider=HYPHEN to enable.'
-    await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
+    // Previously: SUCCESS + skipped:true. That hid the config gap — Brookfield
+    // had 0/72 orders syncing for weeks while /admin/crons showed all-green.
+    // Treat "no enabled tenants" as a FAILURE: cron can't do its job, and the
+    // cron-failure notifier will ping Nate so the gap surfaces. Once a tenant
+    // gets seeded + syncEnabled=true (or all are deliberately disabled), this
+    // resolves on the next run.
+    const msg =
+      'No Hyphen tenants enabled — sync is dead. Either set HYPHEN_<BUILDER>_USERNAME / _PASSWORD env vars + flip HyphenTenant.syncEnabled=true for that builder, or disable this cron in vercel.json if Hyphen is intentionally off.'
+    await finishCronRun(runId, 'FAILURE', Date.now() - started, {
       result: { skipped: true, reason: 'NO_HYPHEN_CONFIG', message: msg },
+      error: msg,
     })
-    return NextResponse.json({ success: true, skipped: true, message: msg })
+    return NextResponse.json(
+      { success: false, skipped: true, reason: 'NO_HYPHEN_CONFIG', message: msg },
+      { status: 503 },
+    )
   }
 
   try {

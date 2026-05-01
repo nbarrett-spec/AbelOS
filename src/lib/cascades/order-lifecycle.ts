@@ -38,9 +38,12 @@ export async function onOrderConfirmed(orderId: string): Promise<CascadeResult> 
   try {
     const orders: any[] = await prisma.$queryRawUnsafe(
       `SELECT o."id", o."orderNumber", o."builderId", o."status"::text AS status,
-              o."deliveryDate", b."companyName" AS "builderName"
+              o."deliveryDate", o."deliveryNotes", o."projectId",
+              b."companyName" AS "builderName",
+              p."jobAddress" AS "projectAddress"
        FROM "Order" o
        LEFT JOIN "Builder" b ON b."id" = o."builderId"
+       LEFT JOIN "Project" p ON p."id" = o."projectId"
        WHERE o."id" = $1`,
       orderId
     )
@@ -64,6 +67,23 @@ export async function onOrderConfirmed(orderId: string): Promise<CascadeResult> 
     let jobNumber: string | null = null
 
     if (await isSystemAutomationEnabled('order.confirmed.create_job')) {
+      // Derive jobAddress from the order so the new Job isn't a header-only
+      // stub. Two sources, in order of preference:
+      //   1. Project.jobAddress (canonical when an Order is tied to a Project)
+      //   2. Order.deliveryNotes "Address: <line>" (Hyphen-style addresses
+      //      written to deliveryNotes by upstream importers)
+      // Falls through to NULL only if neither exists. Mirrors the pattern in
+      // src/app/api/orders/route.ts:160-185 and the backfill-addresses route.
+      let derivedAddress: string | null = null
+      if (order.projectAddress && String(order.projectAddress).trim()) {
+        derivedAddress = String(order.projectAddress).trim()
+      } else if (order.deliveryNotes) {
+        const m = String(order.deliveryNotes).match(/Address:\s*(.+)/i)
+        if (m && m[1] && m[1].trim().length > 5) {
+          derivedAddress = m[1].trim()
+        }
+      }
+
       // Derive a job number — JOB-YYYY-NNNN based on current MAX
       const year = new Date().getFullYear()
       const maxRow: any[] = await prisma.$queryRawUnsafe(
@@ -77,19 +97,20 @@ export async function onOrderConfirmed(orderId: string): Promise<CascadeResult> 
 
       await prisma.$executeRawUnsafe(
         `INSERT INTO "Job" (
-          "id", "jobNumber", "orderId",
+          "id", "jobNumber", "orderId", "projectId",
           "builderName", "scopeType", "status",
-          "scheduledDate",
+          "scheduledDate", "jobAddress",
           "createdAt", "updatedAt"
         ) VALUES (
-          $1, $2, $3,
-          $4, 'DOORS_AND_TRIM'::"ScopeType", 'CREATED'::"JobStatus",
-          $5,
+          $1, $2, $3, $4,
+          $5, 'DOORS_AND_TRIM'::"ScopeType", 'CREATED'::"JobStatus",
+          $6, $7,
           NOW(), NOW()
         )`,
-        jobId, jobNumber, orderId,
+        jobId, jobNumber, orderId, order.projectId || null,
         order.builderName || 'Unknown Builder',
         order.deliveryDate ? new Date(order.deliveryDate) : null,
+        derivedAddress,
       )
     }
 
