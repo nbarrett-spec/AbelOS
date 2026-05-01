@@ -13,12 +13,13 @@
  *    to `[data-portal]`). Nothing leaks into /ops, /login, or /portal.
  *  - The fonts (Outfit, Azeret Mono, Instrument Serif) are already loaded
  *    globally by next/font in src/app/layout.tsx — no new dependency.
- *  - ExplodedDoor stays untouched. It's the focal "live door" hero with
- *    autoPlay + loop continuously.
+ *  - Hero is full-bleed 12s MP4 + centered single-column copy. The
+ *    ExplodedDoor component lived here in earlier revs but was removed
+ *    once the live video background landed — the video carries the
+ *    "live door" energy on its own.
  */
 
 import Link from 'next/link'
-import ExplodedDoor from '@/components/ExplodedDoor'
 
 export default function Home(): JSX.Element {
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>): void => {
@@ -301,8 +302,8 @@ export default function Home(): JSX.Element {
           poster="/video/hero-poster.jpg"
           aria-hidden="true"
         >
-          <source src="/video/hero-bg-slow.webm" type="video/webm" />
-          <source src="/video/hero-bg-slow.mp4" type="video/mp4" />
+          <source src="/video/hero-bg-12s.webm" type="video/webm" />
+          <source src="/video/hero-bg-12s.mp4" type="video/mp4" />
         </video>
 
         {/* Layer 1 — asymmetric gradient overlay (strong left, faded right) */}
@@ -327,64 +328,53 @@ export default function Home(): JSX.Element {
           aria-hidden="true"
         />
 
-        {/* Layer 3 — content */}
-        <div className="relative z-30 max-w-[1180px] mx-auto w-full grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
-          {/* Left — copy */}
-          <div className="text-center lg:text-left">
-            <div className="eyebrow mb-5">
-              AI-Powered Blueprint Intelligence
-            </div>
-
-            <h1
-              className="display"
-              style={{
-                fontSize: 'clamp(40px, 6.5vw, 72px)',
-                lineHeight: 1.02,
-                marginBottom: 22,
-              }}
-            >
-              Upload a Blueprint.
-              <br />
-              Get a Quote in <em>Minutes.</em>
-            </h1>
-
-            <p
-              className="max-w-xl mx-auto lg:mx-0 mb-10"
-              style={{
-                fontSize: 17,
-                color: 'var(--fg-muted)',
-                lineHeight: 1.55,
-              }}
-            >
-              Abel&apos;s AI reads your blueprints, generates accurate
-              material takeoffs, and produces instant quotes — with your
-              custom pricing and flexible payment terms.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Link
-                href="/apply"
-                className="grad-btn inline-flex items-center justify-center px-7 h-12 rounded-xl text-[15px]"
-              >
-                Apply for Builder Account
-              </Link>
-              <a
-                href="#how-it-works"
-                onClick={handleNavigation}
-                className="ghost-btn inline-flex items-center justify-center px-7 h-12 rounded-xl text-[15px]"
-              >
-                See How It Works
-              </a>
-            </div>
+        {/* Layer 3 — content (centered single column over the video) */}
+        <div className="relative z-30 max-w-3xl mx-auto w-full text-center flex flex-col items-center">
+          <div className="eyebrow mb-5">
+            AI-Powered Blueprint Intelligence
           </div>
 
-          {/* Right — door rendered over the video bleed-through. The
-              video provides the "live" visual, so we drop the indigo
-              halo to keep the right side clean. */}
-          <div className="relative hidden lg:flex items-center justify-center min-h-[520px]">
-            <div className="relative z-10 w-full">
-              <ExplodedDoor variant="hero" autoPlay loop loopInterval={6000} />
-            </div>
+          <h1
+            className="display"
+            style={{
+              fontSize: 'clamp(40px, 6.5vw, 72px)',
+              lineHeight: 1.02,
+              marginBottom: 22,
+            }}
+          >
+            Upload a Blueprint.
+            <br />
+            Get a Quote in <em>Minutes.</em>
+          </h1>
+
+          <p
+            className="mb-10"
+            style={{
+              maxWidth: '36rem',
+              fontSize: 17,
+              color: 'var(--fg-muted)',
+              lineHeight: 1.55,
+            }}
+          >
+            Abel&apos;s AI reads your blueprints, generates accurate
+            material takeoffs, and produces instant quotes — with your
+            custom pricing and flexible payment terms.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/apply"
+              className="grad-btn inline-flex items-center justify-center px-7 h-12 rounded-xl text-[15px]"
+            >
+              Apply for Builder Account
+            </Link>
+            <a
+              href="#how-it-works"
+              onClick={handleNavigation}
+              className="ghost-btn inline-flex items-center justify-center px-7 h-12 rounded-xl text-[15px]"
+            >
+              See How It Works
+            </a>
           </div>
         </div>
       </section>
