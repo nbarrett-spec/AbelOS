@@ -67,6 +67,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
   const [uploading, setUploading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [uploadCat, setUploadCat] = useState(defaultCategory)
+  const [staged, setStaged] = useState<File[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const buildParams = useCallback(() => {
@@ -100,12 +101,24 @@ export default function DocumentPanel(props: DocumentPanelProps) {
 
   useEffect(() => { fetchDocs() }, [fetchDocs])
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
+  const stageFiles = (files: FileList | File[] | null) => {
+    if (!files) return
+    const arr = Array.from(files)
+    if (arr.length === 0) return
+    // Accumulate — never replace prior selection. Re-open picker to add more.
+    setStaged(prev => [...prev, ...arr])
+  }
+
+  const removeStaged = (idx: number) => {
+    setStaged(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const handleUpload = async () => {
+    if (staged.length === 0) return
     setUploading(true)
     try {
       const formData = new FormData()
-      Array.from(files).forEach(f => formData.append('files', f))
+      staged.forEach(f => formData.append('files', f))
       formData.append('category', uploadCat)
 
       // Pass all entity link props
@@ -127,6 +140,7 @@ export default function DocumentPanel(props: DocumentPanelProps) {
         body: formData,
       })
       setShowUpload(false)
+      setStaged([])
       fetchDocs()
     } catch { /* ignore */ }
     setUploading(false)
@@ -160,24 +174,76 @@ export default function DocumentPanel(props: DocumentPanelProps) {
               value={uploadCat}
               onChange={e => setUploadCat(e.target.value)}
               className="border rounded px-2 py-1 text-xs flex-shrink-0"
+              disabled={uploading}
             >
               {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
             </select>
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => {
+                e.preventDefault()
+                stageFiles(e.dataTransfer.files)
+              }}
               className="flex-1 border-2 border-dashed rounded px-3 py-1 text-xs text-fg-muted hover:border-blue-400 hover:text-c1 transition"
             >
-              {uploading ? 'Uploading...' : 'Click to select files'}
+              {staged.length > 0 ? `+ Add more (${staged.length} staged)` : 'Click to select files or drag & drop'}
             </button>
           </div>
+          {/* Staged file list */}
+          {staged.length > 0 && (
+            <ul className="max-h-40 overflow-y-auto divide-y bg-surface rounded border">
+              {staged.map((f, i) => (
+                <li key={`${f.name}-${i}`} className="flex items-center gap-2 px-2 py-1.5 text-xs">
+                  <span className="shrink-0">{getIcon(f.name.split('.').pop()?.toLowerCase() || '', f.type)}</span>
+                  <span className="flex-1 truncate text-fg">{f.name}</span>
+                  <span className="text-fg-subtle shrink-0">{formatSize(f.size)}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeStaged(i)}
+                    disabled={uploading}
+                    className="text-red-500 hover:text-red-700 text-xs px-1"
+                    aria-label={`Remove ${f.name}`}
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {staged.length > 0 && (
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setStaged([])}
+                disabled={uploading}
+                className="text-xs px-2.5 py-1 rounded border text-fg-muted hover:bg-row-hover"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={uploading}
+                className="text-xs px-3 py-1 rounded font-medium text-white disabled:opacity-50"
+                style={{ backgroundColor: 'var(--c1, #4F46E5)' }}
+              >
+                {uploading ? 'Uploading…' : `Upload ${staged.length} file${staged.length === 1 ? '' : 's'}`}
+              </button>
+            </div>
+          )}
           <input
             ref={fileRef}
             type="file"
             multiple
             className="hidden"
             accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.svg,.txt"
-            onChange={e => handleUpload(e.target.files)}
+            onChange={e => {
+              stageFiles(e.target.files)
+              // Reset so re-picking same file fires onChange.
+              e.target.value = ''
+            }}
           />
         </div>
       )}

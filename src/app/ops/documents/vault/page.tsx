@@ -551,28 +551,78 @@ export default function DocumentVaultPage() {
           <div className="bg-surface rounded-2xl shadow-elevation-3 w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-border">
               <h2 className="text-xl font-semibold text-fg">Upload Documents</h2>
-              <p className="text-fg-muted text-sm mt-1">PDF, images, spreadsheets, documents up to 25MB each</p>
+              <p className="text-fg-muted text-sm mt-1">PDF, images, spreadsheets, documents up to 25MB each. Pick multiple at once, or click again to keep adding.</p>
             </div>
             <div className="p-6 space-y-4">
-              {/* File picker */}
+              {/* File picker — drag-drop + click + accumulating selection */}
               <div
-                className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-signal transition"
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${
+                  dragOver ? 'border-signal bg-signal-subtle' : 'border-border hover:border-signal'
+                }`}
                 onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => {
+                  e.preventDefault()
+                  setDragOver(false)
+                  const dropped = Array.from(e.dataTransfer.files || [])
+                  if (dropped.length > 0) {
+                    setSelectedFiles(prev => [...prev, ...dropped])
+                  }
+                }}
               >
                 {selectedFiles.length > 0 ? (
-                  <div>
-                    <div className="text-lg font-medium text-fg">{selectedFiles.length} file(s) selected</div>
-                    <div className="text-sm text-fg-muted mt-1">
-                      {selectedFiles.map(f => f.name).join(', ')}
+                  <div className="space-y-2 text-left" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-fg">
+                        {selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'} staged
+                        <span className="text-fg-muted font-normal ml-2">
+                          ({formatFileSize(selectedFiles.reduce((s, f) => s + f.size, 0))})
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs text-c1 hover:text-c2 font-medium"
+                        >
+                          + Add more
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFiles([])}
+                          className="text-xs text-red-600 hover:text-red-700 font-medium"
+                        >
+                          Clear all
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-xs text-fg-subtle mt-1">
-                      Total: {formatFileSize(selectedFiles.reduce((s, f) => s + f.size, 0))}
-                    </div>
+                    <ul className="max-h-48 overflow-y-auto divide-y divide-border border border-border rounded-lg bg-surface-muted">
+                      {selectedFiles.map((f, i) => (
+                        <li key={`${f.name}-${i}`} className="flex items-center gap-2 px-3 py-2 text-sm">
+                          <span className="text-base shrink-0">{getFileIcon(f.name.split('.').pop()?.toLowerCase() || '', f.type)}</span>
+                          <span className="flex-1 truncate text-fg">{f.name}</span>
+                          <span className="text-xs text-fg-subtle shrink-0">{formatFileSize(f.size)}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                            className="text-xs text-red-500 hover:text-red-700 shrink-0"
+                            aria-label={`Remove ${f.name}`}
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-fg-subtle text-center pt-1">
+                      Click anywhere above to add more files, or drag & drop.
+                    </p>
                   </div>
                 ) : (
                   <div>
                     <div className="text-4xl mb-2">📁</div>
                     <div className="text-fg-muted">Click to select files or drag & drop</div>
+                    <div className="text-xs text-fg-subtle mt-1">Hold Cmd/Ctrl to select multiple at once</div>
                   </div>
                 )}
                 <input
@@ -581,7 +631,15 @@ export default function DocumentVaultPage() {
                   multiple
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.svg,.txt,.json,.xml"
                   className="hidden"
-                  onChange={e => setSelectedFiles(Array.from(e.target.files || []))}
+                  onChange={e => {
+                    const picked = Array.from(e.target.files || [])
+                    if (picked.length > 0) {
+                      // Accumulate so re-opening the picker adds rather than replaces.
+                      setSelectedFiles(prev => [...prev, ...picked])
+                    }
+                    // Reset so re-selecting the same file fires onChange again.
+                    e.target.value = ''
+                  }}
                 />
               </div>
 
