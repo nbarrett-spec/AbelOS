@@ -8,6 +8,7 @@
  * portal layout swaps this for a bottom sheet (handled in layout.tsx).
  */
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -78,27 +79,15 @@ export function PortalSidebar() {
         style={{ borderBottom: '1px solid var(--glass-border)' }}
       >
         <div className="flex items-center gap-3">
-          {/* Mockup-3 .brand-mark — gradient square + inner border */}
-          <div
-            className="relative shrink-0"
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 9,
-              background: 'var(--grad)',
-              boxShadow: '0 6px 20px rgba(79, 70, 229, 0.3)',
-            }}
-            aria-hidden="true"
-          >
-            <span
-              style={{
-                position: 'absolute',
-                inset: 5,
-                border: '1.5px solid rgba(255, 255, 255, 0.4)',
-                borderRadius: 5,
-              }}
-            />
-          </div>
+          {/* Brand mark — Abel Lumber longhorn logo */}
+          <Image
+            src="/images/logos/abel-logo.png"
+            alt="Abel Lumber"
+            width={360}
+            height={240}
+            priority
+            className="h-10 w-auto object-contain shrink-0"
+          />
           <div className="min-w-0 flex-1">
             <div
               className="truncate text-sm"
@@ -106,17 +95,18 @@ export function PortalSidebar() {
                 color: 'var(--portal-text-strong)',
                 letterSpacing: '-0.01em',
                 fontWeight: 600,
-                fontSize: 15,
+                fontSize: 14,
               }}
+              title={builder.companyName}
             >
               {builder.companyName}
             </div>
             <div
-              className="text-[11px] uppercase mt-0.5"
+              className="text-[10px] uppercase mt-0.5"
               style={{
                 fontFamily: 'var(--font-portal-mono)',
                 color: 'var(--portal-text-subtle)',
-                letterSpacing: '0.08em',
+                letterSpacing: '0.1em',
               }}
             >
               Builder Portal

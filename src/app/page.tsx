@@ -19,6 +19,7 @@
  *    "live door" energy on its own.
  */
 
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default function Home(): JSX.Element {
@@ -219,46 +220,29 @@ export default function Home(): JSX.Element {
         }}
       >
         <div className="max-w-[1180px] mx-auto h-full px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {/* Brand mark — gradient square w/ inner border (Mockup-3) */}
-            <div
-              className="relative shrink-0"
+          <Link href="/" className="flex items-center gap-3 shrink-0" aria-label="Abel Lumber — Home">
+            {/* Brand mark — real logo (longhorn skull + ABEL LUMBER wordmark) */}
+            <Image
+              src="/images/logos/abel-logo.png"
+              alt="Abel Lumber"
+              width={360}
+              height={240}
+              priority
+              className="h-11 w-auto object-contain"
+            />
+            <span
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 9,
-                background: 'var(--grad)',
-                boxShadow: '0 6px 20px rgba(79, 70, 229, 0.3)',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--fg-subtle)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
               }}
-              aria-hidden="true"
+              className="hidden sm:inline"
             >
-              <span
-                style={{
-                  position: 'absolute',
-                  inset: 5,
-                  border: '1.5px solid rgba(255, 255, 255, 0.4)',
-                  borderRadius: 5,
-                }}
-              />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>
-                Abel Lumber
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--fg-subtle)',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  marginTop: 1,
-                }}
-              >
-                Builder Platform
-              </span>
-            </div>
-          </div>
+              Builder Platform
+            </span>
+          </Link>
 
           <div className="flex items-center gap-5">
             <Link
