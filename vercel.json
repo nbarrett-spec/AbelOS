@@ -93,6 +93,10 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/cron/calendar-sync",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/cron/material-watch",
       "schedule": "*/30 * * * *"
     },
