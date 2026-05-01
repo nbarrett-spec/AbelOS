@@ -47,10 +47,9 @@ export function PortalShell({
           onOpenNotifications={() => setPanelOpen(true)}
           unreadCount={unreadCount}
         />
-        <main
-          className="flex-1 px-4 sm:px-6 md:px-8 py-6 md:py-8"
-          style={{ background: 'var(--portal-bg, #FDFAF4)' }}
-        >
+        {/* main is transparent so the data-portal multi-layer background
+            (warm canvas + radial washes + blueprint grid) shows through. */}
+        <main className="flex-1 px-4 sm:px-6 md:px-8 py-6 md:py-8">
           {children}
         </main>
       </div>

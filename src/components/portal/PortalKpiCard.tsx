@@ -40,73 +40,106 @@ export function PortalKpiCard({
     (delta && delta.value > 0 ? 'up' : delta && delta.value < 0 ? 'down' : 'neutral')
 
   return (
+    // Mockup-3 .summary-card — glass treatment + 2px colored left bar
+    // (replaces v1's top accent bar to match the mockup) + Instrument
+    // Serif 56px big number + Outfit label + Azeret Mono dashed footer.
     <div
-      className="relative overflow-hidden rounded-[14px] transition-shadow"
+      className="relative overflow-hidden rounded-[14px]"
       style={{
-        background: 'var(--portal-bg-card, #FFFFFF)',
-        border: '1px solid var(--portal-border-light, #F0E8DA)',
-        boxShadow: 'var(--shadow-sm)',
-        minHeight: 130,
+        background: 'var(--glass)',
+        backdropFilter: 'var(--glass-blur)',
+        WebkitBackdropFilter: 'var(--glass-blur)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: 'var(--glass-shadow)',
+        minHeight: 140,
+        transition: 'transform 250ms var(--ease-out), box-shadow 250ms var(--ease-out)',
       }}
     >
-      {/* Accent bar */}
+      {/* Left accent bar (2px) */}
       <div
         aria-hidden="true"
         style={{
           position: 'absolute',
           top: 0,
+          bottom: 0,
           left: 0,
-          right: 0,
-          height: 3,
+          width: 2,
           background: accentColor,
         }}
       />
 
-      <div className="px-5 pt-5 pb-4">
+      <div className="px-6 pt-5 pb-5">
+        {/* Big number — Instrument Serif 48px (slightly smaller than the
+            mockup's 56px so it fits a 4-up grid on tablet without truncating) */}
         <div
-          className="text-[11px] font-semibold uppercase tracking-wider"
+          className="flex items-baseline gap-1 mb-1.5"
           style={{
-            color: 'var(--portal-kiln-oak, #8B6F47)',
-            letterSpacing: '0.08em',
+            fontFamily: 'var(--font-portal-display)',
+            fontSize: '3rem',
+            fontWeight: 400,
+            lineHeight: 1,
+            color: 'var(--portal-text-strong)',
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {prefix && (
+            <span
+              className="opacity-80 mr-0.5"
+              style={{ fontSize: '1.75rem' }}
+            >
+              {prefix}
+            </span>
+          )}
+          <NumberTicker
+            value={value}
+            decimalPlaces={decimals}
+            className="tabular-nums"
+          />
+          {suffix && (
+            <span
+              className="opacity-80 ml-0.5"
+              style={{ fontSize: '1.75rem' }}
+            >
+              {suffix}
+            </span>
+          )}
+        </div>
+
+        {/* Label — Outfit 14px, --fg-muted (Mockup-3 .summary-label) */}
+        <div
+          style={{
+            fontFamily: 'var(--font-portal-body)',
+            fontSize: 14,
+            color: 'var(--portal-text-muted)',
           }}
         >
           {label}
         </div>
 
-        <div
-          className="flex items-baseline gap-1 mt-2"
-          style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
-            fontSize: '2.25rem',
-            fontWeight: 600,
-            lineHeight: 1.1,
-            color: 'var(--portal-text-strong, #3E2A1E)',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          {prefix && <span className="text-[1.25rem] opacity-80 mr-0.5">{prefix}</span>}
-          <NumberTicker value={value} decimalPlaces={decimals} className="tabular-nums" />
-          {suffix && <span className="text-[1.25rem] opacity-80 ml-0.5">{suffix}</span>}
-        </div>
-
-        {delta && (
+        {/* Footer — delta indicator OR mono separator */}
+        {delta ? (
           <div
-            className="inline-flex items-center gap-1 mt-2 text-xs"
+            className="inline-flex items-center gap-1 mt-3 pt-3 text-[11px] uppercase"
             style={{
+              borderTop: '1px dashed var(--bp-annotation)',
+              fontFamily: 'var(--font-portal-mono)',
+              letterSpacing: '0.1em',
               color:
                 direction === 'up'
-                  ? '#1A4B21'
+                  ? 'var(--data-positive)'
                   : direction === 'down'
-                    ? '#7E2417'
-                    : 'var(--portal-text-muted, #6B6056)',
-              fontWeight: 500,
+                    ? 'var(--data-negative)'
+                    : 'var(--portal-text-subtle)',
+              fontWeight: 600,
+              width: '100%',
             }}
           >
             {direction === 'up' && <TrendingUp className="w-3 h-3" />}
             {direction === 'down' && <TrendingDown className="w-3 h-3" />}
             <span>{delta.label}</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Sparkline pinned bottom-right at low opacity */}
@@ -115,9 +148,9 @@ export function PortalKpiCard({
           aria-hidden="true"
           style={{
             position: 'absolute',
-            right: 8,
-            bottom: 8,
-            opacity: 0.18,
+            right: 10,
+            bottom: 10,
+            opacity: 0.22,
             pointerEvents: 'none',
           }}
         >

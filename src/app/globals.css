@@ -1800,37 +1800,59 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
    ════════════════════════════════════════════════════════════════════════ */
 
 [data-portal] {
-  /* Primary */
-  --portal-walnut: #3E2A1E;
-  --portal-walnut-deep: #2C1E14;
-  --portal-kiln-oak: #8B6F47;
-  --portal-charcoal: #2C2C2C;
-  --portal-cream: #F3EAD8;
-  --portal-cream-warm: #FAF5E8;
+  /* ───────────────────────────────────────────────────────────────────
+     Mockup-3 "Engineered Warmth" — warm canvas + indigo gradient + glass.
+     Replaces the legacy walnut/cream theme. Old --portal-walnut/cream/etc
+     names are KEPT below as aliases that map to new values, so existing
+     components continue to compile while we migrate them piece by piece.
+     ─────────────────────────────────────────────────────────────────── */
 
-  /* Accent */
-  --portal-amber: #C9822B;
-  --portal-amber-light: #D4A54A;
-  --portal-amber-glow: rgba(201, 130, 43, 0.25);
-  --portal-sky: #8CA8B8;
-  --portal-dust: #B8876B;
-  --portal-oxblood: #6E2A24;
+  /* Core gradient (Mockup-3 indigo → blue → sky → cyan) */
+  --c1: #4F46E5;
+  --c2: #2563EB;
+  --c3: #0EA5E9;
+  --c4: #06B6D4;
+  --grad: linear-gradient(135deg, var(--c1), var(--c2), var(--c3));
 
-  /* Gradients */
-  --grad-amber: linear-gradient(135deg, #C9822B, #D4A54A, #C9822B);
-  --grad-gold-text: linear-gradient(135deg, #F3EAD8 30%, #D4A54A 60%, #F3EAD8 90%);
-  --grad-hero: radial-gradient(ellipse 100% 80% at 50% 40%, #4A3122 0%, #3E2A1E 45%, #2C1E14 100%);
+  /* Surfaces — warm canvas, not cream */
+  --canvas: #F6F4EE;
+  --portal-bg: #F6F4EE;
+  --portal-bg-elevated: #F6F4EE;
+  --portal-bg-card: rgba(255, 255, 255, 0.82);  /* glass, not solid */
+  --portal-border: rgba(79, 70, 229, 0.12);
+  --portal-border-light: rgba(79, 70, 229, 0.08);
 
-  /* Glass */
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.25);
-  --glass-blur: blur(16px) saturate(180%);
+  /* Text */
+  --portal-text: #1A1817;
+  --portal-text-strong: #1A1817;
+  --portal-text-muted: #5A5450;
+  --portal-text-subtle: #8A847F;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(62, 42, 30, 0.04), 0 1px 2px rgba(62, 42, 30, 0.06);
-  --shadow-md: 0 4px 16px rgba(62, 42, 30, 0.06), 0 2px 4px rgba(62, 42, 30, 0.04);
-  --shadow-lg: 0 12px 40px rgba(62, 42, 30, 0.08), 0 4px 12px rgba(62, 42, 30, 0.04);
-  --shadow-glow: 0 10px 40px rgba(201, 130, 43, 0.2);
+  /* Blueprint grid (paper texture) */
+  --bp-fine: rgba(79, 70, 229, 0.05);
+  --bp-annotation: rgba(79, 70, 229, 0.25);
+
+  /* Glass system (Mockup-3 canonical) */
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(79, 70, 229, 0.12);
+  --glass-blur: blur(24px) saturate(1.4);
+  --glass-shadow: 0 10px 44px rgba(30, 58, 138, 0.08), 0 0 0 1px rgba(79, 70, 229, 0.03);
+  --glass-hover: 0 28px 80px rgba(30, 58, 138, 0.14), 0 0 0 1px rgba(79, 70, 229, 0.06);
+
+  /* Status / data colors */
+  --data-positive: #0F8A4B;
+  --data-positive-bg: rgba(15, 138, 75, 0.08);
+  --data-negative: #B91C1C;
+  --data-negative-bg: rgba(185, 28, 28, 0.08);
+  --data-warning: #B45309;
+  --data-warning-bg: rgba(180, 83, 9, 0.08);
+
+  /* Shadows — light blueprint-blue cast */
+  --shadow-sm: 0 1px 3px rgba(30, 58, 138, 0.04), 0 1px 2px rgba(30, 58, 138, 0.06);
+  --shadow-md: 0 4px 16px rgba(30, 58, 138, 0.06), 0 2px 4px rgba(30, 58, 138, 0.04);
+  --shadow-lg: 0 12px 40px rgba(30, 58, 138, 0.10), 0 4px 12px rgba(30, 58, 138, 0.06);
+  --shadow-glow: 0 10px 40px rgba(79, 70, 229, 0.20);
 
   /* Motion */
   --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1839,20 +1861,86 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
   --dur-base: 250ms;
   --dur-reveal: 900ms;
 
-  /* Type */
-  --font-portal-display: 'Playfair Display', Georgia, serif;
-  --font-portal-body: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-portal-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  /* Type — Mockup-3 stack (Outfit / Azeret Mono / Instrument Serif) */
+  --font-portal-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-portal-body: 'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-portal-mono: 'Azeret Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Surfaces */
-  --portal-bg: #FDFAF4;
-  --portal-bg-elevated: #FAF5E8;
-  --portal-bg-card: #FFFFFF;
-  --portal-border: #E8DFD0;
-  --portal-border-light: #F0E8DA;
-  --portal-text: #2C2C2C;
-  --portal-text-strong: #3E2A1E;
-  --portal-text-muted: #6B6056;
+  /* ─── Legacy aliases (kept so older components compile while we
+         migrate them). Each maps to the closest Mockup-3 equivalent.
+         New code should use the Mockup-3 names directly. ─────────── */
+
+  /* The "amber" was the primary interactive accent. In Mockup-3 that
+     role is filled by the indigo gradient stop --c1 (used for active
+     nav, links, focus rings). Keep the legacy name pointing at it. */
+  --portal-amber: var(--c1);
+  --portal-amber-light: var(--c4);
+  --portal-amber-glow: rgba(79, 70, 229, 0.25);
+
+  /* Walnut → primary text color (used for headings/strong text). */
+  --portal-walnut: #1A1817;
+  --portal-walnut-deep: #0E0D0C;
+
+  /* Cream → warm canvas. */
+  --portal-cream: #F6F4EE;
+  --portal-cream-warm: #F6F4EE;
+
+  /* Kiln-oak → muted text (eyebrows, captions). */
+  --portal-kiln-oak: #5A5450;
+  --portal-charcoal: #1A1817;
+
+  /* Sky / dust / oxblood → status colors closest to mockup palette. */
+  --portal-sky: var(--c3);
+  --portal-dust: #B8876B;
+  --portal-oxblood: var(--data-negative);
+  --portal-success: var(--data-positive);
+
+  /* Old gradient names → indigo gradient. */
+  --grad-amber: var(--grad);
+  --grad-gold-text: var(--grad);
+  --grad-hero: linear-gradient(135deg, var(--c1), var(--c2));
+}
+
+/* Mockup-3 multi-layer background:
+     2 radial color washes (indigo top-right, cyan bottom-left)
+     + 24px blueprint grid.
+   Applied to the [data-portal] root (PortalShell paints this on its
+   outermost div). Body fonts are forced to the portal stack so any
+   nested component that doesn't explicitly set font-family inherits
+   Outfit, not the global Tailwind sans default. */
+[data-portal] {
+  font-family: var(--font-portal-body);
+  color: var(--portal-text);
+  background: var(--canvas);
+  background-image:
+    radial-gradient(ellipse at top right, rgba(79, 70, 229, 0.09), transparent 55%),
+    radial-gradient(ellipse at bottom left, rgba(6, 182, 212, 0.07), transparent 50%),
+    linear-gradient(var(--bp-fine) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-fine) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px;
+  background-attachment: fixed;
+}
+
+/* Status pulse (used by PortalStatusBadge dots) */
+@keyframes portal-pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Reusable card transition curve */
+[data-portal] .portal-glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--glass-shadow);
+  transition: transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+[data-portal] .portal-glass-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--glass-hover);
 }
 
 /* Reduced motion — disable all portal animations */
@@ -1868,6 +1956,9 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
   }
   [data-portal] [data-animate] {
     animation: none !important;
+  }
+  [data-portal] .portal-glass-card:hover {
+    transform: none !important;
   }
 }
 

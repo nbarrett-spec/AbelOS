@@ -1,28 +1,75 @@
 /**
  * Status badge for portal order statuses.
  *
- * Single source of truth for the colored pill we render for an order's
- * lifecycle stage. Lives here (not inline in DashboardClient) so the orders
- * list, order detail header, and recent-orders table all share one mapping.
+ * Mockup-3 .jc-status pattern — Azeret Mono uppercase pill with a 6px
+ * status dot that pulses ("pulse-live" 2s ease-in-out infinite). Single
+ * source of truth for the colored pill we render across the orders list,
+ * order detail header, recent-orders table, and dashboard activity feed.
+ *
+ * Color scheme: green = on-track, amber = at-risk, red = blocked, neutral
+ * = informational. Reduces the v1 walnut/sky palette to the four canonical
+ * Mockup-3 statuses for visual consistency.
  */
 
 import type { PortalOrderStatus } from '@/types/portal'
 
+type Tone = 'green' | 'amber' | 'red' | 'neutral'
+
+const TONE_STYLE: Record<
+  Tone,
+  { bg: string; fg: string; dotBg: string }
+> = {
+  green: {
+    bg: 'var(--data-positive-bg)',
+    fg: 'var(--data-positive)',
+    dotBg: 'var(--data-positive)',
+  },
+  amber: {
+    bg: 'var(--data-warning-bg)',
+    fg: 'var(--data-warning)',
+    dotBg: 'var(--data-warning)',
+  },
+  red: {
+    bg: 'var(--data-negative-bg)',
+    fg: 'var(--data-negative)',
+    dotBg: 'var(--data-negative)',
+  },
+  neutral: {
+    bg: 'rgba(79, 70, 229, 0.08)',
+    fg: 'var(--c1)',
+    dotBg: 'var(--c1)',
+  },
+}
+
+interface BadgeMeta {
+  tone: Tone
+  label: string
+}
+
+const STATUS_TO_TONE: Record<PortalOrderStatus | string, BadgeMeta> = {
+  DRAFT:           { tone: 'neutral', label: 'Draft' },
+  CONFIRMED:       { tone: 'amber',   label: 'Confirmed' },
+  IN_PRODUCTION:   { tone: 'amber',   label: 'In Production' },
+  SHIPPED:         { tone: 'amber',   label: 'Shipped' },
+  DELIVERED:       { tone: 'green',   label: 'Delivered' },
+  CANCELLED:       { tone: 'red',     label: 'Cancelled' },
+  ON_HOLD:         { tone: 'red',     label: 'On Hold' },
+  RECEIVED:        { tone: 'neutral', label: 'Received' },
+  PARTIAL_SHIPPED: { tone: 'amber',   label: 'Partial' },
+}
+
+/** Legacy shape exported for components that still reach in by status key
+ *  to grab raw bg/fg values. Computed from the unified tone map so
+ *  changes here propagate everywhere. */
 export const PORTAL_STATUS_BADGE: Record<
   PortalOrderStatus | string,
   { bg: string; fg: string; label: string }
-> = {
-  DRAFT:         { bg: 'rgba(107,96,86,0.12)', fg: '#5A4F46', label: 'Draft' },
-  CONFIRMED:     { bg: 'rgba(201,130,43,0.14)', fg: '#7A4E0F', label: 'Confirmed' },
-  IN_PRODUCTION: { bg: 'rgba(140,168,184,0.16)', fg: '#3D5A6A', label: 'In Production' },
-  SHIPPED:       { bg: 'rgba(140,168,184,0.16)', fg: '#3D5A6A', label: 'Shipped' },
-  DELIVERED:     { bg: 'rgba(56,128,77,0.12)', fg: '#1A4B21', label: 'Delivered' },
-  CANCELLED:     { bg: 'rgba(110,42,36,0.10)', fg: '#7E2417', label: 'Cancelled' },
-  ON_HOLD:       { bg: 'rgba(212,165,74,0.16)', fg: '#7A5413', label: 'On Hold' },
-  // Platform statuses the orders endpoint may pass through unchanged.
-  RECEIVED:        { bg: 'rgba(140,168,184,0.16)', fg: '#3D5A6A', label: 'Received' },
-  PARTIAL_SHIPPED: { bg: 'rgba(140,168,184,0.16)', fg: '#3D5A6A', label: 'Partial' },
-}
+> = Object.fromEntries(
+  Object.entries(STATUS_TO_TONE).map(([k, meta]) => {
+    const t = TONE_STYLE[meta.tone]
+    return [k, { bg: t.bg, fg: t.fg, label: meta.label }]
+  }),
+) as Record<PortalOrderStatus | string, { bg: string; fg: string; label: string }>
 
 interface PortalStatusBadgeProps {
   status: string
@@ -35,19 +82,41 @@ export function PortalStatusBadge({
   size = 'sm',
   className,
 }: PortalStatusBadgeProps) {
-  const badge = PORTAL_STATUS_BADGE[status] || PORTAL_STATUS_BADGE.DRAFT
-  const dims =
+  const meta =
+    STATUS_TO_TONE[status] ||
+    STATUS_TO_TONE.DRAFT
+  const tone = TONE_STYLE[meta.tone]
+  const padding =
     size === 'md'
-      ? 'px-2.5 py-1 text-[12px]'
-      : 'px-2 py-0.5 text-[11px]'
+      ? 'px-3 py-1 text-[12px] gap-2'
+      : 'px-2.5 py-[3px] text-[11px] gap-1.5'
+
   return (
     <span
-      className={`inline-flex items-center rounded-full font-medium ${dims}${
+      className={`inline-flex items-center rounded-full uppercase ${padding}${
         className ? ` ${className}` : ''
       }`}
-      style={{ background: badge.bg, color: badge.fg }}
+      style={{
+        background: tone.bg,
+        color: tone.fg,
+        fontFamily: 'var(--font-portal-mono)',
+        fontWeight: 600,
+        letterSpacing: '0.12em',
+      }}
     >
-      {badge.label}
+      <span
+        aria-hidden="true"
+        className="rounded-full"
+        style={{
+          width: 6,
+          height: 6,
+          background: tone.dotBg,
+          // Mockup-3 pulse-live keyframe lives in globals.css under
+          // [data-portal] (defined as @keyframes portal-pulse-live).
+          animation: 'portal-pulse-live 2s ease-in-out infinite',
+        }}
+      />
+      {meta.label}
     </span>
   )
 }

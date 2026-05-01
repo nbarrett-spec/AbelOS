@@ -150,15 +150,10 @@ export default async function PortalRootLayout({
   }
 
   return (
-    <div
-      {...getDataPortalAttribute()}
-      style={{
-        minHeight: '100vh',
-        background: 'var(--portal-bg, #FDFAF4)',
-        color: 'var(--portal-text, #2C2C2C)',
-        fontFamily: 'var(--font-portal-body, Inter, sans-serif)',
-      }}
-    >
+    // The Mockup-3 multi-layer background (warm canvas + radial washes
+    // + 24px blueprint grid) is now painted via the [data-portal] CSS
+    // block in globals.css. Don't override it with inline styles here.
+    <div {...getDataPortalAttribute()} style={{ minHeight: '100vh' }}>
       <PortalProvider session={ctx.session} communities={ctx.communities}>
         <PortalShell>{children}</PortalShell>
       </PortalProvider>

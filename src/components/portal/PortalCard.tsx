@@ -28,12 +28,17 @@ export function PortalCard({
   noBodyPadding = false,
 }: PortalCardProps) {
   return (
+    // Mockup-3 .glass-card pattern — semi-transparent white + 24px blur
+    // + saturate + indigo-tinted border + glass-shadow that lifts on hover.
     <div
-      className={`rounded-[14px] transition-shadow ${className || ''}`}
+      className={`portal-glass-card rounded-[14px] ${className || ''}`}
       style={{
-        background: 'var(--portal-bg-card, #FFFFFF)',
-        border: '1px solid var(--portal-border-light, #F0E8DA)',
-        boxShadow: 'var(--shadow-sm)',
+        background: 'var(--glass)',
+        backdropFilter: 'var(--glass-blur)',
+        WebkitBackdropFilter: 'var(--glass-blur)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: 'var(--glass-shadow)',
+        transition: 'transform 250ms var(--ease-out), box-shadow 250ms var(--ease-out)',
       }}
     >
       {(title || action) && (
@@ -41,11 +46,13 @@ export function PortalCard({
           <div className="min-w-0">
             {title && (
               <h3
-                className="text-[1.05rem] font-medium truncate"
+                className="text-[20px] truncate"
                 style={{
-                  fontFamily: 'var(--font-portal-display, Georgia)',
-                  color: 'var(--portal-text-strong, #3E2A1E)',
-                  letterSpacing: '-0.01em',
+                  fontFamily: 'var(--font-portal-display)',
+                  color: 'var(--portal-text-strong)',
+                  letterSpacing: '-0.015em',
+                  fontWeight: 400,
+                  lineHeight: 1.2,
                 }}
               >
                 {title}
@@ -53,8 +60,12 @@ export function PortalCard({
             )}
             {subtitle && (
               <p
-                className="text-xs mt-0.5"
-                style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+                className="text-[11px] uppercase mt-1"
+                style={{
+                  fontFamily: 'var(--font-portal-mono)',
+                  color: 'var(--portal-text-subtle)',
+                  letterSpacing: '0.1em',
+                }}
               >
                 {subtitle}
               </p>

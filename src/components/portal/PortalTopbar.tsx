@@ -42,37 +42,47 @@ export function PortalTopbar({
 
   return (
     <header
-      className="sticky top-0 z-20 print:hidden"
+      className="portal-topbar sticky top-0 z-20 print:hidden"
       style={{
-        height: 64,
-        background: 'rgba(253,250,244,0.85)',
-        backdropFilter: 'blur(16px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-        borderBottom: '1px solid var(--portal-border-light, #F0E8DA)',
+        // Mockup-3 .topbar — 68px, semi-transparent white glass over the
+        // multi-layer canvas. Sits above the data-portal background paint.
+        height: 68,
+        background: 'rgba(255, 255, 255, 0.6)',
+        backdropFilter: 'blur(20px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+        borderBottom: '1px solid var(--glass-border, rgba(79,70,229,0.12))',
       }}
     >
-      <div className="h-full flex items-center justify-between px-6 md:px-8">
-        {/* Left — title block */}
-        <div className="flex flex-col justify-center min-w-0">
-          <h1
-            className="text-lg md:text-xl font-medium truncate"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.01em',
-              lineHeight: 1.15,
-            }}
-          >
-            {title}
-          </h1>
-          {subtitle && (
-            <p
-              className="text-xs md:text-sm truncate"
-              style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+      <div className="h-full flex items-center justify-between px-6 md:px-8 gap-4">
+        {/* Left — page title (Instrument Serif) */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex flex-col justify-center min-w-0">
+            <h1
+              className="text-lg md:text-xl truncate"
+              style={{
+                fontFamily: 'var(--font-portal-display)',
+                color: 'var(--portal-text-strong)',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.15,
+                fontWeight: 400,
+              }}
             >
-              {subtitle}
-            </p>
-          )}
+              {title}
+            </h1>
+            {subtitle && (
+              <p
+                className="text-[11px] truncate uppercase"
+                style={{
+                  fontFamily: 'var(--font-portal-mono)',
+                  color: 'var(--portal-text-subtle)',
+                  letterSpacing: '0.08em',
+                  marginTop: 1,
+                }}
+              >
+                {subtitle}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Right — actions, search, bell, avatar */}
@@ -82,22 +92,25 @@ export function PortalTopbar({
           <button
             type="button"
             onClick={() => setSearchOpen((s) => !s)}
-            className="hidden sm:flex items-center gap-2 px-3 h-9 rounded-md text-xs transition-colors"
+            className="hidden sm:flex items-center gap-2 px-3 h-9 rounded-full text-xs transition-colors"
             style={{
-              border: '1px solid var(--portal-border, #E8DFD0)',
-              background: 'var(--portal-bg-card, #FFFFFF)',
-              color: 'var(--portal-text-muted, #6B6056)',
+              border: '1px solid var(--glass-border)',
+              background: 'rgba(79, 70, 229, 0.05)',
+              color: 'var(--portal-text-muted)',
               minWidth: 200,
+              fontFamily: 'var(--font-portal-body)',
             }}
             aria-label="Open command palette"
           >
             <Search className="w-3.5 h-3.5" />
             <span>Search…</span>
             <span
-              className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-mono"
+              className="ml-auto rounded px-1.5 py-0.5 text-[10px]"
               style={{
-                background: 'var(--portal-bg-elevated, #FAF5E8)',
-                color: 'var(--portal-text-muted, #6B6056)',
+                background: 'rgba(79, 70, 229, 0.08)',
+                color: 'var(--portal-text-muted)',
+                fontFamily: 'var(--font-portal-mono)',
+                letterSpacing: '0.05em',
               }}
             >
               ⌘K
@@ -108,11 +121,11 @@ export function PortalTopbar({
           <button
             type="button"
             onClick={() => setSearchOpen((s) => !s)}
-            className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md transition-colors"
+            className="sm:hidden flex items-center justify-center w-9 h-9 rounded-full transition-colors"
             style={{
-              border: '1px solid var(--portal-border, #E8DFD0)',
-              background: 'var(--portal-bg-card, #FFFFFF)',
-              color: 'var(--portal-text-muted, #6B6056)',
+              border: '1px solid var(--glass-border)',
+              background: 'rgba(79, 70, 229, 0.05)',
+              color: 'var(--portal-text-muted)',
             }}
             aria-label="Search"
           >
@@ -122,11 +135,11 @@ export function PortalTopbar({
           <button
             type="button"
             onClick={onOpenNotifications}
-            className="relative flex items-center justify-center w-9 h-9 rounded-md transition-colors"
+            className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors"
             style={{
-              border: '1px solid var(--portal-border, #E8DFD0)',
-              background: 'var(--portal-bg-card, #FFFFFF)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
+              border: '1px solid var(--glass-border)',
+              background: 'rgba(79, 70, 229, 0.05)',
+              color: 'var(--portal-text-strong)',
             }}
             aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
           >
@@ -135,8 +148,9 @@ export function PortalTopbar({
               <span
                 className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-semibold px-1"
                 style={{
-                  background: 'var(--portal-amber, #C9822B)',
+                  background: 'var(--c1)',
                   color: 'white',
+                  fontFamily: 'var(--font-portal-mono)',
                 }}
               >
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -144,11 +158,39 @@ export function PortalTopbar({
             )}
           </button>
 
+          {/* User-menu pill — Mockup-3 .user-menu */}
           <div
-            className="flex items-center justify-center w-9 h-9 rounded-full text-xs font-semibold"
+            className="hidden sm:flex items-center gap-2 pr-3 pl-1.5 h-9 rounded-full"
             style={{
-              background: 'linear-gradient(135deg, #C9822B, #D4A54A)',
-              color: 'var(--portal-walnut, #3E2A1E)',
+              background: 'rgba(79, 70, 229, 0.05)',
+              border: '1px solid var(--glass-border)',
+              fontFamily: 'var(--font-portal-body)',
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--portal-text-strong)',
+            }}
+            aria-label={`Signed in as ${builder.companyName}`}
+            title={builder.email}
+          >
+            <span
+              className="w-7 h-7 rounded-full inline-flex items-center justify-center text-[11px] font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
+                color: 'white',
+              }}
+            >
+              {initials || 'AB'}
+            </span>
+            <span className="truncate max-w-[140px]">
+              {builder.companyName}
+            </span>
+          </div>
+          {/* Mobile-only avatar (no name pill) */}
+          <div
+            className="sm:hidden flex items-center justify-center w-9 h-9 rounded-full text-xs font-semibold"
+            style={{
+              background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
+              color: 'white',
             }}
             aria-label={`Signed in as ${builder.companyName}`}
             title={builder.email}
@@ -163,9 +205,12 @@ export function PortalTopbar({
         <div
           className="absolute top-full left-0 right-0 mx-auto max-w-2xl p-3 rounded-b-lg shadow-md text-sm"
           style={{
-            background: 'var(--portal-bg-card, #FFFFFF)',
-            border: '1px solid var(--portal-border, #E8DFD0)',
-            color: 'var(--portal-text-muted, #6B6056)',
+            background: 'var(--glass)',
+            backdropFilter: 'blur(24px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+            border: '1px solid var(--glass-border)',
+            color: 'var(--portal-text-muted)',
+            fontFamily: 'var(--font-portal-body)',
           }}
         >
           <p className="text-center py-2">
