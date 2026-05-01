@@ -129,21 +129,16 @@ export function OrdersClient({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
+      <div className="portal-section-head">
         <div className="min-w-0">
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Orders
-          </h2>
+          <div className="portal-eyebrow mb-2">Order History</div>
+          <h1 className="portal-page-title">Orders</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             {total > 0
               ? `${total.toLocaleString()} order${total === 1 ? '' : 's'} on file`
@@ -152,12 +147,12 @@ export function OrdersClient({
         </div>
         <Link
           href="/portal/quotes/new"
-          className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
+          className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-shadow"
           style={{
-            background:
-              'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+            background: 'var(--grad)',
             color: 'white',
-            boxShadow: 'var(--shadow-md)',
+            boxShadow: '0 6px 20px rgba(79,70,229,0.25)',
+            fontFamily: 'var(--font-portal-body)',
           }}
         >
           <FilePlus className="w-3.5 h-3.5" />
@@ -245,10 +240,7 @@ export function OrdersClient({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr
-                  className="text-left text-[10px] uppercase tracking-wider"
-                  style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
-                >
+                <tr className="text-left portal-meta-label">
                   <th className="px-6 py-3 font-semibold">Order</th>
                   <th className="px-2 py-3 font-semibold">Items</th>
                   <th className="px-2 py-3 font-semibold">Total</th>
@@ -284,10 +276,8 @@ export function OrdersClient({
                         <Link
                           href={`/portal/orders/${o.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="font-mono text-xs hover:underline"
-                          style={{
-                            color: 'var(--portal-text-strong, #3E2A1E)',
-                          }}
+                          className="portal-mono-data text-[13px] hover:underline"
+                          style={{ color: 'var(--portal-text-strong)' }}
                         >
                           {o.orderNumber}
                         </Link>
@@ -302,12 +292,15 @@ export function OrdersClient({
                           </div>
                         )}
                       </td>
-                      <td className="px-2 py-3 align-top">{o.itemCount}</td>
                       <td
-                        className="px-2 py-3 font-mono tabular-nums align-top"
-                        style={{
-                          color: 'var(--portal-text-strong, #3E2A1E)',
-                        }}
+                        className="px-2 py-3 align-top portal-mono-data text-[13px]"
+                        style={{ color: 'var(--portal-text)' }}
+                      >
+                        {o.itemCount}
+                      </td>
+                      <td
+                        className="px-2 py-3 portal-mono-data text-[15px] align-top"
+                        style={{ color: 'var(--portal-text-strong)' }}
                       >
                         ${fmtUsd(o.total)}
                       </td>
@@ -315,15 +308,15 @@ export function OrdersClient({
                         <PortalStatusBadge status={o.status} />
                       </td>
                       <td
-                        className="px-2 py-3 text-xs align-top"
-                        style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+                        className="px-2 py-3 text-xs align-top portal-mono-data"
+                        style={{ color: 'var(--portal-text-subtle)' }}
                       >
                         {relTime(o.createdAt)}
                       </td>
                       <td className="px-6 py-3 align-top text-right">
                         <ChevronRight
                           className="w-4 h-4 inline-block opacity-30 group-hover:opacity-100 transition-opacity"
-                          style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+                          style={{ color: 'var(--c1)' }}
                         />
                       </td>
                     </tr>
@@ -362,53 +355,78 @@ function FeaturedOrderCard({ order }: { order: PortalOrder }) {
   return (
     <Link
       href={`/portal/orders/${order.id}`}
-      className="block rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--portal-amber,#C9822B)] focus-visible:ring-offset-2"
+      className="block rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c1)] focus-visible:ring-offset-2"
     >
       <div
         className="relative overflow-hidden rounded-[14px] p-5"
         style={{
+          // Mockup-3 hero card — indigo gradient surface for the
+          // featured in-flight order. Reads as "active / important"
+          // against the warm canvas + glass cards around it.
           background:
-            'linear-gradient(135deg, var(--portal-walnut, #3E2A1E), #4F3829)',
+            'linear-gradient(135deg, var(--c1) 0%, var(--c2) 50%, var(--c3) 100%)',
           color: 'white',
-          boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(62,42,30,0.18))',
+          boxShadow: '0 12px 40px rgba(79,70,229,0.25)',
         }}
       >
         <div
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          className="absolute inset-0 opacity-[0.10] pointer-events-none"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 80% 20%, #C9822B 0, transparent 40%)',
+              'radial-gradient(circle at 80% 20%, #06B6D4 0, transparent 45%)',
           }}
         />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wider opacity-70">
-              In flight
+            <div
+              className="text-[11px] uppercase opacity-80"
+              style={{
+                fontFamily: 'var(--font-portal-mono)',
+                letterSpacing: '0.18em',
+                fontWeight: 600,
+              }}
+            >
+              In Flight
             </div>
-            <div className="flex items-baseline gap-3 mt-1 flex-wrap">
+            <div className="flex items-baseline gap-3 mt-1.5 flex-wrap">
               <h3
-                className="text-xl font-semibold tabular-nums font-mono"
+                className="text-xl portal-mono-data"
                 style={{
-                  fontFamily: 'var(--font-portal-mono, JetBrains Mono)',
-                  letterSpacing: '-0.01em',
+                  letterSpacing: '0.04em',
+                  fontWeight: 600,
                 }}
               >
                 {order.orderNumber}
               </h3>
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                style={{ background: badge.bg, color: badge.fg }}
+                className="inline-flex items-center px-2.5 py-[3px] rounded-full uppercase"
+                style={{
+                  background: 'rgba(255,255,255,0.18)',
+                  color: 'white',
+                  fontFamily: 'var(--font-portal-mono)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                }}
               >
                 {badge.label}
               </span>
             </div>
-            <div className="mt-1 text-sm opacity-80 flex items-center gap-3 flex-wrap">
-              <span>{order.itemCount} items · ${fmtUsd(order.total)}</span>
-              <span className="opacity-60">·</span>
-              <span>{relTime(order.createdAt)}</span>
+            <div
+              className="mt-2 text-sm opacity-90 flex items-center gap-3 flex-wrap"
+              style={{ fontFamily: 'var(--font-portal-body)' }}
+            >
+              <span className="portal-mono-data">
+                {order.itemCount} items · ${fmtUsd(order.total)}
+              </span>
+              <span className="opacity-70">·</span>
+              <span className="portal-mono-data">{relTime(order.createdAt)}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs">
+          <div
+            className="flex items-center gap-2 text-xs"
+            style={{ fontFamily: 'var(--font-portal-body)', fontWeight: 500 }}
+          >
             <Package className="w-4 h-4" />
             View details
             <ChevronRight className="w-4 h-4" />
@@ -416,7 +434,7 @@ function FeaturedOrderCard({ order }: { order: PortalOrder }) {
         </div>
         <div
           className="mt-5 -mx-1 rounded-md px-2 py-2"
-          style={{ background: 'rgba(255,255,255,0.06)' }}
+          style={{ background: 'rgba(255,255,255,0.08)' }}
         >
           <PortalOrderTimeline status={order.status} />
         </div>

@@ -1927,6 +1927,62 @@ html.dark body { background-color: var(--canvas); color: var(--fg); }
   50% { opacity: 0.5; }
 }
 
+/* ───────── Portal typography utilities (Mockup-3 patterns) ─────────
+   Use these on page titles, section heads, eyebrow labels, and inline
+   data cells so they match the canonical mockup spec without each page
+   re-declaring fontFamily + size + weight + tracking inline.
+   ─────────────────────────────────────────────────────────────────── */
+
+[data-portal] .portal-page-title {
+  font-family: var(--font-portal-display);
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--portal-text-strong);
+}
+[data-portal] .portal-page-title em {
+  font-style: italic;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 400;
+}
+
+[data-portal] .portal-eyebrow {
+  font-family: var(--font-portal-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--c1);
+}
+
+[data-portal] .portal-section-sub,
+[data-portal] .portal-meta-label {
+  font-family: var(--font-portal-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--portal-text-subtle);
+}
+
+[data-portal] .portal-mono-data {
+  font-family: var(--font-portal-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Section head — title + uppercase mono subtitle aligned baseline (Mockup-3 .section-head) */
+[data-portal] .portal-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 /* Reusable card transition curve */
 [data-portal] .portal-glass-card {
   background: var(--glass);

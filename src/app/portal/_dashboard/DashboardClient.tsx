@@ -23,6 +23,12 @@ import {
 import { usePortal } from '@/components/portal/PortalContext'
 import { PortalKpiCard } from '@/components/portal/PortalKpiCard'
 import { PortalCard } from '@/components/portal/PortalCard'
+// Use the centralized PORTAL_STATUS_BADGE map (Mockup-3 4-tone palette
+// with pulsing dots) instead of redeclaring badge colors here.
+import {
+  PORTAL_STATUS_BADGE as STATUS_BADGE,
+  PortalStatusBadge,
+} from '@/components/portal/PortalStatusBadge'
 import type { AnalyticsResponse, PortalOrder } from '@/types/portal'
 
 interface QuickAction {
@@ -102,15 +108,6 @@ function relTime(iso: string): string {
   return `${Math.floor(diff / 86_400_000)}d ago`
 }
 
-const STATUS_BADGE: Record<string, { bg: string; fg: string; label: string }> = {
-  DRAFT:         { bg: 'rgba(107,96,86,0.12)', fg: '#5A4F46', label: 'Draft' },
-  CONFIRMED:     { bg: 'rgba(201,130,43,0.14)', fg: '#7A4E0F', label: 'Confirmed' },
-  IN_PRODUCTION: { bg: 'rgba(140,168,184,0.16)', fg: '#3D5A6A', label: 'In Production' },
-  SHIPPED:       { bg: 'rgba(140,168,184,0.16)', fg: '#3D5A6A', label: 'Shipped' },
-  DELIVERED:     { bg: 'rgba(56,128,77,0.12)', fg: '#1A4B21', label: 'Delivered' },
-  CANCELLED:     { bg: 'rgba(110,42,36,0.10)', fg: '#7E2417', label: 'Cancelled' },
-  ON_HOLD:       { bg: 'rgba(212,165,74,0.16)', fg: '#7A5413', label: 'On Hold' },
-}
 
 export function DashboardClient({
   firstName,
@@ -142,22 +139,25 @@ export function DashboardClient({
 
   return (
     <div className="space-y-7">
-      {/* ── Welcome banner ─────────────────────────────────────────────── */}
+      {/* ── Welcome banner — Mockup-3 hero pattern (eyebrow + serif H1) ─ */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div className="min-w-0">
-          <h2
-            className="text-2xl md:text-[1.75rem] font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
+          <div className="portal-eyebrow mb-3">
+            {analytics ? `${ytdOrders} orders YTD` : 'Builder portal'}
+          </div>
+          <h1
+            className="portal-page-title"
+            style={{ fontSize: 'clamp(28px, 4vw, 44px)' }}
           >
-            {greetingFor(new Date())}, {firstName || builder.companyName}.
-          </h2>
+            {greetingFor(new Date())}, <em>{firstName || builder.companyName}</em>.
+          </h1>
           <p
-            className="text-sm mt-1 max-w-[640px]"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-3 max-w-[640px]"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+              lineHeight: 1.55,
+            }}
           >
             {activeOrderCount > 0 ? (
               <>
@@ -167,7 +167,7 @@ export function DashboardClient({
               <>No active orders right now. </>
             )}
             {analytics
-              ? `${ytdOrders} placed year-to-date.`
+              ? `Welcome back — your account is healthy.`
               : 'Welcome to your portal.'}
           </p>
         </div>
@@ -175,11 +175,12 @@ export function DashboardClient({
           <div className="flex gap-2">
             <Link
               href="/portal/quotes/new"
-              className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
+              className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-shadow"
               style={{
-                background: 'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                background: 'var(--grad)',
                 color: 'white',
-                boxShadow: 'var(--shadow-md)',
+                boxShadow: '0 6px 20px rgba(79,70,229,0.25)',
+                fontFamily: 'var(--font-portal-body)',
               }}
             >
               <FilePlus className="w-3.5 h-3.5" />
@@ -187,11 +188,14 @@ export function DashboardClient({
             </Link>
             <Link
               href="/portal/schedule"
-              className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-colors"
               style={{
-                background: 'var(--portal-bg-card, #FFFFFF)',
-                color: 'var(--portal-text-strong, #3E2A1E)',
-                border: '1px solid var(--portal-border, #E8DFD0)',
+                background: 'var(--glass)',
+                backdropFilter: 'var(--glass-blur)',
+                WebkitBackdropFilter: 'var(--glass-blur)',
+                color: 'var(--portal-text-strong)',
+                border: '1px solid var(--glass-border)',
+                fontFamily: 'var(--font-portal-body)',
               }}
             >
               <MapPin className="w-3.5 h-3.5" />
@@ -335,10 +339,7 @@ export function DashboardClient({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr
-                    className="text-left text-[10px] uppercase tracking-wider"
-                    style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
-                  >
+                  <tr className="text-left portal-meta-label">
                     <th className="px-6 py-3 font-semibold">Order #</th>
                     <th className="px-2 py-3 font-semibold">Items</th>
                     <th className="px-2 py-3 font-semibold">Total</th>
@@ -347,47 +348,44 @@ export function DashboardClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders.map((o) => {
-                    const badge = STATUS_BADGE[o.status] || STATUS_BADGE.DRAFT
-                    return (
-                      <tr
-                        key={o.id}
-                        className="border-t transition-colors hover:bg-[var(--portal-bg-elevated)]"
-                        style={{ borderColor: 'var(--portal-border-light, #F0E8DA)' }}
+                  {recentOrders.map((o) => (
+                    <tr
+                      key={o.id}
+                      className="border-t transition-colors hover:bg-[rgba(79,70,229,0.04)]"
+                      style={{ borderColor: 'var(--portal-border-light)' }}
+                    >
+                      <td className="px-6 py-3 portal-mono-data text-xs">
+                        <Link
+                          href={`/portal/orders/${o.id}`}
+                          className="hover:underline"
+                          style={{ color: 'var(--portal-text-strong)' }}
+                        >
+                          {o.orderNumber}
+                        </Link>
+                      </td>
+                      <td
+                        className="px-2 py-3 portal-mono-data text-[13px]"
+                        style={{ color: 'var(--portal-text)' }}
                       >
-                        <td className="px-6 py-3 font-mono text-xs">
-                          <Link
-                            href={`/portal/orders/${o.id}`}
-                            className="hover:underline"
-                            style={{ color: 'var(--portal-text-strong, #3E2A1E)' }}
-                          >
-                            {o.orderNumber}
-                          </Link>
-                        </td>
-                        <td className="px-2 py-3">{o.itemCount}</td>
-                        <td
-                          className="px-2 py-3 font-mono tabular-nums"
-                          style={{ color: 'var(--portal-text-strong, #3E2A1E)' }}
-                        >
-                          ${o.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        </td>
-                        <td className="px-2 py-3">
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                            style={{ background: badge.bg, color: badge.fg }}
-                          >
-                            {badge.label}
-                          </span>
-                        </td>
-                        <td
-                          className="px-6 py-3 text-right text-xs"
-                          style={{ color: 'var(--portal-text-muted, #6B6056)' }}
-                        >
-                          {relTime(o.createdAt)}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                        {o.itemCount}
+                      </td>
+                      <td
+                        className="px-2 py-3 portal-mono-data text-[15px]"
+                        style={{ color: 'var(--portal-text-strong)' }}
+                      >
+                        ${o.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td className="px-2 py-3">
+                        <PortalStatusBadge status={o.status} />
+                      </td>
+                      <td
+                        className="px-6 py-3 text-right portal-mono-data text-[11px]"
+                        style={{ color: 'var(--portal-text-subtle)' }}
+                      >
+                        {relTime(o.createdAt)}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -411,21 +409,27 @@ export function DashboardClient({
                 <li key={o.id} className="flex items-start gap-3 text-sm">
                   <span
                     className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: 'var(--portal-amber, #C9822B)' }}
+                    style={{ background: 'var(--c1)' }}
                   />
                   <div className="min-w-0">
                     <p
                       className="leading-tight"
-                      style={{ color: 'var(--portal-text-strong, #3E2A1E)' }}
+                      style={{ color: 'var(--portal-text-strong)' }}
                     >
-                      Order <strong className="font-mono">{o.orderNumber}</strong>{' '}
-                      <span style={{ color: 'var(--portal-text-muted, #6B6056)' }}>
+                      Order{' '}
+                      <strong
+                        className="portal-mono-data"
+                        style={{ fontWeight: 600 }}
+                      >
+                        {o.orderNumber}
+                      </strong>{' '}
+                      <span style={{ color: 'var(--portal-text-muted)' }}>
                         — {STATUS_BADGE[o.status]?.label ?? o.status}
                       </span>
                     </p>
                     <p
-                      className="text-[11px]"
-                      style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+                      className="text-[11px] portal-mono-data mt-0.5"
+                      style={{ color: 'var(--portal-text-subtle)' }}
                     >
                       {relTime(o.createdAt)} · ${o.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </p>
@@ -470,25 +474,28 @@ function Stat({
 }) {
   return (
     <div>
+      <div className="portal-meta-label">{label}</div>
       <div
-        className="text-[10px] uppercase tracking-wider font-semibold"
-        style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
-      >
-        {label}
-      </div>
-      <div
-        className="mt-1 text-[1.5rem] leading-tight"
+        className="mt-1.5 leading-none"
         style={{
-          fontFamily: 'var(--font-portal-display, Georgia)',
-          color: 'var(--portal-text-strong, #3E2A1E)',
-          fontWeight: 600,
+          fontFamily: 'var(--font-portal-display)',
+          fontSize: '1.75rem',
+          color: 'var(--portal-text-strong)',
+          fontWeight: 400,
           letterSpacing: '-0.01em',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         {value}
       </div>
       {subValue && (
-        <div className="text-xs" style={{ color: 'var(--portal-text-muted, #6B6056)' }}>
+        <div
+          className="text-xs mt-1"
+          style={{
+            color: 'var(--portal-text-muted)',
+            fontFamily: 'var(--font-portal-body)',
+          }}
+        >
           {subValue}
         </div>
       )}
@@ -523,14 +530,14 @@ function SpendBarChart({
               className="w-full rounded-t-md transition-colors"
               style={{
                 height: `${pct}%`,
-                background: 'var(--grad-amber, linear-gradient(180deg, #C9822B, #D4A54A))',
+                background: 'linear-gradient(180deg, var(--c1), var(--c2))',
                 minHeight: 2,
               }}
               title={`${m.month}: $${fmtMoney(m.spend)}`}
             />
             <div
-              className="text-[9px] font-mono"
-              style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+              className="text-[9px] portal-mono-data"
+              style={{ color: 'var(--portal-text-subtle)' }}
             >
               {m.month.slice(5) /* MM portion of YYYY-MM */}
             </div>
