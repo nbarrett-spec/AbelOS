@@ -8,7 +8,7 @@ export default function PortalProductNotFound() {
         className="w-14 h-14 mx-auto rounded-full flex items-center justify-center"
         style={{
           background: 'var(--portal-bg-elevated, #FAF5E8)',
-          color: 'var(--portal-kiln-oak, #8B6F47)',
+          color: 'var(--c1)',
         }}
       >
         <Box className="w-7 h-7" />
@@ -16,7 +16,7 @@ export default function PortalProductNotFound() {
       <h1
         className="text-xl font-medium"
         style={{
-          fontFamily: 'var(--font-portal-display, Georgia)',
+          fontFamily: 'var(--font-portal-display)',
           color: 'var(--portal-text-strong, #3E2A1E)',
         }}
       >

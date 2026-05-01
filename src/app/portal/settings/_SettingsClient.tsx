@@ -108,19 +108,14 @@ export function SettingsClient({ profile }: SettingsClientProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2
-          className="text-2xl font-medium leading-tight"
-          style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
-            color: 'var(--portal-text-strong, #3E2A1E)',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Settings
-        </h2>
+        <div className="portal-eyebrow mb-2">Account · Preferences</div>
+        <h1 className="portal-page-title">Settings</h1>
         <p
-          className="text-sm mt-1"
-          style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+          className="text-[15px] mt-2"
+          style={{
+            color: 'var(--portal-text-muted)',
+            fontFamily: 'var(--font-portal-body)',
+          }}
         >
           Account info, notifications, and branding for {builder.companyName}.
         </p>
@@ -274,7 +269,7 @@ export function SettingsClient({ profile }: SettingsClientProps) {
               <a
                 href="mailto:portal@abellumber.com"
                 className="hover:underline"
-                style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+                style={{ color: 'var(--c1)' }}
               >
                 portal@abellumber.com
               </a>{' '}
@@ -314,7 +309,7 @@ function Row({
     <div className="grid grid-cols-[100px_1fr] gap-3 items-baseline">
       <dt
         className="text-[10px] uppercase tracking-wider font-semibold flex items-center gap-1.5"
-        style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+        style={{ color: 'var(--portal-text-subtle)' }}
       >
         {icon}
         {label}
@@ -372,7 +367,7 @@ function Toggle({
         className="shrink-0 w-9 h-5 rounded-full relative transition-colors"
         style={{
           background: checked
-            ? 'var(--portal-amber, #C9822B)'
+            ? 'var(--c1)'
             : 'var(--portal-border, #E8DFD0)',
         }}
       >

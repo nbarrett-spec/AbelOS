@@ -137,7 +137,10 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
       <Link
         href="/portal/orders"
         className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
-        style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+        style={{
+          color: 'var(--c1)',
+          fontFamily: 'var(--font-portal-body)',
+        }}
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to orders
@@ -146,13 +149,14 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
+          <div className="portal-eyebrow mb-2">Order Detail</div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <h1
-              className="text-2xl font-medium font-mono tabular-nums"
+              className="portal-mono-data text-[28px]"
               style={{
-                fontFamily: 'var(--font-portal-mono, JetBrains Mono)',
-                color: 'var(--portal-text-strong, #3E2A1E)',
-                letterSpacing: '-0.01em',
+                color: 'var(--portal-text-strong)',
+                letterSpacing: '0.02em',
+                fontWeight: 600,
               }}
             >
               {order.orderNumber}
@@ -161,8 +165,11 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
           </div>
           {projectLine && (
             <p
-              className="text-sm mt-1"
-              style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+              className="text-[15px] mt-2"
+              style={{
+                color: 'var(--portal-text-muted)',
+                fontFamily: 'var(--font-portal-body)',
+              }}
             >
               {projectLine}
             </p>
@@ -170,7 +177,10 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
           {addressLine && (
             <p
               className="text-xs mt-0.5 flex items-center gap-1"
-              style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+              style={{
+                color: 'var(--portal-text-subtle)',
+                fontFamily: 'var(--font-portal-body)',
+              }}
             >
               <MapPin className="w-3 h-3" /> {addressLine}
             </p>
@@ -179,11 +189,14 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
         <div className="flex gap-2">
           <Link
             href="/portal/messages"
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-medium transition-colors"
             style={{
-              background: 'var(--portal-bg-card, #FFFFFF)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              border: '1px solid var(--portal-border, #E8DFD0)',
+              background: 'var(--glass)',
+              backdropFilter: 'var(--glass-blur)',
+              WebkitBackdropFilter: 'var(--glass-blur)',
+              color: 'var(--portal-text-strong)',
+              border: '1px solid var(--glass-border)',
+              fontFamily: 'var(--font-portal-body)',
             }}
           >
             <MessageCircle className="w-3.5 h-3.5" />
@@ -193,12 +206,12 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             type="button"
             onClick={handleReorder}
             disabled={reordering}
-            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-xs font-medium transition-shadow disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-xs font-medium transition-shadow disabled:opacity-60"
             style={{
-              background:
-                'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+              background: 'var(--grad)',
               color: 'white',
-              boxShadow: 'var(--shadow-md)',
+              boxShadow: '0 6px 20px rgba(79,70,229,0.25)',
+              fontFamily: 'var(--font-portal-body)',
             }}
           >
             <Repeat className="w-3.5 h-3.5" />
@@ -245,10 +258,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr
-                    className="text-left text-[10px] uppercase tracking-wider"
-                    style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
-                  >
+                  <tr className="text-left portal-meta-label">
                     <th className="px-6 py-3 font-semibold">Item</th>
                     <th className="px-2 py-3 font-semibold text-right">Qty</th>
                     <th className="px-2 py-3 font-semibold text-right">Unit</th>

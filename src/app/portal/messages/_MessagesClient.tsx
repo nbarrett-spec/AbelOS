@@ -251,19 +251,14 @@ export function MessagesClient({
       {/* Header */}
       <div className="mb-4 flex items-end justify-between gap-4 flex-wrap">
         <div className="min-w-0">
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Messages
-          </h2>
+          <div className="portal-eyebrow mb-2">Direct Chat</div>
+          <h1 className="portal-page-title">Messages</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             Chat with your {builder.companyName} team at Abel.
           </p>
@@ -277,7 +272,7 @@ export function MessagesClient({
           className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
           style={{
             background:
-              'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+              'var(--grad)',
             color: 'white',
             boxShadow: 'var(--shadow-md)',
           }}
@@ -301,7 +296,7 @@ export function MessagesClient({
           <div
             className="px-4 py-3 text-[10px] uppercase tracking-wider font-semibold flex items-center justify-between"
             style={{
-              color: 'var(--portal-kiln-oak, #8B6F47)',
+              color: 'var(--portal-text-subtle)',
               borderBottom: '1px solid var(--portal-border-light, #F0E8DA)',
             }}
           >
@@ -310,7 +305,7 @@ export function MessagesClient({
               <span
                 className="text-[10px] px-1.5 rounded-full"
                 style={{
-                  background: 'var(--portal-amber, #C9822B)',
+                  background: 'var(--c1)',
                   color: 'white',
                 }}
               >
@@ -348,7 +343,7 @@ export function MessagesClient({
                             ? 'var(--portal-bg-elevated, #FAF5E8)'
                             : 'transparent',
                           borderLeft: active
-                            ? '3px solid var(--portal-amber, #C9822B)'
+                            ? '3px solid var(--c1)'
                             : '3px solid transparent',
                           borderBottom:
                             '1px solid var(--portal-border-light, #F0E8DA)',
@@ -386,7 +381,7 @@ export function MessagesClient({
                             <span
                               className="text-[9px] font-mono tabular-nums px-1.5 rounded-full shrink-0"
                               style={{
-                                background: 'var(--portal-amber, #C9822B)',
+                                background: 'var(--c1)',
                                 color: 'white',
                                 lineHeight: '14px',
                               }}
@@ -462,7 +457,7 @@ export function MessagesClient({
                 >
                   <ChevronLeft
                     className="w-4 h-4"
-                    style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+                    style={{ color: 'var(--c1)' }}
                   />
                 </button>
                 <div className="min-w-0 flex-1">
@@ -537,7 +532,7 @@ export function MessagesClient({
                   className="inline-flex items-center justify-center w-10 h-10 rounded-md transition-shadow disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
                     background:
-                      'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                      'var(--grad)',
                     color: 'white',
                     boxShadow: 'var(--shadow-md)',
                   }}
@@ -584,8 +579,8 @@ function MessageBubble({ message }: { message: MessageRow }) {
         className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-semibold"
         style={{
           background: isBuilder
-            ? 'var(--portal-amber, #C9822B)'
-            : 'var(--portal-walnut, #3E2A1E)',
+            ? 'var(--c1)'
+            : 'var(--c1)',
           color: 'white',
         }}
         aria-hidden="true"
@@ -598,7 +593,7 @@ function MessageBubble({ message }: { message: MessageRow }) {
           style={
             isBuilder
               ? {
-                  background: 'var(--portal-walnut, #3E2A1E)',
+                  background: 'var(--c1)',
                   color: 'var(--portal-cream, #F3EAD8)',
                   borderTopRightRadius: 4,
                 }
@@ -650,7 +645,7 @@ function NewThreadForm({
         <h3
           className="text-sm font-medium"
           style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
+            fontFamily: 'var(--font-portal-display)',
             color: 'var(--portal-text-strong, #3E2A1E)',
           }}
         >
@@ -674,7 +669,7 @@ function NewThreadForm({
         <div>
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)' }}
           >
             Subject
           </label>
@@ -695,7 +690,7 @@ function NewThreadForm({
         <div className="flex-1 min-h-0 flex flex-col">
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)' }}
           >
             Message
           </label>
@@ -738,7 +733,7 @@ function NewThreadForm({
           className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow disabled:opacity-60"
           style={{
             background:
-              'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+              'var(--grad)',
             color: 'white',
             boxShadow: 'var(--shadow-md)',
           }}

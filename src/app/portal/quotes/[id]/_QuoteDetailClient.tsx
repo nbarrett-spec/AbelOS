@@ -158,7 +158,10 @@ export function QuoteDetailClient({
       <Link
         href="/portal/quotes"
         className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
-        style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+        style={{
+          color: 'var(--c1)',
+          fontFamily: 'var(--font-portal-body)',
+        }}
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to quotes
@@ -167,20 +170,28 @@ export function QuoteDetailClient({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
+          <div className="portal-eyebrow mb-2">Quote Detail</div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <h1
-              className="text-2xl font-medium font-mono tabular-nums"
+              className="portal-mono-data text-[28px]"
               style={{
-                fontFamily: 'var(--font-portal-mono, JetBrains Mono)',
-                color: 'var(--portal-text-strong, #3E2A1E)',
-                letterSpacing: '-0.01em',
+                color: 'var(--portal-text-strong)',
+                letterSpacing: '0.02em',
+                fontWeight: 600,
               }}
             >
               {quote.quoteNumber}
             </h1>
             <span
-              className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium"
-              style={{ background: badge.bg, color: badge.fg }}
+              className="inline-flex items-center px-2.5 py-1 rounded-full uppercase"
+              style={{
+                background: badge.bg,
+                color: badge.fg,
+                fontFamily: 'var(--font-portal-mono)',
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+              }}
             >
               {badge.label}
             </span>
@@ -237,7 +248,7 @@ export function QuoteDetailClient({
               className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-xs font-medium transition-shadow disabled:opacity-60"
               style={{
                 background:
-                  'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                  'var(--grad)',
                 color: 'white',
                 boxShadow: 'var(--shadow-md)',
               }}
@@ -259,7 +270,7 @@ export function QuoteDetailClient({
               className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-xs font-medium transition-shadow"
               style={{
                 background:
-                  'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                  'var(--grad)',
                 color: 'white',
                 boxShadow: 'var(--shadow-md)',
               }}
@@ -303,10 +314,7 @@ export function QuoteDetailClient({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr
-                    className="text-left text-[10px] uppercase tracking-wider"
-                    style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
-                  >
+                  <tr className="text-left portal-meta-label">
                     <th className="px-6 py-3 font-semibold">Item</th>
                     <th className="px-2 py-3 font-semibold text-right">Qty</th>
                     <th className="px-2 py-3 font-semibold text-right">Unit</th>

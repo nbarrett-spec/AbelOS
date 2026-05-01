@@ -128,13 +128,13 @@ export function PortalOrderTimeline({
                   style={
                     state === 'complete'
                       ? {
-                          background: 'var(--portal-walnut, #3E2A1E)',
+                          background: 'var(--c1)',
                           color: 'white',
                         }
                       : state === 'current'
                         ? {
                             background:
-                              'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                              'var(--grad)',
                             color: 'white',
                             boxShadow: '0 0 0 4px rgba(201,130,43,0.18)',
                           }
@@ -159,7 +159,7 @@ export function PortalOrderTimeline({
                     style={{
                       background:
                         state === 'complete'
-                          ? 'var(--portal-walnut, #3E2A1E)'
+                          ? 'var(--c1)'
                           : 'var(--portal-border, #E8DFD0)',
                     }}
                   />

@@ -18,7 +18,7 @@ export function PortalSparkline({
   data,
   width = 100,
   height = 36,
-  color = 'var(--portal-walnut, #3E2A1E)',
+  color = 'var(--c1)',
   opacity = 0.6,
   className,
 }: PortalSparklineProps) {

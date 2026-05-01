@@ -218,31 +218,26 @@ export function ScheduleClient({
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Schedule
-          </h2>
+          <div className="portal-eyebrow mb-2">Deliveries · Installs · Jobs</div>
+          <h1 className="portal-page-title">Schedule</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             Deliveries, installs, and jobs across your active builds.
           </p>
         </div>
       </div>
 
-      {/* Stat strip */}
+      {/* Stat strip — Mockup-3 colored left-bar accents */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Active Jobs" value={stats.activeJobs} accent="var(--portal-walnut, #3E2A1E)" />
-        <Stat label="Upcoming Deliveries" value={stats.upcomingDeliveries} accent="var(--portal-amber, #C9822B)" />
-        <Stat label="In Transit" value={stats.inTransit} accent="var(--portal-sky, #8CA8B8)" />
-        <Stat label="Done This Month" value={stats.completedThisMonth} accent="var(--portal-success, #1A4B21)" />
+        <Stat label="Active Jobs" value={stats.activeJobs} accent="var(--c1)" />
+        <Stat label="Upcoming Deliveries" value={stats.upcomingDeliveries} accent="var(--data-warning)" />
+        <Stat label="In Transit" value={stats.inTransit} accent="var(--c3)" />
+        <Stat label="Done This Month" value={stats.completedThisMonth} accent="var(--data-positive)" />
       </div>
 
       {/* Week navigator + calendar */}
@@ -275,7 +270,7 @@ export function ScheduleClient({
               className="h-8 px-3 inline-flex items-center justify-center rounded transition-colors text-xs font-medium"
               style={{
                 background: 'var(--portal-bg-elevated, #FAF5E8)',
-                color: 'var(--portal-walnut, #3E2A1E)',
+                color: 'var(--c1)',
               }}
               aria-label="Today"
             >
@@ -319,8 +314,8 @@ export function ScheduleClient({
                     className="text-[10px] uppercase tracking-wider font-semibold"
                     style={{
                       color: isToday
-                        ? 'var(--portal-amber, #C9822B)'
-                        : 'var(--portal-kiln-oak, #8B6F47)',
+                        ? 'var(--data-warning)'
+                        : 'var(--portal-text-subtle)',
                     }}
                   >
                     {d.toLocaleDateString(undefined, { weekday: 'short' })}
@@ -329,7 +324,7 @@ export function ScheduleClient({
                     className="text-sm font-mono tabular-nums"
                     style={{
                       color: isToday
-                        ? 'var(--portal-amber, #C9822B)'
+                        ? 'var(--data-warning)'
                         : 'var(--portal-text-strong, #3E2A1E)',
                       fontWeight: isToday ? 700 : 500,
                     }}
@@ -355,7 +350,7 @@ export function ScheduleClient({
                           e.type === 'delivery'
                             ? '#7A4E0F'
                             : e.type === 'install'
-                              ? 'var(--portal-walnut, #3E2A1E)'
+                              ? 'var(--c1)'
                               : '#3D5A6A',
                       }}
                       title={`${e.title}${e.subtitle ? ' — ' + e.subtitle : ''}`}
@@ -466,14 +461,14 @@ function Stat({
       <div className="pl-1.5">
         <div
           className="text-[10px] uppercase tracking-wider font-semibold"
-          style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+          style={{ color: 'var(--portal-text-subtle)' }}
         >
           {label}
         </div>
         <div
           className="text-2xl font-semibold tabular-nums mt-1"
           style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
+            fontFamily: 'var(--font-portal-display)',
             color: 'var(--portal-text-strong, #3E2A1E)',
             letterSpacing: '-0.02em',
           }}
@@ -495,7 +490,7 @@ function InTransitRibbon({
       className="relative overflow-hidden rounded-[14px] p-4"
       style={{
         background:
-          'linear-gradient(135deg, var(--portal-walnut, #3E2A1E), #4F3829)',
+          'linear-gradient(135deg, var(--c1) 0%, var(--c2) 50%, var(--c3) 100%)',
         color: 'white',
         boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(62,42,30,0.18))',
       }}
@@ -524,7 +519,7 @@ function InTransitRibbon({
           </div>
           <h3
             className="text-lg font-medium mt-0.5"
-            style={{ fontFamily: 'var(--font-portal-display, Georgia)' }}
+            style={{ fontFamily: 'var(--font-portal-display)' }}
           >
             {deliveries.length} delivery{deliveries.length === 1 ? '' : ' on the move'}
           </h3>
@@ -624,7 +619,7 @@ function DeliveryCard({
           className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center"
           style={{
             background: 'rgba(201,130,43,0.10)',
-            color: 'var(--portal-amber, #C9822B)',
+            color: 'var(--data-warning)',
           }}
         >
           <Package className="w-4 h-4" />
@@ -693,7 +688,7 @@ function DeliveryCard({
                 disabled={!newDate || rescheduled}
                 className="h-7 px-2 text-[11px] rounded font-medium disabled:opacity-60"
                 style={{
-                  background: 'var(--portal-walnut, #3E2A1E)',
+                  background: 'var(--c1)',
                   color: 'white',
                 }}
               >
@@ -728,7 +723,7 @@ function DeliveryCard({
                 className="text-[11px] font-medium px-2 h-6 rounded transition-colors"
                 style={{
                   background: 'var(--portal-bg-elevated, #FAF5E8)',
-                  color: 'var(--portal-walnut, #3E2A1E)',
+                  color: 'var(--c1)',
                 }}
               >
                 Reschedule
@@ -787,7 +782,7 @@ function EventPopover({
         </button>
         <div
           className="text-[10px] uppercase tracking-wider font-semibold"
-          style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+          style={{ color: 'var(--portal-text-subtle)' }}
         >
           {event.type}
         </div>
@@ -834,7 +829,7 @@ function EventPopover({
             className="inline-flex items-center gap-1.5 mt-4 px-3 h-8 rounded-md text-xs font-medium transition-shadow"
             style={{
               background:
-                'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                'var(--grad)',
               color: 'white',
             }}
           >

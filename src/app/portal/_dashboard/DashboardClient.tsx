@@ -40,46 +40,49 @@ interface QuickAction {
   fg: string
 }
 
+// Mockup-3 quick-action palette — each card uses an indigo/cyan/sky
+// tint pulled from the gradient stops, plus warning + negative for
+// Report Issue.
 const QUICK_ACTIONS: QuickAction[] = [
   {
     label: 'New Quote',
     hint: 'Start from plan',
     href: '/portal/quotes/new',
     icon: FilePlus,
-    bg: 'rgba(62,42,30,0.06)',
-    fg: 'var(--portal-walnut, #3E2A1E)',
+    bg: 'rgba(79,70,229,0.08)',
+    fg: 'var(--c1)',
   },
   {
     label: 'Reorder',
     hint: 'From past order',
     href: '/portal/orders?reorder=1',
     icon: Repeat,
-    bg: 'rgba(201,130,43,0.08)',
-    fg: 'var(--portal-amber, #C9822B)',
+    bg: 'rgba(37,99,235,0.08)',
+    fg: 'var(--c2)',
   },
   {
     label: 'Track Delivery',
     hint: 'Real-time ETA',
     href: '/portal/schedule',
     icon: MapPin,
-    bg: 'rgba(140,168,184,0.1)',
-    fg: 'var(--portal-sky, #8CA8B8)',
+    bg: 'rgba(14,165,233,0.10)',
+    fg: 'var(--c3)',
   },
   {
     label: 'Message Abel',
     hint: 'Chat with your PM',
     href: '/portal/messages',
     icon: MessageCircle,
-    bg: 'rgba(184,135,107,0.1)',
-    fg: 'var(--portal-dust, #B8876B)',
+    bg: 'rgba(6,182,212,0.10)',
+    fg: 'var(--c4)',
   },
   {
     label: 'Report Issue',
     hint: 'Warranty / QC',
     href: '/portal/warranty',
     icon: AlertCircle,
-    bg: 'rgba(110,42,36,0.06)',
-    fg: 'var(--portal-oxblood, #6E2A24)',
+    bg: 'var(--data-negative-bg)',
+    fg: 'var(--data-negative)',
   },
 ]
 
@@ -210,7 +213,7 @@ export function DashboardClient({
         <PortalKpiCard
           label="Active Orders"
           value={activeOrderCount}
-          accentColor="var(--portal-walnut, #3E2A1E)"
+          accentColor="var(--c1)"
           delta={
             recentOrders.length > 0
               ? {
@@ -225,7 +228,7 @@ export function DashboardClient({
         <PortalKpiCard
           label="YTD Orders"
           value={ytdOrders}
-          accentColor="var(--portal-amber, #C9822B)"
+          accentColor="var(--c2)"
           sparklineData={sparkOrders.length > 1 ? sparkOrders : undefined}
         />
         <PortalKpiCard
@@ -250,7 +253,7 @@ export function DashboardClient({
           value={approvalRate}
           suffix="%"
           decimals={0}
-          accentColor="var(--portal-kiln-oak, #8B6F47)"
+          accentColor="var(--c4)"
         />
       </div>
 
@@ -318,7 +321,7 @@ export function DashboardClient({
               href="/portal/orders"
               className="text-xs font-medium px-3 h-8 inline-flex items-center rounded transition-colors"
               style={{
-                color: 'var(--portal-walnut, #3E2A1E)',
+                color: 'var(--portal-text-strong)',
                 background: 'var(--portal-bg-elevated, #FAF5E8)',
               }}
             >

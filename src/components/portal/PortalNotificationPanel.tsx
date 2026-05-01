@@ -96,7 +96,7 @@ export function PortalNotificationPanel({
             <h2
               className="text-base font-medium"
               style={{
-                fontFamily: 'var(--font-portal-display, Georgia)',
+                fontFamily: 'var(--font-portal-display)',
                 color: 'var(--portal-text-strong, #3E2A1E)',
               }}
             >
@@ -113,7 +113,7 @@ export function PortalNotificationPanel({
                 onClick={onMarkAllRead}
                 className="text-xs px-2 py-1 rounded transition-colors"
                 style={{
-                  color: 'var(--portal-amber, #C9822B)',
+                  color: 'var(--c1)',
                 }}
               >
                 Mark all read
@@ -150,7 +150,7 @@ export function PortalNotificationPanel({
               <section key={bucket}>
                 <h3
                   className="text-[10px] font-semibold uppercase tracking-wider mb-2 px-2"
-                  style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                  style={{ color: 'var(--portal-text-subtle)' }}
                 >
                   {bucket}
                 </h3>
@@ -170,7 +170,7 @@ export function PortalNotificationPanel({
                             className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
                             style={{
                               background: 'rgba(62,42,30,0.05)',
-                              color: 'var(--portal-walnut, #3E2A1E)',
+                              color: 'var(--portal-text-strong)',
                             }}
                           >
                             <Icon className="w-4 h-4" />
@@ -190,7 +190,7 @@ export function PortalNotificationPanel({
                             </p>
                             <p
                               className="text-[10px] mt-1"
-                              style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                              style={{ color: 'var(--portal-text-subtle)' }}
                             >
                               {new Date(n.timestamp).toLocaleString()}
                             </p>

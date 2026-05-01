@@ -183,7 +183,7 @@ export function OrdersClient({
                 style={
                   active
                     ? {
-                        background: 'var(--portal-walnut, #3E2A1E)',
+                        background: 'var(--c1)',
                         color: 'white',
                       }
                     : {
@@ -487,7 +487,7 @@ function EmptyState({ query, status }: { query: string; status: string }) {
         className="inline-flex items-center gap-1.5 mt-4 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
         style={{
           background:
-            'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+            'var(--grad)',
           color: 'white',
         }}
       >

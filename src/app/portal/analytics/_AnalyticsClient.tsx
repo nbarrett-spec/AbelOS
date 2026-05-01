@@ -181,22 +181,18 @@ export function AnalyticsClient({
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2
-            className="text-2xl font-medium leading-tight"
+          <div className="portal-eyebrow mb-2">
+            {periodTotals.label}
+          </div>
+          <h1 className="portal-page-title">Spend & Analytics</h1>
+          <p
+            className="text-[15px] mt-2 portal-mono-data"
             style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
+              color: 'var(--portal-text-muted)',
+              fontWeight: 400,
             }}
           >
-            Spend & Analytics
-          </h2>
-          <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
-          >
-            {periodTotals.label} · {periodTotals.orders} orders · $
-            {fmtMoney(periodTotals.spend)}
+            {periodTotals.orders} orders · ${fmtMoney(periodTotals.spend)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -210,7 +206,7 @@ export function AnalyticsClient({
                 style={
                   period === p
                     ? {
-                        background: 'var(--portal-walnut, #3E2A1E)',
+                        background: 'var(--c1)',
                         color: 'white',
                       }
                     : {
@@ -260,7 +256,7 @@ export function AnalyticsClient({
           value={Math.round(periodTotals.spend / 1000)}
           prefix="$"
           suffix="K"
-          accentColor="var(--portal-walnut, #3E2A1E)"
+          accentColor="var(--c1)"
         />
         <PortalKpiCard
           label="Avg Order Value"
@@ -268,7 +264,7 @@ export function AnalyticsClient({
           prefix="$"
           suffix="K"
           decimals={1}
-          accentColor="var(--portal-amber, #C9822B)"
+          accentColor="var(--c4)"
         />
         <PortalKpiCard
           label="Orders"
@@ -280,7 +276,7 @@ export function AnalyticsClient({
           value={approvalRate}
           suffix="%"
           decimals={0}
-          accentColor="var(--portal-kiln-oak, #8B6F47)"
+          accentColor="var(--portal-text-subtle)"
         />
       </div>
 
@@ -685,7 +681,7 @@ function TopProductsBars({
                   style={{
                     width: `${pct}%`,
                     background:
-                      'var(--grad-amber, linear-gradient(90deg, #C9822B, #D4A54A))',
+                      'linear-gradient(90deg, var(--c1), var(--c2))',
                     minWidth: 2,
                   }}
                 />
@@ -722,7 +718,7 @@ function VolumeTierProgress({ volume }: { volume: VolumeSavingsResponse }) {
         <Stat
           label="YTD Spend"
           value={fmtUsdShort(volume.yearTotal)}
-          accent="var(--portal-walnut, #3E2A1E)"
+          accent="var(--c1)"
         />
         <Stat
           label="Saved at Tier"
@@ -736,7 +732,7 @@ function VolumeTierProgress({ volume }: { volume: VolumeSavingsResponse }) {
               ? `+${volume.nextTierDiscountPercent ?? 0}%`
               : '✓'
           }
-          accent="var(--portal-amber, #C9822B)"
+          accent="var(--c4)"
         />
       </div>
       {/* Tier ladder */}
@@ -764,7 +760,7 @@ function VolumeTierProgress({ volume }: { volume: VolumeSavingsResponse }) {
                   style={{
                     color:
                       isCurrent
-                        ? 'var(--portal-amber, #C9822B)'
+                        ? 'var(--c4)'
                         : 'var(--portal-text-strong, #3E2A1E)',
                     fontWeight: isCurrent ? 700 : 500,
                   }}
@@ -782,8 +778,8 @@ function VolumeTierProgress({ volume }: { volume: VolumeSavingsResponse }) {
                     style={{
                       width: isCurrent ? `${progress}%` : '100%',
                       background: passed
-                        ? 'var(--portal-walnut, #3E2A1E)'
-                        : 'var(--grad-amber, linear-gradient(90deg, #C9822B, #D4A54A))',
+                        ? 'var(--c1)'
+                        : 'linear-gradient(90deg, var(--c1), var(--c2))',
                     }}
                   />
                 )}
@@ -814,7 +810,7 @@ function VolumeTierProgress({ volume }: { volume: VolumeSavingsResponse }) {
       >
         <TrendingUp
           className="w-3.5 h-3.5 shrink-0 mt-0.5"
-          style={{ color: 'var(--portal-amber, #C9822B)' }}
+          style={{ color: 'var(--c4)' }}
         />
         <div>
           {volume.nextTier ? (
@@ -869,14 +865,14 @@ function Stat({
       <div className="pl-1.5">
         <div
           className="text-[10px] uppercase tracking-wider"
-          style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+          style={{ color: 'var(--portal-text-subtle)' }}
         >
           {label}
         </div>
         <div
           className="text-base font-semibold tabular-nums mt-0.5"
           style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
+            fontFamily: 'var(--font-portal-display)',
             color: 'var(--portal-text-strong, #3E2A1E)',
           }}
         >
@@ -902,7 +898,7 @@ function CategoryPricingTable({
         <thead>
           <tr
             className="text-left text-[10px] uppercase tracking-wider"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)' }}
           >
             <th className="px-2 py-2 font-semibold">Category</th>
             <th className="px-2 py-2 font-semibold text-right">List Avg</th>

@@ -294,19 +294,14 @@ export function DocumentsClient({
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Documents
-          </h2>
+          <div className="portal-eyebrow mb-2">Invoices · Statements · Quotes</div>
+          <h1 className="portal-page-title">Documents</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             Invoices, statements, and quote PDFs.
           </p>
@@ -343,7 +338,7 @@ export function DocumentsClient({
             label="Outstanding"
             value={`$${fmtUsd(summary.totalOutstanding, 0)}`}
             sub={`${summary.openCount} open`}
-            accent="var(--portal-walnut, #3E2A1E)"
+            accent="var(--c1)"
           />
           <SummaryStat
             label="Overdue"
@@ -359,7 +354,7 @@ export function DocumentsClient({
           <SummaryStat
             label="Total Invoices"
             value={String(summary.totalInvoices)}
-            accent="var(--portal-amber, #C9822B)"
+            accent="var(--c4)"
           />
         </div>
       )}
@@ -385,7 +380,7 @@ export function DocumentsClient({
               style={
                 active
                   ? {
-                      background: 'var(--portal-walnut, #3E2A1E)',
+                      background: 'var(--c1)',
                       color: 'white',
                     }
                   : {
@@ -495,7 +490,7 @@ export function DocumentsClient({
                 className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
                 style={{
                   background:
-                    'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                    'var(--grad)',
                   color: 'white',
                   boxShadow: 'var(--shadow-md)',
                 }}
@@ -562,14 +557,14 @@ function SummaryStat({
       <div className="pl-1.5">
         <div
           className="text-[10px] uppercase tracking-wider font-semibold"
-          style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+          style={{ color: 'var(--portal-text-subtle)' }}
         >
           {label}
         </div>
         <div
           className="text-xl font-semibold tabular-nums mt-1"
           style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
+            fontFamily: 'var(--font-portal-display)',
             color: 'var(--portal-text-strong, #3E2A1E)',
             letterSpacing: '-0.02em',
           }}
@@ -624,7 +619,7 @@ function InvoiceItem({
           onChange={canSelect ? onToggle : undefined}
           disabled={!canSelect}
           className="w-4 h-4 shrink-0 disabled:opacity-30"
-          style={{ accentColor: 'var(--portal-amber, #C9822B)' }}
+          style={{ accentColor: 'var(--c4)' }}
           aria-label={`Select ${invoice.invoiceNumber}`}
         />
       )}
@@ -782,7 +777,7 @@ function StatementItem({ statement }: { statement: StatementRow }) {
         className="w-9 h-9 shrink-0 rounded-md flex items-center justify-center"
         style={{
           background: 'rgba(62,42,30,0.10)',
-          color: 'var(--portal-walnut, #3E2A1E)',
+          color: 'var(--c1)',
         }}
       >
         <Receipt className="w-4 h-4" />
@@ -880,7 +875,7 @@ function PayModal({
           <h3
             className="text-lg font-medium"
             style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
+              fontFamily: 'var(--font-portal-display)',
               color: 'var(--portal-text-strong, #3E2A1E)',
             }}
           >
@@ -903,7 +898,7 @@ function PayModal({
         <div>
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-2"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)' }}
           >
             Payment Method
           </label>
@@ -917,7 +912,7 @@ function PayModal({
                 style={
                   method === m
                     ? {
-                        background: 'var(--portal-walnut, #3E2A1E)',
+                        background: 'var(--c1)',
                         color: 'white',
                       }
                     : {
@@ -939,7 +934,7 @@ function PayModal({
         <div>
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)' }}
           >
             Reference (optional)
           </label>
@@ -991,7 +986,7 @@ function PayModal({
             className="inline-flex items-center gap-1.5 px-5 h-9 rounded-md text-sm font-medium transition-shadow disabled:opacity-60"
             style={{
               background:
-                'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                'var(--grad)',
               color: 'white',
               boxShadow: 'var(--shadow-md)',
             }}

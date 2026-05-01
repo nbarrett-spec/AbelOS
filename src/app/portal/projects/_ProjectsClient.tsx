@@ -134,19 +134,14 @@ export function ProjectsClient({
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Projects
-          </h2>
+          <div className="portal-eyebrow mb-2">Active Builds</div>
+          <h1 className="portal-page-title">Projects</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             {projects.length > 0
               ? `${projects.length} project${projects.length === 1 ? '' : 's'} on file`
@@ -161,12 +156,12 @@ export function ProjectsClient({
           <Stat
             label="Filtered Projects"
             value={String(filtered.length)}
-            accent="var(--portal-walnut, #3E2A1E)"
+            accent="var(--c1)"
           />
           <Stat
             label="Total Spend (Filtered)"
             value={fmtUsd(totalSpend)}
-            accent="var(--portal-amber, #C9822B)"
+            accent="var(--c4)"
           />
           <Stat
             label="Upcoming Deliveries"
@@ -188,7 +183,7 @@ export function ProjectsClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by project name, address, or plan…"
-            className="h-10 w-full pl-10 pr-9 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+            className="h-10 w-full pl-10 pr-9 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
             style={{
               background: 'var(--portal-bg-card, #FFFFFF)',
               border: '1px solid var(--portal-border, #E8DFD0)',
@@ -214,7 +209,7 @@ export function ProjectsClient({
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="text-[10px] uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)' }}
               >
                 Community:
               </span>
@@ -225,7 +220,7 @@ export function ProjectsClient({
                 style={
                   !community
                     ? {
-                        background: 'var(--portal-walnut, #3E2A1E)',
+                        background: 'var(--c1)',
                         color: 'white',
                       }
                     : {
@@ -248,7 +243,7 @@ export function ProjectsClient({
                     style={
                       active
                         ? {
-                            background: 'var(--portal-walnut, #3E2A1E)',
+                            background: 'var(--c1)',
                             color: 'white',
                           }
                         : {
@@ -269,7 +264,7 @@ export function ProjectsClient({
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="text-[10px] uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)' }}
               >
                 Status:
               </span>
@@ -280,7 +275,7 @@ export function ProjectsClient({
                 style={
                   !status
                     ? {
-                        background: 'var(--portal-walnut, #3E2A1E)',
+                        background: 'var(--c1)',
                         color: 'white',
                       }
                     : {
@@ -304,7 +299,7 @@ export function ProjectsClient({
                     style={
                       active
                         ? {
-                            background: 'var(--portal-walnut, #3E2A1E)',
+                            background: 'var(--c1)',
                             color: 'white',
                           }
                         : {
@@ -365,7 +360,7 @@ function ProjectCard({ project }: { project: PortalProjectRow }) {
   return (
     <Link
       href={`/portal/orders?q=${encodeURIComponent(project.name)}`}
-      className="group block rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--portal-amber,#C9822B)] focus-visible:ring-offset-2"
+      className="group block rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c1)] focus-visible:ring-offset-2"
     >
       <div
         className="relative h-full p-4 rounded-[14px] transition-shadow group-hover:shadow-md"
@@ -385,7 +380,7 @@ function ProjectCard({ project }: { project: PortalProjectRow }) {
           <div className="text-right">
             <div
               className="text-[10px] uppercase tracking-wider"
-              style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+              style={{ color: 'var(--portal-text-subtle)' }}
             >
               Spend
             </div>
@@ -402,7 +397,7 @@ function ProjectCard({ project }: { project: PortalProjectRow }) {
         <h3
           className="text-base font-medium leading-tight line-clamp-2 mb-1"
           style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
+            fontFamily: 'var(--font-portal-display)',
             color: 'var(--portal-text-strong, #3E2A1E)',
             letterSpacing: '-0.01em',
           }}
@@ -461,7 +456,7 @@ function ProjectCard({ project }: { project: PortalProjectRow }) {
         {/* Hover affordance */}
         <ChevronRight
           className="absolute bottom-4 right-4 w-4 h-4 opacity-0 group-hover:opacity-60 transition-opacity"
-          style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+          style={{ color: 'var(--c1)' }}
         />
       </div>
     </Link>
@@ -481,7 +476,7 @@ function Mini({
     <div>
       <div
         className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-wider"
-        style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+        style={{ color: 'var(--portal-text-subtle)' }}
       >
         {icon}
         {label}
@@ -520,14 +515,14 @@ function Stat({
       <div className="pl-1.5">
         <div
           className="text-[10px] uppercase tracking-wider font-semibold"
-          style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+          style={{ color: 'var(--portal-text-subtle)' }}
         >
           {label}
         </div>
         <div
           className="text-2xl font-semibold tabular-nums mt-1"
           style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
+            fontFamily: 'var(--font-portal-display)',
             color: 'var(--portal-text-strong, #3E2A1E)',
             letterSpacing: '-0.02em',
           }}

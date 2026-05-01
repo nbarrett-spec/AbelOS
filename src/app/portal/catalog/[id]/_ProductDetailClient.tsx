@@ -164,7 +164,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
       <Link
         href="/portal/catalog"
         className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
-        style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+        style={{ color: 'var(--c1)' }}
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to catalog
@@ -190,7 +190,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
           ) : (
             <div
               className="w-full h-full flex items-center justify-center text-xs uppercase tracking-wider font-semibold"
-              style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+              style={{ color: 'var(--portal-text-subtle)' }}
             >
               {product.category}
             </div>
@@ -207,7 +207,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
           <div>
             <div
               className="text-[10px] uppercase tracking-wider font-semibold"
-              style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+              style={{ color: 'var(--portal-text-subtle)' }}
             >
               {product.category}
               {product.subcategory ? ` · ${product.subcategory}` : ''}
@@ -215,7 +215,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
             <h1
               className="mt-1 text-2xl md:text-3xl font-medium leading-tight"
               style={{
-                fontFamily: 'var(--font-portal-display, Georgia)',
+                fontFamily: 'var(--font-portal-display)',
                 color: 'var(--portal-text-strong, #3E2A1E)',
                 letterSpacing: '-0.02em',
               }}
@@ -263,7 +263,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
                 <div
                   className="text-3xl font-semibold tabular-nums"
                   style={{
-                    fontFamily: 'var(--font-portal-display, Georgia)',
+                    fontFamily: 'var(--font-portal-display)',
                     color: 'var(--portal-text-strong, #3E2A1E)',
                     letterSpacing: '-0.02em',
                   }}
@@ -332,7 +332,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
                   onChange={(e) =>
                     setQty(Math.max(1, parseInt(e.target.value, 10) || 1))
                   }
-                  className="h-9 w-14 text-center text-sm tabular-nums font-mono focus:outline-none focus:ring-1 focus:ring-[var(--portal-amber,#C9822B)]"
+                  className="h-9 w-14 text-center text-sm tabular-nums font-mono focus:outline-none focus:ring-1 focus:ring-[var(--c1)]"
                   style={{
                     background: 'var(--portal-bg-card, #FFFFFF)',
                     color: 'var(--portal-text-strong, #3E2A1E)',
@@ -363,7 +363,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
                 style={{
                   background: added
                     ? 'var(--portal-success, #1A4B21)'
-                    : 'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                    : 'var(--grad)',
                   color: 'white',
                   boxShadow: 'var(--shadow-md)',
                 }}
@@ -413,7 +413,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
                   <div key={s.label}>
                     <dt
                       className="text-[10px] uppercase tracking-wider font-semibold"
-                      style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                      style={{ color: 'var(--portal-text-subtle)' }}
                     >
                       {s.label}
                     </dt>
@@ -455,7 +455,7 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
             <TierColumn
               tier="Best"
               accent="rgba(62,42,30,0.10)"
-              accentFg="var(--portal-walnut, #3E2A1E)"
+              accentFg="var(--c1)"
               alternatives={alternatives.best}
             />
           </div>

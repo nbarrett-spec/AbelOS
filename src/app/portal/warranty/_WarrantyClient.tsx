@@ -209,19 +209,14 @@ export function WarrantyClient({
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Warranty & Claims
-          </h2>
+          <div className="portal-eyebrow mb-2">Service & Returns</div>
+          <h1 className="portal-page-title">Warranty &amp; Claims</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             File a claim for damaged goods, missing parts, or warranty
             repairs.
@@ -234,7 +229,7 @@ export function WarrantyClient({
             className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
             style={{
               background:
-                'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                'var(--grad)',
               color: 'white',
               boxShadow: 'var(--shadow-md)',
             }}
@@ -298,7 +293,7 @@ export function WarrantyClient({
                 <select
                   value={form.type}
                   onChange={(e) => update('type', e.target.value)}
-                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                   style={{
                     background: 'var(--portal-bg-card, #FFFFFF)',
                     border: '1px solid var(--portal-border, #E8DFD0)',
@@ -317,7 +312,7 @@ export function WarrantyClient({
                   <select
                     value={form.policyId}
                     onChange={(e) => update('policyId', e.target.value)}
-                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                     style={{
                       background: 'var(--portal-bg-card, #FFFFFF)',
                       border: '1px solid var(--portal-border, #E8DFD0)',
@@ -341,7 +336,7 @@ export function WarrantyClient({
                 value={form.subject}
                 onChange={(e) => update('subject', e.target.value)}
                 placeholder="Short summary, e.g. 'Cracked door panel — Lot 42'"
-                className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                 style={{
                   background: 'var(--portal-bg-card, #FFFFFF)',
                   border: '1px solid var(--portal-border, #E8DFD0)',
@@ -356,7 +351,7 @@ export function WarrantyClient({
                 onChange={(e) => update('description', e.target.value)}
                 rows={4}
                 placeholder="What happened? When was the issue discovered? Photos can be sent later — for now, just write what you'd tell the project manager."
-                className="w-full px-3 py-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30 resize-y"
+                className="w-full px-3 py-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30 resize-y"
                 style={{
                   background: 'var(--portal-bg-card, #FFFFFF)',
                   border: '1px solid var(--portal-border, #E8DFD0)',
@@ -372,7 +367,7 @@ export function WarrantyClient({
                   value={form.productName}
                   onChange={(e) => update('productName', e.target.value)}
                   placeholder="e.g. ADT 3068 RH Interior Door"
-                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                   style={{
                     background: 'var(--portal-bg-card, #FFFFFF)',
                     border: '1px solid var(--portal-border, #E8DFD0)',
@@ -386,7 +381,7 @@ export function WarrantyClient({
                   value={form.productSku}
                   onChange={(e) => update('productSku', e.target.value)}
                   placeholder="e.g. BC004010"
-                  className="h-10 w-full px-3 font-mono text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                  className="h-10 w-full px-3 font-mono text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                   style={{
                     background: 'var(--portal-bg-card, #FFFFFF)',
                     border: '1px solid var(--portal-border, #E8DFD0)',
@@ -399,7 +394,7 @@ export function WarrantyClient({
                   type="date"
                   value={form.installDate}
                   onChange={(e) => update('installDate', e.target.value)}
-                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                   style={{
                     background: 'var(--portal-bg-card, #FFFFFF)',
                     border: '1px solid var(--portal-border, #E8DFD0)',
@@ -412,7 +407,7 @@ export function WarrantyClient({
                   type="date"
                   value={form.issueDate}
                   onChange={(e) => update('issueDate', e.target.value)}
-                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                  className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                   style={{
                     background: 'var(--portal-bg-card, #FFFFFF)',
                     border: '1px solid var(--portal-border, #E8DFD0)',
@@ -425,7 +420,7 @@ export function WarrantyClient({
             <details className="space-y-3">
               <summary
                 className="cursor-pointer text-xs font-medium"
-                style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+                style={{ color: 'var(--c1)' }}
               >
                 Site address & contact (optional)
               </summary>
@@ -436,7 +431,7 @@ export function WarrantyClient({
                     value={form.siteAddress}
                     onChange={(e) => update('siteAddress', e.target.value)}
                     placeholder="123 Main St"
-                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                     style={{
                       background: 'var(--portal-bg-card, #FFFFFF)',
                       border: '1px solid var(--portal-border, #E8DFD0)',
@@ -450,7 +445,7 @@ export function WarrantyClient({
                       type="text"
                       value={form.siteCity}
                       onChange={(e) => update('siteCity', e.target.value)}
-                      className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                      className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                       style={{
                         background: 'var(--portal-bg-card, #FFFFFF)',
                         border: '1px solid var(--portal-border, #E8DFD0)',
@@ -466,7 +461,7 @@ export function WarrantyClient({
                         onChange={(e) => update('siteState', e.target.value)}
                         maxLength={2}
                         placeholder="TX"
-                        className="h-10 w-12 px-2 text-center text-sm rounded-md uppercase focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                        className="h-10 w-12 px-2 text-center text-sm rounded-md uppercase focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                         style={{
                           background: 'var(--portal-bg-card, #FFFFFF)',
                           border: '1px solid var(--portal-border, #E8DFD0)',
@@ -479,7 +474,7 @@ export function WarrantyClient({
                         onChange={(e) => update('siteZip', e.target.value)}
                         maxLength={10}
                         placeholder="75024"
-                        className="h-10 flex-1 px-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                        className="h-10 flex-1 px-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                         style={{
                           background: 'var(--portal-bg-card, #FFFFFF)',
                           border: '1px solid var(--portal-border, #E8DFD0)',
@@ -494,7 +489,7 @@ export function WarrantyClient({
                     type="text"
                     value={form.contactName}
                     onChange={(e) => update('contactName', e.target.value)}
-                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                     style={{
                       background: 'var(--portal-bg-card, #FFFFFF)',
                       border: '1px solid var(--portal-border, #E8DFD0)',
@@ -508,7 +503,7 @@ export function WarrantyClient({
                     value={form.contactPhone}
                     onChange={(e) => update('contactPhone', e.target.value)}
                     placeholder="(214) 555-0100"
-                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                     style={{
                       background: 'var(--portal-bg-card, #FFFFFF)',
                       border: '1px solid var(--portal-border, #E8DFD0)',
@@ -521,7 +516,7 @@ export function WarrantyClient({
                     type="email"
                     value={form.contactEmail}
                     onChange={(e) => update('contactEmail', e.target.value)}
-                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                    className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                     style={{
                       background: 'var(--portal-bg-card, #FFFFFF)',
                       border: '1px solid var(--portal-border, #E8DFD0)',
@@ -566,7 +561,7 @@ export function WarrantyClient({
                 className="inline-flex items-center gap-1.5 px-5 h-9 rounded-md text-sm font-medium transition-shadow disabled:opacity-60"
                 style={{
                   background:
-                    'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                    'var(--grad)',
                   color: 'white',
                   boxShadow: 'var(--shadow-md)',
                 }}
@@ -751,7 +746,7 @@ function Field({
     <div className={className}>
       <label
         className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-        style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+        style={{ color: 'var(--portal-text-subtle)' }}
       >
         {label} {required && <span style={{ color: '#7E2417' }}>*</span>}
       </label>
@@ -775,7 +770,7 @@ function Detail({
     <div>
       <div
         className="text-[10px] uppercase tracking-wider font-semibold mb-1"
-        style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+        style={{ color: 'var(--portal-text-subtle)' }}
       >
         {label}
       </div>

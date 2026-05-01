@@ -194,21 +194,16 @@ export function QuotesClient({ quotes, initialStatus }: QuotesClientProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
+      <div className="portal-section-head">
         <div className="min-w-0">
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Quotes
-          </h2>
+          <div className="portal-eyebrow mb-2">Pricing & Approvals</div>
+          <h1 className="portal-page-title">Quotes</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             {quotes.length > 0
               ? `${quotes.length} quote${quotes.length === 1 ? '' : 's'} on file`
@@ -217,12 +212,12 @@ export function QuotesClient({ quotes, initialStatus }: QuotesClientProps) {
         </div>
         <Link
           href="/portal/quotes/new"
-          className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
+          className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-medium transition-shadow"
           style={{
-            background:
-              'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+            background: 'var(--grad)',
             color: 'white',
-            boxShadow: 'var(--shadow-md)',
+            boxShadow: '0 6px 20px rgba(79,70,229,0.25)',
+            fontFamily: 'var(--font-portal-body)',
           }}
         >
           <FilePlus className="w-3.5 h-3.5" />
@@ -244,13 +239,17 @@ export function QuotesClient({ quotes, initialStatus }: QuotesClientProps) {
               style={
                 active
                   ? {
-                      background: 'var(--portal-walnut, #3E2A1E)',
+                      background: 'var(--grad)',
                       color: 'white',
+                      fontFamily: 'var(--font-portal-body)',
                     }
                   : {
-                      background: 'var(--portal-bg-card, #FFFFFF)',
-                      color: 'var(--portal-text-strong, #3E2A1E)',
-                      border: '1px solid var(--portal-border, #E8DFD0)',
+                      background: 'var(--glass)',
+                      backdropFilter: 'var(--glass-blur)',
+                      WebkitBackdropFilter: 'var(--glass-blur)',
+                      color: 'var(--portal-text-strong)',
+                      border: '1px solid var(--glass-border)',
+                      fontFamily: 'var(--font-portal-body)',
                     }
               }
             >
@@ -293,10 +292,7 @@ export function QuotesClient({ quotes, initialStatus }: QuotesClientProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr
-                  className="text-left text-[10px] uppercase tracking-wider"
-                  style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
-                >
+                <tr className="text-left portal-meta-label">
                   <th className="px-6 py-3 font-semibold">Quote #</th>
                   <th className="px-2 py-3 font-semibold">Project</th>
                   <th className="px-2 py-3 font-semibold">Items</th>
@@ -421,8 +417,7 @@ function QuoteAction({
         disabled={isConverting}
         className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-xs font-medium disabled:opacity-60"
         style={{
-          background:
-            'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+          background: 'var(--grad)',
           color: 'white',
           boxShadow: 'var(--shadow-md)',
         }}
@@ -481,7 +476,7 @@ function QuoteAction({
     <Link
       href={`/portal/quotes/${quote.id}`}
       className="inline-flex items-center gap-1 text-xs font-medium px-2 h-8 rounded transition-colors hover:bg-[var(--portal-bg-elevated)]"
-      style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+      style={{ color: 'var(--c1)' }}
     >
       View <ChevronRight className="w-3.5 h-3.5" />
     </Link>
@@ -525,8 +520,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
         href="/portal/quotes/new"
         className="inline-flex items-center gap-1.5 mt-4 px-4 h-9 rounded-md text-sm font-medium transition-shadow"
         style={{
-          background:
-            'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+          background: 'var(--grad)',
           color: 'white',
         }}
       >

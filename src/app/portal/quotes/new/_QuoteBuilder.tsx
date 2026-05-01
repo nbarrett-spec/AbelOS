@@ -161,7 +161,10 @@ export function QuoteBuilder({ initialCart }: QuoteBuilderProps) {
       <Link
         href="/portal/quotes"
         className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
-        style={{ color: 'var(--portal-walnut, #3E2A1E)' }}
+        style={{
+          color: 'var(--c1)',
+          fontFamily: 'var(--font-portal-body)',
+        }}
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to quotes
@@ -169,19 +172,14 @@ export function QuoteBuilder({ initialCart }: QuoteBuilderProps) {
 
       {/* Header */}
       <div>
-        <h2
-          className="text-2xl font-medium leading-tight"
-          style={{
-            fontFamily: 'var(--font-portal-display, Georgia)',
-            color: 'var(--portal-text-strong, #3E2A1E)',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          New Quote
-        </h2>
+        <div className="portal-eyebrow mb-2">4-Step Quote Builder</div>
+        <h1 className="portal-page-title">New Quote</h1>
         <p
-          className="text-sm mt-1"
-          style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+          className="text-[15px] mt-2"
+          style={{
+            color: 'var(--portal-text-muted)',
+            fontFamily: 'var(--font-portal-body)',
+          }}
         >
           Build your quote in 4 steps. {builder.companyName} will receive a
           confirmation email when it&apos;s submitted.
@@ -245,7 +243,7 @@ export function QuoteBuilder({ initialCart }: QuoteBuilderProps) {
             className="inline-flex items-center gap-1.5 px-4 h-9 rounded-md text-sm font-medium transition-shadow disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background:
-                'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                'var(--grad)',
               color: 'white',
               boxShadow: 'var(--shadow-md)',
             }}
@@ -272,13 +270,13 @@ function Stepper({ current }: { current: Step }) {
               style={
                 state === 'complete'
                   ? {
-                      background: 'var(--portal-walnut, #3E2A1E)',
+                      background: 'var(--grad)',
                       color: 'white',
                     }
                   : state === 'current'
                     ? {
                         background:
-                          'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                          'var(--grad)',
                         color: 'white',
                         boxShadow: '0 0 0 4px rgba(201,130,43,0.18)',
                       }
@@ -308,7 +306,7 @@ function Stepper({ current }: { current: Step }) {
                 style={{
                   background:
                     state === 'complete'
-                      ? 'var(--portal-walnut, #3E2A1E)'
+                      ? 'var(--grad)'
                       : 'var(--portal-border, #E8DFD0)',
                 }}
               />
@@ -339,7 +337,7 @@ function Step1({
         <div className="md:col-span-2">
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
           >
             Community
           </label>
@@ -352,7 +350,7 @@ function Step1({
                   communityId: e.target.value || null,
                 })
               }
-              className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+              className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
               style={{
                 background: 'var(--portal-bg-card, #FFFFFF)',
                 border: '1px solid var(--portal-border, #E8DFD0)',
@@ -382,7 +380,7 @@ function Step1({
         <div>
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
           >
             Project / Lot Name <span style={{ color: '#7E2417' }}>*</span>
           </label>
@@ -393,7 +391,7 @@ function Step1({
               dispatch({ type: 'SET_PROJECT_NAME', value: e.target.value })
             }
             placeholder="e.g. Lot 24, Maple Run"
-            className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+            className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
             style={{
               background: 'var(--portal-bg-card, #FFFFFF)',
               border: '1px solid var(--portal-border, #E8DFD0)',
@@ -405,7 +403,7 @@ function Step1({
         <div>
           <label
             className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-            style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+            style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
           >
             Job Address (optional)
           </label>
@@ -416,7 +414,7 @@ function Step1({
               dispatch({ type: 'SET_PROJECT_ADDRESS', value: e.target.value })
             }
             placeholder="123 Main St, Frisco, TX"
-            className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+            className="h-10 w-full px-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
             style={{
               background: 'var(--portal-bg-card, #FFFFFF)',
               border: '1px solid var(--portal-border, #E8DFD0)',
@@ -498,7 +496,7 @@ function Step2({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search products by name or SKU…"
-              className="h-10 w-full pl-10 pr-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+              className="h-10 w-full pl-10 pr-3 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
               style={{
                 background: 'var(--portal-bg-card, #FFFFFF)',
                 border: '1px solid var(--portal-border, #E8DFD0)',
@@ -583,7 +581,7 @@ function Step2({
                       className="inline-flex items-center gap-1 px-3 h-8 rounded-md text-xs font-medium transition-shadow"
                       style={{
                         background:
-                          'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+                          'var(--grad)',
                         color: 'white',
                       }}
                     >
@@ -698,7 +696,7 @@ function Step3({
             <thead>
               <tr
                 className="text-left text-[10px] uppercase tracking-wider"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
               >
                 <th className="px-4 py-3 font-semibold">Item</th>
                 <th className="px-2 py-3 font-semibold text-right">Qty</th>
@@ -744,7 +742,7 @@ function Step3({
                           quantity: parseInt(e.target.value, 10) || 1,
                         })
                       }
-                      className="h-8 w-16 text-center text-xs tabular-nums font-mono rounded focus:outline-none focus:ring-1 focus:ring-[var(--portal-amber,#C9822B)]"
+                      className="h-8 w-16 text-center text-xs tabular-nums font-mono rounded focus:outline-none focus:ring-1 focus:ring-[var(--c1)]"
                       style={{
                         background: 'var(--portal-bg-card, #FFFFFF)',
                         color: 'var(--portal-text-strong, #3E2A1E)',
@@ -802,7 +800,7 @@ function Step3({
             <span
               className="text-2xl font-semibold tabular-nums"
               style={{
-                fontFamily: 'var(--font-portal-display, Georgia)',
+                fontFamily: 'var(--font-portal-display)',
                 color: 'var(--portal-text-strong, #3E2A1E)',
                 letterSpacing: '-0.02em',
               }}
@@ -824,7 +822,7 @@ function Step3({
             <div>
               <label
                 className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
               >
                 <Calendar className="w-3 h-3 inline mr-1" />
                 Requested Delivery Date
@@ -838,7 +836,7 @@ function Step3({
                     value: e.target.value,
                   })
                 }
-                className="h-9 w-full px-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30"
+                className="h-9 w-full px-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30"
                 style={{
                   background: 'var(--portal-bg-card, #FFFFFF)',
                   border: '1px solid var(--portal-border, #E8DFD0)',
@@ -849,7 +847,7 @@ function Step3({
             <div>
               <label
                 className="block text-[10px] uppercase tracking-wider font-semibold mb-1.5"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
               >
                 Special Instructions
               </label>
@@ -860,7 +858,7 @@ function Step3({
                 }
                 rows={4}
                 placeholder="Anything we should know? Job-site access, color preferences, hardware notes…"
-                className="w-full px-3 py-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--portal-amber,#C9822B)]/30 resize-y"
+                className="w-full px-3 py-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--c1)]/30 resize-y"
                 style={{
                   background: 'var(--portal-bg-card, #FFFFFF)',
                   border: '1px solid var(--portal-border, #E8DFD0)',
@@ -961,7 +959,7 @@ function Step4({
           <h3
             className="text-xl font-medium"
             style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
+              fontFamily: 'var(--font-portal-display)',
               color: 'var(--portal-text-strong, #3E2A1E)',
             }}
           >
@@ -985,7 +983,7 @@ function Step4({
           <div>
             <dt
               className="text-[10px] uppercase tracking-wider font-semibold"
-              style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+              style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
             >
               Project
             </dt>
@@ -1007,7 +1005,7 @@ function Step4({
           <div>
             <dt
               className="text-[10px] uppercase tracking-wider font-semibold"
-              style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+              style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
             >
               Items
             </dt>
@@ -1023,7 +1021,7 @@ function Step4({
             <div>
               <dt
                 className="text-[10px] uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
               >
                 Requested Date
               </dt>
@@ -1044,7 +1042,7 @@ function Step4({
             <div className="md:col-span-2">
               <dt
                 className="text-[10px] uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--portal-kiln-oak, #8B6F47)' }}
+                style={{ color: 'var(--portal-text-subtle)', fontFamily: 'var(--font-portal-mono)', letterSpacing: '0.1em' }}
               >
                 Notes
               </dt>
@@ -1091,7 +1089,7 @@ function Step4({
           className="inline-flex items-center gap-1.5 px-5 h-9 rounded-md text-sm font-medium transition-shadow disabled:opacity-60"
           style={{
             background:
-              'var(--grad-amber, linear-gradient(135deg, #C9822B, #D4A54A, #C9822B))',
+              'var(--grad)',
             color: 'white',
             boxShadow: 'var(--shadow-md)',
           }}

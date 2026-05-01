@@ -74,27 +74,22 @@ export function CatalogClient({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
+      <div className="portal-section-head">
         <div className="min-w-0">
-          <h2
-            className="text-2xl font-medium leading-tight"
-            style={{
-              fontFamily: 'var(--font-portal-display, Georgia)',
-              color: 'var(--portal-text-strong, #3E2A1E)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Catalog
-          </h2>
+          <div className="portal-eyebrow mb-2">Doors · Trim · Hardware</div>
+          <h1 className="portal-page-title">Catalog</h1>
           <p
-            className="text-sm mt-1"
-            style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            className="text-[15px] mt-2"
+            style={{
+              color: 'var(--portal-text-muted)',
+              fontFamily: 'var(--font-portal-body)',
+            }}
           >
             {hasPricing && tier ? (
               <>
                 Showing your <strong>{tier}</strong> tier pricing.{' '}
                 {total > 0 && (
-                  <span style={{ color: 'var(--portal-text-muted, #6B6056)' }}>
+                  <span style={{ color: 'var(--portal-text-subtle)' }}>
                     {total.toLocaleString()} products available.
                   </span>
                 )}
@@ -173,13 +168,17 @@ export function CatalogClient({
                 style={
                   active
                     ? {
-                        background: 'var(--portal-walnut, #3E2A1E)',
+                        background: 'var(--grad)',
                         color: 'white',
+                        fontFamily: 'var(--font-portal-body)',
                       }
                     : {
-                        background: 'var(--portal-bg-card, #FFFFFF)',
-                        color: 'var(--portal-text-strong, #3E2A1E)',
-                        border: '1px solid var(--portal-border, #E8DFD0)',
+                        background: 'var(--glass)',
+                        backdropFilter: 'var(--glass-blur)',
+                        WebkitBackdropFilter: 'var(--glass-blur)',
+                        color: 'var(--portal-text-strong)',
+                        border: '1px solid var(--glass-border)',
+                        fontFamily: 'var(--font-portal-body)',
                       }
                 }
               >

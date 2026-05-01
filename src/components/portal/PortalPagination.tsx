@@ -111,7 +111,7 @@ export function PortalPagination({
               style={
                 p === page
                   ? {
-                      background: 'var(--portal-walnut, #3E2A1E)',
+                      background: 'var(--c1)',
                       color: 'white',
                     }
                   : {
