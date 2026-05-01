@@ -181,6 +181,28 @@ export default function Home(): JSX.Element {
             transform: none !important;
             transition: none !important;
           }
+          /* Reduced-motion: drop the autoplay video. The warm canvas +
+             gradient overlay + blueprint grid that's already painted on
+             the [data-landing] root reads as the intentional fallback. */
+          [data-landing] .hero-with-video video[autoplay] {
+            display: none !important;
+          }
+        }
+
+        /* Mobile: hero collapses to a single column. Switch the gradient
+           overlay from a 135deg diagonal (favoring the left text column)
+           to a 180deg top-down with a higher minimum opacity so the
+           full-width text stays readable while the video still bleeds
+           through at the bottom. */
+        @media (max-width: 768px) {
+          [data-landing] .hero-overlay {
+            background: linear-gradient(
+              180deg,
+              rgba(246, 244, 238, 0.88) 0%,
+              rgba(246, 244, 238, 0.85) 60%,
+              rgba(246, 244, 238, 0.55) 100%
+            ) !important;
+          }
         }
       `}</style>
 
@@ -262,9 +284,51 @@ export default function Home(): JSX.Element {
         </div>
       </nav>
 
-      {/* ── Hero — door is the live focal element ───────────────────── */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-28 pb-16 overflow-hidden">
-        <div className="relative z-10 max-w-[1180px] mx-auto w-full grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
+      {/* ── Hero — 4-layer stack (video → gradient → grid → content) ──
+          Per CLAUDE-CODE-VIDEO-HERO-HANDOFF.md. Video plays under the hero
+          showing slow-motion door assembly; the warm gradient overlay
+          keeps text readable on the left while letting the video bleed
+          through on the right. */}
+      <section className="hero-with-video relative min-h-screen flex items-center justify-center px-6 pt-28 pb-16 overflow-hidden">
+        {/* Layer 0 — full-bleed video (poster shows instantly, then loop) */}
+        <video
+          className="hero-video absolute inset-0 w-full h-full object-cover z-0"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/video/hero-poster.jpg"
+          aria-hidden="true"
+        >
+          <source src="/video/hero-bg-slow.webm" type="video/webm" />
+          <source src="/video/hero-bg-slow.mp4" type="video/mp4" />
+        </video>
+
+        {/* Layer 1 — asymmetric gradient overlay (strong left, faded right) */}
+        <div
+          className="hero-overlay absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(246,244,238,0.92) 0%, rgba(246,244,238,0.7) 40%, rgba(246,244,238,0.45) 100%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Layer 2 — 24px blueprint grid (paper texture, indigo-tinted) */}
+        <div
+          className="absolute inset-0 z-20 pointer-events-none"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(79,70,229,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.05) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+            opacity: 0.6,
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Layer 3 — content */}
+        <div className="relative z-30 max-w-[1180px] mx-auto w-full grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
           {/* Left — copy */}
           <div className="text-center lg:text-left">
             <div className="eyebrow mb-5">
@@ -314,9 +378,10 @@ export default function Home(): JSX.Element {
             </div>
           </div>
 
-          {/* Right — live door with indigo halo behind */}
+          {/* Right — door rendered over the video bleed-through. The
+              video provides the "live" visual, so we drop the indigo
+              halo to keep the right side clean. */}
           <div className="relative hidden lg:flex items-center justify-center min-h-[520px]">
-            <div className="door-halo" aria-hidden="true" />
             <div className="relative z-10 w-full">
               <ExplodedDoor variant="hero" autoPlay loop loopInterval={6000} />
             </div>
