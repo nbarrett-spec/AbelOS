@@ -41,9 +41,11 @@ import {
   DollarSign,
   HardHat,
   MessageSquare,
+  MoonStar,
   Package,
   Play,
   Plus,
+  Search,
   Shield,
   Tag,
   X,
@@ -137,6 +139,12 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
   const [completedExpanded, setCompletedExpanded] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [flashId, setFlashId] = useState<string | null>(null)
+  // v2 additions
+  const [search, setSearch] = useState('')
+  const [bulkMode, setBulkMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [snoozeMenuFor, setSnoozeMenuFor] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const panelRef = useRef<HTMLDivElement | null>(null)
   const fabRef = useRef<HTMLButtonElement | null>(null)
@@ -338,6 +346,88 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
     }
   }
 
+  // ── Snooze (single task — pushes dueDate via PATCH) ───────────────
+  async function handleSnooze(taskId: string, when: 'tomorrow' | 'next-week' | Date) {
+    try {
+      let dueDate: Date
+      if (when === 'tomorrow') {
+        const d = new Date()
+        d.setDate(d.getDate() + 1)
+        d.setHours(17, 0, 0, 0) // 5 PM tomorrow
+        dueDate = d
+      } else if (when === 'next-week') {
+        const d = new Date()
+        d.setDate(d.getDate() + 7)
+        d.setHours(17, 0, 0, 0)
+        dueDate = d
+      } else {
+        dueDate = when
+      }
+      const res = await fetch(`/api/ops/tasks/${taskId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-id': staffId,
+        },
+        body: JSON.stringify({ dueDate: dueDate.toISOString() }),
+      })
+      if (res.ok) {
+        setSnoozeMenuFor(null)
+        await fetchTasks(filter)
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // ── Bulk actions ──────────────────────────────────────────────────
+  function toggleBulkMode() {
+    setBulkMode((v) => {
+      if (v) setSelectedIds(new Set())
+      return !v
+    })
+  }
+
+  function toggleSelected(taskId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(taskId)) next.delete(taskId)
+      else next.add(taskId)
+      return next
+    })
+  }
+
+  async function handleBulkAction(action: 'complete' | 'snooze' | 'cancel', dueDate?: Date) {
+    if (bulkBusy || selectedIds.size === 0) return
+    setBulkBusy(true)
+    try {
+      const body: any = {
+        action,
+        ids: Array.from(selectedIds),
+      }
+      if (action === 'snooze' && dueDate) body.dueDate = dueDate.toISOString()
+      const res = await fetch('/api/ops/tasks/bulk', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-id': staffId,
+        },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        setSelectedIds(new Set())
+        setBulkMode(false)
+        await fetchTasks(filter)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   // ── Sectioning logic ──────────────────────────────────────────────
   const sections = useMemo(() => {
     const overdue: PortalTask[] = []
@@ -360,7 +450,20 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
       23, 59, 59, 999,
     )
 
+    // Apply client-side search filter (title + description + jobNumber + builder name)
+    const q = search.trim().toLowerCase()
+    const matchesSearch = (t: PortalTask): boolean => {
+      if (!q) return true
+      if (t.title?.toLowerCase().includes(q)) return true
+      if (t.description?.toLowerCase().includes(q)) return true
+      if (t.job?.jobNumber?.toLowerCase().includes(q)) return true
+      if (t.builder?.companyName?.toLowerCase().includes(q)) return true
+      if (t.category?.toLowerCase().includes(q)) return true
+      return false
+    }
+
     for (const t of tasks) {
+      if (!matchesSearch(t)) continue
       if (t.status === 'DONE') {
         completed.push(t)
         continue
@@ -392,7 +495,7 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
     }
 
     return { overdue, dueToday, upcoming, noDate, completed }
-  }, [tasks, filter])
+  }, [tasks, filter, search])
 
   const badgeCount = counts.overdue + counts.critical
   const showBadge = badgeCount > 0
@@ -486,6 +589,26 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
             <div className="flex items-center gap-1">
               <button
                 type="button"
+                onClick={toggleBulkMode}
+                className="text-xs px-2 h-7 rounded-md font-medium inline-flex items-center gap-1 transition-colors"
+                style={
+                  bulkMode
+                    ? {
+                        background: 'var(--fg, #1F2937)',
+                        color: 'white',
+                      }
+                    : {
+                        background: 'var(--surface-muted, #F4F4F5)',
+                        color: 'var(--fg-muted, #6B7280)',
+                      }
+                }
+                aria-pressed={bulkMode}
+                title="Bulk select"
+              >
+                {bulkMode ? `${selectedIds.size} sel` : 'Select'}
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowAdd((v) => !v)}
                 className="text-xs px-2.5 h-7 rounded-md font-medium inline-flex items-center gap-1 transition-colors"
                 style={{
@@ -511,6 +634,45 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
                 />
               </button>
             </div>
+          </div>
+
+          {/* Search bar */}
+          <div
+            className="px-3 py-2 relative"
+            style={{
+              borderBottom: '1px solid var(--border, rgba(0,0,0,0.06))',
+            }}
+          >
+            <Search
+              className="absolute left-5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+              style={{ color: 'var(--fg-muted, #6B7280)' }}
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tasks…"
+              className="w-full h-8 pl-7 pr-7 text-xs rounded focus:outline-none focus:ring-2 focus:ring-[var(--signal,#C6A24E)]/30"
+              style={{
+                background: 'var(--surface, #FFFFFF)',
+                border: '1px solid var(--border, rgba(0,0,0,0.08))',
+                color: 'var(--fg, #1F2937)',
+              }}
+              aria-label="Search tasks"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 inline-flex items-center justify-center rounded hover:bg-[var(--surface-muted,#F4F4F5)]"
+                aria-label="Clear search"
+              >
+                <X
+                  className="w-3 h-3"
+                  style={{ color: 'var(--fg-muted, #6B7280)' }}
+                />
+              </button>
+            )}
           </div>
 
           {/* Status chips */}
@@ -597,119 +759,160 @@ export default function TaskPanel({ staffId, staffRole }: TaskPanelProps) {
                 Loading…
               </div>
             ) : tasks.length === 0 ? (
-              <EmptyState filter={filter} />
+              <EmptyState filter={filter} search={search} />
             ) : (
               <div className="px-2 py-2 space-y-3">
-                {filter !== 'done' && sections.overdue.length > 0 && (
-                  <Section
-                    title="Overdue"
-                    icon={<AlertTriangle className="w-3.5 h-3.5" />}
-                    color="#DC2626"
-                  >
-                    {sections.overdue.map((t) => (
-                      <TaskCard
-                        key={t.id}
-                        task={t}
-                        flashId={flashId}
-                        reducedMotion={reducedMotion}
-                        onComplete={() => handleComplete(t.id)}
-                        onStart={() => handleStart(t.id)}
-                      />
-                    ))}
-                  </Section>
-                )}
-                {filter !== 'done' && sections.dueToday.length > 0 && (
-                  <Section
-                    title="Due Today"
-                    icon={<Calendar className="w-3.5 h-3.5" />}
-                    color="#F59E0B"
-                  >
-                    {sections.dueToday.map((t) => (
-                      <TaskCard
-                        key={t.id}
-                        task={t}
-                        flashId={flashId}
-                        reducedMotion={reducedMotion}
-                        onComplete={() => handleComplete(t.id)}
-                        onStart={() => handleStart(t.id)}
-                      />
-                    ))}
-                  </Section>
-                )}
-                {filter !== 'done' && sections.upcoming.length > 0 && (
-                  <Section
-                    title="Upcoming"
-                    icon={<ClipboardList className="w-3.5 h-3.5" />}
-                    color="var(--fg-muted, #6B7280)"
-                  >
-                    {sections.upcoming.map((t) => (
-                      <TaskCard
-                        key={t.id}
-                        task={t}
-                        flashId={flashId}
-                        reducedMotion={reducedMotion}
-                        onComplete={() => handleComplete(t.id)}
-                        onStart={() => handleStart(t.id)}
-                      />
-                    ))}
-                  </Section>
-                )}
-                {filter !== 'done' && sections.noDate.length > 0 && (
-                  <Section
-                    title="No Due Date"
-                    icon={<Tag className="w-3.5 h-3.5" />}
-                    color="var(--fg-muted, #6B7280)"
-                  >
-                    {sections.noDate.map((t) => (
-                      <TaskCard
-                        key={t.id}
-                        task={t}
-                        flashId={flashId}
-                        reducedMotion={reducedMotion}
-                        onComplete={() => handleComplete(t.id)}
-                        onStart={() => handleStart(t.id)}
-                      />
-                    ))}
-                  </Section>
-                )}
-                {sections.completed.length > 0 && (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => setCompletedExpanded((v) => !v)}
-                      className="w-full px-2 py-1.5 flex items-center justify-between text-[10px] uppercase tracking-wider font-semibold rounded transition-colors hover:bg-[var(--surface-muted,#F4F4F5)]"
-                      style={{ color: '#16A34A' }}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Completed (last 24h) · {sections.completed.length}
-                      </span>
-                      {completedExpanded ? (
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5" />
+                {(() => {
+                  // Helper closure — keeps the 5 sections from re-listing
+                  // every TaskCard prop and threads bulk + snooze state.
+                  const renderTask = (t: PortalTask, done?: boolean) => (
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      flashId={flashId}
+                      reducedMotion={reducedMotion}
+                      onComplete={() => handleComplete(t.id)}
+                      onStart={() => handleStart(t.id)}
+                      done={done}
+                      bulkMode={!done && bulkMode}
+                      selected={selectedIds.has(t.id)}
+                      onToggleSelect={() => toggleSelected(t.id)}
+                      onSnooze={(when) => handleSnooze(t.id, when)}
+                      snoozeMenuOpen={snoozeMenuFor === t.id}
+                      onSnoozeMenuToggle={() =>
+                        setSnoozeMenuFor((cur) => (cur === t.id ? null : t.id))
+                      }
+                    />
+                  )
+                  return (
+                    <>
+                      {filter !== 'done' && sections.overdue.length > 0 && (
+                        <Section
+                          title="Overdue"
+                          icon={<AlertTriangle className="w-3.5 h-3.5" />}
+                          color="#DC2626"
+                        >
+                          {sections.overdue.map((t) => renderTask(t))}
+                        </Section>
                       )}
-                    </button>
-                    {completedExpanded && (
-                      <div className="mt-1 space-y-1">
-                        {sections.completed.map((t) => (
-                          <TaskCard
-                            key={t.id}
-                            task={t}
-                            flashId={flashId}
-                            reducedMotion={reducedMotion}
-                            onComplete={() => handleComplete(t.id)}
-                            onStart={() => handleStart(t.id)}
-                            done
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                      {filter !== 'done' && sections.dueToday.length > 0 && (
+                        <Section
+                          title="Due Today"
+                          icon={<Calendar className="w-3.5 h-3.5" />}
+                          color="#F59E0B"
+                        >
+                          {sections.dueToday.map((t) => renderTask(t))}
+                        </Section>
+                      )}
+                      {filter !== 'done' && sections.upcoming.length > 0 && (
+                        <Section
+                          title="Upcoming"
+                          icon={<ClipboardList className="w-3.5 h-3.5" />}
+                          color="var(--fg-muted, #6B7280)"
+                        >
+                          {sections.upcoming.map((t) => renderTask(t))}
+                        </Section>
+                      )}
+                      {filter !== 'done' && sections.noDate.length > 0 && (
+                        <Section
+                          title="No Due Date"
+                          icon={<Tag className="w-3.5 h-3.5" />}
+                          color="var(--fg-muted, #6B7280)"
+                        >
+                          {sections.noDate.map((t) => renderTask(t))}
+                        </Section>
+                      )}
+                      {sections.completed.length > 0 && (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setCompletedExpanded((v) => !v)}
+                            className="w-full px-2 py-1.5 flex items-center justify-between text-[10px] uppercase tracking-wider font-semibold rounded transition-colors hover:bg-[var(--surface-muted,#F4F4F5)]"
+                            style={{ color: '#16A34A' }}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Completed (last 24h) · {sections.completed.length}
+                            </span>
+                            {completedExpanded ? (
+                              <ChevronUp className="w-3.5 h-3.5" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          {completedExpanded && (
+                            <div className="mt-1 space-y-1">
+                              {sections.completed.map((t) => renderTask(t, true))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             )}
           </div>
+
+          {/* Bulk-action footer (only when bulkMode + selection > 0) */}
+          {bulkMode && selectedIds.size > 0 && (
+            <div
+              className="px-3 py-2 flex items-center justify-between gap-2"
+              style={{
+                background: 'var(--fg, #1F2937)',
+                color: 'white',
+                borderTop: '1px solid rgba(0,0,0,0.1)',
+              }}
+            >
+              <span className="text-xs">
+                {selectedIds.size} selected
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + 1)
+                    d.setHours(17, 0, 0, 0)
+                    handleBulkAction('snooze', d)
+                  }}
+                  disabled={bulkBusy}
+                  className="text-[11px] h-7 px-2 rounded font-medium disabled:opacity-50"
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    color: 'white',
+                  }}
+                >
+                  Snooze
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBulkAction('cancel')}
+                  disabled={bulkBusy}
+                  className="text-[11px] h-7 px-2 rounded font-medium disabled:opacity-50"
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    color: 'white',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBulkAction('complete')}
+                  disabled={bulkBusy}
+                  className="text-[11px] h-7 px-3 rounded font-medium inline-flex items-center gap-1 disabled:opacity-50"
+                  style={{
+                    background: '#16A34A',
+                    color: 'white',
+                  }}
+                >
+                  <CheckCircle className="w-3 h-3" />
+                  {bulkBusy ? 'Working…' : 'Complete'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -807,6 +1010,12 @@ function TaskCard({
   onComplete,
   onStart,
   done,
+  bulkMode,
+  selected,
+  onToggleSelect,
+  onSnooze,
+  snoozeMenuOpen,
+  onSnoozeMenuToggle,
 }: {
   task: PortalTask
   flashId: string | null
@@ -814,6 +1023,12 @@ function TaskCard({
   onComplete: () => void
   onStart: () => void
   done?: boolean
+  bulkMode?: boolean
+  selected?: boolean
+  onToggleSelect?: () => void
+  onSnooze?: (when: 'tomorrow' | 'next-week' | Date) => void
+  snoozeMenuOpen?: boolean
+  onSnoozeMenuToggle?: () => void
 }) {
   const dot = PRIORITY_DOT[task.priority] || PRIORITY_DOT.MEDIUM
   const cat = CATEGORY_META[task.category] || CATEGORY_META.GENERAL
@@ -827,17 +1042,35 @@ function TaskCard({
 
   return (
     <div
-      className="group rounded-lg p-2.5 mx-1 transition-colors"
+      className="group rounded-lg p-2.5 mx-1 transition-colors relative"
       style={{
-        border: '1px solid var(--border, rgba(0,0,0,0.08))',
-        background: done
-          ? 'var(--surface-muted, #F4F4F5)'
-          : 'var(--surface, #FFFFFF)',
+        border: selected
+          ? '1px solid var(--signal, #C6A24E)'
+          : '1px solid var(--border, rgba(0,0,0,0.08))',
+        background: selected
+          ? 'rgba(198, 162, 78, 0.08)'
+          : done
+            ? 'var(--surface-muted, #F4F4F5)'
+            : 'var(--surface, #FFFFFF)',
         opacity: done ? 0.7 : 1,
         animation: flashing && !reducedMotion ? 'task-flash 1.2s ease-out' : undefined,
       }}
+      onClick={bulkMode && !done ? onToggleSelect : undefined}
+      role={bulkMode && !done ? 'button' : undefined}
+      tabIndex={bulkMode && !done ? 0 : undefined}
     >
       <div className="flex items-start gap-2">
+        {bulkMode && !done && (
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 w-3.5 h-3.5 shrink-0"
+            style={{ accentColor: 'var(--signal, #C6A24E)' }}
+            aria-label={`Select ${task.title}`}
+          />
+        )}
         <span
           className="mt-1 w-2 h-2 rounded-full shrink-0"
           style={{
@@ -912,7 +1145,7 @@ function TaskCard({
           </div>
         </div>
         {/* Actions */}
-        {!done && (
+        {!done && !bulkMode && (
           <div className="flex items-center gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
             {task.status === 'TODO' && (
               <button
@@ -928,6 +1161,29 @@ function TaskCard({
                 />
               </button>
             )}
+            {onSnooze && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={onSnoozeMenuToggle}
+                  className="w-7 h-7 rounded inline-flex items-center justify-center hover:bg-[var(--surface-muted,#F4F4F5)]"
+                  title="Snooze"
+                  aria-label="Snooze task"
+                  aria-expanded={!!snoozeMenuOpen}
+                >
+                  <MoonStar
+                    className="w-3.5 h-3.5"
+                    style={{ color: '#8B5CF6' }}
+                  />
+                </button>
+                {snoozeMenuOpen && (
+                  <SnoozeMenu
+                    onClose={onSnoozeMenuToggle ?? (() => {})}
+                    onSnooze={onSnooze}
+                  />
+                )}
+              </div>
+            )}
             <button
               type="button"
               onClick={onComplete}
@@ -942,6 +1198,93 @@ function TaskCard({
             </button>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function SnoozeMenu({
+  onClose,
+  onSnooze,
+}: {
+  onClose: () => void
+  onSnooze: (when: 'tomorrow' | 'next-week' | Date) => void
+}) {
+  const [customDate, setCustomDate] = useState('')
+  // Close on Escape / click outside.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    function onClick(e: MouseEvent) {
+      const target = e.target as HTMLElement | null
+      if (target?.closest('[data-snooze-menu]')) return
+      onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onClick)
+    }
+  }, [onClose])
+  return (
+    <div
+      data-snooze-menu
+      className="absolute right-0 top-8 z-30 w-40 rounded-md py-1 shadow-lg"
+      style={{
+        background: 'var(--surface, #FFFFFF)',
+        border: '1px solid var(--border, rgba(0,0,0,0.08))',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={() => onSnooze('tomorrow')}
+        className="w-full text-left text-xs px-2.5 py-1.5 hover:bg-[var(--surface-muted,#F4F4F5)]"
+        style={{ color: 'var(--fg, #1F2937)' }}
+      >
+        Tomorrow
+      </button>
+      <button
+        type="button"
+        onClick={() => onSnooze('next-week')}
+        className="w-full text-left text-xs px-2.5 py-1.5 hover:bg-[var(--surface-muted,#F4F4F5)]"
+        style={{ color: 'var(--fg, #1F2937)' }}
+      >
+        Next Monday
+      </button>
+      <div className="border-t my-1" style={{ borderColor: 'var(--border, rgba(0,0,0,0.06))' }} />
+      <div className="px-2 py-1">
+        <input
+          type="date"
+          value={customDate}
+          onChange={(e) => setCustomDate(e.target.value)}
+          className="w-full h-7 px-1.5 text-[11px] rounded"
+          style={{
+            background: 'var(--surface, #FFFFFF)',
+            border: '1px solid var(--border, rgba(0,0,0,0.08))',
+            color: 'var(--fg, #1F2937)',
+          }}
+          aria-label="Custom snooze date"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            if (!customDate) return
+            const d = new Date(customDate)
+            d.setHours(17, 0, 0, 0)
+            onSnooze(d)
+          }}
+          disabled={!customDate}
+          className="mt-1 w-full text-[11px] h-6 rounded font-medium disabled:opacity-50"
+          style={{
+            background: 'var(--signal, #C6A24E)',
+            color: 'white',
+          }}
+        >
+          Snooze
+        </button>
       </div>
     </div>
   )
@@ -1095,7 +1438,14 @@ function AddTaskForm({
   )
 }
 
-function EmptyState({ filter }: { filter: Filter }) {
+function EmptyState({
+  filter,
+  search,
+}: {
+  filter: Filter
+  search?: string
+}) {
+  const hasSearch = !!search?.trim()
   return (
     <div className="px-4 py-10 text-center">
       <ClipboardList
@@ -1107,19 +1457,23 @@ function EmptyState({ filter }: { filter: Filter }) {
         className="text-sm font-medium"
         style={{ color: 'var(--fg, #1F2937)' }}
       >
-        {filter === 'done'
-          ? 'Nothing completed in the last week'
-          : filter === 'overdue'
-            ? 'Nothing overdue — nice work'
-            : filter === 'today'
-              ? 'Nothing due today'
-              : 'You’re all caught up'}
+        {hasSearch
+          ? `No tasks match "${search}"`
+          : filter === 'done'
+            ? 'Nothing completed in the last week'
+            : filter === 'overdue'
+              ? 'Nothing overdue — nice work'
+              : filter === 'today'
+                ? 'Nothing due today'
+                : 'You’re all caught up'}
       </p>
       <p
         className="text-xs mt-1"
         style={{ color: 'var(--fg-muted, #6B7280)' }}
       >
-        Click <strong>Add</strong> to create a task.
+        {hasSearch ? 'Clear the search to see everything.' : (
+          <>Click <strong>Add</strong> to create a task.</>
+        )}
       </p>
     </div>
   )

@@ -224,14 +224,24 @@ async function generatePmTasks(creatorId: string, result: GenResult) {
     )
   }
 
-  // Material arriving today (MEDIUM): POs with expectedDate = today.
-  // PurchaseOrder has no direct Job link — round-robin across active PMs
-  // so somebody owns the receiving check.
+  // Round-robin pool of active PMs — used by both material-PO and warranty
+  // tasks where there's no per-entity owner field on the source row.
   const pmRows: any[] = await prisma.$queryRawUnsafe(
     `SELECT "id" FROM "Staff"
       WHERE "active" = true AND "role"::text = 'PROJECT_MANAGER'
       ORDER BY "createdAt" ASC`,
   )
+  let pmRR = 0
+  function nextPm(): string | null {
+    if (pmRows.length === 0) return null
+    const id = pmRows[pmRR % pmRows.length].id
+    pmRR++
+    return id
+  }
+
+  // Material arriving today (MEDIUM): POs with expectedDate = today.
+  // PurchaseOrder has no direct Job link — round-robin across active PMs
+  // so somebody owns the receiving check.
   if (pmRows.length > 0) {
     const materialPOs: any[] = await prisma.$queryRawUnsafe(
       `SELECT po."id" AS "poId", po."poNumber", po."expectedDate",
@@ -242,10 +252,9 @@ async function generatePmTasks(creatorId: string, result: GenResult) {
           AND po."status"::text NOT IN ('CANCELLED', 'RECEIVED')
         LIMIT 200`,
     )
-    let pmIdx = 0
     for (const m of materialPOs) {
-      const pmId = pmRows[pmIdx % pmRows.length].id
-      pmIdx++
+      const pmId = nextPm()
+      if (!pmId) continue
       await createTaskIfMissing(
         creatorId,
         {
@@ -256,6 +265,106 @@ async function generatePmTasks(creatorId: string, result: GenResult) {
           category: 'MATERIAL_VERIFICATION',
           dueDate: endOfTodayDate(),
           sourceKey: `material-eta:${m.poId}:${today}`,
+        },
+        result,
+        'pm',
+      )
+    }
+  }
+
+  // ── Warranty claim open > 3 days (MEDIUM) ─────────────────────────
+  // WarrantyClaim has no PM owner — round-robin across PMs so someone
+  // chases the resolution. Skip when status is already terminal.
+  if (pmRows.length > 0) {
+    const warrantyClaims: any[] = await prisma.$queryRawUnsafe(
+      `SELECT wc."id", wc."claimNumber", wc."subject", wc."priority",
+              wc."status", wc."createdAt", wc."builderId",
+              b."companyName" AS "builderName"
+         FROM "WarrantyClaim" wc
+    LEFT JOIN "Builder" b ON b."id" = wc."builderId"
+        WHERE wc."status" NOT IN ('RESOLVED', 'CLOSED', 'REJECTED')
+          AND wc."createdAt" < NOW() - INTERVAL '3 days'
+        LIMIT 200`,
+    )
+    for (const wc of warrantyClaims) {
+      const pmId = nextPm()
+      if (!pmId) continue
+      // Mirror the urgency: URGENT/HIGH on the claim → HIGH task.
+      const claimPriority = (wc.priority || 'MEDIUM').toString().toUpperCase()
+      const taskPriority: 'HIGH' | 'MEDIUM' =
+        claimPriority === 'URGENT' || claimPriority === 'HIGH'
+          ? 'HIGH'
+          : 'MEDIUM'
+      await createTaskIfMissing(
+        creatorId,
+        {
+          assigneeId: pmId,
+          title: `Warranty follow-up: ${wc.claimNumber}`,
+          description: `${wc.subject || 'Warranty claim'} — open since ${
+            wc.createdAt ? new Date(wc.createdAt).toLocaleDateString() : ''
+          }${wc.builderName ? `, ${wc.builderName}` : ''}. Status: ${wc.status}. Coordinate inspection or resolution.`,
+          priority: taskPriority,
+          category: 'QUALITY_REVIEW',
+          dueDate: null,
+          sourceKey: `warranty:${wc.id}:${week}`,
+          builderId: wc.builderId,
+        },
+        result,
+        'pm',
+      )
+    }
+  }
+
+  // ── Builder messages unanswered > 24h (HIGH) ───────────────────────
+  // Find conversations whose latest message came from BUILDER more than
+  // 24h ago (i.e. nobody on staff has replied). Assigns to whoever
+  // created the conversation if that's a real staff record; falls back
+  // to PM round-robin so coverage doesn't gap.
+  if (pmRows.length > 0) {
+    const unanswered: any[] = await prisma.$queryRawUnsafe(
+      `WITH latest_msg AS (
+         SELECT DISTINCT ON (m."conversationId")
+                m."conversationId",
+                m."senderType",
+                m."createdAt",
+                m."body"
+           FROM "Message" m
+       ORDER BY m."conversationId", m."createdAt" DESC
+       )
+       SELECT c."id" AS "conversationId",
+              c."subject",
+              c."builderId",
+              c."createdById",
+              b."companyName" AS "builderName",
+              lm."createdAt" AS "lastMsgAt",
+              SUBSTR(lm."body", 1, 200) AS "lastMsgPreview"
+         FROM "Conversation" c
+         JOIN latest_msg lm ON lm."conversationId" = c."id"
+    LEFT JOIN "Builder" b ON b."id" = c."builderId"
+        WHERE c."type"::text = 'BUILDER_SUPPORT'
+          AND lm."senderType" = 'BUILDER'
+          AND lm."createdAt" < NOW() - INTERVAL '24 hours'
+        LIMIT 200`,
+    )
+    for (const u of unanswered) {
+      // Use the conversation creator (a staff id) if it exists, else PM RR.
+      const assignee = u.createdById || nextPm()
+      if (!assignee) continue
+      await createTaskIfMissing(
+        creatorId,
+        {
+          assigneeId: assignee,
+          title: `Reply to ${u.builderName || 'builder'} — ${
+            u.subject || 'message thread'
+          }`,
+          description: `Builder message has been waiting for a reply since ${
+            u.lastMsgAt ? new Date(u.lastMsgAt).toLocaleString() : ''
+          }.${u.lastMsgPreview ? `\n\n"${u.lastMsgPreview}"` : ''}`,
+          priority: 'HIGH',
+          category: 'BUILDER_COMMUNICATION',
+          dueDate: endOfTodayDate(),
+          sourceKey: `unreplied-msg:${u.conversationId}`,
+          builderId: u.builderId,
         },
         result,
         'pm',
@@ -314,6 +423,109 @@ async function generateSalesTasks(creatorId: string, result: GenResult) {
         dueDate: endOfTodayDate(),
         sourceKey: `quote-followup:${q.quoteId}:${week}`,
         builderId: q.builderId,
+      },
+      result,
+      'sales',
+    )
+  }
+
+  // ── New builder applications unreviewed > 2d (HIGH) ─────────────────
+  // Assign to the original deal owner if linked via Deal record; otherwise
+  // round-robin across SALES_REP staff.
+  const apps: any[] = await prisma.$queryRawUnsafe(
+    `SELECT ba."id", ba."companyName", ba."referenceNumber",
+            ba."contactName", ba."contactEmail", ba."createdAt"
+       FROM "BuilderApplication" ba
+      WHERE ba."status" = 'PENDING_APPROVAL'
+        AND ba."reviewedAt" IS NULL
+        AND ba."createdAt" < NOW() - INTERVAL '2 days'
+      LIMIT 200`,
+  )
+  for (const a of apps) {
+    await createTaskIfMissing(
+      creatorId,
+      {
+        assigneeId: nextRep(),
+        title: `Review application: ${a.companyName}`,
+        description: `New builder app ref ${a.referenceNumber} submitted ${
+          a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''
+        }. Contact: ${a.contactName}${
+          a.contactEmail ? ` (${a.contactEmail})` : ''
+        }. Approve or request more info.`,
+        priority: 'HIGH',
+        category: 'GENERAL',
+        dueDate: endOfTodayDate(),
+        sourceKey: `app-review:${a.id}`,
+      },
+      result,
+      'sales',
+    )
+  }
+
+  // ── Stale deal > 5d idle (MEDIUM) ──────────────────────────────────
+  // Assigns to Deal.ownerId (the rep who owns it).
+  const staleDeals: any[] = await prisma.$queryRawUnsafe(
+    `SELECT d."id", d."dealNumber", d."companyName", d."ownerId",
+            d."updatedAt", d."stage"::text AS "stage", d."builderId",
+            EXTRACT(DAY FROM NOW() - d."updatedAt")::int AS "daysIdle"
+       FROM "Deal" d
+      WHERE d."stage"::text NOT IN ('CLOSED_WON','CLOSED_LOST','CANCELLED')
+        AND d."updatedAt" < NOW() - INTERVAL '5 days'
+        AND d."ownerId" IS NOT NULL
+      LIMIT 200`,
+  )
+  for (const d of staleDeals) {
+    await createTaskIfMissing(
+      creatorId,
+      {
+        assigneeId: d.ownerId,
+        title: `Stale deal: ${d.companyName} — ${d.daysIdle}d idle`,
+        description: `${d.dealNumber} sitting in ${d.stage} since ${
+          d.updatedAt ? new Date(d.updatedAt).toLocaleDateString() : ''
+        }. Move it forward or mark closed-lost.`,
+        priority: 'MEDIUM',
+        category: 'GENERAL',
+        dueDate: null,
+        sourceKey: `deal-stale:${d.id}:${week}`,
+        builderId: d.builderId,
+      },
+      result,
+      'sales',
+    )
+  }
+
+  // ── Contract expiring < 30d (MEDIUM) ───────────────────────────────
+  // Assigns to the deal owner; falls back to round-robin across SALES_REP.
+  const expiringContracts: any[] = await prisma.$queryRawUnsafe(
+    `SELECT c."id" AS "contractId", c."status"::text AS "status",
+            c."endDate", c."dealId", c."builderId",
+            d."ownerId" AS "ownerId",
+            d."dealNumber",
+            COALESCE(b."companyName", d."companyName", 'Unknown') AS "builderName"
+       FROM "Contract" c
+  LEFT JOIN "Deal" d ON d."id" = c."dealId"
+  LEFT JOIN "Builder" b ON b."id" = c."builderId"
+      WHERE c."endDate" IS NOT NULL
+        AND c."endDate" > NOW()
+        AND c."endDate" < NOW() + INTERVAL '30 days'
+        AND c."status"::text NOT IN ('EXPIRED','CANCELLED','TERMINATED')
+      LIMIT 200`,
+  )
+  for (const c of expiringContracts) {
+    const assignee = c.ownerId || nextRep()
+    await createTaskIfMissing(
+      creatorId,
+      {
+        assigneeId: assignee,
+        title: `Renew contract: ${c.builderName} — expires ${
+          c.endDate ? new Date(c.endDate).toLocaleDateString() : ''
+        }`,
+        description: `Contract ends within 30 days. Reach out about renewal terms.`,
+        priority: 'MEDIUM',
+        category: 'GENERAL',
+        dueDate: c.endDate ? new Date(c.endDate) : null,
+        sourceKey: `contract-renew:${c.contractId}`,
+        builderId: c.builderId,
       },
       result,
       'sales',
