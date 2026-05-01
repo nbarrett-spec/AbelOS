@@ -12,6 +12,11 @@ interface HyphenConfig {
   apiKey: string
   baseUrl: string
   supplierId: string
+  // Multi-tenant additions (optional — back-compat with single-tenant getConfig).
+  tenantId?: string
+  builderName?: string
+  username?: string
+  password?: string
 }
 
 async function getConfig(): Promise<HyphenConfig | null> {
@@ -25,6 +30,136 @@ async function getConfig(): Promise<HyphenConfig | null> {
     apiKey: config.apiKey,
     baseUrl: config.baseUrl,
     supplierId: config.companyId || '',
+  }
+}
+
+// ─── Multi-tenant: pull every active HyphenTenant row ──────────────────
+//
+// Each builder (Brookfield, Toll Brothers, Shaddock) has its own HyphenTenant
+// row with its own credentials + baseUrl. The cron iterates these in turn.
+//
+// Falls back to legacy getConfig() if the HyphenTenant table is empty (so we
+// don't black-hole single-tenant deploys).
+export async function getAllTenants(): Promise<HyphenConfig[]> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id", "builderName", "baseUrl", "username", "password",
+              "oauthAccessToken", "oauthExpiresAt"
+       FROM "HyphenTenant"
+       WHERE "syncEnabled" = TRUE
+       ORDER BY "builderName" ASC`
+    )
+
+    if (rows.length === 0) {
+      const legacy = await getConfig()
+      return legacy ? [legacy] : []
+    }
+
+    const tenants: HyphenConfig[] = []
+    for (const r of rows) {
+      const apiKey = r.oauthAccessToken || r.password || ''
+      const baseUrl = r.baseUrl || 'https://www.bldrconnect.com'
+      if (!apiKey || !baseUrl) {
+        console.warn(`HyphenTenant ${r.builderName} (${r.id}) missing apiKey/baseUrl — skipping`)
+        continue
+      }
+      tenants.push({
+        apiKey,
+        baseUrl,
+        supplierId: r.builderName || '',
+        tenantId: r.id,
+        builderName: r.builderName || undefined,
+        username: r.username || undefined,
+        password: r.password || undefined,
+      })
+    }
+    return tenants
+  } catch (err: any) {
+    // Table not yet migrated (Phase 1 has additive migration pending). Fall
+    // back to legacy single-tenant getConfig() so the cron still works.
+    const msg = err?.message || String(err)
+    if (/HyphenTenant|relation .* does not exist/i.test(msg)) {
+      const legacy = await getConfig()
+      return legacy ? [legacy] : []
+    }
+    throw err
+  }
+}
+
+// Per-tenant sync-status writeback. Best-effort — never throws.
+async function recordTenantSync(
+  tenantId: string | undefined,
+  status: 'SUCCESS' | 'PARTIAL' | 'FAILED',
+  error?: string,
+) {
+  if (!tenantId) return
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "HyphenTenant"
+       SET "lastSyncAt" = NOW(),
+           "lastSyncStatus" = $1,
+           "lastSyncError" = $2,
+           "updatedAt" = NOW()
+       WHERE "id" = $3`,
+      status,
+      error || null,
+      tenantId,
+    )
+  } catch (e: any) {
+    console.warn(`recordTenantSync failed for ${tenantId}:`, e?.message)
+  }
+}
+
+function emptyResult(syncType: 'schedule_updates' | 'payments' | 'orders', error: string, startedAt: Date): SyncResult {
+  return {
+    provider: 'HYPHEN', syncType, direction: 'PULL',
+    status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
+    recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+    errorMessage: error,
+    startedAt, completedAt: new Date(),
+    durationMs: Date.now() - startedAt.getTime(),
+  }
+}
+
+// Aggregate N per-tenant SyncResult rows into a single SyncResult so
+// callers/cron-observability that expect the original shape keep working.
+function aggregateResults(syncType: 'schedule_updates' | 'payments' | 'orders', results: Array<{ tenant: string; result: SyncResult }>, startedAt: Date): SyncResult {
+  const completedAt = new Date()
+  if (results.length === 0) {
+    return {
+      provider: 'HYPHEN', syncType, direction: 'PULL',
+      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
+      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+      errorMessage: 'No active HyphenTenant rows configured',
+      startedAt, completedAt,
+      durationMs: completedAt.getTime() - startedAt.getTime(),
+    }
+  }
+  let created = 0, updated = 0, skipped = 0, failed = 0
+  const errors: string[] = []
+  let anySuccess = false, anyFailed = false
+  for (const { tenant, result } of results) {
+    created += result.recordsCreated
+    updated += result.recordsUpdated
+    skipped += result.recordsSkipped
+    failed += result.recordsFailed
+    if (result.status === 'FAILED') {
+      anyFailed = true
+      errors.push(`${tenant}: ${result.errorMessage || 'unknown'}`)
+    } else {
+      anySuccess = true
+    }
+  }
+  const status: SyncResult['status'] = anyFailed && anySuccess ? 'PARTIAL' : anyFailed ? 'FAILED' : 'SUCCESS'
+  return {
+    provider: 'HYPHEN', syncType, direction: 'PULL',
+    status,
+    recordsProcessed: created + updated + skipped + failed,
+    recordsCreated: created, recordsUpdated: updated,
+    recordsSkipped: skipped, recordsFailed: failed,
+    errorMessage: errors.length > 0 ? errors.join(' | ') : undefined,
+    startedAt, completedAt,
+    durationMs: completedAt.getTime() - startedAt.getTime(),
   }
 }
 
@@ -51,19 +186,32 @@ async function hyphenFetch(path: string, config: HyphenConfig, options?: Request
 
 // ─── Schedule Updates Sync ──────────────────────────────────────────────
 
-export async function syncScheduleUpdates(): Promise<SyncResult> {
-  const startedAt = new Date()
-  const config = await getConfig()
-  if (!config) {
-    return {
-      provider: 'HYPHEN', syncType: 'schedule_updates', direction: 'PULL',
-      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
-      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
-      errorMessage: 'Hyphen not configured',
-      startedAt, completedAt: new Date(),
-      durationMs: Date.now() - startedAt.getTime(),
+export async function syncScheduleUpdates(tenantOverride?: HyphenConfig): Promise<SyncResult> {
+  // Multi-tenant orchestrator: if no override given, iterate every active
+  // HyphenTenant and aggregate. Per-tenant failures are isolated.
+  if (!tenantOverride) {
+    const startedAt = new Date()
+    const tenants = await getAllTenants()
+    if (tenants.length === 0) {
+      return emptyResult('schedule_updates', 'Hyphen not configured', startedAt)
     }
+    const results: Array<{ tenant: string; result: SyncResult }> = []
+    for (const t of tenants) {
+      try {
+        const r = await syncScheduleUpdates(t)
+        results.push({ tenant: t.builderName || t.tenantId || 'unknown', result: r })
+        await recordTenantSync(t.tenantId, r.status === 'FAILED' ? 'FAILED' : (r.recordsFailed > 0 ? 'PARTIAL' : 'SUCCESS'), r.errorMessage)
+      } catch (err: any) {
+        const failResult = emptyResult('schedule_updates', err?.message || String(err), startedAt)
+        results.push({ tenant: t.builderName || t.tenantId || 'unknown', result: failResult })
+        await recordTenantSync(t.tenantId, 'FAILED', err?.message || String(err))
+      }
+    }
+    return aggregateResults('schedule_updates', results, startedAt)
   }
+
+  const config = tenantOverride
+  const startedAt = new Date()
 
   let updated = 0, skipped = 0, failed = 0
 
@@ -289,19 +437,30 @@ export async function syncSchedules(since?: Date): Promise<SyncResult> {
 
 // ─── Payment Sync ───────────────────────────────────────────────────────
 
-export async function syncPayments(): Promise<SyncResult> {
-  const startedAt = new Date()
-  const config = await getConfig()
-  if (!config) {
-    return {
-      provider: 'HYPHEN', syncType: 'payments', direction: 'PULL',
-      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
-      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
-      errorMessage: 'Hyphen not configured',
-      startedAt, completedAt: new Date(),
-      durationMs: Date.now() - startedAt.getTime(),
+export async function syncPayments(tenantOverride?: HyphenConfig): Promise<SyncResult> {
+  if (!tenantOverride) {
+    const startedAt = new Date()
+    const tenants = await getAllTenants()
+    if (tenants.length === 0) {
+      return emptyResult('payments', 'Hyphen not configured', startedAt)
     }
+    const results: Array<{ tenant: string; result: SyncResult }> = []
+    for (const t of tenants) {
+      try {
+        const r = await syncPayments(t)
+        results.push({ tenant: t.builderName || t.tenantId || 'unknown', result: r })
+        await recordTenantSync(t.tenantId, r.status === 'FAILED' ? 'FAILED' : (r.recordsFailed > 0 ? 'PARTIAL' : 'SUCCESS'), r.errorMessage)
+      } catch (err: any) {
+        const failResult = emptyResult('payments', err?.message || String(err), startedAt)
+        results.push({ tenant: t.builderName || t.tenantId || 'unknown', result: failResult })
+        await recordTenantSync(t.tenantId, 'FAILED', err?.message || String(err))
+      }
+    }
+    return aggregateResults('payments', results, startedAt)
   }
+
+  const config = tenantOverride
+  const startedAt = new Date()
 
   let updated = 0, failed = 0
 
@@ -386,19 +545,30 @@ export async function syncPayments(): Promise<SyncResult> {
 
 // ─── Orders Sync ─────────────────────────────────────────────────────────
 
-export async function syncOrders(): Promise<SyncResult> {
-  const startedAt = new Date()
-  const config = await getConfig()
-  if (!config) {
-    return {
-      provider: 'HYPHEN', syncType: 'orders', direction: 'PULL',
-      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
-      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
-      errorMessage: 'Hyphen not configured',
-      startedAt, completedAt: new Date(),
-      durationMs: Date.now() - startedAt.getTime(),
+export async function syncOrders(tenantOverride?: HyphenConfig): Promise<SyncResult> {
+  if (!tenantOverride) {
+    const startedAt = new Date()
+    const tenants = await getAllTenants()
+    if (tenants.length === 0) {
+      return emptyResult('orders', 'Hyphen not configured', startedAt)
     }
+    const results: Array<{ tenant: string; result: SyncResult }> = []
+    for (const t of tenants) {
+      try {
+        const r = await syncOrders(t)
+        results.push({ tenant: t.builderName || t.tenantId || 'unknown', result: r })
+        await recordTenantSync(t.tenantId, r.status === 'FAILED' ? 'FAILED' : (r.recordsFailed > 0 ? 'PARTIAL' : 'SUCCESS'), r.errorMessage)
+      } catch (err: any) {
+        const failResult = emptyResult('orders', err?.message || String(err), startedAt)
+        results.push({ tenant: t.builderName || t.tenantId || 'unknown', result: failResult })
+        await recordTenantSync(t.tenantId, 'FAILED', err?.message || String(err))
+      }
+    }
+    return aggregateResults('orders', results, startedAt)
   }
+
+  const config = tenantOverride
+  const startedAt = new Date()
 
   let created = 0, updated = 0, failed = 0
 

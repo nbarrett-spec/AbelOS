@@ -215,6 +215,22 @@
     {
       "path": "/api/cron/dead-stock-report",
       "schedule": "0 11 * * 5"
+    },
+    {
+      "path": "/api/cron/morning-brain-brief",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/boise-pricing-sync",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/qb-aggregate",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/prospect-enrich",
+      "schedule": "0 7 * * 1"
     }
   ]
 }

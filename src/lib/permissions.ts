@@ -145,6 +145,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   // AI Assistant — available to ALL staff (tools are role-filtered per user)
   '/ops/ai': ALL_ROLES,
 
+  // Brain Insights — Brain-ranked signals for the whole team
+  '/ops/brain-insights': ALL_ROLES,
+
   // Growth Engine — PM added (needs visibility into pipeline growth)
   '/ops/growth': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],
   '/ops/marketing': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],
@@ -666,6 +669,10 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // Special-case: confirmation send on delivery (mirrors /api/ops/delivery).
   '/api/ops/deliveries': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'DRIVER', 'WAREHOUSE_LEAD'],
+
+  // Brain proxies — staff-wide read access to NUC Brain insights/knowledge.
+  // Server-side proxies enforce their own outbound auth to brain.abellumber.com.
+  '/api/v1/brain': ALL_ROLES,
 }
 
 export function canAccessAPI(role: StaffRole | StaffRole[], pathname: string): boolean {

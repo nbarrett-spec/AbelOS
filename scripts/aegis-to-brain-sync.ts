@@ -385,6 +385,35 @@ function buildJobEvents(jobs: any[]): BrainEvent[] {
   return out
 }
 
+// ── Hyphen orders, per builder (multi-tenant: Brookfield/Toll/Shaddock) ─
+function buildHyphenOrderEvents(orders: any[]): BrainEvent[] {
+  const out: BrainEvent[] = []
+  for (const o of orders) {
+    const builder = o.builderName || 'unknown'
+    const tag = builder.toLowerCase().replace(/\s+/g, '_')
+    out.push({
+      source: 'aegis',
+      source_id: `hyphen_order:${o.id}`,
+      event_type: 'hyphen_order',
+      title: `Hyphen ${builder} · ${o.builderOrderNum || o.hyphId || o.id} · ${o.orderStatus || o.builderStatus || ''}`.slice(0, 220),
+      content: [
+        `Builder: ${builder}`,
+        o.subdivision ? `Community: ${o.subdivision}` : '',
+        o.lotBlockPlan ? `Lot/Block: ${o.lotBlockPlan}` : '',
+        o.address ? `Address: ${o.address}` : '',
+        o.task ? `Task: ${o.task}` : '',
+        o.total != null ? `Total: $${Number(o.total).toFixed(2)}` : '',
+        o.orderStatus ? `Status: ${o.orderStatus}` : '',
+        o.builderStatus ? `Builder status: ${o.builderStatus}` : '',
+      ].filter(Boolean).join('\n'),
+      tags: ['hyphen', 'builder_order', tag, o.orderStatus].filter(Boolean) as string[],
+      timestamp: o.updatedAt?.toISOString?.(),
+      priority: 'P3',
+    })
+  }
+  return out
+}
+
 // ── Inventory + product summary (volume guard) ────────────────────────
 // 3000+/day product changes would flood Brain. Send one aggregate event per cycle.
 function buildInventorySummaryEvent(productCount: number, inventoryCount: number, since: Date): BrainEvent[] {
@@ -499,7 +528,7 @@ export async function runAegisToBrainSync(
   const [
     orders, pos, inboxItems, collections,
     comms, builderUpdates, vendorUpdates, pricingChanges, jobUpdates,
-    productCount, inventoryCount,
+    productCount, inventoryCount, hyphenOrders,
   ] = await Promise.all([
     prisma.order.findMany({
       where: {
@@ -564,6 +593,18 @@ export async function runAegisToBrainSync(
     // Product/inventory volume — sent as aggregate counts only
     prisma.product.count({ where: { updatedAt: { gte: since } } }),
     prisma.inventoryItem.count({ where: { updatedAt: { gte: since } } }),
+    // HyphenOrder updates per builder (Brookfield/Toll/Shaddock multi-tenant).
+    // builderName is denormalized on the row, so Brain gets per-tenant tags.
+    prisma.hyphenOrder.findMany({
+      where: { updatedAt: { gte: since } },
+      orderBy: { updatedAt: 'desc' },
+      take: 300,
+    }).catch((err: any) => {
+      // HyphenOrder schema is stable (72 rows currently); guard only against
+      // table-not-found in case this script runs against a stripped-down DB.
+      console.warn('hyphenOrder pull failed:', err?.message)
+      return []
+    }),
   ])
 
   // 2. Transform
@@ -577,6 +618,7 @@ export async function runAegisToBrainSync(
   const pricingEvents = buildPricingEvents(pricingChanges)
   const jobEvents = buildJobEvents(jobUpdates)
   const inventorySummary = buildInventorySummaryEvent(productCount, inventoryCount, since)
+  const hyphenOrderEvents = buildHyphenOrderEvents(hyphenOrders)
 
   const byType: Record<string, number> = {}
   const allEvents: BrainEvent[] = [
@@ -590,6 +632,7 @@ export async function runAegisToBrainSync(
     ...pricingEvents,
     ...jobEvents,
     ...inventorySummary,
+    ...hyphenOrderEvents,
   ]
   for (const e of allEvents) {
     byType[e.event_type] = (byType[e.event_type] || 0) + 1

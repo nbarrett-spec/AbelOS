@@ -1731,10 +1731,10 @@ model PurchaseOrder {
   receivedAt   DateTime?
 
   // Payment tracking (Finance FIX-10)
-  paidAt       DateTime?
-  paidMethod   String?
+  paidAt        DateTime?
+  paidMethod    String?
   paidReference String?
-  paidAmount   Float?
+  paidAmount    Float?
 
   // Vendor confirmation (GAP-23)
   vendorConfirmedAt   DateTime?
@@ -5134,7 +5134,26 @@ model Prospect {
   createdAt             DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
 
+  // ── Builder enrichment metadata (Apr 2026) ────────────────────────────
+  // Populated by the enrich-prospect agent (src/lib/agents/enrich-prospect.ts)
+  // via Vercel cron + on-create webhook. All additive/nullable — existing
+  // Prospect rows continue to work without migration.
+  domain               String? // canonical company domain (e.g., "garabedianbuilds.com")
+  founderName          String? // owner/founder name from research
+  emailPattern         String? // 'firstname.lastname' | 'firstname' | 'flastname' etc.
+  enrichmentRunAt      DateTime? @db.Timestamptz(6)
+  enrichmentConfidence String? // 'CONFIRMED' | 'LIKELY' | 'UNVERIFIED'
+  enrichmentSourceUrls String[]  @default([])
+  bouncedAt            DateTime? @db.Timestamptz(6) // set by Resend bounce webhook
+  icpTier              String? // 'PREMIUM' | 'MID' | 'GROWTH'
+
+  pitchContexts PitchContext[]
+  pitchRuns     PitchRun[]
+
   @@index([status], map: "idx_prospect_status")
+  @@index([enrichmentConfidence], map: "idx_prospect_enrich_conf")
+  @@index([enrichmentRunAt(sort: Desc)], map: "idx_prospect_enriched_at")
+  @@index([bouncedAt], map: "idx_prospect_bounced")
 }
 
 model PunchItem {
@@ -6128,4 +6147,282 @@ model HyphenDocument {
   @@index([fileSha256])
   @@index([matchConfidence])
   @@index([scrapedAt(sort: Desc)])
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// BUILDER ENRICHMENT + PITCH GENERATOR (added 2026-04-30)
+// Lives on feat/builder-enrichment. Sales agents: enrich-prospect +
+// generate-pitch. See src/lib/agents/ for the runtime, prisma/migrations/
+// add_builder_enrichment_pitch.sql for the migration.
+// ──────────────────────────────────────────────────────────────────────────
+
+// Per-prospect pitch inputs that aren't part of the enrichment surface.
+// 1:1 with Prospect (one PitchContext per prospect). Filled by Dalton via
+// /admin/pitch-generator before generating a pitch, OR auto-pulled if the
+// CRM gets these fields populated upstream.
+model PitchContext {
+  id         String   @id @default(cuid())
+  prospectId String   @unique
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  // Sales positioning inputs
+  targetPlans      Json? // [{ planName, sqFt, materialBudget, priorityRank }]
+  currentVendor    String? // who Abel is replacing ("84 Lumber", "DW Distribution", etc.)
+  estBuildVolume   Int? // homes per year (best estimate)
+  dealStage        String? @default("COLD") // COLD | INTRO_SENT | IN_DISCUSSION | PROPOSAL | WON | LOST
+  positioningNotes String? // free-form sales notes; fed to the pitch agent verbatim
+
+  // Last-known relationship signals
+  lastTouchedAt DateTime? @db.Timestamptz(6)
+  lastTouchedBy String? // staffId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([prospectId])
+  @@index([dealStage])
+}
+
+// Each generation request — input config + output URLs + status.
+// Created when Dalton hits "Generate" on /admin/pitch-generator, OR when
+// an auto-trigger fires (Phase 2: enrichment hits CONFIRMED → draft pitch).
+model PitchRun {
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  // Style/layout/elements — config the user picked
+  style    String // HERITAGE | EXECUTIVE | BUILDER_FIELD
+  layout   String // MICROSITE | DECK | ONE_PAGER
+  elements String[] // ['cover','exec_summary','pricing','plan_breakdown','value_eng','scope','capabilities','team','financials','references','timeline','terms']
+
+  // Run state
+  status       String   @default("QUEUED") // QUEUED | GENERATING | PREVIEW | APPROVED | SENT | FAILED
+  previewUrl   String? // Vercel preview deploy URL (microsite)
+  htmlContent  String? // Generated HTML (for microsite layout)
+  pptxFileId   String? // Files API ref (for deck layout — Phase 2)
+  pdfFileId    String? // Files API ref (for one-pager layout — Phase 2)
+  emailDraft   String? // Markdown draft email body (queued in ReviewQueue for approval)
+  errorMessage String?
+  costEstimate Decimal? @db.Decimal(8, 4) // USD; tallies Anthropic input/output + image gen + Vercel
+
+  // Provenance
+  generatedBy String? // staffId; null if auto-triggered
+  approvedBy  String? // staffId; set when ReviewQueue approves
+  approvedAt  DateTime? @db.Timestamptz(6)
+  sentAt      DateTime? @db.Timestamptz(6)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([prospectId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)], map: "idx_pitchrun_created")
+  @@index([generatedBy])
+}
+
+// Single review queue across enrichment, pitch approvals, and outbound emails.
+// CLAUDE.md hard rule: external customer emails need DFW outreach approval.
+// This is the gate. Items land here when:
+//   - Enrichment confidence = UNVERIFIED + source URLs conflict
+//   - Pitch generator finishes (status: PREVIEW) and needs Nate's approval
+//   - Resend bounce flags a prospect for re-research
+model ReviewQueue {
+  id String @id @default(cuid())
+
+  // What needs review
+  entityType String // PROSPECT_ENRICHMENT | PITCH_RUN | EMAIL_SEND | BOUNCE_RECHECK
+  entityId   String // FK by convention to Prospect.id, PitchRun.id, etc.
+
+  // Why it landed here + what to do
+  reason          String // short label for UI: "low_confidence_email", "pitch_ready_review", etc.
+  summary         String? // one-liner the reviewer sees in the queue list
+  suggestedAction Json? // { type: "approve_send", payload: {...} } — agent's recommendation
+
+  // Resolution
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED | EXPIRED
+  reviewedBy String? // staffId
+  reviewedAt DateTime? @db.Timestamptz(6)
+  notes      String? // reviewer notes (free-form)
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? @db.Timestamptz(6) // optional auto-expire (e.g., stale pitch previews)
+
+  @@index([status, createdAt(sort: Desc)], map: "idx_reviewq_pending")
+  @@index([entityType, entityId], map: "idx_reviewq_entity")
+  @@index([reviewedBy])
+}
+
+// ============================================================================
+// Multi-tenant Hyphen support — one row per builder. See scripts/seed-hyphen-tenants.ts
+// IntegrationConfig keeps its @@unique([provider]); HyphenTenant lives independently.
+// ============================================================================
+model HyphenTenant {
+  id                  String    @id @default(cuid())
+  builderId           String?
+  builderName         String    @unique
+  baseUrl             String    @default("https://www.bldrconnect.com")
+  username            String?
+  password            String?
+  oauthAccessToken    String?
+  oauthRefreshToken   String?
+  oauthExpiresAt      DateTime?
+  syncEnabled         Boolean   @default(true)
+  lastSyncAt          DateTime?
+  lastSyncStatus      String?
+  lastSyncError       String?
+  syncIntervalMinutes Int       @default(60)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([builderId])
+  @@index([syncEnabled])
+  @@index([lastSyncAt])
+}
+
+// ============================================================================
+// Boise Cascade pricing snapshots — diff each new upload vs prior to emit
+// "boise_price_change" events to Brain. See src/lib/integrations/boise-pricing-watcher.ts
+// ============================================================================
+model BoisePriceSnapshot {
+  id            String    @id
+  source        String // UPLOAD | EMAIL | CRON | MANUAL
+  effectiveDate DateTime?
+  filename      String?
+  uploadedBy    String?
+  totalSkus     Int
+  priceMap      Json
+  createdAt     DateTime  @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([effectiveDate(sort: Desc)])
+  @@index([source])
+}
+
+// ============================================================================
+// QuickBooks Desktop sync via QB Web Connector (QBWC).
+// Fed by /api/v1/qb/qbwc SOAP endpoint that Dawn's Windows PC polls.
+// Aggregated daily by /api/cron/qb-aggregate into Brain finance events.
+// ============================================================================
+model QbCustomer {
+  listId      String   @id
+  fullName    String
+  companyName String?
+  email       String?
+  phone       String?
+  balance     Float?
+  isActive    Boolean  @default(true)
+  raw         Json     @default("{}")
+  syncedAt    DateTime @default(now())
+
+  @@index([fullName])
+  @@index([syncedAt])
+}
+
+model QbVendor {
+  listId      String   @id
+  fullName    String
+  companyName String?
+  email       String?
+  phone       String?
+  balance     Float?
+  isActive    Boolean  @default(true)
+  raw         Json     @default("{}")
+  syncedAt    DateTime @default(now())
+
+  @@index([fullName])
+  @@index([syncedAt])
+}
+
+model QbAccount {
+  listId      String   @id
+  fullName    String
+  accountType String
+  balance     Float?
+  isActive    Boolean  @default(true)
+  raw         Json     @default("{}")
+  syncedAt    DateTime @default(now())
+
+  @@index([accountType])
+  @@index([isActive])
+}
+
+model QbItem {
+  listId     String   @id
+  fullName   String
+  type       String
+  salesPrice Float?
+  isActive   Boolean  @default(true)
+  raw        Json     @default("{}")
+  syncedAt   DateTime @default(now())
+
+  @@index([fullName])
+  @@index([type])
+}
+
+model QbInvoice {
+  txnId            String          @id
+  refNumber        String?
+  customerListId   String?
+  customerName     String?
+  txnDate          DateTime?       @db.Date
+  dueDate          DateTime?       @db.Date
+  subtotal         Float?
+  totalAmount      Float?
+  balanceRemaining Float?
+  isPaid           Boolean         @default(false)
+  raw              Json            @default("{}")
+  syncedAt         DateTime        @default(now())
+  lines            QbInvoiceLine[]
+
+  @@index([customerListId])
+  @@index([dueDate])
+  @@index([txnDate])
+  @@index([isPaid])
+}
+
+model QbInvoiceLine {
+  id           String    @id @default(cuid())
+  invoiceTxnId String
+  itemListId   String?
+  itemName     String?
+  description  String?
+  quantity     Float?
+  rate         Float?
+  amount       Float?
+  invoice      QbInvoice @relation(fields: [invoiceTxnId], references: [txnId], onDelete: Cascade)
+
+  @@index([invoiceTxnId])
+  @@index([itemListId])
+}
+
+model QbBill {
+  txnId        String              @id
+  refNumber    String?
+  vendorListId String?
+  vendorName   String?
+  txnDate      DateTime?           @db.Date
+  dueDate      DateTime?           @db.Date
+  amountDue    Float?
+  isPaid       Boolean             @default(false)
+  raw          Json                @default("{}")
+  syncedAt     DateTime            @default(now())
+  expenseLines QbBillExpenseLine[]
+
+  @@index([vendorListId])
+  @@index([dueDate])
+  @@index([isPaid])
+}
+
+model QbBillExpenseLine {
+  id            String  @id @default(cuid())
+  billTxnId     String
+  accountListId String?
+  accountName   String?
+  amount        Float?
+  memo          String?
+  bill          QbBill  @relation(fields: [billTxnId], references: [txnId], onDelete: Cascade)
+
+  @@index([billTxnId])
+  @@index([accountListId])
 }

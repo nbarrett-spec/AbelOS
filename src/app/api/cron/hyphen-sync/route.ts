@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
-import { syncScheduleUpdates, syncPayments, syncOrders } from '@/lib/integrations/hyphen'
+import { syncScheduleUpdates, syncPayments, syncOrders, getAllTenants } from '@/lib/integrations/hyphen'
 import { startCronRun, finishCronRun } from '@/lib/cron'
 
 // Note: vercel.json schedules this as GET, older code used POST. Both work.
@@ -20,76 +20,86 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Check if Hyphen is configured. Record the CronRun either way so the
-  // /ops/crons observability page doesn't flag the job as stale/dead when
-  // it's intentionally short-circuiting on missing credentials.
-  //
-  // Pre-check must match what lib/integrations/hyphen.ts::getConfig() actually
-  // requires (status=CONNECTED AND apiKey AND baseUrl) — otherwise a half-
-  // configured row makes the three sync funcs each return FAILED, which the
-  // cron surfaces as the unhelpful "One or more sync operations FAILED".
-  const hyphenConfig: any[] = await (await import('@/lib/prisma')).prisma.$queryRawUnsafe(
-    `SELECT id,
-            ("apiKey" IS NOT NULL AND "apiKey" <> '')   AS has_api_key,
-            ("baseUrl" IS NOT NULL AND "baseUrl" <> '') AS has_base_url
-     FROM "IntegrationConfig"
-     WHERE provider::text = 'HYPHEN' AND status::text = 'CONNECTED' LIMIT 1`
-  )
+  // Multi-tenant: pull every active HyphenTenant row. Falls back to the
+  // legacy single IntegrationConfig row if the new HyphenTenant table is
+  // empty or not yet migrated.
+  const tenants = await getAllTenants()
   const runId = await startCronRun('hyphen-sync', 'schedule')
   const started = Date.now()
 
-  if (hyphenConfig.length === 0) {
-    const msg = 'Hyphen not configured — skipping sync. Add IntegrationConfig with provider=HYPHEN to enable.'
+  if (tenants.length === 0) {
+    const msg = 'No Hyphen tenants configured — skipping sync. Add rows to HyphenTenant (preferred) or IntegrationConfig with provider=HYPHEN to enable.'
     await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
       result: { skipped: true, reason: 'NO_HYPHEN_CONFIG', message: msg },
     })
     return NextResponse.json({ success: true, skipped: true, message: msg })
   }
 
-  // CONNECTED row exists but credentials incomplete — surface clearly rather
-  // than letting each of the three syncs fail with the generic error.
-  const cfgRow = hyphenConfig[0]
-  if (!cfgRow.has_api_key || !cfgRow.has_base_url) {
-    const missing = [
-      !cfgRow.has_api_key ? 'apiKey' : null,
-      !cfgRow.has_base_url ? 'baseUrl' : null,
-    ].filter(Boolean).join(', ')
-    const msg = `Hyphen IntegrationConfig is CONNECTED but missing: ${missing}. Update the row and re-test the connection.`
-    await finishCronRun(runId, 'SUCCESS', Date.now() - started, {
-      result: { skipped: true, reason: 'HYPHEN_CONFIG_INCOMPLETE', missing, message: msg },
-    })
-    return NextResponse.json({ success: true, skipped: true, message: msg })
-  }
-
   try {
-    // Execute all three sync operations
-    const [scheduleResult, paymentsResult, ordersResult] = await Promise.all([
-      syncScheduleUpdates(),
-      syncPayments(),
-      syncOrders(),
-    ])
+    // Per-tenant orchestration: run schedule/payments/orders for each tenant
+    // sequentially per-sync-type. The lib functions handle per-tenant isolation
+    // — one tenant failing does not poison the others. Aggregate counts come
+    // back in the SyncResult shape.
+    const errorsPerTenant: Record<string, string[]> = {}
+    const succeededTenants = new Set<string>()
+    const failedTenants = new Set<string>()
 
-    const allSuccess = [scheduleResult, paymentsResult, ordersResult].every(r => r.status !== 'FAILED')
+    const runForTenant = async (tenant: typeof tenants[number]) => {
+      const label = tenant.builderName || tenant.tenantId || 'unknown'
+      try {
+        const [s, p, o] = await Promise.all([
+          syncScheduleUpdates(tenant),
+          syncPayments(tenant),
+          syncOrders(tenant),
+        ])
+        const tenantErrors: string[] = []
+        for (const r of [s, p, o]) {
+          if (r.status === 'FAILED') tenantErrors.push(`${r.syncType}: ${r.errorMessage || 'unknown'}`)
+        }
+        if (tenantErrors.length > 0) {
+          errorsPerTenant[label] = tenantErrors
+          failedTenants.add(label)
+        } else {
+          succeededTenants.add(label)
+        }
+        return { tenant: label, schedule: s, payments: p, orders: o }
+      } catch (err: any) {
+        errorsPerTenant[label] = [err?.message || String(err)]
+        failedTenants.add(label)
+        return { tenant: label, error: err?.message || String(err) }
+      }
+    }
+
+    const perTenantResults = await Promise.all(tenants.map(runForTenant))
+
+    const tenantsProcessed = tenants.length
+    const tenantsSucceeded = succeededTenants.size
+    const tenantsFailed = failedTenants.size
+    const allSuccess = tenantsFailed === 0
 
     const payload = {
       success: allSuccess,
       timestamp: new Date().toISOString(),
-      results: {
-        scheduleUpdates: scheduleResult,
-        payments: paymentsResult,
-        orders: ordersResult,
-      },
+      tenants_processed: tenantsProcessed,
+      tenants_succeeded: tenantsSucceeded,
+      tenants_failed: tenantsFailed,
+      errors_per_tenant: errorsPerTenant,
+      results: perTenantResults,
     }
 
-    // Surface the actual sync errorMessage(s) on failure instead of the
-    // generic "One or more sync operations FAILED" — otherwise /admin/crons
-    // shows a useless error and whoever's on-call has to dig through JSON.
-    const failureSummary = allSuccess ? undefined : [scheduleResult, paymentsResult, ordersResult]
-      .filter(r => r.status === 'FAILED')
-      .map(r => `${r.syncType}: ${r.errorMessage || 'unknown'}`)
-      .join(' | ') || 'One or more sync operations FAILED'
+    // Surface tenant-by-tenant errors so /admin/crons shows the real failure.
+    const failureSummary = allSuccess
+      ? undefined
+      : Object.entries(errorsPerTenant)
+          .map(([t, errs]) => `${t}: ${errs.join('; ')}`)
+          .join(' | ') || 'One or more tenant syncs FAILED'
 
-    await finishCronRun(runId, allSuccess ? 'SUCCESS' : 'FAILURE', Date.now() - started, {
+    // Partial success (some tenants OK, some failed) → SUCCESS with details,
+    // not FAILURE. /admin/crons should not red-flag the whole job because
+    // Toll's creds expired while Brookfield + Shaddock kept ingesting.
+    const cronStatus = allSuccess ? 'SUCCESS' : (tenantsSucceeded > 0 ? 'SUCCESS' : 'FAILURE')
+
+    await finishCronRun(runId, cronStatus, Date.now() - started, {
       result: payload,
       error: failureSummary,
     })

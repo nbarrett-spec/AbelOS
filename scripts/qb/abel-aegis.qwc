@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<QBWCXML>
+  <AppName>Abel Aegis Sync</AppName>
+  <AppID></AppID>
+  <AppURL>https://app.abellumber.com/api/v1/qb/qbwc</AppURL>
+  <AppDescription>Abel Lumber — Aegis ↔ QuickBooks Desktop sync (customers, invoices, bills, accounts).</AppDescription>
+  <AppSupport>https://app.abellumber.com/ops/integrations/quickbooks</AppSupport>
+  <UserName>aegis-qb-sync</UserName>
+  <!--
+    OwnerID and FileID must be unique GUIDs. Generate fresh ones BEFORE giving
+    this file to Dawn (PowerShell: [guid]::NewGuid()). Surround with curly braces.
+    Re-using GUIDs across installs will break QBWC.
+  -->
+  <OwnerID>{REPLACE-WITH-FRESH-GUID-OWNER}</OwnerID>
+  <FileID>{REPLACE-WITH-FRESH-GUID-FILE}</FileID>
+  <QBType>QBFS</QBType>
+  <Scheduler>
+    <RunEveryNMinutes>60</RunEveryNMinutes>
+  </Scheduler>
+  <IsReadOnly>false</IsReadOnly>
+</QBWCXML>

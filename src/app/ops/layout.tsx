@@ -246,6 +246,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'AI OPERATIONS BRAIN', id: 'ai-brain',
     items: [
+      { href: '/ops/brain-insights', label: 'Brain Insights', icon: '🧠' },
       { href: '/ops/ai/insights', label: 'AI Insights', icon: '💡' },
       { href: '/ops/ai/scans', label: 'NUC Scans', icon: '🔬' },
       { href: '/ops/ai/competitive', label: 'Competitive Intel', icon: '⚔️' },
