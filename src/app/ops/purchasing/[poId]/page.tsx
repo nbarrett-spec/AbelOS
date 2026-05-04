@@ -312,6 +312,23 @@ export default function PurchaseOrderDetailPage() {
     }
   }
 
+  // FIX-4: inline-edit a single PO field (used by the EditableDate widget on
+  // the Expected Delivery cell). Same PATCH endpoint as patchStatus, but
+  // doesn't force a status transition.
+  const updateField = async (data: Record<string, any>): Promise<void> => {
+    if (!po) return
+    const res = await fetch(`/api/ops/purchasing/${po.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      throw new Error(j.error || `HTTP ${res.status}`)
+    }
+    await load()
+  }
+
   const sendEmail = async () => {
     if (!po) return
     setActionLoading('send-email')
@@ -665,7 +682,14 @@ export default function PurchaseOrderDetailPage() {
         <Card variant="default" padding="md" className="lg:col-span-2">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Meta label="Ordered" value={fmtDate(po.orderedAt)} />
-            <Meta label="Expected" value={fmtDate(po.expectedDate)} />
+            <EditableDateCell
+              label="Expected"
+              value={po.expectedDate}
+              editable={['DRAFT', 'APPROVED', 'SENT_TO_VENDOR'].includes(po.status)}
+              onSave={async (date) => {
+                await updateField({ expectedDate: date })
+              }}
+            />
             <Meta label="Received" value={fmtDate(po.receivedAt)} />
             <Meta
               label="Created by"
@@ -1072,6 +1096,125 @@ function Meta({ label, value }: { label: string; value: string }) {
     <div>
       <div className="eyebrow">{label}</div>
       <div className="text-sm font-medium text-fg mt-0.5 truncate">{value}</div>
+    </div>
+  )
+}
+
+/**
+ * FIX-4 — Inline-editable date cell. Behaves like Meta when not editable, and
+ * shows a small "edit" affordance + date picker when editable. Calls onSave
+ * with an ISO yyyy-mm-dd string (or null when cleared). The PATCH endpoint
+ * normalizes the date to a Postgres timestamp.
+ */
+function EditableDateCell({
+  label,
+  value,
+  editable,
+  onSave,
+}: {
+  label: string
+  value: string | null | undefined
+  editable: boolean
+  onSave: (date: string | null) => Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<string>(() =>
+    value ? new Date(value).toISOString().slice(0, 10) : '',
+  )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Reset draft when the underlying value changes server-side.
+  useEffect(() => {
+    setDraft(value ? new Date(value).toISOString().slice(0, 10) : '')
+  }, [value])
+
+  const formatted = value
+    ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '—'
+
+  if (!editable) {
+    return (
+      <div>
+        <div className="eyebrow">{label}</div>
+        <div className="text-sm font-medium text-fg mt-0.5 truncate">{formatted}</div>
+      </div>
+    )
+  }
+
+  if (!editing) {
+    return (
+      <div>
+        <div className="eyebrow flex items-center gap-1">
+          {label}
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-fg-subtle hover:text-fg transition-colors"
+            title="Edit"
+            aria-label={`Edit ${label}`}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            </svg>
+          </button>
+        </div>
+        <div className="text-sm font-medium text-fg mt-0.5 truncate">{formatted}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="eyebrow">{label}</div>
+      <div className="mt-1 flex items-center gap-1">
+        <input
+          type="date"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          disabled={saving}
+          className="input input-sm w-full text-xs"
+          autoFocus
+        />
+        <button
+          type="button"
+          onClick={async () => {
+            setError(null)
+            setSaving(true)
+            try {
+              await onSave(draft || null)
+              setEditing(false)
+            } catch (e: any) {
+              setError(e?.message || 'Save failed')
+            } finally {
+              setSaving(false)
+            }
+          }}
+          disabled={saving}
+          className="btn btn-primary btn-xs shrink-0"
+          title="Save"
+        >
+          {saving ? '…' : '✓'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(value ? new Date(value).toISOString().slice(0, 10) : '')
+            setEditing(false)
+            setError(null)
+          }}
+          disabled={saving}
+          className="btn btn-secondary btn-xs shrink-0"
+          title="Cancel"
+        >
+          ✕
+        </button>
+      </div>
+      {error && (
+        <div className="text-[10px] text-data-negative mt-1 truncate" title={error}>
+          {error}
+        </div>
+      )}
     </div>
   )
 }
