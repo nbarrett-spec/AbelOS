@@ -5,15 +5,12 @@
  * MCP-protocol-level handle. It's used by the HTTP transport in
  * src/app/api/mcp/route.ts.
  *
- * Phase 1 (current): 10 read-only tools across 5 domains.
- *   • Orders: search_orders, get_order
- *   • Quotes: search_quotes, get_quote
- *   • Products/Inventory: search_products, check_inventory
- *   • Builders: search_builders, get_builder
- *   • Analytics: ops_dashboard, global_search
+ * Phase 1 + Phase 2 — full coverage across 10 tool files.
  *
- * Phase 2 (queued): write tools, full read coverage, audit + rate
- * limiting + tool annotations (readOnlyHint / destructiveHint).
+ * Read tools wrap their handler with withMcpAudit(name, 'READ', ...).
+ * Write tools use 'WRITE'. The audit log records every tool call with
+ * staffId='mcp-service' so we can grep the audit table to see every
+ * action Cowork has taken.
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
@@ -22,6 +19,11 @@ import { registerQuoteTools } from './tools/quotes'
 import { registerProductTools } from './tools/products'
 import { registerBuilderTools } from './tools/builders'
 import { registerAnalyticsTools } from './tools/analytics'
+import { registerInvoiceTools } from './tools/invoices'
+import { registerPurchasingTools } from './tools/purchasing'
+import { registerDeliveryTools } from './tools/deliveries'
+import { registerProjectTools } from './tools/projects'
+import { registerMessagingTools } from './tools/messaging'
 
 let cachedServer: McpServer | null = null
 
@@ -37,14 +39,20 @@ export function getMcpServer(): McpServer {
 
   const server = new McpServer({
     name: 'abel-aegis',
-    version: '1.0.0',
+    version: '2.0.0',
   })
 
+  // Phase 1 + Phase 2 tools
   registerOrderTools(server)
   registerQuoteTools(server)
   registerProductTools(server)
   registerBuilderTools(server)
   registerAnalyticsTools(server)
+  registerInvoiceTools(server)
+  registerPurchasingTools(server)
+  registerDeliveryTools(server)
+  registerProjectTools(server)
+  registerMessagingTools(server)
 
   cachedServer = server
   return server
