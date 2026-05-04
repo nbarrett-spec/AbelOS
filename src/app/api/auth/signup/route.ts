@@ -1,11 +1,12 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, createToken, setSessionCookie } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth'
 import { signupSchema } from '@/lib/validations'
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logger, getRequestId } from '@/lib/logger'
 import { logAudit } from '@/lib/audit'
+import { sendApplicationReceivedEmail } from '@/lib/email'
 
 // Fire-and-forget audit call. logAudit() internally try/catches + returns ''
 // on any failure, and we attach .catch(() => {}) defensively so a rejected
@@ -100,7 +101,13 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Create builder account with raw SQL
+      // Create builder account with raw SQL.
+      //
+      // ⚠ Approval gate: new self-registered builders land in PENDING.
+      // A staff member must flip the status to ACTIVE on /admin/builders/[id]
+      // before they can log in. The login route returns a friendly 403 with
+      // "pending approval" until then. emailVerified=false because the new
+      // account hasn't proven the inbox owns the address yet — separate flow.
       const passwordHash = await hashPassword(password)
       const builderId = crypto.randomUUID()
 
@@ -124,31 +131,44 @@ export async function POST(request: NextRequest) {
         city,
         state,
         zip,
-        'ACTIVE',
-        true
+        'PENDING',
+        false
       )
 
-      // Create session
-      const token = await createToken({
-        builderId,
-        email,
-        companyName,
-      })
-      await setSessionCookie(token)
+      // Application reference number — short user-visible identifier in case
+      // they call/email Abel about their pending application.
+      const refNumber = `APP-${new Date().getFullYear()}-${builderId.slice(0, 8).toUpperCase()}`
 
       logAudit({
         staffId: `builder:${builderId}`,
         action: 'SIGNUP',
         entity: 'auth',
         entityId: builderId,
-        details: { userId: builderId, email: mask(email), ip: ipAddress, userAgent },
+        details: { userId: builderId, email: mask(email), refNumber, status: 'PENDING', ip: ipAddress, userAgent },
         ipAddress,
         userAgent,
         severity: 'INFO',
       }).catch(() => {})
 
+      // Send application-received email so the user knows what to expect.
+      // Fire-and-forget — a Resend hiccup must not break signup.
+      sendApplicationReceivedEmail({
+        to: email,
+        contactName,
+        companyName,
+        refNumber,
+      }).catch((err: any) => {
+        logger.warn('signup_email_send_failed', { msg: err?.message, requestId, builderId })
+      })
+
+      // Note: NO session is created. PENDING builders can't log in yet.
+      // The 201 response just confirms receipt; the UI redirects to
+      // /signup/pending-approval (or shows an inline confirmation).
       return NextResponse.json(
         {
+          status: 'PENDING_APPROVAL',
+          refNumber,
+          message: 'Your application has been received. Our team will review and activate your account within 1-2 business days.',
           builder: {
             id: builderId,
             companyName,

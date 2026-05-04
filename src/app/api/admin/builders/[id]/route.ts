@@ -4,6 +4,8 @@ import { getSession } from '@/lib/auth'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
 import { audit } from '@/lib/audit'
+import { sendApplicationApprovedSelfEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   request: NextRequest,
@@ -351,6 +353,34 @@ export async function PATCH(
       },
       'CRITICAL'
     ).catch(() => {})
+
+    // Approval email: when status flips from non-ACTIVE → ACTIVE AND the
+    // builder has a passwordHash (meaning they signed up themselves and just
+    // got cleared by staff), let them know they can log in. Skipped when no
+    // passwordHash — that's the staff-invite flow, which sends its own email
+    // via /api/admin/builders/[id]/invite.
+    const statusChange = changes.status
+    if (
+      statusChange &&
+      statusChange.to === 'ACTIVE' &&
+      statusChange.from !== 'ACTIVE' &&
+      updatedBuilder.email
+    ) {
+      const pwRows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "passwordHash" FROM "Builder" WHERE id = $1 LIMIT 1`,
+        id,
+      )
+      const hasPassword = !!pwRows?.[0]?.passwordHash
+      if (hasPassword) {
+        sendApplicationApprovedSelfEmail({
+          to: updatedBuilder.email,
+          contactName: updatedBuilder.contactName,
+          companyName: updatedBuilder.companyName,
+        }).catch((err: any) => {
+          logger.warn('builder_approval_email_failed', { msg: err?.message, builderId: id })
+        })
+      }
+    }
 
     return NextResponse.json({
       builder: updatedBuilder,

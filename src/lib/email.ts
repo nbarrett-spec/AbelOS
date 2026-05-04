@@ -912,6 +912,97 @@ export async function sendApplicationApprovedEmail(params: {
   })
 }
 
+/**
+ * Send approval notification to a SELF-REGISTERED builder applicant.
+ *
+ * Distinct from sendApplicationApprovedEmail — that one assumes staff
+ * created the account and assigned a temp password. This one assumes
+ * the applicant chose their own password during signup, so we just
+ * tell them they can log in.
+ *
+ * Triggered when the admin PATCH-es Builder.status from PENDING → ACTIVE
+ * AND the row already has a passwordHash (meaning the user signed up
+ * themselves, vs. being staff-created).
+ */
+export async function sendApplicationApprovedSelfEmail(params: {
+  to: string
+  contactName: string
+  companyName: string
+}) {
+  return sendEmail({
+    to: params.to,
+    subject: `Welcome to Abel Lumber — Your Portal Is Ready`,
+    replyTo: 'sales@abellumber.com',
+    html: wrap(`
+      <h2 style="color: #0f2a3e; margin-top: 0;">Your Account Is Approved</h2>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">
+        Hi ${params.contactName},
+      </p>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">
+        Your builder account for <strong>${params.companyName}</strong> has been
+        approved. Log in with the email and password you chose during signup
+        to view orders, request quotes, and track deliveries.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/login" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+          Log In Now
+        </a>
+      </div>
+      <p style="color: #666; font-size: 13px; line-height: 1.6;">
+        Forgot your password? Use the
+        <a href="${APP_URL}/forgot-password" style="color: #C6A24E;">forgot-password link</a>
+        on the login page. Need help getting started? Reply to this email and
+        your account manager will reach out.
+      </p>
+    `),
+  })
+}
+
+/**
+ * Send a portal-invite email to a builder that exists in the DB but has
+ * no passwordHash yet (e.g. data-imported from InFlow). Staff triggers
+ * this from /admin/builders/[id]. The link drops them into the existing
+ * /reset-password flow with a 48h-valid token; on completion they can
+ * immediately log in.
+ */
+export async function sendBuilderInviteEmail(params: {
+  to: string
+  contactName: string
+  companyName: string
+  inviteUrl: string
+}) {
+  return sendEmail({
+    to: params.to,
+    subject: `You're invited to the Abel Lumber Builder Portal`,
+    replyTo: 'sales@abellumber.com',
+    html: wrap(`
+      <h2 style="color: #0f2a3e; margin-top: 0;">Welcome to Abel Lumber</h2>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">
+        Hi ${params.contactName},
+      </p>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">
+        Abel Lumber has set up a builder-portal account for
+        <strong>${params.companyName}</strong>. Click below to set your password
+        and log in. From the portal you can view orders, request quotes,
+        track deliveries, and pay invoices.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${params.inviteUrl}" style="background-color: #C6A24E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+          Set Up Your Account
+        </a>
+      </div>
+      <p style="color: #666; font-size: 13px; line-height: 1.6;">
+        This invitation link expires in 48 hours. If it expires, ask your
+        Abel rep to re-send.
+      </p>
+      <p style="color: #999; font-size: 12px; margin-top: 24px;">
+        Can't click the button? Copy and paste this link: <br>
+        <a href="${params.inviteUrl}" style="color: #C6A24E; word-break: break-all;">${params.inviteUrl}</a>
+      </p>
+    `),
+  })
+}
+
 // ─── TEMPLATE REGISTRY ──────────────────────────────────────────────────────
 // Central registry of all email templates with metadata for admin/ops preview.
 

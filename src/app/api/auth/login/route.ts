@@ -101,6 +101,24 @@ export async function POST(request: NextRequest) {
       const builder = builderRows[0]
 
       if (builder.status !== 'ACTIVE') {
+        // Status-specific messaging: PENDING gets an encouraging "in review"
+        // note; SUSPENDED/CLOSED/INACTIVE gets a terminal "contact support".
+        // Generic catch-all retains the old wording for unknown states.
+        const status = String(builder.status || '').toUpperCase()
+        let userMessage: string
+        let auditAction: string
+        if (status === 'PENDING') {
+          userMessage =
+            'Your account is pending approval. Our team will notify you when activated (typically within 1-2 business days).'
+          auditAction = 'FAIL_PENDING_APPROVAL'
+        } else if (status === 'SUSPENDED' || status === 'CLOSED' || status === 'INACTIVE') {
+          userMessage =
+            'Your account has been deactivated. Contact support@abellumber.com to restore access.'
+          auditAction = 'FAIL_DEACTIVATED_ACCOUNT'
+        } else {
+          userMessage = 'Account is not active. Please contact support.'
+          auditAction = 'FAIL_INACTIVE_ACCOUNT'
+        }
         logSecurityEvent({
           kind: 'AUTH_FAIL',
           path: '/api/auth/login',
@@ -108,20 +126,20 @@ export async function POST(request: NextRequest) {
           ip: clientIp(request),
           userAgent: request.headers.get('user-agent'),
           requestId,
-          details: { reason: 'inactive_account', builderId: builder.id },
+          details: { reason: 'inactive_account', status, builderId: builder.id },
         })
         logAudit({
           staffId: `builder:${builder.id}`,
-          action: 'FAIL_INACTIVE_ACCOUNT',
+          action: auditAction,
           entity: 'auth',
           entityId: builder.id,
-          details: { route: 'login', userId: builder.id, email: mask(builder.email), ip: ipAddress, userAgent },
+          details: { route: 'login', userId: builder.id, status, email: mask(builder.email), ip: ipAddress, userAgent },
           ipAddress,
           userAgent,
           severity: 'WARN',
         }).catch(() => {})
         return NextResponse.json(
-          { error: 'Account is not active. Please contact support.' },
+          { error: userMessage, status },
           { status: 403 }
         )
       }
