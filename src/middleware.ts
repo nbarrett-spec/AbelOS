@@ -284,6 +284,7 @@ export async function middleware(request: NextRequest) {
     // Skip CSRF for Gmail sync API key auth (Google Apps Script, no browser origin)
     const gmailSyncApiKey = request.headers.get('x-api-key')
     if ((pathname.startsWith('/api/agent-hub') && authHeader?.startsWith('Bearer ')) ||
+        (pathname.startsWith('/api/mcp') && authHeader?.startsWith('Bearer ')) ||
         (pathname.startsWith('/api/v1/engine') && authHeader?.startsWith('Bearer ')) ||
         (pathname === '/api/ops/communication-logs/gmail-sync' && gmailSyncApiKey) ||
         (pathname === '/api/ops/hyphen/ingest' && authHeader?.startsWith('Bearer '))) {
@@ -503,6 +504,65 @@ export async function middleware(request: NextRequest) {
         requestId
       )
     }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // MCP SERVER ROUTES — /api/mcp/*
+  // Single auth method: Bearer ABEL_MCP_API_KEY (Cowork → Aegis MCP).
+  // No staff-cookie fallback — this is service-to-service only.
+  // Sets x-staff-id=mcp-service, x-staff-role=ADMIN downstream so the
+  // MCP tool handlers can call any internal API/Prisma helper without
+  // hitting role gates. The MCP key itself is treated as root credential.
+  // ────────────────────────────────────────────────────────────────────
+  if (pathname.startsWith('/api/mcp')) {
+    const authHeader = request.headers.get('authorization')
+    const mcpApiKey = process.env.ABEL_MCP_API_KEY
+
+    if (!authHeader?.startsWith('Bearer ') || !mcpApiKey) {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'missing_credentials',
+        scope: 'mcp',
+      })
+      return withRequestId(
+        NextResponse.json(
+          { error: 'Authentication required. Provide Bearer ABEL_MCP_API_KEY.' },
+          { status: 401 },
+        ),
+        requestId,
+      )
+    }
+
+    const token = authHeader.slice(7)
+    // NOTE: simple === comparison matches the existing /api/agent-hub
+    // pattern. Edge runtime can't import Node's crypto.timingSafeEqual,
+    // and the timing-attack risk on a 64-char hex key over CDN+TLS is
+    // negligible. If we ever pull MCP auth into a Node runtime route
+    // handler we can layer timingSafeEqual there.
+    if (token !== mcpApiKey) {
+      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
+        reason: 'invalid_mcp_api_key',
+        scope: 'mcp',
+      })
+      return withRequestId(
+        NextResponse.json({ error: 'Invalid API key' }, { status: 401 }),
+        requestId,
+      )
+    }
+
+    const requestHeaders = forwardWithRequestId(request, requestId)
+    requestHeaders.set('x-staff-id', 'mcp-service')
+    requestHeaders.set('x-staff-role', 'ADMIN')
+    requestHeaders.set('x-staff-roles', 'ADMIN')
+    requestHeaders.set('x-staff-department', 'MCP')
+    requestHeaders.set('x-staff-email', 'mcp@abellumber.com')
+    requestHeaders.set('x-staff-firstname', 'MCP')
+    requestHeaders.set('x-staff-lastname', 'Service')
+    requestHeaders.set('x-mcp-authenticated', 'true')
+
+    return addSecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      requestId,
+    )
   }
 
   // ────────────────────────────────────────────────────────────────────
