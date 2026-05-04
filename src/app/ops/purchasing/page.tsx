@@ -350,7 +350,10 @@ export default function PurchaseOrdersPage() {
               <Download className="w-3.5 h-3.5" />
               Export CSV
             </button>
-            <Link href="/ops/procurement-intelligence" className="btn btn-primary btn-sm">
+            <Link href="/ops/purchasing/new" className="btn btn-primary btn-sm">
+              <Plus className="w-3.5 h-3.5" /> New PO
+            </Link>
+            <Link href="/ops/procurement-intelligence" className="btn btn-secondary btn-sm">
               <Sparkles className="w-3.5 h-3.5" /> AI Generate POs
             </Link>
           </>

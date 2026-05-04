@@ -53,10 +53,10 @@ function NewPOForm() {
     setLoading(true)
     try {
       // Fetch vendors
-      const vendorRes = await fetch('/api/ops/vendors?active=true')
+      const vendorRes = await fetch('/api/ops/vendors?status=active&limit=200')
       if (vendorRes.ok) {
         const vData = await vendorRes.json()
-        setVendors(vData.vendors || [])
+        setVendors(Array.isArray(vData) ? vData : (vData.vendors || vData.data || []))
       }
 
       // Fetch product info if productId provided
