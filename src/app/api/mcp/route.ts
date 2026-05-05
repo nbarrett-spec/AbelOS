@@ -31,9 +31,11 @@ import { checkMcpAuth } from '@/lib/mcp/auth'
 import { logger } from '@/lib/logger'
 
 /**
- * Build a fresh transport per request. The server instance is shared
- * (cached at module level inside getMcpServer) but each transport
- * handles one request lifecycle in stateless mode.
+ * Build a fresh transport AND server per request. The previous version
+ * cached the McpServer but called server.connect(transport) on every
+ * request — the SDK throws "Already connected to a transport" on the
+ * second hit to the same Vercel instance. Creating a fresh server per
+ * request is cheap (just tool registration calls) and avoids the issue.
  */
 async function handle(request: NextRequest): Promise<Response> {
   // Defense-in-depth: middleware should have already 401'd unauthenticated
@@ -42,7 +44,8 @@ async function handle(request: NextRequest): Promise<Response> {
   if (authError) return authError
 
   try {
-    const server = getMcpServer()
+    // Fresh server + transport per request — stateless, no caching issues.
+    const server = getMcpServer(true)
     const transport = new WebStandardStreamableHTTPServerTransport({
       // Stateless — no session tracking.
       sessionIdGenerator: undefined,

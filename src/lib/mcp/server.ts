@@ -28,14 +28,18 @@ import { registerMessagingTools } from './tools/messaging'
 let cachedServer: McpServer | null = null
 
 /**
- * Build (or return the cached) MCP server with every tool registered.
+ * Build a fresh MCP server with every tool registered.
  *
- * The server itself is stateless — each tool handler reaches into Prisma
- * fresh per call. We cache the McpServer instance because tool registration
- * is the same on every cold start.
+ * Each tool handler reaches into Prisma fresh per call. Pass fresh=true
+ * (default) to get a new server instance per request — required because
+ * the MCP SDK throws if you call server.connect() on an already-connected
+ * instance. Tool registration is cheap (~0.5ms for all 47 tools).
+ *
+ * Pass fresh=false only if you need the cached instance for introspection
+ * outside of the HTTP transport path.
  */
-export function getMcpServer(): McpServer {
-  if (cachedServer) return cachedServer
+export function getMcpServer(fresh = true): McpServer {
+  if (!fresh && cachedServer) return cachedServer
 
   const server = new McpServer({
     name: 'abel-aegis',
