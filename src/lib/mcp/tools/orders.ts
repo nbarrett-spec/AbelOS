@@ -7,7 +7,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '../wrap'
+import { withMcpAudit, withRateLimit } from '../wrap'
 
 const ORDER_STATUSES = [
   'RECEIVED',
@@ -132,7 +132,7 @@ export function registerOrderTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('create_order_from_quote', 'WRITE', async ({ quoteId, deliveryNotes }: any) => {
+    withMcpAudit('create_order_from_quote', 'WRITE', withRateLimit('create_order_from_quote', async ({ quoteId, deliveryNotes }: any) => {
       const quote = await prisma.quote.findUnique({
         where: { id: quoteId },
         include: {
@@ -212,7 +212,7 @@ export function registerOrderTools(server: McpServer) {
       })
 
       return { content: [{ type: 'text' as const, text: JSON.stringify({ ok: true, order }, null, 2) }] }
-    }),
+    })),
   )
 
   // ──────────────────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ export function registerOrderTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('update_order_status', 'WRITE', async ({ orderId, newStatus, notes }: any) => {
+    withMcpAudit('update_order_status', 'WRITE', withRateLimit('update_order_status', async ({ orderId, newStatus, notes }: any) => {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
         select: { id: true, orderNumber: true, status: true, deliveryNotes: true },
@@ -293,6 +293,6 @@ export function registerOrderTools(server: McpServer) {
           },
         ],
       }
-    }),
+    })),
   )
 }

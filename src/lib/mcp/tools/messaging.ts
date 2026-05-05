@@ -20,7 +20,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '@/lib/mcp/wrap'
+import { withMcpAudit, withRateLimit } from '@/lib/mcp/wrap'
 
 async function resolveAdminStaffId(): Promise<string | null> {
   const admin = await prisma.staff.findFirst({
@@ -52,7 +52,7 @@ export function registerMessagingTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('send_builder_message', 'WRITE', async (args: any) => {
+    withMcpAudit('send_builder_message', 'WRITE', withRateLimit('send_builder_message', async (args: any) => {
       const { builderId, message, subject } = args as {
         builderId: string
         message: string
@@ -151,7 +151,7 @@ export function registerMessagingTools(server: McpServer) {
           },
         ],
       }
-    }),
+    })),
   )
 
   // ──────────────────────────────────────────────────────────────────

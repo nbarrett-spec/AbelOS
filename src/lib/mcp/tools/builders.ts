@@ -7,7 +7,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '../wrap'
+import { withMcpAudit, withRateLimit } from '../wrap'
 
 const ACCOUNT_STATUSES = ['PENDING', 'ACTIVE', 'SUSPENDED', 'CLOSED'] as const
 const PAYMENT_TERMS = ['PAY_AT_ORDER', 'PAY_ON_DELIVERY', 'NET_15', 'NET_30'] as const
@@ -315,7 +315,7 @@ export function registerBuilderTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('update_builder', 'WRITE', async ({ builderId, status, paymentTerm, creditLimit, taxExempt }: any) => {
+    withMcpAudit('update_builder', 'WRITE', withRateLimit('update_builder', async ({ builderId, status, paymentTerm, creditLimit, taxExempt }: any) => {
       const before = await prisma.builder.findUnique({
         where: { id: builderId },
         select: {
@@ -359,6 +359,6 @@ export function registerBuilderTools(server: McpServer) {
       return {
         content: [{ type: 'text' as const, text: JSON.stringify({ ok: true, before, after }, null, 2) }],
       }
-    }),
+    })),
   )
 }

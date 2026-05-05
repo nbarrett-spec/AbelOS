@@ -7,7 +7,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '../wrap'
+import { withMcpAudit, withRateLimit } from '../wrap'
 
 const QUOTE_STATUSES = ['DRAFT', 'SENT', 'APPROVED', 'REJECTED', 'EXPIRED', 'ORDERED'] as const
 
@@ -142,7 +142,7 @@ export function registerQuoteTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('create_quote', 'WRITE', async (args: any) => {
+    withMcpAudit('create_quote', 'WRITE', withRateLimit('create_quote', async (args: any) => {
       const { projectId, takeoffId, validUntil, notes, items } = args
 
       // Validate project + takeoff exist (cheaper to fail fast than to
@@ -201,6 +201,6 @@ export function registerQuoteTools(server: McpServer) {
       })
 
       return { content: [{ type: 'text' as const, text: JSON.stringify({ ok: true, quote }, null, 2) }] }
-    }),
+    })),
   )
 }

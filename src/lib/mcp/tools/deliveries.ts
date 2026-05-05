@@ -24,7 +24,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '@/lib/mcp/wrap'
+import { withMcpAudit, withRateLimit } from '@/lib/mcp/wrap'
 
 // Status-based ETA descriptors used by track_delivery. No GPS lookup —
 // purely a derived label so the caller doesn't have to know the enum.
@@ -161,7 +161,7 @@ export function registerDeliveryTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('dispatch_delivery', 'WRITE', async (args) => {
+    withMcpAudit('dispatch_delivery', 'WRITE', withRateLimit('dispatch_delivery', async (args) => {
       const { jobId, scheduledDate, notes } = args as {
         jobId: string
         scheduledDate: string
@@ -283,7 +283,7 @@ export function registerDeliveryTools(server: McpServer) {
           },
         ],
       }
-    }),
+    })),
   )
 
   // ──────────────────────────────────────────────────────────────────

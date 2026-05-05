@@ -25,7 +25,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '../wrap'
+import { withMcpAudit, withRateLimit } from '../wrap'
 
 const PO_STATUSES = [
   'DRAFT',
@@ -228,7 +228,7 @@ export function registerPurchasingTools(server: McpServer) {
     withMcpAudit(
       'create_purchase_order',
       'WRITE',
-      async (args: {
+      withRateLimit('create_purchase_order', async (args: {
         vendorId: string
         items: Array<{
           productId?: string
@@ -340,7 +340,7 @@ export function registerPurchasingTools(server: McpServer) {
             },
           ],
         }
-      },
+      }),
     ),
   )
 
@@ -364,7 +364,7 @@ export function registerPurchasingTools(server: McpServer) {
     withMcpAudit(
       'approve_purchase_order',
       'WRITE',
-      async (args: { poId: string; approverNotes?: string }) => {
+      withRateLimit('approve_purchase_order', async (args: { poId: string; approverNotes?: string }) => {
         const { poId, approverNotes } = args
         const po = await prisma.purchaseOrder.findUnique({
           where: { id: poId },
@@ -430,7 +430,7 @@ export function registerPurchasingTools(server: McpServer) {
             },
           ],
         }
-      },
+      }),
     ),
   )
 
@@ -464,7 +464,7 @@ export function registerPurchasingTools(server: McpServer) {
     withMcpAudit(
       'receive_purchase_order',
       'WRITE',
-      async (args: {
+      withRateLimit('receive_purchase_order', async (args: {
         poId: string
         receivedItems: Array<{ itemId: string; quantityReceived: number; notes?: string }>
       }) => {
@@ -604,7 +604,7 @@ export function registerPurchasingTools(server: McpServer) {
             },
           ],
         }
-      },
+      }),
     ),
   )
 

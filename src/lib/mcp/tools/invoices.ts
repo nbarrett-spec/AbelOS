@@ -22,7 +22,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '@/lib/mcp/wrap'
+import { withMcpAudit, withRateLimit } from '@/lib/mcp/wrap'
 
 export function registerInvoiceTools(server: McpServer) {
   // ──────────────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ export function registerInvoiceTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('create_invoice', 'WRITE', async ({ orderId, notes }: any) => {
+    withMcpAudit('create_invoice', 'WRITE', withRateLimit('create_invoice', async ({ orderId, notes }: any) => {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: { items: true },
@@ -294,7 +294,7 @@ export function registerInvoiceTools(server: McpServer) {
           },
         ],
       }
-    }),
+    })),
   )
 
   // ──────────────────────────────────────────────────────────────────
@@ -474,7 +474,7 @@ export function registerInvoiceTools(server: McpServer) {
     withMcpAudit(
       'log_collection_action',
       'WRITE',
-      async ({ invoiceId, actionType, channel = 'EMAIL', notes }: any) => {
+      withRateLimit('log_collection_action', async ({ invoiceId, actionType, channel = 'EMAIL', notes }: any) => {
         const invoice = await prisma.invoice.findUnique({
           where: { id: invoiceId },
           select: { id: true },
@@ -515,7 +515,7 @@ export function registerInvoiceTools(server: McpServer) {
             },
           ],
         }
-      },
+      }),
     ),
   )
 }

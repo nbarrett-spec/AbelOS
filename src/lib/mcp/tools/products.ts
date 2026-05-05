@@ -16,7 +16,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { withMcpAudit } from '../wrap'
+import { withMcpAudit, withRateLimit } from '../wrap'
 
 export function registerProductTools(server: McpServer) {
   server.registerTool(
@@ -251,7 +251,7 @@ export function registerProductTools(server: McpServer) {
       },
       annotations: { destructiveHint: true },
     },
-    withMcpAudit('adjust_inventory', 'WRITE', async ({ productId, quantityAdjustment, reason }: any) => {
+    withMcpAudit('adjust_inventory', 'WRITE', withRateLimit('adjust_inventory', async ({ productId, quantityAdjustment, reason }: any) => {
       const inv = await prisma.inventoryItem.findFirst({ where: { productId } })
       if (!inv) {
         return {
@@ -300,7 +300,7 @@ export function registerProductTools(server: McpServer) {
           },
         ],
       }
-    }),
+    })),
   )
 
   // ──────────────────────────────────────────────────────────────────
