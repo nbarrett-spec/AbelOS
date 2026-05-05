@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import DocumentAttachments from '@/components/ops/DocumentAttachments'
 
 interface VendorDetail {
   id: string
@@ -768,6 +769,16 @@ export default function VendorDetailPage() {
           </form>
         </div>
       )}
+
+      {/* Document attachments — FIX-1 from AEGIS-OPS-FINANCE-HANDOFF */}
+      <div style={{ backgroundColor: '#fff', padding: 24, borderRadius: 12, marginTop: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <DocumentAttachments
+          entityType="vendor"
+          entityId={data.vendor.id}
+          defaultCategory="CONTRACT"
+          allowedCategories={['CONTRACT', 'CORRESPONDENCE', 'INVOICE', 'PURCHASE_ORDER', 'REPORT', 'GENERAL']}
+        />
+      </div>
     </div>
   )
 }

@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import DocumentAttachments from '@/components/ops/DocumentAttachments'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -1069,6 +1070,16 @@ export default function PurchaseOrderDetailPage() {
           </p>
         </div>
       </Dialog>
+
+      {/* Document attachments — FIX-1 from AEGIS-OPS-FINANCE-HANDOFF */}
+      <div className="bg-white rounded-lg shadow-sm border p-5 mt-6">
+        <DocumentAttachments
+          entityType="purchaseOrder"
+          entityId={po.id}
+          defaultCategory="PURCHASE_ORDER"
+          allowedCategories={['PURCHASE_ORDER', 'INVOICE', 'CONTRACT', 'CORRESPONDENCE', 'GENERAL']}
+        />
+      </div>
     </div>
   )
 }

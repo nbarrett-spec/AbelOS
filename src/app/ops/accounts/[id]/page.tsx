@@ -65,6 +65,7 @@ import {
 } from '@/components/ui'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 import { cn } from '@/lib/utils'
+import DocumentAttachments from '@/components/ops/DocumentAttachments'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -2489,6 +2490,16 @@ export default function AccountDetailPage() {
           </div>
         </div>
       </Dialog>
+
+      {/* Document attachments — FIX-1 from AEGIS-OPS-FINANCE-HANDOFF */}
+      <div className="bg-white rounded-lg shadow-sm border p-5 mt-6">
+        <DocumentAttachments
+          entityType="builder"
+          entityId={builder.id}
+          defaultCategory="CONTRACT"
+          allowedCategories={['CONTRACT', 'CORRESPONDENCE', 'INVOICE', 'WARRANTY', 'REPORT', 'GENERAL']}
+        />
+      </div>
     </div>
   )
 }
