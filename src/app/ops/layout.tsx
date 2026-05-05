@@ -38,6 +38,7 @@ import {
   Heart, Sparkles, Zap, Handshake, Link2, TreePine, Archive, FolderOpen, Users, User, Trophy,
   MessageSquare, MailOpen, Bell, Wallet, Landmark, Sun, ChevronLeft, ChevronRight,
   PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown, CreditCard, Key,
+  BookOpen, Library,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '🌲': TreePine, '🗄️': Archive, '📁': FolderOpen, '👥': Users, '👤': User,
   '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark, '💳': CreditCard,
   '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck, '💡': Sparkles, '🔬': Sparkles, '🏆': Trophy,
-  '🔑': Key,
+  '🔑': Key, '📒': BookOpen, '📚': Library,
   '⚔️': Sparkles, '💹': TrendingUp, '🚀': TrendingUp, '🏛️': Building, '📉': TrendingUp, '🎓': FileText,
 }
 
@@ -230,6 +231,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/finance/optimization', label: 'Financial Optimizer', icon: '🎯' },
       { href: '/ops/collections', label: 'Collections Center', icon: '📞' },
       { href: '/ops/cash-flow-optimizer', label: 'AI Cash Flow Brain', icon: '💸' },
+      { href: '/ops/accounting/journal-entries', label: 'Journal Entries', icon: '📒' },
+      { href: '/ops/accounting/chart-of-accounts', label: 'Chart of Accounts', icon: '📚' },
     ],
   },
   {

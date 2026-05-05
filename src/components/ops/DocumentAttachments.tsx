@@ -44,6 +44,7 @@ type EntityType =
   | 'vendor'
   | 'purchaseOrder'
   | 'deal'
+  | 'journalEntry'
 
 const ENTITY_FIELD: Record<EntityType, string> = {
   order: 'orderId',
@@ -54,6 +55,7 @@ const ENTITY_FIELD: Record<EntityType, string> = {
   vendor: 'vendorId',
   purchaseOrder: 'purchaseOrderId',
   deal: 'dealId',
+  journalEntry: 'journalEntryId',
 }
 
 // All categories the API accepts. Pages typically pass a narrower

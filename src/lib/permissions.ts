@@ -143,6 +143,12 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/admin/api-keys': ['ADMIN'],
   '/api/ops/admin/api-keys': ['ADMIN'],
 
+  // Accounting — journal entries, chart of accounts, GL
+  '/ops/accounting/journal-entries': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/ops/accounting/chart-of-accounts': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/accounting/journal-entries': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+  '/api/ops/accounting/chart-of-accounts': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
+
   // Email queue — admin, managers, sales, PMs
   '/ops/email': ['ADMIN', 'MANAGER', 'SALES_REP', 'PROJECT_MANAGER'],
 

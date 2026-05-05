@@ -88,6 +88,8 @@ export async function GET(request: NextRequest) {
   const invoiceId = url.searchParams.get('invoiceId') || ''
   const dealId = url.searchParams.get('dealId') || ''
   const vendorId = url.searchParams.get('vendorId') || ''
+  const purchaseOrderId = url.searchParams.get('purchaseOrderId') || ''
+  const journalEntryId = url.searchParams.get('journalEntryId') || ''
   const showArchived = url.searchParams.get('archived') === 'true'
   const page = parseInt(url.searchParams.get('page') || '1')
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100)
@@ -160,6 +162,8 @@ export async function GET(request: NextRequest) {
   if (invoiceId) { conditions.push(`"invoiceId" = $${paramIdx}`); params.push(invoiceId); paramIdx++ }
   if (dealId) { conditions.push(`"dealId" = $${paramIdx}`); params.push(dealId); paramIdx++ }
   if (vendorId) { conditions.push(`"vendorId" = $${paramIdx}`); params.push(vendorId); paramIdx++ }
+  if (purchaseOrderId) { conditions.push(`"purchaseOrderId" = $${paramIdx}`); params.push(purchaseOrderId); paramIdx++ }
+  if (journalEntryId) { conditions.push(`"journalEntryId" = $${paramIdx}`); params.push(journalEntryId); paramIdx++ }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
@@ -177,6 +181,7 @@ export async function GET(request: NextRequest) {
             "entityType", "entityId", "secondaryEntityType", "secondaryEntityId",
             "builderId", "orderId", "jobId", "quoteId", "invoiceId",
             "dealId", "vendorId", "purchaseOrderId", "doorIdentityId",
+            "journalEntryId",
             "uploadedBy", "uploadedByName", "isArchived", "version",
             "parentDocumentId", "createdAt", "updatedAt"
      FROM "DocumentVault" ${whereClause}
@@ -259,6 +264,7 @@ async function handleFileUpload(request: NextRequest) {
     const vendorId = formData.get('vendorId') as string | null
     const purchaseOrderId = formData.get('purchaseOrderId') as string | null
     const doorIdentityId = formData.get('doorIdentityId') as string | null
+    const journalEntryId = formData.get('journalEntryId') as string | null
     const uploadedBy = formData.get('uploadedBy') as string || 'system'
     const uploadedByName = formData.get('uploadedByName') as string | null
 
@@ -293,6 +299,7 @@ async function handleFileUpload(request: NextRequest) {
           "entityType", "entityId",
           "builderId", "orderId", "jobId", "quoteId", "invoiceId",
           "dealId", "vendorId", "purchaseOrderId", "doorIdentityId",
+          "journalEntryId",
           "uploadedBy", "uploadedByName", "checksum", "createdAt", "updatedAt"
         ) VALUES (
           $1, $2, $3, $4, $5, $6,
@@ -300,13 +307,15 @@ async function handleFileUpload(request: NextRequest) {
           $11, $12,
           $13, $14, $15, $16, $17,
           $18, $19, $20, $21,
-          $22, $23, $24, NOW(), NOW()
+          $22,
+          $23, $24, $25, NOW(), NOW()
         )`,
         id, f.name, fileExt, f.type, f.size, category,
         description, tags, 'DATABASE', base64Data,
         entityType, entityId,
         builderId, orderId, jobId, quoteId, invoiceId,
         dealId, vendorId, purchaseOrderId, doorIdentityId,
+        journalEntryId,
         uploadedBy, uploadedByName, checksum
       )
 
