@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import AssignScheduleDialog from './AssignScheduleDialog'
 import { RecordPaymentModal } from '@/app/ops/components/RecordPaymentModal'
+import DocumentAttachments from '@/components/ops/DocumentAttachments'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 
 // Feature flag — default ON unless explicitly 'off'. Evaluated at bundle time.
@@ -494,6 +495,16 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Document attachments — FIX-1 from AEGIS-OPS-FINANCE-HANDOFF */}
+      <div className="bg-white rounded-lg shadow-sm border p-5 mb-6">
+        <DocumentAttachments
+          entityType="invoice"
+          entityId={invoice.id}
+          defaultCategory="INVOICE"
+          allowedCategories={['INVOICE', 'CONTRACT', 'CORRESPONDENCE', 'REPORT', 'GENERAL']}
+        />
+      </div>
 
       {/* Assign dialog */}
       {LABOR_SCHEDULE_ENABLED && (
