@@ -4402,6 +4402,7 @@ model DocumentVault {
   vendorId            String?
   purchaseOrderId     String?
   doorIdentityId      String?
+  journalEntryId      String?
   uploadedBy          String
   uploadedByName      String?
   isArchived          Boolean?  @default(false)
@@ -4426,6 +4427,7 @@ model DocumentVault {
   @@index([quoteId], map: "idx_vault_quote")
   @@index([uploadedBy], map: "idx_vault_uploaded")
   @@index([vendorId], map: "idx_vault_vendor")
+  @@index([journalEntryId], map: "idx_vault_journal_entry")
 }
 
 model DocumentVaultActivity {
@@ -6425,4 +6427,157 @@ model QbBillExpenseLine {
 
   @@index([billTxnId])
   @@index([accountListId])
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// AEGIS-OPS-FINANCE-HANDOFF additions (2026-05-05)
+//
+// Five additive models + two enums for FIX-3 (Payments hub w/ vendor
+// payments), FIX-4 (Journal entries + Chart of Accounts), and a
+// developer-tooling ApiKey table for self-serve key generation.
+//
+// All FK columns to existing tables (Vendor, PurchaseOrder, Staff,
+// JournalEntry, ChartOfAccount, DocumentVault) are plain String?
+// columns without @relation directives, mirroring the convention
+// already used heavily on DocumentVault. Raw queries handle joins
+// where needed; no back-relations on existing models so this commit
+// stays purely additive.
+// ──────────────────────────────────────────────────────────────────────
+
+// ── FIX-3 — Vendor Payments ───────────────────────────────────────────
+
+model VendorPayment {
+  id              String   @id @default(cuid())
+  vendorId        String
+  purchaseOrderId String?  // optional — utilities/rent have no PO
+  amount          Float
+  method          String   // CHECK | ACH | WIRE | CREDIT_CARD | CASH | OTHER
+  checkNumber     String?
+  reference       String?  // ACH trace, transaction id, etc.
+  memo            String?
+  paidAt          DateTime @default(now())
+  createdById     String?  // Staff id of whoever recorded the payment
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([vendorId])
+  @@index([purchaseOrderId])
+  @@index([paidAt(sort: Desc)])
+  @@index([method])
+}
+
+// ── FIX-4 — Chart of Accounts + Journal Entries ──────────────────────
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  REVERSED
+  VOID
+}
+
+model ChartOfAccount {
+  id          String      @id @default(cuid())
+  code        String      @unique  // e.g. "1000", "4010-DOORS"
+  name        String                // e.g. "Cash", "Revenue - Doors"
+  type        AccountType
+  subType     String?               // e.g. "Current Asset", "Fixed Asset"
+  description String?
+  isActive    Boolean     @default(true)
+
+  // Self-relation for parent/child accounts (e.g. 4000 Revenue → 4010 Doors)
+  parentId    String?
+  parent      ChartOfAccount?  @relation("AccountTree", fields: [parentId], references: [id])
+  children    ChartOfAccount[] @relation("AccountTree")
+
+  // Back-relation for journal entry lines
+  entries     JournalEntryLine[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([type])
+  @@index([parentId])
+  @@index([isActive])
+}
+
+model JournalEntry {
+  id          String              @id @default(cuid())
+  entryNumber String              @unique // "JE-2026-0001"
+  date        DateTime
+  description String
+  reference   String?                       // invoice#, PO#, free text
+  status      JournalEntryStatus  @default(DRAFT)
+
+  lines       JournalEntryLine[]
+
+  createdById String?
+  approvedById String?
+  approvedAt  DateTime?
+  reversalOf  String?                        // ID of entry this reverses
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([date(sort: Desc)])
+  @@index([status])
+  @@index([entryNumber])
+  @@index([reversalOf])
+}
+
+model JournalEntryLine {
+  id             String         @id @default(cuid())
+  journalEntryId String
+  journalEntry   JournalEntry   @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        ChartOfAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  debit          Float          @default(0)
+  credit         Float          @default(0)
+  memo           String?
+  createdAt      DateTime       @default(now())
+
+  @@index([journalEntryId])
+  @@index([accountId])
+}
+
+// ── API Key generator — self-serve key rotation for the Aegis MCP ─────
+//
+// User flow (UI lives at /ops/admin/api-keys):
+//   1. Click "Generate" → server creates 64-char hex key, stores
+//      sha256(key), returns the raw key ONCE.
+//   2. User saves the raw key offline. Subsequent visits show only the
+//      8-char prefix + metadata.
+//   3. Middleware (existing /api/mcp gate) checks env var first
+//      (preserves the seeded ABEL_MCP_API_KEY), then falls back to a
+//      DB lookup by sha256 hash.
+//   4. Revoke sets revokedAt — the row stays for audit. Last-used
+//      tracking lets us spot stale/unused keys.
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  name        String                       // human label, e.g. "Cowork MCP"
+  scope       String    @default("mcp")    // 'mcp' | 'agent' | 'admin' (string,
+                                            // not enum, so adding new scopes
+                                            // doesn't require a migration)
+  prefix      String                       // first 8 chars of the raw key —
+                                            // safe to display in lists
+  hashedKey   String    @unique             // sha256(rawKey) hex
+  createdById String?                       // Staff id (or null for seed keys)
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+  revokedById String?
+  lastUsedAt  DateTime?
+  notes       String?
+
+  @@index([scope])
+  @@index([hashedKey])
+  @@index([revokedAt])
+  @@index([createdAt(sort: Desc)])
 }
