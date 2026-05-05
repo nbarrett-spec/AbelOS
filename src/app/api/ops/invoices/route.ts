@@ -272,7 +272,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { builderId, paymentTerm, items, orderId, jobId, notes, createdById } = body
+    const {
+      builderId,
+      paymentTerm,
+      items,
+      orderId,
+      jobId,
+      notes,
+      createdById,
+      taxAmount: taxAmountInput,
+      taxRate, // alternative input — percentage applied to subtotal
+    } = body
 
     if (!builderId || !paymentTerm || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -291,10 +301,17 @@ export async function POST(request: NextRequest) {
     const nextNumber = Number(maxRow[0]?.max_num || 0) + 1
     const invoiceNumber = `INV-${year}-${String(nextNumber).padStart(4, '0')}`
 
-    // Calculate totals
+    // Calculate totals. taxAmount accepted as either an explicit dollar value
+    // or derived from a percentage `taxRate`. Default 0 preserves prior
+    // from-order behavior (no tax line) when neither is supplied.
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.quantity * item.unitPrice), 0)
-    const taxAmount = 0
-    const total = subtotal + taxAmount
+    let taxAmount = 0
+    if (typeof taxAmountInput === 'number' && taxAmountInput >= 0) {
+      taxAmount = taxAmountInput
+    } else if (typeof taxRate === 'number' && taxRate >= 0) {
+      taxAmount = +(subtotal * (taxRate / 100)).toFixed(2)
+    }
+    const total = +(subtotal + taxAmount).toFixed(2)
 
     const invId = `inv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 

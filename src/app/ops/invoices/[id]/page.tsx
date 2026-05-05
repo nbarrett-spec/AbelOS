@@ -39,6 +39,7 @@ interface Invoice {
   invoiceNumber: string
   builderId: string
   builderName?: string
+  orderId: string | null
   jobId: string | null
   subtotal: number
   taxAmount: number
@@ -286,6 +287,16 @@ export default function InvoiceDetailPage() {
           <span className={`px-3 py-1 text-xs font-medium rounded ${statusColor(invoice.status)}`}>
             {invoice.status.replace(/_/g, ' ')}
           </span>
+
+          {/* FIX-2 — Manual Invoice badge (no orderId) */}
+          {!invoice.orderId && (
+            <span
+              className="px-3 py-1 text-xs font-medium rounded bg-purple-100 text-purple-700"
+              title="This invoice was created manually — not from an order or PO"
+            >
+              Manual Invoice
+            </span>
+          )}
 
           {/* FIX-13 — Download PDF */}
           <a

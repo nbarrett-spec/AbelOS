@@ -284,11 +284,17 @@ export default function InvoicesPage() {
             >
               Import from ECI Bolt
             </button>
+            <Link
+              href="/ops/invoices/new"
+              className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-row-hover"
+            >
+              + Create Manual Invoice
+            </Link>
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="px-3 py-1.5 text-sm bg-surface-elevated text-white rounded-lg hover:bg-canvas"
             >
-              + Create Invoice
+              + Create from Order
             </button>
           </>
         }
