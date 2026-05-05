@@ -516,39 +516,30 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────────────────
   if (pathname.startsWith('/api/mcp')) {
     const authHeader = request.headers.get('authorization')
-    const mcpApiKey = process.env.ABEL_MCP_API_KEY
 
-    if (!authHeader?.startsWith('Bearer ') || !mcpApiKey) {
+    // Cheap presence check — if there's no Bearer header at all, kill
+    // the request here so we don't waste a Lambda invocation. Real
+    // token validation (env var + ApiKey table) happens in the Node-
+    // runtime route handler at src/app/api/mcp/route.ts via
+    // src/lib/mcp/auth.ts (it needs Prisma access, which the Edge
+    // runtime can't do).
+    if (!authHeader?.startsWith('Bearer ')) {
       logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
-        reason: 'missing_credentials',
+        reason: 'missing_bearer_header',
         scope: 'mcp',
       })
       return withRequestId(
         NextResponse.json(
-          { error: 'Authentication required. Provide Bearer ABEL_MCP_API_KEY.' },
+          { error: 'Authentication required. Provide Bearer <ABEL_MCP_API_KEY or generated key>.' },
           { status: 401 },
         ),
         requestId,
       )
     }
 
-    const token = authHeader.slice(7)
-    // NOTE: simple === comparison matches the existing /api/agent-hub
-    // pattern. Edge runtime can't import Node's crypto.timingSafeEqual,
-    // and the timing-attack risk on a 64-char hex key over CDN+TLS is
-    // negligible. If we ever pull MCP auth into a Node runtime route
-    // handler we can layer timingSafeEqual there.
-    if (token !== mcpApiKey) {
-      logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
-        reason: 'invalid_mcp_api_key',
-        scope: 'mcp',
-      })
-      return withRequestId(
-        NextResponse.json({ error: 'Invalid API key' }, { status: 401 }),
-        requestId,
-      )
-    }
-
+    // Stamp the service identity headers. The route handler will reject
+    // the request if the token doesn't validate, so these are only ever
+    // observed by code that ALSO sees a 200-status response.
     const requestHeaders = forwardWithRequestId(request, requestId)
     requestHeaders.set('x-staff-id', 'mcp-service')
     requestHeaders.set('x-staff-role', 'ADMIN')
@@ -557,7 +548,6 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-staff-email', 'mcp@abellumber.com')
     requestHeaders.set('x-staff-firstname', 'MCP')
     requestHeaders.set('x-staff-lastname', 'Service')
-    requestHeaders.set('x-mcp-authenticated', 'true')
 
     return addSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),

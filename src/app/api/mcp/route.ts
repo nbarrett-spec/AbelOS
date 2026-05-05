@@ -38,9 +38,11 @@ import { logger } from '@/lib/logger'
  * request is cheap (just tool registration calls) and avoids the issue.
  */
 async function handle(request: NextRequest): Promise<Response> {
-  // Defense-in-depth: middleware should have already 401'd unauthenticated
-  // requests, but check again in case of direct invocation.
-  const authError = checkMcpAuth(request)
+  // Auth happens here (Node runtime, Prisma access) rather than in
+  // middleware (Edge runtime, no Prisma) — see lib/mcp/auth.ts. Middleware
+  // confirms a Bearer header is present, this verifies it against env +
+  // the ApiKey table.
+  const authError = await checkMcpAuth(request)
   if (authError) return authError
 
   try {

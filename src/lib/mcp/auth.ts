@@ -1,38 +1,52 @@
 /**
- * MCP service-key validation helper.
+ * MCP bearer-token validation.
  *
- * Note: the primary auth gate for /api/mcp is in src/middleware.ts (Bearer
- * ABEL_MCP_API_KEY). By the time a request reaches the route handler the
- * middleware has already 401'd anything without a valid key, set
- * x-mcp-authenticated=true, and stamped x-staff-id=mcp-service /
- * x-staff-role=ADMIN.
+ * Two-tier check, env var first, DB second:
+ *   1. ABEL_MCP_API_KEY env var — the seed key set in Vercel. Always
+ *      works. Provides the bootstrap path before any ApiKey rows
+ *      exist in the DB.
+ *   2. ApiKey table (sha256 hash lookup) — keys generated via the
+ *      /ops/admin/api-keys UI. Scope must be 'mcp' or 'admin'.
+ *      Revoked keys are rejected. Last-used timestamp is updated
+ *      fire-and-forget on every successful auth.
  *
- * This helper is the defense-in-depth check inside the route handler in
- * case middleware is ever bypassed (e.g., direct invocation via internal
- * imports). Returns null if authenticated, NextResponse 401 if not.
+ * Middleware (src/middleware.ts) does a cheap presence check on the
+ * Bearer header before forwarding here, but the actual token
+ * comparison happens in this helper since middleware is in the Edge
+ * runtime (no Prisma). This means the Node-runtime route handler
+ * carries the auth load — which is fine, MCP traffic is low-volume.
+ *
+ * Returns null on success (authenticated), NextResponse 401/500 on
+ * failure. Async because the DB lookup may run.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiKey } from '@/lib/api-keys'
 
-export function checkMcpAuth(request: NextRequest): NextResponse | null {
-  if (request.headers.get('x-mcp-authenticated') === 'true') {
+export async function checkMcpAuth(request: NextRequest): Promise<NextResponse | null> {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+  }
+  const token = authHeader.slice(7)
+  if (!token) {
+    return NextResponse.json({ error: 'Empty bearer token.' }, { status: 401 })
+  }
+
+  // Tier 1 — seed env var
+  const seed = process.env.ABEL_MCP_API_KEY
+  if (seed && token === seed) {
     return null
   }
-  const authHeader = request.headers.get('authorization')
-  const expected = process.env.ABEL_MCP_API_KEY
-  if (!expected) {
-    return NextResponse.json(
-      { error: 'MCP server not configured (ABEL_MCP_API_KEY missing).' },
-      { status: 500 },
-    )
+
+  // Tier 2 — DB-backed key (any scope of 'mcp' or 'admin')
+  try {
+    const row = await verifyApiKey(token)
+    if (row && (row.scope === 'mcp' || row.scope === 'admin')) {
+      return null
+    }
+  } catch {
+    // Fall through to 401 — never leak DB errors to the caller
   }
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json(
-      { error: 'Authentication required.' },
-      { status: 401 },
-    )
-  }
-  if (authHeader.slice(7) !== expected) {
-    return NextResponse.json({ error: 'Invalid API key.' }, { status: 401 })
-  }
-  return null
+
+  return NextResponse.json({ error: 'Invalid API key.' }, { status: 401 })
 }

@@ -37,7 +37,7 @@ import {
   Factory, Cog, CheckCircle, Banknote, Printer, Smartphone, Scale, Bot, Download, Map,
   Heart, Sparkles, Zap, Handshake, Link2, TreePine, Archive, FolderOpen, Users, User, Trophy,
   MessageSquare, MailOpen, Bell, Wallet, Landmark, Sun, ChevronLeft, ChevronRight,
-  PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown, CreditCard,
+  PanelLeftClose, PanelLeft, Menu, LogOut, ExternalLink, ChevronDown, CreditCard, Key,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -71,6 +71,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '🌲': TreePine, '🗄️': Archive, '📁': FolderOpen, '👥': Users, '👤': User,
   '💬': MessageSquare, '📩': MailOpen, '🔔': Bell, '💸': Wallet, '🏦': Landmark, '💳': CreditCard,
   '☀️': Sun, '📍': Target, '🏷️': Package, '🚛': Truck, '💡': Sparkles, '🔬': Sparkles, '🏆': Trophy,
+  '🔑': Key,
   '⚔️': Sparkles, '💹': TrendingUp, '🚀': TrendingUp, '🏛️': Building, '📉': TrendingUp, '🎓': FileText,
 }
 
@@ -324,6 +325,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/ops/admin/system-health', label: 'System Health', icon: '❤️' },
       { href: '/ops/staff', label: 'Staff Management', icon: '👥' },
+      { href: '/ops/admin/api-keys', label: 'API Keys', icon: '🔑' },
       { href: '/ops/locations', label: 'Locations', icon: '🏢' },
       { href: '/ops/delegations', label: 'Workload Delegation', icon: '🔄' },
       { href: '/ops/automations', label: 'Automations', icon: '⚡' },

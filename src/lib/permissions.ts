@@ -139,6 +139,10 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   // System Health dashboard — admin only
   '/ops/admin/system-health': ['ADMIN'],
 
+  // API Keys management — admin only (mints service-to-service keys)
+  '/ops/admin/api-keys': ['ADMIN'],
+  '/api/ops/admin/api-keys': ['ADMIN'],
+
   // Email queue — admin, managers, sales, PMs
   '/ops/email': ['ADMIN', 'MANAGER', 'SALES_REP', 'PROJECT_MANAGER'],
 
