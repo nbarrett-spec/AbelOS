@@ -95,11 +95,10 @@ export default function SettingsPage() {
   const loadSettings = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/ops/settings', {
-        headers: {
-          'x-staff-id': 'current-staff', // In real app, get from session
-        },
-      })
+      // Auth flows via the staff session cookie + middleware; the route
+      // handler reads x-staff-id / x-staff-role that middleware stamps from
+      // the JWT. No client-side headers needed.
+      const response = await fetch('/api/ops/settings')
 
       if (!response.ok) throw new Error('Failed to load settings')
 
@@ -153,12 +152,12 @@ export default function SettingsPage() {
     try {
       setSavingSection(section)
 
+      // Same auth-flow note as loadSettings — middleware stamps the staff
+      // identity from the JWT, so no client-supplied identity headers.
       const response = await fetch('/api/ops/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-staff-id': 'current-staff', // In real app, get from session
-          'x-staff-role': 'ADMIN', // In real app, get from session
         },
         body: JSON.stringify({
           settings: changes,
