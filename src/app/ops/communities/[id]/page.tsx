@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import DocumentAttachments from '@/components/ops/DocumentAttachments'
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -363,6 +364,17 @@ export default function CommunityDetailPage() {
       {tab === 'comms' && <CommsTab commLogs={commLogs} />}
       {tab === 'floorplans' && <FloorPlansTab floorPlans={floorPlans} communityId={id} />}
       {tab === 'notes' && <NotesTab notes={notes} />}
+
+      {/* ── Blueprints & Documents (B-FEAT-2) ────────────────── */}
+      <div className="mt-8 bg-white border border-gray-200 rounded-lg p-4">
+        <DocumentAttachments
+          entityType="community"
+          entityId={community.id}
+          defaultCategory="BLUEPRINT"
+          allowedCategories={['BLUEPRINT', 'FLOOR_PLAN', 'SPEC_SHEET', 'CORRESPONDENCE', 'GENERAL']}
+          title="Blueprints & Documents"
+        />
+      </div>
     </div>
   )
 }

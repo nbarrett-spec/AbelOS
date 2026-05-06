@@ -368,6 +368,7 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/finance/ar': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
   // Collections action center endpoints — Dawn + leadership
   '/api/ops/collections': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP'],
+  '/api/ops/collections/send-email': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER'],
   '/api/ops/finance/ap-waterfall': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PURCHASING'],
   '/api/ops/sync-health': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/invoices': ['ADMIN', 'MANAGER', 'ACCOUNTING', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],

@@ -46,6 +46,7 @@ type EntityType =
   | 'deal'
   | 'journalEntry'
   | 'contract'
+  | 'community'
 
 // Each mapping is either a dedicated FK column on DocumentVault, or — for
 // entities without a column — `null`, which falls back to the generic
@@ -62,6 +63,8 @@ const ENTITY_FIELD: Record<EntityType, string | null> = {
   journalEntry: 'journalEntryId',
   // No FK column for Contract — use the generic entityType/entityId pair.
   contract: null,
+  // No FK column for Community — use the generic entityType/entityId pair.
+  community: null,
 }
 
 // All categories the API accepts. Pages typically pass a narrower

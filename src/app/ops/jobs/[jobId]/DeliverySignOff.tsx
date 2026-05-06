@@ -289,10 +289,8 @@ export default function DeliverySignOff({ jobId }: { jobId: string }) {
                             {submittingId === d.id ? 'Signing…' : 'Sign off as PM'}
                           </button>
                         ) : (
-                          // [TODO] /ops/deliveries/[id] detail route isn't
-                          // implemented yet — graceful empty link.
                           <Link
-                            href={`/ops/deliveries?jobId=${jobId}`}
+                            href={`/ops/deliveries/${d.id}`}
                             className="text-xs text-gray-500 hover:underline"
                           >
                             View

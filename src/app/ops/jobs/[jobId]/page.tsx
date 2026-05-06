@@ -144,11 +144,14 @@ export default function JobDetailPage() {
   const [showCoPreview, setShowCoPreview] = useState(false)
   // Material drill-down drawer — opens from header "Materials" button.
   const [showMaterialDrawer, setShowMaterialDrawer] = useState(false)
-  // 4.5 — Link-to-Order UI state. Search drawer; submit blocked until backend exists.
+  // 4.5 — Link-to-Order UI state. Search drawer; submit wired to
+  // POST /api/ops/jobs/[id]/link-order.
   const [showLinkOrder, setShowLinkOrder] = useState(false)
   const [linkOrderQuery, setLinkOrderQuery] = useState('')
   const [linkOrderResults, setLinkOrderResults] = useState<any[]>([])
   const [linkOrderSearching, setLinkOrderSearching] = useState(false)
+  const [linkingOrderId, setLinkingOrderId] = useState<string | null>(null)
+  const [linkOrderError, setLinkOrderError] = useState<string | null>(null)
   // Invoice generation state
   const [generatingInvoice, setGeneratingInvoice] = useState(false)
   const [invoiceError, setInvoiceError] = useState<string | null>(null)
@@ -159,33 +162,37 @@ export default function JobDetailPage() {
   const [installAssigneeChoice, setInstallAssigneeChoice] = useState<string>('')
   const [assigningInstaller, setAssigningInstaller] = useState(false)
 
-  useEffect(() => {
-    const fetchJob = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch(`/api/ops/jobs/${jobId}`)
-        if (!res.ok) {
-          if (res.status === 404) throw new Error('Job not found')
-          throw new Error('Failed to fetch job')
-        }
-        const data = await res.json()
-        setJob(data)
-        // Initialize installer choice from job data
-        if (data.installerId) {
-          setInstallAssigneeChoice(`crew:${data.installerId}`)
-        } else if (data.trimVendorId) {
-          setInstallAssigneeChoice(`vendor:${data.trimVendorId}`)
-        } else {
-          setInstallAssigneeChoice('')
-        }
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
-      } finally {
-        setLoading(false)
+  // Hoisted so post-write actions (e.g. link-order) can refetch the job
+  // and pick up freshly-joined data (Order, builder, etc.).
+  const fetchJob = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/ops/jobs/${jobId}`)
+      if (!res.ok) {
+        if (res.status === 404) throw new Error('Job not found')
+        throw new Error('Failed to fetch job')
       }
+      const data = await res.json()
+      setJob(data)
+      // Initialize installer choice from job data
+      if (data.installerId) {
+        setInstallAssigneeChoice(`crew:${data.installerId}`)
+      } else if (data.trimVendorId) {
+        setInstallAssigneeChoice(`vendor:${data.trimVendorId}`)
+      } else {
+        setInstallAssigneeChoice('')
+      }
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     if (jobId) fetchJob()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId])
 
   // Lightweight count of HyphenDocuments for the tab badge.
@@ -470,6 +477,42 @@ export default function JobDetailPage() {
       }
     } catch { /* ignore */ } finally {
       setAssigningInstaller(false)
+    }
+  }
+
+  // 4.5 — Link a selected Order to this Job. Backed by
+  // POST /api/ops/jobs/[id]/link-order (ADMIN/MANAGER/PROJECT_MANAGER).
+  // Refetches the job on success so the linked Order card replaces the
+  // empty-state CTA without requiring a page reload.
+  const handleLinkOrder = async (orderId: string) => {
+    if (!jobId || !orderId) return
+    setLinkingOrderId(orderId)
+    setLinkOrderError(null)
+    try {
+      const res = await fetch(`/api/ops/jobs/${jobId}/link-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const msg = data?.error || `Failed to link order (status ${res.status})`
+        setLinkOrderError(msg)
+        alert(msg)
+        return
+      }
+      // Success — close the drawer, clear the search, and refresh job data.
+      setShowLinkOrder(false)
+      setLinkOrderQuery('')
+      setLinkOrderResults([])
+      alert(`Linked order ${data?.order?.orderNumber || ''} to job ${data?.job?.jobNumber || ''}`.trim())
+      await fetchJob()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to link order'
+      setLinkOrderError(msg)
+      alert(msg)
+    } finally {
+      setLinkingOrderId(null)
     }
   }
 
@@ -1087,18 +1130,15 @@ export default function JobDetailPage() {
             <div className="bg-surface rounded-lg border p-5">
               <h2 className="text-lg font-semibold text-fg mb-4">Linked Order</h2>
               <p className="text-sm text-fg-subtle italic mb-3">Not linked to an Order</p>
-              {/* TODO: wire to /api/ops/jobs/[id]/link-order once the endpoint
-                  exists. Existing PATCH at /api/ops/jobs/[id] does NOT include
-                  `orderId` in its validFields list, so we can't repurpose it
-                  without a server-side change. UI is implemented but disabled. */}
+              {/* Wired to POST /api/ops/jobs/[id]/link-order. Endpoint
+                  enforces same-builder + already-linked-elsewhere guards
+                  server-side. */}
               <button
                 type="button"
-                disabled
                 onClick={() => setShowLinkOrder(true)}
-                title="Backend endpoint /api/ops/jobs/[id]/link-order does not exist yet"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface-muted text-fg-subtle cursor-not-allowed"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface hover:bg-surface-muted text-fg"
               >
-                Link to Order (backend not wired)
+                Link to Order
               </button>
               {showLinkOrder && (
                 <div className="mt-3 p-3 bg-surface-muted rounded-lg space-y-2">
@@ -1125,19 +1165,22 @@ export default function JobDetailPage() {
                           </span>
                           <button
                             type="button"
-                            disabled
-                            title="Cannot save — /api/ops/jobs/[id]/link-order endpoint not yet implemented"
-                            className="text-xs px-2 py-1 rounded border border-border text-fg-subtle bg-surface cursor-not-allowed"
+                            disabled={linkingOrderId !== null}
+                            onClick={() => handleLinkOrder(o.id)}
+                            className="text-xs px-2 py-1 rounded border border-border text-fg bg-surface hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Link
+                            {linkingOrderId === o.id ? 'Linking…' : 'Link'}
                           </button>
                         </li>
                       ))}
                     </ul>
                   )}
+                  {linkOrderError && (
+                    <p className="text-xs text-red-600">{linkOrderError}</p>
+                  )}
                   <button
                     type="button"
-                    onClick={() => { setShowLinkOrder(false); setLinkOrderQuery(''); setLinkOrderResults([]) }}
+                    onClick={() => { setShowLinkOrder(false); setLinkOrderQuery(''); setLinkOrderResults([]); setLinkOrderError(null) }}
                     className="text-xs text-fg-muted hover:text-fg"
                   >
                     Cancel
