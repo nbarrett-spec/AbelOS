@@ -124,6 +124,9 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   // Sales Pipeline — PM added (they need to see what's coming)
   '/ops/sales': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
 
+  // My Book — sales rep landing page (own assigned builders + pipeline + activity)
+  '/ops/my-book': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
+
   // Workload delegation — managers, PMs, admin
   '/ops/delegations': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
 
@@ -593,6 +596,10 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   // Daily sales briefing + scorecard.
   '/api/ops/sales-briefing': ['ADMIN', 'MANAGER', 'SALES_REP'],
   '/api/ops/sales-scorecard': ['ADMIN', 'MANAGER', 'SALES_REP'],
+
+  // Sales rep "My Book" — reps see their own; ADMIN/MANAGER can pass ?staffId=
+  // PROJECT_MANAGER kept here so dual-role PMs running deals don't 403.
+  '/api/ops/my-book': ['ADMIN', 'MANAGER', 'SALES_REP', 'PROJECT_MANAGER'],
 
   // Projects/standup — project timeline, command-center, PM standup feed.
   '/api/ops/projects': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
