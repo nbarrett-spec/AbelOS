@@ -1,26 +1,28 @@
-// /ops/substitutions — PM substitution approval queue.
+// /ops/substitutions — substitutions hub (two tabs).
 //
-// Server component that fetches the initial queue payload from
-// /api/ops/substitutions (scope=mine by default) and hands it to the
-// SubstitutionQueue client component. Approve/reject flows POST to the
-// existing /api/ops/substitutions/requests/[id]/approve and /reject
-// routes — this page is read-only except for triggering those.
+// Server component that loads the initial PM approval-queue payload from
+// /api/ops/substitutions (scope=mine by default), then delegates the UI to
+// SubstitutionsTabs which exposes:
+//   1. "Approval queue" — the existing PM-scoped review flow
+//      (SubstitutionQueue.tsx — unchanged behavior).
+//   2. "Catalog browse" — search products with active substitutes, filter
+//      by low/out-of-stock, apply a substitute on a job, bulk apply, and
+//      view a recent audit trail. Drives /api/ops/substitutions/catalog,
+//      /api/ops/substitutions/audit, and the canonical apply endpoint
+//      POST /api/ops/products/[productId]/substitutes/apply.
 //
 // Distinct from /ops/substitutions/requests (the older full-history queue).
-// This page is builder-PM-scoped with a filter bar, days-pending sort, and
-// a side-drawer review experience.
 
 import { cookies, headers } from 'next/headers'
 import { notFound } from 'next/navigation'
-import SubstitutionQueue, {
-  type QueueRequest,
-  type QueueCounts,
-} from './SubstitutionQueue'
+import SubstitutionsTabs from './SubstitutionsTabs'
+import type { QueueRequest, QueueCounts } from './SubstitutionQueue'
 
 export const dynamic = 'force-dynamic'
 export const metadata = {
-  title: 'Substitution Requests · Aegis',
-  description: 'PM approval queue for pending substitution requests.',
+  title: 'Substitutions · Aegis',
+  description:
+    'PM approval queue and substitution catalog browse for ops staff.',
 }
 
 interface ApiResponse {
@@ -103,7 +105,7 @@ export default async function SubstitutionsQueuePage() {
 
   return (
     <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6">
-      <SubstitutionQueue
+      <SubstitutionsTabs
         initial={data}
         initialError={error}
         staffRole={staffRole}

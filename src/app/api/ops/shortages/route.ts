@@ -9,30 +9,21 @@ import { checkStaffAuth } from '@/lib/api-auth'
  *
  * Surfaces DemandForecast shortfalls for the ops floor:
  * joins DemandForecast → Product → InventoryItem → VendorProduct (preferred),
- * tallies open PO coverage, and counts jobs currently needing the SKU.
+ * tallies open PO coverage, counts jobs currently needing the SKU, and
+ * pulls a few same-category alternatives that are in stock.
  *
  * Query params:
  *   horizon  = 7 | 14 | 30   (default 14) — forward-looking window in days
- *   severity = all | high    (default all) — "high" keeps only shortfall $ ≥ $250
- *              or days-of-coverage ≤ 3
+ *   severity = all | high | critical | low (default all)
+ *              - high: legacy shortfall $≥250 OR ≤3d coverage
+ *              - critical: InventoryItem.available ≤ safetyStock
+ *              - low: safetyStock < available ≤ reorderPoint
  *   vendorId = <preferred vendor id>       — filter to one preferred vendor
+ *   category = <Product.category>          — filter to a single category
  *
- * Data model note: DemandForecast is monthly (periodDays=30, forecastDate =
- * first-of-month). We pro-rate into the requested horizon: for each
- * forecast row, take the overlap between [today, today+horizon) and
- * [forecastDate, forecastDate + periodDays) and multiply by
- * predictedDemand / periodDays. That lets a single horizon=7 request answer
- * "how short are we THIS week" without a new cron.
- *
- * Response:
- *   {
- *     asOf, horizonDays,
- *     summary: { shortSkus, shortageDollars, minDaysOfCoverage },
- *     items: [ ... ]
- *   }
- *
- * Items are sorted by shortage $ desc. Empty `items` is a valid response;
- * page layer renders an empty state explaining the cron hasn't run yet.
+ * Items are sorted CRITICAL → LOW → OK, then soonest-stockout first, then
+ * shortage $ desc. Empty `items` is a valid response; page layer renders
+ * an empty state explaining the cron hasn't run yet.
  */
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -41,16 +32,20 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const horizonRaw = url.searchParams.get('horizon') || '14'
   const horizonDays = horizonRaw === '7' ? 7 : horizonRaw === '30' ? 30 : 14
-  const severity = url.searchParams.get('severity') === 'high' ? 'high' : 'all'
+  const severityRaw = (url.searchParams.get('severity') || 'all').toLowerCase()
+  const severity: 'all' | 'high' | 'critical' | 'low' =
+    severityRaw === 'high'
+      ? 'high'
+      : severityRaw === 'critical'
+        ? 'critical'
+        : severityRaw === 'low'
+          ? 'low'
+          : 'all'
   const vendorId = url.searchParams.get('vendorId') || null
+  const categoryFilter = url.searchParams.get('category') || null
 
   try {
     // ── 1. Pro-rated forecast demand per productId in the window ─────────
-    // Overlap math:
-    //   window = [today, today + horizon)
-    //   row    = [forecastDate, forecastDate + periodDays)
-    //   ovl    = max(0, least(window_end, row_end) - greatest(window_start, row_start))
-    //   units  = predictedDemand * ovl_days / periodDays
     const rawDemand = await prisma.$queryRawUnsafe<
       Array<{
         productId: string
@@ -99,7 +94,16 @@ export async function GET(request: NextRequest) {
         {
           asOf: new Date().toISOString(),
           horizonDays,
-          summary: { shortSkus: 0, shortageDollars: 0, minDaysOfCoverage: null },
+          severity,
+          vendorId,
+          summary: {
+            shortSkus: 0,
+            shortageDollars: 0,
+            minDaysOfCoverage: null,
+            criticalCount: 0,
+            lowCount: 0,
+            categories: [],
+          },
           items: [],
           note:
             'No DemandForecast rows cover the requested window. The weekly cron (/api/cron/demand-forecast-weekly) may not have run yet.',
@@ -135,11 +139,16 @@ export async function GET(request: NextRequest) {
       Array<{
         productId: string
         onHand: number
+        committed: number
         available: number
         avgDailyUsage: number | null
+        reorderPoint: number
+        reorderQty: number
+        safetyStock: number
       }>
     >(
-      `SELECT "productId", "onHand", "available", "avgDailyUsage"
+      `SELECT "productId", "onHand", "committed", "available", "avgDailyUsage",
+              "reorderPoint", "reorderQty", "safetyStock"
          FROM "InventoryItem"
         WHERE "productId" = ANY($1::text[])`,
       productIds
@@ -149,14 +158,17 @@ export async function GET(request: NextRequest) {
         i.productId,
         {
           onHand: Number(i.onHand) || 0,
+          committed: Number(i.committed) || 0,
           available: Number(i.available) || 0,
           avgDailyUsage: Number(i.avgDailyUsage) || 0,
+          reorderPoint: Number(i.reorderPoint) || 0,
+          reorderQty: Number(i.reorderQty) || 0,
+          safetyStock: Number(i.safetyStock) || 0,
         },
       ])
     )
 
     // ── 4. Preferred vendor per product (vendorProduct.preferred=true). ──
-    // If none flagged, fall back to the lowest-cost vendor with a price.
     const vendorRows = await prisma.$queryRawUnsafe<
       Array<{
         productId: string
@@ -251,8 +263,6 @@ export async function GET(request: NextRequest) {
     )
 
     // ── 6. Affected jobs — how many open jobs in window need the SKU ─────
-    // Uses MaterialWatch (AWAITING/PARTIAL) as ground truth since the ATP
-    // shortage cron populates it; one row per (job, productId).
     const jobRows = await prisma.$queryRawUnsafe<
       Array<{ productId: string; jobCount: number }>
     >(
@@ -288,18 +298,89 @@ export async function GET(request: NextRequest) {
       dateRows.map((r) => [r.productId, r.earliest])
     )
 
+    // ── 7b. Alternatives — up to 3 same-category SKUs with healthy stock ──
+    // Cheap heuristic: same Product.category, available > safetyStock, not
+    // the SKU itself. Sorted by available DESC. Real BoM-driven substitutions
+    // can layer on later.
+    const categoriesNeeded = Array.from(
+      new Set(
+        productIds
+          .map((pid) => productById.get(pid)?.category)
+          .filter((c): c is string => !!c)
+      )
+    )
+    const altByProduct = new Map<
+      string,
+      Array<{ productId: string; sku: string; name: string; available: number }>
+    >()
+    if (categoriesNeeded.length > 0) {
+      const altRows = await prisma.$queryRawUnsafe<
+        Array<{
+          productId: string
+          sku: string
+          name: string
+          category: string | null
+          available: number
+        }>
+      >(
+        `
+        SELECT p."id" AS "productId", p."sku", p."name", p."category",
+               COALESCE(i."available", 0)::int AS "available"
+          FROM "Product" p
+          JOIN "InventoryItem" i ON i."productId" = p."id"
+         WHERE p."category" = ANY($1::text[])
+           AND COALESCE(i."available", 0) > COALESCE(i."safetyStock", 0)
+        `,
+        categoriesNeeded
+      )
+      const byCat = new Map<
+        string,
+        Array<{ productId: string; sku: string; name: string; available: number }>
+      >()
+      for (const r of altRows) {
+        if (!r.category) continue
+        const list = byCat.get(r.category) || []
+        list.push({
+          productId: r.productId,
+          sku: r.sku,
+          name: r.name,
+          available: Number(r.available) || 0,
+        })
+        byCat.set(r.category, list)
+      }
+      for (const [, list] of byCat) {
+        list.sort((a, b) => b.available - a.available)
+      }
+      for (const pid of productIds) {
+        const product = productById.get(pid)
+        if (!product?.category) continue
+        const pool = byCat.get(product.category) || []
+        altByProduct.set(
+          pid,
+          pool.filter((a) => a.productId !== pid).slice(0, 3)
+        )
+      }
+    }
+
     // ── 8. Assemble items ─────────────────────────────────────────────────
+    type SeverityLevel = 'CRITICAL' | 'LOW' | 'OK'
     const items = [] as Array<{
       productId: string
       sku: string
       name: string
       category: string | null
       onHand: number
+      committed: number
       available: number
+      reorderPoint: number
+      reorderQty: number
+      safetyStock: number
       forecastDemand: number
       shortageQty: number
       shortageDollars: number
+      severity: SeverityLevel
       daysOfCoverage: number | null
+      daysUntilStockout: number | null
       earliestShortDate: string | null
       openPoCount: number
       inTransitQty: number
@@ -314,6 +395,12 @@ export async function GET(request: NextRequest) {
         leadTimeDays: number | null
       }
       unitCost: number
+      alternatives: Array<{
+        productId: string
+        sku: string
+        name: string
+        available: number
+      }>
     }>
 
     let minDaysOfCoverage: number | null = null
@@ -322,7 +409,15 @@ export async function GET(request: NextRequest) {
       const product = productById.get(pid)
       if (!product) continue
 
-      const inv = invByProduct.get(pid) || { onHand: 0, available: 0, avgDailyUsage: 0 }
+      const inv = invByProduct.get(pid) || {
+        onHand: 0,
+        committed: 0,
+        available: 0,
+        avgDailyUsage: 0,
+        reorderPoint: 0,
+        reorderQty: 0,
+        safetyStock: 0,
+      }
       const vendor = vendorByProduct.get(pid) || null
       const po = poByProduct.get(pid) || {
         openPoCount: 0,
@@ -336,12 +431,9 @@ export async function GET(request: NextRequest) {
       }
 
       const windowDemand = Math.round(demandByProduct.get(pid) || 0)
-      // Shortage = forecast demand + committed-to-others spilled into
-      // `committed`; InventoryItem.available already nets out committed.
-      // Incoming POs within the window count as supply.
+      // Shortage = forecast demand vs `available` + in-window in-transit POs.
       const projectedSupply =
         (inv.available || 0) +
-        // only count in-transit if it's expected inside the window
         (po.earliestExpected &&
         (new Date(po.earliestExpected).getTime() - Date.now()) / 86400000 < horizonDays
           ? po.inTransitQty
@@ -359,6 +451,26 @@ export async function GET(request: NextRequest) {
       const daysOfCoverage =
         dailyBurn > 0 ? Math.round((inv.available / dailyBurn) * 10) / 10 : null
 
+      // daysUntilStockout: prefer InventoryItem.avgDailyUsage (real ship-out
+      // velocity) over forecast burn. Falls back to forecast burn so a SKU
+      // that's never shipped but is on a job still gets a number.
+      const velocity = inv.avgDailyUsage > 0 ? inv.avgDailyUsage : dailyBurn
+      const daysUntilStockout =
+        velocity > 0
+          ? Math.round((inv.available / velocity) * 10) / 10
+          : null
+
+      // Severity: CRITICAL if available is at or below safetyStock, LOW if
+      // between safetyStock and reorderPoint, OK above reorderPoint. Rows
+      // only land here when there's a forecast shortage, so OK means "we
+      // have buffer but the forecast still exceeds supply".
+      const itemSeverity: SeverityLevel =
+        inv.available <= inv.safetyStock
+          ? 'CRITICAL'
+          : inv.available <= inv.reorderPoint
+            ? 'LOW'
+            : 'OK'
+
       if (
         daysOfCoverage !== null &&
         (minDaysOfCoverage === null || daysOfCoverage < minDaysOfCoverage)
@@ -372,11 +484,17 @@ export async function GET(request: NextRequest) {
         name: product.name,
         category: product.category,
         onHand: inv.onHand,
+        committed: inv.committed,
         available: inv.available,
+        reorderPoint: inv.reorderPoint,
+        reorderQty: inv.reorderQty,
+        safetyStock: inv.safetyStock,
         forecastDemand: windowDemand,
         shortageQty,
         shortageDollars,
+        severity: itemSeverity,
         daysOfCoverage,
+        daysUntilStockout,
         earliestShortDate: earliestByProduct.get(pid)
           ? (earliestByProduct.get(pid) as Date).toISOString().slice(0, 10)
           : null,
@@ -397,26 +515,56 @@ export async function GET(request: NextRequest) {
             }
           : null,
         unitCost,
+        alternatives: altByProduct.get(pid) || [],
       })
     }
 
-    // severity filter after shortage calc so the "high only" switch is stable
-    const filtered =
+    // severity filter after shortage calc so the chip toggles are stable
+    let filtered =
       severity === 'high'
         ? items.filter(
             (it) =>
               it.shortageDollars >= 250 ||
               (it.daysOfCoverage !== null && it.daysOfCoverage <= 3)
           )
-        : items
+        : severity === 'critical'
+          ? items.filter((it) => it.severity === 'CRITICAL')
+          : severity === 'low'
+            ? items.filter((it) => it.severity === 'LOW')
+            : items
 
-    filtered.sort((a, b) => b.shortageDollars - a.shortageDollars)
+    if (categoryFilter) {
+      filtered = filtered.filter((it) => it.category === categoryFilter)
+    }
+
+    // Sort: CRITICAL first, then LOW, then OK; within each, soonest stockout
+    // first. Ties break on shortage $ desc.
+    const sevRank: Record<string, number> = { CRITICAL: 0, LOW: 1, OK: 2 }
+    filtered.sort((a, b) => {
+      const sevDiff = (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9)
+      if (sevDiff !== 0) return sevDiff
+      const aDays = a.daysUntilStockout ?? Number.POSITIVE_INFINITY
+      const bDays = b.daysUntilStockout ?? Number.POSITIVE_INFINITY
+      if (aDays !== bDays) return aDays - bDays
+      return b.shortageDollars - a.shortageDollars
+    })
+
+    // Counts off the unfiltered set so chip labels stay stable as the user
+    // toggles severity/category.
+    const criticalCount = items.filter((it) => it.severity === 'CRITICAL').length
+    const lowCount = items.filter((it) => it.severity === 'LOW').length
+    const categories = Array.from(
+      new Set(items.map((it) => it.category).filter((c): c is string => !!c))
+    ).sort()
 
     const summary = {
       shortSkus: filtered.length,
       shortageDollars:
         Math.round(filtered.reduce((s, it) => s + it.shortageDollars, 0) * 100) / 100,
       minDaysOfCoverage,
+      criticalCount,
+      lowCount,
+      categories,
     }
 
     return NextResponse.json(

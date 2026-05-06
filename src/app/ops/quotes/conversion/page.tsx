@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 
@@ -28,7 +29,14 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function QuoteConversionPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // A-UX-13: filters hydrate from URL on mount so deep-links and reloads preserve state.
   const [activeTab, setActiveTab] = useState('funnel');
+  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get('category') || '');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [monthFilter, setMonthFilter] = useState(() => searchParams.get('month') || '');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
 
@@ -42,6 +50,24 @@ export default function QuoteConversionPage() {
     } catch (e) { console.error('Load error:', e); }
     finally { setLoading(false); }
   };
+
+  // A-UX-13: sync filter state → URL so reload + Back/Forward + sharing all preserve filters.
+  // router.replace with scroll:false avoids scroll-jumping on each keystroke.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (categoryFilter) params.set('category', categoryFilter);
+    if (search) params.set('search', search);
+    if (monthFilter) params.set('month', monthFilter);
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : '?', { scroll: false });
+  }, [categoryFilter, search, monthFilter, router]);
+
+  const clearFilters = useCallback(() => {
+    setCategoryFilter('');
+    setSearch('');
+    setMonthFilter('');
+  }, []);
+  const hasActiveFilters = Boolean(categoryFilter || search || monthFilter);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -63,16 +89,49 @@ export default function QuoteConversionPage() {
         </div>
       </div>
 
+      <div className="bg-surface-muted border-b border-border px-8 py-3">
+        <div className="max-w-7xl mx-auto flex flex-wrap gap-3 items-center">
+          <input
+            type="text"
+            placeholder="Search builder, project, quote #..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-3 py-2 border border-border rounded-lg text-sm w-64 focus:outline-none focus:border-signal bg-surface"
+          />
+          <input
+            type="text"
+            placeholder="Category (e.g. Doors)"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 border border-border rounded-lg text-sm w-48 focus:outline-none focus:border-signal bg-surface"
+          />
+          <input
+            type="month"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-signal bg-surface"
+          />
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-red-500 hover:text-red-700 font-medium"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-fg-muted">Analyzing quote data...</div>
         ) : data ? (
           <>
             {activeTab === 'funnel' && <FunnelTab data={data} />}
-            {activeTab === 'by-builder' && <BuilderTab data={data} />}
-            {activeTab === 'by-category' && <CategoryTab data={data} />}
-            {activeTab === 'recovery' && <RecoveryTab data={data} />}
-            {activeTab === 'trends' && <TrendsTab data={data} />}
+            {activeTab === 'by-builder' && <BuilderTab data={data} search={search} />}
+            {activeTab === 'by-category' && <CategoryTab data={data} categoryFilter={categoryFilter} />}
+            {activeTab === 'recovery' && <RecoveryTab data={data} search={search} monthFilter={monthFilter} />}
+            {activeTab === 'trends' && <TrendsTab data={data} monthFilter={monthFilter} />}
           </>
         ) : (
           <EmptyState
@@ -129,8 +188,15 @@ function FunnelTab({ data }: { data: any }) {
   );
 }
 
-function BuilderTab({ data }: { data: any }) {
-  const builders = data.builders || [];
+function BuilderTab({ data, search }: { data: any; search: string }) {
+  const allBuilders = data.builders || [];
+  const builders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allBuilders;
+    return allBuilders.filter((b: any) =>
+      String(b.companyName || '').toLowerCase().includes(q)
+    );
+  }, [allBuilders, search]);
 
   return (
     <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
@@ -183,8 +249,15 @@ function BuilderTab({ data }: { data: any }) {
   );
 }
 
-function CategoryTab({ data }: { data: any }) {
-  const cats = data.categories || [];
+function CategoryTab({ data, categoryFilter }: { data: any; categoryFilter: string }) {
+  const allCats = data.categories || [];
+  const cats = useMemo(() => {
+    const q = categoryFilter.trim().toLowerCase();
+    if (!q) return allCats;
+    return allCats.filter((c: any) =>
+      String(c.category || '').toLowerCase().includes(q)
+    );
+  }, [allCats, categoryFilter]);
 
   return (
     <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
@@ -206,9 +279,8 @@ function CategoryTab({ data }: { data: any }) {
               <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
                   {c.category && c.category !== 'Unknown' ? (
-                    // TODO(filter-wiring): /ops/products does not yet read ?category= from URL on mount —
-                    // current page only filters via the in-page select. Next wave: hydrate `categoryFilter`
-                    // state from useSearchParams() so this drilldown actually filters the catalog.
+                    // A-UX-13: this page now hydrates ?category= on mount (see top of component).
+                    // /ops/products still doesn't read ?category= on mount — that drilldown is tracked separately.
                     <Link
                       href={`/ops/products?category=${encodeURIComponent(c.category)}`}
                       className="text-signal hover:underline cursor-pointer"
@@ -242,9 +314,33 @@ function CategoryTab({ data }: { data: any }) {
   );
 }
 
-function RecoveryTab({ data }: { data: any }) {
-  const recoverable = data.recoverable || [];
-  const neverOrdered = data.neverOrdered || [];
+function RecoveryTab({ data, search, monthFilter }: { data: any; search: string; monthFilter: string }) {
+  const allRecoverable = data.recoverable || [];
+  const allNeverOrdered = data.neverOrdered || [];
+  const recoverable = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allRecoverable.filter((r: any) => {
+      if (q) {
+        const hay = `${r.quoteNumber || ''} ${r.companyName || ''} ${r.projectName || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (monthFilter && r.createdAt) {
+        const d = new Date(r.createdAt);
+        if (!isNaN(d.getTime())) {
+          const m = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+          if (m !== monthFilter) return false;
+        }
+      }
+      return true;
+    });
+  }, [allRecoverable, search, monthFilter]);
+  const neverOrdered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allNeverOrdered;
+    return allNeverOrdered.filter((n: any) =>
+      String(n.companyName || '').toLowerCase().includes(q)
+    );
+  }, [allNeverOrdered, search]);
 
   return (
     <div className="space-y-6">
@@ -272,9 +368,8 @@ function RecoveryTab({ data }: { data: any }) {
                 <tr key={i} className="hover:bg-row-hover">
                   <td className="px-4 py-2 text-sm font-mono">
                     {r.quoteNumber ? (
-                      // TODO(filter-wiring): /ops/quotes does not yet read ?search= from URL on mount —
-                      // current page only filters via the in-page search input. Next wave: hydrate `search`
-                      // state from useSearchParams() so this drilldown actually filters the list.
+                      // A-UX-13: this page now hydrates ?search= on mount (see top of component).
+                      // /ops/quotes still doesn't read ?search= on mount — that drilldown is tracked separately.
                       <Link href={`/ops/quotes?search=${encodeURIComponent(r.quoteNumber)}`} className="text-signal hover:underline cursor-pointer">
                         {r.quoteNumber}
                       </Link>
@@ -349,8 +444,18 @@ function RecoveryTab({ data }: { data: any }) {
   );
 }
 
-function TrendsTab({ data }: { data: any }) {
-  const monthly = data.monthly || [];
+function TrendsTab({ data, monthFilter }: { data: any; monthFilter: string }) {
+  const allMonthly = data.monthly || [];
+  const monthly = useMemo(() => {
+    if (!monthFilter) return allMonthly;
+    return allMonthly.filter((m: any) => {
+      if (!m.month) return false;
+      const d = new Date(m.month);
+      if (isNaN(d.getTime())) return false;
+      const monthStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+      return monthStr === monthFilter;
+    });
+  }, [allMonthly, monthFilter]);
 
   return (
     <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
@@ -379,9 +484,8 @@ function TrendsTab({ data }: { data: any }) {
               <tr key={i} className="hover:bg-row-hover">
                 <td className="px-4 py-2 text-sm font-medium">
                   {monthStr ? (
-                    // TODO(filter-wiring): /ops/quotes does not yet read ?month= from URL —
-                    // current page only exposes dateFrom/dateTo via in-page inputs. Next wave:
-                    // hydrate dateFrom/dateTo from useSearchParams() (compute month → first/last day).
+                    // A-UX-13: this page now hydrates ?month= on mount (see top of component).
+                    // /ops/quotes still doesn't read ?month= on mount — that drilldown is tracked separately.
                     <Link href={`/ops/quotes?month=${monthStr}`} className="text-signal hover:underline cursor-pointer">
                       {monthLabel}
                     </Link>
