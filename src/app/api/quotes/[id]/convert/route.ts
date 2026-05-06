@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { audit } from '@/lib/audit'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { enforceCreditHold } from '@/lib/credit-hold'
 
 // POST /api/quotes/[id]/convert — Convert an approved/sent quote to an order
 export async function POST(
@@ -26,10 +27,12 @@ export async function POST(
     const body = await request.json().catch(() => ({}))
     const poNumber = body.poNumber || null
     const deliveryNotes = body.deliveryNotes || null
+    const acknowledgeExpired = !!body.acknowledgeExpired
 
-    // Fetch the quote (Quote links to Project which has builderId)
+    // Fetch the quote (Quote links to Project which has builderId).
+    // validUntil pulled in for the stale-pricing check below (A-BIZ-1).
     const quotes: any[] = await prisma.$queryRawUnsafe(`
-      SELECT q.id, q."quoteNumber", q."projectId",
+      SELECT q.id, q."quoteNumber", q."projectId", q."validUntil",
              p."name" as "projectName", p."builderId",
              q.subtotal, q."taxAmount", q.total, q.status::text as status,
              b."paymentTerm"
@@ -49,6 +52,27 @@ export async function POST(
       return NextResponse.json({ error: `Cannot convert a ${quote.status} quote. Only SENT or APPROVED quotes can be converted.` }, { status: 400 })
     }
 
+    // Stale-quote guard (A-BIZ-1). Builder-facing conversion path. Same
+    // policy as /api/ops/orders: block by default, allow acknowledgeExpired
+    // override. Status check above already filters EXPIRED quotes; this
+    // catches the gap where a quote is past validUntil but the daily cron
+    // hasn't flipped it yet (e.g. it expired three hours ago).
+    if (quote.validUntil && new Date(quote.validUntil) < new Date() && !acknowledgeExpired) {
+      const daysAgo = Math.round(
+        (Date.now() - new Date(quote.validUntil).getTime()) / 86400000
+      )
+      return NextResponse.json(
+        {
+          error: 'Quote is expired',
+          code: 'QUOTE_EXPIRED',
+          quoteNumber: quote.quoteNumber,
+          validUntil: quote.validUntil,
+          warning: `Quote ${quote.quoteNumber} expired ${daysAgo} days ago - pricing may be stale. Contact your rep for a fresh quote.`,
+        },
+        { status: 400 }
+      )
+    }
+
     // Guard: the convert flow always leaves Quote in APPROVED. SENT → APPROVED
     // is valid; APPROVED → APPROVED is a silent no-op in the guard.
     try {
@@ -60,33 +84,15 @@ export async function POST(
     }
 
     // ── Credit hold enforcement ──────────────────────────────────
-    const builderInfo: any[] = await prisma.$queryRawUnsafe(
-      `SELECT status, "accountStatus", "creditLimit" FROM "Builder" WHERE "id" = $1`,
-      session.builderId
+    // Single source of truth in @/lib/credit-hold. Hard-blocks SUSPENDED/CLOSED
+    // and overdue AR; credit-limit breaches only block when STRICT_CREDIT_LIMIT=true.
+    const blockedByCredit = await enforceCreditHold(
+      session.builderId,
+      Number(quote.total || 0),
+      request,
+      { source: 'POST /api/quotes/[id]/convert', quoteId }
     )
-    const bldr = builderInfo[0]
-    if (bldr) {
-      const bStatus = bldr.status || bldr.accountStatus
-      if (bStatus === 'SUSPENDED' || bStatus === 'ON_HOLD') {
-        return NextResponse.json(
-          { error: `Order blocked: account is ${bStatus.replace('_', ' ').toLowerCase()}. Contact your rep.` },
-          { status: 403 }
-        )
-      }
-      if (bldr.creditLimit && Number(bldr.creditLimit) > 0) {
-        const arRows: any[] = await prisma.$queryRawUnsafe(
-          `SELECT COALESCE(SUM("total"), 0) as balance FROM "Order" WHERE "builderId" = $1 AND "paymentStatus" != 'PAID'`,
-          session.builderId
-        )
-        const currentAR = Number(arRows[0]?.balance || 0)
-        if (currentAR + Number(quote.total) > Number(bldr.creditLimit)) {
-          return NextResponse.json(
-            { error: `Order blocked: would exceed credit limit. Contact your rep.` },
-            { status: 403 }
-          )
-        }
-      }
-    }
+    if (blockedByCredit) return blockedByCredit
 
     // Generate order number
     const countRows: any[] = await prisma.$queryRawUnsafe(

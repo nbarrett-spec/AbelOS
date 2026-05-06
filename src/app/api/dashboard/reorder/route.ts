@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { withAudit } from '@/lib/audit-route'
+import { enforceCreditHold } from '@/lib/credit-hold'
 
 // GET /api/dashboard/reorder — Fetch reorderable items and recent orders
 export async function GET(request: NextRequest) {
@@ -116,7 +118,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/dashboard/reorder — Create a new reorder from selected items
-export async function POST(request: NextRequest) {
+export const POST = withAudit(async (request: NextRequest) => {
   const session = await getSession()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -191,6 +193,16 @@ export async function POST(request: NextRequest) {
 
     const total = subtotal
 
+    // ── Credit hold enforcement ──────────────────────────────────
+    // Reorder is just another order from a builder's perspective; same guard rails.
+    const blockedByCredit = await enforceCreditHold(
+      builderId,
+      total,
+      request,
+      { source: 'POST /api/dashboard/reorder' }
+    )
+    if (blockedByCredit) return blockedByCredit
+
     // Generate order ID and order number
     const orderId = `ord_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const now = new Date()
@@ -253,4 +265,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

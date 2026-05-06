@@ -114,6 +114,10 @@ export async function GET(request: NextRequest) {
     let totalOutstanding = 0
     let failedSends = 0
     let skippedNoEmail = 0
+    // Collect invoice IDs to promote to OVERDUE in a single bulk UPDATE after
+    // the loop. Was previously a per-invoice UPDATE inside the inner loop —
+    // O(N) round-trips collapsed into O(1).
+    const invoiceIdsToPromote: string[] = []
 
     // Send one email per builder with their tier
     for (const builder of builderMap.values()) {
@@ -141,20 +145,14 @@ export async function GET(request: NextRequest) {
         // Communication audit trail should be tracked through CollectionAction records instead.
         // Optionally, log to invoice's CollectionAction for audit trail.
 
-        // Promote non-terminal pre-overdue statuses to OVERDUE once past due.
+        // Queue non-terminal pre-overdue invoices for OVERDUE promotion.
         // ISSUED or SENT invoices that are past due become OVERDUE. PARTIALLY_PAID
         // is left alone because it carries its own meaning (a partial payment
         // has been applied) which we don't want to clobber with OVERDUE.
+        // The actual UPDATE happens once after the loop (see below).
         for (const invoice of builder.invoices) {
           if (invoice.daysOverdue > 0) {
-            await prisma.$executeRawUnsafe(
-              `
-              UPDATE "Invoice"
-              SET "status" = 'OVERDUE', "updatedAt" = NOW()
-              WHERE "id" = $1 AND "status"::text IN ('ISSUED', 'SENT')
-              `,
-              invoice.id
-            )
+            invoiceIdsToPromote.push(invoice.id)
           }
         }
 
@@ -171,6 +169,20 @@ export async function GET(request: NextRequest) {
         )
         failedSends++
       }
+    }
+
+    // Bulk-promote all queued invoices to OVERDUE in one round-trip.
+    // Filter on status::text IN ('ISSUED', 'SENT') is preserved so PARTIALLY_PAID
+    // (or anything terminal) is left alone, matching the prior per-row semantics.
+    if (invoiceIdsToPromote.length > 0) {
+      await prisma.$executeRawUnsafe(
+        `
+        UPDATE "Invoice"
+        SET "status" = 'OVERDUE', "updatedAt" = NOW()
+        WHERE "id" = ANY($1::text[]) AND "status"::text IN ('ISSUED', 'SENT')
+        `,
+        invoiceIdsToPromote
+      )
     }
 
     const totalSent = emailsSent.friendly + emailsSent.firm + emailsSent.warning + emailsSent.hold

@@ -7,6 +7,7 @@ import { apiLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { sanitizeInput, isValidUUID, checkCSRF } from '@/lib/security'
 import { audit } from '@/lib/audit'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { enforceCreditHold } from '@/lib/credit-hold'
 
 // GET /api/quotes/[id] — Get single quote detail
 export async function GET(
@@ -166,6 +167,18 @@ export async function PATCH(
         if (res) return res
         throw e
       }
+
+      // ── Credit hold enforcement ──────────────────────────────────
+      // Approving a quote auto-creates an order. Block builders on credit hold
+      // BEFORE we flip the Quote → APPROVED so the quote stays open and the AR
+      // team has something to work with rather than a stranded approved quote.
+      const blockedByCredit = await enforceCreditHold(
+        session.builderId,
+        Number(q.total || 0),
+        request,
+        { source: 'PATCH /api/quotes/[id] (approve)', quoteId: params.id }
+      )
+      if (blockedByCredit) return blockedByCredit
 
       // Update quote status and store signature
       await prisma.$executeRawUnsafe(

@@ -9,6 +9,7 @@ import { checkCSRF } from '@/lib/security'
 import { logger, getRequestId } from '@/lib/logger'
 import { audit } from '@/lib/audit'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
+import { enforceCreditHold } from '@/lib/credit-hold'
 
 // GET /api/orders — List builder's orders
 export async function GET(request: NextRequest) {
@@ -97,6 +98,18 @@ export async function POST(request: NextRequest) {
       if (res) return res
       throw e
     }
+
+    // ── Credit hold enforcement ──────────────────────────────────
+    // Builder is on credit hold (SUSPENDED/CLOSED, overdue AR, optionally
+    // credit-limit breach when STRICT_CREDIT_LIMIT=true). Block + audit before
+    // we open the tx so a refused order doesn't churn the Quote → APPROVED path.
+    const blockedByCredit = await enforceCreditHold(
+      session.builderId,
+      Number(quoteRecord.total || 0),
+      request,
+      { source: 'POST /api/orders', quoteId }
+    )
+    if (blockedByCredit) return blockedByCredit
 
     // Generate order number and ID
     const orderNumber = `ORD-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`

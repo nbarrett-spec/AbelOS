@@ -3,18 +3,20 @@
  *
  * Single source of truth for whether a builder is allowed to open a new
  * order. Pulls the same dimensions the ops/orders route currently inlines:
- *  - Account status (SUSPENDED/ON_HOLD → hard block)
- *  - Credit limit vs. current AR balance
- *  - Overdue AR beyond grace (60 days with positive balance)
+ *  - Account status (SUSPENDED/CLOSED → hard block, always on)
+ *  - Overdue AR beyond grace (>$25k or >60 days → hard block, always on)
+ *  - Credit limit vs. current AR balance (opt-in via STRICT_CREDIT_LIMIT=true)
  *
- * Call from POST /api/ops/orders; fail with 409 Conflict if `ok === false`.
+ * Call from POST /api/ops/orders; fail with 403 if `ok === false`.
  * MANAGER+ roles can pass an override reason to bypass.
  *
  * Also used by a daily cron: builders with overdue AR > $threshold get
  * flagged automatically (status → SUSPENDED + InboxItem for accounting).
  */
 import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { logAudit } from '@/lib/audit'
 
 export interface CreditStatus {
   ok: boolean
@@ -85,8 +87,10 @@ export async function checkBuilderCreditStatus(builderId: string, proposedOrderT
     base.overdueAmount = Number(overdueRows[0]?.overdueAmount || 0)
     base.overdueDays = Number(overdueRows[0]?.overdueDays || 0)
 
-    // Credit-limit check
-    if (base.creditLimit && base.creditLimit > 0) {
+    // Credit-limit check — opt-in via STRICT_CREDIT_LIMIT=true so we can roll
+    // it out without breaking existing flows that rely on AR > limit being
+    // soft-warning only. Hard blocks above (SUSPENDED/CLOSED, overdue) stay on.
+    if (process.env.STRICT_CREDIT_LIMIT === 'true' && base.creditLimit && base.creditLimit > 0) {
       const projected = base.currentAR + Number(proposedOrderTotal || 0)
       if (projected > base.creditLimit) {
         return {
@@ -196,4 +200,99 @@ export async function sweepOverdueCreditHolds(): Promise<{ flagged: number; scan
   }
 
   return { flagged, scanned }
+}
+
+/**
+ * Enforcement helper for order-creation endpoints.
+ *
+ * Runs the full credit-hold check for the builder + the proposed order total.
+ * If blocked, logs a CREDIT_HOLD_BLOCK audit row and returns a NextResponse
+ * that the caller should `return` immediately.
+ *
+ * Returns `null` on the happy path so the caller can proceed.
+ *
+ *   const blocked = await enforceCreditHold(builderId, total, request, { source: 'POST /api/orders' })
+ *   if (blocked) return blocked
+ *
+ * Error codes returned to the client:
+ *   - CREDIT_HOLD               — account SUSPENDED/CLOSED or overdue AR
+ *   - CREDIT_LIMIT_EXCEEDED     — projected AR would breach creditLimit (only
+ *                                 when STRICT_CREDIT_LIMIT=true)
+ */
+export async function enforceCreditHold(
+  builderId: string,
+  proposedOrderTotal: number,
+  request?: NextRequest,
+  context?: { source?: string; quoteId?: string; orderNumber?: string }
+): Promise<NextResponse | null> {
+  if (!builderId) return null
+  let status: CreditStatus
+  try {
+    status = await checkBuilderCreditStatus(builderId, proposedOrderTotal)
+  } catch (e) {
+    // Fail-open on unexpected error — log loudly but don't block legitimate orders.
+    logger.error('credit_hold_enforce_errored', e as any, { builderId })
+    return null
+  }
+  if (status.ok) return null
+
+  // Pick the wire-error code by reason. CREDIT_LIMIT_EXCEEDED is the only
+  // soft-flag-gated one; everything else is CREDIT_HOLD.
+  const isLimitBreach = status.reason === 'would_exceed_credit_limit'
+  const errorCode = isLimitBreach ? 'CREDIT_LIMIT_EXCEEDED' : 'CREDIT_HOLD'
+
+  const message = isLimitBreach
+    ? status.suggestedAction || 'Order would exceed builder credit limit. Contact AR before placing orders.'
+    : status.suggestedAction || 'This builder is on credit hold. Contact AR before placing orders.'
+
+  // Audit the blocked attempt — fire-and-forget so a logging hiccup never
+  // prevents the 403 from going out, but await the actual logAudit so we
+  // don't lose ordering when the route returns immediately after.
+  try {
+    const ip = request?.headers.get('x-forwarded-for') || request?.headers.get('x-real-ip') || undefined
+    const ua = request?.headers.get('user-agent') || undefined
+    const staffId = request?.headers.get('x-staff-id') || `builder:${builderId}`
+    await logAudit({
+      staffId,
+      action: 'CREDIT_HOLD_BLOCK',
+      entity: 'Order',
+      entityId: context?.orderNumber || context?.quoteId,
+      severity: 'WARN',
+      details: {
+        builderId,
+        reason: status.reason,
+        accountStatus: status.accountStatus,
+        currentAR: status.currentAR,
+        creditLimit: status.creditLimit,
+        overdueAmount: status.overdueAmount,
+        overdueDays: status.overdueDays,
+        attemptedTotal: proposedOrderTotal,
+        source: context?.source,
+      },
+      ipAddress: ip,
+      userAgent: ua,
+    })
+  } catch {
+    // never let logging block the refusal
+  }
+
+  const payload: Record<string, any> = {
+    error: errorCode,
+    message,
+    builderId,
+    reason: status.reason,
+  }
+  if (isLimitBreach) {
+    payload.currentBalance = status.currentAR
+    payload.attemptedTotal = proposedOrderTotal
+    payload.creditLimit = status.creditLimit
+  } else {
+    payload.accountStatus = status.accountStatus
+    if (status.overdueAmount > 0) {
+      payload.overdueAmount = status.overdueAmount
+      payload.overdueDays = status.overdueDays
+    }
+  }
+
+  return NextResponse.json(payload, { status: 403 })
 }

@@ -78,7 +78,11 @@ export async function POST(
     if (existingNotes) noteParts.push(existingNotes)
     noteParts.push(`[${action}]: ${now.toISOString()}${updatedBy ? ` by ${updatedBy}` : ''}`)
     if (notes) noteParts.push(`[${action}-NOTES]: ${notes}`)
-    const newNotes = noteParts.join('\n')
+    const NOTES_MAX_LEN = 2000
+    let newNotes = noteParts.join('\n')
+    if (newNotes.length > NOTES_MAX_LEN) {
+      newNotes = newNotes.slice(0, NOTES_MAX_LEN - 16) + '… [truncated]'
+    }
 
     // Field-specific stamps. arrivedAt for ARRIVED, completedAt for REFUSED
     // (terminal). RESCHEDULED leaves timing fields alone.
