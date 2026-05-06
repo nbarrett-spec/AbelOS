@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { Briefcase } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Briefcase, X } from 'lucide-react'
 import { CreateJobModal } from '../components/CreateJobModal'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
@@ -58,7 +59,17 @@ interface ApiResponse {
 // [NEEDS_REVIEW | DEFAULT_LEAD_TIME] is carried in buildSheetNotes.
 const NEEDS_REVIEW_FILTER = 'NEEDS_REVIEW'
 
-export default function JobPipelinePage() {
+function JobPipelineInner() {
+  // BUG-14: read ?builderId=... to scope the list to one builder. When set,
+  // we forward it to /api/ops/jobs and render a "Filtered by: <name>" chip.
+  // Builder companyName is fetched on first load so the chip can show a real
+  // label (the API can also return it but a tiny direct fetch keeps the UI
+  // logic flat).
+  const searchParamsHook = useSearchParams()
+  const router = useRouter()
+  const builderIdParam = searchParamsHook?.get('builderId') || null
+  const [builderName, setBuilderName] = useState<string | null>(null)
+
   const [activeFilter, setActiveFilter] = useState('ALL')
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
   const [search, setSearch] = useState('')
@@ -97,7 +108,9 @@ export default function JobPipelinePage() {
     const fetchJobs = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/ops/jobs?limit=1000')
+        const qs = new URLSearchParams({ limit: '1000' })
+        if (builderIdParam) qs.set('builderId', builderIdParam)
+        const response = await fetch(`/api/ops/jobs?${qs.toString()}`)
         if (!response.ok) {
           throw new Error('Failed to fetch jobs')
         }
@@ -115,7 +128,27 @@ export default function JobPipelinePage() {
 
     fetchJobs()
     fetchNeedsReview()
-  }, [])
+  }, [builderIdParam])
+
+  // Resolve builder name for the filter chip. Best-effort — falls back to id.
+  useEffect(() => {
+    if (!builderIdParam) {
+      setBuilderName(null)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/admin/builders/${builderIdParam}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        const name = d?.builder?.companyName || null
+        setBuilderName(name)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [builderIdParam])
 
   const handleConfirmScheduledDate = async (jobId: string, newDate?: string) => {
     setSavingRow(jobId)
@@ -188,7 +221,9 @@ export default function JobPipelinePage() {
     const fetchJobs = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/ops/jobs?limit=1000')
+        const qs = new URLSearchParams({ limit: '1000' })
+        if (builderIdParam) qs.set('builderId', builderIdParam)
+        const response = await fetch(`/api/ops/jobs?${qs.toString()}`)
         if (!response.ok) {
           throw new Error('Failed to fetch jobs')
         }
@@ -232,6 +267,23 @@ export default function JobPipelinePage() {
           </button>
         }
       />
+
+      {/* BUG-14: filter chip when arrived from a builder profile */}
+      {builderIdParam && (
+        <div className="flex items-center gap-2 bg-signal/5 border border-signal/30 rounded-lg px-3 py-2 text-sm">
+          <span className="text-fg-muted">Filtered by:</span>
+          <span className="font-medium text-fg">
+            {builderName || `Builder ${builderIdParam.slice(0, 8)}`}
+          </span>
+          <button
+            onClick={() => router.push('/ops/jobs')}
+            className="ml-auto inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg"
+            aria-label="Clear builder filter"
+          >
+            <X className="w-3 h-3" /> Clear filter
+          </button>
+        </div>
+      )}
 
       {/* Error message */}
       {error && (
@@ -696,6 +748,23 @@ export default function JobPipelinePage() {
         onSuccess={handleCreateJobSuccess}
       />
     </div>
+  )
+}
+
+export default function JobPipelinePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-signal" />
+            <p className="mt-4 text-fg-muted">Loading jobs...</p>
+          </div>
+        </div>
+      }
+    >
+      <JobPipelineInner />
+    </Suspense>
   )
 }
 

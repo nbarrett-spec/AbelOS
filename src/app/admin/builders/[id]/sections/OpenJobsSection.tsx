@@ -31,6 +31,9 @@ export interface OpenJobRow {
 
 export interface OpenJobsSectionProps {
   jobs: OpenJobRow[]
+  /** When set, shows a "View all jobs" link in the header that filters the
+   *  /ops/jobs list by this builder (BUG-14). */
+  viewAllHref?: string
 }
 
 function statusVariant(
@@ -58,7 +61,10 @@ function statusVariant(
   }
 }
 
-export default function OpenJobsSection({ jobs }: OpenJobsSectionProps) {
+export default function OpenJobsSection({
+  jobs,
+  viewAllHref,
+}: OpenJobsSectionProps) {
   return (
     <Card>
       <CardBody>
@@ -71,6 +77,14 @@ export default function OpenJobsSection({ jobs }: OpenJobsSectionProps) {
               {jobs.length} active
             </div>
           </div>
+          {viewAllHref && (
+            <Link
+              href={viewAllHref}
+              className="text-xs text-brand hover:underline"
+            >
+              View all jobs →
+            </Link>
+          )}
         </div>
 
         {jobs.length === 0 ? (

@@ -49,6 +49,8 @@ import OpenJobsSection, { type OpenJobRow } from './sections/OpenJobsSection'
 import ContactCard, { type PrimaryContact } from './sections/ContactCard'
 import BuilderDetailClient from './sections/BuilderDetailClient'
 import BuilderEditButton from './sections/BuilderEditButton'
+import CommunicationsTab from './sections/CommunicationsTab'
+import NotesSection from '@/components/ops/NotesSection'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -170,7 +172,17 @@ export default async function BuilderDetailPage({
 }) {
   const builderId = params.id
   const featureOn = process.env.NEXT_PUBLIC_FEATURE_BUILDER_OVERVIEW !== 'off'
-  const activeTab = featureOn ? (searchParams?.tab === 'details' ? 'details' : 'overview') : 'details'
+  // 4 tabs once the Overview feature flag is on: Overview, Communications,
+  // Notes, Details. Anything not in the allow-list falls back to Overview
+  // so a stale link never lands on a blank screen.
+  const tabFromQuery = (searchParams?.tab || '').toLowerCase()
+  const ALLOWED_TABS = ['overview', 'communications', 'notes', 'details'] as const
+  type TabKey = (typeof ALLOWED_TABS)[number]
+  const activeTab: TabKey = featureOn
+    ? ((ALLOWED_TABS as readonly string[]).includes(tabFromQuery)
+        ? (tabFromQuery as TabKey)
+        : 'overview')
+    : 'details'
 
   // ── 1. Builder existence + identity ───────────────────────────────────
   // Use raw SQL here because we only need a small projection and want to
@@ -397,24 +409,42 @@ export default async function BuilderDetailPage({
           { label: builder.companyName },
         ]}
         actions={
-          <BuilderEditButton
-            builder={{
-              id: builder.id,
-              companyName: builder.companyName,
-              contactName: builder.contactName,
-              email: builder.email,
-              phone: builder.phone,
-              address: builder.address,
-              city: builder.city,
-              state: builder.state,
-              zip: builder.zip,
-              licenseNumber: builder.licenseNumber,
-              paymentTerm: builder.paymentTerm,
-              creditLimit: builder.creditLimit !== null ? Number(builder.creditLimit) : null,
-              taxExempt: builder.taxExempt,
-              status: builder.status,
-            }}
-          />
+          <div className="flex items-center gap-2">
+            {/* BUG-17: New quote, builder pre-selected via ?builderId */}
+            <Link
+              href={`/ops/quotes/new?builderId=${builderId}`}
+              className="text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-surface text-fg hover:bg-row-hover transition-colors"
+            >
+              + Create Quote
+            </Link>
+            {/* BUG-16: New order. /ops/orders/new is a quote-selector, so the
+                target page filters its quote list to this builder when ?builderId
+                is set. */}
+            <Link
+              href={`/ops/orders/new?builderId=${builderId}`}
+              className="text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-surface text-fg hover:bg-row-hover transition-colors"
+            >
+              + New Order
+            </Link>
+            <BuilderEditButton
+              builder={{
+                id: builder.id,
+                companyName: builder.companyName,
+                contactName: builder.contactName,
+                email: builder.email,
+                phone: builder.phone,
+                address: builder.address,
+                city: builder.city,
+                state: builder.state,
+                zip: builder.zip,
+                licenseNumber: builder.licenseNumber,
+                paymentTerm: builder.paymentTerm,
+                creditLimit: builder.creditLimit !== null ? Number(builder.creditLimit) : null,
+                taxExempt: builder.taxExempt,
+                status: builder.status,
+              }}
+            />
+          </div>
         }
       />
 
@@ -425,6 +455,16 @@ export default async function BuilderDetailPage({
             href={`/admin/builders/${builderId}?tab=overview`}
             active={activeTab === 'overview'}
             label="Overview"
+          />
+          <TabLink
+            href={`/admin/builders/${builderId}?tab=communications`}
+            active={activeTab === 'communications'}
+            label="Communications"
+          />
+          <TabLink
+            href={`/admin/builders/${builderId}?tab=notes`}
+            active={activeTab === 'notes'}
+            label="Notes"
           />
           <TabLink
             href={`/admin/builders/${builderId}?tab=details`}
@@ -494,7 +534,10 @@ export default async function BuilderDetailPage({
                 buckets={buckets}
                 openByDefault={arDanger}
               />
-              <OpenJobsSection jobs={jobRows} />
+              <OpenJobsSection
+                jobs={jobRows}
+                viewAllHref={`/ops/jobs?builderId=${builderId}`}
+              />
             </div>
             <div className="space-y-6">
               <ContactCard
@@ -609,6 +652,18 @@ export default async function BuilderDetailPage({
             </CardBody>
           </Card>
         </>
+      )}
+
+      {activeTab === 'communications' && featureOn && (
+        <CommunicationsTab builderId={builderId} />
+      )}
+
+      {activeTab === 'notes' && featureOn && (
+        <Card>
+          <CardBody>
+            <NotesSection entityType="builder" entityId={builderId} />
+          </CardBody>
+        </Card>
       )}
 
       {activeTab === 'details' && (
