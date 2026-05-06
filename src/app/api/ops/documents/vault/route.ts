@@ -20,11 +20,47 @@ const CATEGORIES = [
   'CORRESPONDENCE', 'REPORT', 'GENERAL'
 ] as const
 
+// Vercel's serverless functions cap request bodies at ~4.5MB. The DB column
+// can hold more, but the platform rejects the upload before we ever see it.
+// Keeping the application-level cap at 25MB lets us deliver clear errors for
+// in-bounds files; anything between 4.5MB and 25MB will surface a 413 from
+// the platform and we translate that to a user-friendly message client-side.
 const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB
-const ALLOWED_MIME_PREFIXES = ['image/', 'application/pdf', 'application/vnd', 'text/', 'application/json', 'application/xml']
+// Vercel hard cap on serverless function request body. Surfaced to the
+// client so the UI can warn before sending.
+const VERCEL_BODY_LIMIT = 4.5 * 1024 * 1024
+const ALLOWED_MIME_PREFIXES = [
+  'image/',
+  'application/pdf',
+  'application/vnd', // Office, OpenDocument, etc.
+  'application/msword', // legacy .doc
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/octet-stream', // some browsers report this for unknown extensions
+  'text/',
+  'application/json',
+  'application/xml',
+]
 
-function isAllowedMime(mime: string): boolean {
-  return ALLOWED_MIME_PREFIXES.some(prefix => mime.startsWith(prefix))
+// Extensions we trust even if MIME is empty/wrong — common from older
+// browsers, mobile uploads (iOS Safari sends '' for some types), and the
+// Windows file picker.
+const TRUSTED_EXTENSIONS = new Set([
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+  'txt', 'csv', 'json', 'xml', 'rtf',
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif',
+  'zip',
+])
+
+function isAllowedMime(mime: string, fileName: string): boolean {
+  if (mime && ALLOWED_MIME_PREFIXES.some(prefix => mime.startsWith(prefix))) {
+    return true
+  }
+  // Fallback: trust well-known extensions even when the browser sent no
+  // (or a junk) Content-Type. Mobile uploads + older browsers regularly
+  // do this and we don't want to silently reject a legitimate PDF.
+  const ext = fileName.split('.').pop()?.toLowerCase() || ''
+  return TRUSTED_EXTENSIONS.has(ext)
 }
 
 async function ensureTable() {
@@ -233,12 +269,59 @@ export async function POST(request: NextRequest) {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// PATCH: Quick metadata edits (category, description, tags)
+// ──────────────────────────────────────────────────────────────────
+// The shared <DocumentAttachments> component issues a PATCH to update
+// category from the row dropdown. Without this handler, the call returns
+// 405 and the dropdown silently snaps back — which is exactly what was
+// reported as "category click-to-edit not working."
+export async function PATCH(request: NextRequest) {
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
+  await ensureTable()
+
+  let body: any
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const sessionStaffId = request.headers.get('x-staff-id') || 'system'
+  const sessionFirst = request.headers.get('x-staff-firstname') || ''
+  const sessionLast = request.headers.get('x-staff-lastname') || ''
+  const staffName =
+    [sessionFirst, sessionLast].filter(Boolean).join(' ').trim() || null
+
+  // Reuse the existing handleUpdate path so audit + history are consistent.
+  return handleUpdate({
+    ...body,
+    staffId: sessionStaffId,
+    staffName,
+  })
+}
+
+// ──────────────────────────────────────────────────────────────────
 // FILE UPLOAD HANDLER
 // ──────────────────────────────────────────────────────────────────
 async function handleFileUpload(request: NextRequest) {
   try {
     // Audit log
     audit(request, 'CREATE', 'Documents', undefined, { method: 'POST' }).catch(() => {})
+
+    // Derive uploader identity from the trusted middleware-injected
+    // headers — never from the form payload (FIX-6 lesson: never trust
+    // client-supplied identity). Falls back to 'system' only if the auth
+    // gate somehow let an anonymous request through.
+    const sessionStaffId = request.headers.get('x-staff-id') || 'system'
+    const sessionFirst = request.headers.get('x-staff-firstname') || ''
+    const sessionLast = request.headers.get('x-staff-lastname') || ''
+    const sessionEmail = request.headers.get('x-staff-email') || ''
+    const derivedName =
+      [sessionFirst, sessionLast].filter(Boolean).join(' ').trim() ||
+      sessionEmail ||
+      null
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
@@ -265,8 +348,10 @@ async function handleFileUpload(request: NextRequest) {
     const purchaseOrderId = formData.get('purchaseOrderId') as string | null
     const doorIdentityId = formData.get('doorIdentityId') as string | null
     const journalEntryId = formData.get('journalEntryId') as string | null
-    const uploadedBy = formData.get('uploadedBy') as string || 'system'
-    const uploadedByName = formData.get('uploadedByName') as string | null
+    // Identity comes from the session, not the client. Form values are
+    // ignored to prevent spoofing.
+    const uploadedBy = sessionStaffId
+    const uploadedByName = derivedName
 
     const uploaded: any[] = []
     const errors: string[] = []
@@ -280,8 +365,8 @@ async function handleFileUpload(request: NextRequest) {
         errors.push(`${f.name}: exceeds 25MB limit (${(f.size / 1024 / 1024).toFixed(1)}MB)`)
         continue
       }
-      if (!isAllowedMime(f.type)) {
-        errors.push(`${f.name}: file type not allowed (${f.type})`)
+      if (!isAllowedMime(f.type, f.name)) {
+        errors.push(`${f.name}: file type not allowed (${f.type || 'unknown'})`)
         continue
       }
 
@@ -364,6 +449,15 @@ async function handleUpdate(body: any) {
   const { documentId, staffId, staffName, category, description, tags } = body
   if (!documentId) return NextResponse.json({ error: 'documentId required' }, { status: 400 })
 
+  // Validate category against the canonical list. Garbage in → 400 instead
+  // of a silent corruption that would later break the categoryColor switch.
+  if (category && !CATEGORIES.includes(category)) {
+    return NextResponse.json(
+      { error: `Invalid category. Must be one of: ${CATEGORIES.join(', ')}` },
+      { status: 400 },
+    )
+  }
+
   const sets: string[] = ['"updatedAt" = NOW()']
   const params: any[] = []
   let idx = 1
@@ -371,6 +465,11 @@ async function handleUpdate(body: any) {
   if (category) { sets.push(`"category" = $${idx}`); params.push(category); idx++ }
   if (description !== undefined) { sets.push(`"description" = $${idx}`); params.push(description); idx++ }
   if (tags) { sets.push(`"tags" = $${idx}::text[]`); params.push(tags); idx++ }
+
+  // Nothing to update — short-circuit so we don't burn an audit row.
+  if (sets.length === 1) {
+    return safeJson({ success: true, noop: true })
+  }
 
   params.push(documentId)
   await prisma.$executeRawUnsafe(
