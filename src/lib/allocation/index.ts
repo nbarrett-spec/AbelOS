@@ -20,6 +20,7 @@
 
 export * from './allocate'
 export * from './release'
+export * from './reserve'
 export * from './pick'
 export * from './consume'
 export type { AllocateResult, AllocatedRow, ShortfallRow } from './types'

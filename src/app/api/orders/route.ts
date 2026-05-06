@@ -10,6 +10,7 @@ import { logger, getRequestId } from '@/lib/logger'
 import { audit } from '@/lib/audit'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { enforceCreditHold } from '@/lib/credit-hold'
+import { reserveForOrder } from '@/lib/allocation'
 
 // GET /api/orders — List builder's orders
 export async function GET(request: NextRequest) {
@@ -161,7 +162,23 @@ export async function POST(request: NextRequest) {
         quoteId
       )
 
+      // ── A-BIZ-3: reserve inventory at order create ──
+      // Same fix as /api/ops/orders POST. Reserves OrderItem-grain inventory
+      // on the InventoryAllocation ledger inside the same tx so concurrent
+      // orders can't double-claim the same physical stock. Shortfalls become
+      // BACKORDERED rows.
+      await reserveForOrder(
+        tx,
+        orderId,
+        items.map((it: any) => ({
+          productId: it.productId,
+          quantity: Number(it.quantity || 0),
+        })),
+      )
+
       return items
+    }, {
+      timeout: 15000,
     })
 
     // ── Auto-create Job for ops team ──────────────────────────────

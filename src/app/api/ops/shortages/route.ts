@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
             minDaysOfCoverage: null,
             criticalCount: 0,
             lowCount: 0,
+            lateCount: 0,
             categories: [],
           },
           items: [],
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
       rawDemand.map((r) => [r.productId, Number(r.windowDemand) || 0])
     )
 
-    // ── 2. Product metadata + cost ───────────────────────────────────────
+    // ── 2. Product metadata + cost + per-product lead-time override ───────
     const products = await prisma.$queryRawUnsafe<
       Array<{
         id: string
@@ -125,9 +126,10 @@ export async function GET(request: NextRequest) {
         name: string
         category: string | null
         cost: number | null
+        leadTimeDays: number | null
       }>
     >(
-      `SELECT "id", "sku", "name", "category", "cost"
+      `SELECT "id", "sku", "name", "category", "cost", "leadTimeDays"
          FROM "Product"
         WHERE "id" = ANY($1::text[])`,
       productIds
@@ -169,6 +171,9 @@ export async function GET(request: NextRequest) {
     )
 
     // ── 4. Preferred vendor per product (vendorProduct.preferred=true). ──
+    // Pull Vendor.avgLeadDays alongside VendorProduct.leadTimeDays so the
+    // poNeededBy math can fall back to the vendor default when the
+    // vendor-product row hasn't been calibrated.
     const vendorRows = await prisma.$queryRawUnsafe<
       Array<{
         productId: string
@@ -179,6 +184,7 @@ export async function GET(request: NextRequest) {
         vendorContactName: string | null
         vendorCost: number | null
         leadTimeDays: number | null
+        avgLeadDays: number | null
         preferred: boolean
       }>
     >(
@@ -192,6 +198,7 @@ export async function GET(request: NextRequest) {
         v."contactName" AS "vendorContactName",
         vp."vendorCost",
         vp."leadTimeDays",
+        v."avgLeadDays",
         vp."preferred"
       FROM "VendorProduct" vp
       JOIN "Vendor" v ON v."id" = vp."vendorId"
@@ -211,6 +218,7 @@ export async function GET(request: NextRequest) {
         vendorContactName: string | null
         vendorCost: number | null
         leadTimeDays: number | null
+        avgLeadDays: number | null
       }
     >()
     for (const row of vendorRows) {
@@ -223,6 +231,7 @@ export async function GET(request: NextRequest) {
           vendorContactName: row.vendorContactName,
           vendorCost: row.vendorCost != null ? Number(row.vendorCost) : null,
           leadTimeDays: row.leadTimeDays,
+          avgLeadDays: row.avgLeadDays,
         })
       }
     }
@@ -394,6 +403,14 @@ export async function GET(request: NextRequest) {
         contactName: string | null
         leadTimeDays: number | null
       }
+      // Effective vendor lead time (Product → VendorProduct → Vendor → 14d)
+      // and the "PO needed by" date so the floor sees lead-time risk, not
+      // just stock-out risk.
+      effectiveLeadDays: number
+      leadTimeSource: 'product' | 'vendorProduct' | 'vendor' | 'default'
+      poNeededBy: string | null
+      alreadyLate: boolean
+      daysUntilPoNeededBy: number | null
       unitCost: number
       alternatives: Array<{
         productId: string
@@ -478,6 +495,47 @@ export async function GET(request: NextRequest) {
         minDaysOfCoverage = daysOfCoverage
       }
 
+      // Resolve effective vendor lead time using the same chain the MRP
+      // projector uses. Treat 0 as "no signal" so we fall through.
+      let effectiveLeadDays = 14
+      let leadTimeSource: 'product' | 'vendorProduct' | 'vendor' | 'default' = 'default'
+      if (product.leadTimeDays && product.leadTimeDays > 0) {
+        effectiveLeadDays = product.leadTimeDays
+        leadTimeSource = 'product'
+      } else if (vendor?.leadTimeDays && vendor.leadTimeDays > 0) {
+        effectiveLeadDays = vendor.leadTimeDays
+        leadTimeSource = 'vendorProduct'
+      } else if (vendor?.avgLeadDays && vendor.avgLeadDays > 0) {
+        effectiveLeadDays = vendor.avgLeadDays
+        leadTimeSource = 'vendor'
+      }
+
+      // poNeededBy: the date a PO must be placed so material lands before
+      // we run out. Anchor to the earliest signal we have:
+      //   1. earliestShortDate (from MaterialWatch — actual job dates), else
+      //   2. today + daysUntilStockout (forecast burn)
+      // Then subtract effectiveLeadDays. If the result is in the past,
+      // alreadyLate flips true and the row gets bumped to the top.
+      const earliestRaw = earliestByProduct.get(pid)
+      const stockoutAnchor = earliestRaw
+        ? new Date(earliestRaw)
+        : daysUntilStockout !== null
+          ? new Date(Date.now() + daysUntilStockout * 86400000)
+          : null
+      let poNeededBy: string | null = null
+      let alreadyLate = false
+      let daysUntilPoNeededBy: number | null = null
+      if (stockoutAnchor && !Number.isNaN(stockoutAnchor.getTime())) {
+        const needBy = new Date(stockoutAnchor)
+        needBy.setDate(needBy.getDate() - effectiveLeadDays)
+        poNeededBy = needBy.toISOString().slice(0, 10)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const diffMs = needBy.getTime() - today.getTime()
+        daysUntilPoNeededBy = Math.round(diffMs / 86400000)
+        alreadyLate = diffMs < 0
+      }
+
       items.push({
         productId: pid,
         sku: product.sku,
@@ -514,6 +572,11 @@ export async function GET(request: NextRequest) {
               leadTimeDays: vendor.leadTimeDays,
             }
           : null,
+        effectiveLeadDays,
+        leadTimeSource,
+        poNeededBy,
+        alreadyLate,
+        daysUntilPoNeededBy,
         unitCost,
         alternatives: altByProduct.get(pid) || [],
       })
@@ -537,10 +600,14 @@ export async function GET(request: NextRequest) {
       filtered = filtered.filter((it) => it.category === categoryFilter)
     }
 
-    // Sort: CRITICAL first, then LOW, then OK; within each, soonest stockout
-    // first. Ties break on shortage $ desc.
+    // Sort: alreadyLate items first (you needed to order yesterday), then
+    // CRITICAL → LOW → OK by inventory severity, then soonest stockout, then
+    // shortage $ desc. alreadyLate floats above CRITICAL because you can have
+    // healthy inventory and still be late if vendor lead time exceeds runway.
     const sevRank: Record<string, number> = { CRITICAL: 0, LOW: 1, OK: 2 }
     filtered.sort((a, b) => {
+      if (a.alreadyLate && !b.alreadyLate) return -1
+      if (!a.alreadyLate && b.alreadyLate) return 1
       const sevDiff = (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9)
       if (sevDiff !== 0) return sevDiff
       const aDays = a.daysUntilStockout ?? Number.POSITIVE_INFINITY

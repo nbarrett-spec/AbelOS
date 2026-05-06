@@ -447,32 +447,36 @@ export async function onOrderCancelled(orderId: string): Promise<CascadeResult> 
     }
 
     // ── Toggle: order.cancelled.release_inventory ─────────────────────────
-    // Walks OrderItems, increments InventoryItem.onHand by the order qty.
-    // No-op for OrderItems with no productId (custom line items / labor).
+    // A-BIZ-3 fix: previous implementation incremented InventoryItem.onHand
+    // directly — that's wrong (it inflates physical stock that was never
+    // shipped). Correct behavior: mark every order- AND job-level allocation
+    // RELEASED on the ledger, then recompute committed/available. onHand is
+    // not touched. Always-on for the order-level release; the toggle still
+    // gates the job-level release for callers that want to keep that off.
+    try {
+      const { releaseForOrder } = await import('@/lib/allocation')
+      const result = await releaseForOrder(orderId, 'order_cancelled')
+      releasedItemCount = result.released
+    } catch (err) {
+      logger.error('cascade_cancel_release_inventory_failed', err as Error, { orderId })
+    }
     if (await isSystemAutomationEnabled('order.cancelled.release_inventory')) {
       try {
-        const items: any[] = await prisma.$queryRawUnsafe(
-          `SELECT "productId", "quantity"
-           FROM "OrderItem"
-           WHERE "orderId" = $1 AND "productId" IS NOT NULL`,
+        const { releaseForJob } = await import('@/lib/allocation')
+        const linkedJobs: any[] = await prisma.$queryRawUnsafe(
+          `SELECT "id" FROM "Job" WHERE "orderId" = $1`,
           orderId,
         )
-        for (const item of items) {
+        for (const j of linkedJobs) {
           try {
-            await prisma.$executeRawUnsafe(
-              `UPDATE "InventoryItem"
-               SET "onHand" = "onHand" + $1, "updatedAt" = NOW()
-               WHERE "productId" = $2`,
-              Number(item.quantity || 0),
-              item.productId,
-            )
-            releasedItemCount++
+            const r = await releaseForJob(j.id, 'order_cancelled')
+            releasedItemCount += r.released
           } catch {
-            // best-effort per-item — keep going on partial failure
+            // best-effort per-job
           }
         }
       } catch (err) {
-        logger.error('cascade_cancel_release_inventory_failed', err as Error, { orderId })
+        logger.error('cascade_cancel_release_inventory_job_failed', err as Error, { orderId })
       }
     }
 

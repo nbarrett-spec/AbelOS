@@ -239,6 +239,10 @@
     {
       "path": "/api/cron/mfg-24hr-check",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/auto-reorder",
+      "schedule": "0 10 * * *"
     }
   ]
 }

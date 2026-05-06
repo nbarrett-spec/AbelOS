@@ -36,11 +36,27 @@ export interface MrpProductProjection {
     vendorCost: number | null
     minOrderQty: number
   } | null
+  // Effective vendor lead time used for poNeededBy math.
+  // Resolution order: Product.leadTimeDays → VendorProduct.leadTimeDays
+  // → Vendor.avgLeadDays → 14 (default).
+  effectiveLeadDays: number
+  // Source of effectiveLeadDays — for transparency in the UI/logs.
+  leadTimeSource: 'product' | 'vendorProduct' | 'vendor' | 'default'
   totalDemand: number
   totalInbound: number
   endingBalance: number
   stockoutDate: string | null
   daysUntilStockout: number | null
+  // Date by which the PO must be placed (= stockoutDate − effectiveLeadDays).
+  // Null when stockoutDate is null.
+  poNeededBy: string | null
+  // True when poNeededBy is in the past — i.e. lead time eats the runway and
+  // we're already late to order. Surfaces the "you have 5 days but vendor
+  // takes 14, so you're already late" UX.
+  alreadyLate: boolean
+  // Days from `today` until poNeededBy. Negative = already late.
+  // Null when stockoutDate is null.
+  daysUntilPoNeededBy: number | null
   shortfallQty: number // qty needed beyond safetyStock at stockout point (positive number)
   schedule: MrpDayBucket[]
   drivingJobIds: string[]
@@ -194,7 +210,12 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
 
   const productIds = Array.from(productIdSet)
 
-  // 3. Fetch product info + inventory + preferred vendor in one query
+  // 3. Fetch product info + inventory + preferred vendor in one query.
+  // Lead-time data is pulled from three layers so the projector can
+  // resolve effectiveLeadDays without a second round-trip:
+  //   Product.leadTimeDays  → per-product override (tightest signal)
+  //   VendorProduct.leadTimeDays → vendor-product specific (current preference)
+  //   Vendor.avgLeadDays    → vendor default
   const productInfo = await prisma.$queryRawUnsafe<
     Array<{
       productId: string
@@ -205,10 +226,12 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
       committed: number
       safetyStock: number
       reorderQty: number
+      productLeadTimeDays: number | null
       vendorId: string | null
       vendorName: string | null
       vendorCode: string | null
       leadTimeDays: number | null
+      vendorAvgLeadDays: number | null
       vendorCost: number | null
       minOrderQty: number | null
     }>
@@ -223,10 +246,12 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
       COALESCE(i."committed", 0)::int as committed,
       COALESCE(i."safetyStock", 0)::int as "safetyStock",
       COALESCE(i."reorderQty", 0)::int as "reorderQty",
+      p."leadTimeDays" as "productLeadTimeDays",
       vp."vendorId" as "vendorId",
       v."name" as "vendorName",
       v."code" as "vendorCode",
       vp."leadTimeDays" as "leadTimeDays",
+      v."avgLeadDays" as "vendorAvgLeadDays",
       vp."vendorCost" as "vendorCost",
       vp."minOrderQty" as "minOrderQty"
     FROM "Product" p
@@ -325,6 +350,36 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
       ? Math.max(0, Math.round((new Date(stockoutDate).getTime() - today.getTime()) / 86400000))
       : null
 
+    // Resolve effective vendor lead time: Product → VendorProduct → Vendor → 14d default.
+    // We treat 0 as "no signal" because most data has 0/null mixed in for unknown.
+    let effectiveLeadDays = 14
+    let leadTimeSource: 'product' | 'vendorProduct' | 'vendor' | 'default' = 'default'
+    if (info.productLeadTimeDays && info.productLeadTimeDays > 0) {
+      effectiveLeadDays = info.productLeadTimeDays
+      leadTimeSource = 'product'
+    } else if (info.leadTimeDays && info.leadTimeDays > 0) {
+      effectiveLeadDays = info.leadTimeDays
+      leadTimeSource = 'vendorProduct'
+    } else if (info.vendorAvgLeadDays && info.vendorAvgLeadDays > 0) {
+      effectiveLeadDays = info.vendorAvgLeadDays
+      leadTimeSource = 'vendor'
+    }
+
+    // poNeededBy = stockoutDate − effectiveLeadDays. If the resulting date is
+    // already in the past, we mark `alreadyLate` and let the UI shout.
+    let poNeededBy: string | null = null
+    let alreadyLate = false
+    let daysUntilPoNeededBy: number | null = null
+    if (stockoutDate) {
+      const stockoutDt = new Date(stockoutDate)
+      const needBy = new Date(stockoutDt)
+      needBy.setDate(needBy.getDate() - effectiveLeadDays)
+      poNeededBy = isoDay(needBy)
+      const diffMs = needBy.getTime() - today.getTime()
+      daysUntilPoNeededBy = Math.round(diffMs / 86400000)
+      alreadyLate = diffMs < 0
+    }
+
     products.push({
       productId: info.productId,
       sku: info.sku,
@@ -344,19 +399,28 @@ export async function runMrpProjection(opts: MrpOptions = {}): Promise<MrpProjec
             minOrderQty: info.minOrderQty ?? 1,
           }
         : null,
+      effectiveLeadDays,
+      leadTimeSource,
       totalDemand,
       totalInbound,
       endingBalance: balance,
       stockoutDate,
       daysUntilStockout,
+      poNeededBy,
+      alreadyLate,
+      daysUntilPoNeededBy,
       shortfallQty,
       schedule,
       drivingJobIds: Array.from(drivingJobsByProduct[info.productId] || []),
     })
   }
 
-  // Sort: stockouts first (closest first), then by ending balance ascending
+  // Sort: alreadyLate stockouts first, then upcoming stockouts (closest first),
+  // then by ending balance ascending. "Already late" floats to the top because
+  // those need a phone call, not just a PO draft.
   products.sort((a, b) => {
+    if (a.alreadyLate && !b.alreadyLate) return -1
+    if (!a.alreadyLate && b.alreadyLate) return 1
     if (a.stockoutDate && !b.stockoutDate) return -1
     if (!a.stockoutDate && b.stockoutDate) return 1
     if (a.stockoutDate && b.stockoutDate) {

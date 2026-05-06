@@ -11,6 +11,7 @@ import { toCsv } from '@/lib/csv'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { fireStaffNotifications } from '@/lib/order-staff-notifications'
 import { orderIdsWithBomItems } from '@/lib/orders'
+import { reserveForOrder } from '@/lib/allocation'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -479,57 +480,84 @@ export async function POST(request: NextRequest) {
     const resolvedOrderDate = orderDate
       ? new Date(orderDate).toISOString()
       : new Date().toISOString();
-    const insertOrderQuery = `
-      INSERT INTO "Order" (
-        "id", "orderNumber", "builderId", "quoteId", "subtotal", "taxAmount",
-        "total", "paymentTerm", "paymentStatus", "status", "deliveryDate",
-        "deliveryNotes", "orderDate", "createdAt", "updatedAt"
-      )
-      VALUES (
-        $1, $2, $3, $4, $5, $6, $7,
-        $8::"PaymentTerm", $9::"PaymentStatus", $10::"OrderStatus",
-        $11::timestamp, $12, $13::timestamptz, $14::timestamp, $15::timestamp
-      )
-    `;
-    await prisma.$executeRawUnsafe(
-      insertOrderQuery,
-      orderId,
-      orderNumber,
-      finalBuilderId,
-      quoteId,
-      quote.subtotal,
-      quote.taxAmount,
-      quote.total,
-      paymentTerm,
-      'PENDING',
-      'RECEIVED',
-      deliveryDate ? new Date(deliveryDate).toISOString() : null,
-      deliveryNotes || null,
-      resolvedOrderDate,
-      new Date().toISOString(),
-      new Date().toISOString()
-    );
 
-    // Insert order items
-    for (const item of quoteItems as any[]) {
-      const itemId = `oi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-      const insertItemQuery = `
-        INSERT INTO "OrderItem" ("id", "orderId", "productId", "description", "quantity", "unitPrice", "lineTotal", "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::timestamp, $9::timestamp)
+    // ── A-BIZ-3: Order + items + inventory reservation in one transaction ──
+    // Why a transaction: two simultaneous orders for the same stock would
+    // each see InventoryItem.available before either wrote a reservation,
+    // both pass any availability check, and end up with -committed +
+    // double-claimed inventory. Wrapping the insert + reserveForOrder in a
+    // single tx with row-level locking on InventoryItem (inside reserveForOrder)
+    // forces them to serialize.
+    await prisma.$transaction(async (tx) => {
+      const insertOrderQuery = `
+        INSERT INTO "Order" (
+          "id", "orderNumber", "builderId", "quoteId", "subtotal", "taxAmount",
+          "total", "paymentTerm", "paymentStatus", "status", "deliveryDate",
+          "deliveryNotes", "orderDate", "createdAt", "updatedAt"
+        )
+        VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8::"PaymentTerm", $9::"PaymentStatus", $10::"OrderStatus",
+          $11::timestamp, $12, $13::timestamptz, $14::timestamp, $15::timestamp
+        )
       `;
-      await prisma.$executeRawUnsafe(
-        insertItemQuery,
-        itemId,
+      await tx.$executeRawUnsafe(
+        insertOrderQuery,
         orderId,
-        item.productId,
-        item.description,
-        item.quantity,
-        item.unitPrice,
-        item.lineTotal,
+        orderNumber,
+        finalBuilderId,
+        quoteId,
+        quote.subtotal,
+        quote.taxAmount,
+        quote.total,
+        paymentTerm,
+        'PENDING',
+        'RECEIVED',
+        deliveryDate ? new Date(deliveryDate).toISOString() : null,
+        deliveryNotes || null,
+        resolvedOrderDate,
         new Date().toISOString(),
         new Date().toISOString()
       );
-    }
+
+      // Insert order items
+      for (const item of quoteItems as any[]) {
+        const itemId = `oi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        const insertItemQuery = `
+          INSERT INTO "OrderItem" ("id", "orderId", "productId", "description", "quantity", "unitPrice", "lineTotal", "createdAt", "updatedAt")
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::timestamp, $9::timestamp)
+        `;
+        await tx.$executeRawUnsafe(
+          insertItemQuery,
+          itemId,
+          orderId,
+          item.productId,
+          item.description,
+          item.quantity,
+          item.unitPrice,
+          item.lineTotal,
+          new Date().toISOString(),
+          new Date().toISOString()
+        );
+      }
+
+      // Reserve inventory at OrderItem grain. Shortfalls become BACKORDERED
+      // ledger rows (not a hard reject) — production already accepts orders
+      // with backordered material; the fix here is preventing the same
+      // physical units from being claimed twice by concurrent calls.
+      await reserveForOrder(
+        tx,
+        orderId,
+        (quoteItems as any[]).map((qi) => ({
+          productId: qi.productId,
+          quantity: Number(qi.quantity || 0),
+        })),
+      );
+    }, {
+      // Conservative timeout — InventoryAllocation insert + recompute is fast
+      // but the row-lock contention under concurrent orders can stretch it.
+      timeout: 15000,
+    });
 
     // Update quote status to ORDERED — guard the transition against QuoteStatus state machine.
     try {

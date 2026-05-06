@@ -85,8 +85,12 @@ async function runMrpNightly(triggeredBy: 'schedule' | 'manual' = 'schedule'): P
           1
         )
         const estimatedCost = (vendor.vendorCost || 0) * recommendedQty
-        const urgency =
-          (item.daysUntilStockout ?? 999) < 7
+        // Urgency now factors in lead time: if poNeededBy is in the past
+        // (alreadyLate), bump straight to CRITICAL — we're already eating
+        // schedule risk regardless of how many days of stock remain.
+        const urgency = item.alreadyLate
+          ? 'CRITICAL'
+          : (item.daysUntilStockout ?? 999) < 7
             ? 'CRITICAL'
             : (item.daysUntilStockout ?? 999) < 14
               ? 'HIGH'
@@ -94,12 +98,16 @@ async function runMrpNightly(triggeredBy: 'schedule' | 'manual' = 'schedule'): P
                 ? 'NORMAL'
                 : 'LOW'
 
-        const orderByDate = item.stockoutDate
-          ? new Date(
-              new Date(item.stockoutDate).getTime() -
-                (vendor.leadTimeDays || 14) * 86400000
-            )
-          : new Date()
+        // Use effectiveLeadDays (Product → VendorProduct → Vendor → 14d) so
+        // orderByDate matches what the projection surfaced as poNeededBy.
+        const orderByDate = item.poNeededBy
+          ? new Date(item.poNeededBy)
+          : item.stockoutDate
+            ? new Date(
+                new Date(item.stockoutDate).getTime() -
+                  item.effectiveLeadDays * 86400000
+              )
+            : new Date()
         const safeOrderByDate = orderByDate < new Date() ? new Date() : orderByDate
 
         const recId = `mrp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
@@ -130,7 +138,9 @@ async function runMrpNightly(triggeredBy: 'schedule' | 'manual' = 'schedule'): P
             item.productId,
             item.category,
             urgency,
-            `Nightly MRP: ${item.sku} stocks out ${item.stockoutDate} (in ${item.daysUntilStockout}d)`,
+            item.alreadyLate
+              ? `Nightly MRP: ${item.sku} stocks out ${item.stockoutDate} — vendor lead time ${item.effectiveLeadDays}d, ALREADY LATE to order`
+              : `Nightly MRP: ${item.sku} stocks out ${item.stockoutDate} (in ${item.daysUntilStockout}d, lead ${item.effectiveLeadDays}d)`,
             recommendedQty,
             estimatedCost,
             new Date(item.stockoutDate!),

@@ -61,6 +61,12 @@ export interface ShortageItem {
     contactName: string | null
     leadTimeDays: number | null
   }
+  // Lead-time-aware reorder window (A-BIZ-5).
+  effectiveLeadDays: number
+  leadTimeSource: 'product' | 'vendorProduct' | 'vendor' | 'default'
+  poNeededBy: string | null
+  alreadyLate: boolean
+  daysUntilPoNeededBy: number | null
   unitCost: number
   alternatives: ShortageAlternative[]
 }
@@ -71,6 +77,7 @@ interface Summary {
   minDaysOfCoverage: number | null
   criticalCount?: number
   lowCount?: number
+  lateCount?: number
   categories?: string[]
 }
 
@@ -121,8 +128,11 @@ function buildMailto(item: ShortageItem, horizonDays: number): string {
     month: 'short',
     day: 'numeric',
   })
+  const subjectPrefix = item.alreadyLate
+    ? `Abel Lumber URGENT EXPEDITE — ${item.sku}`
+    : `Abel Lumber expedite — ${item.sku}`
   const subject = encodeURIComponent(
-    `Abel Lumber expedite — ${item.sku} (${item.shortageQty} units needed by ${byStr})`
+    `${subjectPrefix} (${item.shortageQty} units needed by ${byStr})`
   )
   const greeting = vendor.contactName ? `${vendor.contactName}, ` : 'Team, '
   const body = encodeURIComponent(
@@ -130,6 +140,9 @@ function buildMailto(item: ShortageItem, horizonDays: number): string {
       `${greeting}`,
       ``,
       `We're forecast short ${item.shortageQty} of ${item.sku} — ${item.name} — by ${byStr}.`,
+      item.alreadyLate
+        ? `Standard ${item.effectiveLeadDays}-day lead time will not land before stockout. We need expedited handling or a partial drop-ship to bridge the gap.`
+        : '',
       ``,
       `Currently on hand: ${item.onHand}. Forecast demand over the next ${horizonDays} days: ${item.forecastDemand}.`,
       `Open POs in transit: ${item.inTransitQty} (${item.openPoCount} PO${item.openPoCount === 1 ? '' : 's'}).`,
@@ -287,6 +300,7 @@ export default function ShortageTable({ initial, initialError }: Props) {
     minDaysOfCoverage: null,
     criticalCount: 0,
     lowCount: 0,
+    lateCount: 0,
     categories: [],
   }
 
@@ -328,7 +342,14 @@ export default function ShortageTable({ initial, initialError }: Props) {
       />
 
       {/* KPI strip */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+        <KPICard
+          title="Already late"
+          value={fmtInt(summary.lateCount ?? 0)}
+          subtitle="lead time exceeds runway"
+          accent={(summary.lateCount ?? 0) > 0 ? 'negative' : 'neutral'}
+          icon={<AlertTriangle className="w-4 h-4" />}
+        />
         <KPICard
           title="Critical"
           value={fmtInt(summary.criticalCount ?? 0)}
@@ -336,7 +357,6 @@ export default function ShortageTable({ initial, initialError }: Props) {
           accent={
             (summary.criticalCount ?? 0) > 0 ? 'negative' : 'neutral'
           }
-          icon={<AlertTriangle className="w-4 h-4" />}
         />
         <KPICard
           title="Low"
@@ -530,8 +550,12 @@ export default function ShortageTable({ initial, initialError }: Props) {
                   const vendorMissing = !it.preferredVendor?.email
                   const reorderS = reorderState[it.productId] || 'idle'
                   const reorderR = reorderResult[it.productId] || {}
-                  const rowAccent =
-                    it.severity === 'CRITICAL'
+                  // alreadyLate dominates row accent — even a "low" inventory
+                  // SKU is operationally critical if vendor lead time eats
+                  // the entire runway.
+                  const rowAccent = it.alreadyLate
+                    ? 'border-l-4 border-l-[var(--data-red-500)] bg-[var(--data-red-50)]/30'
+                    : it.severity === 'CRITICAL'
                       ? 'border-l-4 border-l-[var(--data-red-500)]'
                       : it.severity === 'LOW'
                         ? 'border-l-4 border-l-[var(--data-amber-500)]'
@@ -617,15 +641,18 @@ export default function ShortageTable({ initial, initialError }: Props) {
                         {it.preferredVendor ? (
                           <div className="text-xs">
                             <div
-                              className="truncate max-w-[140px] font-medium"
+                              className="truncate max-w-[160px] font-medium"
                               title={it.preferredVendor.name}
                             >
                               {it.preferredVendor.name}
                             </div>
                             <div className="text-fg-subtle">
-                              {it.preferredVendor.leadTimeDays != null
-                                ? `${it.preferredVendor.leadTimeDays}d lead`
-                                : 'lead unknown'}
+                              {`${it.effectiveLeadDays}d lead`}
+                              {it.leadTimeSource === 'default' && (
+                                <span title="Lead time unknown — using 14d default">
+                                  {' '}(est.)
+                                </span>
+                              )}
                               {it.openPoCount > 0 && (
                                 <>
                                   {' · '}
@@ -633,6 +660,35 @@ export default function ShortageTable({ initial, initialError }: Props) {
                                 </>
                               )}
                             </div>
+                            {it.poNeededBy && (
+                              <div
+                                className={
+                                  it.alreadyLate
+                                    ? 'text-[var(--data-red-500)] font-medium'
+                                    : (it.daysUntilPoNeededBy ?? 99) <= 3
+                                      ? 'text-[var(--data-amber-600)] font-medium'
+                                      : 'text-fg-subtle'
+                                }
+                                title={
+                                  it.alreadyLate
+                                    ? `Stockout ${fmtDate(it.earliestShortDate || (it.daysUntilStockout != null ? new Date(Date.now() + it.daysUntilStockout * 86400000).toISOString().slice(0, 10) : null))} − ${it.effectiveLeadDays}d lead time. Order yesterday.`
+                                    : `Place PO by ${fmtDate(it.poNeededBy)} so material lands before stockout`
+                                }
+                              >
+                                {it.alreadyLate ? (
+                                  <>
+                                    LATE — order ASAP
+                                    {it.daysUntilPoNeededBy != null && (
+                                      <span className="text-[10px] ml-1">
+                                        ({Math.abs(it.daysUntilPoNeededBy)}d ago)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>PO by {fmtDate(it.poNeededBy)}</>
+                                )}
+                              </div>
+                            )}
                             {it.earliestExpected && (
                               <div className="text-fg-subtle">
                                 ETA {fmtDate(it.earliestExpected)}

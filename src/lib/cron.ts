@@ -336,6 +336,8 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'prospect-enrich', schedule: '0 7 * * 1', description: 'Weekly: re-enrich Prospects that are stale (>30d) or low-confidence; gated by FEATURE_PROSPECT_ENRICH_ENABLED' },
   // B-FEAT-4 / A-BIZ-8: hourly mfg-late check (Jobs delivering <24h, not yet IN_PRODUCTION)
   { name: 'mfg-24hr-check', schedule: '0 * * * *', description: 'Flag jobs delivering within 24h that are not yet in production (manufacturing builds the day before delivery)' },
+  // A-BIZ-4: daily auto-reorder draft POs when inventory hits reorder point (5am CT / 10:00 UTC)
+  { name: 'auto-reorder', schedule: '0 10 * * *', description: 'Daily 5am CT: create DRAFT POs for SKUs at/below reorder point, grouped by preferred vendor; idempotent against open POs' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

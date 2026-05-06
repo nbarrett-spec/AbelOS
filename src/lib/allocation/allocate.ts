@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { AllocateResult, AllocatedRow, BackorderedRow, ShortfallRow } from './types'
+import { migrateOrderAllocationsToJob } from './reserve'
 
 /**
  * allocateForJob — turn a Job into rows on the InventoryAllocation ledger.
@@ -47,6 +48,19 @@ export async function allocateForJob(jobId: string): Promise<AllocateResult> {
   // closed. Cron sweeps these as a belt-and-suspenders.
   if (['CLOSED', 'COMPLETE', 'INVOICED', 'DELIVERED'].includes(String(job.status))) {
     return { ...base, skipped: true, reason: `terminal_status:${job.status}` }
+  }
+
+  // ── A-BIZ-3 handoff ──
+  // If the parent Order already has order-level reservations from
+  // reserveForOrder, rebrand them to this Job before BoM-allocating the rest.
+  // Prevents double-counting OrderItem demand: same productId reserved twice.
+  // Idempotent — second call is a no-op.
+  try {
+    await migrateOrderAllocationsToJob(job.orderId, jobId)
+  } catch {
+    // Migration is best-effort; if it fails the BoM allocation below still
+    // works (just may double-count, which the existing partial unique idx
+    // and recompute_inventory_committed limits in practice).
   }
 
   // ── Gold Stock fast path ──
