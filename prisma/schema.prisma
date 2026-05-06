@@ -675,8 +675,23 @@ model OrderItem {
   // Final Front" at the form layer.
   doorMaterial DoorMaterial?
 
+  // ── A-BIZ-6: backorder queue ──
+  // When reserveForOrder finds insufficient `available` for an item it
+  // reserves what it can and stamps the shortfall here so the line carries
+  // its own "owed" state without requiring callers to walk the
+  // InventoryAllocation ledger. fulfillingPoId points at the next incoming
+  // PurchaseOrder we expect to clear the shortfall; expectedDate mirrors
+  // that PO's expectedDate at link time. All four nullable so the migration
+  // stays additive on the populated prod table.
+  backorderedQty  Int       @default(0)
+  backorderedAt   DateTime?
+  expectedDate    DateTime? // ETA when stock will arrive (from incoming PO)
+  fulfillingPoId  String? // PO that will fulfill this backorder
+
   @@index([orderId])
   @@index([productId])
+  @@index([backorderedAt], map: "idx_orderitem_backordered")
+  @@index([fulfillingPoId], map: "idx_orderitem_fulfilling_po")
 }
 
 // ─── ORDER TEMPLATES ─────────────────────────────────────────────────
@@ -2147,6 +2162,26 @@ model ConversationParticipant {
   @@unique([conversationId, staffId])
   @@index([conversationId])
   @@index([staffId])
+}
+
+// Inbound Twilio SMS — every text from a customer/builder lands here.
+// Created by POST /api/agent/sms (webhook).
+model InboundSms {
+  id         String   @id @default(cuid())
+  twilioSid  String   @unique // MessageSid — Twilio's idempotency key
+  fromNumber String // E.164 sender ("From")
+  toNumber   String // E.164 Abel inbox ("To")
+  body       String // Message body
+  builderId  String? // Resolved Builder.phone match, if any
+  urgent     Boolean  @default(false) // urgent/asap/stop keyword detected
+  processed  Boolean  @default(false) // routing flag — set true once handled
+  receivedAt DateTime @default(now())
+
+  @@index([fromNumber])
+  @@index([builderId])
+  @@index([processed])
+  @@index([urgent])
+  @@index([receivedAt])
 }
 
 model Notification {
@@ -4250,12 +4285,23 @@ model CommunicationLog {
   communityId     String?
   syncAccount     String?
 
+  // A-INT-4 (2026-05-05): post-ingest ack/receipt handling.
+  //   processedAt = NOW() once the cron finished builder-linking and
+  //   notification fan-out for this message. Subsequent cron runs skip
+  //   rows where this is non-null, making the post-ingest pass idempotent.
+  //   inboxItemId = reverse pointer to the InboxItem we raised (null if
+  //   suppressed: automated sender, outbound, no builder match, etc.).
+  processedAt DateTime?
+  inboxItemId String?
+
   @@index([builderId])
   @@index([channel])
   @@index([organizationId])
   @@index([sentAt])
   @@index([communityId], map: "idx_commlog_community")
   @@index([syncAccount], map: "idx_commlog_sync_account")
+  @@index([processedAt], map: "idx_commlog_processed_at")
+  @@index([builderId, sentAt(sort: Desc)], map: "idx_commlog_builder_sent")
 }
 
 model Community_legacy {
@@ -6312,16 +6358,22 @@ model ReviewQueue {
 // ============================================================================
 // Multi-tenant Hyphen support — one row per builder. See scripts/seed-hyphen-tenants.ts
 // IntegrationConfig keeps its @@unique([provider]); HyphenTenant lives independently.
+//
+// SECURITY (A-SEC-6): username/password/oauthAccessToken/oauthRefreshToken are
+// AES-256-GCM-encrypted at rest. All reads must go through
+// src/lib/hyphen/crypto.ts → decryptCredential(); all writes through
+// encryptCredential(). Key: HYPHEN_ENCRYPTION_KEY (32 bytes hex). Migration
+// script: scripts/encrypt-hyphen-tenants.mjs (run once with --apply).
 // ============================================================================
 model HyphenTenant {
   id                  String    @id @default(cuid())
   builderId           String?
   builderName         String    @unique
   baseUrl             String    @default("https://www.bldrconnect.com")
-  username            String?
-  password            String?
-  oauthAccessToken    String?
-  oauthRefreshToken   String?
+  username            String?  // AES-256-GCM (see A-SEC-6 above)
+  password            String?  // AES-256-GCM (see A-SEC-6 above)
+  oauthAccessToken    String?  // AES-256-GCM (see A-SEC-6 above)
+  oauthRefreshToken   String?  // AES-256-GCM (see A-SEC-6 above)
   oauthExpiresAt      DateTime?
   syncEnabled         Boolean   @default(true)
   lastSyncAt          DateTime?
