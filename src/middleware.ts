@@ -2,13 +2,19 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required in production')
+// JWT_SECRET is required in every environment. No dev fallback — a missing
+// value should crash the app loudly rather than silently sign tokens with a
+// known-public default. Set it in `.env` locally and in Vercel for deployed
+// envs. Generate with: `openssl rand -base64 48`.
+if (!process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET environment variable is required. ' +
+    'Set it in .env (local) or your hosting provider (prod). ' +
+    'Generate with: openssl rand -base64 48'
+  )
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'dev-secret-change-in-production'
-)
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET)
 
 /**
  * Generate or retrieve request ID for distributed tracing
