@@ -12,13 +12,30 @@
  * The schedule entry in vercel.json has been removed in the same
  * commit. The route is retained as a 410 stub so any stale external
  * caller gets a clear signal instead of a 500.
+ *
+ * Auth: still requires Authorization: Bearer <CRON_SECRET> so a 410
+ * is only returned to authorized callers; unauthorized requests get
+ * 401 and don't learn anything about the endpoint's status.
  */
 
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
+  // Verify CRON_SECRET bearer auth
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+
+  if (!cronSecret) {
+    console.error('CRON_SECRET not configured')
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   return NextResponse.json(
     {
       success: false,
