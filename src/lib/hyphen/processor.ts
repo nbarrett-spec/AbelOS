@@ -28,6 +28,15 @@ import {
   NormalizedItem,
   NormalizedBuilder,
 } from './mapper'
+import {
+  parseChangeOrderHeader,
+  parseChangeOrderItems,
+  toLineNumBigInt,
+  extractReplacementFields,
+  buildReplacementDescription,
+  ItemReplacementFields,
+  ParsedChangeOrderHeader,
+} from './change-order-mapper'
 
 let aliasTablesEnsured = false
 
@@ -549,6 +558,464 @@ export async function getHyphenEventPayload(
   )
   if (rows.length === 0) return null
   return rows[0]
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Change Order processor (SPConnect v13 §3)
+//
+// Different shape from processHyphenOrderEvent on purpose — change orders
+// modify an existing Abel Order rather than creating one, so the result
+// communicates partial-line-failures via unresolvedSkus + warnings without
+// needing the full builder/mapper handshake.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface ChangeOrderProcessResult {
+  success: boolean
+  mappedOrderId: string | null
+  errorCode?: string
+  errorMessage?: string
+  warnings: string[]
+  unresolvedSkus: Array<{
+    lineNum: number | null
+    sku: string | null
+    description: string | null
+  }>
+  changeType?: string | null
+}
+
+/**
+ * Process an inbound Hyphen Change Order envelope.
+ *
+ * Flow:
+ *   1. Load HyphenOrderEvent + assert kind=changeOrder.
+ *   2. Parse header / items via change-order-mapper.
+ *   3. Resolve the parent Abel Order via three-stage fallback:
+ *      a. Order.inflowOrderId === header.builderOrderNumber
+ *      b. Order.poNumber === header.builderOrderNumber
+ *      c. prior HyphenOrderEvent (kind=order, builderOrderNumber match) →
+ *         follow mappedOrderId
+ *   4. Branch on header.changeType (case-insensitive):
+ *        Reschedule              → update Order.deliveryDate from end/startDate
+ *        ChangeInDetail          → walk items[], match OrderItem.builderLineItemNum
+ *                                  to originalLineNum (BigInt), apply changeCode
+ *                                  (default ReplaceAllValues — replace all fields
+ *                                  from originalItemDetailWithChanges)
+ *        ChangeInHeadingSection  → update Order header-level fields (notes,
+ *                                  delivery dates, account info)
+ *        NotesOnly               → append changeOrderHeaderNote to Order.deliveryNotes
+ *        Unknown                 → return errorCode UNKNOWN_CHANGE_TYPE
+ *   5. Wrap DB writes in a transaction.
+ *   6. Update HyphenOrderEvent.status (MAPPED on success, FAILED on error).
+ */
+export async function processHyphenChangeOrderEvent(
+  eventId: string
+): Promise<ChangeOrderProcessResult> {
+  const warnings: string[] = []
+  const unresolvedSkus: ChangeOrderProcessResult['unresolvedSkus'] = []
+
+  // 1. Load event + verify kind
+  const event = await loadEvent(eventId)
+  if (!event) {
+    return {
+      success: false,
+      mappedOrderId: null,
+      errorCode: 'EVENT_NOT_FOUND',
+      errorMessage: `HyphenOrderEvent ${eventId} not found`,
+      warnings,
+      unresolvedSkus,
+    }
+  }
+
+  if (event.kind !== 'changeOrder') {
+    await markChangeOrderFailed(eventId, `Kind "${event.kind}" is not a changeOrder`)
+    return {
+      success: false,
+      mappedOrderId: null,
+      errorCode: 'WRONG_KIND',
+      errorMessage: `processHyphenChangeOrderEvent only handles kind=changeOrder, got ${event.kind}`,
+      warnings,
+      unresolvedSkus,
+    }
+  }
+
+  // 2. Parse header
+  const header = parseChangeOrderHeader(event.rawPayload)
+  if (!header) {
+    await markChangeOrderFailed(eventId, 'Missing or malformed change-order header')
+    return {
+      success: false,
+      mappedOrderId: null,
+      errorCode: 'MISSING_HEADER',
+      errorMessage: 'Change order payload has no header.id',
+      warnings,
+      unresolvedSkus,
+    }
+  }
+
+  // 3. Resolve parent order
+  const parentOrderId = await findParentOrderId(header)
+  if (!parentOrderId) {
+    const msg = `No parent Abel Order found for builderOrderNumber=${header.builderOrderNumber || 'n/a'}, supplierOrderNumber=${header.supplierOrderNumber || 'n/a'}, hyphenOrderId=${header.hyphenOrderId}`
+    await markChangeOrderFailed(eventId, msg)
+    return {
+      success: false,
+      mappedOrderId: null,
+      errorCode: 'PARENT_ORDER_NOT_FOUND',
+      errorMessage: msg,
+      warnings,
+      unresolvedSkus,
+      changeType: header.changeTypeRaw,
+    }
+  }
+
+  // 4. Branch on changeType
+  if (header.changeType === null) {
+    const msg = `Unknown changeType "${header.changeTypeRaw || 'null'}"`
+    await markChangeOrderFailed(eventId, msg)
+    return {
+      success: false,
+      mappedOrderId: parentOrderId,
+      errorCode: 'UNKNOWN_CHANGE_TYPE',
+      errorMessage: msg,
+      warnings,
+      unresolvedSkus,
+      changeType: header.changeTypeRaw,
+    }
+  }
+
+  // 5. Apply the change inside a transaction
+  try {
+    await prisma.$transaction(async (tx) => {
+      switch (header.changeType) {
+        case 'Reschedule': {
+          await applyReschedule(tx, parentOrderId, header, warnings)
+          break
+        }
+        case 'ChangeInDetail': {
+          const items = parseChangeOrderItems(event.rawPayload)
+          await applyChangeInDetail(tx, parentOrderId, items, warnings, unresolvedSkus)
+          break
+        }
+        case 'ChangeInHeadingSection': {
+          await applyChangeInHeading(tx, parentOrderId, header, warnings)
+          break
+        }
+        case 'NotesOnly': {
+          await applyNotesOnly(tx, parentOrderId, header, warnings)
+          break
+        }
+      }
+    })
+  } catch (e: any) {
+    const msg = e?.message || 'Change order transaction failed'
+    logger.error('hyphen_change_order_apply_failed', e, { eventId, parentOrderId })
+    await markChangeOrderFailed(eventId, msg)
+    return {
+      success: false,
+      mappedOrderId: parentOrderId,
+      errorCode: 'TRANSACTION_FAILED',
+      errorMessage: msg,
+      warnings,
+      unresolvedSkus,
+      changeType: header.changeTypeRaw,
+    }
+  }
+
+  await markChangeOrderProcessed(eventId, parentOrderId)
+  return {
+    success: true,
+    mappedOrderId: parentOrderId,
+    warnings,
+    unresolvedSkus,
+    changeType: header.changeTypeRaw,
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Change-order helpers
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Look up the parent Abel Order id for a change order. Tries three sources
+ * in order: Order.inflowOrderId, Order.poNumber, then the previously-mapped
+ * order from a prior HyphenOrderEvent (kind=order) with the same
+ * builderOrderNumber.
+ */
+async function findParentOrderId(
+  header: ParsedChangeOrderHeader
+): Promise<string | null> {
+  const bon = header.builderOrderNumber
+  const son = header.supplierOrderNumber
+
+  // (a) inflowOrderId match — supplierOrderNumber is the most direct way
+  // back to an Abel order that already round-tripped through InFlow.
+  if (son) {
+    const r1: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Order" WHERE "inflowOrderId" = $1 LIMIT 1`,
+      son
+    )
+    if (r1.length > 0) return r1[0].id
+  }
+  if (bon) {
+    const r1b: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Order" WHERE "inflowOrderId" = $1 LIMIT 1`,
+      bon
+    )
+    if (r1b.length > 0) return r1b[0].id
+  }
+
+  // (b) poNumber — the natural "builderOrderNumber" home in our schema.
+  if (bon) {
+    const r2: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "Order" WHERE "poNumber" = $1 ORDER BY "createdAt" DESC LIMIT 1`,
+      bon
+    )
+    if (r2.length > 0) return r2[0].id
+  }
+
+  // (c) Earlier HyphenOrderEvent (kind=order) → mappedOrderId.
+  if (bon) {
+    const r3: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "mappedOrderId" FROM "HyphenOrderEvent"
+       WHERE "kind" = 'order' AND "builderOrderNumber" = $1
+         AND "mappedOrderId" IS NOT NULL
+       ORDER BY "receivedAt" DESC LIMIT 1`,
+      bon
+    )
+    if (r3.length > 0 && r3[0].mappedOrderId) return r3[0].mappedOrderId
+  }
+
+  // Last resort: prior event with the same Hyphen header.id (externalId)
+  if (header.hyphenOrderId) {
+    const r4: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "mappedOrderId" FROM "HyphenOrderEvent"
+       WHERE "kind" = 'order' AND "externalId" = $1
+         AND "mappedOrderId" IS NOT NULL
+       ORDER BY "receivedAt" DESC LIMIT 1`,
+      header.hyphenOrderId
+    )
+    if (r4.length > 0 && r4[0].mappedOrderId) return r4[0].mappedOrderId
+  }
+
+  return null
+}
+
+async function applyReschedule(
+  tx: any,
+  orderId: string,
+  header: ParsedChangeOrderHeader,
+  warnings: string[]
+): Promise<void> {
+  // Prefer endDate (delivery date), fall back to startDate.
+  const target = header.endDate || header.startDate
+  const iso = target ? safeDateIso(target) : null
+  if (!iso) {
+    warnings.push('[RESCHEDULE_NO_DATE] header.startDate / endDate missing or unparseable — deliveryDate left unchanged')
+    return
+  }
+  await tx.$executeRawUnsafe(
+    `UPDATE "Order" SET "deliveryDate" = $1, "updatedAt" = NOW() WHERE "id" = $2`,
+    iso,
+    orderId
+  )
+}
+
+async function applyChangeInDetail(
+  tx: any,
+  orderId: string,
+  items: ReturnType<typeof parseChangeOrderItems>,
+  warnings: string[],
+  unresolvedSkus: ChangeOrderProcessResult['unresolvedSkus']
+): Promise<void> {
+  if (items.length === 0) {
+    warnings.push('[NO_ITEMS] ChangeInDetail envelope had no items[] — nothing applied')
+    return
+  }
+
+  for (const it of items) {
+    const lineNumBig = toLineNumBigInt(it.originalLineNum)
+    if (lineNumBig === null) {
+      warnings.push(`[INVALID_LINE_NUM] originalLineNum missing or not numeric — skipping`)
+      continue
+    }
+
+    const code = (it.changeCode || '').trim()
+    const codeLc = code.toLowerCase()
+    if (code && codeLc !== 'replaceallvalues') {
+      // Unknown changeCode — fall back to ReplaceAllValues but flag it so the
+      // operator can audit. Spec only documents ReplaceAllValues today.
+      warnings.push(
+        `[UNKNOWN_CHANGE_CODE] changeCode "${code}" not recognized — falling back to ReplaceAllValues for line ${it.originalLineNum}`
+      )
+    }
+
+    const fields = extractReplacementFields(it.detail)
+
+    // Find the matching OrderItem by parent + builderLineItemNum (BigInt).
+    const rows: any[] = await tx.$queryRawUnsafe(
+      `SELECT "id" FROM "OrderItem"
+       WHERE "orderId" = $1 AND "builderLineItemNum" = $2::bigint
+       LIMIT 1`,
+      orderId,
+      lineNumBig.toString()
+    )
+    if (rows.length === 0) {
+      warnings.push(`[NO_MATCHING_LINE] No OrderItem with builderLineItemNum=${it.originalLineNum} on parent order`)
+      unresolvedSkus.push({
+        lineNum: it.originalLineNum,
+        sku: fields.builderSupplierSKU || fields.builderAltItemID || fields.supplierSKU,
+        description: fields.itemDescription,
+      })
+      continue
+    }
+
+    const orderItemId = rows[0].id
+    await replaceOrderItemFromChange(tx, orderItemId, fields, it.originalLineNum)
+  }
+}
+
+async function replaceOrderItemFromChange(
+  tx: any,
+  orderItemId: string,
+  fields: ItemReplacementFields,
+  lineNum: number | null
+): Promise<void> {
+  const description = buildReplacementDescription(fields, lineNum)
+  const unitPrice = fields.requestedUnitPrice ?? 0
+  const qty = fields.quantityOrdered !== null
+    ? Math.max(1, Math.round(fields.quantityOrdered))
+    : null
+  const lineTotal =
+    fields.total ?? (fields.quantityOrdered !== null ? unitPrice * fields.quantityOrdered : null)
+
+  // Update the writable OrderItem fields. quantity is required (NOT NULL) in
+  // schema, so only update it when we have a value.
+  if (qty !== null) {
+    await tx.$executeRawUnsafe(
+      `UPDATE "OrderItem"
+         SET "description" = $1,
+             "unitPrice"   = $2,
+             "lineTotal"   = COALESCE($3, "lineTotal"),
+             "quantity"    = $4
+       WHERE "id" = $5`,
+      description,
+      unitPrice,
+      lineTotal,
+      qty,
+      orderItemId
+    )
+  } else {
+    await tx.$executeRawUnsafe(
+      `UPDATE "OrderItem"
+         SET "description" = $1,
+             "unitPrice"   = $2,
+             "lineTotal"   = COALESCE($3, "lineTotal")
+       WHERE "id" = $4`,
+      description,
+      unitPrice,
+      lineTotal,
+      orderItemId
+    )
+  }
+}
+
+async function applyChangeInHeading(
+  tx: any,
+  orderId: string,
+  header: ParsedChangeOrderHeader,
+  warnings: string[]
+): Promise<void> {
+  // Header-level fields the change envelope can affect on the parent Order:
+  //   poNumber             ← header.builderOrderNumber (rare but possible)
+  //   deliveryDate         ← header.endDate
+  //   deliveryNotes        ← appended with new orderHeaderNote / changeOrderHeaderNote
+  const setClauses: string[] = []
+  const params: any[] = []
+  let p = 1
+
+  if (header.builderOrderNumber) {
+    setClauses.push(`"poNumber" = $${p++}`)
+    params.push(header.builderOrderNumber)
+  }
+  if (header.endDate) {
+    const iso = safeDateIso(header.endDate)
+    if (iso) {
+      setClauses.push(`"deliveryDate" = $${p++}`)
+      params.push(iso)
+    }
+  }
+
+  // Append narrative notes if present.
+  const noteFragments: string[] = []
+  if (header.orderHeaderNote) noteFragments.push(`Order note: ${header.orderHeaderNote}`)
+  if (header.changeOrderHeaderNote) noteFragments.push(`Change note: ${header.changeOrderHeaderNote}`)
+  if (header.changeOrderNumber) noteFragments.push(`Change order: ${header.changeOrderNumber}`)
+  if (noteFragments.length > 0) {
+    setClauses.push(
+      `"deliveryNotes" = COALESCE("deliveryNotes" || E'\\n', '') || $${p++}`
+    )
+    params.push(noteFragments.join('\n'))
+  }
+
+  if (setClauses.length === 0) {
+    warnings.push('[HEADING_NO_FIELDS] ChangeInHeadingSection had no recognized fields to apply')
+    return
+  }
+
+  setClauses.push(`"updatedAt" = NOW()`)
+  params.push(orderId)
+  const sql = `UPDATE "Order" SET ${setClauses.join(', ')} WHERE "id" = $${p}`
+  await tx.$executeRawUnsafe(sql, ...params)
+}
+
+async function applyNotesOnly(
+  tx: any,
+  orderId: string,
+  header: ParsedChangeOrderHeader,
+  warnings: string[]
+): Promise<void> {
+  const note = header.changeOrderHeaderNote || header.orderHeaderNote
+  if (!note) {
+    warnings.push('[NOTES_ONLY_EMPTY] NotesOnly change order had no note text — nothing appended')
+    return
+  }
+  const tag = header.changeOrderNumber ? `[CO ${header.changeOrderNumber}] ` : '[CO] '
+  await tx.$executeRawUnsafe(
+    `UPDATE "Order"
+       SET "deliveryNotes" = COALESCE("deliveryNotes" || E'\\n', '') || $1,
+           "updatedAt" = NOW()
+     WHERE "id" = $2`,
+    tag + note,
+    orderId
+  )
+}
+
+async function markChangeOrderProcessed(
+  eventId: string,
+  parentOrderId: string
+): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    `UPDATE "HyphenOrderEvent"
+       SET "status" = 'MAPPED',
+           "mappedOrderId" = $1,
+           "error" = NULL,
+           "processedAt" = NOW()
+     WHERE "id" = $2`,
+    parentOrderId,
+    eventId
+  )
+}
+
+async function markChangeOrderFailed(eventId: string, error: string): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    `UPDATE "HyphenOrderEvent"
+       SET "status" = 'FAILED',
+           "error" = $1,
+           "processedAt" = NOW()
+     WHERE "id" = $2`,
+    error,
+    eventId
+  )
 }
 
 // ──────────────────────────────────────────────────────────────────────────
