@@ -173,12 +173,17 @@ export async function POST(request: NextRequest) {
     // statement fails, the whole batch rolls back — no half-applied check.
     await prisma.$transaction(async (tx) => {
       for (const p of plan) {
+        // method/status pass through enum casts as parameters — Postgres
+        // rejects values outside the enum domain at parse time, so neither
+        // raw user input (method) nor the computed status string can carry
+        // SQL syntax into the query.
         await tx.$executeRawUnsafe(
           `INSERT INTO "Payment" ("id", "invoiceId", "amount", "method", "reference", "notes", "receivedAt")
-           VALUES ($1, $2, $3, '${method}'::"PaymentMethod", $4, $5, COALESCE($6::timestamp, NOW()))`,
+           VALUES ($1, $2, $3, $4::"PaymentMethod", $5, $6, COALESCE($7::timestamp, NOW()))`,
           p.paymentId,
           p.invoiceId,
           p.paymentAmount,
+          method,
           reference || null,
           notes || null,
           receivedAtParam
@@ -189,12 +194,13 @@ export async function POST(request: NextRequest) {
           `UPDATE "Invoice"
            SET "amountPaid" = $1,
                "balanceDue" = $2,
-               "status" = '${p.newStatus}'::"InvoiceStatus",
+               "status" = $3::"InvoiceStatus",
                "issuedAt" = COALESCE("issuedAt", NOW()),
                "updatedAt" = NOW() ${paidAtClause}
-           WHERE "id" = $3`,
+           WHERE "id" = $4`,
           p.newAmountPaid,
           p.newBalanceDue,
+          p.newStatus,
           p.invoiceId
         )
       }

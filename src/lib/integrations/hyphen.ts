@@ -6,6 +6,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
+import { decryptCredential } from '@/lib/hyphen/crypto'
 import type { HyphenScheduleUpdate, HyphenPurchaseOrder, HyphenPaymentNotification, SyncResult } from './types'
 
 interface HyphenConfig {
@@ -62,7 +63,21 @@ export async function getAllTenants(): Promise<HyphenConfig[]> {
 
     const tenants: HyphenConfig[] = []
     for (const r of rows) {
-      const apiKey = r.oauthAccessToken || r.password || ''
+      // A-SEC-6: credential columns are AES-256-GCM-encrypted on disk.
+      // decryptCredential() passes plaintext through unchanged so legacy
+      // rows keep working until the one-shot migration runs.
+      let username: string | null = null
+      let password: string | null = null
+      let oauthAccessToken: string | null = null
+      try {
+        username = decryptCredential(r.username)
+        password = decryptCredential(r.password)
+        oauthAccessToken = decryptCredential(r.oauthAccessToken)
+      } catch (e: any) {
+        console.warn(`HyphenTenant ${r.builderName} (${r.id}) credential decrypt failed — skipping: ${e?.message}`)
+        continue
+      }
+      const apiKey = oauthAccessToken || password || ''
       const baseUrl = r.baseUrl || 'https://www.bldrconnect.com'
       if (!apiKey || !baseUrl) {
         console.warn(`HyphenTenant ${r.builderName} (${r.id}) missing apiKey/baseUrl — skipping`)
@@ -74,8 +89,8 @@ export async function getAllTenants(): Promise<HyphenConfig[]> {
         supplierId: r.builderName || '',
         tenantId: r.id,
         builderName: r.builderName || undefined,
-        username: r.username || undefined,
-        password: r.password || undefined,
+        username: username || undefined,
+        password: password || undefined,
         lastSyncAt: r.lastSyncAt ? new Date(r.lastSyncAt) : null,
       })
     }

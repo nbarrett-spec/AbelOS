@@ -265,9 +265,9 @@ export async function POST(request: NextRequest) {
               await prisma.$executeRawUnsafe(`
                 INSERT INTO "Payment" (
                   "id", "invoiceId", "amount", "method", "reference", "receivedAt"
-                ) VALUES ($1, $2, $3, '${method}'::"PaymentMethod", $4, ${toTsSql(paidAt)})
+                ) VALUES ($1, $2, $3, $4::"PaymentMethod", $5, ${toTsSql(paidAt)})
               `,
-                payId, invId, amountPaid,
+                payId, invId, amountPaid, method,
                 method === 'CHECK' ? `CHK-${Math.floor(Math.random() * 90000) + 10000}` : `REF-${Math.floor(Math.random() * 900000) + 100000}`
               )
               results.payments++

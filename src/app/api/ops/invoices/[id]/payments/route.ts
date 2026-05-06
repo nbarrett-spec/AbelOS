@@ -85,10 +85,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await prisma.$transaction(async (tx) => {
       // Create the payment. receivedAt: if the client supplied one, use it;
       // otherwise COALESCE falls back to NOW() preserving prior behavior.
+      // method/status are passed as parameters with enum casts ($N::"Enum"),
+      // never interpolated — Postgres rejects values outside the enum domain.
       await tx.$executeRawUnsafe(`
         INSERT INTO "Payment" ("id", "invoiceId", "amount", "method", "reference", "notes", "receivedAt")
-        VALUES ($1, $2, $3, '${method}'::"PaymentMethod", $4, $5, COALESCE($6::timestamp, NOW()))
-      `, payId, id, amount, reference || null, notes || null, receivedAtParam)
+        VALUES ($1, $2, $3, $4::"PaymentMethod", $5, $6, COALESCE($7::timestamp, NOW()))
+      `, payId, id, amount, method, reference || null, notes || null, receivedAtParam)
 
       // Update invoice. Backfill issuedAt when the invoice first becomes
       // billable — a payment against a DRAFT implicitly issues it. Audit
@@ -97,11 +99,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await tx.$executeRawUnsafe(`
         UPDATE "Invoice"
         SET "amountPaid" = $1, "balanceDue" = $2,
-            "status" = '${newStatus}'::"InvoiceStatus",
+            "status" = $3::"InvoiceStatus",
             "issuedAt" = COALESCE("issuedAt", NOW()),
             "updatedAt" = NOW() ${paidAtClause}
-        WHERE "id" = $3
-      `, newAmountPaid, Math.max(0, newBalanceDue), id)
+        WHERE "id" = $4
+      `, newAmountPaid, Math.max(0, newBalanceDue), newStatus, id)
 
       // When invoice reaches PAID status, update linked LienRelease to 'READY'
       if (newStatus === 'PAID') {

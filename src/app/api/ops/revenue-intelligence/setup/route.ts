@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     for (const tableName of tableCheckQueries) {
       try {
         const result = await prisma.$queryRawUnsafe<any[]>(
-          `SELECT EXISTS(SELECT FROM information_schema.tables WHERE table_name = '${tableName}')`
+          `SELECT EXISTS(SELECT FROM information_schema.tables WHERE table_name = $1)`,
+          tableName
         );
         tablesStatus[tableName] = result?.[0]?.exists ?? false;
       } catch (err) {

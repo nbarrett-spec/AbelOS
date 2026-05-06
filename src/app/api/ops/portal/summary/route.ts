@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
     ).then(result => result[0]?.count ?? 0).catch(() => 0);
 
     const upcomingDeliveries = await prisma.$queryRawUnsafe<[{ count: number }]>(
-      `SELECT COUNT(*)::int AS count FROM "ScheduleEntry" WHERE "entryType" = 'DELIVERY' AND "scheduledDate" >= '${todayISO}'::date AND "scheduledDate" < '${sevenDaysISO}'::date`
+      `SELECT COUNT(*)::int AS count FROM "ScheduleEntry" WHERE "entryType" = 'DELIVERY' AND "scheduledDate" >= $1::date AND "scheduledDate" < $2::date`,
+      todayISO,
+      sevenDaysISO
     ).then(result => result[0]?.count ?? 0).catch(() => 0);
 
     // Purchasing Portal: POs needing approval and low stock
@@ -46,7 +48,8 @@ export async function GET(request: NextRequest) {
     let todayPickLists = 0;
     try {
       const pickListResult = await prisma.$queryRawUnsafe<[{ count: number }]>(
-        `SELECT COUNT(*)::int AS count FROM "PickList" WHERE "date" >= '${todayISO}'::date AND "date" < '${todayISO}'::date + INTERVAL '1 day'`
+        `SELECT COUNT(*)::int AS count FROM "PickList" WHERE "date" >= $1::date AND "date" < $1::date + INTERVAL '1 day'`,
+        todayISO
       );
       todayPickLists = pickListResult[0]?.count ?? 0;
     } catch {
@@ -69,11 +72,14 @@ export async function GET(request: NextRequest) {
 
     // Delivery & Logistics Portal: Today's deliveries
     const todayDeliveries = await prisma.$queryRawUnsafe<[{ count: number }]>(
-      `SELECT COUNT(*)::int AS count FROM "ScheduleEntry" WHERE "entryType" = 'DELIVERY' AND "scheduledDate" >= '${todayISO}'::date AND "scheduledDate" < '${todayISO}'::date + INTERVAL '1 day'`
+      `SELECT COUNT(*)::int AS count FROM "ScheduleEntry" WHERE "entryType" = 'DELIVERY' AND "scheduledDate" >= $1::date AND "scheduledDate" < $1::date + INTERVAL '1 day'`,
+      todayISO
     ).then(result => result[0]?.count ?? 0).catch(() => 0);
 
     const upcomingDeliveriesThreeDays = await prisma.$queryRawUnsafe<[{ count: number }]>(
-      `SELECT COUNT(*)::int AS count FROM "ScheduleEntry" WHERE "entryType" = 'DELIVERY' AND "scheduledDate" >= '${todayISO}'::date AND "scheduledDate" < '${threeDaysISO}'::date`
+      `SELECT COUNT(*)::int AS count FROM "ScheduleEntry" WHERE "entryType" = 'DELIVERY' AND "scheduledDate" >= $1::date AND "scheduledDate" < $2::date`,
+      todayISO,
+      threeDaysISO
     ).then(result => result[0]?.count ?? 0).catch(() => 0);
 
     // Accounting Portal: Outstanding invoices and overdue amounts
@@ -82,7 +88,8 @@ export async function GET(request: NextRequest) {
     ).then(result => result[0]?.count ?? 0).catch(() => 0);
 
     const overdueInvoices = await prisma.$queryRawUnsafe<[{ count: number }]>(
-      `SELECT COUNT(*)::int AS count FROM "Invoice" WHERE "status" = 'UNPAID' AND "dueDate" < '${todayISO}'::date`
+      `SELECT COUNT(*)::int AS count FROM "Invoice" WHERE "status" = 'UNPAID' AND "dueDate" < $1::date`,
+      todayISO
     ).then(result => result[0]?.count ?? 0).catch(() => 0);
 
     // Count pending POs for AP
