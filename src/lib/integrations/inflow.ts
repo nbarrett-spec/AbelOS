@@ -232,6 +232,67 @@ export function resetDegradedTracker() {
   endpointFailureCount.clear()
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// CRITICAL: InFlow Cloud uses CURSOR-based pagination, not page-based.
+//
+// 2026-05-06: discovered every sync since launch has been broken — the
+// `?page=N&pageSize=K` parameters are silently ignored. The API always
+// returns the FIRST 20 records (or `count` if you ask, capped server-side)
+// regardless of `page`. So a "page 90" call returns the same 20 records as
+// "page 1". Production logs claiming "1820 records updated" were actually
+// the same 20 SKUs updated 91 times.
+//
+// Correct contract:
+//   /resource?count=N&after=<lastIdFromPrevResponse>
+//
+// `count` controls page size (server caps somewhere ≥ 100). Empty `after`
+// starts from the beginning. The cursor for the next page is the resource's
+// own ID field — `productId`, `salesOrderId`, `purchaseOrderId`, `vendorId`.
+//
+// `paginateAfter` walks the cursor until an empty page or the iteration cap.
+// Each yielded batch should be fully processed before the next inflowFetch
+// to keep the cursor advance correct.
+// ──────────────────────────────────────────────────────────────────────────
+export interface PaginateAfterOptions {
+  /** Field on each record that holds its UUID — varies by endpoint. */
+  idKey: string
+  /** Server-side count param. Default 100. */
+  count?: number
+  /** Hard safety cap on iterations. Default 200 → 20,000 records max. */
+  maxIterations?: number
+  /** ms between requests. Default RATE_LIMIT_DELAY (1200ms). */
+  delayMs?: number
+}
+
+export async function* paginateAfter<T = any>(
+  basePath: string,
+  config: InflowConfig,
+  opts: PaginateAfterOptions
+): AsyncGenerator<T[], void, unknown> {
+  const count = opts.count ?? 100
+  const maxIter = opts.maxIterations ?? 200
+  const delayMs = opts.delayMs ?? RATE_LIMIT_DELAY
+
+  let cursor = ''
+  let iterations = 0
+  while (iterations < maxIter) {
+    const sep = basePath.includes('?') ? '&' : '?'
+    const path = `${basePath}${sep}count=${count}&after=${encodeURIComponent(cursor)}`
+    const data: any = await inflowFetch(path, config)
+    const rows: T[] = Array.isArray(data) ? data : (data?.data || [])
+    if (rows.length === 0) return
+    yield rows
+    const last: any = rows[rows.length - 1]
+    const nextCursor = String(last?.[opts.idKey] || '')
+    if (!nextCursor || nextCursor === cursor) return // safety: no advance = stop
+    cursor = nextCursor
+    iterations++
+    if (iterations < maxIter) {
+      await new Promise(r => setTimeout(r, delayMs))
+    }
+  }
+}
+
 async function inflowFetch(path: string, config: InflowConfig, options?: RequestInit) {
   const url = `${INFLOW_BASE}/${config.companyId}${path}`
   const headers: Record<string, string> = {
@@ -304,24 +365,17 @@ export async function syncProducts(): Promise<SyncResult> {
   }
 
   let created = 0, updated = 0, skipped = 0, failed = 0
-  let page = 1
-  // Safety cap: 300 * 100 = 30,000 products max. InFlow currently has ~6,800.
-  // Previous implementation died at page 61 with 429s because `inflowFetch` only
-  // retried 3 times. Fixed by: (a) 6-retry exponential backoff in inflowFetch,
-  // (b) 400ms inter-page sleep (was 200ms), (c) honor Retry-After header.
-  const MAX_PAGES = 300
-  const PAGE_SIZE = 100
+  let firstPageLogged = false
 
   try {
-    while (page <= MAX_PAGES) {
-      const data = await inflowFetch(`/products?page=${page}&pageSize=${PAGE_SIZE}&includeInactive=false`, config)
-      const products: InflowProduct[] = data.data || data
-
-      if (!products.length) break
-
-      // Log first-page shape for debugging
-      if (page === 1 && products.length > 0) {
+    // CURSOR pagination — see paginateAfter docstring above. The old
+    // page-based loop was broken: InFlow ignored ?page=N and returned the
+    // same first 20 records on every call, so we updated only the first 20
+    // SKUs hundreds of times per cron tick.
+    for await (const products of paginateAfter<InflowProduct>('/products', config, { idKey: 'productId' })) {
+      if (!firstPageLogged && products.length > 0) {
         logger.info('inflow_product_sync_shape', { keys: Object.keys(products[0]) })
+        firstPageLogged = true
       }
 
       for (const ifProduct of products) {
@@ -400,9 +454,7 @@ export async function syncProducts(): Promise<SyncResult> {
           logger.error('inflow_product_sync_failed', err, { sku: ifProduct.sku })
         }
       }
-
-      page++
-      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+      // paginateAfter handles cursor advance + delay
     }
 
     const completedAt = new Date()
@@ -465,18 +517,10 @@ export async function syncInventory(): Promise<SyncResult> {
   const errors: string[] = []
 
   try {
-    let page = 1
-    const MAX_PAGES = 300
-
-    while (page <= MAX_PAGES) {
-      // pageSize matched to syncProducts (was 200). 200 + 400ms delay was 150
-      // req/min, 2.5x InFlow's 60 req/min cap, which tripped 429s mid-stream.
-      // 100 + 1200ms delay = 50 req/min — sustainable.
-      const data = await inflowFetch(`/products?page=${page}&pageSize=100&includeInactive=false`, config)
-      const products: InflowProduct[] = data.data || data
-
-      if (!products.length) break
-
+    // CURSOR pagination — see paginateAfter docstring above. Pre-2026-05-06,
+    // this loop used `page=N&pageSize=200`, which InFlow ignored. The "1820
+    // records updated" prod metric was the same 20 SKUs hammered 91 times.
+    for await (const products of paginateAfter<InflowProduct>('/products', config, { idKey: 'productId' })) {
       for (const ifProduct of products) {
         try {
           // Find the Product record by inflowId or SKU (InFlow uses 'productId' not 'id')
@@ -530,13 +574,8 @@ export async function syncInventory(): Promise<SyncResult> {
           logger.error('inflow_inventory_sync_failed', err, { sku: ifProduct.sku || ifProduct.id })
         }
       }
-
-      // InFlow API may return fewer items than requested pageSize — keep going until empty
-      page++
-
-      // Rate limiting between pages
-      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
-    } // end while
+      // paginateAfter handles cursor advance + rate-limit delay
+    }
 
     const completedAt = new Date()
     const totalProcessed = created + updated + skipped + failed
@@ -734,37 +773,29 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
       throw new Error('No admin staff found for PO sync — need a createdById')
     }
 
-    let page = 1
-    // Safety cap: 25 pages × 100 = 2,500 POs max per run (keeps within Vercel 60s timeout)
-    const MAX_PAGES = 25
-
-    while (page <= MAX_PAGES) {
-      let poList: any
-      try {
-        poList = await inflowFetch(`/purchase-orders?page=${page}&pageSize=100`, config)
-      } catch (apiErr: any) {
-        // If the endpoint doesn't exist, try alternate paths
-        if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
-          try {
-            poList = await inflowFetch(`/purchaseorders?page=${page}&pageSize=100`, config)
-          } catch {
-            try {
-              poList = await inflowFetch(`/purchaseOrders?page=${page}&pageSize=100`, config)
-            } catch {
-              throw new Error(`InFlow PO endpoint not found — tried /purchase-orders, /purchaseorders, /purchaseOrders. Last error: ${apiErr.message}`)
-            }
-          }
-        } else {
-          throw apiErr
+    // Detect endpoint path on first call (InFlow accepts any of three casings).
+    // We probe a single small request, then use the winning path for the
+    // cursor stream below.
+    let poBasePath = '/purchase-orders'
+    try {
+      await inflowFetch(`${poBasePath}?count=1&after=`, config)
+    } catch (apiErr: any) {
+      if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
+        try {
+          poBasePath = '/purchaseorders'
+          await inflowFetch(`${poBasePath}?count=1&after=`, config)
+        } catch {
+          poBasePath = '/purchaseOrders'
+          await inflowFetch(`${poBasePath}?count=1&after=`, config)
         }
-      }
+      } else { throw apiErr }
+    }
 
-      const orders: any[] = Array.isArray(poList) ? poList : (poList.data || [])
-      if (orders.length === 0) break
-
-      // Log first-page shape for debugging
-      if (page === 1 && orders.length > 0) {
+    let firstBatchLogged = false
+    for await (const orders of paginateAfter<any>(poBasePath, config, { idKey: 'purchaseOrderId' })) {
+      if (!firstBatchLogged && orders.length > 0) {
         logger.info('inflow_po_sync_shape', { keys: Object.keys(orders[0]), sample: JSON.stringify(orders[0]).substring(0, 500) })
+        firstBatchLogged = true
       }
 
       for (const ifPO of orders) {
@@ -854,9 +885,7 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
           logger.error('inflow_po_sync_failed', err, { poRef: ifPO.orderNumber || ifPO.purchaseOrderNumber || ifPO.id || 'unknown' })
         }
       }
-
-      page++
-      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+      // paginateAfter handles cursor advance + rate-limit delay
     }
 
     const completedAt = new Date()
@@ -1011,37 +1040,32 @@ export async function syncSalesOrders(): Promise<SyncResult> {
       logger.info('inflow_so_sync_full_backload', { linkedCount: inflowOrderCount[0]?.count })
     }
 
-    let page = 1
-    // Safety cap: 25 pages to stay within Vercel timeout
-    const MAX_PAGES = 25
-
-    while (page <= MAX_PAGES) {
-      let soList: any
-      try {
-        soList = await inflowFetch(`/sales-orders?page=${page}&pageSize=100${modifiedSince}`, config)
-      } catch (apiErr: any) {
-        // Try alternate endpoint paths
-        if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
-          try {
-            soList = await inflowFetch(`/salesorders?page=${page}&pageSize=100${modifiedSince}`, config)
-          } catch {
-            try {
-              soList = await inflowFetch(`/salesOrders?page=${page}&pageSize=100${modifiedSince}`, config)
-            } catch {
-              throw new Error(`InFlow SO endpoint not found — tried /sales-orders, /salesorders, /salesOrders. Last error: ${apiErr.message}`)
-            }
-          }
-        } else {
-          throw apiErr
+    // Detect endpoint path on first call (InFlow accepts any of three casings).
+    let soBasePath = '/sales-orders'
+    try {
+      await inflowFetch(`${soBasePath}?count=1&after=`, config)
+    } catch (apiErr: any) {
+      if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
+        try {
+          soBasePath = '/salesorders'
+          await inflowFetch(`${soBasePath}?count=1&after=`, config)
+        } catch {
+          soBasePath = '/salesOrders'
+          await inflowFetch(`${soBasePath}?count=1&after=`, config)
         }
-      }
+      } else { throw apiErr }
+    }
 
-      const orders: any[] = Array.isArray(soList) ? soList : (soList.data || [])
-      if (orders.length === 0) break
+    // modifiedSince is appended into basePath so paginateAfter inherits it
+    const basePathWithFilter = modifiedSince
+      ? `${soBasePath}?${modifiedSince.replace(/^&/, '')}`
+      : soBasePath
 
-      // Log first-page shape for debugging
-      if (page === 1 && orders.length > 0) {
+    let firstBatchLogged = false
+    for await (const orders of paginateAfter<any>(basePathWithFilter, config, { idKey: 'salesOrderId' })) {
+      if (!firstBatchLogged && orders.length > 0) {
         logger.info('inflow_so_sync_shape', { keys: Object.keys(orders[0]), sample: JSON.stringify(orders[0]).substring(0, 500) })
+        firstBatchLogged = true
       }
 
       for (const ifSO of orders) {
@@ -1170,9 +1194,7 @@ export async function syncSalesOrders(): Promise<SyncResult> {
           logger.error('inflow_so_sync_failed', err, { soRef: ifSO.orderNumber || ifSO.salesOrderNumber || ifSO.id || 'unknown' })
         }
       }
-
-      page++
-      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+      // paginateAfter handles cursor advance + rate-limit delay
     }
 
     const completedAt = new Date()
@@ -1422,33 +1444,22 @@ export async function syncVendors(): Promise<SyncResult> {
   const errors: string[] = []
 
   try {
-    let page = 1
-    // ~80 vendors observed in production. 50 pages × 100 = 5,000 cap is generous.
-    const MAX_PAGES = 50
+    // Detect endpoint path on first call.
+    let vendorBasePath = '/vendors'
+    try {
+      await inflowFetch(`${vendorBasePath}?count=1&after=`, config)
+    } catch (apiErr: any) {
+      if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
+        vendorBasePath = '/suppliers'
+        await inflowFetch(`${vendorBasePath}?count=1&after=`, config)
+      } else { throw apiErr }
+    }
 
-    while (page <= MAX_PAGES) {
-      let vendorList: any
-      try {
-        vendorList = await inflowFetch(`/vendors?page=${page}&pageSize=100`, config)
-      } catch (apiErr: any) {
-        // Try alternate endpoint paths if the canonical one 404s
-        if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
-          try {
-            vendorList = await inflowFetch(`/suppliers?page=${page}&pageSize=100`, config)
-          } catch {
-            throw new Error(`InFlow vendor endpoint not found — tried /vendors, /suppliers. Last error: ${apiErr.message}`)
-          }
-        } else {
-          throw apiErr
-        }
-      }
-
-      const vendors: InflowVendor[] = Array.isArray(vendorList) ? vendorList : (vendorList.data || [])
-      if (vendors.length === 0) break
-
-      // Log first-page shape for debugging field-name discovery
-      if (page === 1 && vendors.length > 0) {
+    let firstBatchLogged = false
+    for await (const vendors of paginateAfter<InflowVendor>(vendorBasePath, config, { idKey: 'vendorId' })) {
+      if (!firstBatchLogged && vendors.length > 0) {
         logger.info('inflow_vendor_sync_shape', { keys: Object.keys(vendors[0]), sample: JSON.stringify(vendors[0]).substring(0, 500) })
+        firstBatchLogged = true
       }
 
       for (const ifVendor of vendors) {
@@ -1554,9 +1565,7 @@ export async function syncVendors(): Promise<SyncResult> {
           logger.error('inflow_vendor_sync_failed', err, { ref })
         }
       }
-
-      page++
-      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+      // paginateAfter handles cursor advance + rate-limit delay
     }
 
     const completedAt = new Date()
