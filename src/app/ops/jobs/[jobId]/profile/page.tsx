@@ -188,8 +188,12 @@ export default function JobProfilePage() {
         </div>
       </div>
 
-      {/* ── Tab Bar ────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
+      {/* ── Tab Bar ──────────────────────────────────────────────────────
+          BUG-12 (2026-05-06): bumped z-index from z-10 to z-30 so the
+          sticky bar always paints over tab content (page chrome elsewhere
+          uses z-10/z-20). Solid bg + isolate makes sure scroll under the
+          bar doesn't bleed through. */}
+      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-30 isolate">
         <div className="px-6 flex items-center gap-0 overflow-x-auto">
           {TABS.map((tab) => (
             <button
@@ -216,8 +220,10 @@ export default function JobProfilePage() {
         </div>
       </div>
 
-      {/* ── Tab Content ────────────────────────────────────────────────── */}
-      <div className="p-6">
+      {/* ── Tab Content ──────────────────────────────────────────────────
+          Each tab is mounted only when active so unrelated tab contents
+          can never visually overlap (BUG-12 defensive measure). */}
+      <div className="p-6 relative z-0">
         {activeTab === 'overview' && <OverviewTab job={job} builder={builder} community={community} phaseSummary={phaseSummary} invoices={invoices} setActiveTab={setActiveTab} />}
         {activeTab === 'phases' && <PhasesTab phases={job.phases || []} phaseSummary={phaseSummary} jobId={jobId} />}
         {activeTab === 'deliveries' && <DeliveriesTab deliveries={job.deliveries || []} />}

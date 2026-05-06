@@ -31,7 +31,10 @@ export async function GET(
       return NextResponse.json({ error: 'Builder not found' }, { status: 404 })
     }
 
-    // Get activities for this builder with raw SQL
+    // Get activities for this builder with raw SQL.
+    // NOTE: the Activity Prisma model has no "updatedAt" column — only
+    // "createdAt". Selecting "updatedAt" raises a 500. Fixed 2026-05-06
+    // (BUG-19).
     const activities = await prisma.$queryRawUnsafe<any[]>(
       `
       SELECT
@@ -46,7 +49,6 @@ export async function GET(
         a."completedAt",
         a."durationMins",
         a."createdAt",
-        a."updatedAt",
         s.id as "staff.id",
         s."firstName" as "staff.firstName",
         s."lastName" as "staff.lastName"
@@ -86,7 +88,6 @@ export async function GET(
       completedAt: row.completedAt,
       durationMins: row.durationMins,
       createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
       staff: row['staff.id']
         ? {
             id: row['staff.id'],
@@ -220,7 +221,10 @@ export async function POST(
     const activityId = `act_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 9)}`
     const now = new Date()
 
-    // Create activity with raw SQL
+    // Create activity with raw SQL.
+    // NOTE: the Activity model only stores "createdAt" — no "updatedAt".
+    // Including the column in the INSERT yielded a 500 (BUG-19, fixed
+    // 2026-05-06).
     await prisma.$executeRawUnsafe(
       `
       INSERT INTO "Activity" (
@@ -234,10 +238,9 @@ export async function POST(
         "scheduledAt",
         "completedAt",
         "durationMins",
-        "createdAt",
-        "updatedAt"
+        "createdAt"
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `,
       activityId,
       id,
@@ -249,11 +252,11 @@ export async function POST(
       scheduledAt ? new Date(scheduledAt) : null,
       completedAt ? new Date(completedAt) : null,
       durationMins || null,
-      now,
       now
     )
 
-    // Fetch the created activity with staff details
+    // Fetch the created activity with staff details.
+    // NOTE: no "updatedAt" — see schema (BUG-19, fixed 2026-05-06).
     const activityResult = await prisma.$queryRawUnsafe<any[]>(
       `
       SELECT
@@ -268,7 +271,6 @@ export async function POST(
         a."completedAt",
         a."durationMins",
         a."createdAt",
-        a."updatedAt",
         s.id as "staff.id",
         s."firstName" as "staff.firstName",
         s."lastName" as "staff.lastName"
@@ -292,7 +294,6 @@ export async function POST(
           completedAt: activityResult[0].completedAt,
           durationMins: activityResult[0].durationMins,
           createdAt: activityResult[0].createdAt,
-          updatedAt: activityResult[0].updatedAt,
           staff: {
             id: activityResult[0]['staff.id'],
             firstName: activityResult[0]['staff.firstName'],
