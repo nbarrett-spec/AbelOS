@@ -69,8 +69,14 @@ export default function NotFound() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start">
+            {/* BUG-10 fix from AEGIS-BUGFIX-HANDOFF: primary action is /ops
+                (staff dashboard). Previously /dashboard was primary, which
+                routes to the BUILDER portal — staff users would hit the
+                builder middleware, fail the cookie check, and get logged
+                out. Both routes still offered; staff users almost always
+                land here so /ops is the correct default. */}
             <Link
-              href="/dashboard"
+              href="/ops"
               className="inline-flex items-center justify-center h-10 px-5 rounded-md font-semibold text-[13px]"
               style={{
                 background: 'linear-gradient(3deg, #c6a24e, #a88a3a)',
@@ -78,17 +84,17 @@ export default function NotFound() {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.3), 0 0 16px rgba(198,162,78,0.12)',
               }}
             >
-              Back to dashboard
+              Ops dashboard
             </Link>
             <Link
-              href="/ops"
+              href="/dashboard"
               className="inline-flex items-center justify-center h-10 px-5 rounded-md font-medium text-[13px]"
               style={{
                 border: '1px solid rgba(198,162,78,0.25)',
                 color: '#f5f1e8',
               }}
             >
-              Ops portal
+              Builder portal
             </Link>
           </div>
 
