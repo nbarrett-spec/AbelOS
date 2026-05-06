@@ -50,9 +50,19 @@ const opsPublicRoutes = ['/ops/login', '/ops/forgot-password', '/ops/reset-passw
  * @deprecated Most headers are now set via next.config.js headers() function
  * Kept here for additional middleware-level security headers
  */
-function addSecurityHeaders(response: NextResponse, requestId?: string): NextResponse {
+function addSecurityHeaders(
+  response: NextResponse,
+  requestId?: string,
+  pathname?: string,
+): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('X-Frame-Options', 'DENY')
+  // Document vault download/preview endpoint needs SAMEORIGIN framing so
+  // the in-app PDF preview iframe in <DocumentAttachments> can render. Every
+  // other route stays at DENY. The endpoint itself is auth-gated by
+  // checkStaffAuth() so loosening the frame policy here is scoped + safe.
+  const isDocVault =
+    pathname?.startsWith('/api/ops/documents/vault/') ?? false
+  response.headers.set('X-Frame-Options', isDocVault ? 'SAMEORIGIN' : 'DENY')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
@@ -71,7 +81,10 @@ function addSecurityHeaders(response: NextResponse, requestId?: string): NextRes
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://*.upstash.io wss: https:",
-      "frame-ancestors 'none'",
+      // Mirror the X-Frame-Options decision in CSP — modern browsers
+      // honor frame-ancestors in preference to X-Frame-Options. Letting
+      // the document vault frame itself preserves the preview UX.
+      isDocVault ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
     ].join('; '),
   )
   if (requestId) {
@@ -440,7 +453,8 @@ export async function middleware(request: NextRequest) {
 
       return addSecurityHeaders(
         NextResponse.next({ request: { headers: requestHeaders } }),
-        requestId
+        requestId,
+        pathname,
       )
     } catch {
       logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
@@ -546,7 +560,8 @@ export async function middleware(request: NextRequest) {
 
       return addSecurityHeaders(
         NextResponse.next({ request: { headers: requestHeaders } }),
-        requestId
+        requestId,
+        pathname,
       )
     } catch {
       logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
@@ -606,6 +621,7 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
       requestId,
+      pathname,
     )
   }
 
@@ -637,7 +653,8 @@ export async function middleware(request: NextRequest) {
 
         return addSecurityHeaders(
           NextResponse.next({ request: { headers: requestHeaders } }),
-          requestId
+          requestId,
+          pathname,
         )
       }
       logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
@@ -679,7 +696,8 @@ export async function middleware(request: NextRequest) {
 
       return addSecurityHeaders(
         NextResponse.next({ request: { headers: requestHeaders } }),
-        requestId
+        requestId,
+        pathname,
       )
     } catch {
       logSecurityEventFromEdge(request, requestId, 'AUTH_FAIL', {
@@ -716,7 +734,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Add security headers and request ID to all matched responses
-  const finalResponse = addSecurityHeaders(NextResponse.next(), requestId)
+  const finalResponse = addSecurityHeaders(NextResponse.next(), requestId, pathname)
   return addRequestIdToResponse(finalResponse, requestId)
 }
 

@@ -131,7 +131,13 @@ export interface DocumentAttachmentsProps {
   allowedCategories?: readonly string[]
   /** Soft cap on # of files in a single drop. Default 10. */
   maxFiles?: number
-  /** Soft cap on file size in MB. Server enforces 25; we surface earlier. */
+  /**
+   * Soft cap on file size in MB. Default 4 — Vercel's serverless function
+   * body limit is ~4.5MB. The server enforces 25MB, but anything between
+   * 4.5MB and 25MB will fail with a cryptic platform-level 413 before our
+   * route handler ever runs. Surfacing the platform limit here gives
+   * users an actionable error instead of "Upload failed".
+   */
   maxSizeMB?: number
   /** Called after a successful upload — useful for parent re-renders */
   onChange?: () => void
@@ -245,7 +251,12 @@ export default function DocumentAttachments({
   defaultCategory = 'GENERAL',
   allowedCategories,
   maxFiles = 10,
-  maxSizeMB = 25,
+  // 4 MB is just under the Vercel serverless body cap of 4.5 MB. The server
+  // accepts up to 25 MB at the application layer, but Vercel rejects the
+  // request before it reaches the route handler if the body is over 4.5 MB
+  // — so the client side has to refuse first or the user sees a platform
+  // 413 with no actionable hint.
+  maxSizeMB = 4,
   onChange,
   title = 'Documents',
   className,
@@ -353,6 +364,19 @@ export default function DocumentAttachments({
 
           const res = await fetch('/api/ops/documents/vault', { method: 'POST', body: fd })
           if (!res.ok) {
+            // Vercel returns a 413 with an HTML body when the request body
+            // exceeds the platform's 4.5MB cap — JSON parse fails. Translate
+            // it into something actionable instead of "HTTP 413".
+            if (res.status === 413) {
+              throw new Error(
+                `File too large for upload pipeline (${formatBytes(f.size)}). Try a smaller file or compress it.`,
+              )
+            }
+            // Auth bounce — most common cause of "uploads silently fail"
+            // for sessions that quietly expired.
+            if (res.status === 401 || res.status === 403) {
+              throw new Error('Session expired — sign in again and retry.')
+            }
             const body = await res.json().catch(() => ({}))
             throw new Error(body.error || `HTTP ${res.status}`)
           }
@@ -361,6 +385,17 @@ export default function DocumentAttachments({
             setUploads((prev) =>
               prev.map((u) =>
                 u.key === key ? { ...u, status: 'error', error: data.errors[0] } : u,
+              ),
+            )
+          } else if (!data.uploaded?.length) {
+            // Server returned 200 but no docs landed — happens when MIME
+            // pre-check rejects every file silently. Make sure the user
+            // sees something rather than a row that just sits in 'uploading'.
+            setUploads((prev) =>
+              prev.map((u) =>
+                u.key === key
+                  ? { ...u, status: 'error', error: 'Server accepted no files (file type rejected?)' }
+                  : u,
               ),
             )
           } else {
@@ -563,15 +598,29 @@ export default function DocumentAttachments({
         </div>
       )}
 
+      {/* Banner-level error — shown ABOVE the doc list rather than instead of
+          it. Prior behavior swallowed the entire list whenever a non-fatal
+          error landed (delete failure, category update conflict, etc.),
+          which made it look like every document vanished. */}
+      {error && (
+        <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-md bg-data-negative-bg text-xs text-data-negative">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span className="flex-1">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-data-negative hover:opacity-70"
+            aria-label="Dismiss error"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Existing docs */}
       <div className="mt-3">
         {loading ? (
           <div className="text-xs text-fg-muted px-3 py-4">Loading…</div>
-        ) : error ? (
-          <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-data-negative-bg text-xs text-data-negative">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
         ) : docs.length === 0 ? (
           <div className="text-xs text-fg-subtle px-3 py-4 text-center italic">
             No documents attached yet.
@@ -583,6 +632,12 @@ export default function DocumentAttachments({
               const Icon = fileIcon(kind)
               const previewable = kind === 'image' || kind === 'pdf'
               const isImage = kind === 'image'
+              // Two response modes from the same endpoint:
+              //   download = Content-Disposition: attachment (file download)
+              //   inline   = Content-Disposition: inline (renders in <img>/<iframe>)
+              // Using `inline` for thumbnails and previews so the browser
+              // renders the bytes instead of triggering a save dialog.
+              const inlineHref = `/api/ops/documents/vault/${d.id}?mode=inline`
               const downloadHref = `/api/ops/documents/vault/${d.id}?mode=download`
               return (
                 <div
@@ -598,7 +653,7 @@ export default function DocumentAttachments({
                       title="Preview"
                     >
                       <img
-                        src={downloadHref}
+                        src={inlineHref}
                         alt={d.fileName}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -630,12 +685,16 @@ export default function DocumentAttachments({
                     </a>
                   )}
 
-                  {/* Category — click to edit */}
+                  {/* Category — click to edit. We commit on `change` only;
+                      `blur` cancels the edit without re-firing the API
+                      call. Prior code fired both, occasionally racing the
+                      reload() and either flickering the value back or
+                      surfacing duplicate audit rows. */}
                   {editingCategoryId === d.id ? (
                     <select
                       autoFocus
                       defaultValue={d.category}
-                      onBlur={(e) => handleUpdateCategory(d, e.target.value)}
+                      onBlur={() => setEditingCategoryId(null)}
                       onChange={(e) => handleUpdateCategory(d, e.target.value)}
                       className="input input-sm text-[11px] py-0.5"
                     >
@@ -688,7 +747,7 @@ export default function DocumentAttachments({
                   )}
                   <a
                     href={downloadHref}
-                    target="_blank"
+                    download={d.fileName}
                     rel="noopener noreferrer"
                     className="text-fg-subtle hover:text-fg p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Download"
@@ -737,7 +796,7 @@ export default function DocumentAttachments({
               </div>
               <a
                 href={`/api/ops/documents/vault/${previewDoc.id}?mode=download`}
-                target="_blank"
+                download={previewDoc.fileName}
                 rel="noopener noreferrer"
                 className="text-xs text-fg-muted hover:text-brand px-3 py-1.5 mr-2"
                 title="Download"
@@ -756,13 +815,13 @@ export default function DocumentAttachments({
             <div className="flex-1 min-h-0 overflow-auto bg-surface-muted">
               {fileKind(previewDoc.mimeType, previewDoc.fileType) === 'image' ? (
                 <img
-                  src={`/api/ops/documents/vault/${previewDoc.id}?mode=download`}
+                  src={`/api/ops/documents/vault/${previewDoc.id}?mode=inline`}
                   alt={previewDoc.fileName}
                   className="block mx-auto max-w-full max-h-[80vh] object-contain"
                 />
               ) : (
                 <iframe
-                  src={`/api/ops/documents/vault/${previewDoc.id}?mode=download`}
+                  src={`/api/ops/documents/vault/${previewDoc.id}?mode=inline`}
                   title={previewDoc.fileName}
                   className="w-full h-[80vh] border-0"
                 />

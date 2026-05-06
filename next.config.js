@@ -87,6 +87,27 @@ const nextConfig = {
         headers: baseHeaders,
       },
 
+      // Document vault preview support — allow SAMEORIGIN framing for the
+      // file-streaming endpoint so the in-app PDF preview iframe in
+      // <DocumentAttachments> can render. Without this override, the
+      // global X-Frame-Options: DENY in baseHeaders blocks ALL frames
+      // including same-origin, leaving every PDF preview blank.
+      // Auth on these routes is enforced by checkStaffAuth(), so loosening
+      // the frame policy for ONLY the document download path doesn't
+      // expand exposure.
+      {
+        source: '/api/ops/documents/vault/:id*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          // Override the CSP frame-ancestors for this single endpoint —
+          // the rest of the site keeps frame-ancestors 'none'.
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self'",
+          },
+        ],
+      },
+
       // Cache static assets aggressively (1 year, immutable)
       {
         source: '/_next/static/(.*)',
