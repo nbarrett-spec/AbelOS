@@ -22,7 +22,7 @@
  * termAdjustment + total automatically.
  */
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, AlertTriangle, Search, Plus, Trash2, Package, FileText } from 'lucide-react'
 import { PageHeader, Card } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -63,6 +63,11 @@ interface LineItem {
 
 function NewQuoteForm() {
   const router = useRouter()
+  // BUG-17: when arrived from a builder profile (`?builderId=...`), pre-select
+  // the matching builder once the list has loaded. Skipped if the list lacks
+  // that builder (e.g. status != ACTIVE filter dropped them).
+  const searchParamsHook = useSearchParams()
+  const builderIdParam = searchParamsHook?.get('builderId') || null
 
   const [builders, setBuilders] = useState<Builder[]>([])
   const [builderSearch, setBuilderSearch] = useState('')
@@ -109,6 +114,37 @@ function NewQuoteForm() {
       cancelled = true
     }
   }, [])
+
+  // ────── BUG-17: pre-select builder from ?builderId= on first match ──────
+  useEffect(() => {
+    if (!builderIdParam || selectedBuilder) return
+    const match = builders.find((b) => b.id === builderIdParam)
+    if (match) {
+      setSelectedBuilder(match)
+      return
+    }
+    // Builder may be missing from the active list (PENDING/SUSPENDED) — pull
+    // it directly so the form can still pre-fill. Best-effort.
+    let cancelled = false
+    fetch(`/api/admin/builders/${builderIdParam}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        const b = d?.builder
+        if (b?.id) {
+          setSelectedBuilder({
+            id: b.id,
+            companyName: b.companyName,
+            paymentTerm: b.paymentTerm,
+            status: b.status,
+          })
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [builderIdParam, builders, selectedBuilder])
 
   // ────── Load projects when builder selected ──────
   useEffect(() => {

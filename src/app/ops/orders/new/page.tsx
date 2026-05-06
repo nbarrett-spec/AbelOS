@@ -16,9 +16,9 @@
  * POST endpoint would be needed; the current API explicitly rejects that.
  */
 import { useState, useEffect, useMemo, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, AlertTriangle, Search, FileText, ArrowRight } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, AlertTriangle, Search, FileText, ArrowRight, X } from 'lucide-react'
 import { PageHeader, Card } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -51,6 +51,12 @@ interface QuoteRow {
 
 function NewOrderForm() {
   const router = useRouter()
+  // BUG-16: when arrived from a builder profile we filter the quote list to
+  // that builder's APPROVED quotes only, and surface a chip so the user knows
+  // they're scoped. We also try to resolve the builder name for display.
+  const searchParamsHook = useSearchParams()
+  const builderIdParam = searchParamsHook?.get('builderId') || null
+  const [builderName, setBuilderName] = useState<string | null>(null)
 
   const [quotes, setQuotes] = useState<QuoteRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,9 +91,19 @@ function NewOrderForm() {
   }, [])
 
   const filtered = useMemo(() => {
+    let list = quotes
+    // BUG-16: scope to one builder when ?builderId is present. Match either
+    // top-level builder or project.builder — older quotes may only have one.
+    if (builderIdParam) {
+      list = list.filter(
+        (x) =>
+          x.builder?.id === builderIdParam ||
+          x.project?.builder?.id === builderIdParam,
+      )
+    }
     const q = search.trim().toLowerCase()
-    if (!q) return quotes
-    return quotes.filter((x) => {
+    if (!q) return list
+    return list.filter((x) => {
       const builder = x.builder?.companyName || x.project?.builder?.companyName || ''
       const project = x.project?.name || ''
       return (
@@ -96,7 +112,27 @@ function NewOrderForm() {
         project.toLowerCase().includes(q)
       )
     })
-  }, [quotes, search])
+  }, [quotes, search, builderIdParam])
+
+  // Resolve builder name for the chip + auto-select if there's exactly one
+  // approved quote available for this builder.
+  useEffect(() => {
+    if (!builderIdParam) {
+      setBuilderName(null)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/admin/builders/${builderIdParam}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        setBuilderName(d?.builder?.companyName || null)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [builderIdParam])
 
   const selectQuote = async (q: QuoteRow) => {
     setSelected(q)
@@ -182,6 +218,27 @@ function NewOrderForm() {
         <div className="flex items-start gap-2 panel border-l-2 border-l-data-negative p-3">
           <AlertTriangle className="w-4 h-4 text-data-negative shrink-0 mt-0.5" />
           <div className="text-sm text-fg">{error}</div>
+        </div>
+      )}
+
+      {/* BUG-16: chip when arrived from a builder profile */}
+      {builderIdParam && (
+        <div className="flex items-center gap-2 bg-signal/5 border border-signal/30 rounded-lg px-3 py-2 text-sm">
+          <span className="text-fg-muted">Filtered by:</span>
+          <span className="font-medium text-fg">
+            {builderName || `Builder ${builderIdParam.slice(0, 8)}`}
+          </span>
+          <span className="text-xs text-fg-subtle">
+            ({filtered.length} approved {filtered.length === 1 ? 'quote' : 'quotes'})
+          </span>
+          <button
+            type="button"
+            onClick={() => router.push('/ops/orders/new')}
+            className="ml-auto inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg"
+            aria-label="Clear builder filter"
+          >
+            <X className="w-3 h-3" /> Clear filter
+          </button>
         </div>
       )}
 

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const assignedPMId = searchParams.get('assignedPMId');
     const builderName = searchParams.get('builderName');
+    const builderId = searchParams.get('builderId');
     const community = searchParams.get('community');
     const scheduledDateFrom = searchParams.get('scheduledDateFrom');
     const scheduledDateTo = searchParams.get('scheduledDateTo');
@@ -56,6 +57,19 @@ export async function GET(request: NextRequest) {
     if (builderName) {
       whereConditions.push(`j."builderName" ILIKE $${paramIndex}`);
       params.push(`%${builderName}%`);
+      paramIndex++;
+    }
+
+    // builderId — link via Order.builderId (Job.orderId → Order). Job has no
+    // direct Builder FK, but it does carry the denormalized builderName, so
+    // we OR the companyName ILIKE match to catch jobs created without an
+    // order linked yet (the same pattern /admin/builders/[id] uses).
+    if (builderId) {
+      whereConditions.push(
+        `(j."orderId" IN (SELECT o."id" FROM "Order" o WHERE o."builderId" = $${paramIndex})
+          OR j."builderName" ILIKE (SELECT b."companyName" FROM "Builder" b WHERE b."id" = $${paramIndex}))`
+      );
+      params.push(builderId);
       paramIndex++;
     }
 
