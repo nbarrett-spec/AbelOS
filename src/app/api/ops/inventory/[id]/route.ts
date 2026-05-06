@@ -130,7 +130,7 @@ export async function GET(
         description: r.description,
         category: r.category,
         subcategory: r.subcategory,
-        manufacturer: r.manufacturer,
+        // manufacturer column doesn't exist on Product model — removed 2026-05-06
         cost: r.cost == null ? null : Number(r.cost),
         basePrice: r.basePrice == null ? null : Number(r.basePrice),
         minMargin: r.minMargin == null ? null : Number(r.minMargin),

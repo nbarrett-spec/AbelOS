@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       const csvRows: any[] = await prisma.$queryRawUnsafe(`
         SELECT
-          p."sku", p."name", p."category", p."subcategory", p."manufacturer",
+          p."sku", p."name", p."category", p."subcategory",
           p."basePrice", p."cost", p."leadTimeDays",
           COALESCE(i."onHand",0)        AS "onHand",
           COALESCE(i."committed",0)     AS "committed",
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         name: r.name ?? '',
         category: r.category ?? '',
         subcategory: r.subcategory ?? '',
-        manufacturer: r.manufacturer ?? '',
+        // manufacturer column doesn't exist on Product model — removed 2026-05-06
         onHand: num(r.onHand),
         committed: num(r.committed),
         available: num(r.available),
@@ -150,7 +150,6 @@ export async function GET(request: NextRequest) {
         { key: 'name', label: 'Name' },
         { key: 'category', label: 'Category' },
         { key: 'subcategory', label: 'Subcategory' },
-        { key: 'manufacturer', label: 'Manufacturer' },
         { key: 'onHand', label: 'On Hand' },
         { key: 'committed', label: 'Committed' },
         { key: 'available', label: 'Available' },
@@ -184,7 +183,7 @@ export async function GET(request: NextRequest) {
     const rows: any[] = await prisma.$queryRawUnsafe(`
       SELECT
         p."id", p."sku", p."name", p."displayName", p."category", p."subcategory",
-        p."manufacturer", p."basePrice", p."cost", p."imageUrl", p."thumbnailUrl",
+        p."basePrice", p."cost", p."imageUrl", p."thumbnailUrl",
         p."leadTimeDays", p."active", p."inStock",
         COALESCE(i."onHand",0)        AS "onHand",
         COALESCE(i."committed",0)     AS "committed",

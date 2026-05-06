@@ -87,7 +87,10 @@ export default function AnalyticsDashboard() {
       } else if (report === 'win_loss') {
         setWinLossData(data)
       } else if (report === 'rep_scorecard') {
-        setScorecards(data.scorecards || data || [])
+        // API returns { repMetrics: [...] } (route.ts:376) — old code looked
+        // for `data.scorecards` which doesn't exist, then fell through to the
+        // wrapper object itself, which `.map()` would throw on. 2026-05-06.
+        setScorecards(Array.isArray(data) ? data : (data.repMetrics || data.scorecards || []))
       } else if (report === 'velocity') {
         setVelocityData(data)
       }

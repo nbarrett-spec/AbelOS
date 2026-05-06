@@ -81,15 +81,19 @@ export async function GET(request: NextRequest) {
           : null
 
         // Count unread messages for this staff member
+        // Postgres text[] @> requires a text[] right operand. JSON.stringify
+        // produces a JSON string ('["abc"]') which Postgres can't cast to
+        // text[]; use ARRAY[$2]::text[] to build the array server-side from
+        // a plain string param. Tripped a 500 in prod 2026-05-06 (BUG-11).
         const unreadCountResult = await prisma.$queryRawUnsafe<any[]>(
           `
           SELECT COUNT(*)::int as count
           FROM "Message"
           WHERE "conversationId" = $1
-          AND NOT ("readBy" @> $2)
+          AND NOT ("readBy" @> ARRAY[$2]::text[])
           `,
           conversation.id,
-          JSON.stringify([staffId])
+          staffId
         )
 
         const unreadCount = unreadCountResult[0]?.count || 0

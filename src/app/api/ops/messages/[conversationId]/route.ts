@@ -79,20 +79,24 @@ export async function GET(
       take
     )
 
-    // Mark messages as read for this staff member
+    // Mark messages as read for this staff member.
+    // Message.readBy is text[] (Prisma `String[]`). Earlier code cast $2::jsonb
+    // which doesn't compose with text[] operators; fixed 2026-05-06 (BUG-11
+    // sibling) by passing staffId as a plain string and building the array
+    // server-side via ARRAY[$2]::text[].
     await prisma.$executeRawUnsafe(
       `
       UPDATE "Message"
       SET "readBy" = (
         CASE
-          WHEN "readBy" @> $2::jsonb THEN "readBy"
-          ELSE "readBy" || $2::jsonb
+          WHEN "readBy" @> ARRAY[$2]::text[] THEN "readBy"
+          ELSE array_append("readBy", $2)
         END
       )
-      WHERE "conversationId" = $1 AND NOT ("readBy" @> $2::jsonb)
+      WHERE "conversationId" = $1 AND NOT ("readBy" @> ARRAY[$2]::text[])
       `,
       conversationId,
-      JSON.stringify([staffId])
+      staffId
     )
 
     // Update lastReadAt for the participant
