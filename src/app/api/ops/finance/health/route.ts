@@ -16,35 +16,101 @@ export async function GET(request: NextRequest) {
   const canSeeSensitiveFinance = userRoles.some(r => SENSITIVE_FINANCE_ROLES.includes(r))
 
   try {
-    const orders = await prisma.$queryRawUnsafe<Array<{ builderId: string; total: number; createdAt: Date }>>(
-      `SELECT "builderId", total, "createdAt" FROM "Order"`
-    )
-
-    const invoices = await prisma.$queryRawUnsafe<Array<{ builderId: string; total: number; amountPaid: number; status: string; dueDate: Date | null; issuedAt: Date | null; createdAt: Date }>>(
-      `SELECT "builderId", total, "amountPaid", status, "dueDate", "issuedAt", "createdAt" FROM "Invoice"`
-    )
-
-    const purchaseOrders = await prisma.$queryRawUnsafe<Array<{ total: number; status: string; expectedDate: Date | null }>>(
-      `SELECT "total", status, "expectedDate" FROM "PurchaseOrder"`
-    )
-
-    const products = await prisma.$queryRawUnsafe<Array<{ cost: number; basePrice: number }>>(
-      `SELECT cost, "basePrice" FROM "Product"`
-    )
-
-    const builders = await prisma.$queryRawUnsafe<Array<{ id: string; companyName: string; creditLimit: number | null }>>(
-      `SELECT id, "companyName", "creditLimit" FROM "Builder"`
-    )
-    const builderMap: Record<string, any> = {}
-    builders.forEach((b) => {
-      builderMap[b.id] = b
-    })
-
-    const jobs = await prisma.$queryRawUnsafe<Array<{ scopeType: string; orderId: string }>>(
-      `SELECT "scopeType", "orderId" FROM "Job"`
-    )
-
     const now = new Date()
+    // Cash-flow horizons (days out from now) — used in the SQL aggregation
+    // below to bucket inflows/outflows without fetching every Invoice/PO row.
+    const horizonMs = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
+    const horizon30 = horizonMs(30)
+    const horizon60 = horizonMs(60)
+    const horizon90 = horizonMs(90)
+
+    // ── Order totals (count + revenue) — one round-trip ──
+    const orderAggResult: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS count, COALESCE(SUM(total), 0)::float AS "totalRevenue"
+       FROM "Order"`
+    )
+    const ordersTotalRevenue = Number(orderAggResult[0]?.totalRevenue || 0)
+    const totalOrderCount = orderAggResult[0]?.count || 0
+
+    // ── Invoice rollup: total billed, total collected, total outstanding ──
+    const invoiceAggResult: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         COALESCE(SUM(total), 0)::float                           AS "totalInvoiced",
+         COALESCE(SUM("amountPaid"), 0)::float                    AS "totalCollected",
+         COALESCE(SUM(total - "amountPaid"), 0)::float            AS "totalOutstanding"
+       FROM "Invoice"`
+    )
+    const totalInvoiced = Number(invoiceAggResult[0]?.totalInvoiced || 0)
+    const totalCollected = Number(invoiceAggResult[0]?.totalCollected || 0)
+    const totalOutstanding = Number(invoiceAggResult[0]?.totalOutstanding || 0)
+
+    // ── PO rollup: total count + count of RECEIVED (used for vendor timeliness) ──
+    const poAggResult: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         COUNT(*)::int                                                   AS "totalPOs",
+         COUNT(*) FILTER (WHERE status::text = 'RECEIVED')::int          AS "receivedPOs"
+       FROM "PurchaseOrder"`
+    )
+    const totalPOs = poAggResult[0]?.totalPOs || 0
+    const paidOnTimePOs = poAggResult[0]?.receivedPOs || 0
+
+    // ── Cash-flow buckets — single query computes 30/60/90 inflows/outflows ──
+    const cashFlowResult: any[] = await prisma.$queryRawUnsafe(
+      `WITH inflows AS (
+        SELECT
+          COALESCE(SUM(CASE WHEN COALESCE("dueDate", "createdAt" + INTERVAL '30 days') > $1
+                            AND COALESCE("dueDate", "createdAt" + INTERVAL '30 days') <= $2
+                       THEN total - "amountPaid" ELSE 0 END), 0)::float AS "in30",
+          COALESCE(SUM(CASE WHEN COALESCE("dueDate", "createdAt" + INTERVAL '30 days') > $1
+                            AND COALESCE("dueDate", "createdAt" + INTERVAL '30 days') <= $3
+                       THEN total - "amountPaid" ELSE 0 END), 0)::float AS "in60",
+          COALESCE(SUM(CASE WHEN COALESCE("dueDate", "createdAt" + INTERVAL '30 days') > $1
+                            AND COALESCE("dueDate", "createdAt" + INTERVAL '30 days') <= $4
+                       THEN total - "amountPaid" ELSE 0 END), 0)::float AS "in90"
+        FROM "Invoice"
+        WHERE status::text != 'PAID'
+      ),
+      outflows AS (
+        SELECT
+          COALESCE(SUM(CASE WHEN COALESCE("expectedDate", $1) <= $2 THEN total ELSE 0 END), 0)::float AS "out30",
+          COALESCE(SUM(CASE WHEN COALESCE("expectedDate", $1) <= $3 THEN total ELSE 0 END), 0)::float AS "out60",
+          COALESCE(SUM(CASE WHEN COALESCE("expectedDate", $1) <= $4 THEN total ELSE 0 END), 0)::float AS "out90"
+        FROM "PurchaseOrder"
+        WHERE status::text != 'RECEIVED'
+      )
+      SELECT i."in30", i."in60", i."in90", o."out30", o."out60", o."out90"
+        FROM inflows i, outflows o`,
+      now, horizon30, horizon60, horizon90
+    )
+    const cf = cashFlowResult[0] || { in30: 0, in60: 0, in90: 0, out30: 0, out60: 0, out90: 0 }
+
+    // ── Builder health: per-builder billed/paid/balance + credit limit, all DB-side ──
+    const builderHealthRows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         b.id                                              AS "builderId",
+         b."companyName"                                   AS "builderName",
+         COALESCE(b."creditLimit", 50000)::float           AS "creditLimit",
+         COALESCE(SUM(i.total), 0)::float                  AS "totalBilled",
+         COALESCE(SUM(i."amountPaid"), 0)::float           AS "totalPaid"
+       FROM "Builder" b
+       JOIN "Order" o ON o."builderId" = b.id
+       LEFT JOIN "Invoice" i ON i."builderId" = b.id
+       GROUP BY b.id, b."companyName", b."creditLimit"
+       ORDER BY (
+         COALESCE(SUM(i.total), 0) - COALESCE(SUM(i."amountPaid"), 0)
+       ) / GREATEST(COALESCE(b."creditLimit", 50000), 1) DESC`
+    )
+
+    // ── Revenue by job scope — combine Job.scopeType with Order.total via SQL ──
+    const revenueByScopeRows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         j."scopeType"                                  AS "scopeType",
+         COUNT(j.id)::int                               AS "jobCount",
+         COALESCE(SUM(o.total), 0)::float               AS amount
+       FROM "Job" j
+       LEFT JOIN "Order" o ON o.id = j."orderId"
+       GROUP BY j."scopeType"`
+    )
 
     // Calculate gross margin from ACTUAL order line items vs product cost
     let marginData: any[] = []
@@ -63,7 +129,7 @@ export async function GET(request: NextRequest) {
     const grossMarginPercent = totalProductRevenue > 0 ? (totalProductRevenue - totalProductCost) / totalProductRevenue : 0
 
     // Revenue per job — aggregate from ALL sources (Orders + BPW + Hyphen)
-    let totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0)
+    let totalRevenue = ordersTotalRevenue
 
     // Add BPW invoice revenue (Pulte)
     try {
@@ -81,101 +147,44 @@ export async function GET(request: NextRequest) {
       totalRevenue += Number(hypRev[0]?.total || 0)
     } catch { /* HyphenPayment table may not exist yet */ }
 
-    const totalJobs = orders.length || 1
+    const totalJobs = totalOrderCount || 1
     const revenuePerJob = totalRevenue / totalJobs
 
-    // AR Collection rate
-    const totalInvoiced = invoices.reduce((sum, i) => sum + Number(i.total), 0)
-    const totalCollected = invoices.reduce((sum, i) => sum + Number(i.amountPaid), 0)
+    // AR Collection rate (totals come from invoiceAggResult)
     const arCollectionRate = totalInvoiced > 0 ? totalCollected / totalInvoiced : 0
 
     // DSO (Days Sales Outstanding)
-    const totalOutstanding = invoices.reduce((sum, i) => sum + (Number(i.total) - Number(i.amountPaid)), 0)
     const dailyRevenue = totalCollected > 0 ? totalCollected / 365 : 1
     const dso = dailyRevenue > 0 ? totalOutstanding / dailyRevenue : 0
 
-    // Vendor payment timeliness — calculate from actual PO data
-    const totalPOs = purchaseOrders.length
-    const paidOnTimePOs = purchaseOrders.filter(po => po.status === 'RECEIVED').length
+    // Vendor payment timeliness — totals come from poAggResult
     const vendorPaymentTimeliness = totalPOs > 0 ? paidOnTimePOs / totalPOs : 1.0
 
-    // Cash flow projection
-    const upcomingInvoices = invoices.filter((i) => {
-      const dueDate = i.dueDate || new Date(i.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000)
-      return dueDate > now && i.status !== 'PAID'
-    })
-
-    const next30Days = {
-      expectedInflows: upcomingInvoices
-        .filter((i) => {
-          const dueDate = i.dueDate || new Date(i.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000)
-          return dueDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-        })
-        .reduce((sum, i) => sum + (Number(i.total) - Number(i.amountPaid)), 0),
-      expectedOutflows: purchaseOrders
-        .filter((po) => {
-          const expectedDate = po.expectedDate || new Date()
-          return expectedDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) && po.status !== 'RECEIVED'
-        })
-        .reduce((sum, po) => sum + Number(po.total), 0),
-    }
-
-    const next60Days = {
-      expectedInflows: upcomingInvoices
-        .filter((i) => {
-          const dueDate = i.dueDate || new Date(i.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000)
-          return dueDate <= new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000)
-        })
-        .reduce((sum, i) => sum + (Number(i.total) - Number(i.amountPaid)), 0),
-      expectedOutflows: purchaseOrders
-        .filter((po) => {
-          const expectedDate = po.expectedDate || new Date()
-          return expectedDate <= new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000) && po.status !== 'RECEIVED'
-        })
-        .reduce((sum, po) => sum + Number(po.total), 0),
-    }
-
-    const next90Days = {
-      expectedInflows: upcomingInvoices
-        .filter((i) => {
-          const dueDate = i.dueDate || new Date(i.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000)
-          return dueDate <= new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
-        })
-        .reduce((sum, i) => sum + (Number(i.total) - Number(i.amountPaid)), 0),
-      expectedOutflows: purchaseOrders
-        .filter((po) => {
-          const expectedDate = po.expectedDate || new Date()
-          return expectedDate <= new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000) && po.status !== 'RECEIVED'
-        })
-        .reduce((sum, po) => sum + Number(po.total), 0),
-    }
+    // Cash flow projection — values precomputed by cashFlowResult above
+    const next30Days = { expectedInflows: cf.in30, expectedOutflows: cf.out30 }
+    const next60Days = { expectedInflows: cf.in60, expectedOutflows: cf.out60 }
+    const next90Days = { expectedInflows: cf.in90, expectedOutflows: cf.out90 }
 
     next30Days.expectedInflows = next30Days.expectedInflows || next60Days.expectedInflows / 2
     next30Days.expectedOutflows = next30Days.expectedOutflows || next60Days.expectedOutflows / 2
 
-    // Builder health - deduplicate by builderId
-    const builderHealthMap: Record<string, any> = {}
-    orders.forEach((order) => {
-      if (builderHealthMap[order.builderId]) return
-
-      const builderInvoices = invoices.filter((i) => i.builderId === order.builderId)
-      const totalBilled = builderInvoices.reduce((sum, i) => sum + Number(i.total), 0)
-      const totalPaid = builderInvoices.reduce((sum, i) => sum + Number(i.amountPaid), 0)
+    // Builder health — final shaping from DB rows
+    const builderHealth = builderHealthRows.map((row: any) => {
+      const totalBilled = Number(row.totalBilled || 0)
+      const totalPaid = Number(row.totalPaid || 0)
       const balance = totalBilled - totalPaid
-
-      const builderInfo = builderMap[order.builderId]
-      const creditLimit = builderInfo?.creditLimit || 50000
+      const creditLimit = Number(row.creditLimit || 50000)
       const utilization = (balance / creditLimit) * 100
       const paymentHistoryScore = (totalPaid / Math.max(totalBilled, 1)) * 100
 
-      let riskFlag = null
+      let riskFlag: string | null = null
       if (utilization > 80) riskFlag = 'High Balance'
       if (paymentHistoryScore < 70) riskFlag = 'Slow Pay'
       if (utilization > 80 && paymentHistoryScore < 70) riskFlag = 'Critical'
 
-      builderHealthMap[order.builderId] = {
-        builderId: order.builderId,
-        builderName: builderInfo?.companyName || 'Unknown',
+      return {
+        builderId: row.builderId,
+        builderName: row.builderName || 'Unknown',
         creditLimit,
         currentBalance: balance,
         utilizationPercent: utilization,
@@ -184,35 +193,16 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const builderHealth = Object.values(builderHealthMap)
-      .sort((a: any, b: any) => b.utilizationPercent - a.utilizationPercent)
-
-    // Revenue by scope type
-    const jobsByScope: Record<string, any> = {}
-    const orderMap: Record<string, number> = {}
-    orders.forEach((o) => {
-      orderMap[o.builderId] = Number(o.total)
-    })
-
-    jobs.forEach((job) => {
-      if (!jobsByScope[job.scopeType]) {
-        jobsByScope[job.scopeType] = {
-          scopeType: job.scopeType,
-          amount: 0,
-          jobCount: 0,
-        }
-      }
-      jobsByScope[job.scopeType].amount += orderMap[job.orderId] || 0
-      jobsByScope[job.scopeType].jobCount++
-    })
-
-    const totalScopeAmount = Object.values(jobsByScope).reduce((sum: any, s: any) => sum + s.amount, 0)
-    const revenueByScope = Object.values(jobsByScope)
-      .map((s: any) => ({
-        ...s,
-        percent: totalScopeAmount > 0 ? (s.amount / totalScopeAmount) * 100 : 0,
+    // Revenue by scope type — pre-aggregated rows + percent-of-total in JS
+    const totalScopeAmount = revenueByScopeRows.reduce((sum: number, r: any) => sum + Number(r.amount || 0), 0)
+    const revenueByScope = revenueByScopeRows
+      .map((r: any) => ({
+        scopeType: r.scopeType,
+        amount: Number(r.amount || 0),
+        jobCount: r.jobCount || 0,
+        percent: totalScopeAmount > 0 ? (Number(r.amount || 0) / totalScopeAmount) * 100 : 0,
       }))
-      .sort((a: any, b: any) => b.amount - a.amount)
+      .sort((a, b) => b.amount - a.amount)
 
     return NextResponse.json(
       {

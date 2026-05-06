@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { toCsv } from '@/lib/csv'
+import { cached } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -155,78 +156,87 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Fetch products with pagination
-    const products: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        id, sku, name, category, subcategory, "basePrice",
-        "imageUrl", "thumbnailUrl", "imageAlt", "inStock", active, "displayName"
-      FROM "Product"
-      WHERE ${whereClause}
-      ORDER BY "category" ASC, "name" ASC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-      ...params,
-      take,
-      skip
-    )
+    // 120s TTL — product catalog changes far less often than orders/payments.
+    // Cache key includes every filter param so different queries don't collide.
+    // CSV export branch above is intentionally not cached (large payload, low rate).
+    const cacheKey = `ops:products:list:v1:${skip}:${take}:${category || 'none'}:${search || 'none'}:${imageStatus || 'none'}:${priceStatus || 'none'}`
 
-    // Get total count for pagination
-    const totalResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as count FROM "Product" WHERE ${whereClause}`,
-      ...params
-    )
-    const total = totalResult[0]?.count || 0
-
-    // Count products with images
-    const withImagesResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as count FROM "Product"
-       WHERE ${whereClause} AND "imageUrl" IS NOT NULL AND "imageUrl" != ''`,
-      ...params
-    )
-    const withImages = withImagesResult[0]?.count || 0
-
-    // Count products needing images
-    const needingImagesResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as count FROM "Product"
-       WHERE ${whereClause} AND ("imageUrl" IS NULL OR "imageUrl" = '')`,
-      ...params
-    )
-    const needingImages = needingImagesResult[0]?.count || 0
-
-    // Count by category
-    const categoryStats: any[] = await prisma.$queryRawUnsafe(
-      `SELECT
-        "category",
-        COUNT(*)::int as total,
-        SUM(CASE WHEN "imageUrl" IS NOT NULL AND "imageUrl" != '' THEN 1 ELSE 0 END)::int as withImages
-      FROM "Product"
-      WHERE active = true
-      GROUP BY "category"
-      ORDER BY "category" ASC`
-    )
-
-    const byCategory: Record<string, { total: number; withImages: number; needingImages: number }> = {}
-    for (const cat of categoryStats) {
-      byCategory[cat.category] = {
-        total: cat.total,
-        withImages: cat.withImages || 0,
-        needingImages: cat.total - (cat.withImages || 0),
-      }
-    }
-
-    return NextResponse.json({
-      products,
-      pagination: {
-        skip,
+    const payload = await cached(cacheKey, 120, async () => {
+      // Fetch products with pagination
+      const products: any[] = await prisma.$queryRawUnsafe(
+        `SELECT
+          id, sku, name, category, subcategory, "basePrice",
+          "imageUrl", "thumbnailUrl", "imageAlt", "inStock", active, "displayName"
+        FROM "Product"
+        WHERE ${whereClause}
+        ORDER BY "category" ASC, "name" ASC
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        ...params,
         take,
-        total,
-      },
-      stats: {
-        total,
-        withImages,
-        needingImages,
-        byCategory,
-      },
+        skip
+      )
+
+      // Get total count for pagination
+      const totalResult: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM "Product" WHERE ${whereClause}`,
+        ...params
+      )
+      const total = totalResult[0]?.count || 0
+
+      // Count products with images
+      const withImagesResult: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM "Product"
+         WHERE ${whereClause} AND "imageUrl" IS NOT NULL AND "imageUrl" != ''`,
+        ...params
+      )
+      const withImages = withImagesResult[0]?.count || 0
+
+      // Count products needing images
+      const needingImagesResult: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM "Product"
+         WHERE ${whereClause} AND ("imageUrl" IS NULL OR "imageUrl" = '')`,
+        ...params
+      )
+      const needingImages = needingImagesResult[0]?.count || 0
+
+      // Count by category
+      const categoryStats: any[] = await prisma.$queryRawUnsafe(
+        `SELECT
+          "category",
+          COUNT(*)::int as total,
+          SUM(CASE WHEN "imageUrl" IS NOT NULL AND "imageUrl" != '' THEN 1 ELSE 0 END)::int as withImages
+        FROM "Product"
+        WHERE active = true
+        GROUP BY "category"
+        ORDER BY "category" ASC`
+      )
+
+      const byCategory: Record<string, { total: number; withImages: number; needingImages: number }> = {}
+      for (const cat of categoryStats) {
+        byCategory[cat.category] = {
+          total: cat.total,
+          withImages: cat.withImages || 0,
+          needingImages: cat.total - (cat.withImages || 0),
+        }
+      }
+
+      return {
+        products,
+        pagination: {
+          skip,
+          take,
+          total,
+        },
+        stats: {
+          total,
+          withImages,
+          needingImages,
+          byCategory,
+        },
+      }
     })
+
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('Failed to fetch products:', error)
     return NextResponse.json(

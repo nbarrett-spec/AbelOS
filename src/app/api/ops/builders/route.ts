@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { cached } from '@/lib/cache'
 
 // GET /api/ops/builders — List all builders (ops-side, staff auth via cookie)
 export async function GET(request: NextRequest) {
@@ -142,78 +143,87 @@ export async function GET(request: NextRequest) {
     }
     const orderBySQL = builderSortMap[sortField] || `b."createdAt" ${dirStr}`
 
-    // Get total count for pagination
-    const countResult: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS total FROM "Builder" b ${whereClause}`, ...sqlParams
-    )
-    const total = countResult[0]?.total || 0
+    // 60s TTL — builder list is shared across staff, low-mutation. Cache key encodes
+    // every filter, sort, and page param so distinct queries get distinct entries.
+    // Note: not user-specific (all staff see the same data).
+    const cacheKey = `ops:builders:list:v1:${page}:${limit}:${search}:${statusFilter}:${termFilter}:${dateFrom || ''}:${dateTo || ''}:${pmId}:${sortField}:${sortDir}`
 
-    const builders = await prisma.$queryRawUnsafe(`
-      SELECT b."id", b."companyName", b."contactName", b."email", b."phone", b."city", b."state",
-             b."paymentTerm", b."taxExempt", b."status", b."creditLimit", b."accountBalance",
-             b."pricingTier", b."createdAt",
-             bo."name" as "organizationName", d."name" as "divisionName"
-      FROM "Builder" b
-      LEFT JOIN "Division" d ON b."divisionId" = d."id"
-      LEFT JOIN "BuilderOrganization" bo ON d."organizationId" = bo."id"
-      ${whereClause}
-      ORDER BY ${orderBySQL}
-      LIMIT $${pidx} OFFSET $${pidx + 1}
-    `, ...sqlParams, limit, skip)
+    const payload = await cached(cacheKey, 60, async () => {
+      // Get total count for pagination
+      const countResult: any[] = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int AS total FROM "Builder" b ${whereClause}`, ...sqlParams
+      )
+      const total = countResult[0]?.total || 0
 
-    // Also get counts for each builder (only for displayed builders)
-    const builderIds = (builders as any[]).map(b => b.id)
-    let countResults: Array<{id: string, projects: number, orders: number}> = []
-
-    if (builderIds.length > 0) {
-      countResults = await prisma.$queryRawUnsafe(`
-        SELECT b."id", COUNT(DISTINCT p."id")::int as "projects", COUNT(DISTINCT o."id")::int as "orders"
+      const builders = await prisma.$queryRawUnsafe(`
+        SELECT b."id", b."companyName", b."contactName", b."email", b."phone", b."city", b."state",
+               b."paymentTerm", b."taxExempt", b."status", b."creditLimit", b."accountBalance",
+               b."pricingTier", b."createdAt",
+               bo."name" as "organizationName", d."name" as "divisionName"
         FROM "Builder" b
-        LEFT JOIN "Project" p ON b."id" = p."builderId"
-        LEFT JOIN "Order" o ON b."id" = o."builderId"
-        WHERE b."id" = ANY($1::text[])
-        GROUP BY b."id"
-      `, builderIds) as any
-    }
+        LEFT JOIN "Division" d ON b."divisionId" = d."id"
+        LEFT JOIN "BuilderOrganization" bo ON d."organizationId" = bo."id"
+        ${whereClause}
+        ORDER BY ${orderBySQL}
+        LIMIT $${pidx} OFFSET $${pidx + 1}
+      `, ...sqlParams, limit, skip)
 
-    const countMap = new Map(countResults.map(c => [c.id, {projects: Number(c.projects), orders: Number(c.orders)}]))
+      // Also get counts for each builder (only for displayed builders)
+      const builderIds = (builders as any[]).map(b => b.id)
+      let countResults: Array<{id: string, projects: number, orders: number}> = []
 
-    // Get builder pricing counts (only for displayed builders)
-    let pricingCounts: any[] = []
-    if (builderIds.length > 0) {
-      pricingCounts = await prisma.$queryRawUnsafe(`
-        SELECT "builderId", COUNT(*)::int AS count
-        FROM "BuilderPricing"
-        WHERE "builderId" = ANY($1::text[])
-        GROUP BY "builderId"
-      `, builderIds)
-    }
-    const pricingMap = new Map(pricingCounts.map((p: any) => [p.builderId, p.count]))
+      if (builderIds.length > 0) {
+        countResults = await prisma.$queryRawUnsafe(`
+          SELECT b."id", COUNT(DISTINCT p."id")::int as "projects", COUNT(DISTINCT o."id")::int as "orders"
+          FROM "Builder" b
+          LEFT JOIN "Project" p ON b."id" = p."builderId"
+          LEFT JOIN "Order" o ON b."id" = o."builderId"
+          WHERE b."id" = ANY($1::text[])
+          GROUP BY b."id"
+        `, builderIds) as any
+      }
 
-    const buildersWithStats = (builders as any[]).map((builder) => {
-      const counts = countMap.get(builder.id) || {projects: 0, orders: 0}
+      const countMap = new Map(countResults.map(c => [c.id, {projects: Number(c.projects), orders: Number(c.orders)}]))
+
+      // Get builder pricing counts (only for displayed builders)
+      let pricingCounts: any[] = []
+      if (builderIds.length > 0) {
+        pricingCounts = await prisma.$queryRawUnsafe(`
+          SELECT "builderId", COUNT(*)::int AS count
+          FROM "BuilderPricing"
+          WHERE "builderId" = ANY($1::text[])
+          GROUP BY "builderId"
+        `, builderIds)
+      }
+      const pricingMap = new Map(pricingCounts.map((p: any) => [p.builderId, p.count]))
+
+      const buildersWithStats = (builders as any[]).map((builder) => {
+        const counts = countMap.get(builder.id) || {projects: 0, orders: 0}
+        return {
+          ...builder,
+          totalProjects: counts.projects,
+          totalOrders: counts.orders,
+          customPricingCount: pricingMap.get(builder.id) || 0,
+          _count: {
+            projects: counts.projects,
+            orders: counts.orders,
+            customPricing: pricingMap.get(builder.id) || 0,
+          },
+        }
+      })
+
       return {
-        ...builder,
-        totalProjects: counts.projects,
-        totalOrders: counts.orders,
-        customPricingCount: pricingMap.get(builder.id) || 0,
-        _count: {
-          projects: counts.projects,
-          orders: counts.orders,
-          customPricing: pricingMap.get(builder.id) || 0,
-        },
+        builders: buildersWithStats,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        }
       }
     })
 
-    return NextResponse.json({
-      builders: buildersWithStats,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      }
-    })
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('GET /api/ops/builders error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

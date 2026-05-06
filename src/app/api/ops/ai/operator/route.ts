@@ -12,53 +12,48 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000)
 
-    // Fetch morning brief metrics
+    // Fetch morning brief metrics — push aggregations to the DB so we don't
+    // pull every payment/order/invoice/delivery row into Node memory just
+    // to count or sum them.
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const [
-      todayPayments,
-      thisMonthPayments,
-      todayOrders,
-      todayOrderValue,
-      overdueInvoices,
-      overdueAmount,
-      scheduledDeliveries,
-      completedDeliveries,
+      todayPaymentsAgg,
+      thisMonthPaymentsAgg,
+      todayOrdersAgg,
+      overdueInvoicesAgg,
+      scheduledDeliveriesGrouped,
+      completedDeliveriesCount,
       pendingApprovals,
       actionQueueItems,
     ] = await Promise.all([
       // Payment has receivedAt (not createdAt) — see prisma/schema.prisma L1671
-      prisma.payment.findMany({
+      prisma.payment.aggregate({
         where: { receivedAt: { gte: todayStart } },
-        select: { amount: true },
+        _sum: { amount: true },
       }),
-      prisma.payment.findMany({
-        where: { receivedAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) } },
-        select: { amount: true },
+      prisma.payment.aggregate({
+        where: { receivedAt: { gte: monthStart } },
+        _sum: { amount: true },
       }),
-      prisma.order.findMany({
+      prisma.order.aggregate({
         where: { createdAt: { gte: todayStart } },
-        select: { id: true },
+        _count: { _all: true },
+        _sum: { total: true },
       }),
-      prisma.order.findMany({
+      prisma.invoice.aggregate({
+        where: { dueDate: { lt: now }, status: { not: 'PAID' } },
+        _count: { _all: true },
+        _sum: { total: true },
+      }),
+      // Group same-day deliveries by status — one round-trip instead of
+      // pulling the full row set just to filter for IN_TRANSIT.
+      prisma.delivery.groupBy({
+        by: ['status'],
         where: { createdAt: { gte: todayStart } },
-        select: { total: true },
+        _count: { _all: true },
       }),
-      prisma.invoice.findMany({
-        where: { dueDate: { lt: now }, status: { not: 'PAID' } },
-        select: { id: true },
-      }),
-      prisma.invoice.findMany({
-        where: { dueDate: { lt: now }, status: { not: 'PAID' } },
-        select: { total: true },
-      }),
-      prisma.delivery.findMany({
-        where: {
-          createdAt: { gte: todayStart },
-        },
-        select: { id: true, status: true },
-      }),
-      prisma.delivery.findMany({
+      prisma.delivery.count({
         where: { completedAt: { gte: todayStart } },
-        select: { id: true },
       }),
       // AgentTask model not in schema — read via raw SQL. Returns [] if the
       // table doesn't exist yet (fresh Neon branch).
@@ -87,16 +82,21 @@ export async function GET(request: NextRequest) {
       errors: 0,
     }))
 
-    // Aggregate metrics
-    const paymentsToday = todayPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-    const paymentsMonth = thisMonthPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-    const newOrdersToday = todayOrders.length
-    const newOrderValue = todayOrderValue.reduce((sum: number, o: any) => sum + (o.total || 0), 0)
-    const totalOverdue = overdueInvoices.length
-    const totalOverdueAmount = overdueAmount.reduce((sum: number, i: any) => sum + (i.total || 0), 0)
-    const scheduledToday = scheduledDeliveries.length
-    const completedToday = completedDeliveries.length
-    const inTransit = scheduledDeliveries.filter((d: any) => d.status === 'IN_TRANSIT').length
+    // Aggregate metrics — values come straight from the DB-side aggregates
+    // above; nothing to recompute over a full row set.
+    const paymentsToday = Number(todayPaymentsAgg._sum.amount || 0)
+    const paymentsMonth = Number(thisMonthPaymentsAgg._sum.amount || 0)
+    const newOrdersToday = todayOrdersAgg._count._all
+    const newOrderValue = Number(todayOrdersAgg._sum.total || 0)
+    const totalOverdue = overdueInvoicesAgg._count._all
+    const totalOverdueAmount = Number(overdueInvoicesAgg._sum.total || 0)
+    const scheduledToday = scheduledDeliveriesGrouped.reduce(
+      (sum: number, g: any) => sum + (g._count?._all || 0),
+      0
+    )
+    const completedToday = completedDeliveriesCount
+    const inTransit =
+      scheduledDeliveriesGrouped.find((g: any) => g.status === 'IN_TRANSIT')?._count?._all || 0
 
     // Count action queue by priority
     const highPriorityActions = actionQueueItems.filter((a: any) => a.priority === 'HIGH').length

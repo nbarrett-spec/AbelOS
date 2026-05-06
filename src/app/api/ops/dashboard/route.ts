@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
+import { cached } from '@/lib/cache'
 
 interface CountResult {
   count: number
@@ -52,11 +53,7 @@ interface POStatusResult {
   total: string | number | null
 }
 
-export async function GET(request: NextRequest) {
-  const authError = checkStaffAuth(request)
-  if (authError) return authError
-
-  try {
+async function computeDashboardKpis() {
     // Run all queries in parallel for performance
     const [
       builderCountResult,
@@ -202,7 +199,7 @@ export async function GET(request: NextRequest) {
       console.warn('Phase 2 data sources unavailable:', e)
     }
 
-    return NextResponse.json({
+    return {
       builders: {
         total: builderCount,
       },
@@ -241,7 +238,18 @@ export async function GET(request: NextRequest) {
         createdAt: o.createdAt,
       })),
       dataSources,
-    })
+    }
+}
+
+export async function GET(request: NextRequest) {
+  const authError = checkStaffAuth(request)
+  if (authError) return authError
+
+  try {
+    // 30s TTL — main ops dashboard. Faster TTL than other endpoints because
+    // the floor activity (orders, POs) moves quickly; staleness >30s is too noticeable.
+    const payload = await cached('ops:dashboard:kpis:v1', 30, computeDashboardKpis)
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('Dashboard stats error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
