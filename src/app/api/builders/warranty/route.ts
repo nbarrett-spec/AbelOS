@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
 import { sendWarrantyClaimConfirmationEmail } from '@/lib/email'
+import { auditBuilder } from '@/lib/audit'
 
 function generateId(prefix: string): string {
   return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
     const claims = await prisma.$queryRawUnsafe(
       `SELECT "id", "claimNumber", "type", "status", "priority", "subject", "description",
               "productName", "resolutionType", "resolutionNotes", "creditAmount",
+              "orderId", "photoUrls",
               "createdAt", "updatedAt", "resolvedAt"
        FROM "WarrantyClaim"
        WHERE "builderId" = $1
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const {
-      policyId, orderId, type, subject, description,
+      policyId, orderId, jobId, type, subject, description,
       productName, productSku, installDate, issueDate,
       contactName, contactEmail, contactPhone,
       siteAddress, siteCity, siteState, siteZip
@@ -66,6 +68,48 @@ export async function POST(request: NextRequest) {
 
     if (!subject || !description || !type) {
       return NextResponse.json({ error: 'Subject, description, and warranty type are required' }, { status: 400 })
+    }
+
+    // ── Defence in depth: verify any FK the builder is asserting ──
+    // Both fields are optional — but if supplied, they MUST belong to
+    // this builder. Otherwise the form could be used to graffiti claims
+    // onto another builder's order/job. Cheap + indexed.
+    if (orderId) {
+      const owns = (await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM "Order" WHERE "id" = $1 AND "builderId" = $2 LIMIT 1`,
+        orderId,
+        builderId,
+      )) as any[]
+      if (owns.length === 0) {
+        return NextResponse.json(
+          { error: 'Order not found for this builder' },
+          { status: 400 },
+        )
+      }
+    }
+    let resolvedJobAddress: string | null = null
+    if (jobId) {
+      const ownsJob = (await prisma.$queryRawUnsafe(
+        `SELECT j."id", j."jobAddress", j."community", j."lotBlock"
+         FROM "Job" j
+         JOIN "Order" o ON o."id" = j."orderId"
+         WHERE j."id" = $1 AND o."builderId" = $2
+         LIMIT 1`,
+        jobId,
+        builderId,
+      )) as any[]
+      if (ownsJob.length === 0) {
+        return NextResponse.json(
+          { error: 'Job not found for this builder' },
+          { status: 400 },
+        )
+      }
+      // Auto-populate site address from the job if the form left it blank,
+      // so the ops team isn't fishing for the same data twice.
+      const j = ownsJob[0]
+      resolvedJobAddress = [j.community, j.lotBlock, j.jobAddress]
+        .filter(Boolean)
+        .join(' · ') || null
     }
 
     const id = generateId('wcl')
@@ -93,7 +137,8 @@ export async function POST(request: NextRequest) {
       installDate ? new Date(installDate) : null,
       issueDate ? new Date(issueDate) : null,
       contactName || null, contactEmail || null, contactPhone || null,
-      siteAddress || null, siteCity || null, siteState || null, siteZip || null
+      siteAddress || resolvedJobAddress || null,
+      siteCity || null, siteState || null, siteZip || null
     )
 
     // Send confirmation email to builder
@@ -121,6 +166,15 @@ export async function POST(request: NextRequest) {
         link: `/ops/warranty/claims?id=${id}`
       }).catch(() => {})
     }
+
+    auditBuilder(
+      builderId,
+      session.companyName || session.email,
+      'BUILDER_FILE_WARRANTY_CLAIM',
+      'WarrantyClaim',
+      id,
+      { claimNumber, type, subjectPreview: subject.slice(0, 80), orderId: orderId || null, jobId: jobId || null }
+    ).catch(() => {})
 
     return NextResponse.json({
       success: true,
