@@ -56,6 +56,24 @@ function addSecurityHeaders(response: NextResponse, requestId?: string): NextRes
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // A-SEC-10: middleware-level CSP. next.config.js already sets a CSP for
+  // page responses; this covers API responses + middleware-handled redirects
+  // (login, role-gate redirects, agent-hub) where next.config headers don't
+  // always fire. 'unsafe-inline' / 'unsafe-eval' stay in script-src because
+  // Next.js App Router inlines RSC payloads as <script>; tightening to a
+  // nonce strategy is its own work item.
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://va.vercel-scripts.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self' https://*.upstash.io wss: https:",
+      "frame-ancestors 'none'",
+    ].join('; '),
+  )
   if (requestId) {
     response.headers.set('X-Request-ID', requestId)
   }

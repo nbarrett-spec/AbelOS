@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { signupSchema } from '@/lib/validations'
-import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { signupResetLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logger, getRequestId } from '@/lib/logger'
 import { logAudit } from '@/lib/audit'
 import { sendApplicationReceivedEmail } from '@/lib/email'
@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
   const ipAddress = getIp(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
   try {
-    const limited = await checkRateLimit(request, authLimiter, 10, 'builder-signup')
+    // A-SEC-7: signup uses tighter 5/min/IP cap (was 10) — account-creation
+    // is high-cost and abuse-prone; 5 leaves headroom for genuine typos.
+    const limited = await checkRateLimit(request, signupResetLimiter, 5, 'builder-signup')
     if (limited) {
       logAudit({
         staffId: 'unknown',

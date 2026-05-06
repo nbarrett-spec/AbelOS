@@ -3,14 +3,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendPasswordResetEmail, getPublicAppUrl } from '@/lib/email'
-import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { signupResetLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logger, getRequestId } from '@/lib/logger'
 
 // POST /api/auth/forgot-password — generate a reset token
 export async function POST(request: NextRequest) {
   const requestId = getRequestId(request)
   try {
-    const limited = await checkRateLimit(request, authLimiter, 10, 'builder-reset')
+    // A-SEC-7: 5/min/IP for password-reset request — stops mass-enumeration
+    // and email-bombing the reset inbox. Legitimate users almost never
+    // exceed 1-2/min.
+    const limited = await checkRateLimit(request, signupResetLimiter, 5, 'builder-reset')
     if (limited) return limited
 
     const { email } = await request.json()

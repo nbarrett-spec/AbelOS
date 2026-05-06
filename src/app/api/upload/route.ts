@@ -42,11 +42,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file size
+    // Validate file size — 25MB cap (A-SEC-9, see lib/constants.ts).
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'File too large. Maximum size is 50MB' },
-        { status: 400 }
+        { error: 'File too large. Maximum size is 25MB' },
+        { status: 413 }
       )
     }
 

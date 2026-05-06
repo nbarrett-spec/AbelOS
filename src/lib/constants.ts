@@ -27,7 +27,10 @@ export const PROJECT_STATUS_LABELS = {
 } as const
 
 export const MIN_MARGIN = 0.25  // 25% floor
-export const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+// A-SEC-9: 25MB ceiling on builder/blueprint/photo uploads. Matches the
+// DocumentVault cap. Larger files must be split or routed through the
+// vault flow with explicit admin approval.
+export const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB
 export const ALLOWED_BLUEPRINT_TYPES = [
   'application/pdf',
   'image/png',

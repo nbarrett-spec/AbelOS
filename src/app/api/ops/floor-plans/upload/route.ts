@@ -7,7 +7,9 @@ import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
 import { audit } from '@/lib/audit'
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+// A-SEC-9: 25MB cap on floor-plan uploads (was 50MB). Matches DocumentVault
+// and the platform-wide upload ceiling.
+const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB
 const ALLOWED_TYPES = [
   'application/pdf',
   'image/png',
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     // Validate size
     if (file.size > MAX_FILE_SIZE) {
-      return safeJson({ error: 'File too large. Maximum 50MB' }, { status: 400 })
+      return safeJson({ error: 'File too large. Maximum 25MB' }, { status: 413 })
     }
 
     // Verify project exists

@@ -133,6 +133,11 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
 // ── Pre-built limiters ──────────────────────────────────────────────
 
 export const authLimiter = createRateLimiter({ windowMs: 60_000, max: 10 })    // 10 login attempts/min
+// Tighter limiter for high-cost auth flows (signup, forgot-password,
+// reset-password). 5/min/IP — enough for legitimate retry after a typo,
+// stingy enough to make password-reset spam, account-flooding, and token
+// brute-force expensive. A-SEC-7.
+export const signupResetLimiter = createRateLimiter({ windowMs: 60_000, max: 5 })  // 5/min for signup + reset flows
 export const apiLimiter = createRateLimiter({ windowMs: 60_000, max: 60 })     // 60 requests/min
 export const syncLimiter = createRateLimiter({ windowMs: 300_000, max: 5 })    // 5 syncs per 5 min
 export const publicFormLimiter = createRateLimiter({ windowMs: 60_000, max: 5 })  // 5 form submits/min
@@ -147,10 +152,15 @@ export const builderWriteLimiter = createRateLimiter({ windowMs: 60_000, max: 15
 // ── Headers helper (unchanged) ──────────────────────────────────────
 
 export function getRateLimitHeaders(result: RateLimitResult, max: number) {
+  // Retry-After (seconds) — RFC 6585 / 7231. Required so clients (and
+  // sensible CDNs) back off correctly when we 429 them. Mirrors the
+  // X-RateLimit-Reset value but in the canonical retry-after format.
+  const retryAfterSec = String(Math.max(1, Math.ceil(result.resetIn / 1000)))
   return {
     'X-RateLimit-Limit': String(max),
     'X-RateLimit-Remaining': String(result.remaining),
-    'X-RateLimit-Reset': String(Math.ceil(result.resetIn / 1000)),
+    'X-RateLimit-Reset': retryAfterSec,
+    'Retry-After': retryAfterSec,
   }
 }
 

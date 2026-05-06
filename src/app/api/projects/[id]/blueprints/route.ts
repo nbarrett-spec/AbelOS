@@ -134,9 +134,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
     }
 
-    // Check file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large (max 50MB)' }, { status: 400 })
+    // A-SEC-9: 25MB cap on builder blueprint uploads. Keeps row size sane
+    // and matches DocumentVault. Bigger PDFs should be split.
+    if (file.size > 25 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large (max 25MB)' }, { status: 413 })
     }
 
     // Upload file to cloud storage (e.g., S3, R2, etc.)

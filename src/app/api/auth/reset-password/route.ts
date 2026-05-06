@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { logger, getRequestId } from '@/lib/logger'
-import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { signupResetLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logAudit } from '@/lib/audit'
 
 // Fire-and-forget audit call. logAudit() internally try/catches + returns ''
@@ -28,8 +28,11 @@ export async function POST(request: NextRequest) {
   const ipAddress = getIp(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
 
-  // Rate limit by IP — stops token brute-force and mass-reset abuse
-  const limited = await checkRateLimit(request, authLimiter, 10, 'reset-password')
+  // Rate limit by IP — stops token brute-force and mass-reset abuse.
+  // A-SEC-7: tightened to 5/min (was 10). Legitimate users only hit this
+  // route once per reset; the tighter cap raises the cost of token
+  // brute-force from "trivially fast" to "noticeably slow".
+  const limited = await checkRateLimit(request, signupResetLimiter, 5, 'reset-password')
   if (limited) {
     logAudit({
       staffId: 'unknown',

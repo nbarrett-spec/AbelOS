@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendEmail, getPublicAppUrl } from '@/lib/email'
-import { authLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { signupResetLimiter, checkRateLimit } from '@/lib/rate-limit'
 import { logAudit } from '@/lib/audit'
 
 // POST /api/ops/auth/forgot-password — generate a reset token for staff
 export async function POST(request: NextRequest) {
   try {
-    const limited = await checkRateLimit(request, authLimiter, 10, 'staff-reset')
+    // A-SEC-7: 5/min/IP. See builder forgot-password route for rationale.
+    const limited = await checkRateLimit(request, signupResetLimiter, 5, 'staff-reset')
     if (limited) return limited
 
     const { email } = await request.json()
