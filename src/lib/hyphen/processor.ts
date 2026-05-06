@@ -612,6 +612,10 @@ async function createAbelOrderFromNormalized(
   )
 
   // Insert order items
+  // v13: also persist Hyphen pass-through fields (optionColor1-3, extText1-6)
+  // and mapper-parsed door specs (doorSwing, doorHand, jambDepth, throatDepth)
+  // + the bigint builderLineItemNum so the ops UI can query/filter on them
+  // without re-parsing the description string.
   for (const { item, productId, lineNum } of resolvedItems) {
     const itemId = 'oi_' + Date.now().toString(36) + '_' + crypto.randomBytes(3).toString('hex')
     const unitPrice = item.requestedUnitPrice ?? item.supplierUnitPrice ?? 0
@@ -619,15 +623,41 @@ async function createAbelOrderFromNormalized(
     const description = buildItemDescription(item, lineNum)
     const qty = Math.max(1, Math.round(item.quantityOrdered)) // OrderItem.quantity is Int
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "OrderItem" ("id", "orderId", "productId", "description", "quantity", "unitPrice", "lineTotal")
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO "OrderItem" (
+         "id", "orderId", "productId", "description", "quantity", "unitPrice", "lineTotal",
+         "optionColor1", "optionColor2", "optionColor3",
+         "extText1", "extText2", "extText3", "extText4", "extText5", "extText6",
+         "doorSwing", "doorHand", "jambDepth", "throatDepth",
+         "builderLineItemNum"
+       )
+       VALUES (
+         $1, $2, $3, $4, $5, $6, $7,
+         $8, $9, $10,
+         $11, $12, $13, $14, $15, $16,
+         $17, $18, $19, $20,
+         $21
+       )`,
       itemId,
       orderId,
       productId,
       description,
       qty,
       unitPrice,
-      lineTotal
+      lineTotal,
+      item.optionColor1,
+      item.optionColor2,
+      item.optionColor3,
+      item.extText1,
+      item.extText2,
+      item.extText3,
+      item.extText4,
+      item.extText5,
+      item.extText6,
+      item.doorSwing,
+      item.doorHand,
+      item.jambDepth,
+      item.throatDepth,
+      item.builderLineItemNum
     )
   }
 
