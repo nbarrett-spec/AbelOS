@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const builderId = searchParams.get('builderId')
     const search = searchParams.get('search')
     const requestingStaffId = searchParams.get('staffId')
+    const mineOnly = searchParams.get('mine') === 'true'
 
     // Build WHERE conditions
     const conditions: string[] = ['c."type" = $1']
@@ -63,6 +64,18 @@ export async function GET(request: NextRequest) {
           WHERE m."conversationId" = c.id
             AND m."senderType" = 'BUILDER'
             AND NOT ($${paramIdx}::text = ANY(m."readBy"))
+        )
+      `)
+      params.push(requestingStaffId)
+      paramIdx++
+    }
+
+    // Filter to threads where the requesting staff is a participant
+    if (mineOnly && requestingStaffId) {
+      conditions.push(`
+        EXISTS (
+          SELECT 1 FROM "ConversationParticipant" cp2
+          WHERE cp2."conversationId" = c.id AND cp2."staffId" = $${paramIdx}
         )
       `)
       params.push(requestingStaffId)
