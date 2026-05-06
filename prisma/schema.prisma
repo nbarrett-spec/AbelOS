@@ -6599,3 +6599,26 @@ model ApiKey {
   @@index([revokedAt])
   @@index([createdAt(sort: Desc)])
 }
+
+// ─── BULK IMPORT AUDIT TRAIL — B-FEAT-6 / A-API-14 (2026-05-05) ─────
+// Generic bulk import log. Captures who ran which import, with what file,
+// and the row-level outcome counts + per-row errors. Powers the
+// /ops/import history view + post-mortem on bad uploads.
+//
+// Additive only. Migration: scripts/migrate-aegis-import-log-2026-05-05.sql
+model ImportLog {
+  id          String   @id @default(cuid())
+  importType  String // INVENTORY_COUNT | PRICE_LIST | BUILDER_LIST (PRODUCT_CATALOG deferred)
+  fileName    String
+  rowsTotal   Int      @default(0)
+  rowsCreated Int      @default(0)
+  rowsUpdated Int      @default(0)
+  rowsErrored Int      @default(0)
+  errors      Json     @default("[]") // Array of { row: number, message: string }
+  createdById String? // Staff.id (nullable for seed/backfill scenarios)
+  createdAt   DateTime @default(now())
+
+  @@index([importType])
+  @@index([createdAt(sort: Desc)])
+  @@index([createdById])
+}
