@@ -178,10 +178,16 @@ export async function GET(request: NextRequest) {
 
     const countMap = new Map(countResults.map(c => [c.id, {projects: Number(c.projects), orders: Number(c.orders)}]))
 
-    // Get builder pricing counts
-    const pricingCounts: any[] = await prisma.$queryRawUnsafe(`
-      SELECT "builderId", COUNT(*)::int AS count FROM "BuilderPricing" GROUP BY "builderId"
-    `)
+    // Get builder pricing counts (only for displayed builders)
+    let pricingCounts: any[] = []
+    if (builderIds.length > 0) {
+      pricingCounts = await prisma.$queryRawUnsafe(`
+        SELECT "builderId", COUNT(*)::int AS count
+        FROM "BuilderPricing"
+        WHERE "builderId" = ANY($1::text[])
+        GROUP BY "builderId"
+      `, builderIds)
+    }
     const pricingMap = new Map(pricingCounts.map((p: any) => [p.builderId, p.count]))
 
     const buildersWithStats = (builders as any[]).map((builder) => {

@@ -29,6 +29,14 @@ import { prisma } from '@/lib/prisma'
 // Query params:
 //   ?start=YYYY-MM-DD   (required)
 //   ?end=YYYY-MM-DD     (required)
+//   ?pad=<int>          (optional; days to extend the window on each side,
+//                         default 0. Page sends 14 to prefetch ±2 weeks
+//                         around the visible range so flipping months
+//                         feels instant.)
+//   ?includeUnscheduled=1 (optional; default 0. Unscheduled jobs aren't
+//                         tied to the date window, so pulling them fights
+//                         the windowing optimization. Page asks for them
+//                         explicitly when it wants the unscheduled section.)
 //   ?view=day|week|month (optional; informational only, server returns flat
 //                         array, client buckets by day)
 //   ?builder=...        (csv of builder name substrings)
@@ -66,7 +74,7 @@ interface CalendarJob {
   communityName: string | null
   assignedPMName: string | null
   assignedPMId: string | null
-  scheduledDate: string // ISO
+  scheduledDate: string | null // ISO, null when job is unscheduled
   jobStatus: string
   scopeType: string
   materialStatus: MaterialStatus
@@ -102,6 +110,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const startStr = searchParams.get('start')
     const endStr = searchParams.get('end')
+    const padStr = searchParams.get('pad') || '0'
+    const includeUnscheduled = searchParams.get('includeUnscheduled') === '1'
     const view = (searchParams.get('view') || 'week') as 'day' | 'week' | 'month'
     const builderCsv = searchParams.get('builder') || ''
     const pmIdCsv = searchParams.get('pmId') || ''
@@ -122,6 +132,12 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       )
     }
+    // Cap pad at 60 days so a misconfigured client can't blow the budget.
+    const padDays = Math.max(0, Math.min(60, parseInt(padStr, 10) || 0))
+    if (padDays > 0) {
+      windowStart.setUTCDate(windowStart.getUTCDate() - padDays)
+      windowEnd.setUTCDate(windowEnd.getUTCDate() + padDays)
+    }
     // Make end inclusive: roll to end-of-day
     windowEnd.setUTCHours(23, 59, 59, 999)
 
@@ -131,22 +147,18 @@ export async function GET(request: NextRequest) {
     const statusFilter = statusCsv.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) as MaterialStatus[]
 
     // ── 1. Fetch in-window jobs with minimal joins ────────────────────────
-    // NOTE: scheduledDate might be NULL for many jobs. We fetch jobs with
-    // scheduledDate in the window PLUS jobs without scheduledDate (unscheduled),
-    // then separate them for display with an "Unscheduled" section.
+    // NOTE: scheduledDate might be NULL for many jobs. By default we ONLY
+    // fetch jobs with scheduledDate in the window — unscheduled jobs are
+    // pulled separately and only when the page asks (?includeUnscheduled=1)
+    // so the date-range filter does its job on first paint.
+    const dateRangeOr = [
+      { scheduledDate: { gte: windowStart, lte: windowEnd } as any },
+      ...(includeUnscheduled ? [{ scheduledDate: null as any }] : []),
+    ]
     const jobs = await prisma.job.findMany({
       where: {
         status: { in: ACTIVE_JOB_STATUSES as unknown as any[] },
-        OR: [
-          // Jobs with scheduledDate in window
-          {
-            scheduledDate: { gte: windowStart, lte: windowEnd },
-          },
-          // Unscheduled jobs (no scheduledDate)
-          {
-            scheduledDate: null,
-          },
-        ],
+        OR: dateRangeOr,
         ...(builderFilters.length > 0 && {
           builderName: { in: builderFilters },
         }),
@@ -176,7 +188,11 @@ export async function GET(request: NextRequest) {
         orderId: true,
       },
       orderBy: [{ scheduledDate: 'asc' }],
-      take: 100, // Cap unscheduled jobs to avoid fetching 1000s
+      // Hard cap as a belt-and-suspenders guard. With pad=14, a calendar
+      // month + 4 weeks of buffer caps at ~58 days × ~30 jobs/day worst
+      // case. 500 leaves plenty of headroom but fences off pathological
+      // queries (e.g. a date range that somehow expanded to a year).
+      take: 500,
     })
 
     if (jobs.length === 0) {
@@ -438,7 +454,7 @@ export async function GET(request: NextRequest) {
         communityName: j.community,
         assignedPMName: pmName,
         assignedPMId: j.assignedPMId,
-        scheduledDate: (j.scheduledDate ?? windowStart).toISOString(),
+        scheduledDate: j.scheduledDate ? j.scheduledDate.toISOString() : null,
         jobStatus: String(j.status),
         scopeType: String(j.scopeType),
         materialStatus,

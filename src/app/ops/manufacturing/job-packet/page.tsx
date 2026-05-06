@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Printable Job Packet — Combined manufacturing document
@@ -168,6 +169,31 @@ const INTERIOR_JOB_TYPES = new Set([
   'HARDWARE', 'HARDWARE_INSTALL',
 ])
 
+// ── Status filter — A-PERF-3 ────────────────────────────────────────────
+// Default load is "active jobs" — everything except COMPLETE, INVOICED,
+// CLOSED. The API takes status as a comma-separated allowlist, so we send
+// the explicit list of active statuses. Keeping it explicit avoids loading
+// the entire Job table just because someone left the status query empty.
+const ACTIVE_STATUSES = [
+  'CREATED',
+  'READINESS_CHECK',
+  'MATERIALS_LOCKED',
+  'IN_PRODUCTION',
+  'STAGED',
+  'LOADED',
+  'IN_TRANSIT',
+  'DELIVERED',
+  'INSTALLING',
+  'PUNCH_LIST',
+] as const
+const ALL_STATUSES = [
+  ...ACTIVE_STATUSES,
+  'COMPLETE',
+  'INVOICED',
+  'CLOSED',
+] as const
+const PAGE_SIZE = 50
+
 export default function JobPacketPage() {
   const [jobId, setJobId] = useState('')
   const [jobSearch, setJobSearch] = useState('')
@@ -182,13 +208,55 @@ export default function JobPacketPage() {
   const printRef = useRef<HTMLDivElement>(null)
 
   // ── Job queue state (shown above the search bar) ──────────────────────
+  // URL params drive filters + page so back/forward + shareable URLs work.
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlStatus = (searchParams.get('status') || 'ACTIVE')
+  const urlBuilder = searchParams.get('builder') || ''
+  const urlPM = searchParams.get('pm') || ''
+  const urlType = (searchParams.get('type') || '') as '' | 'interior' | 'exterior'
+  const urlDateFrom = searchParams.get('dateFrom') || ''
+  const urlDateTo = searchParams.get('dateTo') || ''
+  const urlPage = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+
   const [queueJobs, setQueueJobs] = useState<QueueJob[]>([])
+  const [queueTotal, setQueueTotal] = useState(0)
   const [queueLoading, setQueueLoading] = useState(false)
   const [queueError, setQueueError] = useState('')
   const [pms, setPms] = useState<PMOption[]>([])
-  const [typeFilter, setTypeFilter] = useState<'' | 'interior' | 'exterior'>('')
-  const [builderFilter, setBuilderFilter] = useState<string>('')
-  const [pmFilter, setPmFilter] = useState<string>('')
+  const [typeFilter, setTypeFilter] = useState<'' | 'interior' | 'exterior'>(urlType)
+  const [builderFilter, setBuilderFilter] = useState<string>(urlBuilder)
+  const [pmFilter, setPmFilter] = useState<string>(urlPM)
+  const [statusFilter, setStatusFilter] = useState<string>(urlStatus) // 'ACTIVE' | 'ALL' | <single status>
+  const [dateFrom, setDateFrom] = useState<string>(urlDateFrom)
+  const [dateTo, setDateTo] = useState<string>(urlDateTo)
+  const [page, setPage] = useState<number>(urlPage)
+
+  // Push current filter/page state into the URL (replace, no scroll).
+  const syncUrl = useCallback((overrides?: Partial<{
+    status: string; builder: string; pm: string; type: string;
+    dateFrom: string; dateTo: string; page: number
+  }>) => {
+    const next = {
+      status: overrides?.status ?? statusFilter,
+      builder: overrides?.builder ?? builderFilter,
+      pm: overrides?.pm ?? pmFilter,
+      type: overrides?.type ?? typeFilter,
+      dateFrom: overrides?.dateFrom ?? dateFrom,
+      dateTo: overrides?.dateTo ?? dateTo,
+      page: overrides?.page ?? page,
+    }
+    const params = new URLSearchParams()
+    if (next.status && next.status !== 'ACTIVE') params.set('status', next.status)
+    if (next.builder.trim()) params.set('builder', next.builder.trim())
+    if (next.pm) params.set('pm', next.pm)
+    if (next.type) params.set('type', next.type)
+    if (next.dateFrom) params.set('dateFrom', next.dateFrom)
+    if (next.dateTo) params.set('dateTo', next.dateTo)
+    if (next.page > 1) params.set('page', String(next.page))
+    const qs = params.toString()
+    router.replace(qs ? `/ops/manufacturing/job-packet?${qs}` : '/ops/manufacturing/job-packet', { scroll: false })
+  }, [router, statusFilter, builderFilter, pmFilter, typeFilter, dateFrom, dateTo, page])
 
   const searchJobs = useCallback(async (q: string) => {
     if (!q || q.length < 2) { setSearchResults([]); return }
@@ -217,31 +285,53 @@ export default function JobPacketPage() {
       .catch(() => { /* silent — filter just won't populate */ })
   }, [])
 
-  // Fetch the queue. Re-runs when builder or PM filter changes (server-side
-  // filters). Type filter is applied client-side so we don't refetch for it.
+  // Fetch the queue. Server-side: status, builder, PM, date range, page.
+  // Type filter is applied client-side (it's not a DB column — derived from
+  // jobType enum membership). Default load is "ACTIVE" (everything except
+  // COMPLETE/INVOICED/CLOSED) with 50/page so we never pull the whole table.
   const fetchQueue = useCallback(async () => {
     setQueueLoading(true)
     setQueueError('')
     try {
       const params = new URLSearchParams({
-        status: 'MATERIALS_LOCKED,IN_PRODUCTION',
-        limit: '100',
+        limit: String(PAGE_SIZE),
+        page: String(page),
       })
+      if (statusFilter === 'ACTIVE' || !statusFilter) {
+        params.set('status', ACTIVE_STATUSES.join(','))
+      } else if (statusFilter !== 'ALL') {
+        params.set('status', statusFilter)
+      }
       if (builderFilter.trim()) params.set('builderName', builderFilter.trim())
       if (pmFilter) params.set('assignedPMId', pmFilter)
+      if (dateFrom) params.set('scheduledDateFrom', dateFrom)
+      if (dateTo) params.set('scheduledDateTo', dateTo)
       const res = await fetch(`/api/ops/jobs?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to load job queue')
       const d = await res.json()
       setQueueJobs((d.data || []) as QueueJob[])
+      setQueueTotal(d.pagination?.total ?? 0)
     } catch (e: any) {
       setQueueError(e?.message || 'Failed to load job queue')
       setQueueJobs([])
+      setQueueTotal(0)
     } finally {
       setQueueLoading(false)
     }
-  }, [builderFilter, pmFilter])
+  }, [statusFilter, builderFilter, pmFilter, dateFrom, dateTo, page])
 
   useEffect(() => { fetchQueue() }, [fetchQueue])
+
+  // Filter/page changes → sync URL (so refresh + back/forward retain state).
+  useEffect(() => {
+    syncUrl()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, builderFilter, pmFilter, typeFilter, dateFrom, dateTo, page])
+
+  // Reset to page 1 whenever a filter changes (otherwise an empty page 4
+  // shows after a filter narrows the result set below page*50 rows).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (page !== 1) setPage(1) }, [statusFilter, builderFilter, pmFilter, typeFilter, dateFrom, dateTo])
 
   // Apply client-side type filter and sort by scheduledDate ASC (nulls last).
   const visibleQueueJobs = useMemo(() => {
@@ -348,9 +438,9 @@ export default function JobPacketPage() {
         <div className="bg-surface border border-border" style={{ borderRadius: 12, padding: 20, marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h2 className="text-fg" style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Active Manufacturing Jobs</h2>
+              <h2 className="text-fg" style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Manufacturing Jobs</h2>
               <p className="text-fg-muted" style={{ fontSize: 12, margin: '2px 0 0' }}>
-                Materials Locked &amp; In Production — sorted by scheduled date
+                Default: active jobs only (excludes Complete / Invoiced / Closed) — sorted by scheduled date
               </p>
             </div>
             <button
@@ -363,7 +453,20 @@ export default function JobPacketPage() {
           </div>
 
           {/* Filter row */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="border border-border bg-surface text-fg"
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13 }}
+              title="Job status"
+            >
+              <option value="ACTIVE">Active (default)</option>
+              <option value="ALL">All statuses</option>
+              {ALL_STATUSES.map(s => (
+                <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value as '' | 'interior' | 'exterior')}
@@ -380,7 +483,7 @@ export default function JobPacketPage() {
               value={builderFilter}
               onChange={e => setBuilderFilter(e.target.value)}
               className="border border-border bg-surface text-fg"
-              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13, minWidth: 200 }}
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13, minWidth: 180 }}
             />
             <select
               value={pmFilter}
@@ -395,9 +498,34 @@ export default function JobPacketPage() {
                 </option>
               ))}
             </select>
-            {(typeFilter || builderFilter || pmFilter) && (
+            <span className="text-fg-muted" style={{ fontSize: 12 }}>Scheduled:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="border border-border bg-surface text-fg"
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13 }}
+              title="Scheduled date — from"
+            />
+            <span className="text-fg-muted" style={{ fontSize: 12 }}>→</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="border border-border bg-surface text-fg"
+              style={{ padding: '8px 12px', borderRadius: 8, fontSize: 13 }}
+              title="Scheduled date — to"
+            />
+            {(statusFilter !== 'ACTIVE' || typeFilter || builderFilter || pmFilter || dateFrom || dateTo) && (
               <button
-                onClick={() => { setTypeFilter(''); setBuilderFilter(''); setPmFilter('') }}
+                onClick={() => {
+                  setStatusFilter('ACTIVE')
+                  setTypeFilter('')
+                  setBuilderFilter('')
+                  setPmFilter('')
+                  setDateFrom('')
+                  setDateTo('')
+                }}
                 className="text-fg-muted hover:text-fg"
                 style={{ padding: '8px 12px', borderRadius: 8, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer' }}
               >
@@ -461,6 +589,46 @@ export default function JobPacketPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination — server-side total comes from /api/ops/jobs.
+              Client-side type filter may shave the visible count below the
+              page row count, but pagination still tracks the unfiltered set
+              from the server. */}
+          {(() => {
+            const totalPages = Math.max(1, Math.ceil(queueTotal / PAGE_SIZE))
+            const fromIdx = queueTotal === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+            const toIdx = Math.min(page * PAGE_SIZE, queueTotal)
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
+                <span className="text-fg-muted" style={{ fontSize: 12 }}>
+                  {queueTotal === 0
+                    ? 'No matching jobs'
+                    : `Showing ${fromIdx}–${toIdx} of ${queueTotal}${typeFilter ? ` (page filtered to ${visibleQueueJobs.length} ${typeFilter})` : ''}`}
+                </span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1 || queueLoading}
+                    className="border border-border bg-surface hover:bg-row-hover"
+                    style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.5 : 1 }}
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-fg-muted" style={{ fontSize: 12, padding: '0 6px' }}>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages || queueLoading}
+                    className="border border-border bg-surface hover:bg-row-hover"
+                    style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* ── Search bar (existing) ──────────────────────────────────── */}

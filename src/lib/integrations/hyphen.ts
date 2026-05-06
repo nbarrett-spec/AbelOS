@@ -17,6 +17,11 @@ interface HyphenConfig {
   builderName?: string
   username?: string
   password?: string
+  // Incremental sync watermark — when present, sync calls add
+  // `modifiedSince=<ISO>` to the Hyphen API request so we only pull
+  // changed records. Null/undefined => full import (first run).
+  // See A-PERF-4 (2026-05-05). Owned by the multi-tenant orchestrator.
+  lastSyncAt?: Date | null
 }
 
 async function getConfig(): Promise<HyphenConfig | null> {
@@ -44,7 +49,7 @@ export async function getAllTenants(): Promise<HyphenConfig[]> {
   try {
     const rows: any[] = await prisma.$queryRawUnsafe(
       `SELECT "id", "builderName", "baseUrl", "username", "password",
-              "oauthAccessToken", "oauthExpiresAt"
+              "oauthAccessToken", "oauthExpiresAt", "lastSyncAt"
        FROM "HyphenTenant"
        WHERE "syncEnabled" = TRUE
        ORDER BY "builderName" ASC`
@@ -71,6 +76,7 @@ export async function getAllTenants(): Promise<HyphenConfig[]> {
         builderName: r.builderName || undefined,
         username: r.username || undefined,
         password: r.password || undefined,
+        lastSyncAt: r.lastSyncAt ? new Date(r.lastSyncAt) : null,
       })
     }
     return tenants
@@ -87,6 +93,15 @@ export async function getAllTenants(): Promise<HyphenConfig[]> {
 }
 
 // Per-tenant sync-status writeback. Best-effort — never throws.
+//
+// IMPORTANT (A-PERF-4, 2026-05-05): this function deliberately does NOT
+// advance "lastSyncAt". The watermark is the incremental-sync cursor —
+// advancing it on a partial/failed run would silently drop the records
+// in the missed window. Only `advanceTenantWatermark` (called by the
+// cron when all three sync types succeed for a tenant) moves the cursor
+// forward. Keeping these concerns split means status reflects the most
+// recent attempt, while the watermark only moves when we're sure we
+// got everything.
 async function recordTenantSync(
   tenantId: string | undefined,
   status: 'SUCCESS' | 'PARTIAL' | 'FAILED',
@@ -96,8 +111,7 @@ async function recordTenantSync(
   try {
     await prisma.$executeRawUnsafe(
       `UPDATE "HyphenTenant"
-       SET "lastSyncAt" = NOW(),
-           "lastSyncStatus" = $1,
+       SET "lastSyncStatus" = $1,
            "lastSyncError" = $2,
            "updatedAt" = NOW()
        WHERE "id" = $3`,
@@ -107,6 +121,33 @@ async function recordTenantSync(
     )
   } catch (e: any) {
     console.warn(`recordTenantSync failed for ${tenantId}:`, e?.message)
+  }
+}
+
+/**
+ * Advance HyphenTenant.lastSyncAt — the incremental-sync watermark.
+ * The cron calls this once per tenant, ONLY when every sync type
+ * (orders/payments/schedule) returned status === 'SUCCESS' for that
+ * tenant. The supplied `at` should be the timestamp captured BEFORE
+ * fetch began (so a record modified mid-sync doesn't get skipped on
+ * the next run). Best-effort — never throws.
+ */
+export async function advanceTenantWatermark(
+  tenantId: string | undefined,
+  at: Date,
+) {
+  if (!tenantId) return
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "HyphenTenant"
+       SET "lastSyncAt" = $1,
+           "updatedAt" = NOW()
+       WHERE "id" = $2`,
+      at,
+      tenantId,
+    )
+  } catch (e: any) {
+    console.warn(`advanceTenantWatermark failed for ${tenantId}:`, e?.message)
   }
 }
 
@@ -163,6 +204,16 @@ function aggregateResults(syncType: 'schedule_updates' | 'payments' | 'orders', 
   }
 }
 
+// Build a `&modifiedSince=<ISO>` suffix for an existing query string,
+// or return '' when this is the first run for the tenant. Hyphen's REST
+// surface accepts modifiedSince on schedule-updates, payment-notifications,
+// and purchase-orders endpoints (already used by the legacy syncSchedules
+// path). Falls back gracefully if the API ignores the param.
+function modifiedSinceParam(config: HyphenConfig): string {
+  if (!config.lastSyncAt) return ''
+  return `&modifiedSince=${encodeURIComponent(config.lastSyncAt.toISOString())}`
+}
+
 async function hyphenFetch(path: string, config: HyphenConfig, options?: RequestInit) {
   const url = `${config.baseUrl}${path}`
   const response = await fetch(url, {
@@ -216,7 +267,10 @@ export async function syncScheduleUpdates(tenantOverride?: HyphenConfig): Promis
   let updated = 0, skipped = 0, failed = 0
 
   try {
-    const data = await hyphenFetch(`/api/v1/schedule-updates?supplierId=${config.supplierId}`, config)
+    const data = await hyphenFetch(
+      `/api/v1/schedule-updates?supplierId=${config.supplierId}${modifiedSinceParam(config)}`,
+      config,
+    )
     const updates: HyphenScheduleUpdate[] = data.updates || data
 
     for (const update of updates) {
@@ -465,7 +519,10 @@ export async function syncPayments(tenantOverride?: HyphenConfig): Promise<SyncR
   let updated = 0, failed = 0
 
   try {
-    const data = await hyphenFetch(`/api/v1/payment-notifications?supplierId=${config.supplierId}`, config)
+    const data = await hyphenFetch(
+      `/api/v1/payment-notifications?supplierId=${config.supplierId}${modifiedSinceParam(config)}`,
+      config,
+    )
     const payments: HyphenPaymentNotification[] = data.notifications || data
 
     for (const payment of payments) {
@@ -573,7 +630,10 @@ export async function syncOrders(tenantOverride?: HyphenConfig): Promise<SyncRes
   let created = 0, updated = 0, failed = 0
 
   try {
-    const data = await hyphenFetch(`/api/v1/purchase-orders?supplierId=${config.supplierId}`, config)
+    const data = await hyphenFetch(
+      `/api/v1/purchase-orders?supplierId=${config.supplierId}${modifiedSinceParam(config)}`,
+      config,
+    )
     const orders: HyphenPurchaseOrder[] = data.orders || data
 
     for (const hyphenPO of orders) {

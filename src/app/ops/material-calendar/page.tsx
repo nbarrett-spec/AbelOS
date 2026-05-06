@@ -34,7 +34,7 @@ interface CalendarJob {
   communityName: string | null
   assignedPMName: string | null
   assignedPMId: string | null
-  scheduledDate: string
+  scheduledDate: string | null
   jobStatus: string
   scopeType: string
   materialStatus: MaterialStatus
@@ -195,6 +195,16 @@ export default function MaterialCalendarPage() {
   const [drillReloadTick, setDrillReloadTick] = useState(0)
   const { addToast } = useToast()
 
+  // Window cache: keyed by `${start}|${end}|${view}` so flipping back to
+  // a previously-loaded month doesn't re-hit the API. Entries expire after
+  // 5 minutes — a manual Refresh always bypasses the cache.
+  const CACHE_TTL_MS = 5 * 60_000
+  // Padding the request by ±2 weeks gives the cache enough overlap that
+  // single-week scrolls stay free as long as you're inside the prefetched
+  // halo around the visible range.
+  const PAD_DAYS = 14
+  const cacheRef = useRef<Map<string, { at: number; data: CalendarResponse }>>(new Map())
+
   // ── Range compute ───────────────────────────────────────────────────────
   const [rangeStart, rangeEnd] = useMemo(() => {
     if (view === 'day') {
@@ -211,14 +221,30 @@ export default function MaterialCalendarPage() {
   }, [view, anchorDate])
 
   // ── Fetch calendar data ─────────────────────────────────────────────────
-  const fetchCalendar = useCallback(async () => {
+  const fetchCalendar = useCallback(async (opts?: { force?: boolean }) => {
+    const startKey = toYmd(rangeStart)
+    const endKey = toYmd(rangeEnd)
+    const cacheKey = `${startKey}|${endKey}|${view}`
+    // Cache hit — only when the user isn't forcing a Refresh.
+    if (!opts?.force) {
+      const hit = cacheRef.current.get(cacheKey)
+      if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+        setData(hit.data)
+        setLastFetched(new Date(hit.at))
+        setLoading(false)
+        setError(null)
+        return
+      }
+    }
     setLoading(true)
     setError(null)
     try {
       const params = new URLSearchParams({
-        start: toYmd(rangeStart),
-        end: toYmd(rangeEnd),
+        start: startKey,
+        end: endKey,
         view,
+        pad: String(PAD_DAYS),
+        includeUnscheduled: '1',
       })
       const res = await fetch(`/api/ops/material-calendar?${params.toString()}`, {
         cache: 'no-store',
@@ -229,7 +255,16 @@ export default function MaterialCalendarPage() {
       }
       const json: CalendarResponse = await res.json()
       setData(json)
-      setLastFetched(new Date())
+      const now = Date.now()
+      setLastFetched(new Date(now))
+      cacheRef.current.set(cacheKey, { at: now, data: json })
+      // Trim cache: keep at most 12 windows so memory stays bounded.
+      if (cacheRef.current.size > 12) {
+        const oldest = Array.from(cacheRef.current.entries()).sort(
+          (a, b) => a[1].at - b[1].at
+        )[0]
+        if (oldest) cacheRef.current.delete(oldest[0])
+      }
     } catch (err: any) {
       setError(err?.message ?? 'Failed to load calendar')
     } finally {
@@ -241,10 +276,11 @@ export default function MaterialCalendarPage() {
     fetchCalendar()
   }, [fetchCalendar])
 
-  // Polling every 60s
+  // Polling every 60s — force-refresh so live changes are picked up
+  // even when the visible window is cached.
   useEffect(() => {
     const id = setInterval(() => {
-      fetchCalendar()
+      fetchCalendar({ force: true })
     }, 60_000)
     return () => clearInterval(id)
   }, [fetchCalendar])
@@ -424,7 +460,7 @@ export default function MaterialCalendarPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={fetchCalendar}
+              onClick={() => fetchCalendar({ force: true })}
               icon={<RefreshCw className="w-3.5 h-3.5" />}
               disabled={loading}
             >
@@ -749,11 +785,14 @@ export default function MaterialCalendarPage() {
           error={drillError}
           onRetry={() => setDrillReloadTick((t) => t + 1)}
           onApplied={() => {
-            // Refetch drill + calendar after a substitute is applied
+            // Refetch drill + calendar after a substitute is applied —
+            // bypass the window cache so the new allocation is reflected.
             if (drillJobId) {
               setDrillReloadTick((t) => t + 1)
             }
-            fetchCalendar()
+            // Stale every cached window — allocations could affect any of them.
+            cacheRef.current.clear()
+            fetchCalendar({ force: true })
           }}
         />
       </Sheet>

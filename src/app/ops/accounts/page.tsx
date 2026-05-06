@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Plus, RefreshCw, Users, Search, X } from 'lucide-react'
 import {
   PageHeader, KPICard, Card, CardHeader, CardTitle, CardDescription, CardBody,
@@ -47,6 +48,10 @@ const fmtMoneyCompact = (n: number) => {
 }
 
 export default function BuilderAccountsPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlPage = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+
   const [builders, setBuilders] = useState<BuilderAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -59,10 +64,33 @@ export default function BuilderAccountsPage() {
   const [pms, setPms] = useState<{ id: string; firstName: string; lastName: string }[]>([])
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-  const [page, setPage] = useState(1)
+  const [page, setPageState] = useState(urlPage)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [refreshTick, setRefreshTick] = useState<number | null>(null)
+
+  // Keep `?page=` in sync with state so the browser back button works.
+  // Pushes a new history entry whenever the page changes.
+  const setPage = (next: number | ((p: number) => number)) => {
+    setPageState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next
+      const target = Math.max(1, resolved || 1)
+      if (target !== prev) {
+        const params = new URLSearchParams(searchParams.toString())
+        if (target === 1) params.delete('page')
+        else params.set('page', String(target))
+        const qs = params.toString()
+        router.push(qs ? `/ops/accounts?${qs}` : '/ops/accounts', { scroll: false })
+      }
+      return target
+    })
+  }
+
+  // React to browser back/forward (URL change) — keep state in sync with URL.
+  useEffect(() => {
+    setPageState((prev) => (prev === urlPage ? prev : urlPage))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlPage])
 
   useEffect(() => {
     fetch('/api/ops/pm/roster')

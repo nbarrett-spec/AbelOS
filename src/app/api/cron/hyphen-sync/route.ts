@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
-import { syncScheduleUpdates, syncPayments, syncOrders, getAllTenants } from '@/lib/integrations/hyphen'
+import { syncScheduleUpdates, syncPayments, syncOrders, getAllTenants, advanceTenantWatermark } from '@/lib/integrations/hyphen'
 import { startCronRun, finishCronRun } from '@/lib/cron'
 
 // Note: vercel.json schedules this as GET, older code used POST. Both work.
@@ -57,6 +57,11 @@ async function handle(request: NextRequest) {
 
     const runForTenant = async (tenant: typeof tenants[number]) => {
       const label = tenant.builderName || tenant.tenantId || 'unknown'
+      // Capture watermark candidate BEFORE the fetch starts. If a record
+      // is modified in Hyphen mid-sync, we want the next run's
+      // `modifiedSince` to still pick it up — so we advance to the
+      // pre-fetch timestamp, not NOW(). (A-PERF-4, 2026-05-05.)
+      const runStartedAt = new Date()
       try {
         const [s, p, o] = await Promise.all([
           syncScheduleUpdates(tenant),
@@ -70,13 +75,20 @@ async function handle(request: NextRequest) {
         if (tenantErrors.length > 0) {
           errorsPerTenant[label] = tenantErrors
           failedTenants.add(label)
+          // Do NOT advance the watermark — next run re-attempts the
+          // missed window. Better to re-sync some records than miss them.
         } else {
           succeededTenants.add(label)
+          // All three sync types succeeded. Advance the per-tenant
+          // watermark so the next run only fetches changes since this
+          // moment.
+          await advanceTenantWatermark(tenant.tenantId, runStartedAt)
         }
         return { tenant: label, schedule: s, payments: p, orders: o }
       } catch (err: any) {
         errorsPerTenant[label] = [err?.message || String(err)]
         failedTenants.add(label)
+        // Watermark intentionally not advanced on throw.
         return { tenant: label, error: err?.message || String(err) }
       }
     }
