@@ -7,6 +7,7 @@ import { CreateJobModal } from '../components/CreateJobModal'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { DrillLink } from '@/components/ui/DrillLink'
+import { fullName } from '@/lib/formatting'
 
 const JOB_STATUSES = [
   { key: 'CREATED', label: 'New', color: '#95A5A6' },
@@ -30,8 +31,8 @@ interface Job {
   lotBlock: string | null
   jobAddress: string | null
   assignedPM?: {
-    firstName: string
-    lastName: string
+    firstName: string | null
+    lastName: string | null
   } | null
   scheduledDate?: string | null
   status: string
@@ -420,7 +421,7 @@ export default function JobPipelinePage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.assignedPM
-                            ? `${job.assignedPM.firstName} ${job.assignedPM.lastName}`
+                            ? fullName(job.assignedPM)
                             : <span className="text-fg-subtle">Unassigned</span>}
                         </td>
                         <td className="px-4 py-3 text-sm">
@@ -528,7 +529,7 @@ export default function JobPipelinePage() {
                               </div>
                               {job.assignedPM && (
                                 <div className="text-fg-muted">
-                                  <span className="font-medium">PM:</span> {job.assignedPM.firstName} {job.assignedPM.lastName}
+                                  <span className="font-medium">PM:</span> {fullName(job.assignedPM)}
                                 </div>
                               )}
                               {job.scheduledDate && (
@@ -624,7 +625,7 @@ export default function JobPipelinePage() {
                           </DrillLink>
                         </td>
                         <td className="px-4 py-3 text-sm text-fg-muted">
-                          {job.assignedPM ? `${job.assignedPM.firstName} ${job.assignedPM.lastName}` : '—'}
+                          {fullName(job.assignedPM, '—')}
                         </td>
                         <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.scheduledDate

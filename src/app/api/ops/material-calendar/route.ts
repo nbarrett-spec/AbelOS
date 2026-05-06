@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
 
     // Unique top-level product IDs for BoM explode
     const topLevelProductIds = Array.from(
-      new Set(orderItems.map(oi => oi.productId).filter(Boolean))
+      new Set(orderItems.map(oi => oi.productId).filter((id): id is string => id !== null))
     )
 
     const bomEntries = topLevelProductIds.length > 0

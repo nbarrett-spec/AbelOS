@@ -1,12 +1,27 @@
 # Aegis — Master TODO
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-05-06 (overnight Session 2026-05-05/06)
 **Source documents:**
 - `AEGIS-OPS-FINANCE-HANDOFF.docx` (7 fixes — all shipped 2026-05-05)
 - `AEGIS-BUGFIX-HANDOFF-2026-05-05.docx` (25 bugs/features/UX)
 - `AEGIS-100-IMPROVEMENTS-AUDIT-2026-05-05.docx` (100 audit items)
 
-**Total open:** 117 items (10 P0 · 56 P1 · 45 P2 · 6 P3)
+## 🟢 Session 2026-05-05/06 tally
+
+**Shipped this session:** 95 items across 7 waves
+- Bugfix doc: B-BUG-2, B-BUG-10, B-FEAT-1/2/3/4/5/6, B-UX-1/2/3/4/5/6/7 (15)
+- Audit SEC: 1/2/3/4/5/6/7/9/10 (9)
+- Audit DATA: 6/7/8/9/10/12/13 (7)
+- Audit API: 1/2/3/4/5/6/7/9/10/11/12/13/14/15 (14)
+- Audit UX: 1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16 (16)
+- Audit PERF: 1/2/3/4/5/6/8/9/10/11/12 (11)
+- Audit INT: 2/3/4/5/8/10/11/12 (8)
+- Audit BIZ: 1/3/4/5/6/7/8/11/12/13/14 (11)
+- Audit OBS: 1/2/3/4/5/6/7/8/9/10 (10)
+
+**Total remaining open:** ~22 items (verification-pending B-BUGs, plus assorted P1/P2/P3 explicitly out of today's scope)
+
+**Total open before session:** 117. After: ~22.
 
 > Single source of truth for everything pending. Items move from
 > open → in-progress → done as we work them. Cross-referenced to file
@@ -40,7 +55,7 @@
 | ID | Title | Path / Notes |
 |---|---|---|
 | **B-BUG-1** | QC house walk page broken | `/ops/qc` or `/ops/quality` — needs symptom check |
-| **B-BUG-2** | Approve / Create / Deny builder account broken | API has PATCH for status; **no POST for create**, no UI buttons on listing |
+| ✅ **B-BUG-2** | Approve / Create / Deny builder account broken | shipped — admin builders endpoint added |
 | **B-BUG-3** | Daily tasks drill-in broken | `/ops/tasks` or dashboard widget — wrong onClick route |
 | **B-BUG-4** | Job readiness board broken | `/ops/job-readiness` — needs symptom check |
 | **B-BUG-5** | Calendar sync broken | `/ops/calendar` + Google Calendar OAuth — likely token refresh |
@@ -49,21 +64,21 @@
 | **B-BUG-8** | Inventory CSV export broken | API path EXISTS at `?format=csv` — symptom may not be code-side |
 | **B-BUG-9** | "Assign to me" broken on sales dashboard | `/sales/dashboard` — find onClick handler |
 | **B-BUG-11** | Cannot select recipients for messaging | `/ops/messaging` — combobox not wired to data source |
-| **A-SEC-1** | JWT_SECRET fallback `dev-secret-change-in-production` still in code | `src/middleware.ts` + `src/lib/staff-auth.ts` |
-| **A-SEC-2** | BPW sync cron has zero auth | `src/app/api/cron/bpw-sync/route.ts` — add CRON_SECRET guard |
+| ✅ **A-SEC-1** | JWT_SECRET fallback removed | `3dcdb03` |
+| ✅ **A-SEC-2** | BPW sync CRON_SECRET auth added | `5e502c6` |
 | **A-DATA-1** | Zero soft-delete pattern in 239 models | `prisma/schema.prisma` — add `deletedAt` to Builder, Order, Quote, Invoice, Job, Product |
 | **A-DATA-2** | `onDelete: Restrict` on `Order.builderId` blocks builder cleanup | `prisma/schema.prisma:584` |
 | **A-DATA-3** | `onDelete: Restrict` on `QuoteItem.productId` blocks product retirement | `prisma/schema.prisma:558` — add `productSnapshot` JSON for history |
-| **A-API-1** | 4,011 `any` types vs only 17 zod validations | Codebase-wide — start with builder/order/quote/invoice POST routes |
-| **A-API-2** | Twilio SMS webhook returns 501 — inbound SMS unhandled | `src/app/api/agent/sms/route.ts` |
-| **A-API-3** | Collections send-email endpoint doesn't exist | UI calls `/api/ops/collections/send-email` — route missing |
-| **A-UX-1** | 259 ops pages, only 4 `loading.tsx` files | Most pages have no loading state |
-| **A-UX-2** | Driver manifest page is 8 lines — stub | `src/app/ops/portal/driver/manifest/page.tsx` |
-| **A-UX-3** | Finance YTD page is 36 lines — stub | `src/app/ops/finance/ytd/page.tsx` |
-| **A-UX-4** | Ops inbox is 57 lines — stub | `src/app/ops/inbox/page.tsx` |
+| ✅ **A-API-1** | Zod validation rolled out across builder/order/quote/invoice POST routes | wave-3+ |
+| ✅ **A-API-2** | Twilio SMS webhook now handles inbound + auth | wave-5 |
+| ✅ **A-API-3** | Collections send-email endpoint shipped | wave-2 |
+| ✅ **A-UX-1** | loading.tsx skeletons added across top pages | wave-3+ |
+| ✅ **A-UX-2** | Driver manifest page expanded | `884b781` |
+| ✅ **A-UX-3** | Finance YTD page filled in | wave-3 |
+| ✅ **A-UX-4** | Ops inbox built out | `8d97b1f` |
 | **A-INT-1** | Hyphen scraper has 5 NotImplementedError stubs | `src/lib/hyphen/scraper.ts:192-248` — needs Playwright |
-| **A-INT-2** | Hyphen schedule + closing date fetched but not persisted | `src/lib/hyphen/job-sync.ts:5-6` |
-| **A-BIZ-1** | No quote expiration enforcement | Stale-pricing risk on old quotes — add `expiresAt` + cron |
+| ✅ **A-INT-2** | Hyphen schedule + closing date now persisted | `e8ebc95` |
+| ✅ **A-BIZ-1** | Quote expiration enforcement (expiresAt + cron) | wave-2 part 3 |
 | **A-BIZ-2** | Takeoff engine is template-based mock | `src/lib/takeoff-engine.ts:15` — Phase 1 only, not AI |
 
 > *(P0 row count: 25 — but several B-BUGs need browser verification before they're confidently fixable. Count above includes those pending verification.)*
@@ -75,101 +90,101 @@
 ### Bugfix doc — features (B-FEAT-*)
 | ID | Title | Notes |
 |---|---|---|
-| **B-FEAT-1** | Dunnage door wood/fiberglass flag | Schema add: `OrderItem.doorMaterial` enum [WOOD, FIBERGLASS, METAL]; required on Final Front |
-| **B-FEAT-2** | Blueprint upload on Communities page | Reuse `<DocumentAttachments>`, entityType=COMMUNITY |
-| **B-FEAT-3** | Non-BOM orders skip manufacturing | Add `order.hasBomItems` computed; mfg query filters; "STOCK ONLY" badge |
-| **B-FEAT-4** | Manufacturing schedule 24hr before delivery | `buildByDate = scheduledDate - 1 business day`; alert if missed |
-| **B-FEAT-5** | QC photo queue (per-door + per-load requirements) | New `QcPhotoRequirement` + `QcPhoto` models |
-| **B-FEAT-6** | Import tools (inventory, price lists, builders) | `/ops/import` page with CSV/Excel upload |
+| ✅ **B-FEAT-1** | Dunnage door wood/fiberglass flag | wave-2 part 2 (`6eb7552`) |
+| ✅ **B-FEAT-2** | Blueprint upload on Communities page | wave-2 part 1 |
+| ✅ **B-FEAT-3** | Non-BOM orders skip manufacturing | wave-2 part 2 |
+| ✅ **B-FEAT-4** | Manufacturing schedule 24hr-late cron | wave-2 part 2 |
+| ✅ **B-FEAT-5** | QC photo queue + models | `9affe6a` + `1009699` |
+| ✅ **B-FEAT-6** | Import tools (inventory, price lists, builders) | wave-3 part 2 |
 
 ### Bugfix doc — UX gaps (B-UX-* — renamed to disambiguate from audit UX)
 | ID | Title | Notes |
 |---|---|---|
-| **B-UX-1** | Global search Cmd+K | MCP `global_search` tool already exists as data layer |
-| **B-UX-2** | Drillable addresses / job numbers everywhere | Build `<DrillLink>` reusable component |
-| **B-UX-3** | Edit features on builder/community/order/quote detail pages | Use SlideOver/Modal pattern; PATCH endpoints exist |
-| **B-UX-4** | Order page references all need to be drillable links | Same pattern as B-UX-2 |
-| **B-UX-5** | Sidebar reorganization (workflow-based grouping) | DASHBOARD / SALES / OPS / INVENTORY / FINANCE / SETTINGS |
-| **B-UX-6** | Dark mode contrast — text too low contrast | Bump dark:text-* classes one shade in globals/tailwind |
-| **B-UX-7** | Add Note button on every detail page | New `<NotesSection>` reusable component |
+| ✅ **B-UX-1** | Global search Cmd+K shipped | wave-3 part 3 |
+| ✅ **B-UX-2** | DrillLink component shipped | `b90ab58` |
+| ✅ **B-UX-3** | Edit slide-over on detail pages | wave-6 part 2 |
+| ✅ **B-UX-4** | Drillable order page references | `b90ab58` |
+| ✅ **B-UX-5** | Sidebar reorganization | `b90ab58` |
+| ✅ **B-UX-6** | Dark mode contrast bump | `b90ab58` |
+| ✅ **B-UX-7** | NotesSection component on detail pages | `1009699` |
 
 ### Audit — Security & Auth
 | ID | Title | Path |
 |---|---|---|
-| **A-SEC-3** | Sentry: only 32 usages in 453 routes — captureException missing in most catch blocks | Codebase-wide |
-| **A-SEC-4** | No real CSRF token validation, only origin check | `src/middleware.ts:275` |
-| **A-SEC-5** | Admin routes: verify role check, not just session existence | `src/middleware.ts:681` |
-| **A-SEC-6** | Hyphen OAuth credentials in plaintext | `src/lib/hyphen/scraper.ts` |
+| ✅ **A-SEC-3** | Sentry sweep across catch blocks | wave-6 part 4 (`2252cf2`) |
+| ✅ **A-SEC-4** | CSRF token validation strengthened | wave-5 part 2 |
+| ✅ **A-SEC-5** | Admin route role check enforced | wave-5+ |
+| ✅ **A-SEC-6** | Hyphen OAuth credentials encrypted | `764378b` |
 
 ### Audit — Data Integrity
 | ID | Title | Path |
 |---|---|---|
 | **A-DATA-4** | `OrderItem.productId` Restrict blocks product deletion | `prisma/schema.prisma:656` |
 | **A-DATA-5** | Quote.takeoffId unique + cascade creates orphan risk | `prisma/schema.prisma` |
-| **A-DATA-6** | Missing index on `Builder.status` | Add `@@index([status])` |
-| **A-DATA-7** | Missing index on `Order.status` | Add `@@index([status, createdAt])` |
-| **A-DATA-8** | Missing index on `Job.phase` | Add `@@index([phase, scheduledDate])` |
-| **A-DATA-9** | Missing index on `Invoice.dueDate` | Add `@@index([status, dueDate])` |
+| ✅ **A-DATA-6** | Builder.status index added | `dd43d23` |
+| ✅ **A-DATA-7** | Order(status, createdAt) composite index | `dd43d23` |
+| ✅ **A-DATA-8** | Job(phase, scheduledDate) composite index | `dd43d23` |
+| ✅ **A-DATA-9** | Invoice(status, dueDate) composite index | `dd43d23` |
 
 ### Audit — API Quality
 | ID | Title | Path |
 |---|---|---|
-| **A-API-4** | Statement-send only logs request, doesn't email | `/api/ops/accounts/[id]/statement/send/` |
-| **A-API-5** | Job link-order endpoint missing | TODO at `src/app/ops/jobs/[jobId]/page.tsx:1090` |
-| **A-API-6** | Delivery detail route doesn't exist | TODO in `DeliverySignOff.tsx:292` |
-| **A-API-7** | All QuickBooks sync functions return "not implemented" | `src/lib/integrations/quickbooks.ts:163-190` — decision: build or kill |
-| **A-API-8** | BuilderTrend sync incomplete (one-directional) | `src/lib/integrations/buildertrend.ts` |
-| **A-API-9** | Financial snapshot uses hardcoded `cashOnHand = 0` | `src/app/api/cron/financial-snapshot/route.ts:56` |
-| **A-API-10** | PM standup narrative hardcoded | `src/app/api/ops/projects/standup/[pmId]/route.ts:18` |
+| ✅ **A-API-4** | Statement-send sends real email | wave-2+ |
+| ✅ **A-API-5** | Job link-order endpoint shipped | wave-2 |
+| ✅ **A-API-6** | Delivery detail route built | wave-2 |
+| ✅ **A-API-7** | QuickBooks sync stubs cleaned up (kill decision) | `2252cf2` |
+| **A-API-8** | BuilderTrend sync incomplete (one-directional) | `src/lib/integrations/buildertrend.ts` — partial covered by `2252cf2` |
+| ✅ **A-API-9** | Financial snapshot reads real cashOnHand | wave-2 |
+| ✅ **A-API-10** | PM standup narrative dynamic | wave-2 |
 
 ### Audit — UX Stub Pages
 | ID | Title | Lines |
 |---|---|---|
-| **A-UX-5** | Calendar page stub | 65 |
-| **A-UX-6** | Customer catalog stub | 62 |
-| **A-UX-7** | My Book (sales rep) stub | 24 |
-| **A-UX-8** | Portal analytics stub | 79 |
-| **A-UX-9** | Portal warranty stub (claims non-functional) | 67 |
-| **A-UX-10** | Portal projects stub | 69 |
-| **A-UX-11** | Sales contracts stub | 67 |
-| **A-UX-12** | Sales documents stub | 67 |
-| **A-UX-13** | Quote conversion filters don't read URL params | `/ops/quotes/conversion/page.tsx:209,275,382` |
-| **A-UX-14** | Substitutions page minimal (114 lines) | |
-| **A-UX-15** | Shortages page minimal (93 lines) | |
+| ✅ **A-UX-5** | Calendar wired to real events | `25980e8` |
+| ✅ **A-UX-6** | Customer Catalog page built | `f37d939` |
+| ✅ **A-UX-7** | My Book page built | `9c98762` |
+| ✅ **A-UX-8** | Portal analytics filled in | `74711bc` |
+| ✅ **A-UX-9** | Portal warranty claim flow shipped | `c9f08bd` |
+| ✅ **A-UX-10** | Portal projects expanded | wave-3 part 3 |
+| ✅ **A-UX-11** | Sales contracts list + detail | `b959a86` |
+| ✅ **A-UX-12** | Sales documents vault | `233ca45` |
+| ✅ **A-UX-13** | Quote conversion filters read URL params | wave-3+ |
+| ✅ **A-UX-14** | Substitutions page expanded | wave-3 |
+| ✅ **A-UX-15** | Shortages page expanded | wave-3 |
 
 ### Audit — Performance
 | ID | Title | Path |
 |---|---|---|
-| **A-PERF-1** | Ops accounts page loads all builders without pagination | `src/app/ops/accounts/` |
-| **A-PERF-2** | Material calendar loads entire delivery schedule | `src/app/ops/material-calendar/page.tsx` |
-| **A-PERF-3** | Manufacturing job-packet page unbounded fetch | `src/app/ops/manufacturing/job-packet/` |
-| **A-PERF-4** | Hyphen sync imports all jobs every run (no incremental) | `src/lib/hyphen/job-sync.ts` |
-| **A-PERF-5** | Collections email cron fetches contact per invoice (N+1) | `src/app/api/cron/collections-email/route.ts` |
+| ✅ **A-PERF-1** | Ops accounts paginated | `4beb177` |
+| ✅ **A-PERF-2** | Material calendar windowed | `4beb177` |
+| ✅ **A-PERF-3** | Job-packet bounded fetch | `4beb177` |
+| ✅ **A-PERF-4** | Hyphen sync incremental | `4beb177` |
+| ✅ **A-PERF-5** | Collections N+1 fixed | `1b930c5` |
 
 ### Audit — Integrations
 | ID | Title | Path |
 |---|---|---|
-| **A-INT-3** | Calendar sync broken (matches B-BUG-5) | `src/app/api/cron/calendar-sync/` |
-| **A-INT-4** | Gmail sync ack/receipt handling incomplete | `src/app/api/cron/gmail-sync/route.ts` |
-| **A-INT-5** | BuilderTrend tasks one-directional sync | `src/lib/integrations/buildertrend.ts` |
+| ✅ **A-INT-3** | Calendar sync hardened | wave-5 |
+| ✅ **A-INT-4** | Gmail ack/receipt complete | `0d52789` |
+| ✅ **A-INT-5** | BuilderTrend bidirectional sync | `2252cf2` |
 | **A-INT-6** | InFlow sync runs but inventory page broken (matches B-BUG-7) | |
 
 ### Audit — Business Logic
 | ID | Title | Path |
 |---|---|---|
-| **A-BIZ-3** | No inventory reservation on order placement | Add `reservedQty` on `InventoryItem` |
-| **A-BIZ-4** | No auto-reorder cron for fast-moving SKUs | New cron: reorder-point check → draft PO |
-| **A-BIZ-5** | MRP doesn't account for vendor lead times | Add `leadTimeDays` to Vendor/Product |
-| **A-BIZ-6** | No backorder handling | New flow: `OrderItem.backordered`, link to incoming PO, notify builder |
-| **A-BIZ-7** | Dunnage door strike type not captured (matches B-FEAT-1) | |
-| **A-BIZ-8** | 24hr-before-delivery mfg rule not enforced (matches B-FEAT-4) | |
+| ✅ **A-BIZ-3** | Inventory reservation on order placement | `75d0cf8` |
+| ✅ **A-BIZ-4** | Auto-reorder cron for fast-moving SKUs | `75d0cf8` |
+| ✅ **A-BIZ-5** | MRP accounts for vendor lead times | `75d0cf8` |
+| ✅ **A-BIZ-6** | Backorder flow shipped | `0d52789` |
+| ✅ **A-BIZ-7** | Dunnage door strike type captured (= B-FEAT-1) | `6eb7552` |
+| ✅ **A-BIZ-8** | 24hr-before-delivery mfg rule (= B-FEAT-4) | `6eb7552` |
 
 ### Audit — Observability
 | ID | Title | Path |
 |---|---|---|
-| **A-OBS-1** | AuditLog write is TODO — no production audit trail | `src/lib/security.ts:148` |
-| **A-OBS-2** | No structured logging — 54+ console.log in API layer | Adopt pino/winston |
-| **A-OBS-3** | Health check doesn't ping integrations (DB/Redis/Resend) | `src/app/api/health/` |
+| ✅ **A-OBS-1** | AuditLog persistence wired | `3d5fdc2` |
+| ✅ **A-OBS-2** | Structured logging shipped | `0a837e3` |
+| ✅ **A-OBS-3** | Health check pings DB/Redis/Resend | wave-7 |
 
 ---
 
@@ -178,36 +193,36 @@
 ### Audit — Security
 | ID | Title |
 |---|---|
-| **A-SEC-7** | No rate limiting on auth endpoints — add Upstash limiter to login/signup/reset |
+| ✅ **A-SEC-7** | Rate limiting on auth endpoints | `e7e90a0` |
 | **A-SEC-8** | Password reset tokens lack explicit expiration check |
-| **A-SEC-9** | File uploads have no size limit enforcement (25MB cap) |
-| **A-SEC-10** | No Content-Security-Policy header in middleware |
+| ✅ **A-SEC-9** | File upload size cap enforced | `e7e90a0` |
+| ✅ **A-SEC-10** | CSP header in middleware | `e7e90a0` |
 | **A-SEC-11** | Agent SMS webhook returns 501 with no auth |
 | **A-SEC-12** | NUC integration endpoints lack auth |
 
 ### Audit — Data
 | ID | Title |
 |---|---|
-| **A-DATA-10** | Missing composite index on `Delivery.status + scheduledDate` |
+| ✅ **A-DATA-10** | Delivery(status, scheduledDate) composite index | `dd43d23` |
 | **A-DATA-11** | 667 indexes for 239 models — but key operational fields missed |
-| **A-DATA-12** | Legacy models still in schema (Bolt*, Bpw*, QbCustomer*) |
-| **A-DATA-13** | No DB-level constraint on `Order.total` vs sum of line items |
+| ✅ **A-DATA-12** | Legacy models deprecated | `d7a8706` |
+| ✅ **A-DATA-13** | Order.total trigger | `6ba0728` |
 | **A-DATA-14** | Staff `SetNull` on assigneeId — UI doesn't handle null gracefully |
 | **A-DATA-15** | Verify `Product.sku` has unique constraint |
 
 ### Audit — API
 | ID | Title |
 |---|---|
-| **A-API-11** | 20+ API routes have no try/catch (raw 500 + stack traces leaked) |
-| **A-API-12** | Webhook retry cron has no exponential backoff |
-| **A-API-13** | No idempotency on payment webhook processing |
-| **A-API-14** | Import endpoints missing (matches B-FEAT-6) |
-| **A-API-15** | Search inputs not sanitized in raw queries — audit `$queryRaw`/`$executeRaw` |
+| ✅ **A-API-11** | try/catch sweep across API routes | `e8ebc95` |
+| ✅ **A-API-12** | Webhook retry exponential backoff | `e8ebc95` |
+| ✅ **A-API-13** | Payment webhook idempotency | wave-7 |
+| ✅ **A-API-14** | Import endpoints (= B-FEAT-6) | wave-3 part 2 |
+| ✅ **A-API-15** | Raw SQL audit + sanitization | `764378b` |
 
 ### Audit — UX
 | ID | Title |
 |---|---|
-| **A-UX-16** | Admin page (91 lines) — needs user mgmt, role assignment, integration status |
+| ✅ **A-UX-16** | Admin page expanded | wave-3+ |
 | **A-UX-17** | Homeowner page (113 lines) — needs warranty info, products, care |
 | **A-UX-18** | Portal messages stub (65 lines) |
 | **A-UX-19** | Portal schedule stub (71 lines) |
@@ -216,21 +231,22 @@
 ### Audit — Performance
 | ID | Title |
 |---|---|
-| **A-PERF-6** | PM daily tasks cron has no idempotency check |
+| ✅ **A-PERF-6** | PM daily tasks cron idempotency | wave-2 part 3 |
 | **A-PERF-7** | 54 console.log in API routes (perf + noise) |
-| **A-PERF-8** | No query result caching for frequently-accessed data — add Redis 60s TTL |
-| **A-PERF-9** | Quote report filters in memory, not DB |
-| **A-PERF-10** | Boise Cascade spend analysis recalculates per request — pre-compute via cron |
-| **A-PERF-11** | No image optimization for product photos |
+| ✅ **A-PERF-8** | Redis caching layer | `d591e13` |
+| ✅ **A-PERF-9** | Quote report filters pushed to DB | `d591e13` |
+| ✅ **A-PERF-10** | Boise spend pre-compute cron | `d591e13` + `6ba0728` |
+| ✅ **A-PERF-11** | Image optimization for product photos | `d29dece` |
 
 ### Audit — Integrations
 | ID | Title |
 |---|---|
 | **A-INT-7** | Bolt sync still in crons — ECI Bolt is dead (remove) |
-| **A-INT-8** | QuickBooks sync queue models exist, sync is stub — build or kill (TASKS.md #45) |
+| ✅ **A-INT-8** | QuickBooks sync stubs killed | `2252cf2` |
 | **A-INT-9** | NUC brain-sync crons assume Tailscale (fail on Vercel — no Tailscale) |
-| **A-INT-10** | Stripe webhook handler missing idempotency |
-| **A-INT-11** | Boise pricing sync — no delta detection (full re-import) |
+| ✅ **A-INT-10** | Stripe webhook idempotency | wave-7 |
+| ✅ **A-INT-11** | Boise pricing delta detection | wave-6+ |
+| ✅ **A-INT-12** | SEO local-listing phone placeholder fixed | wave-7 |
 
 ### Audit — Business
 | ID | Title |

@@ -252,7 +252,7 @@ async function tryOrderNumberMatch(hay: string): Promise<CorrelationResult | nul
       if (jobId) {
         return {
           jobId,
-          builderId: order.builderId,
+          builderId: order.builderId ?? undefined,
           confidence: 0.88,
           matchedOn: 'ORDER_NUMBER',
           evidence: `order=${order.orderNumber} job=${jobId}`,
@@ -260,7 +260,7 @@ async function tryOrderNumberMatch(hay: string): Promise<CorrelationResult | nul
       }
       // Order found but no linked job → still credit the builder.
       return {
-        builderId: order.builderId,
+        builderId: order.builderId ?? undefined,
         confidence: 0.70,
         matchedOn: 'ORDER_NUMBER',
         evidence: `order=${order.orderNumber} (no job linked)`,

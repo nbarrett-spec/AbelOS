@@ -100,12 +100,14 @@ model Builder {
   // Hyphen portal docs (plans, redlines, COs, schedules) — matched to builder
   hyphenDocuments HyphenDocument[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // A-DATA-1 — soft-delete tombstone
 
   @@index([email])
   @@index([status])
   @@index([builderType])
+  @@index([deletedAt])
 }
 
 enum BuilderType {
@@ -435,7 +437,10 @@ model Takeoff {
   // Nullable: a takeoff can originate from a raw inquiry (no uploaded blueprint
   // yet) — blueprint-less takeoff entries back the /ops/takeoff-inquiries flow.
   blueprintId String?
-  blueprint   Blueprint? @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  // A-DATA-5 — Restrict (was Cascade). Protects the downstream Quote (which
+  // has Cascade on takeoffId) from being silently destroyed when a Blueprint
+  // is deleted. Soft-delete the blueprint or unlink first.
+  blueprint   Blueprint? @relation(fields: [blueprintId], references: [id], onDelete: Restrict)
 
   status     TakeoffStatus @default(PROCESSING)
   confidence Float? // 0-1 overall confidence score
@@ -536,8 +541,12 @@ model Quote {
   floorPlanId       String?
   notes             String?
 
+  // A-DATA-1 — soft-delete tombstone
+  deletedAt DateTime?
+
   @@index([projectId])
   @@index([quoteNumber])
+  @@index([deletedAt])
 }
 
 enum QuoteStatus {
@@ -555,7 +564,7 @@ model QuoteItem {
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   productId String? // Nullable for custom line items (delivery fees, misc charges, etc.)
-  product   Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   description String
   quantity    Int
@@ -571,6 +580,10 @@ model QuoteItem {
   location String?
 
   sortOrder Int @default(0)
+
+  // A-DATA-3 — frozen product snapshot at item creation. Lets the line render
+  // a stable name/sku/category after a Product is soft-deleted (FK SetNull).
+  productSnapshot Json?
 
   @@index([quoteId])
   @@index([productId])
@@ -596,11 +609,14 @@ model QuoteRevision {
 // ─── ORDERS ──────────────────────────────────────────────────────────
 
 model Order {
-  id        String  @id @default(cuid())
-  builderId String
-  builder   Builder @relation(fields: [builderId], references: [id], onDelete: Restrict)
-  quoteId   String? @unique
-  quote     Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  id        String   @id @default(cuid())
+  // A-DATA-2 — builderId is now nullable + SetNull (was NOT NULL + Restrict).
+  // Lets a builder be soft-deleted without orphaning historical orders; the
+  // FK is cleared and the order survives for accounting/audit.
+  builderId String?
+  builder   Builder? @relation(fields: [builderId], references: [id], onDelete: SetNull)
+  quoteId   String?  @unique
+  quote     Quote?   @relation(fields: [quoteId], references: [id], onDelete: SetNull)
 
   orderNumber String  @unique // ORD-2026-0001
   poNumber    String? // Builder's PO number
@@ -633,8 +649,9 @@ model Order {
   items OrderItem[]
   jobs  Job[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // A-DATA-1 — soft-delete tombstone
 
   @@index([builderId])
   @@index([orderNumber])
@@ -642,6 +659,7 @@ model Order {
   @@index([orderDate])
   @@index([isForecast])
   @@index([status, createdAt], map: "idx_order_status_created")
+  @@index([deletedAt])
 }
 
 enum OrderStatus {
@@ -679,13 +697,20 @@ model OrderItem {
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  // A-DATA-4 — productId is now nullable + SetNull (was NOT NULL + Restrict).
+  // Lets a product be soft-deleted without orphaning historical line items;
+  // the FK is cleared and the line survives via productSnapshot.
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   description String
   quantity    Int
   unitPrice   Float
   lineTotal   Float
+
+  // A-DATA-4 — frozen product snapshot at item creation. Lets the line
+  // render a stable name/sku/category after a Product is soft-deleted.
+  productSnapshot Json?
 
   // Strike-type spec for dunnage / Final Front doors. Nullable in DB so
   // the migration is additive; app code enforces "required for dunnage /
@@ -815,12 +840,14 @@ model Product {
   upgradeFrom   UpgradePath[]       @relation("UpgradeFrom")
   upgradeTo     UpgradePath[]       @relation("UpgradeTo")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // A-DATA-1 — soft-delete tombstone
 
   @@index([sku])
   @@index([category])
   @@index([active])
+  @@index([deletedAt])
 }
 
 model BomEntry {
@@ -876,6 +903,30 @@ model UpgradePath {
   @@unique([fromProductId, toProductId])
   @@index([fromProductId])
   @@index([toProductId])
+}
+
+// ─── A-BIZ-9 — PriceChangeRequest review queue ────────────────────────
+// When Product.cost moves materially (>2% by default), a row lands here
+// with a suggested basePrice that preserves target margin. Sales lead
+// reviews + approves before the catalog price actually changes.
+// Migration: scripts/migrate-aegis-price-change-requests-2026-05-05.sql
+model PriceChangeRequest {
+  id             String    @id @default(cuid())
+  productId      String
+  oldCost        Float
+  newCost        Float
+  oldPrice       Float
+  suggestedPrice Float
+  marginPct      Float
+  status         String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  triggerSource  String? // 'cost-change' | 'manual' | 'vendor-update' | 'inflow-import' | 'price-list-import'
+  reviewerId     String?
+  reviewedAt     DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  @@index([productId])
+  @@index([status, createdAt(sort: Desc)])
 }
 
 // ─── HOMEOWNER PORTAL ────────────────────────────────────────────────
@@ -1178,8 +1229,9 @@ model Job {
   phases            JobPhase[]
   hyphenDocuments   HyphenDocument[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // A-DATA-1 — soft-delete tombstone
 
   @@index([status])
   @@index([assignedPMId])
@@ -1189,6 +1241,7 @@ model Job {
   @@index([communityId])
   @@index([orderId])
   @@index([status, scheduledDate], map: "idx_job_status_scheduled")
+  @@index([deletedAt])
 }
 
 enum JobStatus {
@@ -1970,8 +2023,9 @@ model Invoice {
   payments          Payment[]
   collectionActions CollectionAction[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // A-DATA-1 — soft-delete tombstone
 
   @@index([builderId])
   @@index([status])
@@ -1980,6 +2034,7 @@ model Invoice {
   @@index([orderId])
   @@index([issuedAt])
   @@index([status, dueDate], map: "idx_invoice_status_due")
+  @@index([deletedAt])
 }
 
 enum InvoiceStatus {

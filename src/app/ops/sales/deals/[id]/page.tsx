@@ -20,6 +20,7 @@ import {
   FileCheck,
   AlertCircle,
 } from 'lucide-react';
+import { fullName } from '@/lib/formatting';
 
 interface Deal {
   id: string;
@@ -39,11 +40,11 @@ interface Deal {
   createdAt: string;
   owner: {
     id: string;
-    name: string;
-    firstName?: string;
-    lastName?: string;
+    name?: string;
+    firstName?: string | null;
+    lastName?: string | null;
     avatar?: string;
-  };
+  } | null;
   activities: DealActivity[];
   contracts: Contract[];
   documentRequests: DocumentRequest[];
@@ -684,10 +685,10 @@ export default function DealDetailPage() {
                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                   <span className="text-sm text-gray-600">Owner</span>
                   <div className="flex items-center gap-2">
-                    {deal.owner.avatar && (
-                      <Image src={deal.owner.avatar} alt={`${deal.owner.firstName} ${deal.owner.lastName}`} width={24} height={24} className="w-6 h-6 rounded-full" />
+                    {deal.owner?.avatar && (
+                      <Image src={deal.owner.avatar} alt={fullName(deal.owner)} width={24} height={24} className="w-6 h-6 rounded-full" />
                     )}
-                    <span className="text-sm font-medium text-gray-900">{deal.owner.firstName} {deal.owner.lastName}</span>
+                    <span className="text-sm font-medium text-gray-900">{fullName(deal.owner)}</span>
                   </div>
                 </div>
               </div>

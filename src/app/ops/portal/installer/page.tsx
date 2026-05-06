@@ -13,6 +13,7 @@ import Sheet from '@/components/ui/Sheet'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
 import { useToast } from '@/contexts/ToastContext'
+import { fullName } from '@/lib/formatting'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ interface InstallerJob {
   actualDate: string | null
   orderNumber: string | null
   deliveryNotes: string | null
-  pm: { id: string; firstName: string; lastName: string } | null
+  pm: { id: string; firstName: string | null; lastName: string | null } | null
   highPriorityNotes: { body: string; priority: string; noteType: string }[]
   distanceFromPrevMi: number | null
 }
@@ -321,7 +322,7 @@ export default function InstallerTodayPage() {
                 <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-fg-subtle mb-1">
                   Project manager
                 </p>
-                <p className="text-[13px] text-fg">{sheetJob.pm.firstName} {sheetJob.pm.lastName}</p>
+                <p className="text-[13px] text-fg">{fullName(sheetJob.pm)}</p>
               </div>
             )}
           </div>

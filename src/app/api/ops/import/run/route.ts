@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit, getStaffFromHeaders } from '@/lib/audit'
+import { maybeCreatePriceChangeRequest } from '@/lib/price-change-detector'
 import {
   getImportTypeDef,
   toInt,
@@ -165,8 +166,12 @@ async function runPriceList(body: RunBody): Promise<RunResult> {
     }
   }
 
-  const products = await prisma.product.findMany({ select: { id: true, sku: true } })
-  const skuMap = new Map(products.map(p => [p.sku, p.id]))
+  // Pull current cost alongside id so the detector can compare before/after
+  // without an extra round-trip per row.
+  const products = await prisma.product.findMany({
+    select: { id: true, sku: true, cost: true },
+  })
+  const skuMap = new Map(products.map(p => [p.sku, { id: p.id, cost: p.cost }]))
 
   for (let i = 0; i < body.rows.length; i++) {
     const row = body.rows[i]
@@ -177,11 +182,12 @@ async function runPriceList(body: RunBody): Promise<RunResult> {
         errors.push({ row: rowNum, message: 'Missing SKU' })
         continue
       }
-      const productId = skuMap.get(sku)
-      if (!productId) {
+      const productInfo = skuMap.get(sku)
+      if (!productInfo) {
         errors.push({ row: rowNum, message: `SKU "${sku}" not found in product catalog` })
         continue
       }
+      const productId = productInfo.id
 
       const data: { basePrice?: number; cost?: number } = {}
       if (hasPriceMapping) {
@@ -200,6 +206,17 @@ async function runPriceList(body: RunBody): Promise<RunResult> {
 
       await prisma.product.update({ where: { id: productId }, data })
       updated++
+
+      // Cost moved? Drop a review-queue entry. Fire-and-forget — never block
+      // the bulk import on detector logic.
+      if (data.cost != null) {
+        maybeCreatePriceChangeRequest({
+          productId,
+          oldCost: productInfo.cost ?? 0,
+          newCost: data.cost,
+          source: 'price-list-import',
+        }).catch(() => {})
+      }
     } catch (err: any) {
       errors.push({ row: rowNum, message: err.message?.substring(0, 200) || 'Unknown error' })
     }

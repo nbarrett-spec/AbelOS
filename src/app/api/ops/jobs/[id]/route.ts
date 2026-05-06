@@ -25,6 +25,7 @@ export async function GET(
       SELECT j.*,
              j."status"::text AS "status",
              j."scopeType"::text AS "scopeType",
+             j."jobType"::text AS "jobType",
              o."orderNumber", o."total" AS "orderTotal", o."status"::text AS "orderStatus",
              o."deliveryNotes", o."poNumber",
              b."id" AS "builder_id", b."companyName" AS "builder_companyName",
@@ -81,8 +82,10 @@ export async function GET(
       lotBlock: job.lotBlock,
       community: job.community,
       scopeType: job.scopeType,
+      jobType: job.jobType,
       dropPlan: job.dropPlan,
       assignedPMId: job.assignedPMId,
+      buildSheetNotes: job.buildSheetNotes ?? null,
       status: job.status,
       readinessCheck: job.readinessCheck,
       materialsLocked: job.materialsLocked,
@@ -164,13 +167,35 @@ export async function PATCH(
 
     // Build SET clauses
     const setClauses: string[] = ['"updatedAt" = NOW()']
-    const validFields = ['builderName', 'builderContact', 'jobAddress', 'lotBlock', 'community', 'dropPlan', 'assignedPMId', 'orderId', 'installerId', 'trimVendorId']
+    // Plain string / nullable-FK columns. assignedPMId and the *Id fields
+    // accept null to clear; everything else is treated as a string write.
+    // buildSheetNotes is the back-end column for the user-facing "notes"
+    // field on the Job edit slide-over.
+    const validFields = [
+      'builderName', 'builderContact', 'jobAddress', 'lotBlock',
+      'community', 'dropPlan', 'assignedPMId', 'orderId',
+      'installerId', 'trimVendorId', 'buildSheetNotes',
+    ]
 
     for (const field of validFields) {
       if (body[field] !== undefined) {
-        if (field === 'orderId' || field === 'installerId' || field === 'trimVendorId') {
-          // These are UUIDs, needs special handling
-          setClauses.push(`"${field}" = ${body[field] ? `'${String(body[field]).replace(/'/g, "''")}'` : 'NULL'}`)
+        if (
+          field === 'orderId' ||
+          field === 'installerId' ||
+          field === 'trimVendorId' ||
+          field === 'assignedPMId'
+        ) {
+          // These are UUIDs that may be cleared by passing null/empty.
+          setClauses.push(
+            `"${field}" = ${body[field] ? `'${String(body[field]).replace(/'/g, "''")}'` : 'NULL'}`,
+          )
+        } else if (field === 'buildSheetNotes') {
+          // Allow clearing notes by passing null/empty.
+          setClauses.push(
+            body[field] === null || body[field] === ''
+              ? `"${field}" = NULL`
+              : `"${field}" = '${String(body[field]).replace(/'/g, "''")}'`,
+          )
         } else {
           setClauses.push(`"${field}" = '${String(body[field]).replace(/'/g, "''")}'`)
         }
@@ -179,6 +204,26 @@ export async function PATCH(
 
     if (body.scopeType !== undefined) {
       setClauses.push(`"scopeType" = '${body.scopeType}'::"ScopeType"`)
+    }
+
+    if (body.jobType !== undefined) {
+      // Whitelist enum values to keep the unsafe SQL safe.
+      const allowedJobTypes = new Set([
+        'TRIM_1', 'TRIM_1_INSTALL', 'TRIM_2', 'TRIM_2_INSTALL',
+        'DOORS', 'DOOR_INSTALL', 'HARDWARE', 'HARDWARE_INSTALL',
+        'FINAL_FRONT', 'FINAL_FRONT_INSTALL', 'QC_WALK', 'PUNCH',
+        'WARRANTY', 'CUSTOM',
+      ])
+      if (body.jobType === null || body.jobType === '') {
+        setClauses.push(`"jobType" = NULL`)
+      } else if (!allowedJobTypes.has(String(body.jobType))) {
+        return NextResponse.json(
+          { error: `Invalid jobType: ${body.jobType}` },
+          { status: 400 },
+        )
+      } else {
+        setClauses.push(`"jobType" = '${body.jobType}'::"JobType"`)
+      }
     }
 
     if (body.scheduledDate !== undefined) {

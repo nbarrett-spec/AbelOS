@@ -6,6 +6,7 @@ import * as path from 'path'
 import * as crypto from 'crypto'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
+import { maybeCreatePriceChangeRequest } from '@/lib/price-change-detector'
 
 // CSV parsing utility - handles BOM and quoted fields
 function parseCSVLine(line: string): string[] {
@@ -222,6 +223,16 @@ async function importProducts(csvPath: string) {
       const isActive = row['IsActive']?.trim() !== 'False'
       const attrs = parseProductAttributes(name)
 
+      // Effective new cost picks the same fallback chain the upsert below uses.
+      const effectiveNewCost = cost || vendorPrice || 0
+
+      // Snapshot pre-update cost (only matters when SKU already exists).
+      // Cheap when it doesn't — Prisma returns null and the detector skips.
+      const priorProduct = await prisma.product.findUnique({
+        where: { sku },
+        select: { id: true, cost: true },
+      })
+
       const product = await prisma.product.upsert({
         where: { sku },
         update: {
@@ -245,6 +256,18 @@ async function importProducts(csvPath: string) {
           inflowCategory: row['Category']?.trim(),
         },
       })
+
+      // If this was an existing SKU and the cost moved, queue for review.
+      // First-fill (priorProduct == null) skips inside the detector via the
+      // no-baseline-cost branch.
+      if (priorProduct && effectiveNewCost > 0) {
+        maybeCreatePriceChangeRequest({
+          productId: product.id,
+          oldCost: priorProduct.cost ?? 0,
+          newCost: effectiveNewCost,
+          source: 'inflow-import',
+        }).catch(() => {})
+      }
 
       // Import per-builder pricing
       for (const col of BUILDER_PRICING_COLUMNS) {
@@ -516,10 +539,24 @@ async function importVendorProducts(csvPath: string) {
 
       // Update product cost if vendor provides one
       if (vendorPrice > 0) {
+        // Snapshot prior cost so the detector can decide if this move is
+        // material. Selecting only `cost` is cheap and avoids racing with
+        // the row we're about to update.
+        const prior = await prisma.product.findUnique({
+          where: { id: productId },
+          select: { cost: true },
+        })
         await prisma.product.update({
           where: { id: productId },
           data: { cost: vendorPrice },
         })
+        // Fire-and-forget — never block the cost write on review-queue logic.
+        maybeCreatePriceChangeRequest({
+          productId,
+          oldCost: prior?.cost ?? 0,
+          newCost: vendorPrice,
+          source: 'inflow-import',
+        }).catch(() => {})
       }
 
       imported++

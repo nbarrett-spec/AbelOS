@@ -11,6 +11,7 @@ import { PageHeader, KPICard, StatusBadge, Badge } from '@/components/ui'
 import EmptyState from '@/components/ui/EmptyState'
 import { DrillLink } from '@/components/ui/DrillLink'
 import { cn } from '@/lib/utils'
+import { fullName } from '@/lib/formatting'
 
 type DoorMaterial = 'WOOD' | 'FIBERGLASS' | 'METAL'
 
@@ -105,7 +106,7 @@ export default function OpsOrdersPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [pmFilter, setPmFilter] = useState<string>('')
-  const [pms, setPms] = useState<{ id: string; firstName: string; lastName: string }[]>([])
+  const [pms, setPms] = useState<{ id: string; firstName: string | null; lastName: string | null }[]>([])
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
@@ -428,7 +429,7 @@ export default function OpsOrdersPage() {
               <option value="">All PMs</option>
               {pms.map(pm => (
                 <option key={pm.id} value={pm.id}>
-                  {pm.firstName} {pm.lastName}
+                  {fullName(pm)}
                 </option>
               ))}
             </select>

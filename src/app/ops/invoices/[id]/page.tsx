@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { Edit2 } from 'lucide-react'
 import AssignScheduleDialog from './AssignScheduleDialog'
 import { RecordPaymentModal } from '@/app/ops/components/RecordPaymentModal'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
 import NotesSection from '@/components/ops/NotesSection'
+import EditSlideOver, { type FieldDef } from '@/components/ops/EditSlideOver'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 
 // Feature flag — default ON unless explicitly 'off'. Evaluated at bundle time.
@@ -105,6 +107,8 @@ export default function InvoiceDetailPage() {
   const [writeOffReason, setWriteOffReason] = useState('')
   const [actionBusy, setActionBusy] = useState<null | 'send' | 'void' | 'write-off'>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  // B-UX-3 — Edit slide-over state for limited post-issuance edits.
+  const [editOpen, setEditOpen] = useState(false)
 
   // Staff auth — used to gate the admin-only Write-Off button on the client.
   // The API still enforces it server-side; this just hides the control.
@@ -308,6 +312,20 @@ export default function InvoiceDetailPage() {
           >
             Download PDF
           </a>
+
+          {/* B-UX-3 — Edit. Limited to mutable post-issuance fields (due date,
+              payment term, notes). Hidden on terminal states where edits are
+              meaningless / require void+reissue. */}
+          {!['VOID', 'WRITE_OFF'].includes(invoice.status) && (
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 text-gray-700 bg-white rounded hover:bg-gray-50 font-medium"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          )}
 
           {/* FIX-14 — Send Invoice (first send, ISSUED → SENT) */}
           {invoice.status === 'ISSUED' && (
@@ -717,6 +735,44 @@ export default function InvoiceDetailPage() {
         </div>
       )}
 
+      {/* B-UX-3 — Limited Edit slide-over. Most invoice fields are immutable
+          post-issuance; total / line items / status / builderId need
+          void+reissue, not edit. Exposes only dueDate, paymentTerm, and
+          notes — the safe set the existing PATCH endpoint already accepts. */}
+      <EditSlideOver
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Invoice"
+        subtitle={invoice.invoiceNumber}
+        fields={INVOICE_EDIT_FIELDS}
+        initialValues={{
+          dueDate: invoice.dueDate
+            ? new Date(invoice.dueDate).toISOString().slice(0, 10)
+            : '',
+          paymentTerm: invoice.paymentTerm || 'NET_30',
+          notes: invoice.notes ?? '',
+        }}
+        endpoint={`/api/ops/invoices/${invoice.id}`}
+        method="PATCH"
+        onSuccess={(body) => {
+          if (body && typeof body === 'object') {
+            setInvoice((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    dueDate: body.dueDate ?? prev.dueDate,
+                    paymentTerm: body.paymentTerm ?? prev.paymentTerm,
+                    notes: body.notes ?? prev.notes,
+                  }
+                : prev,
+            )
+          }
+          setEditOpen(false)
+          setToast('Invoice updated.')
+          fetchInvoice()
+        }}
+      />
+
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 bg-green-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50">
@@ -726,3 +782,37 @@ export default function InvoiceDetailPage() {
     </div>
   )
 }
+
+// ── B-UX-3 — Invoice edit fields ──────────────────────────────────────
+// Intentionally minimal. Total / line items / status / builderId are not
+// editable post-issuance — those need void+reissue. Anything else here
+// flows through the existing PATCH /api/ops/invoices/[id] handler.
+const INVOICE_EDIT_FIELDS: FieldDef[] = [
+  {
+    key: 'dueDate',
+    label: 'Due Date',
+    type: 'text',
+    placeholder: 'YYYY-MM-DD',
+    hint: 'ISO date — e.g. 2026-06-15',
+  },
+  {
+    key: 'paymentTerm',
+    label: 'Payment Term',
+    type: 'select',
+    required: true,
+    options: [
+      { value: 'PAY_AT_ORDER', label: 'Pay at Order' },
+      { value: 'PAY_ON_DELIVERY', label: 'Pay on Delivery' },
+      { value: 'NET_15', label: 'Net 15' },
+      { value: 'NET_30', label: 'Net 30' },
+    ],
+  },
+  {
+    key: 'notes',
+    label: 'Notes',
+    type: 'textarea',
+    nullableString: true,
+    colSpan: 2,
+    placeholder: 'Internal notes about this invoice…',
+  },
+]

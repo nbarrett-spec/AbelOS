@@ -19,6 +19,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
 import NotesSection from '@/components/ops/NotesSection'
+import { fullName } from '@/lib/formatting'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -693,22 +694,8 @@ export default function PurchaseOrderDetailPage() {
               }}
             />
             <Meta label="Received" value={fmtDate(po.receivedAt)} />
-            <Meta
-              label="Created by"
-              value={
-                po.createdBy
-                  ? `${po.createdBy.firstName ?? ''} ${po.createdBy.lastName ?? ''}`.trim()
-                  : '—'
-              }
-            />
-            <Meta
-              label="Approved by"
-              value={
-                po.approvedBy
-                  ? `${po.approvedBy.firstName ?? ''} ${po.approvedBy.lastName ?? ''}`.trim()
-                  : '—'
-              }
-            />
+            <Meta label="Created by" value={fullName(po.createdBy, '—')} />
+            <Meta label="Approved by" value={fullName(po.approvedBy, '—')} />
             <Meta label="Created" value={fmtDate(po.createdAt)} />
             <Meta label="Last update" value={fmtDate(po.updatedAt)} />
             <Meta label="Source" value={po.source ?? 'Direct'} />

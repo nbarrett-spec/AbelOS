@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Edit2 } from 'lucide-react'
 import DocumentPanel from '@/components/DocumentPanel'
 import PresenceAvatars from '@/components/ui/PresenceAvatars'
+import { fullName } from '@/lib/formatting'
 import HyphenDocumentsTab from './HyphenDocumentsTab'
 import HyphenPanel from './HyphenPanel'
 import AllocationPanel from './AllocationPanel'
@@ -14,6 +16,7 @@ import CoPreviewSheet from './CoPreviewSheet'
 import ChangeOrderInbox from './ChangeOrderInbox'
 import DeliverySignOff from './DeliverySignOff'
 import NotesSection from '@/components/ops/NotesSection'
+import EditSlideOver, { type FieldDef } from '@/components/ops/EditSlideOver'
 
 // Feature flags — default ON unless explicitly 'off'. Evaluated at bundle time.
 const HYPHEN_PANEL_ENABLED =
@@ -73,6 +76,7 @@ interface Job {
   lotBlock: string | null
   community: string | null
   scopeType: string | null
+  jobType: string | null
   dropPlan: string | null
   status: string
   readinessCheck: boolean
@@ -85,6 +89,8 @@ interface Job {
   updatedAt: string | null
   installerId: string | null
   trimVendorId: string | null
+  assignedPMId: string | null
+  buildSheetNotes: string | null
   order: {
     id: string
     orderNumber: string
@@ -102,8 +108,8 @@ interface Job {
   } | null
   assignedPM: {
     id: string
-    firstName: string
-    lastName: string
+    firstName: string | null
+    lastName: string | null
     email: string | null
     phone: string | null
   } | null
@@ -162,6 +168,10 @@ export default function JobDetailPage() {
   const [trimVendors, setTrimVendors] = useState<{ id: string; name: string }[]>([])
   const [installAssigneeChoice, setInstallAssigneeChoice] = useState<string>('')
   const [assigningInstaller, setAssigningInstaller] = useState(false)
+
+  // B-UX-3 — Edit slide-over state.
+  const [editOpen, setEditOpen] = useState(false)
+  const [pms, setPms] = useState<{ id: string; firstName: string | null; lastName: string | null }[]>([])
 
   // Hoisted so post-write actions (e.g. link-order) can refetch the job
   // and pick up freshly-joined data (Order, builder, etc.).
@@ -282,6 +292,35 @@ export default function JobDetailPage() {
         if (!cancel) setTrimVendors(list.map((v: any) => ({ id: v.id, name: v.name })))
       } catch {
         /* ignore — fallback is empty list */
+      }
+    })()
+    return () => { cancel = true }
+  }, [])
+
+  // B-UX-3 — Load active PROJECT_MANAGER staff for the edit slide-over's
+  // assignedPM dropdown. Best-effort; if the request fails the dropdown
+  // simply shows the current PM by id with a graceful empty list.
+  useEffect(() => {
+    let cancel = false
+    ;(async () => {
+      try {
+        const r = await fetch('/api/ops/staff?role=PROJECT_MANAGER', {
+          cache: 'no-store',
+        })
+        if (!r.ok || cancel) return
+        const data = await r.json()
+        const list = Array.isArray(data) ? data : (data.data || [])
+        if (!cancel) {
+          setPms(
+            list.map((s: any) => ({
+              id: s.id,
+              firstName: s.firstName ?? null,
+              lastName: s.lastName ?? null,
+            })),
+          )
+        }
+      } catch {
+        /* ignore — empty PM list */
       }
     })()
     return () => { cancel = true }
@@ -574,6 +613,14 @@ export default function JobDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <PresenceAvatars recordId={job.id} recordType="job" />
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm font-medium text-fg hover:bg-surface-muted transition-colors"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+            Edit
+          </button>
           {MATERIAL_DRAWER_ENABLED && (
             <button
               onClick={() => setShowMaterialDrawer(true)}
@@ -1069,7 +1116,7 @@ export default function JobDetailPage() {
             <h2 className="text-lg font-semibold text-fg mb-4">Project Manager</h2>
             {job.assignedPM ? (
               <div>
-                <p className="text-sm font-semibold text-fg">{job.assignedPM.firstName} {job.assignedPM.lastName}</p>
+                <p className="text-sm font-semibold text-fg">{fullName(job.assignedPM)}</p>
                 {job.assignedPM.email && <p className="text-sm text-blue-600">{job.assignedPM.email}</p>}
                 {job.assignedPM.phone && <p className="text-sm text-fg-muted">{job.assignedPM.phone}</p>}
               </div>
@@ -1274,6 +1321,171 @@ export default function JobDetailPage() {
           onClose={() => setShowMaterialDrawer(false)}
         />
       )}
+
+      {/* B-UX-3 — Edit slide-over. Mirrors the Builder/Community pattern: PATCH
+          /api/ops/jobs/[id] (ADMIN/MANAGER/PROJECT_MANAGER) and merge the
+          response into local state on success. */}
+      <EditSlideOver
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Job"
+        subtitle={job.jobNumber}
+        fields={buildJobEditFields(pms, job.assignedPMId, job.assignedPM)}
+        initialValues={{
+          jobAddress: job.jobAddress ?? '',
+          community: job.community ?? '',
+          lotBlock: job.lotBlock ?? '',
+          scheduledDate: job.scheduledDate
+            ? new Date(job.scheduledDate).toISOString().slice(0, 10)
+            : '',
+          assignedPMId: job.assignedPMId ?? '',
+          jobType: job.jobType ?? '',
+          buildSheetNotes: job.buildSheetNotes ?? '',
+        }}
+        endpoint={`/api/ops/jobs/${jobId}`}
+        method="PATCH"
+        onSuccess={(body) => {
+          // PATCH returns the updated raw row. Merge persisted edit fields
+          // into local state so the header line + Job Information card
+          // refresh without a full reload. The rest of the page (status,
+          // related collections) is unaffected by edit-only fields.
+          if (body && typeof body === 'object') {
+            setJob((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    jobAddress: body.jobAddress ?? prev.jobAddress,
+                    community: body.community ?? prev.community,
+                    lotBlock: body.lotBlock ?? prev.lotBlock,
+                    scheduledDate:
+                      body.scheduledDate ?? prev.scheduledDate,
+                    assignedPMId:
+                      body.assignedPMId ?? prev.assignedPMId,
+                    jobType: body.jobType ?? prev.jobType,
+                    buildSheetNotes:
+                      body.buildSheetNotes ?? prev.buildSheetNotes,
+                    // Reflect new PM in the right-rail card by looking up
+                    // the chosen PM in the loaded list.
+                    assignedPM: body.assignedPMId
+                      ? (() => {
+                          const m = pms.find((p) => p.id === body.assignedPMId)
+                          return m
+                            ? {
+                                id: m.id,
+                                firstName: m.firstName,
+                                lastName: m.lastName,
+                                email: prev.assignedPM?.email ?? null,
+                                phone: prev.assignedPM?.phone ?? null,
+                              }
+                            : prev.assignedPM
+                        })()
+                      : null,
+                  }
+                : prev,
+            )
+          }
+          setEditOpen(false)
+          // Refetch in the background to pick up any joins (e.g. PM email)
+          // that the raw row doesn't include.
+          fetchJob()
+        }}
+      />
     </div>
   )
+}
+
+// ── B-UX-3 — Job edit slide-over field defs ─────────────────────────────
+// Built dynamically so the assignedPM <select> options reflect the current
+// roster fetched from /api/ops/staff?role=PROJECT_MANAGER. We also fold in
+// the *currently-assigned* PM as a synthetic option when they aren't in the
+// active list (e.g. inactive / role changed) so the dropdown can faithfully
+// render the existing value without losing it on save.
+function buildJobEditFields(
+  pms: { id: string; firstName: string | null; lastName: string | null }[],
+  currentPmId: string | null,
+  currentPm: { id: string; firstName: string | null; lastName: string | null } | null,
+): FieldDef[] {
+  const pmOptions = pms.map((p) => ({
+    value: p.id,
+    label: [p.firstName, p.lastName].filter(Boolean).join(' ') || p.id,
+  }))
+  if (
+    currentPmId &&
+    currentPm &&
+    !pmOptions.some((o) => o.value === currentPmId)
+  ) {
+    pmOptions.unshift({
+      value: currentPmId,
+      label:
+        [currentPm.firstName, currentPm.lastName].filter(Boolean).join(' ') ||
+        currentPmId,
+    })
+  }
+
+  return [
+    {
+      key: 'jobAddress',
+      label: 'Job Address',
+      type: 'text',
+      nullableString: true,
+      colSpan: 2,
+      placeholder: '123 Main St, Frisco, TX 75033',
+    },
+    {
+      key: 'community',
+      label: 'Community',
+      type: 'text',
+      nullableString: true,
+      placeholder: 'e.g. Mobberly Farms',
+    },
+    {
+      key: 'lotBlock',
+      label: 'Lot / Block',
+      type: 'text',
+      nullableString: true,
+      placeholder: 'Lot 14 Block 3',
+    },
+    {
+      key: 'scheduledDate',
+      label: 'Scheduled Date',
+      type: 'text',
+      placeholder: 'YYYY-MM-DD',
+      hint: 'ISO date — e.g. 2026-05-15',
+    },
+    {
+      key: 'assignedPMId',
+      label: 'Assigned PM',
+      type: 'select',
+      options: pmOptions,
+    },
+    {
+      key: 'jobType',
+      label: 'Job Type',
+      type: 'select',
+      options: [
+        { value: 'TRIM_1', label: 'T1 — First Trim' },
+        { value: 'TRIM_1_INSTALL', label: 'T1I — First Trim Install' },
+        { value: 'TRIM_2', label: 'T2 — Second Trim (Finish)' },
+        { value: 'TRIM_2_INSTALL', label: 'T2I — Second Trim Install' },
+        { value: 'DOORS', label: 'DR — Door Delivery' },
+        { value: 'DOOR_INSTALL', label: 'DRI — Door Install' },
+        { value: 'HARDWARE', label: 'HW — Hardware Delivery' },
+        { value: 'HARDWARE_INSTALL', label: 'HWI — Hardware Install' },
+        { value: 'FINAL_FRONT', label: 'FF — Final Front' },
+        { value: 'FINAL_FRONT_INSTALL', label: 'FFI — Final Front Install' },
+        { value: 'QC_WALK', label: 'QC — Quality Control Walk' },
+        { value: 'PUNCH', label: 'PL — Punch List' },
+        { value: 'WARRANTY', label: 'WR — Warranty Callback' },
+        { value: 'CUSTOM', label: 'CU — Custom / Other' },
+      ],
+    },
+    {
+      key: 'buildSheetNotes',
+      label: 'Notes',
+      type: 'textarea',
+      nullableString: true,
+      colSpan: 2,
+      placeholder: 'Build sheet notes, special instructions, gotchas…',
+    },
+  ]
 }

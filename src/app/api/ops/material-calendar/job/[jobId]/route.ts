@@ -109,7 +109,7 @@ export async function GET(
       : []
 
     const topLevelIds = Array.from(
-      new Set(orderItems.map(oi => oi.productId).filter(Boolean))
+      new Set(orderItems.map(oi => oi.productId).filter((id): id is string => id !== null))
     )
     const bomEntries = topLevelIds.length > 0
       ? await prisma.bomEntry.findMany({

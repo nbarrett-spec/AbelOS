@@ -356,7 +356,11 @@ export function getRouteAccessMap(): Record<string, StaffRole[]> {
 
 const API_ACCESS: Record<string, StaffRole[]> = {
   // Staff APIs
-  '/api/ops/staff': ['ADMIN', 'MANAGER'],
+  // PROJECT_MANAGER added so PMs can fetch the PM list for the
+  // assignedPM dropdown on the Job edit slide-over (B-UX-3). Compensation
+  // and admin-only fields are still gated inside the GET handler — non-ADMIN
+  // callers don't see hourlyRate / salary / payType / portalOverrides.
+  '/api/ops/staff': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
   '/api/ops/audit': ['ADMIN', 'MANAGER'],
   '/api/ops/seed-workflow': ['ADMIN'],
   '/api/ops/seed-employees': ['ADMIN'],

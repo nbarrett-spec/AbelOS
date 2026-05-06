@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { fullName } from '@/lib/formatting'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Live Operations Map — Unified view of delivery trucks + jobsites
@@ -52,7 +53,7 @@ interface Job {
   status: string
   scopeType: string
   scheduledDate?: string | null
-  assignedPM?: { firstName: string; lastName: string } | null
+  assignedPM?: { firstName: string | null; lastName: string | null } | null
   _count?: { deliveries: number; tasks: number; installations: number }
 }
 
@@ -87,7 +88,7 @@ interface TruckLocation {
   crew?: {
     name: string
     vehiclePlate?: string
-    members: Array<{ staff: { firstName: string; lastName: string } }>
+    members: Array<{ staff: { firstName: string | null; lastName: string | null } }>
   }
 }
 
@@ -536,7 +537,7 @@ function JobPanel({ job }: { job: GeocodedJob }) {
         {job.assignedPM && (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 col-span-2">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Project Manager</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{job.assignedPM.firstName} {job.assignedPM.lastName}</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">{fullName(job.assignedPM)}</p>
           </div>
         )}
       </div>
@@ -614,10 +615,10 @@ function TruckPanel({ truck }: { truck: TruckLocation }) {
             {truck.crew.members.map((m, i) => (
               <div key={i} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
                 <div className="w-7 h-7 rounded-full bg-[#0f2a3e] flex items-center justify-center text-xs font-bold text-white">
-                  {m.staff.firstName[0]}{m.staff.lastName[0]}
+                  {(m.staff.firstName?.[0] ?? '?')}{(m.staff.lastName?.[0] ?? '')}
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {m.staff.firstName} {m.staff.lastName}
+                  {fullName(m.staff)}
                 </span>
               </div>
             ))}

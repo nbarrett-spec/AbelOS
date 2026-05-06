@@ -5,6 +5,7 @@ import { Inbox } from 'lucide-react'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
+import { fullName } from '@/lib/formatting'
 
 interface Message {
   id: string
@@ -41,8 +42,8 @@ interface DepartmentChannel {
 
 interface StaffMember {
   id: string
-  firstName: string
-  lastName: string
+  firstName: string | null
+  lastName: string | null
   role: string
   department: string
 }
@@ -727,7 +728,7 @@ export default function MessagesPage() {
                         className="w-4 h-4"
                       />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-fg">{s.firstName} {s.lastName}</p>
+                        <p className="text-sm font-medium text-fg">{fullName(s)}</p>
                         <p className="text-xs text-fg-muted">
                           {s.role} &bull; {s.department}
                         </p>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { fullName } from '@/lib/formatting'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Job Profile — Deep multi-tab view of everything associated with a job
@@ -415,10 +416,10 @@ function OverviewTab({ job, jobId, builder, community, phaseSummary, invoices, s
           <SectionCard title="Project Manager">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#0f2a3e] flex items-center justify-center text-sm font-bold text-white">
-                {job.assignedPM.firstName[0]}{job.assignedPM.lastName[0]}
+                {(job.assignedPM.firstName?.[0] ?? '?')}{(job.assignedPM.lastName?.[0] ?? '')}
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">{job.assignedPM.firstName} {job.assignedPM.lastName}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">{fullName(job.assignedPM)}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{job.assignedPM.title || 'Project Manager'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{job.assignedPM.email} {job.assignedPM.phone ? `· ${job.assignedPM.phone}` : ''}</p>
               </div>

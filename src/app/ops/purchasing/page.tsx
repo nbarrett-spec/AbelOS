@@ -16,6 +16,7 @@ import { getStatusBadgeVariant } from '@/components/ui/Badge'
 import { DrillLink } from '@/components/ui/DrillLink'
 import { useLiveTick } from '@/hooks/useLiveTopic'
 import { cn } from '@/lib/utils'
+import { fullName } from '@/lib/formatting'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ interface VendorScorecard {
   }
 }
 
-interface PMOption { id: string; firstName: string; lastName: string }
+interface PMOption { id: string; firstName: string | null; lastName: string | null }
 interface BuilderOption { id: string; companyName: string }
 interface VendorOption { id: string; name: string; code?: string }
 
@@ -443,7 +444,7 @@ export default function PurchaseOrdersPage() {
             <option value="">All PMs</option>
             {pms.map((pm) => (
               <option key={pm.id} value={pm.id}>
-                {pm.firstName} {pm.lastName}
+                {fullName(pm)}
               </option>
             ))}
           </select>

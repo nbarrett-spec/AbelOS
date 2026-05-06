@@ -237,6 +237,18 @@ export function registerInvoiceTools(server: McpServer) {
           break
       }
 
+      // Order.builderId became nullable post A-DATA-2 (SetNull on builder
+      // soft-delete). Invoice.builderId is still required, so refuse here
+      // rather than create an orphan invoice.
+      if (!order.builderId) {
+        return {
+          content: [
+            { type: 'text' as const, text: JSON.stringify({ error: 'Order has no builder (builder may have been deleted)', orderId }) },
+          ],
+          isError: true,
+        }
+      }
+
       // Sum order items into the invoice. Use order.subtotal/tax/total as
       // the source of truth (already reconciled with shipping etc.) but
       // re-derive the line-level breakdown from items.

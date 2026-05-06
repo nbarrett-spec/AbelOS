@@ -65,6 +65,7 @@ import {
 } from '@/components/ui'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 import { cn } from '@/lib/utils'
+import { fullName } from '@/lib/formatting'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
 import NotesSection from '@/components/ops/NotesSection'
 
@@ -116,9 +117,9 @@ interface Activity {
   createdAt: string
   staff: {
     id: string
-    firstName: string
-    lastName: string
-  }
+    firstName: string | null
+    lastName: string | null
+  } | null
 }
 
 interface BuilderPricing {
@@ -713,7 +714,7 @@ export default function AccountDetailPage() {
         id: `activity-${a.id}`,
         kind: 'activity',
         label: a.subject,
-        detail: `${a.activityType.replace(/_/g, ' ')}${a.staff ? ` · ${a.staff.firstName} ${a.staff.lastName}` : ''}`,
+        detail: `${a.activityType.replace(/_/g, ' ')}${a.staff ? ` · ${fullName(a.staff)}` : ''}`,
         at: a.createdAt,
       })
     }
@@ -1601,7 +1602,7 @@ export default function AccountDetailPage() {
                           </Badge>
                         </div>
                         <div className="text-[11.5px] text-fg-muted">
-                          {a.staff.firstName} {a.staff.lastName} · {fmtDate(a.createdAt)}
+                          {fullName(a.staff)} · {fmtDate(a.createdAt)}
                         </div>
                         {a.notes && <p className="text-[12.5px] text-fg mt-1.5">{a.notes}</p>}
                         {a.outcome && (

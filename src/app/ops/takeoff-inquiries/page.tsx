@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Inbox } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
+import { fullName } from '@/lib/formatting'
 
 interface Inquiry {
   id: string
@@ -17,7 +18,7 @@ interface Inquiry {
   scopeNotes?: string
   status: string
   priority: string
-  assignedTo?: { id: string; firstName: string; lastName: string; role: string }
+  assignedTo?: { id: string; firstName: string | null; lastName: string | null; role: string } | null
   aiEstimatedValue?: number
   aiComplexity?: string
   createdAt: string
@@ -244,7 +245,7 @@ export default function TakeoffInquiriesPage() {
                   <div style={{ textAlign: 'right', minWidth: 120 }}>
                     {inquiry.assignedTo ? (
                       <span style={{ fontSize: 12, color: '#6b7280' }}>
-                        Assigned to <strong>{inquiry.assignedTo.firstName} {inquiry.assignedTo.lastName}</strong>
+                        Assigned to <strong>{fullName(inquiry.assignedTo)}</strong>
                       </span>
                     ) : (
                       assigning === inquiry.id ? (
@@ -256,7 +257,7 @@ export default function TakeoffInquiriesPage() {
                         >
                           <option value="">Select staff...</option>
                           {staff.filter(s => ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP'].includes(s.role)).map(s => (
-                            <option key={s.id} value={s.id}>{s.firstName} {s.lastName} ({s.role})</option>
+                            <option key={s.id} value={s.id}>{fullName(s)} ({s.role})</option>
                           ))}
                         </select>
                       ) : (

@@ -6,6 +6,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
 import { DrillLink } from '@/components/ui/DrillLink'
+import { fullName } from '@/lib/formatting'
 
 interface QuoteItem {
   id: string
@@ -65,8 +66,8 @@ interface NewLineItem {
 
 interface PMOption {
   id: string
-  firstName: string
-  lastName: string
+  firstName: string | null
+  lastName: string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -607,7 +608,7 @@ export default function OpsQuotesPage() {
           <option value="">All PMs</option>
           {pms.map(pm => (
             <option key={pm.id} value={pm.id}>
-              {pm.firstName} {pm.lastName}
+              {fullName(pm)}
             </option>
           ))}
         </select>

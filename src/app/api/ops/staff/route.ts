@@ -13,17 +13,33 @@ import { requireStaffAuth } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
   // R7 — migrate from inline header check to the standard auth helper.
-  // /api/ops/staff API_ACCESS prefix is [ADMIN, MANAGER]; canAccessAPI runs
-  // automatically inside requireStaffAuth.
-  const auth = await requireStaffAuth(request, { allowedRoles: ['ADMIN', 'MANAGER'] })
+  // /api/ops/staff API_ACCESS prefix is [ADMIN, MANAGER, PROJECT_MANAGER];
+  // PMs need read access for assignedPM dropdowns. Compensation columns
+  // are gated below for non-ADMIN.
+  const auth = await requireStaffAuth(request, {
+    allowedRoles: ['ADMIN', 'MANAGER', 'PROJECT_MANAGER'],
+  })
   if (auth.error) return auth.error
 
   try {
     const allRoles = (request.headers.get('x-staff-roles') || request.headers.get('x-staff-role') || '').split(',').map(r => r.trim())
     const isAdmin = allRoles.includes('ADMIN')
 
+    // Optional ?role=… filter (e.g. ?role=PROJECT_MANAGER) to scope the list
+    // for dropdowns. Whitelist guard against the StaffRole enum.
+    const roleFilterRaw = request.nextUrl.searchParams.get('role')
+    const ALLOWED_ROLE_FILTERS = new Set([
+      'ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ACCOUNTING', 'PURCHASING',
+      'SALES_REP', 'ESTIMATOR', 'WAREHOUSE_LEAD', 'WAREHOUSE_TECH',
+      'DRIVER', 'QC_INSPECTOR', 'AGENT',
+    ])
+    const roleFilter =
+      roleFilterRaw && ALLOWED_ROLE_FILTERS.has(roleFilterRaw)
+        ? roleFilterRaw
+        : null
+
     // Get all staff with onboarding status + hierarchy + comp
-    const staff: any[] = await (prisma as any).$queryRawUnsafe(`
+    const baseSql = `
       SELECT
         s.id, s."firstName", s."lastName", s.email, s.phone,
         s.role::text AS role, s.department::text AS department, s.title,
@@ -38,8 +54,16 @@ export async function GET(request: NextRequest) {
         s."createdAt", s."updatedAt"
       FROM "Staff" s
       LEFT JOIN "Staff" m ON s."managerId" = m.id
-      ORDER BY s."lastName" ASC, s."firstName" ASC
-    `)
+    `
+    const staff: any[] = roleFilter
+      ? await (prisma as any).$queryRawUnsafe(
+          `${baseSql} WHERE s.role = $1::"StaffRole" AND s.active = true
+           ORDER BY s."lastName" ASC, s."firstName" ASC`,
+          roleFilter,
+        )
+      : await (prisma as any).$queryRawUnsafe(
+          `${baseSql} ORDER BY s."lastName" ASC, s."firstName" ASC`,
+        )
 
     // Transform staff data to include status
     const enrichedStaff = staff.map((s: any) => {

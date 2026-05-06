@@ -6,6 +6,7 @@ import { Factory, ClipboardCheck } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
 import PageHeader from '@/components/ui/PageHeader'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
+import { fullName } from '@/lib/formatting'
 
 const QC_TYPES = [
   { key: 'PRE_PRODUCTION', label: 'Pre-Production' },
@@ -39,9 +40,9 @@ interface QualityCheck {
   notes: string | null
   defectCodes: string[]
   inspector: {
-    firstName: string
-    lastName: string
-  }
+    firstName: string | null
+    lastName: string | null
+  } | null
   job: {
     id: string
     jobNumber: string
@@ -494,7 +495,7 @@ export default function QualityControlPage() {
                         {QC_TYPES.find((t) => t.key === check.checkType)?.label || check.checkType}
                       </td>
                       <td className="px-4 py-3 text-sm text-fg-muted">
-                        {check.inspector.firstName} {check.inspector.lastName}
+                        {fullName(check.inspector)}
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={getStatusBadgeVariant(check.result)} size="sm">
@@ -560,7 +561,7 @@ export default function QualityControlPage() {
                     </div>
                     <div>
                       <span className="text-fg-subtle">Inspector:</span>{' '}
-                      {check.inspector.firstName} {check.inspector.lastName}
+                      {fullName(check.inspector)}
                     </div>
                     <div>
                       <span className="text-fg-subtle">Date:</span>{' '}
