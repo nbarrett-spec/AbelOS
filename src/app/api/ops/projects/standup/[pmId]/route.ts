@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { prisma } from '@/lib/prisma'
+import { composeStandupNarrative } from '@/lib/ops/standup-narrative'
 
 /**
  * GET /api/ops/projects/standup/[pmId]
@@ -15,7 +16,12 @@ import { prisma } from '@/lib/prisma'
  * Uses Job.updatedAt as a proxy for the status-change date. Not perfect
  * but adequate until we wire an audit log per-job.
  *
- * TODO: replace with AI-authored narrative from the NUC brain.
+ * The prose `narrative` field is composed by composeStandupNarrative() from
+ * real per-PM data (status counts, upcoming jobs, alerts). It's templated
+ * today; when the NUC brain is reachable from Vercel (currently blocked — no
+ * Tailscale on Vercel runtime, see A-INT-9 audit), swap the body of
+ * composeStandupNarrative() for an LLM call against the same StandupPMContext
+ * shape.
  */
 export async function GET(
   request: NextRequest,
@@ -36,6 +42,8 @@ export async function GET(
     const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
     const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000)
     const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)
+    const sevenDaysAgo = new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const sevenDaysAhead = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     const jobs = await prisma.job.findMany({
       where: { assignedPMId: pmId },
@@ -64,6 +72,24 @@ export async function GET(
       take: 200,
     })
 
+    // Inbox alerts assigned to this PM (still open)
+    const alerts = await prisma.inboxItem.findMany({
+      where: {
+        assignedTo: pmId,
+        status: { in: ['PENDING', 'SNOOZED'] },
+      },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        priority: true,
+        dueBy: true,
+        financialImpact: true,
+      },
+      orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }],
+      take: 25,
+    })
+
     const completedYesterday = jobs.filter(
       (j) =>
         ['COMPLETE', 'CLOSED', 'INVOICED'].includes(j.status) &&
@@ -87,6 +113,54 @@ export async function GET(
           j.order?.paymentStatus === 'OVERDUE')
     )
 
+    // Narrative-only signals (broader than the three buckets above)
+    const inProductionCount = jobs.filter((j) => j.status === 'IN_PRODUCTION').length
+    const materialsLockedCount = jobs.filter((j) => j.status === 'MATERIALS_LOCKED').length
+    const completedLast7d = jobs.filter(
+      (j) =>
+        ['COMPLETE', 'CLOSED', 'INVOICED'].includes(j.status) &&
+        (j.completedAt ?? j.updatedAt) >= sevenDaysAgo
+    ).length
+
+    const upcomingNext7d = jobs
+      .filter(
+        (j) =>
+          !['COMPLETE', 'CLOSED', 'INVOICED', 'CANCELLED'].includes(j.status) &&
+          j.scheduledDate &&
+          j.scheduledDate >= startOfToday &&
+          j.scheduledDate < sevenDaysAhead
+      )
+      .sort((a, b) => a.scheduledDate!.getTime() - b.scheduledDate!.getTime())
+      .slice(0, 3)
+
+    const criticalAlerts = alerts.filter((a) => a.priority === 'CRITICAL').length
+    const highAlerts = alerts.filter((a) => a.priority === 'HIGH').length
+
+    const narrative = composeStandupNarrative({
+      pm: { firstName: pm.firstName, lastName: pm.lastName },
+      now,
+      counts: {
+        inProduction: inProductionCount,
+        materialsLocked: materialsLockedCount,
+        completedLast7d,
+        committedToday: committedToday.length,
+        blocked: blocked.length,
+      },
+      upcomingNext7d: upcomingNext7d.map((j) => ({
+        jobNumber: j.jobNumber,
+        scheduledDate: j.scheduledDate!,
+        community: j.community,
+        builderName: j.builderName,
+        lotBlock: j.lotBlock,
+      })),
+      alerts: {
+        total: alerts.length,
+        critical: criticalAlerts,
+        high: highAlerts,
+        topTitles: alerts.slice(0, 3).map((a) => a.title),
+      },
+    })
+
     const bullet = (j: (typeof jobs)[number]) => {
       const loc = [j.lotBlock, j.community || j.builderName].filter(Boolean).join(' — ')
       return `- **${j.jobNumber}** · ${loc} · _${j.status.replace('_', ' ')}_`
@@ -95,6 +169,8 @@ export async function GET(
     const markdown = [
       `# Standup — ${pm.firstName} ${pm.lastName}`,
       `_${now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}_`,
+      ``,
+      narrative,
       ``,
       `## Completed yesterday (${completedYesterday.length})`,
       completedYesterday.length ? completedYesterday.map(bullet).join('\n') : '_Nothing hit complete yesterday._',
@@ -127,7 +203,12 @@ export async function GET(
         completedYesterday: completedYesterday.length,
         committedToday: committedToday.length,
         blocked: blocked.length,
+        inProduction: inProductionCount,
+        materialsLocked: materialsLockedCount,
+        completedLast7d,
+        openAlerts: alerts.length,
       },
+      narrative,
       markdown,
     })
   } catch (err: any) {
