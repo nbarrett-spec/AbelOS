@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { notifyCronFailure } from '@/lib/cron-alerting'
+import { logAudit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Cron run tracking.
@@ -138,6 +139,20 @@ export async function startCronRun(
       name,
       triggeredBy
     )
+
+    // Mirror cron starts into AuditLog so SOC/compliance reviewers see them
+    // in one place instead of having to cross-reference CronRun. The pair
+    // (CRON_START → CRON_FINISH) gives a complete audit trail per run.
+    // Fire-and-forget — never block the cron handler.
+    logAudit({
+      staffId: triggeredBy === 'manual' ? 'system:cron-manual' : 'system:cron',
+      action: 'CRON_START',
+      entity: 'CronRun',
+      entityId: id,
+      details: { name, triggeredBy },
+      severity: 'INFO',
+    }).catch(() => {})
+
     return id
   } catch (e: any) {
     logger.error('cron_run_start_failed', e, { name })
@@ -169,6 +184,23 @@ export async function finishCronRun(
       resultJson,
       errorStr
     )
+
+    // Mirror cron finishes into AuditLog. FAILURE = CRITICAL severity so the
+    // /admin/audit-history filter shows them up top alongside money/auth
+    // events. Pair with the CRON_START row by entityId.
+    logAudit({
+      staffId: 'system:cron',
+      action: status === 'SUCCESS' ? 'CRON_FINISH_SUCCESS' : 'CRON_FINISH_FAILURE',
+      entity: 'CronRun',
+      entityId: id,
+      details: {
+        durationMs: Math.round(durationMs),
+        // Cap error size — AuditLog details column is jsonb; large payloads
+        // are wasteful and the full error is already on CronRun.error.
+        error: errorStr ? errorStr.slice(0, 500) : null,
+      },
+      severity: status === 'FAILURE' ? 'CRITICAL' : 'INFO',
+    }).catch(() => {})
   } catch (e: any) {
     logger.error('cron_run_finish_failed', e, { id, status })
   }
@@ -259,6 +291,7 @@ export interface CronSummary {
 // "stale" for any listed cron that hasn't run.
 export const REGISTERED_CRONS: Array<{ name: string; schedule: string; description: string }> = [
   { name: 'quote-followups', schedule: '0 9 * * 1-5', description: 'Send follow-up emails on stale quotes' },
+  { name: 'quote-expiration', schedule: '0 6 * * *', description: 'Daily 6 AM CT: flip quotes past validUntil to EXPIRED + InboxItem per builder for newly-expired APPROVED quotes (A-BIZ-1)' },
   { name: 'agent-opportunities', schedule: '0 14 * * 1-5', description: 'AI agent opportunity scoring' },
   // Schedule synced to vercel.json 2026-04-27 (was '0 * * * *' — hourly drift; vercel.json runs every 15m).
   { name: 'inflow-sync', schedule: '*/15 * * * *', description: 'InFlow inventory sync (every 15m)' },
@@ -299,6 +332,10 @@ export const REGISTERED_CRONS: Array<{ name: string; schedule: string; descripti
   { name: 'cycle-count-schedule', schedule: '0 11 * * 1', description: 'Weekly cycle-count scheduler (Mon 6 AM CT): picks top-20 risk-weighted SKUs, creates CycleCountBatch + 20 lines, assigns WAREHOUSE_LEAD, nudges via InboxItem CYCLE_COUNT_WEEKLY' },
   { name: 'gold-stock-monitor', schedule: '0 5 * * *', description: 'Daily gold-stock kit sweep: any ACTIVE kit with currentQty < minQty creates GOLD_STOCK_BUILD_READY (all parts on-hand) or GOLD_STOCK_COMPONENTS_SHORT InboxItem' },
   { name: 'reorder-calibration', schedule: '0 6 * * *', description: 'Demand-driven reorder point calibration (avgDailyUsage, safetyStock, daysOfSupply) + overstock/dead-stock alerts' },
+  // Builder enrichment (added 2026-04-30, feat/builder-enrichment branch)
+  { name: 'prospect-enrich', schedule: '0 7 * * 1', description: 'Weekly: re-enrich Prospects that are stale (>30d) or low-confidence; gated by FEATURE_PROSPECT_ENRICH_ENABLED' },
+  // B-FEAT-4 / A-BIZ-8: hourly mfg-late check (Jobs delivering <24h, not yet IN_PRODUCTION)
+  { name: 'mfg-24hr-check', schedule: '0 * * * *', description: 'Flag jobs delivering within 24h that are not yet in production (manufacturing builds the day before delivery)' },
 ]
 
 export async function getCronSummaries(): Promise<CronSummary[]> {

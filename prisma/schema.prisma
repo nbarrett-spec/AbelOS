@@ -648,6 +648,15 @@ enum PaymentStatus {
   REFUNDED
 }
 
+// Door slab material — drives strike type on dunnage / Final Front doors.
+// Production crew needs this stamped on the build sheet so they don't
+// install a wood-bore strike on a fiberglass/metal slab (or vice versa).
+enum DoorMaterial {
+  WOOD
+  FIBERGLASS
+  METAL
+}
+
 model OrderItem {
   id      String @id @default(cuid())
   orderId String
@@ -660,6 +669,11 @@ model OrderItem {
   quantity    Int
   unitPrice   Float
   lineTotal   Float
+
+  // Strike-type spec for dunnage / Final Front doors. Nullable in DB so
+  // the migration is additive; app code enforces "required for dunnage /
+  // Final Front" at the form layer.
+  doorMaterial DoorMaterial?
 
   @@index([orderId])
   @@index([productId])
@@ -6453,14 +6467,14 @@ model QbBillExpenseLine {
 model VendorPayment {
   id              String   @id @default(cuid())
   vendorId        String
-  purchaseOrderId String?  // optional — utilities/rent have no PO
+  purchaseOrderId String? // optional — utilities/rent have no PO
   amount          Float
-  method          String   // CHECK | ACH | WIRE | CREDIT_CARD | CASH | OTHER
+  method          String // CHECK | ACH | WIRE | CREDIT_CARD | CASH | OTHER
   checkNumber     String?
-  reference       String?  // ACH trace, transaction id, etc.
+  reference       String? // ACH trace, transaction id, etc.
   memo            String?
   paidAt          DateTime @default(now())
-  createdById     String?  // Staff id of whoever recorded the payment
+  createdById     String? // Staff id of whoever recorded the payment
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -6489,23 +6503,23 @@ enum JournalEntryStatus {
 
 model ChartOfAccount {
   id          String      @id @default(cuid())
-  code        String      @unique  // e.g. "1000", "4010-DOORS"
-  name        String                // e.g. "Cash", "Revenue - Doors"
+  code        String      @unique // e.g. "1000", "4010-DOORS"
+  name        String // e.g. "Cash", "Revenue - Doors"
   type        AccountType
-  subType     String?               // e.g. "Current Asset", "Fixed Asset"
+  subType     String? // e.g. "Current Asset", "Fixed Asset"
   description String?
   isActive    Boolean     @default(true)
 
   // Self-relation for parent/child accounts (e.g. 4000 Revenue → 4010 Doors)
-  parentId    String?
-  parent      ChartOfAccount?  @relation("AccountTree", fields: [parentId], references: [id])
-  children    ChartOfAccount[] @relation("AccountTree")
+  parentId String?
+  parent   ChartOfAccount?  @relation("AccountTree", fields: [parentId], references: [id])
+  children ChartOfAccount[] @relation("AccountTree")
 
   // Back-relation for journal entry lines
-  entries     JournalEntryLine[]
+  entries JournalEntryLine[]
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
   @@index([parentId])
@@ -6513,22 +6527,22 @@ model ChartOfAccount {
 }
 
 model JournalEntry {
-  id          String              @id @default(cuid())
-  entryNumber String              @unique // "JE-2026-0001"
+  id          String             @id @default(cuid())
+  entryNumber String             @unique // "JE-2026-0001"
   date        DateTime
   description String
-  reference   String?                       // invoice#, PO#, free text
-  status      JournalEntryStatus  @default(DRAFT)
+  reference   String? // invoice#, PO#, free text
+  status      JournalEntryStatus @default(DRAFT)
 
-  lines       JournalEntryLine[]
+  lines JournalEntryLine[]
 
-  createdById String?
+  createdById  String?
   approvedById String?
-  approvedAt  DateTime?
-  reversalOf  String?                        // ID of entry this reverses
+  approvedAt   DateTime?
+  reversalOf   String? // ID of entry this reverses
 
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([date(sort: Desc)])
   @@index([status])
@@ -6566,14 +6580,14 @@ model JournalEntryLine {
 
 model ApiKey {
   id          String    @id @default(cuid())
-  name        String                       // human label, e.g. "Cowork MCP"
-  scope       String    @default("mcp")    // 'mcp' | 'agent' | 'admin' (string,
-                                            // not enum, so adding new scopes
-                                            // doesn't require a migration)
-  prefix      String                       // first 8 chars of the raw key —
-                                            // safe to display in lists
-  hashedKey   String    @unique             // sha256(rawKey) hex
-  createdById String?                       // Staff id (or null for seed keys)
+  name        String // human label, e.g. "Cowork MCP"
+  scope       String    @default("mcp") // 'mcp' | 'agent' | 'admin' (string,
+  // not enum, so adding new scopes
+  // doesn't require a migration)
+  prefix      String // first 8 chars of the raw key —
+  // safe to display in lists
+  hashedKey   String    @unique // sha256(rawKey) hex
+  createdById String? // Staff id (or null for seed keys)
   createdAt   DateTime  @default(now())
   revokedAt   DateTime?
   revokedById String?

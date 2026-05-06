@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
 import { safeJson } from '@/lib/safe-json'
+import { orderHasBomItems } from '@/lib/orders'
 
 /**
  * GET /api/ops/manufacturing/build-sheet?jobId=xxx
@@ -49,13 +50,29 @@ export async function GET(request: NextRequest) {
 
     const job = jobs[0]
 
+    // ── Stock-only guard ───────────────────────────────────────────────
+    // Reject build-sheet requests for jobs whose order has no manufactured
+    // items. Those orders still ship/stage/deliver but never enter the
+    // manufacturing queue, so a build sheet would be empty by construction.
+    if (job.orderId) {
+      const hasBom = await orderHasBomItems(job.orderId)
+      if (!hasBom) {
+        return NextResponse.json(
+          { error: 'Order has no manufactured items — skips production', stockOnly: true },
+          { status: 409 },
+        )
+      }
+    }
+
     // ── Order items (what was ordered) ─────────────────────────────────
     let orderItems: any[] = []
     if (job.orderId) {
       orderItems = await prisma.$queryRawUnsafe(`
         SELECT
           oi.id, oi."productId", oi.description, oi.quantity, oi."unitPrice", oi."lineTotal",
-          p.sku, p.name as "productName", p.category, p."doorSize", p.handing,
+          oi."doorMaterial"::text as "doorMaterial",
+          p.sku, p.name as "productName", p.category, p.subcategory,
+          p."doorSize", p.handing,
           p."coreType", p."panelStyle", p."jambSize", p."casingCode",
           p."hardwareFinish", p.material, p."fireRating", p."imageUrl"
         FROM "OrderItem" oi
@@ -102,6 +119,11 @@ export async function GET(request: NextRequest) {
               panelStyle: orderItem?.panelStyle,
               jambSize: orderItem?.jambSize,
               imageUrl: orderItem?.imageUrl,
+              category: orderItem?.category,
+              subcategory: orderItem?.subcategory,
+              // Strike-type spec for dunnage / Final Front items.
+              // Surfaced on the build sheet as a big "STRIKE TYPE" banner.
+              doorMaterial: orderItem?.doorMaterial || null,
             },
             components: [],
           }

@@ -11,6 +11,8 @@ import { PageHeader, KPICard, StatusBadge, Badge } from '@/components/ui'
 import EmptyState from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 
+type DoorMaterial = 'WOOD' | 'FIBERGLASS' | 'METAL'
+
 interface OrderItem {
   id: string
   description: string
@@ -18,7 +20,28 @@ interface OrderItem {
   unitPrice: number
   lineTotal: number
   productId?: string | null
-  product?: { id?: string; name: string; sku: string } | null
+  // Strike-type flag for dunnage / Final Front items. Drives whether
+  // production cuts a wood-bore or fiberglass/metal strike. Captured at
+  // order entry; required for those categories at the form layer.
+  doorMaterial?: DoorMaterial | null
+  product?: { id?: string; name: string; sku: string; category?: string; subcategory?: string } | null
+}
+
+// Categories where the door slab material drives strike type and the
+// dropdown becomes a hard requirement. Keep in sync with
+// src/lib/product-categories.ts (Specialty Doors → Dunnage Doors).
+function needsDoorMaterial(item: OrderItem): boolean {
+  const cat = (item.product?.category || '').toLowerCase()
+  const sub = (item.product?.subcategory || '').toLowerCase()
+  const desc = (item.description || '').toLowerCase()
+  // Dunnage doors (Specialty Doors > Dunnage Doors)
+  if (sub.includes('dunnage') || desc.includes('dunnage')) return true
+  // Final Front items — flagged by description token "final front" / "FF"
+  if (desc.includes('final front') || /\bff\b/i.test(item.description || '')) return true
+  // Exterior front-entry doors are the canonical "final front" target
+  // and benefit from the same strike-type call-out.
+  if (cat === 'exterior doors') return true
+  return false
 }
 
 interface Order {
@@ -39,6 +62,8 @@ interface Order {
   items: OrderItem[]
   quote?: { quoteNumber: string; project?: { name: string; jobAddress: string; city: string; state: string } }
   jobs?: { id: string; jobNumber: string; status: string }[]
+  /** True if at least one OrderItem links to a Product that is the parent of any BomEntry — i.e. order routes through manufacturing. */
+  hasBomItems?: boolean
 }
 
 // Status label map (semantic Badge handles the color)
@@ -151,6 +176,30 @@ export default function OpsOrdersPage() {
       console.error('Update failed:', err)
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Update a single OrderItem (currently used to set door material /
+  // strike type on dunnage / Final Front lines). Optimistic update —
+  // if the PATCH fails the row is re-fetched on next list load.
+  async function updateOrderItem(orderId: string, itemId: string, updates: Record<string, any>) {
+    setOrders(prev => prev.map(o => o.id !== orderId ? o : ({
+      ...o,
+      items: o.items.map(it => it.id === itemId ? { ...it, ...updates } : it),
+    })))
+    try {
+      const res = await fetch(`/api/ops/orders/${orderId}/items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (!res.ok) {
+        // Re-fetch on failure so the UI shows the canonical server state.
+        fetchOrders()
+      }
+    } catch (err) {
+      console.error('Update order item failed:', err)
+      fetchOrders()
     }
   }
 
@@ -484,8 +533,17 @@ export default function OpsOrdersPage() {
                       <span className="text-[10px] text-fg-subtle font-mono">← {order.quote.quoteNumber}</span>
                     )}
                   </div>
-                  <div className="w-32 shrink-0">
+                  <div className="w-32 shrink-0 flex items-center gap-1.5">
                     <StatusBadge status={order.status} size="sm" />
+                    {order.hasBomItems === false && (
+                      <Badge
+                        variant="neutral"
+                        size="sm"
+                        title="Order has no manufactured items — skips production"
+                      >
+                        STOCK ONLY
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
                     <p className="text-sm text-fg truncate font-medium">
@@ -600,6 +658,7 @@ export default function OpsOrdersPage() {
                         <thead>
                           <tr>
                             <th>Item</th>
+                            <th>Material</th>
                             <th className="num">Qty</th>
                             <th className="num hidden sm:table-cell">Unit</th>
                             <th className="num">Total</th>
@@ -609,6 +668,8 @@ export default function OpsOrdersPage() {
                           {order.items.slice(0, 10).map(item => {
                             const productId = item.productId || item.product?.id
                             const skuLabel = item.product?.sku
+                            const showMaterial = needsDoorMaterial(item)
+                            const missing = showMaterial && !item.doorMaterial
                             return (
                               <tr key={item.id}>
                                 <td className="text-fg">
@@ -635,6 +696,32 @@ export default function OpsOrdersPage() {
                                     )
                                   )}
                                 </td>
+                                <td>
+                                  {showMaterial ? (
+                                    <select
+                                      aria-label="Door material (strike type)"
+                                      value={item.doorMaterial || ''}
+                                      onChange={(e) => updateOrderItem(
+                                        order.id,
+                                        item.id,
+                                        { doorMaterial: e.target.value || null },
+                                      )}
+                                      className={cn(
+                                        'text-xs px-2 py-1 rounded border bg-surface',
+                                        missing
+                                          ? 'border-data-negative text-data-negative-fg font-semibold'
+                                          : 'border-border text-fg',
+                                      )}
+                                    >
+                                      <option value="">— select —</option>
+                                      <option value="WOOD">Wood</option>
+                                      <option value="FIBERGLASS">Fiberglass</option>
+                                      <option value="METAL">Metal</option>
+                                    </select>
+                                  ) : (
+                                    <span className="text-fg-subtle text-xs">—</span>
+                                  )}
+                                </td>
                                 <td className="num text-fg-muted">{item.quantity}</td>
                                 <td className="num text-fg-muted hidden sm:table-cell">{fmt(item.unitPrice)}</td>
                                 <td className="num font-medium text-fg">{fmt(item.lineTotal)}</td>
@@ -643,7 +730,7 @@ export default function OpsOrdersPage() {
                           })}
                           {order.items.length > 10 && (
                             <tr>
-                              <td colSpan={4} className="text-center text-xs text-fg-subtle">
+                              <td colSpan={5} className="text-center text-xs text-fg-subtle">
                                 + {order.items.length - 10} more items
                               </td>
                             </tr>
@@ -651,7 +738,7 @@ export default function OpsOrdersPage() {
                         </tbody>
                         <tfoot>
                           <tr className="bg-surface-muted">
-                            <td colSpan={3} className="text-right eyebrow">Total</td>
+                            <td colSpan={4} className="text-right eyebrow">Total</td>
                             <td className="num font-semibold text-accent text-base">{fmt(order.total)}</td>
                           </tr>
                         </tfoot>

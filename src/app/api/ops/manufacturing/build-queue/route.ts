@@ -95,6 +95,17 @@ export async function GET(request: NextRequest) {
       p++
     }
 
+    // Stock-only filter — jobs whose order contains zero manufactured-in-house
+    // items (no OrderItem.productId is the parent of any BomEntry) should not
+    // appear on the manufacturing queue. Those orders still flow through
+    // load / delivery / staging, but they don't get a build sheet.
+    where.push(`EXISTS (
+      SELECT 1
+        FROM "OrderItem" oi
+        JOIN "BomEntry" be ON be."parentId" = oi."productId"
+       WHERE oi."orderId" = j."orderId"
+    )`)
+
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
 
     const sql = `

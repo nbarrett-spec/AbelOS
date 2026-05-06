@@ -45,6 +45,10 @@
       "schedule": "0 9 * * 1-5"
     },
     {
+      "path": "/api/cron/quote-expiration",
+      "schedule": "0 6 * * *"
+    },
+    {
       "path": "/api/cron/agent-opportunities",
       "schedule": "0 14 * * 1-5"
     },
@@ -231,6 +235,10 @@
     {
       "path": "/api/cron/prospect-enrich",
       "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/cron/mfg-24hr-check",
+      "schedule": "0 * * * *"
     }
   ]
 }

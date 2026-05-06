@@ -561,6 +561,28 @@ export default function BuildSheetPage() {
                 const totalItems = group.components.length
                 const verifiedItems = group.components.filter((c: any) => checklist.get(c.id)).length
                 const pct = totalItems > 0 ? Math.round((verifiedItems / totalItems) * 100) : 0
+                // Strike-type call-out for dunnage / Final Front parents.
+                // Production can't tell wood from fiberglass/metal slab by
+                // sight once the slab is in the bay — and the wrong strike
+                // is a rework. Shown big and bold; missing = WARNING band.
+                const sub = (group.parent.subcategory || '').toLowerCase()
+                const cat = (group.parent.category || '').toLowerCase()
+                const name = (group.parent.name || '').toLowerCase()
+                const isStrikeRelevant = sub.includes('dunnage')
+                  || cat === 'exterior doors'
+                  || name.includes('dunnage')
+                  || name.includes('final front')
+                const mat: string | null = group.parent.doorMaterial || null
+                const strikeLabel = mat === 'WOOD'
+                  ? 'STRIKE TYPE: WOOD'
+                  : (mat === 'FIBERGLASS' || mat === 'METAL')
+                    ? 'STRIKE TYPE: FIBERGLASS/METAL'
+                    : 'STRIKE TYPE: NOT SET'
+                const strikeBg = mat === 'WOOD'
+                  ? 'bg-amber-100 text-amber-900 border-amber-400'
+                  : (mat === 'FIBERGLASS' || mat === 'METAL')
+                    ? 'bg-slate-200 text-slate-900 border-slate-500'
+                    : 'bg-red-100 text-red-900 border-red-500'
                 return (
                 <div key={idx} className="bg-white rounded-xl border overflow-hidden">
                   <div className="bg-gray-50 px-6 py-3 border-b">
@@ -576,6 +598,18 @@ export default function BuildSheetPage() {
                         {verifiedItems} of {totalItems} items verified
                       </span>
                     </div>
+                    {/* Strike-type banner — only shown for dunnage / Final Front parents.
+                        Big and bold so production crew can't miss it (and ALL CAPS,
+                        even when printed). Missing value renders as a red WARN band. */}
+                    {isStrikeRelevant && (
+                      <div
+                        className={`mt-3 px-4 py-2 border-2 rounded-md font-bold tracking-wide text-base sm:text-lg uppercase ${strikeBg}`}
+                        role="note"
+                        aria-label="Strike type for this door"
+                      >
+                        {strikeLabel}
+                      </div>
+                    )}
                     {/* Per-group checklist progress bar */}
                     <div className="mt-2 print:hidden">
                       <div className="w-full bg-gray-200 rounded-full h-2">

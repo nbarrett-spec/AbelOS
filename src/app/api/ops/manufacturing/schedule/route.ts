@@ -76,12 +76,19 @@ export async function GET(request: NextRequest) {
     let rows: ScheduleJobRow[] = []
     try {
       rows = await prisma.$queryRawUnsafe<ScheduleJobRow[]>(
-        `SELECT id, "jobNumber", "scheduledDate", status::text AS status, "builderName", community
-         FROM "Job"
-         WHERE "scheduledDate" IS NOT NULL
-           AND "scheduledDate" >= NOW()
-           AND "scheduledDate" < NOW() + INTERVAL '28 days'
-         ORDER BY "scheduledDate" ASC`,
+        `SELECT j.id, j."jobNumber", j."scheduledDate", j.status::text AS status,
+                j."builderName", j.community
+         FROM "Job" j
+         WHERE j."scheduledDate" IS NOT NULL
+           AND j."scheduledDate" >= NOW()
+           AND j."scheduledDate" < NOW() + INTERVAL '28 days'
+           AND EXISTS (
+             SELECT 1
+               FROM "OrderItem" oi
+               JOIN "BomEntry" be ON be."parentId" = oi."productId"
+              WHERE oi."orderId" = j."orderId"
+           )
+         ORDER BY j."scheduledDate" ASC`,
       )
     } catch (e: any) {
       // If the Job table or scheduledDate column is missing in this environment,

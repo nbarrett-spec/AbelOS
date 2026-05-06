@@ -4,12 +4,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
 import { audit } from '@/lib/audit'
 import { runOrderStatusCascades, onOrderConfirmed } from '@/lib/cascades/order-lifecycle'
-import { checkBuilderCreditStatus } from '@/lib/credit-hold'
+import { enforceCreditHold } from '@/lib/credit-hold'
 import { createTaskForOrderReceived } from '@/lib/events/task'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { toCsv } from '@/lib/csv'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { fireStaffNotifications } from '@/lib/order-staff-notifications'
+import { orderIdsWithBomItems } from '@/lib/orders'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -132,14 +133,23 @@ export async function GET(request: NextRequest) {
     let items: any[] = [];
     let jobs: any[] = [];
     let quotes: any[] = [];
+    let bomOrderIdSet: Set<string> = new Set();
 
     if (orderIds.length > 0) {
+      // Pre-compute which orders have any manufactured-in-house items.
+      // Orders without BOM-parent items are "stock only" and bypass the
+      // manufacturing queue / build-sheet flow. Surfaced in the UI as a
+      // "STOCK ONLY" badge so PMs know at a glance.
+      bomOrderIdSet = await orderIdsWithBomItems(orderIds);
+
       // Fetch order items with products
       const itemsQuery = `
         SELECT
           oi."id", oi."orderId", oi."productId", oi."description",
           oi."quantity", oi."unitPrice", oi."lineTotal",
-          p."id" as "product_id", p."name", p."sku", p."category", p."basePrice"
+          oi."doorMaterial"::text as "doorMaterial",
+          p."id" as "product_id", p."name", p."sku", p."category",
+          p."subcategory", p."basePrice"
         FROM "OrderItem" oi
         LEFT JOIN "Product" p ON oi."productId" = p."id"
         WHERE oi."orderId" = ANY($1::text[])
@@ -197,11 +207,13 @@ export async function GET(request: NextRequest) {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           lineTotal: item.lineTotal,
+          doorMaterial: item.doorMaterial || null,
           product: item.product_id ? {
             id: item.product_id,
             name: item.name,
             sku: item.sku,
             category: item.category,
+            subcategory: item.subcategory,
             basePrice: item.basePrice,
           } : null,
         }));
@@ -253,6 +265,7 @@ export async function GET(request: NextRequest) {
         items: orderItems,
         jobs: orderJobs,
         quote: orderQuote,
+        hasBomItems: bomOrderIdSet.has(order.id),
       };
     });
 
@@ -334,6 +347,7 @@ export async function POST(request: NextRequest) {
       deliveryDate,
       deliveryNotes,
       orderDate,
+      acknowledgeExpired,
     } = body;
 
     if (!quoteId) {
@@ -347,7 +361,7 @@ export async function POST(request: NextRequest) {
     const quoteQuery = `
       SELECT
         q."id", q."quoteNumber", q."status", q."total", q."subtotal", q."taxAmount",
-        q."projectId", q."createdAt", q."updatedAt",
+        q."projectId", q."validUntil", q."createdAt", q."updatedAt",
         p."id" as "project_id", p."builderId"
       FROM "Quote" q
       LEFT JOIN "Project" p ON q."projectId" = p."id"
@@ -360,6 +374,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Quote not found' },
         { status: 404 }
+      );
+    }
+
+    // Stale-quote guard (A-BIZ-1). The conversion endpoint used to happily
+    // turn a quote priced six months ago into a fresh order at six-month-old
+    // pricing; that's how we ate margin. Block by default, but accept an
+    // explicit acknowledgeExpired:true so staff can deliberately convert a
+    // stale quote when they've checked the pricing themselves (or the
+    // builder is honoring the original).
+    const isExpiredStatus = String(quote.status) === 'EXPIRED';
+    const isPastValidUntil =
+      !!quote.validUntil && new Date(quote.validUntil) < new Date();
+    if ((isExpiredStatus || isPastValidUntil) && !acknowledgeExpired) {
+      const daysAgo = quote.validUntil
+        ? Math.round((Date.now() - new Date(quote.validUntil).getTime()) / 86400000)
+        : 0;
+      return NextResponse.json(
+        {
+          error: 'Quote is expired',
+          code: 'QUOTE_EXPIRED',
+          quoteNumber: quote.quoteNumber,
+          status: quote.status,
+          validUntil: quote.validUntil,
+          warning: isExpiredStatus
+            ? `Quote ${quote.quoteNumber} is marked EXPIRED - pricing may be stale.`
+            : `Quote ${quote.quoteNumber} expired ${daysAgo} days ago - pricing may be stale.`,
+          remediation:
+            'Re-quote at current pricing, or pass { acknowledgeExpired: true } in the request body to convert anyway.',
+        },
+        { status: 400 }
       );
     }
 
@@ -415,26 +459,15 @@ export async function POST(request: NextRequest) {
     const paymentTerm = builder?.paymentTerm || 'NET_15';
 
     // ── Credit hold enforcement ──────────────────────────────────
-    if (builder) {
-      const builderStatus = builder.status || builder.accountStatus;
-      if (builderStatus === 'SUSPENDED' || builderStatus === 'ON_HOLD') {
-        return NextResponse.json(
-          { error: `Order blocked: account is ${builderStatus.replace('_', ' ').toLowerCase()}. Contact accounting.` },
-          { status: 403 }
-        );
-      }
-      if (builder.creditLimit && Number(builder.creditLimit) > 0) {
-        const arQuery = `SELECT COALESCE(SUM("total"), 0) as balance FROM "Order" WHERE "builderId" = $1 AND "paymentStatus" != 'PAID'`;
-        const arResult = await prisma.$queryRawUnsafe(arQuery, finalBuilderId);
-        const currentAR = Number((arResult as any[])[0]?.balance || 0);
-        if (currentAR + Number(quote.total || 0) > Number(builder.creditLimit)) {
-          return NextResponse.json(
-            { error: `Order blocked: would exceed credit limit ($${Number(builder.creditLimit).toLocaleString()}). Current AR: $${currentAR.toLocaleString()}.` },
-            { status: 403 }
-          );
-        }
-      }
-    }
+    // Single source of truth in @/lib/credit-hold. Hard-blocks SUSPENDED/CLOSED
+    // and overdue AR; credit-limit breaches only block when STRICT_CREDIT_LIMIT=true.
+    const blockedByCredit = await enforceCreditHold(
+      finalBuilderId,
+      Number(quote.total || 0),
+      request,
+      { source: 'POST /api/ops/orders', quoteId }
+    );
+    if (blockedByCredit) return blockedByCredit;
 
     // Generate order ID
     const orderId = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -576,7 +609,9 @@ export async function POST(request: NextRequest) {
       SELECT
         oi."id", oi."orderId", oi."productId", oi."description",
         oi."quantity", oi."unitPrice", oi."lineTotal",
-        p."id" as "product_id", p."name", p."sku", p."category", p."basePrice"
+        oi."doorMaterial"::text as "doorMaterial",
+        p."id" as "product_id", p."name", p."sku", p."category",
+        p."subcategory", p."basePrice"
       FROM "OrderItem" oi
       LEFT JOIN "Product" p ON oi."productId" = p."id"
       WHERE oi."orderId" = $1
@@ -612,11 +647,13 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       lineTotal: item.lineTotal,
+      doorMaterial: item.doorMaterial || null,
       product: item.product_id ? {
         id: item.product_id,
         name: item.name,
         sku: item.sku,
         category: item.category,
+        subcategory: item.subcategory,
         basePrice: item.basePrice,
       } : null,
     }));
