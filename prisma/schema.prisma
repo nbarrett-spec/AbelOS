@@ -576,6 +576,23 @@ model QuoteItem {
   @@index([productId])
 }
 
+// A-BIZ-12 — Append-only revision log for Quote edits.
+// Revision 0 is the Quote row itself (no row written on insert).
+// Every PATCH on a Quote inserts a new row with the post-update snapshot
+// (header + items) and a diff against the previous revision.
+model QuoteRevision {
+  id            String   @id @default(cuid())
+  quoteId       String
+  revision      Int // monotonically increasing per quote (1, 2, 3, ...)
+  snapshot      Json // full quote state at this revision (header + items)
+  changes       Json? // diff against the previous revision (null for revision 1)
+  authorStaffId String?
+  createdAt     DateTime @default(now())
+
+  @@unique([quoteId, revision])
+  @@index([quoteId, createdAt(sort: Desc)])
+}
+
 // ─── ORDERS ──────────────────────────────────────────────────────────
 
 model Order {
@@ -6686,6 +6703,31 @@ model ApiKey {
   @@index([hashedKey])
   @@index([revokedAt])
   @@index([createdAt(sort: Desc)])
+}
+
+// ─── BOISE CASCADE SPEND SNAPSHOT — A-PERF-10 (2026-05-05) ────────────
+// Pre-computed daily aggregate of Boise Cascade PO spend so the supply-chain
+// / vendor pages don't recompute the multi-join SUM on every page load.
+//
+// One row per (periodStart, periodEnd) window — 30-day, 90-day, YTD are the
+// three windows the cron writes nightly at 4am Central. The read endpoint
+// serves the latest snapshot per window; if no snapshot exists yet, the
+// endpoint falls back to live computation.
+//
+// Additive only. Migration: scripts/migrate-aegis-boise-snapshot-2026-05-05.sql
+model BoiseSpendSnapshot {
+  id          String   @id @default(cuid())
+  periodStart DateTime
+  periodEnd   DateTime
+  totalSpend  Float    @default(0)
+  poCount     Int      @default(0)
+  itemCount   Int      @default(0)
+  byCategory  Json     @default("{}") // { EXTERIOR: 12000, TRIM_1: 8000, ... }
+  byMonth     Json     @default("[]") // [{ month: "2026-01", spend: 4200 }, ...]
+  computedAt  DateTime @default(now())
+
+  @@unique([periodStart, periodEnd])
+  @@index([computedAt(sort: Desc)])
 }
 
 // ─── BULK IMPORT AUDIT TRAIL — B-FEAT-6 / A-API-14 (2026-05-05) ─────
