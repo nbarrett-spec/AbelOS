@@ -73,6 +73,17 @@ export async function GET(request: NextRequest) {
                 total: true,
                 deliveryNotes: true,
                 builder: { select: { id: true, companyName: true, phone: true } },
+                // Items — pulled here so the driver manifest can render an
+                // at-a-glance "12 doors, 4 trim" summary without an N+1 fetch.
+                // Cap is generous; manifest summarizes by category, not per-item.
+                items: {
+                  select: {
+                    quantity: true,
+                    description: true,
+                    product: { select: { category: true } },
+                  },
+                  take: 200,
+                },
               },
             },
           },
@@ -109,6 +120,35 @@ export async function GET(request: NextRequest) {
         }
         byDriver.set(key, bucket)
       }
+      // Build a short item summary like "12 doors · 4 trim · 6 hardware".
+      // Bucket by Product.category prefix so we don't list every SKU on the
+      // manifest card. Falls back to total qty + line count if categories
+      // aren't populated yet.
+      const items = d.job?.order?.items || []
+      const buckets: Record<string, number> = {}
+      let totalQty = 0
+      for (const it of items) {
+        const qty = it.quantity || 0
+        totalQty += qty
+        const cat = (it.product?.category || '').toLowerCase()
+        let bucketKey = 'misc'
+        if (cat.includes('door')) bucketKey = 'doors'
+        else if (cat.includes('trim') || cat.includes('moulding') || cat.includes('molding')) bucketKey = 'trim'
+        else if (cat.includes('hardware')) bucketKey = 'hardware'
+        else if (cat.includes('lumber')) bucketKey = 'lumber'
+        else if (cat) bucketKey = cat.split(' ')[0]
+        buckets[bucketKey] = (buckets[bucketKey] || 0) + qty
+      }
+      const itemSummaryParts = Object.entries(buckets)
+        .filter(([, q]) => q > 0)
+        .sort(([, a], [, b]) => b - a)
+        .map(([k, q]) => `${q} ${k}`)
+      const itemSummary = itemSummaryParts.length > 0
+        ? itemSummaryParts.join(' · ')
+        : items.length > 0
+          ? `${totalQty} item${totalQty === 1 ? '' : 's'}`
+          : ''
+
       bucket.deliveries.push({
         id: d.id,
         deliveryNumber: d.deliveryNumber,
@@ -117,12 +157,17 @@ export async function GET(request: NextRequest) {
         status: d.status,
         builderName: d.job?.order?.builder?.companyName || d.job?.builderName,
         builderPhone: d.job?.order?.builder?.phone,
+        orderId: d.job?.order?.id || null,
         orderNumber: d.job?.order?.orderNumber,
         orderTotal: d.job?.order?.total,
+        jobId: d.job?.id || null,
         jobNumber: d.job?.jobNumber,
         crewId: d.crew?.id || null,
         window: d.job?.scheduledDate,
         notes: [d.notes, d.job?.order?.deliveryNotes].filter(Boolean).join(' · '),
+        itemSummary,
+        itemCount: items.length,
+        totalQty,
         signedBy: d.signedBy,
         completedAt: d.completedAt,
         departedAt: d.departedAt,
