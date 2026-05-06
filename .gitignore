@@ -55,6 +55,8 @@ next-env.d.ts
 # Claude Code / MCP config (contains API keys)
 .mcp.json
 .claude/skills/
+.claude/worktrees/
+.claude/scheduled_tasks.lock
 
 # Seed data (contains customer data, passwords, etc.)
 Abel_OS_Seed_Data.xlsx
