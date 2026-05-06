@@ -10,6 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export interface AutomationAction {
   type:
@@ -132,7 +133,7 @@ export async function fireAutomationEvent(
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : 'Unknown error executing rule'
-        console.error(`[Automation] Error executing rule ${rule.id}:`, errorMsg)
+        logger.error('automation_rule_execute_failed', error, { ruleId: rule.id })
         errors.push(errorMsg)
 
         // Log error
@@ -157,7 +158,7 @@ export async function fireAutomationEvent(
     return { rulesTriggered, actionsExecuted, errors }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-    console.error(`[Automation] Fatal error in fireAutomationEvent:`, errorMsg)
+    logger.error('automation_fire_event_fatal', error, { trigger })
     errors.push(errorMsg)
     return { rulesTriggered, actionsExecuted, errors }
   }
@@ -211,7 +212,7 @@ function evaluateConditions(conditions: Record<string, any>, context?: Record<st
     }
     return true
   } catch (error) {
-    console.error('[Automation] Error evaluating conditions:', error)
+    logger.error('automation_evaluate_conditions_failed', error)
     return false
   }
 }
@@ -278,7 +279,7 @@ async function executeActions(
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-      console.error(`[Automation] Error executing action ${action.type}:`, errorMsg)
+      logger.error('automation_action_execute_failed', error, { actionType: action.type })
       errors.push(errorMsg)
     }
   }
@@ -311,7 +312,7 @@ async function processNotification(
 
     // console.log(`[Automation] Notification sent to staff ${staffId}`)
   } catch (error) {
-    console.error('[Automation] Error sending notification:', error)
+    logger.error('automation_send_notification_failed', error, { staffId })
     throw error
   }
 }
@@ -358,7 +359,7 @@ async function processCreateTask(
 
     // console.log(`[Automation] Task created for ${assignedToId}`)
   } catch (error) {
-    console.error('[Automation] Error creating task:', error)
+    logger.error('automation_create_task_failed', error, { assignedToId })
     throw error
   }
 }
@@ -393,7 +394,7 @@ async function processAuditLog(
 
     // console.log(`[Automation] Audit log created for ${subject}`)
   } catch (error) {
-    console.error('[Automation] Error logging audit:', error)
+    logger.error('automation_log_audit_failed', error, { subject })
     throw error
   }
 }
@@ -419,7 +420,7 @@ async function logAutomationExecution(entry: AutomationLogEntry): Promise<void> 
       entry.executedAt
     )
   } catch (error) {
-    console.error('[Automation] Error logging execution:', error)
+    logger.error('automation_log_execution_failed', error)
     // Don't throw - logging errors shouldn't stop automation
   }
 }
@@ -436,7 +437,7 @@ async function updateRuleMetadata(ruleId: string): Promise<void> {
       ruleId
     )
   } catch (error) {
-    console.error('[Automation] Error updating rule metadata:', error)
+    logger.error('automation_update_rule_metadata_failed', error)
     // Don't throw - metadata updates shouldn't stop automation
   }
 }

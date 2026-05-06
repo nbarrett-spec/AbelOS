@@ -350,6 +350,16 @@ export default function AccountDetailPage() {
     totalAR: number
   } | null>(null)
 
+  // A-BIZ-10 — Aegis-native builder health snapshot (independent of NUC)
+  const [health, setHealth] = useState<{
+    score: number
+    grade: 'A' | 'B' | 'C' | 'D' | 'F'
+    trend: 'improving' | 'declining' | 'stable'
+    trafficLight: 'green' | 'yellow' | 'red'
+    factors: any
+    computedAt: string
+  } | null>(null)
+
   // Activity / comms / pricing / margins / communities / contacts
   const [activities, setActivities] = useState<Activity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)

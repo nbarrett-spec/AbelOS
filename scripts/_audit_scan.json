@@ -1,0 +1,6085 @@
+[
+  {
+    "file": "src/app/api/account/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/account/statement/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/activity/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/alert-history/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/alert-mute/route.ts",
+    "mutations": [
+      "DELETE",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/builders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/builders/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/crons/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/error-counts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/errors/route.ts",
+    "mutations": [
+      "DELETE"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/hyphen/aliases/route.ts",
+    "mutations": [
+      "DELETE",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/hyphen/credentials/route.ts",
+    "mutations": [
+      "DELETE",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/admin/hyphen/events/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/hyphen/events/[id]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/incident-timeline/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/products/enrich/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/products/search/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/request-trace/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/security-events/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/slo/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/slow-queries/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/stats/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/sync-catalog/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/test-alert-notify/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/test-cron-alert/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/uptime/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/webhooks/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/admin/webhooks/[id]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent/chat/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent/email/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent/schedule-change/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent/sms/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/actions/log/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/churn/at-risk/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/churn/intervene/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/context/builder/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/context/daily-brief/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/context/inventory-alerts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/context/pipeline/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/expansion/opportunities/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/expansion/recommend/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/heartbeat/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/intelligence/builder/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/intelligence/builders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/intelligence/refresh/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/agent-hub/inventory/auto-po/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/inventory/forecast/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/messages/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/agent-hub/notifications/proactive/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/outreach/generate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/outreach/performance/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/outreach/sequence/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/permits/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/permits/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/pricing/analysis/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/pricing/calculate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/pricing/competitors/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/pricing/rules/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/quality/predict/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/schedule/auto-assign/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/schedule/optimization-score/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/seo/content/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/seo/keywords/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/seo/local-listing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/seo/review-request/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/status/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/agent-hub/tasks/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/agent-hub/tasks/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/auth/change-password/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/dev-login/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/forgot-password/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/login/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/logout/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/me/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/preferences/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/profile/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/reset-password/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/auth/signup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/blueprints/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/blueprints/[id]/analyze/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/blueprints/[id]/convert/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/blueprints/[id]/route.ts",
+    "mutations": [
+      "DELETE"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/blueprints/[id]/takeoff/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/analytics/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/branding/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/chat/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/chat/[conversationId]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/cost-predictor/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/deliveries/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/deliveries/track/[orderId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/deliveries/[id]/reschedule/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/onboarding/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/orders/search/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/orders/[id]/reorder/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/phase-config/route.ts",
+    "mutations": [
+      "PUT"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/pricing-intelligence/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/recommendations/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/referrals/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/reorder-forecast/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/schedule/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/schedule/[jobId]/milestones/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/statement/export/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder/templates/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/templates/[id]/add-to-cart/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/templates/[id]/route.ts",
+    "mutations": [
+      "DELETE"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder/volume-savings/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder-portal/jobs/status/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builder-portal/jobs/[jobId]/co-preview/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/builder-portal/jobs/[jobId]/status/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builders/messages/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builders/quote-request/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builders/register/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/builders/warranty/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/bulk-order/parse/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/catalog/bundles/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/catalog/cart/route.ts",
+    "mutations": [
+      "DELETE",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/catalog/inventory/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/catalog/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/catalog/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/client-errors/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/crews/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/crews/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/daily-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/delivery/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/install/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/route/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/crew/schedule/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/aegis-brain-sync/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/agent-opportunities/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/allocation-health/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/bolt-sync/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/bpw-sync/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/brain-sync/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/brain-sync-staff/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/buildertrend-sync/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/collections-cycle/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/collections-email/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/collections-ladder/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/cross-dock-scan/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/cycle-count-schedule/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/daily-digest/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/data-quality/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/data-quality-watchdog/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/demand-forecast-weekly/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/financial-snapshot/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/gmail-sync/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/gold-stock-monitor/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/hyphen-sync/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/inbox-feed/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/inflow-sync/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/material-confirm-checkpoint/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/material-watch/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/morning-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/mrp-nightly/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/nuc-alerts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/observability-gc/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/pm-daily-tasks/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/process-outreach/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/quote-followups/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/run-automations/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/shortage-forecast/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/uptime-probe/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/vendor-scorecard-daily/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/webhook-retry/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/weekly-report/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/cron/zombie-sweep/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/dashboard/actions/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/dashboard/analytics/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/dashboard/reorder/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/deliveries/feedback/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/deliveries/[orderId]/photos/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/docs/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/door/[id]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/executive/dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/health/ready/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/homeowner/seed/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/homeowner/[token]/confirm/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/homeowner/[token]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/homeowner/[token]/selections/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/homeowner/[token]/upgrades/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/hyphen/changeOrders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/hyphen/oauth/token/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/hyphen/orders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/internal/security-event/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/invoices/batch-pay/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/invoices/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/invoices/[id]/pdf/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/messages/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/notifications/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/accounting-ai/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/accounting-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/accounting-command/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/accounts/proactive/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/accounts/[id]/activities/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/accounts/[id]/margins/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/accounts/[id]/pricing/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/action-queue/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/activity-log/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/ai-usage/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/crons/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/data-quality/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/data-quality/run/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/data-repair/accept-fix/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/data-repair/drift-flagged/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/data-repair/flag-for-review/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/data-repair/reject-fix/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/digest-preview/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/health-metrics/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/integrations-freshness/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/qr-tags/log-print/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/admin/qr-tags/preview/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/admin/trends/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/agent/messages/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/agent/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/agent/workflows/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/agent/workflows/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/alerts/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/builder-snapshot/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/chat/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/competitive/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/daily-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/exec-briefing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/insights/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/operator/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/order-summary/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/predictive/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/scans/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/ai/schedule-suggest/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/scheduling/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai/templates/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/ai-orders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/audit/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/auth/diagnose/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/forgot-password/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/login/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/logout/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/me/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/auth/permissions/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/auth/profile/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/reset-password/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/run-migrations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/seed-admin/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/seed-staff/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auth/setup-account/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/auto-po/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/automations/dunnage-to-final-front/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/automations/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/blueprints/analyze/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/blueprints/generate-takeoff/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/brain/proxy/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/brain/scores/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/brain/trigger-sync/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/brain/webhook/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/brain-seed/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/builder-chat/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/builder-messages/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/builders/applications/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/builders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/builders/[id]/phase-config/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/builders/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/builders/[id]/settings/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/cash-flow-optimizer/collections/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/cash-flow-optimizer/payment-terms/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/cash-flow-optimizer/setup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/cash-flow-optimizer/working-capital/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/change-orders/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/cleanup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/collections/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/collections/rules/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/collections/run-cycle/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/collections/today/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/collections/[invoiceId]/action/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/communication-logs/gmail-fetch/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/communication-logs/gmail-sync/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/communication-logs/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/communities/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/communities/[id]/floor-plans/[planId]/bom/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/communities/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/contacts/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/contracts/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/credit-alerts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/crew-conflicts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/crews/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/crews/subcontractor-pricing/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/customers/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/data-fix/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/data-quality/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/delegations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delegations/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/deliveries/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/deliveries/[id]/send-confirmation/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/curri/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/dispatch/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/eta/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/delivery/optimize/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/delivery/optimize-hint/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/partial-shipment/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/route-optimizer/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/today/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/delivery/tracking/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/[deliveryId]/assign-driver/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/[deliveryId]/complete/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/[deliveryId]/depart/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery/[deliveryId]/load/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/delivery-notify/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/divisions/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/documents/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/documents/vault/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/documents/vault/[id]/route.ts",
+    "mutations": [
+      "DELETE"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/email/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/email/templates/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/email-templates/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/estimator-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/executive/dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/executive/financial/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/executive/operations/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/export/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/ap/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/ap-forecast/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/ap-schedule/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/finance/ap-waterfall/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/finance/ar/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/ar-heatmap/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/ar-predict/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/bank/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/finance/cash-dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/command-center/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/dso-compliance/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/gross-margin/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/monthly-close/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/finance/monthly-rollup/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/finance/payment-patterns/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/fleet/live/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/fleet/location/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/fleet/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/fleet/vehicles/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/floor-plans/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/floor-plans/serve/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/floor-plans/upload/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/floor-plans/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/gchat/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/gold-stock/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/gold-stock/[kitId]/build/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/gold-stock/[kitId]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/growth/leads/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/growth/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/handbook/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/homeowner-access/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/hyphen/documents/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/hyphen/ingest/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/hyphen/unmatched/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/import-bolt/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/import-box/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/import-bpw/intake/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/import-bpw/process/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/import-bpw/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/import-hyphen/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/import-inflow/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inbox/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inbox/scoped/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inbox/[id]/escalate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inbox/[id]/resolve/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inbox/[id]/snooze/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inbox/[id]/take-action/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inspections/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inspections/templates/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inspections/[id]/photos/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inspections/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/buildertrend/projects/route.ts",
+    "mutations": [
+      "DELETE",
+      "POST",
+      "PUT"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/buildertrend/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/buildertrend/webhook/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/integrations/inflow/debug/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/integrations/inflow/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/inflow/sync/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/quickbooks/status/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/integrations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/setup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/supplier-pricing/apply/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/integrations/supplier-pricing/history/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/integrations/supplier-pricing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/allocations/bulk/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/allocations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/allocations/[id]/route.ts",
+    "mutations": [
+      "DELETE"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/auto-reorder/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/intelligence/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inventory/kpis/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inventory/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inventory/transfers/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/transfers/[id]/complete/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/valuation/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inventory/[id]/purchase-history/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inventory/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/inventory/[id]/sales-history/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/inventory/[id]/transactions/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/invoice-reminder/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/invoices/from-order/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/invoices/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/invoices/[id]/payments/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/invoices/[id]/remind/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/invoices/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/backfill-addresses/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/geocode/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/needs-review/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/jobs/profitability/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/jobs/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/allocations/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/co-preview/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/confirm-scheduled-date/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/documents/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/material-confirm/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/material-escalate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/notes/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/phases/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/phases/[phaseId]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/profile/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/jobs/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/kpis/export/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/kpis/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/lien-releases/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/lien-releases/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/locations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/advance-job/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/bom/route.ts",
+    "mutations": [
+      "DELETE",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/bom-cleanup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/build-sheet/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/cost-rollup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/generate-picks/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/labor-rates/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/picks/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/picks/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/qc/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/staging/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/manufacturing/tag-program/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing-ai/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing-command/receiving/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/manufacturing-command/rework/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/manufacturing-command/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/manufacturing-command/schedule/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/margin-defaults/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/margin-rules/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/marketing/campaigns/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/material-calendar/job/[jobId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/material-calendar/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/material-eta/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/material-watch/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/me/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/messages/departments/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/messages/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/messages/[conversationId]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/add-indexes/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/ai-agent/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/builder-pricing-tiers/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/data-scrub/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/employee-onboarding/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/fix-order-totals/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/manufacturing-tables/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/multi-role-support/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/platform-upgrade/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/portal-overrides/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/product-expansion/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate/vendor-credit/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-agent-hub/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-all/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-cascades/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-change-orders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-documents/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-features/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-indexes/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-manufacturing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-nfc/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-outreach/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-phase2/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-phase3/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-phase4/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-phase5/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-punch-items/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/migrate-temporal/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/mrp/bom-explode/[orderId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/daily-output/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/demand-heatmap/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/draft-pos/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/mrp/forecast/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/job-materials/[jobId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/production-queue/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/mrp/projection/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/setup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/mrp/shortage-summary/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/stockouts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/mrp/suggest-po/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/my-day/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/notifications/builder/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/notifications/builder/send/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/notifications/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/orders/bulk/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/orders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/orders/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/organizations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/outreach/tracker/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/payments/aging/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/payments/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/phase-templates/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/phase-templates/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PUT"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/pm/material-confirm-pending/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/pm-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/pm-dashboard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/pm-scorecard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/builder-intel/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/driver/voice-briefing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/jobs/[jobId]/complete/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/jobs/[jobId]/escalate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/jobs/[jobId]/photos/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/jobs/[jobId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/jobs/[jobId]/start/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/schedule/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/installer/today/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/pm/material/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/sales/earnings/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/sales/next-stop/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/sales/today-stops/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/sales/voice-briefing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/portal/summary/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/preferences/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/presence/activity/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/presence/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/pricing/engine/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/pricing/tiers/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/ai-assistant/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/inventory/calculate-usage/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/inventory/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/purchase-orders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/purchase-orders/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/setup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/suppliers/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/suppliers/[id]/products/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement/suppliers/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement-intelligence/cash-flow/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement-intelligence/cost-trends/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement-intelligence/setup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement-intelligence/smart-po/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/procurement-intelligence/vendor-scoring/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/product-categories/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/products/categories/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/products/cleanup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/products/enrich/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/products/images/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/products/pricing/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/products/profitability/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/products/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/products/search/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/products/[productId]/substitutes/apply/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/products/[productId]/substitutes/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/projects/command-center/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/projects/standup/[pmId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/projects/[projectId]/timeline/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/punch-items/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/purchasing/optimize/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/purchasing/recommendations/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/purchasing/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/purchasing/smart-po/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/purchasing/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/purchasing/[id]/send/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/purchasing-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/qc/metrics/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/qc-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/qc-trends/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/quote-requests/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/quotes/conversion/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/quotes/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/readiness-check/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/received-orders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/receiving/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/receiving/[id]/receive/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/receiving/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/reports/generate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/reports/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/reports/schedule/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/reports/shipping-forecast/download/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/reports/shipping-forecast/generate-xlsx/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/reports/shipping-forecast/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/returns/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/returns/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/revenue-intelligence/builder-value/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/revenue-intelligence/pricing-engine/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/revenue-intelligence/setup/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/analytics/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sales/contracts/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/contracts/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PUT"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/deals/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/deals/[id]/activities/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/deals/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PUT"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/documents/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/documents/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PUT"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/follow-ups/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sales/migrate/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/outreach-engine/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/pipeline/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/reminders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sales/reports/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sales/seed-reps/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sales/stats/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sales-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sales-scorecard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/schedule/milestones/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/schedule/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/schedule/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/search/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/seed/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/seed-demo-data/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/seed-employees/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/seed-workflow/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/settings/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sops/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/staff/bulk-invite/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/staff/fix-passwords/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/staff/preferences/digest/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/staff/preferences/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/staff/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/staff/seed/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/staff/[id]/reset-password/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/staff/[id]/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/stream/changes/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/stream/recent/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/substitutions/requests/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/substitutions/requests/[id]/approve/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/substitutions/requests/[id]/reject/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/suppliers/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/supply-chain/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/sync-health/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/sync-health/v2/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/system-alerts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/takeoff-inquiries/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/upload/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/[id]/blueprint/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/[id]/extract/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/[id]/generate-quote/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/[id]/match-products/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/takeoffs/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/trades/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/trades/[id]/reviews/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/tts/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/vendors/performance/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/vendors/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/vendors/scorecard/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/vendors/scorecard/[vendorId]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/vendors/[id]/route.ts",
+    "mutations": [
+      "DELETE",
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/video-rooms/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/bays/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/cross-dock/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse/cycle-count/complete/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/cycle-count/current/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse/cycle-count/history/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse/cycle-count/line/[id]/count/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/daily-plan/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse/pick-verify/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/picks/today/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse/picks/[jobId]/mark-picked/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/picks/[jobId]/scan/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/picks/[jobId]/short/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warehouse/picks-for-job/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse/ready-to-pick/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warehouse-briefing/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/ops/warranty/automation/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warranty/claims/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warranty/claims/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warranty/inspections/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/warranty/policies/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/ops/workflows/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/orders/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/orders/[id]/audio/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/orders/[id]/reorder/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/orders/[id]/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/payments/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/presence/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/projects/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/projects/[id]/blueprints/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/projects/[id]/details/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/projects/[id]/homeowner-access/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/projects/[id]/selections/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/quick-order/search/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/quote-request/instant/route.ts",
+    "mutations": [
+      "PATCH",
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/quotes/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/quotes/[id]/convert/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/quotes/[id]/pdf/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/quotes/[id]/route.ts",
+    "mutations": [
+      "PATCH"
+    ],
+    "hasGet": true,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/readiness/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/recommendations/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/search/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/takeoff/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/upload/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/agent/approve/[commandId]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/v1/engine/agent/pending/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/agent/reject/[commandId]/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/v1/engine/agent/status/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/chat/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/v1/engine/command/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": true,
+    "hasAuditCall": true
+  },
+  {
+    "file": "src/app/api/v1/engine/data/aegis/builders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/aegis/deliveries/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/aegis/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/aegis/inventory/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/aegis/orders/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/calendar/events/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/calendar/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/drive/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/drive/search/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/gmail/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/gmail/threads/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/hubspot/contacts/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/hubspot/deals/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/hubspot/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/quickbooks/ar-aging/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/quickbooks/cash-flow/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/quickbooks/health/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/data/quickbooks/profit-loss/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/inbox/patterns/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/inbox/pending/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/inbox/[inboxItemId]/ack/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/v1/engine/inbox/[inboxItemId]/resolution/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/webhooks/gmail/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/webhooks/hyphen/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/webhooks/inflow/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/webhooks/stripe/route.ts",
+    "mutations": [
+      "POST"
+    ],
+    "hasGet": false,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  },
+  {
+    "file": "src/app/api/_meta/route.ts",
+    "mutations": [],
+    "hasGet": true,
+    "hasAuditImport": false,
+    "hasAuditCall": false
+  }
+]

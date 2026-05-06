@@ -1,0 +1,2592 @@
+{
+  "generatedAt": "2026-04-27T15:31:46.086Z",
+  "modelsInSchema": 221,
+  "enumsInSchema": 61,
+  "prodTableCount": 247,
+  "prodEnumCount": 65,
+  "missingOnProd": [],
+  "tablesNotInSchema": [
+    "ArHistorySnapshot",
+    "BankEntry",
+    "BloomfieldPlanBom",
+    "BoltWorkOrderLink",
+    "BrookfieldPlanBom",
+    "BrookfieldVeAlternative",
+    "CalendarEvent",
+    "CycleCountBatch",
+    "CycleCountLine",
+    "EmailSendLog",
+    "GoldStockInstance",
+    "GoldStockKit",
+    "GoldStockKitComponent",
+    "HyphenCommunityAlias",
+    "HyphenCommunityMapping",
+    "LegalNote",
+    "ManufacturingStep",
+    "ProductGroup",
+    "ProductImage",
+    "ProductSubstitution",
+    "PulteHistoricalBackcharge",
+    "Sop",
+    "SyncCursor",
+    "TollBrothersPlanBom",
+    "VendorNote",
+    "VendorScorecardSnapshot"
+  ],
+  "columnDrift": [
+    {
+      "model": "Builder",
+      "table": "Builder",
+      "missing": [],
+      "extra": [
+        "salesOwnerId"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "builderType",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Community",
+      "table": "Community",
+      "missing": [],
+      "extra": [
+        "latitude",
+        "longitude"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "totalLots",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "activeLots",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "status",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "updatedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "BuilderContact",
+      "table": "BuilderContact",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "role",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "isPrimary",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "receivesPO",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "receivesInvoice",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "active",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "updatedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "CommunityFloorPlan",
+      "table": "CommunityFloorPlan",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "active",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "updatedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "CommunityNote",
+      "table": "CommunityNote",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "category",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "pinned",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "updatedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Takeoff",
+      "table": "Takeoff",
+      "missing": [],
+      "extra": [
+        "floorPlanId"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Order",
+      "table": "Order",
+      "missing": [],
+      "extra": [
+        "driverId",
+        "deliveryConfirmedAt",
+        "deliverySignature",
+        "trackingUpdates",
+        "qbTxnId",
+        "qbSyncedAt",
+        "legacySource",
+        "legacyDescription"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "OrderItem",
+      "table": "OrderItem",
+      "missing": [],
+      "extra": [
+        "legacyLineId"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "OrderTemplateItem",
+      "table": "OrderTemplateItem",
+      "missing": [
+        {
+          "field": "createdAt",
+          "column": "createdAt",
+          "type": "DateTime",
+          "optional": false
+        }
+      ],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "BuilderPricing",
+      "table": "BuilderPricing",
+      "missing": [],
+      "extra": [
+        "revisionTag",
+        "effectiveDate"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Staff",
+      "table": "Staff",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "mustChangePassword",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Job",
+      "table": "Job",
+      "missing": [],
+      "extra": [
+        "jobAddressRaw",
+        "orderIdMatchMethod",
+        "materialConfirmedAt",
+        "materialConfirmedBy",
+        "materialConfirmNote",
+        "materialEscalatedAt",
+        "materialEscalatedTo"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Task",
+      "table": "Task",
+      "missing": [],
+      "extra": [
+        "dealId",
+        "createdById"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Crew",
+      "table": "Crew",
+      "missing": [],
+      "extra": [
+        "isSubcontractor",
+        "companyName",
+        "contactPhone",
+        "contactEmail"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "CrewMember",
+      "table": "CrewMember",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Delivery",
+      "table": "Delivery",
+      "missing": [],
+      "extra": [
+        "curriBookingId",
+        "curriTrackingUrl",
+        "curriCost"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "loadPhotos",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "sitePhotos",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "DeliveryTracking",
+      "table": "DeliveryTracking",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "updatedBy",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Installation",
+      "table": "Installation",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "beforePhotos",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "afterPhotos",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "QualityCheck",
+      "table": "QualityCheck",
+      "missing": [],
+      "extra": [
+        "materialPickId"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "defectCodes",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "photos",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "PurchaseOrderItem",
+      "table": "PurchaseOrderItem",
+      "missing": [],
+      "extra": [
+        "jobId",
+        "crossDockFlag",
+        "crossDockJobIds",
+        "crossDockCheckedAt"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "InventoryItem",
+      "table": "InventoryItem",
+      "missing": [],
+      "extra": [
+        "minStockLevel"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "InvoiceItem",
+      "table": "InvoiceItem",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "lineType",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Payment",
+      "table": "Payment",
+      "missing": [],
+      "extra": [
+        "builderId",
+        "status",
+        "referenceNumber",
+        "processedById",
+        "processedAt",
+        "createdAt"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "MaterialPick",
+      "table": "MaterialPick",
+      "missing": [],
+      "extra": [
+        "pickedById",
+        "verifiedById",
+        "orderItemId",
+        "bomEntryId",
+        "parentProductId",
+        "allocationId"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Message",
+      "table": "Message",
+      "missing": [],
+      "extra": [
+        "threadId",
+        "mentions",
+        "reactions",
+        "isEdited",
+        "editedAt"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "readBy",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "Contract",
+      "table": "Contract",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "type",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "SyncLog",
+      "table": "SyncLog",
+      "missing": [],
+      "extra": [
+        "errorDetails",
+        "integration",
+        "entity",
+        "entityId",
+        "details",
+        "error",
+        "syncedAt"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "completedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "durationMs",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "IntegrationConfig",
+      "table": "IntegrationConfig",
+      "missing": [],
+      "extra": [
+        "gmailWatchExpiry",
+        "gmailHistoryId",
+        "lastSyncError",
+        "configuredById"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "BTProjectMapping",
+      "table": "BTProjectMapping",
+      "missing": [
+        {
+          "field": "btBlock",
+          "column": "btBlock",
+          "type": "String",
+          "optional": true
+        }
+      ],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "btProjectName",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "btStatus",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "CollectionRule",
+      "table": "CollectionRule",
+      "missing": [
+        {
+          "field": "updatedAt",
+          "column": "updatedAt",
+          "type": "DateTime",
+          "optional": false
+        }
+      ],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "CollectionAction",
+      "table": "CollectionAction",
+      "missing": [],
+      "extra": [
+        "requiresApproval",
+        "approvedAt",
+        "approvedBy",
+        "toneUsed",
+        "intelligenceSnapshot"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "AccountReviewTrigger",
+      "table": "AccountReviewTrigger",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "AccountTouchpoint",
+      "table": "AccountTouchpoint",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "BuilderApplication",
+      "table": "BuilderApplication",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "referenceNumber",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "OutreachSequence",
+      "table": "OutreachSequence",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "stepCount",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "active",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "updatedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "OutreachStep",
+      "table": "OutreachStep",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "OutreachEnrollment",
+      "table": "OutreachEnrollment",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "currentStep",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "enrolledAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "updatedAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "OutreachEnrollmentStep",
+      "table": "OutreachEnrollmentStep",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "OutreachTemplate",
+      "table": "OutreachTemplate",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "createdAt",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "FinancialSnapshot",
+      "table": "FinancialSnapshot",
+      "missing": [],
+      "extra": [
+        "cogs",
+        "grossProfit",
+        "operatingExpenses",
+        "netIncome",
+        "liabilities",
+        "notes"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "CronRun",
+      "table": "CronRun",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "triggeredBy",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "AutomationRule",
+      "table": "AutomationRule",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "roles",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "BuilderCatalog",
+      "table": "BuilderCatalog",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "productIds",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "CommunicationLog",
+      "table": "CommunicationLog",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "toAddresses",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "ccAddresses",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "aiActionItems",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "DocumentVault",
+      "table": "DocumentVault",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "tags",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "PunchItem",
+      "table": "PunchItem",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "photoUrls",
+          "schemaOptional": false,
+          "prodNullable": true
+        },
+        {
+          "field": "fixPhotoUrls",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    },
+    {
+      "model": "ScheduleMilestone",
+      "table": "ScheduleMilestone",
+      "missing": [],
+      "extra": [
+        "dependsOn"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Supplier",
+      "table": "Supplier",
+      "missing": [],
+      "extra": [
+        "categories"
+      ],
+      "typeMismatch": [],
+      "nullMismatch": []
+    },
+    {
+      "model": "Trade",
+      "table": "Trade",
+      "missing": [],
+      "extra": [],
+      "typeMismatch": [],
+      "nullMismatch": [
+        {
+          "field": "serviceArea",
+          "schemaOptional": false,
+          "prodNullable": true
+        }
+      ]
+    }
+  ],
+  "enumDrift": [
+    {
+      "name": "PaymentTerm",
+      "schema": [
+        "PAY_AT_ORDER",
+        "PAY_ON_DELIVERY",
+        "NET_15",
+        "NET_30"
+      ],
+      "prod": [
+        "PAY_AT_ORDER",
+        "PAY_ON_DELIVERY",
+        "NET_15",
+        "NET_30",
+        "DUE_ON_RECEIPT"
+      ],
+      "onlyInSchema": [],
+      "onlyInProd": [
+        "DUE_ON_RECEIPT"
+      ]
+    },
+    {
+      "name": "OrderStatus",
+      "schema": [
+        "RECEIVED",
+        "CONFIRMED",
+        "IN_PRODUCTION",
+        "AWAITING_MATERIAL",
+        "READY_TO_SHIP",
+        "PARTIAL_SHIPPED",
+        "SHIPPED",
+        "DELIVERED",
+        "COMPLETE",
+        "CANCELLED"
+      ],
+      "prod": [
+        "RECEIVED",
+        "CONFIRMED",
+        "IN_PRODUCTION",
+        "READY_TO_SHIP",
+        "SHIPPED",
+        "DELIVERED",
+        "COMPLETE",
+        "CANCELLED"
+      ],
+      "onlyInSchema": [
+        "AWAITING_MATERIAL",
+        "PARTIAL_SHIPPED"
+      ],
+      "onlyInProd": []
+    },
+    {
+      "name": "NotificationType",
+      "schema": [
+        "JOB_UPDATE",
+        "TASK_ASSIGNED",
+        "MESSAGE",
+        "PO_APPROVAL",
+        "DELIVERY_UPDATE",
+        "QC_ALERT",
+        "INVOICE_OVERDUE",
+        "SCHEDULE_CHANGE",
+        "MATERIAL_ARRIVAL",
+        "BACKORDER_UPDATE",
+        "OUTREACH_REVIEW",
+        "SYSTEM"
+      ],
+      "prod": [
+        "JOB_UPDATE",
+        "TASK_ASSIGNED",
+        "MESSAGE",
+        "PO_APPROVAL",
+        "DELIVERY_UPDATE",
+        "QC_ALERT",
+        "INVOICE_OVERDUE",
+        "SCHEDULE_CHANGE",
+        "SYSTEM"
+      ],
+      "onlyInSchema": [
+        "MATERIAL_ARRIVAL",
+        "BACKORDER_UPDATE",
+        "OUTREACH_REVIEW"
+      ],
+      "onlyInProd": []
+    },
+    {
+      "name": "DealSource",
+      "schema": [
+        "OUTBOUND",
+        "REFERRAL",
+        "INBOUND",
+        "TRADE_SHOW",
+        "REACTIVATION"
+      ],
+      "prod": [
+        "OUTBOUND",
+        "REFERRAL",
+        "INBOUND",
+        "TRADE_SHOW",
+        "REACTIVATION",
+        "WEBSITE",
+        "EXISTING_CUSTOMER"
+      ],
+      "onlyInSchema": [],
+      "onlyInProd": [
+        "WEBSITE",
+        "EXISTING_CUSTOMER"
+      ]
+    },
+    {
+      "name": "ContractStatus",
+      "schema": [
+        "DRAFT",
+        "INTERNAL_REVIEW",
+        "SENT",
+        "BUILDER_REVIEW",
+        "REVISION_REQUESTED",
+        "SIGNED",
+        "ACTIVE",
+        "EXPIRED",
+        "TERMINATED"
+      ],
+      "prod": [
+        "DRAFT",
+        "PENDING_REVIEW",
+        "ACTIVE",
+        "EXPIRED",
+        "TERMINATED",
+        "RENEWED"
+      ],
+      "onlyInSchema": [
+        "INTERNAL_REVIEW",
+        "SENT",
+        "BUILDER_REVIEW",
+        "REVISION_REQUESTED",
+        "SIGNED"
+      ],
+      "onlyInProd": [
+        "PENDING_REVIEW",
+        "RENEWED"
+      ]
+    },
+    {
+      "name": "IntegrationProvider",
+      "schema": [
+        "INFLOW",
+        "ECI_BOLT",
+        "GMAIL",
+        "HYPHEN",
+        "QUICKBOOKS_DESKTOP",
+        "BUILDERTREND"
+      ],
+      "prod": [
+        "INFLOW",
+        "ECI_BOLT",
+        "GMAIL",
+        "HYPHEN",
+        "QUICKBOOKS_DESKTOP",
+        "BUILDERTREND",
+        "BOISE_CASCADE"
+      ],
+      "onlyInSchema": [],
+      "onlyInProd": [
+        "BOISE_CASCADE"
+      ]
+    },
+    {
+      "name": "IntegrationStatus",
+      "schema": [
+        "PENDING",
+        "CONFIGURING",
+        "CONNECTED",
+        "DISCONNECTED",
+        "ERROR"
+      ],
+      "prod": [
+        "PENDING",
+        "CONFIGURING",
+        "CONNECTED",
+        "ERROR",
+        "DISABLED"
+      ],
+      "onlyInSchema": [
+        "DISCONNECTED"
+      ],
+      "onlyInProd": [
+        "DISABLED"
+      ]
+    },
+    {
+      "name": "CategoryType",
+      "schema": [
+        "CORE",
+        "EXTENDED",
+        "PREMIUM"
+      ],
+      "prod": [
+        "CORE",
+        "ADD_ON"
+      ],
+      "onlyInSchema": [
+        "EXTENDED",
+        "PREMIUM"
+      ],
+      "onlyInProd": [
+        "ADD_ON"
+      ]
+    },
+    {
+      "name": "BuilderRole",
+      "schema": [
+        "PRIMARY",
+        "SECONDARY",
+        "CONTRACTOR"
+      ],
+      "prod": [
+        "PRIMARY",
+        "SUPERINTENDENT",
+        "PURCHASING",
+        "PROJECT_MANAGER",
+        "ESTIMATOR",
+        "OTHER"
+      ],
+      "onlyInSchema": [
+        "SECONDARY",
+        "CONTRACTOR"
+      ],
+      "onlyInProd": [
+        "SUPERINTENDENT",
+        "PURCHASING",
+        "PROJECT_MANAGER",
+        "ESTIMATOR",
+        "OTHER"
+      ]
+    },
+    {
+      "name": "LeadSource",
+      "schema": [
+        "REFERRAL",
+        "INBOUND",
+        "OUTBOUND",
+        "TRADE_SHOW",
+        "OTHER"
+      ],
+      "prod": [
+        "AI_TAKEOFF",
+        "REFERRAL",
+        "WEBSITE",
+        "TRADE_SHOW",
+        "COLD_CALL",
+        "HYPHEN",
+        "EXISTING",
+        "OTHER"
+      ],
+      "onlyInSchema": [
+        "INBOUND",
+        "OUTBOUND"
+      ],
+      "onlyInProd": [
+        "AI_TAKEOFF",
+        "WEBSITE",
+        "COLD_CALL",
+        "HYPHEN",
+        "EXISTING"
+      ]
+    },
+    {
+      "name": "DoorEventType",
+      "status": "missing-in-schema",
+      "prod": [
+        "CREATED",
+        "QC_PASS",
+        "QC_FAIL",
+        "NFC_LINKED",
+        "STORED",
+        "STAGED",
+        "LOADED",
+        "DELIVERED",
+        "INSTALLED",
+        "WARRANTY_CLAIMED",
+        "WARRANTY_RESOLVED",
+        "RETURNED",
+        "NOTE"
+      ]
+    },
+    {
+      "name": "DoorStatus",
+      "status": "missing-in-schema",
+      "prod": [
+        "PRODUCTION",
+        "QC_PASSED",
+        "QC_FAILED",
+        "STORED",
+        "STAGED",
+        "LOADED",
+        "DELIVERED",
+        "INSTALLED",
+        "WARRANTY_CLAIM",
+        "RETURNED"
+      ]
+    },
+    {
+      "name": "SyncDirection",
+      "status": "missing-in-schema",
+      "prod": [
+        "PULL",
+        "PUSH",
+        "BIDIRECTIONAL"
+      ]
+    },
+    {
+      "name": "SyncStatus",
+      "status": "missing-in-schema",
+      "prod": [
+        "SUCCESS",
+        "PARTIAL",
+        "FAILED"
+      ]
+    }
+  ],
+  "statusDrift": [],
+  "indexDrift": [
+    {
+      "table": "Builder",
+      "columns": [
+        "email"
+      ]
+    },
+    {
+      "table": "Builder",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Community",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Community",
+      "columns": [
+        "city",
+        "state"
+      ]
+    },
+    {
+      "table": "BuilderContact",
+      "columns": [
+        "email"
+      ]
+    },
+    {
+      "table": "BuilderContact",
+      "columns": [
+        "role"
+      ]
+    },
+    {
+      "table": "CommunityNote",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "BuilderReferral",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Project",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Takeoff",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "TakeoffItem",
+      "columns": [
+        "productId"
+      ]
+    },
+    {
+      "table": "TakeoffItem",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "QuoteItem",
+      "columns": [
+        "productId"
+      ]
+    },
+    {
+      "table": "Order",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "OrderTemplate",
+      "columns": [
+        "sourceOrderId"
+      ]
+    },
+    {
+      "table": "OrderTemplateItem",
+      "columns": [
+        "productId"
+      ]
+    },
+    {
+      "table": "Product",
+      "columns": [
+        "sku"
+      ]
+    },
+    {
+      "table": "Product",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "Product",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "HomeownerAccess",
+      "columns": [
+        "builderId"
+      ]
+    },
+    {
+      "table": "HomeownerAccess",
+      "columns": [
+        "email"
+      ]
+    },
+    {
+      "table": "HomeownerAccess",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "HomeownerSelection",
+      "columns": [
+        "homeownerAccessId"
+      ]
+    },
+    {
+      "table": "HomeownerSelection",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Staff",
+      "columns": [
+        "email"
+      ]
+    },
+    {
+      "table": "Staff",
+      "columns": [
+        "role"
+      ]
+    },
+    {
+      "table": "Staff",
+      "columns": [
+        "department"
+      ]
+    },
+    {
+      "table": "Staff",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "Job",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Job",
+      "columns": [
+        "community"
+      ]
+    },
+    {
+      "table": "DecisionNote",
+      "columns": [
+        "priority"
+      ]
+    },
+    {
+      "table": "Activity",
+      "columns": [
+        "scheduledAt"
+      ]
+    },
+    {
+      "table": "Task",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Task",
+      "columns": [
+        "builderId"
+      ]
+    },
+    {
+      "table": "Task",
+      "columns": [
+        "priority"
+      ]
+    },
+    {
+      "table": "ScheduleEntry",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Crew",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "Delivery",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "DeliveryTracking",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Installation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "QualityCheck",
+      "columns": [
+        "inspectorId"
+      ]
+    },
+    {
+      "table": "QualityCheck",
+      "columns": [
+        "result"
+      ]
+    },
+    {
+      "table": "Vendor",
+      "columns": [
+        "code"
+      ]
+    },
+    {
+      "table": "Vendor",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "VendorProduct",
+      "columns": [
+        "preferred"
+      ]
+    },
+    {
+      "table": "TrimVendor",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "PurchaseOrder",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "PurchaseOrder",
+      "columns": [
+        "approvedById"
+      ]
+    },
+    {
+      "table": "PurchaseOrder",
+      "columns": [
+        "orderedAt"
+      ]
+    },
+    {
+      "table": "PurchaseOrder",
+      "columns": [
+        "source"
+      ]
+    },
+    {
+      "table": "InventoryItem",
+      "columns": [
+        "sku"
+      ]
+    },
+    {
+      "table": "InventoryItem",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "InventoryItem",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "InventoryItem",
+      "columns": [
+        "lastReceivedAt"
+      ]
+    },
+    {
+      "table": "Invoice",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "InvoiceItem",
+      "columns": [
+        "productId"
+      ]
+    },
+    {
+      "table": "Payment",
+      "columns": [
+        "receivedAt"
+      ]
+    },
+    {
+      "table": "Payment",
+      "columns": [
+        "method"
+      ]
+    },
+    {
+      "table": "MaterialPick",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "MaterialPick",
+      "columns": [
+        "pickedAt"
+      ]
+    },
+    {
+      "table": "MaterialPick",
+      "columns": [
+        "zone"
+      ]
+    },
+    {
+      "table": "Conversation",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "Conversation",
+      "columns": [
+        "createdById"
+      ]
+    },
+    {
+      "table": "Conversation",
+      "columns": [
+        "lastMessageAt"
+      ]
+    },
+    {
+      "table": "Notification",
+      "columns": [
+        "read"
+      ]
+    },
+    {
+      "table": "Notification",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "Deal",
+      "columns": [
+        "stage"
+      ]
+    },
+    {
+      "table": "Deal",
+      "columns": [
+        "source"
+      ]
+    },
+    {
+      "table": "Deal",
+      "columns": [
+        "probability"
+      ]
+    },
+    {
+      "table": "DealActivity",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "DealActivity",
+      "columns": [
+        "followUpDone"
+      ]
+    },
+    {
+      "table": "DealActivity",
+      "columns": [
+        "createdAt"
+      ]
+    },
+    {
+      "table": "Contract",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Contract",
+      "columns": [
+        "signedDate"
+      ]
+    },
+    {
+      "table": "DocumentRequest",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "DocumentRequest",
+      "columns": [
+        "expiresDate"
+      ]
+    },
+    {
+      "table": "DocumentRequest",
+      "columns": [
+        "reminderSent"
+      ]
+    },
+    {
+      "table": "SyncLog",
+      "columns": [
+        "provider"
+      ]
+    },
+    {
+      "table": "SyncLog",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "IntegrationConfig",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "IntegrationConfig",
+      "columns": [
+        "lastSyncAt"
+      ]
+    },
+    {
+      "table": "IntegrationConfig",
+      "columns": [
+        "syncEnabled"
+      ]
+    },
+    {
+      "table": "IntegrationConfig",
+      "columns": [
+        "syncInterval"
+      ]
+    },
+    {
+      "table": "BTProjectMapping",
+      "columns": [
+        "jobId"
+      ]
+    },
+    {
+      "table": "BTProjectMapping",
+      "columns": [
+        "btStatus"
+      ]
+    },
+    {
+      "table": "BTProjectMapping",
+      "columns": [
+        "lastSyncedAt"
+      ]
+    },
+    {
+      "table": "CollectionRule",
+      "columns": [
+        "daysOverdue"
+      ]
+    },
+    {
+      "table": "CollectionRule",
+      "columns": [
+        "isActive"
+      ]
+    },
+    {
+      "table": "CollectionRule",
+      "columns": [
+        "actionType"
+      ]
+    },
+    {
+      "table": "CollectionAction",
+      "columns": [
+        "channel"
+      ]
+    },
+    {
+      "table": "CollectionAction",
+      "columns": [
+        "respondedAt"
+      ]
+    },
+    {
+      "table": "BuilderApplication",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "BuilderApplication",
+      "columns": [
+        "builderId"
+      ]
+    },
+    {
+      "table": "BuilderApplication",
+      "columns": [
+        "createdAt"
+      ]
+    },
+    {
+      "table": "MaterialWatch",
+      "columns": [
+        "orderId"
+      ]
+    },
+    {
+      "table": "MaterialWatch",
+      "columns": [
+        "productId"
+      ]
+    },
+    {
+      "table": "MaterialWatch",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "MaterialWatch",
+      "columns": [
+        "purchaseOrderId"
+      ]
+    },
+    {
+      "table": "MaterialWatch",
+      "columns": [
+        "salesRepId"
+      ]
+    },
+    {
+      "table": "MaterialWatch",
+      "columns": [
+        "jobId"
+      ]
+    },
+    {
+      "table": "BackorderItem",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "JobPhase",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "OutreachSequence",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "OutreachSequence",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "OutreachEnrollment",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "OutreachEnrollment",
+      "columns": [
+        "email"
+      ]
+    },
+    {
+      "table": "OutreachEnrollmentStep",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "FinancialSnapshot",
+      "columns": [
+        "snapshotDate(sort: Desc)"
+      ]
+    },
+    {
+      "table": "WebhookEvent",
+      "columns": [
+        "receivedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "WebhookEvent",
+      "columns": [
+        "provider",
+        "status"
+      ]
+    },
+    {
+      "table": "WebhookEvent",
+      "columns": [
+        "status",
+        "nextRetryAt"
+      ]
+    },
+    {
+      "table": "CronRun",
+      "columns": [
+        "name",
+        "startedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "CronRun",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "DataQualityRule",
+      "columns": [
+        "entity"
+      ]
+    },
+    {
+      "table": "DataQualityIssue",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "DataQualityIssue",
+      "columns": [
+        "ruleId",
+        "status"
+      ]
+    },
+    {
+      "table": "InboxItem",
+      "columns": [
+        "status",
+        "priority"
+      ]
+    },
+    {
+      "table": "InboxItem",
+      "columns": [
+        "assignedTo",
+        "status"
+      ]
+    },
+    {
+      "table": "InboxItem",
+      "columns": [
+        "type",
+        "status"
+      ]
+    },
+    {
+      "table": "InboxItem",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "InboxItem",
+      "columns": [
+        "brainAcknowledgedAt"
+      ]
+    },
+    {
+      "table": "AIInvocation",
+      "columns": [
+        "endpoint"
+      ]
+    },
+    {
+      "table": "AIInvocation",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "StockTransfer",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "AgentConversation",
+      "columns": [
+        "channel"
+      ]
+    },
+    {
+      "table": "AgentConversation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "AgentTask",
+      "columns": [
+        "assignedTo",
+        "status"
+      ]
+    },
+    {
+      "table": "AgentTask",
+      "columns": [
+        "priority",
+        "createdAt"
+      ]
+    },
+    {
+      "table": "AgentTask",
+      "columns": [
+        "agentRole",
+        "status"
+      ]
+    },
+    {
+      "table": "AgentTask",
+      "columns": [
+        "taskType",
+        "status"
+      ]
+    },
+    {
+      "table": "AlertIncident",
+      "columns": [
+        "alertId",
+        "startedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "AlertIncident",
+      "columns": [
+        "startedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "AlertMute",
+      "columns": [
+        "mutedUntil(sort: Desc)"
+      ]
+    },
+    {
+      "table": "AuditLog",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "AuditLog",
+      "columns": [
+        "action"
+      ]
+    },
+    {
+      "table": "AuditLog",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "AuditLog",
+      "columns": [
+        "entity",
+        "entityId"
+      ]
+    },
+    {
+      "table": "AuditLog",
+      "columns": [
+        "severity"
+      ]
+    },
+    {
+      "table": "AuditLog",
+      "columns": [
+        "staffId",
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "AutoPurchaseOrder",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "AutoPurchaseOrder",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "AutomationRule",
+      "columns": [
+        "trigger"
+      ]
+    },
+    {
+      "table": "BoltJob",
+      "columns": [
+        "address"
+      ]
+    },
+    {
+      "table": "BoltJob",
+      "columns": [
+        "community"
+      ]
+    },
+    {
+      "table": "BoltWorkOrder",
+      "columns": [
+        "stage"
+      ]
+    },
+    {
+      "table": "BpwFieldPO",
+      "columns": [
+        "community"
+      ]
+    },
+    {
+      "table": "BuilderIntelligence",
+      "columns": [
+        "crossSellScore(sort: Desc)"
+      ]
+    },
+    {
+      "table": "BuilderMessage",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "CashFlowForecast",
+      "columns": [
+        "scenario"
+      ]
+    },
+    {
+      "table": "CashFlowForecast",
+      "columns": [
+        "scenario"
+      ]
+    },
+    {
+      "table": "ChangeOrder",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "ClientError",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "ClientError",
+      "columns": [
+        "digest"
+      ]
+    },
+    {
+      "table": "ClientError",
+      "columns": [
+        "scope"
+      ]
+    },
+    {
+      "table": "CommunicationLog",
+      "columns": [
+        "channel"
+      ]
+    },
+    {
+      "table": "DeliveryNotification",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Division",
+      "columns": [
+        "region"
+      ]
+    },
+    {
+      "table": "DocumentVault",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "DocumentVault",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "DocumentVaultActivity",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "DoorIdentity",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "EmailQueue",
+      "columns": [
+        "status",
+        "scheduledFor"
+      ]
+    },
+    {
+      "table": "EngineSnapshot",
+      "columns": [
+        "source",
+        "method",
+        "fetchedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "FloorPlan",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "HyphenCredential",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "HyphenOrderEvent",
+      "columns": [
+        "kind"
+      ]
+    },
+    {
+      "table": "HyphenOrderEvent",
+      "columns": [
+        "receivedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "HyphenOrderEvent",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "HyphenPayment",
+      "columns": [
+        "orderNumber",
+        "checkNumber",
+        "amount"
+      ]
+    },
+    {
+      "table": "Inspection",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "InstantQuoteRequest",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "InventoryAllocation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "InventoryAllocation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "LienRelease",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Location",
+      "columns": [
+        "active"
+      ]
+    },
+    {
+      "table": "PaymentTermRecommendation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "PermitLead",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "PricingTierRule",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "ProcurementAlert",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "ProcurementAlert",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "ProductCategory",
+      "columns": [
+        "slug"
+      ]
+    },
+    {
+      "table": "ProfitOptimizationLog",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "ProfitOptimizationLog",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "ProfitOptimizationLog",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "ProfitOptimizationLog",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Prospect",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "PunchItem",
+      "columns": [
+        "severity"
+      ]
+    },
+    {
+      "table": "PunchItem",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "QBSyncQueue",
+      "columns": [
+        "entityType",
+        "status"
+      ]
+    },
+    {
+      "table": "QBSyncQueue",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "QBSyncQueue",
+      "columns": [
+        "status",
+        "createdAt"
+      ]
+    },
+    {
+      "table": "QuoteRequest",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "QuoteRequest",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "RetentionAction",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "RetentionAction",
+      "columns": [
+        "urgency"
+      ]
+    },
+    {
+      "table": "SEOContent",
+      "columns": [
+        "slug"
+      ]
+    },
+    {
+      "table": "SEOContent",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "ScheduleChangeRequest",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "SecurityEvent",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "SecurityEvent",
+      "columns": [
+        "ip"
+      ]
+    },
+    {
+      "table": "SecurityEvent",
+      "columns": [
+        "kind",
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "ServerError",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "ServerError",
+      "columns": [
+        "digest"
+      ]
+    },
+    {
+      "table": "ServiceRequest",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "SlowQueryLog",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "SlowQueryLog",
+      "columns": [
+        "digest"
+      ]
+    },
+    {
+      "table": "SlowQueryLog",
+      "columns": [
+        "durationMs(sort: Desc)"
+      ]
+    },
+    {
+      "table": "SmartPORecommendation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "SmartPORecommendation",
+      "columns": [
+        "urgency"
+      ]
+    },
+    {
+      "table": "Supplier",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "Supplier",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "SupplierPriceUpdate",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "SupplierPriceUpdate",
+      "columns": [
+        "supplier"
+      ]
+    },
+    {
+      "table": "SupplierPriceUpdate",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "SupplierPriceUpdate",
+      "columns": [
+        "supplier"
+      ]
+    },
+    {
+      "table": "SupplierProduct",
+      "columns": [
+        "category"
+      ]
+    },
+    {
+      "table": "TakeoffInquiry",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "UptimeProbe",
+      "columns": [
+        "createdAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "NucHeartbeat",
+      "columns": [
+        "receivedAt(sort: Desc)"
+      ]
+    },
+    {
+      "table": "VendorReturn",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "WarehouseBay",
+      "columns": [
+        "zone"
+      ]
+    },
+    {
+      "table": "WarrantyClaim",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "WarrantyClaim",
+      "columns": [
+        "type"
+      ]
+    },
+    {
+      "table": "WarrantyInspection",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "WarrantyPolicy",
+      "columns": [
+        "type",
+        "isActive"
+      ]
+    },
+    {
+      "table": "WorkingCapitalSnapshot",
+      "columns": [
+        "snapshotDate(sort: Desc)"
+      ]
+    },
+    {
+      "table": "WorkloadDelegation",
+      "columns": [
+        "status"
+      ]
+    },
+    {
+      "table": "HyphenDocument",
+      "columns": [
+        "scrapedAt(sort: Desc)"
+      ]
+    }
+  ]
+}

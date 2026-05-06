@@ -6,6 +6,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import type { InflowProduct, InflowPurchaseOrder, SyncResult } from './types'
 
 const INFLOW_BASE = 'https://cloudapi.inflowinventory.com'
@@ -132,7 +133,7 @@ export async function fetchWithBackoff<T = any>(
     if (response && response.ok) {
       const data = (await response.json()) as T
       const totalMs = Date.now() - startedAt
-      console.log(`[InFlow] ${endpoint} ok status=${response.status} attempts=${attempt + 1} ms=${totalMs}`)
+      logger.info('inflow_request_ok', { endpoint, status: response.status, attempts: attempt + 1, ms: totalMs })
       resetEndpointFailure(normalizeEndpoint(endpoint))
       return { data, attempts: attempt + 1, durationMs: totalMs, status: response.status }
     }
@@ -156,7 +157,7 @@ export async function fetchWithBackoff<T = any>(
     if (!retryable || attempt >= maxRetries) {
       // Give up.
       const totalMs = Date.now() - startedAt
-      console.warn(`[InFlow] ${endpoint} fail status=${status} attempts=${attempt + 1} ms=${totalMs} body="${lastBody.slice(0, 120)}"`)
+      logger.warn('inflow_request_failed', { endpoint, status, attempts: attempt + 1, ms: totalMs, body: lastBody.slice(0, 120) })
       recordEndpointFailure(normalizeEndpoint(endpoint))
       const err: any = new Error(
         `InFlow API ${status || 'ERR'} on ${endpoint} after ${attempt + 1} attempts: ${lastBody}`
@@ -183,9 +184,7 @@ export async function fetchWithBackoff<T = any>(
     }
     backoffMs = Math.min(backoffMs, capMs)
 
-    console.warn(
-      `[InFlow] ${endpoint} retry status=${status || 'net-err'} attempt=${attempt + 1}/${maxRetries + 1} ms=${attemptMs} backoff=${backoffMs}ms retry-after=${retryAfterHeader || 'none'}`
-    )
+    logger.warn('inflow_request_retry', { endpoint, status: status || 'net-err', attempt: attempt + 1, maxAttempts: maxRetries + 1, ms: attemptMs, backoffMs, retryAfter: retryAfterHeader || 'none' })
     await new Promise(r => setTimeout(r, backoffMs))
     attempt++
   }
@@ -317,7 +316,7 @@ export async function syncProducts(): Promise<SyncResult> {
 
       // Log first-page shape for debugging
       if (page === 1 && products.length > 0) {
-        console.log('[InFlow Product Sync] First record keys:', Object.keys(products[0]).join(', '))
+        logger.info('inflow_product_sync_shape', { keys: Object.keys(products[0]) })
       }
 
       for (const ifProduct of products) {
@@ -393,7 +392,7 @@ export async function syncProducts(): Promise<SyncResult> {
           }
         } catch (err) {
           failed++
-          console.error(`InFlow product sync error for SKU ${ifProduct.sku}:`, err)
+          logger.error('inflow_product_sync_failed', err, { sku: ifProduct.sku })
         }
       }
 
@@ -520,7 +519,7 @@ export async function syncInventory(): Promise<SyncResult> {
           failed++
           const errMsg = `SKU ${ifProduct.sku || ifProduct.id}: ${err.message}`
           errors.push(errMsg)
-          console.error(`InFlow inventory sync error:`, errMsg)
+          logger.error('inflow_inventory_sync_failed', err, { sku: ifProduct.sku || ifProduct.id })
         }
       }
 
@@ -585,7 +584,7 @@ export async function handleInflowWebhook(eventType: string, payload: any) {
   // In AEGIS_PRIMARY mode, InFlow changes are ignored
   const mode = await getSyncMode()
   if (mode === 'AEGIS_PRIMARY') {
-    console.log(`[InFlow Webhook] Ignoring ${eventType} — Aegis is primary`)
+    logger.info('inflow_webhook_ignored', { eventType, reason: 'aegis_primary' })
     return
   }
 
@@ -638,7 +637,7 @@ export async function handleInflowWebhook(eventType: string, payload: any) {
               )
             }
           } catch (err) {
-            console.error(`PO item sync error:`, err)
+            logger.error('inflow_po_item_sync_failed', err)
           }
         }
       }
@@ -757,8 +756,7 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
 
       // Log first-page shape for debugging
       if (page === 1 && orders.length > 0) {
-        console.log('[InFlow PO Sync] First record keys:', Object.keys(orders[0]).join(', '))
-        console.log('[InFlow PO Sync] First record sample:', JSON.stringify(orders[0]).substring(0, 500))
+        logger.info('inflow_po_sync_shape', { keys: Object.keys(orders[0]), sample: JSON.stringify(orders[0]).substring(0, 500) })
       }
 
       for (const ifPO of orders) {
@@ -845,7 +843,7 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
           failed++
           const poRef = ifPO.orderNumber || ifPO.purchaseOrderNumber || ifPO.id || 'unknown'
           errors.push(`PO ${poRef}: ${err.message}`)
-          console.error('InFlow PO sync error:', err.message)
+          logger.error('inflow_po_sync_failed', err, { poRef: ifPO.orderNumber || ifPO.purchaseOrderNumber || ifPO.id || 'unknown' })
         }
       }
 
@@ -869,7 +867,7 @@ export async function syncPurchaseOrders(): Promise<SyncResult> {
     return result
   } catch (error: any) {
     const completedAt = new Date()
-    console.error('[InFlow PO Sync] Fatal error:', error.message)
+    logger.error('inflow_po_sync_fatal', error)
     const result: SyncResult = {
       provider: 'INFLOW', syncType: 'purchaseOrders', direction: 'PULL',
       status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
@@ -999,10 +997,10 @@ export async function syncSalesOrders(): Promise<SyncResult> {
           modifiedSince = `&modifiedSince=${since.toISOString()}`
         }
       } catch (e: any) {
-        console.warn('[InFlow SO Sync] Could not fetch last sync time, pulling all:', e?.message)
+        logger.warn('inflow_so_sync_last_sync_unavailable', { error: e?.message })
       }
     } else {
-      console.log('[InFlow SO Sync] Full backload: only', inflowOrderCount[0]?.count, 'orders linked — pulling all from InFlow')
+      logger.info('inflow_so_sync_full_backload', { linkedCount: inflowOrderCount[0]?.count })
     }
 
     let page = 1
@@ -1035,8 +1033,7 @@ export async function syncSalesOrders(): Promise<SyncResult> {
 
       // Log first-page shape for debugging
       if (page === 1 && orders.length > 0) {
-        console.log('[InFlow SO Sync] First record keys:', Object.keys(orders[0]).join(', '))
-        console.log('[InFlow SO Sync] First record sample:', JSON.stringify(orders[0]).substring(0, 500))
+        logger.info('inflow_so_sync_shape', { keys: Object.keys(orders[0]), sample: JSON.stringify(orders[0]).substring(0, 500) })
       }
 
       for (const ifSO of orders) {
@@ -1162,7 +1159,7 @@ export async function syncSalesOrders(): Promise<SyncResult> {
           failed++
           const soRef = ifSO.orderNumber || ifSO.salesOrderNumber || ifSO.id || 'unknown'
           errors.push(`SO ${soRef}: ${err.message}`)
-          console.error('InFlow SO sync error:', err.message)
+          logger.error('inflow_so_sync_failed', err, { soRef: ifSO.orderNumber || ifSO.salesOrderNumber || ifSO.id || 'unknown' })
         }
       }
 
@@ -1186,7 +1183,7 @@ export async function syncSalesOrders(): Promise<SyncResult> {
     return result
   } catch (error: any) {
     const completedAt = new Date()
-    console.error('[InFlow SO Sync] Fatal error:', error.message)
+    logger.error('inflow_so_sync_fatal', error)
     const result: SyncResult = {
       provider: 'INFLOW', syncType: 'salesOrders', direction: 'PULL',
       status: 'FAILED', recordsProcessed: created + updated + skipped + failed,

@@ -1,0 +1,110 @@
+/api/admin/alert-mute|DELETE,POST|admin|
+/api/admin/builders/[id]|PATCH|admin|builder-facing action
+/api/admin/errors|DELETE|admin|
+/api/admin/hyphen/aliases|DELETE,POST|admin|Hyphen integration data
+/api/admin/hyphen/events/[id]|POST|admin|Hyphen integration data
+/api/admin/products/enrich|POST|admin|
+/api/admin/sync-catalog|POST|admin|
+/api/admin/test-alert-notify|POST|admin|
+/api/admin/test-cron-alert|POST|admin|
+/api/admin/webhooks/[id]|POST|admin|
+/api/agent-hub/actions/log|POST|agent-hub|agent-hub agent action
+/api/agent-hub/churn/intervene|POST|agent-hub|agent-hub agent action
+/api/agent-hub/expansion/recommend|POST|agent-hub|agent-hub agent action
+/api/agent-hub/heartbeat|PATCH|agent-hub|agent-hub agent action
+/api/agent-hub/inventory/auto-po|POST|agent-hub|agent-hub agent action
+/api/agent-hub/inventory/forecast|POST|agent-hub|agent-hub agent action
+/api/agent-hub/notifications/proactive|POST|agent-hub|agent-hub agent action
+/api/agent-hub/outreach/generate|POST|agent-hub|agent-hub agent action
+/api/agent-hub/outreach/sequence|POST|agent-hub|agent-hub agent action
+/api/agent-hub/permits/[id]|PATCH|agent-hub|agent-hub agent action
+/api/agent-hub/permits|POST|agent-hub|agent-hub agent action
+/api/agent-hub/pricing/calculate|POST|agent-hub|agent-hub agent action
+/api/agent-hub/pricing/competitors|POST|agent-hub|agent-hub agent action
+/api/agent-hub/pricing/rules|POST|agent-hub|agent-hub agent action
+/api/agent-hub/quality/predict|POST|agent-hub|agent-hub agent action
+/api/agent-hub/schedule/auto-assign|POST|agent-hub|agent-hub agent action
+/api/agent-hub/seo/content|POST|agent-hub|agent-hub agent action
+/api/agent-hub/seo/keywords|POST|agent-hub|agent-hub agent action
+/api/agent-hub/seo/local-listing|POST|agent-hub|agent-hub agent action
+/api/agent-hub/seo/review-request|POST|agent-hub|agent-hub agent action
+/api/agent/chat|POST|agent|
+/api/agent/email|POST|agent|
+/api/agent/schedule-change|POST|agent|
+/api/agent/sms|POST|agent|
+/api/auth/change-password|POST|auth|auth / session / credentials
+/api/auth/dev-login|POST|auth|auth / session / credentials
+/api/auth/forgot-password|POST|auth|auth / session / credentials
+/api/auth/login|POST|auth|auth / session / credentials
+/api/auth/logout|POST|auth|auth / session / credentials
+/api/auth/preferences|PATCH|auth|auth / session / credentials
+/api/auth/profile|PATCH|auth|auth / session / credentials
+/api/auth/reset-password|POST|auth|auth / session / credentials
+/api/auth/signup|POST|auth|auth / session / credentials
+/api/builders/messages|POST|builders|builder-facing action
+/api/builders/quote-request|POST|builders|builder-facing action
+/api/builders/register|POST|builders|builder-facing action
+/api/builders/warranty|POST|builders|builder-facing action
+/api/bulk-order/parse|POST|bulk-order|
+/api/catalog/cart|DELETE,POST|catalog|
+/api/client-errors|POST|client-errors|
+/api/crew/delivery/[id]|PATCH|crew|
+/api/crew/install/[id]|PATCH|crew|
+/api/cron/aegis-brain-sync|POST|cron|cron run (background)
+/api/cron/allocation-health|POST|cron|cron run (background)
+/api/cron/brain-sync-staff|POST|cron|cron run (background)
+/api/cron/brain-sync|POST|cron|cron run (background)
+/api/cron/cross-dock-scan|POST|cron|cron run (background)
+/api/cron/cycle-count-schedule|POST|cron|cron run (background)
+/api/cron/demand-forecast-weekly|POST|cron|cron run (background)
+/api/cron/gold-stock-monitor|POST|cron|cron run (background)
+/api/cron/hyphen-sync|POST|cron|cron run (background)
+/api/cron/material-confirm-checkpoint|POST|cron|cron run (background)
+/api/cron/mrp-nightly|POST|cron|cron run (background)
+/api/cron/observability-gc|POST|cron|cron run (background)
+/api/cron/process-outreach|POST|cron|cron run (background)
+/api/cron/quote-followups|POST|cron|cron run (background)
+/api/cron/shortage-forecast|POST|cron|cron run (background)
+/api/cron/uptime-probe|POST|cron|cron run (background)
+/api/cron/webhook-retry|POST|cron|cron run (background)
+/api/dashboard/reorder|POST|dashboard|
+/api/deliveries/feedback|POST|deliveries|
+/api/door/[id]|POST|door|
+/api/homeowner/[token]/confirm|POST|homeowner|homeowner-facing selection
+/api/homeowner/[token]/selections|POST|homeowner|homeowner-facing selection
+/api/homeowner/[token]/upgrades|POST|homeowner|homeowner-facing selection
+/api/homeowner/seed|POST|homeowner|homeowner-facing selection
+/api/hyphen/changeOrders|POST|hyphen|Hyphen integration data
+/api/hyphen/oauth/token|POST|hyphen|Hyphen integration data
+/api/hyphen/orders|POST|hyphen|Hyphen integration data
+/api/internal/security-event|POST|internal|
+/api/messages|POST|messages|
+/api/notifications|PATCH|notifications|
+/api/ops/admin/digest-preview|POST|ops|
+/api/ops/gold-stock/[kitId]/build|POST|ops|
+/api/ops/gold-stock/[kitId]|PATCH|ops|
+/api/ops/hyphen/documents/[id]|PATCH|ops|Hyphen integration data
+/api/ops/hyphen/ingest|POST|ops|Hyphen integration data
+/api/ops/portal/driver/voice-briefing|POST|ops|
+/api/ops/portal/sales/voice-briefing|POST|ops|
+/api/ops/presence/activity|POST|ops|
+/api/ops/presence|POST|ops|
+/api/ops/products/[productId]/substitutes/apply|POST|ops|
+/api/ops/reports/generate|POST|ops|
+/api/ops/reports/schedule|POST|ops|
+/api/ops/staff/preferences/digest|POST|ops|
+/api/ops/substitutions/requests/[id]/approve|POST|ops|
+/api/ops/substitutions/requests/[id]/reject|POST|ops|
+/api/ops/video-rooms|PATCH,POST|ops|
+/api/presence|POST|presence|
+/api/quote-request/instant|PATCH,POST|quote-request|
+/api/takeoff|POST|takeoff|
+/api/upload|POST|upload|
+/api/v1/engine/data/calendar/events|POST|v1|
+/api/v1/engine/data/drive/search|POST|v1|
+/api/v1/engine/data/gmail/threads|POST|v1|
+/api/v1/engine/inbox/[inboxItemId]/ack|POST|v1|
+/api/webhooks/gmail|POST|webhooks|external webhook (Stripe / Gmail / Hyphen / InFlow)
+/api/webhooks/hyphen|POST|webhooks|external webhook (Stripe / Gmail / Hyphen / InFlow)
+/api/webhooks/inflow|POST|webhooks|external webhook (Stripe / Gmail / Hyphen / InFlow)
+/api/webhooks/stripe|POST|webhooks|external webhook (Stripe / Gmail / Hyphen / InFlow)

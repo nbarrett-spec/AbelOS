@@ -154,7 +154,7 @@ async function getServiceAccountToken(
 
     if (!response.ok) {
       const text = await response.text()
-      console.error(`Service account token exchange failed for ${userEmail}:`, text)
+      logger.error('gmail_token_exchange_failed', undefined, { userEmail, body: text.slice(0, 200) })
       return null
     }
 
@@ -165,7 +165,7 @@ async function getServiceAccountToken(
     })
     return data.access_token
   } catch (err) {
-    console.error('Service account JWT exchange error:', err)
+    logger.error('gmail_jwt_exchange_failed', err)
     return null
   }
 }
@@ -189,13 +189,13 @@ export async function listDomainUsers(
       { headers: { Authorization: `Bearer ${token}` } }
     )
     if (!response.ok) {
-      console.error('Admin API error:', await response.text())
+      logger.error('gmail_admin_api_failed', undefined, { body: (await response.text()).slice(0, 200) })
       return []
     }
     const data = await response.json()
     return (data.users || []).map((u: any) => u.primaryEmail as string)
   } catch (err) {
-    console.error('List domain users error:', err)
+    logger.error('gmail_list_domain_users_failed', err)
     return []
   }
 }
@@ -253,7 +253,7 @@ export async function syncAllAccounts(
       const token = await getServiceAccountToken(userEmail)
       if (!token) {
         firstError = firstError || `Could not get Gmail access token for ${userEmail} — check domain-wide delegation is authorized for scope gmail.readonly`
-        console.warn(`[Gmail Sync] Could not get token for ${userEmail}, skipping`)
+        logger.warn('gmail_sync_token_missing', { userEmail })
         totalFailed++
         continue
       }
@@ -267,7 +267,7 @@ export async function syncAllAccounts(
       if (!listResponse.ok) {
         const bodyText = await listResponse.text().catch(() => '')
         firstError = firstError || `Gmail messages.list for ${userEmail} → ${listResponse.status} ${bodyText.slice(0, 200)}`
-        console.warn(`[Gmail Sync] List failed for ${userEmail}: ${listResponse.status}`)
+        logger.warn('gmail_sync_list_failed', { userEmail, status: listResponse.status })
         totalFailed++
         continue
       }
@@ -353,7 +353,7 @@ export async function syncAllAccounts(
     } catch (err: any) {
       totalFailed++
       firstError = firstError || `Account ${userEmail} top-level error: ${err?.message?.slice(0, 200) || String(err).slice(0, 200)}`
-      console.error(`[Gmail Sync] Account ${userEmail} error:`, err)
+      logger.error('gmail_sync_account_failed', err, { userEmail })
     }
   }
 
@@ -384,7 +384,7 @@ export async function syncAllAccounts(
       result.errorMessage || null
     )
   } catch (logErr) {
-    console.error('[Gmail Sync] Failed to write SyncLog:', logErr)
+    logger.error('gmail_synclog_write_failed', logErr)
   }
 
   // console.log(`[Gmail Sync] Complete: ${totalCreated} created, ${totalSkipped} skipped, ${totalFailed} failed across ${users.length} accounts`)
@@ -626,7 +626,7 @@ export async function setupWatch(topicName: string): Promise<GmailWatchResponse 
 
     return response
   } catch (error) {
-    console.error('Gmail watch setup error:', error)
+    logger.error('gmail_watch_setup_failed', error)
     return null
   }
 }

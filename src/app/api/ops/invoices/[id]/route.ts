@@ -104,7 +104,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = params
     const body = await request.json()
-    const { status, notes, issuedAt, dueDate } = body
+    const { status, notes, issuedAt, dueDate, paymentTerm } = body
 
     // Guard: enforce InvoiceStatus state machine before writing.
     if (status !== undefined) {
@@ -146,6 +146,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
     if (dueDate !== undefined) {
       setClauses.push(dueDate ? `"dueDate" = '${dueDate}'::timestamptz` : `"dueDate" = NULL`)
+    }
+    if (paymentTerm !== undefined && paymentTerm !== '' && paymentTerm !== null) {
+      // Whitelist enum values to keep the unsafe SQL safe.
+      const allowed = new Set(['PAY_AT_ORDER', 'PAY_ON_DELIVERY', 'NET_15', 'NET_30'])
+      if (!allowed.has(String(paymentTerm))) {
+        return NextResponse.json({ error: `Invalid paymentTerm: ${paymentTerm}` }, { status: 400 })
+      }
+      setClauses.push(`"paymentTerm" = '${paymentTerm}'::"PaymentTerm"`)
     }
 
     await prisma.$executeRawUnsafe(`

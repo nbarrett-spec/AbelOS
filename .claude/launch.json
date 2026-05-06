@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "janthony-proposal",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const h=require('http'),fs=require('fs'),path=require('path');const d='C:/Users/natha/OneDrive/Abel Lumber/Sales Pipeline/Custom Builder Push April 2026/Homes by J. Anthony';h.createServer((q,r)=>{let f=path.join(d,q.url==='/'?'Interactive_HTML.html':q.url);fs.readFile(f,(e,b)=>{if(e){r.writeHead(404);r.end('Not found');}else{r.writeHead(200,{'Content-Type':'text/html'});r.end(b);}});}).listen(7843,()=>console.log('OK'));"],
+      "port": 7843,
+      "autoPort": false
+    }
+  ,
+    {
+      "name": "abel-catalog",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../abel-catalog", "run", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "coats-proposal",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const h=require('http'),fs=require('fs'),path=require('path');const d='C:/Users/natha/OneDrive/Abel Lumber/Sales Pipeline/Custom Builder Push April 2026/Coats Homes';h.createServer((q,r)=>{let f=path.join(d,q.url==='/'?'Interactive_HTML.html':q.url);fs.readFile(f,(e,b)=>{if(e){r.writeHead(404);r.end('Not found');}else{r.writeHead(200,{'Content-Type':'text/html'});r.end(b);}});}).listen(7844,()=>console.log('OK'));"],
+      "port": 7844,
+      "autoPort": false
+    }
+  ]
+}

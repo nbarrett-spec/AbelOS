@@ -6,6 +6,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import type { SyncResult } from './types'
 import * as crypto from 'crypto'
 
@@ -179,7 +180,7 @@ class BuilderTrendClient {
         this.config.tokenExpiresAt
       )
     } catch (error) {
-      console.error('Failed to persist BuilderTrend token:', error)
+      logger.error('buildertrend_persist_token_failed', error)
       // Continue anyway; token is in memory
     }
   }
@@ -209,7 +210,7 @@ export async function getBuilderTrendConfig(): Promise<BuilderTrendConfig | null
       tokenExpiresAt: config.tokenExpiresAt,
     }
   } catch (error) {
-    console.error('Failed to load BuilderTrend config:', error)
+    logger.error('buildertrend_load_config_failed', error)
     return null
   }
 }
@@ -300,7 +301,7 @@ export async function syncProjects(): Promise<SyncResult> {
           recordsCreated++
         }
       } catch (err) {
-        console.error(`Error processing BT project ${btProject.id}:`, err)
+        logger.error('buildertrend_process_project_failed', err, { projectId: btProject.id })
         recordsFailed++
       }
     }
@@ -435,12 +436,12 @@ export async function syncSchedules(since?: Date): Promise<SyncResult> {
               recordsCreated++
             }
           } catch (err) {
-            console.error(`Error processing BT schedule ${btSchedule.id}:`, err)
+            logger.error('buildertrend_process_schedule_failed', err, { scheduleId: btSchedule.id })
             recordsFailed++
           }
         }
       } catch (err) {
-        console.error(`Error syncing schedules for mapping ${mapping.id}:`, err)
+        logger.error('buildertrend_sync_schedules_failed', err, { mappingId: mapping.id })
         recordsFailed += mapping.length || 1
       }
     }
@@ -576,12 +577,12 @@ export async function syncMaterialSelections(): Promise<SyncResult> {
 
             recordsCreated++
           } catch (err) {
-            console.error(`Error processing BT selection ${selection.id}:`, err)
+            logger.error('buildertrend_process_selection_failed', err, { selectionId: selection.id })
             recordsFailed++
           }
         }
       } catch (err) {
-        console.error(`Error syncing materials for mapping ${mapping.id}:`, err)
+        logger.error('buildertrend_sync_materials_failed', err, { mappingId: mapping.id })
       }
     }
 
@@ -654,7 +655,7 @@ export async function verifyWebhookSignature(
     if (providedBuf.length !== expectedBuf.length) return false
     return crypto.timingSafeEqual(providedBuf, expectedBuf)
   } catch (error) {
-    console.error('Error verifying webhook signature:', error)
+    logger.error('buildertrend_verify_signature_failed', error)
     return false
   }
 }
@@ -717,7 +718,7 @@ export async function processWebhookPayload(payload: BTWebhookPayload): Promise<
       await syncMaterialSelections()
     }
   } catch (error) {
-    console.error('Error processing webhook payload:', error)
+    logger.error('buildertrend_process_webhook_failed', error, { event: payload.event })
   }
 }
 
@@ -761,7 +762,7 @@ async function logSync(result: any): Promise<void> {
       result.durationMs
     )
   } catch (error) {
-    console.error('Error logging sync:', error)
+    logger.error('buildertrend_log_sync_failed', error)
   }
 }
 

@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { startCronRun, finishCronRun } from '@/lib/cron'
+import { logger } from "@/lib/logger"
 
 interface AutomationAction {
   type:
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
             })
           } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-            console.error(`[Automation Cron] Error executing rule ${rule.id}:`, errorMsg)
+            logger.error('automation_rule_execute_failed', error, { ruleId: rule.id })
             stats.errors.push(errorMsg)
 
             await logAutomationExecution({
@@ -160,7 +161,7 @@ export async function GET(request: NextRequest) {
         await updateRuleMetadata(rule.id)
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error(`[Automation Cron] Error evaluating rule ${rule.id}:`, errorMsg)
+        logger.error('automation_rule_evaluate_failed', error, { ruleId: rule.id })
         stats.errors.push(errorMsg)
       }
     }
@@ -183,7 +184,7 @@ export async function GET(request: NextRequest) {
     })
     return NextResponse.json(payload)
   } catch (error) {
-    console.error('[Automation Cron] Fatal error:', error)
+    logger.error('automation_cron_fatal', error)
     await finishCronRun(runId, 'FAILURE', Date.now() - startTime, {
       error: error instanceof Error ? error.message : String(error),
     })
@@ -277,11 +278,11 @@ async function checkTrigger(rule: AutomationRule): Promise<TriggerMatch | null> 
         return null
 
       default:
-        console.warn(`[Automation Cron] Unknown trigger type: ${rule.trigger}`)
+        logger.warn('automation_unknown_trigger', { trigger: rule.trigger })
         return null
     }
   } catch (error) {
-    console.error(`[Automation Cron] Error checking trigger ${rule.trigger}:`, error)
+    logger.error('automation_trigger_check_failed', error, { trigger: rule.trigger })
     return null
   }
 
@@ -308,7 +309,7 @@ async function checkInvoiceOverdue(rule: AutomationRule): Promise<TriggerMatch |
       }
     }
   } catch (error) {
-    console.error('[Automation Cron] Error checking overdue invoices:', error)
+    logger.error('automation_check_overdue_invoices_failed', error)
   }
 
   return null
@@ -333,7 +334,7 @@ async function checkInventoryLow(rule: AutomationRule): Promise<TriggerMatch | n
       }
     }
   } catch (error) {
-    console.error('[Automation Cron] Error checking low inventory:', error)
+    logger.error('automation_check_low_inventory_failed', error)
   }
 
   return null
@@ -358,7 +359,7 @@ async function checkInventoryOut(rule: AutomationRule): Promise<TriggerMatch | n
       }
     }
   } catch (error) {
-    console.error('[Automation Cron] Error checking out of stock inventory:', error)
+    logger.error('automation_check_out_of_stock_failed', error)
   }
 
   return null
@@ -384,7 +385,7 @@ async function checkPOOverdue(rule: AutomationRule): Promise<TriggerMatch | null
       }
     }
   } catch (error) {
-    console.error('[Automation Cron] Error checking overdue POs:', error)
+    logger.error('automation_check_overdue_pos_failed', error)
   }
 
   return null
@@ -410,7 +411,7 @@ async function checkQuoteExpired(rule: AutomationRule): Promise<TriggerMatch | n
       }
     }
   } catch (error) {
-    console.error('[Automation Cron] Error checking expired quotes:', error)
+    logger.error('automation_check_expired_quotes_failed', error)
   }
 
   return null
@@ -435,7 +436,7 @@ async function checkOrderCreated(rule: AutomationRule): Promise<TriggerMatch | n
       }
     }
   } catch (error) {
-    console.error('[Automation Cron] Error checking order creation:', error)
+    logger.error('automation_check_order_created_failed', error)
   }
 
   return null
@@ -524,7 +525,7 @@ async function executeActions(
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-      console.error(`[Automation Cron] Error executing action ${action.type}:`, errorMsg)
+      logger.error('automation_action_execute_failed', error, { actionType: action.type })
       errors.push(errorMsg)
     }
   }
@@ -642,7 +643,7 @@ async function logAutomationExecution(entry: {
       entry.error || null
     )
   } catch (error) {
-    console.error('[Automation Cron] Error logging execution:', error)
+    logger.error('automation_log_execution_failed', error)
   }
 }
 
@@ -658,6 +659,6 @@ async function updateRuleMetadata(ruleId: string): Promise<void> {
       ruleId
     )
   } catch (error) {
-    console.error('[Automation Cron] Error updating rule metadata:', error)
+    logger.error('automation_update_rule_metadata_failed', error)
   }
 }

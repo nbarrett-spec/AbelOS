@@ -5,19 +5,23 @@
  *
  * §4.2.1 Order Detail. Renders header (order number, project, status pill),
  * timeline, two-column body (line items table + summary side panel), and
- * the reorder action.
+ * the reorder + save-as-template actions (A-BIZ-14).
  *
- * Reorder posts to /api/orders/[id]/reorder which mutates the cart cookie
- * server-side, then we navigate to /portal/quotes/new to let the builder
- * review and submit. (The cart format already matches what the quotes
- * builder expects.)
+ * Reorder opens a confirmation modal that lets the builder edit qty / drop
+ * lines, then POSTs to /api/portal/orders/from-order which goes through the
+ * same credit-hold + inventory-reservation pipeline as POST /api/orders.
+ * The new order's id comes back and we route to it directly — no detour
+ * through the quote builder.
+ *
+ * "Save as Template" appears for completed orders (DELIVERED / SHIPPED /
+ * COMPLETE) and writes an OrderTemplate the builder can re-launch later.
  */
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
+  Bookmark,
   Calendar,
   Hash,
   MapPin,
@@ -29,6 +33,8 @@ import {
 import { PortalCard } from '@/components/portal/PortalCard'
 import { PortalStatusBadge } from '@/components/portal/PortalStatusBadge'
 import { PortalOrderTimeline } from '@/components/portal/PortalOrderTimeline'
+import { ReorderModal } from '../_ReorderModal'
+import { SaveTemplateModal } from '../_SaveTemplateModal'
 
 export interface OrderDetailItem {
   id: string
@@ -96,30 +102,21 @@ interface OrderDetailClientProps {
   order: OrderDetailPayload
 }
 
-export function OrderDetailClient({ order }: OrderDetailClientProps) {
-  const router = useRouter()
-  const [reordering, setReordering] = useState(false)
-  const [reorderError, setReorderError] = useState<string | null>(null)
+// Statuses that count as "completed" for the Reorder + Save-as-Template
+// actions. Spec calls them "completed orders" — anything that already
+// shipped or is closed out is fair game.
+const COMPLETED_STATUSES = new Set([
+  'DELIVERED',
+  'SHIPPED',
+  'COMPLETE',
+  'PARTIAL_SHIPPED',
+])
 
-  async function handleReorder() {
-    if (reordering) return
-    setReordering(true)
-    setReorderError(null)
-    try {
-      const res = await fetch(`/api/orders/${order.id}/reorder`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.error || 'Failed to add to cart')
-      }
-      router.push('/portal/quotes/new')
-    } catch (e: any) {
-      setReorderError(e?.message || 'Reorder failed')
-      setReordering(false)
-    }
-  }
+export function OrderDetailClient({ order }: OrderDetailClientProps) {
+  const [reorderOpen, setReorderOpen] = useState(false)
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false)
+
+  const isCompleted = COMPLETED_STATUSES.has(order.status)
 
   const project = order.project
   const projectLine = project
@@ -202,11 +199,28 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             <MessageCircle className="w-3.5 h-3.5" />
             Message PM
           </Link>
+          {isCompleted && (
+            <button
+              type="button"
+              onClick={() => setSaveTemplateOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-medium transition-colors"
+              style={{
+                background: 'var(--glass)',
+                backdropFilter: 'var(--glass-blur)',
+                WebkitBackdropFilter: 'var(--glass-blur)',
+                color: 'var(--portal-text-strong)',
+                border: '1px solid var(--glass-border)',
+                fontFamily: 'var(--font-portal-body)',
+              }}
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              Save as Template
+            </button>
+          )}
           <button
             type="button"
-            onClick={handleReorder}
-            disabled={reordering}
-            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-xs font-medium transition-shadow disabled:opacity-60"
+            onClick={() => setReorderOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-xs font-medium transition-shadow"
             style={{
               background: 'var(--grad)',
               color: 'white',
@@ -215,23 +229,24 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             }}
           >
             <Repeat className="w-3.5 h-3.5" />
-            {reordering ? 'Adding…' : 'Reorder these items'}
+            Reorder
           </button>
         </div>
       </div>
 
-      {reorderError && (
-        <div
-          className="px-4 py-3 rounded-md text-sm"
-          style={{
-            background: 'rgba(110,42,36,0.08)',
-            border: '1px solid rgba(110,42,36,0.2)',
-            color: '#7E2417',
-          }}
-        >
-          {reorderError}
-        </div>
-      )}
+      <ReorderModal
+        open={reorderOpen}
+        onClose={() => setReorderOpen(false)}
+        mode="order"
+        sourceId={order.id}
+        sourceLabel={order.orderNumber}
+      />
+      <SaveTemplateModal
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        sourceOrderId={order.id}
+        defaultName={`Template from ${order.orderNumber}`}
+      />
 
       {/* Timeline */}
       <PortalCard title="Progress">

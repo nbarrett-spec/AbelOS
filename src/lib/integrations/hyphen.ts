@@ -6,6 +6,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { decryptCredential } from '@/lib/hyphen/crypto'
 import type { HyphenScheduleUpdate, HyphenPurchaseOrder, HyphenPaymentNotification, SyncResult } from './types'
 
@@ -74,13 +75,13 @@ export async function getAllTenants(): Promise<HyphenConfig[]> {
         password = decryptCredential(r.password)
         oauthAccessToken = decryptCredential(r.oauthAccessToken)
       } catch (e: any) {
-        console.warn(`HyphenTenant ${r.builderName} (${r.id}) credential decrypt failed — skipping: ${e?.message}`)
+        logger.warn('hyphen_tenant_decrypt_failed', { builderName: r.builderName, tenantId: r.id, error: e?.message })
         continue
       }
       const apiKey = oauthAccessToken || password || ''
       const baseUrl = r.baseUrl || 'https://www.bldrconnect.com'
       if (!apiKey || !baseUrl) {
-        console.warn(`HyphenTenant ${r.builderName} (${r.id}) missing apiKey/baseUrl — skipping`)
+        logger.warn('hyphen_tenant_missing_credentials', { builderName: r.builderName, tenantId: r.id })
         continue
       }
       tenants.push({
@@ -135,7 +136,7 @@ async function recordTenantSync(
       tenantId,
     )
   } catch (e: any) {
-    console.warn(`recordTenantSync failed for ${tenantId}:`, e?.message)
+    logger.warn('hyphen_record_tenant_sync_failed', { tenantId, error: e?.message })
   }
 }
 
@@ -162,7 +163,7 @@ export async function advanceTenantWatermark(
       tenantId,
     )
   } catch (e: any) {
-    console.warn(`advanceTenantWatermark failed for ${tenantId}:`, e?.message)
+    logger.warn('hyphen_advance_watermark_failed', { tenantId, error: e?.message })
   }
 }
 
@@ -315,7 +316,7 @@ export async function syncScheduleUpdates(tenantOverride?: HyphenConfig): Promis
         }
       } catch (err: any) {
         failed++
-        console.error(`Hyphen schedule update error for ${update.eventId}:`, err?.message)
+        logger.error('hyphen_schedule_update_failed', err, { eventId: update.eventId })
       }
     }
 
@@ -466,7 +467,7 @@ export async function syncSchedules(since?: Date): Promise<SyncResult> {
         }
       } catch (err) {
         failed++
-        console.error(`Hyphen schedule sync error:`, err)
+        logger.error('hyphen_schedule_sync_failed', err)
       }
     }
 
@@ -577,7 +578,7 @@ export async function syncPayments(tenantOverride?: HyphenConfig): Promise<SyncR
         }
       } catch (err: any) {
         failed++
-        console.error(`Hyphen payment sync error for ${payment.paymentId}:`, err?.message)
+        logger.error('hyphen_payment_sync_failed', err, { paymentId: payment.paymentId })
       }
     }
 
@@ -721,7 +722,7 @@ export async function syncOrders(tenantOverride?: HyphenConfig): Promise<SyncRes
         }
       } catch (err: any) {
         failed++
-        console.error(`Hyphen order sync error for ${hyphenPO.poId}:`, err?.message)
+        logger.error('hyphen_order_sync_failed', err, { poId: hyphenPO.poId })
       }
     }
 
@@ -814,7 +815,7 @@ export async function handlePaymentNotification(notification: HyphenPaymentNotif
       })
     }
   } catch (error) {
-    console.error('Hyphen payment notification error:', error)
+    logger.error('hyphen_payment_notification_failed', error)
   }
 }
 

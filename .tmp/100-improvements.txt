@@ -1,0 +1,374 @@
+
+AEGIS PLATFORM — 100 IMPROVEMENTS AUDIT
+Date: 2026-05-05
+Author: Nate Barrett (via Cowork audit)
+Target: Claude Code — abel-builder-platform repo
+239 Prisma models • 453 API routes • 259 ops pages • 51 crons
+Comprehensive platform audit identifying 100 improvements across security, data integrity, performance, missing features, UX gaps, and code quality. Organized by category and priority. Each item includes file path and specific fix guidance.
+1. SECURITY &amp; AUTH (12 items)
+SEC-1 [P0]: JWT fallback allows dev-secret in production edge case
+  Path: src/middleware.ts + src/lib/staff-auth.ts
+  Fix: JWT_SECRET falls back to 'dev-secret-change-in-production'. While there's a runtime throw in production, the fallback line still exists. Remove the fallback entirely — crash if unset.
+SEC-2 [P0]: BPW sync cron has zero auth check
+  Path: src/app/api/cron/bpw-sync/route.ts
+  Fix: Only cron route without CRON_SECRET validation. Even as a 410 stub, add the auth guard for consistency.
+SEC-3 [P1]: Only 32 Sentry usages across 453 API routes
+  Path: Codebase-wide
+  Fix: Most catch blocks log to console.log (54 instances in /api alone) without reporting to Sentry. Add captureException in every catch.
+SEC-4 [P1]: No CSRF protection on state-mutating ops routes
+  Path: src/middleware.ts
+  Fix: Middleware has CSRF comment at line 275 but only skips logging endpoints. No actual CSRF token validation on POST/PATCH/DELETE for ops routes.
+SEC-5 [P1]: Admin routes check session existence only, not role
+  Path: src/middleware.ts line 681
+  Fix: Comment says 'ADMIN role enforced in middleware' but verify the actual check gates on role=ADMIN, not just valid-session.
+SEC-6 [P1]: Hyphen OAuth credentials stored in plaintext
+  Path: src/lib/hyphen/scraper.ts + integration config
+  Fix: Hyphen login uses hardcoded or DB-stored plaintext credentials. Encrypt at rest or use env vars exclusively.
+SEC-7 [P2]: No rate limiting on auth endpoints
+  Path: src/app/api/auth/login/route.ts, /signup, /reset-password
+  Fix: Auth routes have no rate limiter. Add Upstash ratelimit (already in stack) to login/signup/reset with IP-based sliding window.
+SEC-8 [P2]: Password reset tokens lack explicit expiration check
+  Path: src/app/api/auth/reset-password/route.ts
+  Fix: Verify that reset tokens have TTL enforcement. If using DB-stored tokens, add expiresAt column + check.
+SEC-9 [P2]: File uploads have no size limit enforcement
+  Path: src/app/api/ops/ (various upload routes)
+  Fix: No maxFileSize or Content-Length validation on blueprint/document upload endpoints. Add 25MB cap.
+SEC-10 [P2]: No Content-Security-Policy header
+  Path: src/middleware.ts
+  Fix: Add CSP header (script-src, style-src, img-src) to prevent XSS. Vercel supports this in middleware.
+SEC-11 [P2]: Agent SMS webhook returns 501 with no auth
+  Path: src/app/api/agent/sms/route.ts
+  Fix: Endpoint is publicly accessible and returns 501. Either add Twilio signature validation or remove the route.
+SEC-12 [P2]: NUC integration endpoints lack auth
+  Path: src/app/api/integrations/nuc/health/route.ts, .../query/route.ts
+  Fix: No try/catch, no auth check. These should require CRON_SECRET or staff session.
+2. DATA INTEGRITY &amp; SCHEMA (15 items)
+DATA-1 [P0]: Zero soft-delete pattern anywhere in 239 models
+  Path: prisma/schema.prisma
+  Fix: No deletedAt or isDeleted column on any model. Permanent deletes break audit trails. Add deletedAt DateTime? to Builder, Order, Quote, Invoice, Job, Product at minimum.
+DATA-2 [P0]: onDelete: Restrict on Order.builderId prevents account cleanup
+  Path: prisma/schema.prisma line 584
+  Fix: Cannot delete or archive a builder without first reassigning/deleting all orders. Add soft-delete or change to SetNull with nullable builderId.
+DATA-3 [P0]: onDelete: Restrict on QuoteItem.productId blocks product retirement
+  Path: prisma/schema.prisma line 558
+  Fix: Can't deactivate a product that's ever been quoted. Change to SetNull + add productSnapshot JSON field for historical record.
+DATA-4 [P1]: onDelete: Restrict on OrderItem.productId blocks product deletion
+  Path: prisma/schema.prisma line 656
+  Fix: Same issue as DATA-3 for order items.
+DATA-5 [P1]: Quote.takeoffId unique constraint + cascade creates orphan risk
+  Path: prisma/schema.prisma
+  Fix: If takeoff cascades on blueprint delete, the Quote loses its takeoff but the Quote itself persists in a broken state.
+DATA-6 [P1]: No index on Builder.status — filters scan entire table
+  Path: prisma/schema.prisma
+  Fix: Builder queries filter by status (ACTIVE/PENDING/SUSPENDED) without index. Add @@index([status]).
+DATA-7 [P1]: No index on Order.status — most common filter
+  Path: prisma/schema.prisma
+  Fix: Order list pages always filter/sort by status. Add @@index([status, createdAt]).
+DATA-8 [P1]: No index on Job.phase — ops queries are slow
+  Path: prisma/schema.prisma
+  Fix: Manufacturing/delivery pages filter jobs by phase. Add @@index([phase, scheduledDate]).
+DATA-9 [P1]: No index on Invoice.dueDate — collections queries
+  Path: prisma/schema.prisma
+  Fix: Collections cycle queries invoices by dueDate ranges. Add @@index([status, dueDate]).
+DATA-10 [P2]: No index on Delivery.status + date
+  Path: prisma/schema.prisma
+  Fix: Today's deliveries page and dispatch logic filter by status + scheduledDate. Add composite index.
+DATA-11 [P2]: 667 indexes for 239 models — but key operational fields missed
+  Path: prisma/schema.prisma
+  Fix: Existing indexes cover relations (FK) but not the status/date/phase fields actually used in WHERE clauses.
+DATA-12 [P2]: Legacy models still in schema (Bolt*, Bpw*, QbCustomer*)
+  Path: prisma/schema.prisma
+  Fix: ECI Bolt sync, Pulte BPW, and QB models are dead. Mark deprecated or remove to reduce schema noise.
+DATA-13 [P2]: No database-level constraint on Order total vs line items
+  Path: prisma/schema.prisma + recompute-order-totals cron
+  Fix: Order.total can drift from sum(OrderItem.total). The cron fixes it but add a CHECK constraint or trigger.
+DATA-14 [P2]: Staff assignment uses SetNull — pages expect non-null
+  Path: prisma/schema.prisma (various assigneeId fields)
+  Fix: When staff is deleted, assigned orders/jobs become null but UI doesn't handle the null state gracefully.
+DATA-15 [P2]: No unique constraint on Product.sku
+  Path: prisma/schema.prisma
+  Fix: Verify sku is unique. Duplicate SKUs from InFlow imports create confusion. Add @@unique([sku]) if not present.
+3. API QUALITY &amp; VALIDATION (15 items)
+API-1 [P0]: 4,011 uses of 'any' type with only 17 zod validations across all API routes
+  Path: src/app/api/ (codebase-wide)
+  Fix: Almost zero runtime input validation. Implement zod schemas for at least: create/update builder, create order, create quote, create invoice, file uploads. Use a shared validation middleware pattern.
+API-2 [P0]: Twilio SMS webhook returns 501 — inbound SMS completely unhandled
+  Path: src/app/api/agent/sms/route.ts
+  Fix: Customers texting the Abel number get no response. Implement: verify Twilio signature, parse body, create InboundMessage record, trigger notification.
+API-3 [P0]: Collections send-email endpoint doesn't exist
+  Path: Referenced in src/app/ops/finance/cash/page.tsx line 570
+  Fix: UI button exists to send collection emails but the API route /api/ops/collections/send-email is missing. Build it: query overdue invoices, render email template, send via Resend.
+API-4 [P1]: Statement send endpoint only records request, doesn't send
+  Path: src/app/api/ops/accounts/[id]/statement/send/
+  Fix: Clicking 'Send Statement' in ops logs the action but never renders the PDF or sends via Resend. Wire up PDF generation + email dispatch.
+API-5 [P1]: Job link-order endpoint doesn't exist
+  Path: Referenced in src/app/ops/jobs/[jobId]/page.tsx line 1090
+  Fix: TODO comment: '/api/ops/jobs/[id]/link-order once the endpoint exists'. Build it: PATCH to associate an Order with a Job.
+API-6 [P1]: Delivery detail route doesn't exist
+  Path: Referenced in src/app/ops/jobs/[jobId]/DeliverySignOff.tsx line 292
+  Fix: TODO: '/ops/deliveries/[id] detail route isn't built'. Create GET /api/ops/deliveries/[id] returning full delivery with items, driver, proof-of-delivery.
+API-7 [P1]: QuickBooks sync functions all return 'not implemented yet'
+  Path: src/lib/integrations/quickbooks.ts lines 163-190
+  Fix: syncInvoices, syncPayments, syncJournals all stub out. Either implement or kill the QB integration entirely (per TASKS.md #45).
+API-8 [P1]: BuilderTrend sync incomplete
+  Path: src/lib/integrations/buildertrend.ts
+  Fix: Tasks created but status updates not mapped back. Job completion sync one-directional.
+API-9 [P1]: Financial snapshot uses cashOnHand = 0 (hardcoded)
+  Path: src/app/api/cron/financial-snapshot/route.ts line 56
+  Fix: TODO comment: 'Integrate with actual cash account'. Wire to QB or bank feed API.
+API-10 [P1]: PM standup narrative is hardcoded
+  Path: src/app/api/ops/projects/standup/[pmId]/route.ts line 18
+  Fix: TODO: 'replace with AI-authored narrative from the NUC brain'. Currently returns canned text.
+API-11 [P2]: 20+ API routes have no try/catch
+  Path: Various (alert-history, slo, gold-stock, mrp/forecast, jobs/co-list, etc.)
+  Fix: Any DB error returns raw 500 with stack trace. Wrap in try/catch + return structured error JSON.
+API-12 [P2]: Webhook retry cron has no exponential backoff
+  Path: src/app/api/cron/webhook-retry/route.ts
+  Fix: Failed webhooks retry at fixed interval. Implement exponential backoff (1min, 5min, 30min, 2hr, 24hr).
+API-13 [P2]: No idempotency on payment webhook processing
+  Path: src/app/api/ (Stripe/payment handlers)
+  Fix: Duplicate webhook deliveries may create duplicate payment records. Add idempotency key check (event ID).
+API-14 [P2]: Import endpoints missing (inventory, price lists, customer info)
+  Path: src/app/api/ops/
+  Fix: No bulk import routes exist. Build CSV parsers for: products/inventory, price lists (Boise format), builder contacts.
+API-15 [P2]: Search inputs not sanitized for SQL injection in raw queries
+  Path: src/app/api/ops/ (routes using $queryRaw)
+  Fix: Raw SQL queries with string interpolation. Audit all $queryRaw/$executeRaw for parameterized queries.
+4. UI / UX GAPS (20 items)
+UX-1 [P0]: 259 ops pages but only 4 loading.tsx files — most pages have no loading state
+  Path: src/app/ops/
+  Fix: Add loading.tsx with skeleton UI to at minimum: /ops/orders, /ops/jobs, /ops/manufacturing, /ops/deliveries, /ops/finance, /ops/inventory, /ops/purchasing.
+UX-2 [P0]: Driver manifest page is 8 lines — completely stub
+  Path: src/app/ops/portal/driver/manifest/page.tsx
+  Fix: Drivers have no usable manifest view. Build: route list, stop order, item counts, signature capture, proof-of-delivery photo upload.
+UX-3 [P0]: Finance YTD page is 36 lines — stub with no data
+  Path: src/app/ops/finance/ytd/page.tsx
+  Fix: Finance team has no YTD view. Build: revenue, COGS, gross margin, operating expenses, net income — all from existing financial data.
+UX-4 [P0]: Ops inbox is 57 lines — no message list or compose
+  Path: src/app/ops/inbox/page.tsx
+  Fix: Internal messaging unusable. Wire to existing messaging API routes + builder message model.
+UX-5 [P1]: Calendar page is 65 lines — no event display
+  Path: src/app/ops/calendar/page.tsx
+  Fix: Should show deliveries, installations, QC walks, meetings. Wire to Google Calendar sync + Job scheduled dates.
+UX-6 [P1]: Customer catalog page is 62 lines — stub
+  Path: src/app/ops/customer-catalog/page.tsx
+  Fix: Builder-facing catalog needs product cards, pricing tier display, search/filter, add-to-quote action.
+UX-7 [P1]: My Book (sales rep view) is 24 lines — stub
+  Path: src/app/ops/my-book/page.tsx
+  Fix: Sales reps can't see their assigned builders, pipeline, or activity. Build: builder list with revenue, last order date, overdue invoices, recent activity.
+UX-8 [P1]: Portal analytics is 79 lines — stub
+  Path: src/app/portal/analytics/page.tsx
+  Fix: Builders see nothing. Add: order history charts, spend by category, delivery performance, payment history.
+UX-9 [P1]: Portal warranty is 67 lines — stub
+  Path: src/app/portal/warranty/page.tsx
+  Fix: Warranty claims completely non-functional. Build: submit claim form, claim status list, photo upload.
+UX-10 [P1]: Portal projects is 69 lines — stub
+  Path: src/app/portal/projects/page.tsx
+  Fix: Builders can't see their communities/projects. Wire to existing Project model.
+UX-11 [P1]: Sales contracts page is 67 lines — stub
+  Path: src/app/sales/contracts/page.tsx
+  Fix: Contract management completely missing. Build: list view, create/edit, pricing terms, expiration dates.
+UX-12 [P1]: Sales documents page is 67 lines — stub
+  Path: src/app/sales/documents/page.tsx
+  Fix: Document vault for sales team not wired. Connect to DocumentVault model.
+UX-13 [P1]: Quote conversion filter buttons don't read URL params on mount
+  Path: src/app/ops/quotes/conversion/page.tsx lines 209, 275, 382
+  Fix: Three separate TODOs. Filters reset on page load. Read ?category=, ?search=, ?month= from URL on mount.
+UX-14 [P1]: Substitutions page is 114 lines — minimal
+  Path: src/app/ops/substitutions/page.tsx
+  Fix: Product substitution logic exists in MRP but the UI is barely functional. Add: search, substitute suggestions, bulk apply, audit trail.
+UX-15 [P1]: Shortages page is 93 lines — minimal
+  Path: src/app/ops/shortages/page.tsx
+  Fix: Shortage alerts need: severity indicators, reorder triggers, vendor ETA, alternative product suggestions.
+UX-16 [P2]: Admin page is 91 lines — stub
+  Path: src/app/ops/admin/page.tsx
+  Fix: System admin needs: user management, role assignment, integration status, system health, audit log viewer.
+UX-17 [P2]: Homeowner page is 113 lines — barely functional
+  Path: src/app/homeowner/page.tsx
+  Fix: Homeowner access code entry + minimal view. Needs: warranty info, installed products, care instructions, support contact.
+UX-18 [P2]: Portal messages page is 65 lines — stub
+  Path: src/app/portal/messages/page.tsx
+  Fix: Builder messaging non-functional on their side. Wire to get_builder_messages API.
+UX-19 [P2]: Portal schedule page is 71 lines — stub
+  Path: src/app/portal/schedule/page.tsx
+  Fix: Builders can't see delivery/installation schedule. Wire to Job.scheduledDate + Delivery model.
+UX-20 [P2]: QC rework uses localStorage instead of DB
+  Path: src/app/ops/portal/qc/rework/page.tsx lines 22, 260
+  Fix: Two TODOs: rework state persisted in localStorage, lost on device change. Create ReworkStatus model or use existing Job status.
+5. PERFORMANCE (12 items)
+PERF-1 [P1]: Ops accounts page loads all builders without pagination
+  Path: src/app/ops/accounts/ + API route
+  Fix: With 500+ builders, page loads full dataset. Add cursor-based pagination (take: 50, skip, orderBy).
+PERF-2 [P1]: Material calendar queries all deliveries at once
+  Path: src/app/ops/material-calendar/page.tsx
+  Fix: Heavy page loads entire delivery schedule. Add date-range windowing (current week ± 2 weeks).
+PERF-3 [P1]: Manufacturing job-packet page loads unbounded
+  Path: src/app/ops/manufacturing/job-packet/
+  Fix: Full dataset fetch for manufacturing queue. Add status filter + pagination.
+PERF-4 [P1]: Hyphen sync imports all jobs every run (no incremental)
+  Path: src/app/api/cron/hyphen-sync/ + src/lib/hyphen/job-sync.ts
+  Fix: Full sync on every cron run. Add lastSyncedAt timestamp and fetch only modified-since.
+PERF-5 [P1]: Collections email cron fetches contact per invoice (N+1)
+  Path: src/app/api/cron/collections-email/route.ts
+  Fix: Loop: for each overdue invoice, fetch builder contact. Use include/join to batch.
+PERF-6 [P2]: PM daily tasks generates without dedup check
+  Path: src/app/api/cron/pm-daily-tasks/route.ts
+  Fix: If cron fires twice, duplicate tasks created. Add idempotency (check if task for today already exists).
+PERF-7 [P2]: 54 console.log statements in API routes (perf + noise)
+  Path: src/app/api/ (18 files)
+  Fix: Replace with structured logger (pino or existing logger pattern). Remove all console.log from production paths.
+PERF-8 [P2]: No query result caching for frequently-accessed data
+  Path: src/app/api/ops/
+  Fix: Dashboard KPIs, product catalog, builder list hit DB every request. Add Upstash Redis caching with 60s TTL for read-heavy endpoints.
+PERF-9 [P2]: Quote report filters in memory instead of DB
+  Path: src/app/api/ops/quotes/ (report endpoints)
+  Fix: Fetches all quotes then filters client-side. Push WHERE clauses to Prisma/SQL.
+PERF-10 [P2]: Boise Cascade spend analysis recalculates per request
+  Path: src/app/api/ (boise-related)
+  Fix: Heavy aggregation query runs on every page load. Pre-compute daily via cron and serve cached result.
+PERF-11 [P2]: No image optimization pipeline for product photos
+  Path: src/lib/product-images.ts
+  Fix: Product images served at original resolution. Add Next.js Image component with sizes/blur placeholder, or CDN resize (Vercel Image Optimization).
+PERF-12 [P3]: Run-automations cron has 21 console.logs
+  Path: src/app/api/cron/run-automations/route.ts
+  Fix: Noisy in production logs. Replace with structured log at INFO level.
+6. INTEGRATIONS (12 items)
+INT-1 [P0]: Hyphen scraper has 5 NotImplementedError stubs requiring Playwright
+  Path: src/lib/hyphen/scraper.ts lines 192-248
+  Fix: fetchJobSchedule, fetchJobClosingDate, fetchJobRedLines, fetchJobPlanSet, fetchJobChangeOrders all throw. Either implement with Playwright or replace with Hyphen API (if available).
+INT-2 [P0]: Hyphen job-sync TODOs: schedule + closing date not persisted
+  Path: src/lib/hyphen/job-sync.ts lines 5-6
+  Fix: Job schedule and closing date fetched but never written to DB. Add columns to Job model and persist.
+INT-3 [P1]: Calendar sync not working (per user report)
+  Path: src/app/api/cron/calendar-sync/
+  Fix: Google Calendar sync cron exists but user confirmed it's broken. Debug: check OAuth token refresh, event creation logic, error handling.
+INT-4 [P1]: Gmail sync cron — ack/receipt handling incomplete
+  Path: src/app/api/cron/gmail-sync/route.ts
+  Fix: Messages ingested but no read-receipt or reply tracking. Add: mark as processed, link to builder record, trigger notifications.
+INT-5 [P1]: BuilderTrend tasks created but status not mapped back
+  Path: src/lib/integrations/buildertrend.ts
+  Fix: One-directional sync. When BT task completes, Abel OS doesn't know. Add webhook listener or poll for status changes.
+INT-6 [P1]: InFlow sync cron exists but inventory page broken
+  Path: src/app/api/cron/inflow-sync/ + src/app/ops/inventory/
+  Fix: Cron runs but page can't display data (per user: 'cant sort, cant see inventory'). Debug the page component.
+INT-7 [P2]: Bolt sync still in crons — ECI Bolt is deprecated
+  Path: src/app/api/cron/bolt-sync/
+  Fix: Dead integration. Remove from vercel.json schedule and add 410 stub like bpw-sync.
+INT-8 [P2]: QuickBooks sync queue models exist but sync is stub
+  Path: src/lib/integrations/quickbooks.ts
+  Fix: 4 functions return 'not implemented'. Decision pending: build or kill (TASKS.md #45). If kill: remove models + routes + cron.
+INT-9 [P2]: NUC brain-sync crons assume Tailscale reachability
+  Path: src/app/api/cron/brain-sync/, aegis-brain-sync/, brain-synthesize/
+  Fix: 3 crons hit 100.84.113.47 which fails on Vercel (no Tailscale). These should only run from NUC-local or use public relay.
+INT-10 [P2]: Stripe webhook handler missing idempotency
+  Path: src/app/api/ (stripe webhook route)
+  Fix: Duplicate deliveries process twice. Check event.id against ProcessedEvent table before acting.
+INT-11 [P2]: Boise pricing sync — no delta detection
+  Path: src/app/api/cron/boise-pricing-sync/
+  Fix: Full price list re-imported every run. Add hash comparison to only update changed prices.
+INT-12 [P3]: SEO local-listing route has placeholder phone
+  Path: src/app/api/agent-hub/seo/local-listing/route.ts line 64
+  Fix: Hardcoded '(512) XXX-XXXX'. Replace with actual Abel phone from env/config.
+7. BUSINESS LOGIC GAPS (14 items)
+BIZ-1 [P0]: No quote expiration enforcement
+  Path: src/app/api/ops/quotes/
+  Fix: Quotes have no TTL. Old quotes with stale pricing get converted to orders months later. Add expiresAt field, cron to auto-expire, warning on conversion.
+BIZ-2 [P0]: Takeoff engine is template-based mock (Phase 1 only)
+  Path: src/lib/takeoff-engine.ts line 15
+  Fix: Comment says 'Phase 1: Template-based mock engine'. Blueprint upload → takeoff is not AI-powered yet. Line items are template-generated, not from actual plan analysis.
+BIZ-3 [P1]: No inventory reservation when order is placed
+  Path: src/app/api/ops/orders/ + prisma schema
+  Fix: Creating an order doesn't reserve stock. Two orders can claim the same inventory. Add reservedQty field on InventoryItem, decrement on order creation.
+BIZ-4 [P1]: No auto-reorder for fast-moving SKUs
+  Path: src/app/api/cron/ (no reorder cron exists)
+  Fix: When inventory hits reorder point, no PO is auto-generated. Build: reorder-point check cron → auto-create draft PO for review.
+BIZ-5 [P1]: MRP doesn't account for supplier lead times
+  Path: src/lib/mrp/ + src/app/ops/mrp/
+  Fix: Material requirements computed without lead time offset. Orders needed by date X should trigger PO at X - leadTimeDays. Add leadTimeDays to Vendor/Product.
+BIZ-6 [P1]: No backorder handling
+  Path: Codebase-wide
+  Fix: When an order can't be fulfilled from stock, there's no backorder queue. Build: mark OrderItem as backordered, link to incoming PO, notify builder of ETA.
+BIZ-7 [P1]: Dunnage door strike type not captured
+  Path: src/app/api/ops/orders/ (order creation)
+  Fix: Per user: 'for dunnage doors we always need to know whether the final front door will be wood or fiberglass/metal as that determines the strike'. Add strikeType field or configuration question.
+BIZ-8 [P1]: Manufacturing items must be on list 24hr before delivery — not enforced
+  Path: src/app/api/cron/daily-task-gen/ or manufacturing schedule
+  Fix: User requirement: manufactured items on manufacturing list day before delivery. No system enforcement. Add validation/alert when delivery is scheduled without prior-day manufacturing slot.
+BIZ-9 [P2]: No dynamic pricing / margin protection
+  Path: src/lib/ (no pricing engine)
+  Fix: Price changes require manual update. No automatic margin calculation when vendor costs change. Build: cost-change propagation → auto-adjust retail maintaining minMargin.
+BIZ-10 [P2]: No churn prediction or account health scoring
+  Path: Codebase-wide (NUC does this, not Aegis)
+  Fix: Aegis has no native builder health signal. If NUC is down, no visibility into at-risk accounts. Add basic signals: order frequency decline, payment delays, support tickets.
+BIZ-11 [P2]: Credit hold logic not enforced at order creation
+  Path: src/app/api/ops/orders/
+  Fix: Builder can place orders even if over credit limit. Add check: if builder.balance &gt; builder.creditLimit, block order and notify AR.
+BIZ-12 [P2]: No revision history on quotes
+  Path: src/app/api/ops/quotes/
+  Fix: Quote edits overwrite. No versioning, no diff view, no 'Revision 2 of 3'. Add QuoteRevision model or JSON history field.
+BIZ-13 [P2]: No PDF versioning for generated documents
+  Path: src/app/api/ops/ (quote PDF, statement PDF)
+  Fix: Regenerating a PDF overwrites the previous. Builder may have printed Rev 1 — store versions in DocumentVault.
+BIZ-14 [P3]: Order templates exist but no 'repeat last order' UX for builders
+  Path: OrderTemplate model + portal
+  Fix: Model exists but builder portal has no 'Reorder' or 'Copy previous order' button. Add to portal/orders.
+8. OBSERVABILITY &amp; DEVOPS (10 items)
+OBS-1 [P1]: AuditLog write is TODO — no production audit trail
+  Path: src/lib/security.ts line 148
+  Fix: Comment: 'TODO: Write to AuditLog table when in production'. The audit() function is called everywhere but doesn't persist. Wire to DB.
+OBS-2 [P1]: No structured logging — 54+ console.log in API layer
+  Path: src/app/api/ (codebase-wide)
+  Fix: Replace with pino or winston. JSON-structured logs with request ID, user ID, timestamp. Essential for debugging production issues.
+OBS-3 [P1]: No health-check for integration dependencies
+  Path: src/app/api/health/ (exists but minimal)
+  Fix: Health endpoint doesn't check: Neon DB connectivity, Redis, Resend, Sentry, external APIs. Add /api/health/deep that pings each dependency.
+OBS-4 [P2]: 51 crons with no centralized status dashboard
+  Path: src/app/api/cron/ (51 directories)
+  Fix: No visibility into which crons ran, succeeded, failed, or skipped. The admin crons page exists but verify it's comprehensive.
+OBS-5 [P2]: No alerting on financial-snapshot errors
+  Path: src/app/api/cron/financial-snapshot/route.ts
+  Fix: If financial snapshot fails, no notification. Critical for daily cash position visibility. Add failure alert.
+OBS-6 [P2]: Webhook delivery tracking incomplete
+  Path: src/app/api/cron/webhook-retry/
+  Fix: No dashboard showing webhook delivery success/failure rates by endpoint. Add WebhookDelivery status tracking.
+OBS-7 [P2]: No error budget / SLO tracking beyond admin page
+  Path: src/app/api/admin/slo/route.ts
+  Fix: Route exists but has no try/catch. Verify SLO calculations are correct and surfaced to ops team.
+OBS-8 [P3]: Uptime probe exists but no external monitoring
+  Path: src/app/api/cron/uptime-probe/
+  Fix: Self-monitoring (Vercel hitting itself). Add external uptime check (BetterStack, Checkly) for true availability.
+OBS-9 [P3]: No deployment notification in Slack/Teams
+  Path: Vercel deployment hooks
+  Fix: Team doesn't know when deploys happen. Add Vercel deployment webhook → internal notification.
+OBS-10 [P3]: MRP AI insight placeholder
+  Path: src/app/ops/mrp/page.tsx line 1013
+  Fix: TODO: 'replace with AI insight once NUC brain is wired'. Shows nothing currently. Add a static useful metric until NUC is live.
+SUMMARY BY PRIORITY
+Priority
+Count
+Categories
+Deploy Strategy
+P0
+14
+SEC(2), DATA(3), API(3), UX(4), INT(2), BIZ(2)
+Fix immediately — broken core functionality or security risk
+P1
+44
+SEC(4), DATA(4), API(5), UX(11), PERF(5), INT(5), BIZ(6), OBS(3)
+Next 2-4 sprint cycles — high-value features and critical gaps
+P2
+36
+SEC(5), DATA(6), API(4), UX(4), PERF(5), INT(5), BIZ(5), OBS(4)
+Backlog — improve quality and reduce tech debt over time
+P3
+6
+PERF(1), INT(1), OBS(3), BIZ(1)
+Nice-to-have — address when bandwidth allows
+KEY SYSTEMIC PATTERNS
+No input validation: 4,011 'any' types, only 17 zod usages. Every API route accepts whatever is sent.
+No soft-delete: Permanent deletions everywhere. Once data is gone, it's gone. Breaks audit, breaks history.
+Stub pages shipped: 15+ pages under 100 lines that show users empty shells. Either hide nav links or build them.
+Console.log as logging: 54+ in API layer alone. No structured logging means no searchable production logs.
+Integration dead code: QB, Bolt, BPW integrations are dead but still in schema/crons. Clean up or kill.
+Missing indexes on filter fields: Status, date, phase fields used in WHERE clauses have no indexes. Queries will degrade as data grows.
+Sentry gap: Only 32 usages across the entire platform. Most errors are silently logged to console and lost.

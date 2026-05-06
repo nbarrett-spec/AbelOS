@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aegis Home — Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500;1,700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       Aegis v4 — "Drafting Room / Brand-Canonical"
+       Self-contained prototype. Matches src/app/aegis-v4.css exactly.
+       ============================================================ */
+    :root {
+      --v4-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --v4-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+      --v4-font-display: 'Playfair Display', Georgia, serif;
+
+      --v4-walnut-900: #1F140C;
+      --v4-walnut-800: #2A1C14;
+      --v4-walnut-700: #3E2A1E;
+      --v4-walnut-600: #5A4233;
+      --v4-walnut-500: #6E543D;
+      --v4-walnut-400: #8B6F47;
+      --v4-walnut-300: #B18F6B;
+
+      --v4-brass-700: #8A6E25;
+      --v4-brass-600: #A8872F;
+      --v4-brass-500: #C6A24E;
+      --v4-brass-400: #D6B66A;
+      --v4-brass-300: #E4C77A;
+      --v4-brass-200: #EFD8A1;
+
+      --v4-navy-950: #040A12;
+      --v4-navy-900: #0A1420;
+      --v4-navy-800: #131F2E;
+      --v4-navy-700: #1C2D41;
+      --v4-navy-600: #284057;
+
+      --v4-cream:   #F3EAD8;
+      --v4-mylar:   #F5F2EB;
+      --v4-onion:   #FAF4E8;
+      --v4-ink:     #2C2C2C;
+
+      --v4-sage:    #5CAA68;
+      --v4-ember:   #B64E3D;
+      --v4-amber:   #C9822B;
+      --v4-sky:     #8CA8B8;
+
+      --v4-ease: cubic-bezier(.2, .8, .2, 1);
+
+      /* Dark-mode semantic (primary experience) */
+      --canvas:           var(--v4-navy-950);
+      --surface:          var(--v4-navy-900);
+      --surface-muted:    var(--v4-navy-800);
+      --surface-elevated: var(--v4-navy-700);
+
+      --fg:         #F5F1E8;
+      --fg-muted:   #B8B0A0;
+      --fg-subtle:  #857E70;
+
+      --border:         rgba(198, 162, 78, 0.10);
+      --border-strong:  rgba(198, 162, 78, 0.22);
+
+      --signal:         var(--v4-brass-500);
+      --signal-hover:   var(--v4-brass-300);
+      --signal-subtle:  rgba(198, 162, 78, 0.12);
+      --signal-glow:    rgba(198, 162, 78, 0.28);
+
+      --data-positive-bg: rgba(92, 170, 104, 0.16);
+      --data-positive-fg: #82D090;
+      --data-negative-bg: rgba(182, 78, 61, 0.18);
+      --data-negative-fg: #E08572;
+      --data-warning-bg:  rgba(201, 130, 43, 0.18);
+      --data-warning-fg:  #E3B36A;
+      --data-info-bg:     rgba(140, 168, 184, 0.16);
+      --data-info-fg:     #B0C5D3;
+      --data-positive:    var(--v4-sage);
+      --data-negative:    var(--v4-ember);
+      --data-warning:     var(--v4-amber);
+      --data-info:        var(--v4-sky);
+
+      --elev-1: 0 1px 2px -1px rgba(0,0,0, 0.3), 0 1px 3px 0 rgba(0,0,0, 0.2);
+      --elev-2: 0 2px 4px -2px rgba(0,0,0, 0.35), 0 4px 10px -2px rgba(0,0,0, 0.2);
+
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: var(--v4-font-sans);
+      font-feature-settings: "ss01", "cv01", "cv11", "calt";
+      background: var(--canvas);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* Canvas + blueprint grid + aurora */
+    .v4-bg-canvas { position: relative; isolation: isolate; background: var(--canvas); min-height: 100vh; padding-bottom: 96px; }
+    .v4-bg-canvas::before {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(to right, currentColor 1px, transparent 1px),
+        linear-gradient(to bottom, currentColor 1px, transparent 1px);
+      background-size: 40px 40px;
+      color: var(--v4-brass-500);
+      opacity: 0.04;
+      pointer-events: none;
+      z-index: -2;
+      mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 85%);
+    }
+    .v4-aurora {
+      position: absolute; top: 0; left: 0; right: 0; height: 480px;
+      overflow: hidden; pointer-events: none;
+    }
+    .v4-aurora::before, .v4-aurora::after {
+      content: ""; position: absolute;
+      width: 56rem; height: 56rem;
+      border-radius: 9999px;
+      filter: blur(80px);
+      opacity: 0.28; mix-blend-mode: screen;
+      animation: v4-drift 24s ease-in-out infinite alternate;
+    }
+    .v4-aurora::before {
+      background: radial-gradient(closest-side, var(--v4-brass-500), transparent 70%);
+      top: -20rem; left: -12rem;
+    }
+    .v4-aurora::after {
+      background: radial-gradient(closest-side, var(--v4-walnut-400), transparent 70%);
+      bottom: -24rem; right: -16rem;
+      animation-delay: -12s;
+    }
+    @keyframes v4-drift {
+      0%   { transform: translate3d(0,0,0)       scale(1); }
+      50%  { transform: translate3d(30px,-20px,0) scale(1.08); }
+      100% { transform: translate3d(-20px,30px,0) scale(0.96); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .v4-aurora::before, .v4-aurora::after { animation: none; }
+    }
+
+    .wrap {
+      position: relative;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 28px 0;
+    }
+
+    /* Numeric + display */
+    .num { font-family: var(--v4-font-mono); font-variant-numeric: tabular-nums slashed-zero; font-feature-settings: "tnum","zero"; }
+    .display { font-family: var(--v4-font-display); font-style: italic; font-weight: 500; letter-spacing: -0.01em; }
+
+    /* Section label — signature mono caps with brass rule */
+    .label {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: var(--v4-font-mono);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--fg-subtle);
+      line-height: 1;
+    }
+    .label::before {
+      content: ""; display: inline-block; width: 28px; height: 1px;
+      background: var(--v4-brass-500);
+    }
+
+    /* Top bar */
+    header.top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand .mark {
+      width: 28px; height: 28px; display: grid; place-items: center;
+      border-radius: 8px;
+      background: var(--v4-walnut-700);
+      color: var(--v4-cream);
+      font-family: var(--v4-font-display);
+      font-size: 16px; font-style: italic;
+    }
+    .brand .titles { display: flex; flex-direction: column; gap: 2px; }
+    .brand .name { font-size: 13px; font-weight: 600; letter-spacing: -0.003em; color: var(--fg); }
+    .brand .sub  { font-family: var(--v4-font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg-subtle); }
+
+    .controls { display: flex; align-items: center; gap: 12px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 8px; border-radius: 6px;
+      font-family: var(--v4-font-mono);
+      font-size: 10.5px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--surface-muted); color: var(--fg-muted);
+      border: 1px solid var(--border);
+      line-height: 1.4; white-space: nowrap;
+    }
+    .chip::before { content: ""; width: 6px; height: 6px; border-radius: 9999px; background: currentColor; opacity: 0.9; }
+    .chip.positive { color: var(--data-positive-fg); background: var(--data-positive-bg); border-color: transparent; }
+    .chip.negative { color: var(--data-negative-fg); background: var(--data-negative-bg); border-color: transparent; }
+    .chip.warning  { color: var(--data-warning-fg);  background: var(--data-warning-bg);  border-color: transparent; }
+    .chip.info     { color: var(--data-info-fg);     background: var(--data-info-bg);     border-color: transparent; }
+
+    .tenant-switch { display: flex; align-items: center; gap: 10px; }
+    .tenant-switch .ml { font-family: var(--v4-font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--fg-subtle); }
+    select {
+      appearance: none;
+      background: var(--surface);
+      color: var(--fg);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 6px 28px 6px 10px;
+      font-family: var(--v4-font-sans);
+      font-size: 12.5px; font-weight: 600;
+      line-height: 1; cursor: pointer; outline: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, currentColor 50%),
+        linear-gradient(135deg, currentColor 50%, transparent 50%);
+      background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+    select:focus { border-color: var(--signal); }
+
+    /* Tier badge strip */
+    .tier-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      padding: 14px 18px; margin-bottom: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--elev-1);
+    }
+    .tier-strip .s-label { font-family: var(--v4-font-mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--fg-subtle); }
+    .tier-strip .s-val   { font-size: 14px; font-weight: 600; color: var(--fg); margin-top: 4px; }
+    .tier-strip .s-sub   { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Hero */
+    h1.hero {
+      margin: 14px 0 10px;
+      font-size: 34px; font-weight: 500; letter-spacing: -0.02em;
+      color: var(--fg); line-height: 1.1;
+    }
+    h1.hero .accent { color: var(--signal); }
+    p.lede { font-size: 14.5px; color: var(--fg-muted); max-width: 720px; line-height: 1.5; margin: 0; }
+
+    /* Copilot bar */
+    .copilot {
+      position: relative; display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: var(--elev-1);
+    }
+    .copilot::before {
+      content: "✦";
+      width: 28px; height: 28px;
+      display: grid; place-items: center; border-radius: 8px;
+      background: var(--signal-subtle); color: var(--signal);
+      font-size: 14px; flex-shrink: 0;
+    }
+    .copilot input {
+      flex: 1; border: 0; outline: 0; background: transparent;
+      color: var(--fg); font-family: var(--v4-font-sans); font-size: 13px;
+    }
+    .copilot input::placeholder { color: var(--fg-subtle); }
+    .copilot .kbd {
+      font-family: var(--v4-font-mono); font-size: 10px; font-weight: 600;
+      color: var(--fg-subtle);
+      padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-muted);
+    }
+
+    /* Cards */
+    .card {
+      position: relative;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; box-shadow: var(--elev-1);
+      transition: box-shadow 180ms var(--v4-ease), border-color 180ms var(--v4-ease);
+    }
+    .card:hover { border-color: var(--border-strong); box-shadow: var(--elev-2); }
+    .card.ruled::before {
+      content: ""; position: absolute; top: -1px; left: 24px;
+      width: 32px; height: 2px; background: var(--v4-brass-500); border-radius: 2px;
+    }
+    .card-pad { padding: 22px 24px; }
+
+    /* Exception cards */
+    .ex {
+      display: grid; grid-template-columns: 44px 1fr auto;
+      gap: 16px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px;
+      transition: border-color 180ms var(--v4-ease), box-shadow 180ms var(--v4-ease);
+    }
+    .ex:hover { border-color: var(--border-strong); box-shadow: var(--elev-2); }
+    .ex .glyph {
+      width: 44px; height: 44px; display: grid; place-items: center;
+      border-radius: 10px; background: var(--signal-subtle); color: var(--signal);
+    }
+    .ex .glyph svg { width: 18px; height: 18px; }
+    .ex.warning  .glyph { background: var(--data-warning-bg);  color: var(--data-warning-fg); }
+    .ex.negative .glyph { background: var(--data-negative-bg); color: var(--data-negative-fg); }
+    .ex.info     .glyph { background: var(--data-info-bg);     color: var(--data-info-fg); }
+    .ex .t { font-size: 14px; font-weight: 600; color: var(--fg); letter-spacing: -0.005em; line-height: 1.25; }
+    .ex .why { margin-top: 4px; font-size: 12.5px; color: var(--fg-muted); line-height: 1.45; }
+    .ex .meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; font-family: var(--v4-font-mono); font-size: 11px; color: var(--fg-subtle); }
+    .ex .meta strong { color: var(--fg-muted); font-weight: 500; letter-spacing: 0.02em; }
+    .ex-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: var(--v4-font-sans); font-weight: 600; font-size: 12px;
+      height: 30px; padding: 0 10px; border-radius: 6px;
+      border: 1px solid transparent; cursor: pointer; user-select: none;
+      transition: all 180ms var(--v4-ease); outline: none; text-decoration: none;
+    }
+    .btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+    .btn.primary { background: var(--v4-brass-500); color: var(--v4-navy-950); border-color: var(--v4-brass-600); }
+    .btn.primary:hover { background: var(--v4-brass-300); }
+    .btn.ghost { background: transparent; color: var(--fg); border-color: var(--border-strong); }
+    .btn.ghost:hover { background: var(--surface-muted); border-color: var(--fg-muted); }
+
+    /* KPI tiles */
+    .kpis { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi {
+      position: relative;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px 18px; overflow: hidden;
+      transition: border-color 180ms var(--v4-ease), box-shadow 180ms var(--v4-ease);
+    }
+    .kpi:hover { border-color: var(--border-strong); box-shadow: var(--elev-2); }
+    .kpi .rule { position: absolute; left: 18px; top: 0; width: 24px; height: 2px; background: var(--v4-brass-500); border-radius: 2px; }
+    .kpi .k-label { font-family: var(--v4-font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--fg-subtle); }
+    .kpi .k-value { display: block; margin-top: 10px; font-family: var(--v4-font-mono); font-variant-numeric: tabular-nums slashed-zero; font-size: 30px; font-weight: 500; color: var(--fg); line-height: 1.05; letter-spacing: -0.02em; }
+    .kpi .k-sub   { margin-top: 8px; font-size: 12px; color: var(--fg-muted); display: flex; align-items: center; gap: 8px; }
+    .k-delta { display: inline-flex; align-items: center; gap: 4px; font-family: var(--v4-font-mono); font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+    .k-delta.up   { color: var(--data-positive-fg); background: var(--data-positive-bg); }
+    .k-delta.down { color: var(--data-negative-fg); background: var(--data-negative-bg); }
+    .k-delta.flat { color: var(--fg-subtle); background: var(--surface-muted); }
+
+    /* Schedule confidence */
+    .conf { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--surface-muted); }
+    .conf span { display: block; height: 100%; }
+    .conf .on { background: var(--data-positive); }
+    .conf .risk { background: var(--data-warning); }
+    .conf .late { background: var(--data-negative); }
+
+    /* Rows */
+    .row {
+      display: grid; grid-template-columns: 52px 1fr auto;
+      align-items: center; gap: 16px; padding: 10px 14px;
+      border-radius: 8px;
+      transition: background 140ms var(--v4-ease);
+    }
+    .row:hover { background: var(--surface-muted); }
+    .row .days {
+      width: 44px; height: 44px; display: grid; place-items: center;
+      border-radius: 10px; background: var(--data-info-bg); color: var(--data-info-fg);
+      font-family: var(--v4-font-mono);
+    }
+    .row .days b { display: block; font-size: 17px; font-weight: 600; line-height: 1; }
+    .row .days span { font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.8; }
+    .row .title { font-size: 13px; font-weight: 600; color: var(--fg); letter-spacing: -0.002em; }
+    .row .rsub  { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+    .row .amt   { font-family: var(--v4-font-mono); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: var(--fg); text-align: right; }
+
+    .hair { height: 1px; background: linear-gradient(to right, transparent, var(--border), transparent); }
+
+    /* Quick actions */
+    .quick { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+    @media (max-width: 900px) { .quick { grid-template-columns: repeat(2, 1fr); } }
+    .tile {
+      display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+      gap: 12px; padding: 16px; min-height: 98px;
+      border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+      color: var(--fg); text-align: left; cursor: pointer;
+      transition: all 180ms var(--v4-ease); text-decoration: none;
+    }
+    .tile:hover { border-color: var(--v4-brass-500); transform: translateY(-1px); box-shadow: var(--elev-2); }
+    .tile .tg { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--signal-subtle); color: var(--signal); }
+    .tile .tlabel { font-size: 13px; font-weight: 600; color: var(--fg); }
+    .tile .thint  { font-family: var(--v4-font-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--fg-subtle); text-transform: uppercase; }
+    .tile .trow { display: flex; align-items: baseline; justify-content: space-between; width: 100%; }
+
+    /* Section spacing */
+    section { margin-bottom: 36px; }
+    .grid-2-main { display: grid; gap: 28px; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+
+    footer.foot {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--v4-font-mono);
+      font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--fg-subtle);
+      padding-top: 20px; border-top: 1px solid var(--border);
+    }
+
+    /* Spark svg sizing */
+    svg.spark { display: block; width: 100%; height: 36px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <main class="v4-bg-canvas">
+    <div class="v4-aurora" aria-hidden="true"></div>
+
+    <div class="wrap">
+      <header class="top">
+        <div class="brand">
+          <div class="mark" id="mark" aria-hidden="true">B</div>
+          <div class="titles">
+            <div class="name" id="tenantName">Brookfield Residential — DFW</div>
+            <div class="sub">Aegis · <span id="tierLabel">Production · Large</span></div>
+          </div>
+        </div>
+        <div class="controls">
+          <span class="chip info" id="statusChip">Active · T5</span>
+          <div class="tenant-switch">
+            <span class="ml">Tenant</span>
+            <select id="tenantSelect" aria-label="Switch tenant"></select>
+          </div>
+        </div>
+      </header>
+
+      <!-- Tier badge strip -->
+      <section class="tier-strip" aria-label="Tier profile">
+        <div><div class="s-label">Build model</div><div class="s-val" id="sModel">Production</div></div>
+        <div><div class="s-label">Size band</div><div class="s-val" id="sSize">L</div><div class="s-sub" id="sSizeSub">501–2,500 starts/yr</div></div>
+        <div><div class="s-label">Integration</div><div class="s-val" id="sInteg">PM-integrated</div></div>
+        <div><div class="s-label">Nav items</div><div class="s-val" id="sNav">13</div><div class="s-sub" id="sHome">3 home widgets</div></div>
+      </section>
+
+      <!-- Greeting -->
+      <section>
+        <div class="label" id="todayLabel">Today · Friday, April 24</div>
+        <h1 class="hero"><span>Good morning, </span><span id="gUser">Brittney</span>. <span class="display accent" id="gWord">Four</span> <span id="gItems">items need a decision.</span></h1>
+        <p class="lede" id="gSummary">Two deliveries are on the trucks right now. One invoice just aged past net-30. Chad has a redline waiting on PO #4817. Everything else is running on schedule.</p>
+      </section>
+
+      <!-- Copilot -->
+      <section>
+        <form class="copilot" onsubmit="event.preventDefault()">
+          <input id="copilotInput" placeholder='Ask about your purchasing. e.g. "Why is lot 214 running over?"' aria-label="Ask Copilot" />
+          <kbd class="kbd">⌘ /</kbd>
+        </form>
+      </section>
+
+      <!-- Urgency feed -->
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+          <div class="label">Needs a decision</div>
+          <a href="#" style="font-size:12px;font-weight:600;color:var(--signal);text-decoration:none">See all →</a>
+        </div>
+        <div id="urgency" style="display:grid;gap:12px"></div>
+      </section>
+
+      <!-- KPI strip -->
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+          <div class="label">Account pulse</div>
+          <span style="font-family:var(--v4-font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--fg-subtle)">last 30 days</span>
+        </div>
+        <div id="kpis" class="kpis"></div>
+      </section>
+
+      <!-- Dynamic slots -->
+      <div id="projectsSlot"></div>
+      <div id="scheduleSlot"></div>
+      <div id="divisionsSlot"></div>
+
+      <!-- Quick actions -->
+      <section>
+        <div style="margin-bottom:14px"><div class="label">Quick actions</div></div>
+        <div id="quick" class="quick"></div>
+      </section>
+
+      <!-- Nav visibility -->
+      <section class="card" style="padding:16px 20px">
+        <div style="margin-bottom:10px"><div class="label">Nav at this tier</div></div>
+        <div id="navChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </section>
+
+      <footer class="foot">
+        <span>Aegis · Built in Gainesville · <span class="display">on schedule</span></span>
+        <span class="num" id="footMeta">v4.0.0 · tier T5 · brookfield</span>
+      </footer>
+    </div>
+  </main>
+
+<script>
+/* ============================================================
+   Tier library (inline — mirrors src/lib/builder-tiers.ts
+   + tier-matrix.ts + tenant-roster.ts)
+   ============================================================ */
+
+const ROSTER = [
+  { slug:'abel',             name:'Abel Lumber',                 tier:'T0_ABEL_INTERNAL',         status:'ACTIVE',  model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED', color:'#3E2A1E' },
+  { slug:'desco',            name:'Desco Fine Homes',            tier:'T1_CUSTOM_BOUTIQUE',       status:'TRIAL',   model:'CUSTOM',      size:'XS',  integ:'PORTAL_ONLY',   color:'#3E2A1E' },
+  { slug:'bella',            name:'Bella Custom Homes',          tier:'T1_CUSTOM_BOUTIQUE',       status:'TRIAL',   model:'CUSTOM',      size:'XS',  integ:'PORTAL_ONLY',   color:'#2A1C14' },
+  { slug:'lingenfelter',     name:'Lingenfelter Luxury Homes',   tier:'T1_CUSTOM_BOUTIQUE',       status:'TRIAL',   model:'CUSTOM',      size:'XS',  integ:'PORTAL_ONLY',   color:'#1F140C' },
+  { slug:'joseph-paul',      name:'Joseph Paul Homes',           tier:'T2_SEMI_CUSTOM_SMALL',     status:'ACTIVE',  model:'SEMI_CUSTOM', size:'S',   integ:'PORTAL_ONLY',   color:'#3E2A1E' },
+  { slug:'rdr',              name:'RDR Development',             tier:'T2_SEMI_CUSTOM_SMALL',     status:'ACTIVE',  model:'SEMI_CUSTOM', size:'S',   integ:'PORTAL_ONLY',   color:'#5A4233' },
+  { slug:'true-grit',        name:'True Grit',                   tier:'T2_SEMI_CUSTOM_SMALL',     status:'ACTIVE',  model:'SEMI_CUSTOM', size:'XS',  integ:'PORTAL_ONLY',   color:'#6E543D' },
+  { slug:'shaddock',         name:'Shaddock Homes',              tier:'T3_PRODUCTION_SMALL',      status:'ACTIVE',  model:'PRODUCTION',  size:'S',   integ:'LIGHT_INTEGRATED', color:'#3E2A1E' },
+  { slug:'olerio',           name:'Olerio Homes',                tier:'T3_PRODUCTION_SMALL',      status:'ACTIVE',  model:'PRODUCTION',  size:'S',   integ:'LIGHT_INTEGRATED', color:'#5A4233' },
+  { slug:'msr',              name:'MSR (Sorovar-Frisco)',        tier:'T3_PRODUCTION_SMALL',      status:'ACTIVE',  model:'PRODUCTION',  size:'S',   integ:'PORTAL_ONLY',      color:'#6E543D' },
+  { slug:'trophy-signature', name:'Trophy Signature Homes',      tier:'T3_PRODUCTION_SMALL',      status:'ACTIVE',  model:'PRODUCTION',  size:'S',   integ:'LIGHT_INTEGRATED', color:'#3E2A1E' },
+  { slug:'bloomfield',       name:'Bloomfield Homes',            tier:'T4_PRODUCTION_MID',        status:'TRIAL',   model:'PRODUCTION',  size:'M',   integ:'LIGHT_INTEGRATED', color:'#5A4233' },
+  { slug:'grand',            name:'Grand Homes',                 tier:'T4_PRODUCTION_MID',        status:'TRIAL',   model:'PRODUCTION',  size:'M',   integ:'LIGHT_INTEGRATED', color:'#6E543D' },
+  { slug:'davidson',         name:'Davidson Homes',              tier:'T4_PRODUCTION_MID',        status:'TRIAL',   model:'PRODUCTION',  size:'M',   integ:'LIGHT_INTEGRATED', color:'#3E2A1E' },
+  { slug:'brookfield',       name:'Brookfield Residential',      tier:'T5_PRODUCTION_LARGE',      status:'ACTIVE',  model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED',    color:'#0F4F3A' },
+  { slug:'toll-brothers',    name:'Toll Brothers DFW',           tier:'T5_PRODUCTION_LARGE',      status:'ACTIVE',  model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED',    color:'#7A2A2A' },
+  { slug:'perry',            name:'Perry Homes',                 tier:'T5_PRODUCTION_LARGE',      status:'TRIAL',   model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED',    color:'#3E2A1E' },
+  { slug:'highland',         name:'Highland Homes',              tier:'T5_PRODUCTION_LARGE',      status:'TRIAL',   model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED',    color:'#2A1C14' },
+  { slug:'tri-pointe',       name:'Tri Pointe Homes',            tier:'T5_PRODUCTION_LARGE',      status:'TRIAL',   model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED',    color:'#1F3A5F' },
+  { slug:'meritage',         name:'Meritage Homes',              tier:'T5_PRODUCTION_LARGE',      status:'TRIAL',   model:'PRODUCTION',  size:'L',   integ:'PM_INTEGRATED',    color:'#3E2A1E' },
+  { slug:'lennar',           name:'Lennar',                      tier:'T6_PRODUCTION_ENTERPRISE', status:'TRIAL',   model:'PRODUCTION',  size:'XXL', integ:'PM_INTEGRATED',    color:'#1F3A5F' },
+  { slug:'pulte',            name:'PulteGroup (Centex + Del Webb)', tier:'T6_PRODUCTION_ENTERPRISE', status:'CHURNED', model:'PRODUCTION', size:'XXL', integ:'EDI_NATIVE',        color:'#003A5D' },
+];
+
+const TIER_LABELS = {
+  T0_ABEL_INTERNAL: 'Abel Internal',
+  T1_CUSTOM_BOUTIQUE: 'Custom · Boutique',
+  T2_SEMI_CUSTOM_SMALL: 'Semi-Custom · Small',
+  T3_PRODUCTION_SMALL: 'Production · Small',
+  T4_PRODUCTION_MID: 'Production · Mid',
+  T5_PRODUCTION_LARGE: 'Production · Large',
+  T6_PRODUCTION_ENTERPRISE: 'Production · Enterprise',
+};
+const TIER_SHORT = {
+  T0_ABEL_INTERNAL: 'Abel', T1_CUSTOM_BOUTIQUE: 'T1', T2_SEMI_CUSTOM_SMALL: 'T2',
+  T3_PRODUCTION_SMALL: 'T3', T4_PRODUCTION_MID: 'T4', T5_PRODUCTION_LARGE: 'T5', T6_PRODUCTION_ENTERPRISE: 'T6',
+};
+const SIZE_SUB = { XS:'≤ 15 starts/yr', S:'16–75 starts/yr', M:'76–500 starts/yr', L:'501–2,500 starts/yr', XL:'2,501–10,000 starts/yr', XXL:'10,000+ starts/yr' };
+const INTEG_LABEL = { PORTAL_ONLY:'Portal only', LIGHT_INTEGRATED:'Light integrations', PM_INTEGRATED:'PM-integrated', EDI_NATIVE:'EDI-native' };
+
+/* Feature matrix per tier (nav only — enough for prototype) */
+const NAV_BY_TIER = {
+  T0_ABEL_INTERNAL:       ['Projects','Communities','Lots','Plans','Options','POs','Schedule','Invoices','Messages','Documents','Reports','Analytics','Integrations','Developer','EDI'],
+  T1_CUSTOM_BOUTIQUE:     ['Projects','POs','Schedule','Invoices','Messages','Documents'],
+  T2_SEMI_CUSTOM_SMALL:   ['Projects','Plans','POs','Schedule','Invoices','Messages','Documents'],
+  T3_PRODUCTION_SMALL:    ['Communities','Lots','Plans','POs','Schedule','Invoices','Messages','Documents','Reports','Integrations'],
+  T4_PRODUCTION_MID:      ['Communities','Lots','Plans','Options','POs','Schedule','Invoices','Messages','Documents','Reports','Analytics','Integrations'],
+  T5_PRODUCTION_LARGE:    ['Communities','Lots','Plans','Options','POs','Schedule','Invoices','Messages','Documents','Reports','Analytics','Integrations','Developer'],
+  T6_PRODUCTION_ENTERPRISE:['Communities','Lots','Plans','Options','POs','Schedule','Invoices','Messages','Documents','Reports','Analytics','Integrations','Developer','EDI'],
+};
+const HOME_WIDGETS_BY_TIER = {
+  T0_ABEL_INTERNAL: ['projects','schedule','divisions'],
+  T1_CUSTOM_BOUTIQUE: ['projects'],
+  T2_SEMI_CUSTOM_SMALL: ['projects'],
+  T3_PRODUCTION_SMALL: ['schedule'],
+  T4_PRODUCTION_MID: ['schedule'],
+  T5_PRODUCTION_LARGE: ['schedule'],
+  T6_PRODUCTION_ENTERPRISE: ['schedule','divisions'],
+};
+
+/* ============================================================
+   Scenario data per tier (representative, not live)
+   ============================================================ */
+function scenarioFor(slug, tier) {
+  if (tier === 'T1_CUSTOM_BOUTIQUE') return {
+    g: { user:'Alex', count:2, summary:"A quote is ready on the Turtle Creek build. Your Preston Hollow door schedule needs a final sign-off before fab." },
+    kpis: [
+      { label:'Active projects', value:'3',        sub:'2 in design · 1 in trim',    delta:'—',       trend:'flat', spark:[2,2,3,3,3,3,3],    accent:'brand' },
+      { label:'YTD spend',       value:'$184,210', sub:'vs $142K last year',          delta:'+29.6%',  trend:'up',   spark:[12,14,18,20,22,24,26], accent:'brand' },
+      { label:'Open quotes',     value:'1',        sub:'Turtle Creek · due Fri',      delta:'—',       trend:'flat', spark:[1,0,1,1,0,1,1],    accent:'info' },
+      { label:'Outstanding',     value:'$4,820',   sub:'1 invoice · on time',         delta:'−$1.2K',  trend:'down', spark:[6,6,5.5,5,5,5,4.8],accent:'positive' },
+    ],
+    ex: [
+      { glyph:'sig',  tone:'info',    t:'Quote ready — <span class="num">Turtle Creek</span> interior door package.',
+        why:'Kiln-dried walnut interior doors, brass Emtek hardware, pre-hung. Lead time 18 business days.',
+        meta:[['Total','<span class="num">$47,320.00</span>'],['Expires','Fri, May 2']],
+        a:'Accept quote', s:'Request revise' },
+      { glyph:'pen',  tone:'warning', t:'Preston Hollow — door schedule ready to lock.',
+        why:'Dalton has confirmed 26 interior + 4 exterior units. Sign off to release to Gainesville fab.',
+        meta:[['Units','<span class="num">30</span>']],
+        a:'Lock and release' },
+    ],
+    projects: [
+      { name:'Turtle Creek — Barnes residence',     phase:'Design',  next:'Quote signed',    chip:'info'    },
+      { name:'Preston Hollow — Alvarado residence', phase:'Trim',    next:'Schedule release',chip:'warning' },
+      { name:'Westlake — Nguyen residence',         phase:'Install', next:'Punch walk',      chip:'positive'},
+    ],
+    deliveries: [{ n:'DEL-00412', lot:'Westlake — Nguyen', items:4, amt:4980, eta:'10:00 AM', late:false }],
+  };
+  if (tier === 'T2_SEMI_CUSTOM_SMALL') return {
+    g: { user:'Sam', count:2, summary:"A plan revision is waiting on Plan 22-B. A BoM approval is pending for the Beacon Hill build." },
+    kpis: [
+      { label:'Plans in library', value:'8',        sub:'2 semi-custom',              delta:'+1',      trend:'up',   spark:[5,5,6,7,7,8,8],    accent:'brand' },
+      { label:'YTD spend',        value:'$412,920', sub:'vs $340K last year',          delta:'+21.4%',  trend:'up',   spark:[30,35,38,40,42,44,45], accent:'brand' },
+      { label:'Open POs',         value:'6',        sub:'2 this week',                 delta:'+1',      trend:'up',   spark:[4,5,5,6,6,6,6],    accent:'info' },
+      { label:'Outstanding',      value:'$14,220',  sub:'2 invoices · on time',        delta:'—',       trend:'flat', spark:[14,14,14,14,14,14,14.2], accent:'warning' },
+    ],
+    ex: [
+      { glyph:'pen',  tone:'info',    t:'Plan <span class="num">22-B · Rev 2</span> ready for review.',
+        why:'Owner requested a widened dining room bay. Affects 4 plan copies; net BoM delta +$640.',
+        meta:[['Builder plans affected','<span class="num">4</span>']],
+        a:'Review plan', s:'Compare to Rev 1' },
+      { glyph:'sig',  tone:'warning', t:'BoM approval pending — Beacon Hill · lot 12.',
+        why:'Abel proposed a redline on trim profile. Net delta +$186 (+0.8%).',
+        meta:[['Amount','<span class="num">$23,140.00</span>']],
+        a:'Approve', s:'Redline' },
+    ],
+    projects: [
+      { name:'Beacon Hill · Lot 12',    phase:'Frame',  next:'Trim 1 release', chip:'warning' },
+      { name:'Hawthorne · Lot 4',       phase:'Design', next:'Plan freeze',    chip:'info' },
+      { name:'Summit Ridge · Lot 7',    phase:'Trim',   next:'Final pack',     chip:'positive' },
+    ],
+    deliveries: [{ n:'DEL-01128', lot:'Beacon Hill · Lot 12', items:14, amt:8420, eta:'11:00 AM', late:false }],
+  };
+  if (tier === 'T3_PRODUCTION_SMALL') return {
+    g: { user:'Jordan', count:3, summary:"Two lots are ready for trim release. One invoice just aged into 30 days." },
+    kpis: [
+      { label:'Open POs',         value:'18',       sub:'6 this week',                delta:'+2',      trend:'up',   spark:[12,14,13,15,16,17,18], accent:'info' },
+      { label:'YTD spend',        value:'$612,450', sub:'vs $498K last year',          delta:'+22.9%',  trend:'up',   spark:[40,48,52,55,58,60,61], accent:'brand' },
+      { label:'Credit available', value:'$187,550', sub:'of $250K · Net 30',           delta:'—',       trend:'flat', spark:[240,230,220,210,200,195,188], accent:'positive' },
+      { label:'Outstanding',      value:'$32,110',  sub:'2 invoices · 1 due',          delta:'—',       trend:'flat', spark:[30,28,30,31,32,32,32], accent:'warning' },
+    ],
+    ex: [
+      { glyph:'sig',  tone:'warning', t:'PO <span class="num">#SH-1184</span> awaiting approval — Shaddock Heights Lot 42.',
+        why:'Trim 1 pack. Abel flagged kiln-oak casing availability — alt vendor secured, net delta +$62.',
+        meta:[['Community','Shaddock Heights'],['Amount','<span class="num">$8,940.00</span>']],
+        a:'Review & approve', s:'Open redline' },
+      { glyph:'bank', tone:'negative', t:'Invoice <span class="num">#1876</span> aged to 31 days.',
+        why:'Net 30 lapsed yesterday. Clear this plus one other invoice via batch pay to keep DPO at 28.',
+        meta:[['Amount','<span class="num">$14,220.00</span>']],
+        a:'Pay now', s:'Dispute' },
+      { glyph:'pen',  tone:'info', t:'Two lots ready for trim release at Shaddock Heights.',
+        why:'Frame complete 4/22 on Lots 38 and 42. Abel awaiting your trim-release PO to trigger Gainesville pick.',
+        meta:[], a:'Release both' },
+    ],
+    communities: [
+      { name:'Shaddock Heights', on:12, risk:2, late:0 },
+      { name:'Parker Pointe',    on:8,  risk:1, late:1 },
+    ],
+    deliveries: [
+      { n:'DEL-10204', lot:'Lot 42 · Shaddock Heights', items:22, amt:8940, eta:'11:30 AM', late:false },
+      { n:'DEL-10206', lot:'Lot 14 · Parker Pointe',    items:18, amt:7620, eta:'2:00 PM',  late:false },
+    ],
+  };
+  if (tier === 'T6_PRODUCTION_ENTERPRISE') return {
+    g: { user:'Diana', count:11, summary:"DFW division has 4 POs awaiting approval. Houston EDI 855 lag dropped to 2.3 min (target 3). One invoice batch cleared overnight." },
+    kpis: [
+      { label:'Open POs (all divs)', value:'842',       sub:'134 this week',           delta:'+12',    trend:'up',   spark:[720,740,760,780,800,820,842], accent:'info' },
+      { label:'YTD spend',           value:'$48.2M',    sub:'vs $42.9M last year',     delta:'+12.4%', trend:'up',   spark:[3.2,3.6,3.8,3.9,4.0,4.1,4.2], accent:'brand' },
+      { label:'On-time rate',        value:'96.8%',     sub:'trailing 90 days',        delta:'+0.6pp', trend:'up',   spark:[95.2,95.8,96.0,96.2,96.4,96.6,96.8], accent:'positive' },
+      { label:'DSO',                 value:'28.4 days', sub:'target 28',               delta:'−1.1',   trend:'down', spark:[32,31,30,29.5,29,28.8,28.4], accent:'positive' },
+    ],
+    ex: [
+      { glyph:'sig',  tone:'warning', t:'DFW Division — <span class="num">4</span> POs awaiting approval.',
+        why:'Combined $184K across Mobberly, Treeline, Gateway. Procurement threshold hit at $50K each.',
+        meta:[['Community count','3'],['Oldest','6h ago']],
+        a:'Open queue', s:'Delegate' },
+      { glyph:'truck', tone:'info', t:'Houston EDI 855 acks — average <span class="num">2.3 min</span> (target 3).',
+        why:'Ahead of SLA. No action required; logged for the weekly ops review.',
+        meta:[['855s/day','<span class="num">1,210</span>']],
+        a:'Open EDI console' },
+      { glyph:'bank', tone:'info', t:'Batch payment cleared — <span class="num">142</span> invoices, <span class="num">$2.18M</span>.',
+        why:'Overnight ACH. 100% match rate against POD + PO + Invoice 3-way.',
+        meta:[], a:'Remittance summary' },
+    ],
+    communities: [
+      { name:'DFW · Mobberly Farms',   on:48, risk:6, late:2 },
+      { name:'DFW · Treeline Crossing',on:52, risk:3, late:0 },
+      { name:'DFW · Gateway Heights',  on:36, risk:4, late:2 },
+      { name:'HOU · Cypress Meadows',  on:62, risk:5, late:1 },
+      { name:'AUS · Cedar Park Ridge', on:44, risk:2, late:0 },
+    ],
+    divisions: [
+      { name:'DFW Division',     starts:1420, ot:96.2, spend:18.4 },
+      { name:'Houston Division', starts:1680, ot:97.4, spend:21.2 },
+      { name:'Austin Division',  starts: 720, ot:96.8, spend: 8.6 },
+    ],
+    deliveries: [
+      { n:'DEL-EDI-88402', lot:'DFW · Mobberly Lot 214', items:28, amt:31220, eta:'2:40 PM', late:true  },
+      { n:'DEL-EDI-88415', lot:'HOU · Cypress Lot 612',  items:22, amt:24180, eta:'3:15 PM', late:false },
+      { n:'DEL-EDI-88421', lot:'DFW · Treeline Lot 41',  items:34, amt:42980, eta:'4:00 PM', late:false },
+    ],
+  };
+  /* Default: T4/T5 (Brookfield, Bloomfield) */
+  return {
+    g: { user:'Brittney', count:4, summary:"Two deliveries are on the trucks right now. One invoice just aged past net-30. Chad has a redline waiting on PO #4817. Everything else is running on schedule." },
+    kpis: [
+      { label:'Open POs',          value:'47',          sub:'12 this week',             delta:'+4',      trend:'up',   spark:[32,34,38,36,39,41,43,44,47],     accent:'info' },
+      { label:'YTD spend',         value:'$2,184,320',  sub:'vs $1.93M a year ago',     delta:'+13.2%',  trend:'up',   spark:[140,160,155,180,195,210,220,230,245], accent:'brand' },
+      { label:'Credit available',  value:'$612,450',    sub:'of $1.00M · Net 30',       delta:'—',       trend:'flat', spark:[820,790,760,740,700,680,655,640,612], accent:'positive' },
+      { label:'Outstanding AR',    value:'$87,240',     sub:'3 invoices · 1 overdue',   delta:'−$12.4K', trend:'down', spark:[140,130,120,110,105,99,96,94,87], accent:'negative' },
+    ],
+    ex: [
+      { glyph:'sig',  tone:'warning', t:'PO <span class="num">#4817</span> for Lot 214 is awaiting your approval.',
+        why:'Abel proposed a BoM redline on 3 interior door SKUs. Net delta +$412 (+1.8%). PM: Chad Zeh.',
+        meta:[['Community','Mobberly Farms'],['Amount','<span class="num">$23,040.50</span>'],['Since','4h ago']],
+        a:'Review & approve', s:'Open redline' },
+      { glyph:'bank', tone:'negative', t:'Invoice <span class="num">#2214</span> is 4 days overdue.',
+        why:'Net 30 lapsed on Apr 19. Abel has not yet dialed; batch-pay with 2 other invoices to keep DPO clean.',
+        meta:[['Amount','<span class="num">$18,970.00</span>'],['Days late','<span class="num">4</span>']],
+        a:'Pay now', s:'Dispute' },
+      { glyph:'truck', tone:'warning', t:'Truck <span class="num">12</span> running late — ETA slipped to 2:40 PM.',
+        why:'Driver reports I-35E slowdown north of Denton. Mobberly Lot 207 delivery window was 1:00–2:00 PM.',
+        meta:[['Original ETA','1:15 PM'],['New ETA','2:40 PM']],
+        a:'Reschedule', s:'Notify super' },
+      { glyph:'pen',  tone:'info', t:'Plan <span class="num">2450 · Rev 4</span> is waiting for your sign-off.',
+        why:'Amanda Barham posted the rev Thursday. Affects door schedule on Lots 210, 214, 218 — all currently at trim phase.',
+        meta:[['Lots affected','<span class="num">3</span>'],['Net BoM delta','<span class="num">+$1,418</span>']],
+        a:'Review plan', s:'Compare to Rev 3' },
+    ],
+    communities: [
+      { name:'Mobberly Farms',    on:18, risk:3, late:1 },
+      { name:'Treeline Crossing', on:22, risk:1, late:0 },
+      { name:'Winchester Park',   on:11, risk:2, late:2 },
+      { name:'Windsor Ridge',     on:14, risk:0, late:0 },
+    ],
+    deliveries: [
+      { n:'DEL-10423', lot:'Lot 214 · Mobberly',   items:14, amt:23040.5, eta:'2:40 PM', late:true  },
+      { n:'DEL-10427', lot:'Lot 207 · Mobberly',   items:8,  amt:9880.0,  eta:'3:15 PM', late:false },
+      { n:'DEL-10431', lot:'Lot 3 · Winchester',   items:22, amt:41120.0, eta:'4:00 PM', late:false },
+    ],
+  };
+}
+
+/* ============================================================
+   Rendering helpers
+   ============================================================ */
+const GLYPHS = {
+  sig:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 19v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l7 7v9z"/><path d="M13 3v7h7"/><path d="M8 17l3-3 2 2 3-3"/></svg>',
+  bank:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M7 15h.01M11 15h2"/></svg>',
+  truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17h4V5H2v12h3"/><path d="M20 17h2v-3.34a2 2 0 0 0-.59-1.42l-2.5-2.5A2 2 0 0 0 17.5 9H14v8h1"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  pen:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+  pkg:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4L7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>',
+  ruler: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7a2.4 2.4 0 0 1 0 3.4L12 22 2 12l9.9-9.9a2.4 2.4 0 0 1 3.4 0l6 6z"/><path d="m7 10 2 2"/><path d="m10 7 2 2"/><path d="m13 10 2 2"/><path d="m16 7 2 2"/></svg>',
+  rcpt:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>',
+  cal:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  msg:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  brief: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+  layers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 6-10 6L2 8z"/><path d="m2 17 10 6 10-6"/><path d="m2 12 10 6 10-6"/></svg>',
+  bldg:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>',
+  up:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l10-10"/><path d="M7 7h10v10"/></svg>',
+  down:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10"/><path d="M17 7v10H7"/></svg>',
+  dash:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
+};
+
+function sparklinePath(data, accent) {
+  const w=160, h=36, pad=2;
+  const min=Math.min(...data), max=Math.max(...data), range=(max-min)||1;
+  const stepX=(w-pad*2)/(data.length-1);
+  const pts = data.map((v,i) => [pad+i*stepX, pad+(h-pad*2)*(1-(v-min)/range)]);
+  const poly = pts.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const area = `${pad},${h-pad} ${poly} ${w-pad},${h-pad}`;
+  const stroke = accent==='positive' ? 'var(--data-positive)' :
+                 accent==='negative' ? 'var(--data-negative)' :
+                 accent==='warning'  ? 'var(--data-warning)'  :
+                 accent==='info'     ? 'var(--data-info)'     : 'var(--v4-brass-500)';
+  const gid = `g-${accent}-${Math.random().toString(36).slice(2,6)}`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="${stroke}" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="${stroke}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${area}" fill="url(#${gid})"/>
+    <polyline points="${poly}" fill="none" stroke="${stroke}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function money(n) { return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }
+function wordFor(n) { const w=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve']; return w[n] ?? String(n); }
+
+/* ============================================================
+   Render
+   ============================================================ */
+
+function populateTenantSelect() {
+  const sel = document.getElementById('tenantSelect');
+  sel.innerHTML = ROSTER.map(r => `<option value="${r.slug}">${TIER_SHORT[r.tier]} · ${r.name}</option>`).join('');
+  // Default from hash if present
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const qSlug = params.get('tenant');
+  sel.value = qSlug && ROSTER.some(r => r.slug === qSlug) ? qSlug : 'brookfield';
+  sel.addEventListener('change', () => {
+    const p = new URLSearchParams();
+    p.set('tenant', sel.value);
+    window.location.hash = p.toString();
+    render();
+  });
+}
+
+function render() {
+  const sel = document.getElementById('tenantSelect');
+  const tenant = ROSTER.find(r => r.slug === sel.value) || ROSTER.find(r => r.slug === 'brookfield');
+  const tier = tenant.tier;
+  const widgets = HOME_WIDGETS_BY_TIER[tier] || [];
+  const nav = NAV_BY_TIER[tier] || [];
+  const scene = scenarioFor(tenant.slug, tier);
+
+  // Header
+  document.getElementById('mark').textContent = tenant.name.charAt(0).toUpperCase();
+  document.getElementById('mark').style.background = tenant.color;
+  document.getElementById('tenantName').textContent = tenant.name;
+  document.getElementById('tierLabel').textContent = TIER_LABELS[tier];
+  const statusChip = document.getElementById('statusChip');
+  statusChip.textContent = `${tenant.status} · ${TIER_SHORT[tier]}`;
+  statusChip.className = `chip ${tenant.status === 'ACTIVE' ? 'info' : tenant.status === 'CHURNED' ? 'negative' : 'warning'}`;
+
+  // Tier strip
+  document.getElementById('sModel').textContent = tenant.model.replace('_',' ').toLowerCase().replace(/\b\w/g, c=>c.toUpperCase());
+  document.getElementById('sSize').textContent = tenant.size;
+  document.getElementById('sSizeSub').textContent = SIZE_SUB[tenant.size];
+  document.getElementById('sInteg').textContent = INTEG_LABEL[tenant.integ];
+  document.getElementById('sNav').textContent = String(nav.length);
+  document.getElementById('sHome').textContent = `${widgets.length} home widgets`;
+
+  // Greeting
+  document.getElementById('gUser').textContent = scene.g.user;
+  const gWord = document.getElementById('gWord');
+  gWord.textContent = wordFor(scene.g.count).charAt(0).toUpperCase() + wordFor(scene.g.count).slice(1);
+  document.getElementById('gItems').textContent = `item${scene.g.count===1?'':'s'} need${scene.g.count===1?'s':''} a decision.`;
+  document.getElementById('gSummary').textContent = scene.g.summary;
+  document.getElementById('todayLabel').textContent = 'Today · ' + new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+
+  // Urgency feed
+  document.getElementById('urgency').innerHTML = scene.ex.map(e => `
+    <div class="ex ${e.tone}">
+      <div class="glyph" aria-hidden="true">${GLYPHS[e.glyph]}</div>
+      <div>
+        <div class="t">${e.t}</div>
+        <div class="why">${e.why}</div>
+        ${e.meta && e.meta.length ? `<div class="meta">${e.meta.map(([k,v])=>`<span><strong>${k}</strong> ${v}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="ex-actions">
+        ${e.s ? `<button class="btn ghost">${e.s}</button>` : ''}
+        ${e.a ? `<button class="btn primary">${e.a} ${GLYPHS.arrow}</button>` : ''}
+      </div>
+    </div>`).join('');
+
+  // KPIs
+  document.getElementById('kpis').innerHTML = scene.kpis.map(k => `
+    <div class="kpi">
+      <span aria-hidden="true" class="rule"></span>
+      <div class="k-label">${k.label}</div>
+      <div class="k-value">${k.value}</div>
+      <div class="k-sub">
+        <span class="k-delta ${k.trend}">${k.trend==='up'?GLYPHS.up:k.trend==='down'?GLYPHS.down:GLYPHS.dash} ${k.delta||''}</span>
+        ${k.sub ? `<span>${k.sub}</span>` : ''}
+      </div>
+      ${sparklinePath(k.spark, k.accent)}
+    </div>`).join('');
+
+  // Projects slot
+  const projSlot = document.getElementById('projectsSlot');
+  if (widgets.includes('projects') && scene.projects) {
+    projSlot.innerHTML = `<section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+        <div class="label">Active projects</div>
+        <a href="#" style="font-size:12px;font-weight:600;color:var(--signal);text-decoration:none">Open projects →</a>
+      </div>
+      <div class="card ruled card-pad">
+        <div style="display:grid;gap:4px">
+          ${scene.projects.map(p => `
+            <div class="row">
+              <div class="days" style="background:var(--signal-subtle);color:var(--signal)">${GLYPHS.brief}</div>
+              <div><div class="title">${p.name}</div><div class="rsub">Phase · <span style="color:var(--fg)">${p.phase}</span> · next: ${p.next}</div></div>
+              <span class="chip ${p.chip}">${p.phase}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </section>`;
+  } else { projSlot.innerHTML = ''; }
+
+  // Schedule + deliveries slot
+  const schedSlot = document.getElementById('scheduleSlot');
+  if (widgets.includes('schedule') && scene.communities) {
+    const totalLots = scene.communities.reduce((s,c)=>s+c.on+c.risk+c.late,0);
+    schedSlot.innerHTML = `<section class="grid-2-main">
+      <div class="card ruled card-pad">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div class="label">Schedule confidence</div>
+          <span class="num" style="font-size:12px;color:var(--fg-muted)">${totalLots} lots · ${scene.communities.length} communities</span>
+        </div>
+        <div style="display:grid;gap:18px">
+          ${scene.communities.map(c => `
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between">
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <span style="font-size:13.5px;font-weight:600;color:var(--fg)">${c.name}</span>
+                  <span class="num" style="font-size:11px;color:var(--fg-subtle);letter-spacing:0.08em">${c.on+c.risk+c.late} lots</span>
+                </div>
+                <div style="display:flex;gap:10px;font-family:var(--v4-font-mono);font-size:11px">
+                  <span style="color:var(--data-positive-fg)">● ${c.on} on</span>
+                  <span style="color:var(--data-warning-fg)">● ${c.risk} risk</span>
+                  <span style="color:var(--data-negative-fg)">● ${c.late} late</span>
+                </div>
+              </div>
+              <div class="conf" role="img" aria-label="${c.name}: ${c.on} on, ${c.risk} risk, ${c.late} late">
+                <span class="on"   style="width:${c.on/(c.on+c.risk+c.late)*100}%"></span>
+                <span class="risk" style="width:${c.risk/(c.on+c.risk+c.late)*100}%"></span>
+                <span class="late" style="width:${c.late/(c.on+c.risk+c.late)*100}%"></span>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div class="hair" style="margin:22px 0 14px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <p style="font-size:12px;color:var(--fg-muted);max-width:420px;line-height:1.45;margin:0">Confidence is a live function of delivery windows, Hyphen job status, and Abel's on-time history — it reflects the next 14 days.</p>
+          <button class="btn ghost">Open schedule</button>
+        </div>
+      </div>
+      <div class="card ruled card-pad">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+          <div class="label">Today's deliveries</div>
+          <span class="num" style="font-size:12px;color:var(--fg-muted)">${scene.deliveries.length} loads</span>
+        </div>
+        <div style="display:grid;gap:4px">
+          ${scene.deliveries.map(d => `
+            <div class="row">
+              <div class="days"><b>${d.eta.split(':')[0]}</b><span>${d.eta.includes('PM')?'pm':'am'}</span></div>
+              <div>
+                <div class="title">${d.lot}</div>
+                <div class="rsub"><span class="num">${d.n}</span> · ${d.items} items${d.late?' · <span style="color:var(--data-warning-fg);font-weight:600">running late</span>':''}</div>
+              </div>
+              <div>
+                <div class="amt">${money(d.amt)}</div>
+                <span class="chip ${d.late?'warning':'positive'}" style="margin-top:4px">${d.late?'Delayed':'On route'}</span>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div class="hair" style="margin:16px 0 10px"></div>
+        <a href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--signal);text-decoration:none">All deliveries →</a>
+      </div>
+    </section>`;
+  } else { schedSlot.innerHTML = ''; }
+
+  // Divisions slot
+  const divSlot = document.getElementById('divisionsSlot');
+  if (widgets.includes('divisions') && scene.divisions) {
+    divSlot.innerHTML = `<section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+        <div class="label">Division scorecard</div>
+        <span class="num" style="font-size:12px;color:var(--fg-muted)">trailing 90 days</span>
+      </div>
+      <div class="card ruled card-pad">
+        <div style="display:grid;gap:12px">
+          ${scene.divisions.map(d => `
+            <div class="row" style="grid-template-columns:44px 1fr 120px 120px 160px">
+              <div class="days" style="background:var(--signal-subtle);color:var(--signal)">${GLYPHS.bldg}</div>
+              <div><div class="title">${d.name}</div><div class="rsub">3-month trailing</div></div>
+              <div style="text-align:right"><div class="amt">${d.starts.toLocaleString()}</div><div class="rsub">starts</div></div>
+              <div style="text-align:right"><div class="amt">${d.ot.toFixed(1)}%</div><div class="rsub">on-time</div></div>
+              <div style="text-align:right"><div class="amt">$${d.spend.toFixed(1)}M</div><div class="rsub">trailing spend</div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </section>`;
+  } else { divSlot.innerHTML = ''; }
+
+  // Quick actions
+  const showProjects = widgets.includes('projects');
+  document.getElementById('quick').innerHTML = `
+    <a class="tile" href="#"><div class="tg">${GLYPHS.pkg}</div><div class="trow"><span class="tlabel">New PO</span><span class="thint">N then P</span></div></a>
+    <a class="tile" href="#"><div class="tg">${showProjects ? GLYPHS.brief : GLYPHS.layers}</div><div class="trow"><span class="tlabel">${showProjects ? 'New project' : 'New community'}</span><span class="thint">${showProjects ? 'N then J' : 'N then C'}</span></div></a>
+    <a class="tile" href="#"><div class="tg">${GLYPHS.ruler}</div><div class="trow"><span class="tlabel">Upload plan</span><span class="thint">N then L</span></div></a>
+    <a class="tile" href="#"><div class="tg">${GLYPHS.rcpt}</div><div class="trow"><span class="tlabel">Pay invoices</span><span class="thint">G then I</span></div></a>
+    <a class="tile" href="#"><div class="tg">${GLYPHS.msg}</div><div class="trow"><span class="tlabel">Message Abel</span><span class="thint">⌘ M</span></div></a>`;
+
+  // Nav visibility
+  document.getElementById('navChips').innerHTML = nav.map(n => `<span class="chip info">${n}</span>`).join('');
+
+  // Footer
+  document.getElementById('footMeta').textContent = `v4.0.0 · tier ${TIER_SHORT[tier]} · ${tenant.slug}`;
+}
+
+/* Boot */
+populateTenantSelect();
+render();
+
+/* Live tenant prompt demo */
+const prompts = [
+  'Why is lot 214 running over?',
+  "Summarize Brookfield's open POs for framing",
+  'Draft a follow-up to Abel on PO 4817',
+  "What's our average delivery window at Mobberly?",
+  'Which invoices age into 30+ days next week?',
+];
+let pi = 0;
+setInterval(() => {
+  const input = document.getElementById('copilotInput');
+  if (input && document.activeElement !== input) {
+    pi = (pi+1) % prompts.length;
+    input.placeholder = `Ask about your purchasing. e.g. "${prompts[pi]}"`;
+  }
+}, 4500);
+</script>
+</body>
+</html>

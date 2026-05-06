@@ -1,4 +1,4 @@
-// Re-export from utils and add additional formatting utilities
+﻿// Re-export from utils and add additional formatting utilities
 export { formatCurrency, formatDate } from './utils'
 
 export function getTimeAgo(date: Date | string): string {
@@ -17,4 +17,19 @@ export function getTimeAgo(date: Date | string): string {
 
 export function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`
+}
+
+/**
+ * Safely format a person's full name from a possibly-null Staff/Contact relation.
+ * Handles SetNull foreign keys (e.g. when a Staff record is deleted, the relation
+ * becomes null on the parent record). Returns the fallback when the entity is
+ * missing or both name fields are empty.
+ */
+export function fullName(
+  s: { firstName?: string | null; lastName?: string | null } | null | undefined,
+  fallback = 'Unassigned'
+): string {
+  if (!s) return fallback
+  const name = [s.firstName, s.lastName].filter(Boolean).join(' ').trim()
+  return name || fallback
 }

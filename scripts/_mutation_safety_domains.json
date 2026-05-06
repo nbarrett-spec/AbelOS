@@ -1,0 +1,1994 @@
+[
+  [
+    "admin/alert-mute",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 0,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/builders",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/errors",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/hyphen",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 1,
+      "val": 0,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/products",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/sync-catalog",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/test-alert-notify",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 0,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/test-cron-alert",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "admin/webhooks",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "agent",
+    {
+      "total": 4,
+      "auth": 2,
+      "audit": 0,
+      "val": 2,
+      "tryc": 3,
+      "idemp": 4,
+      "pass": 0
+    }
+  ],
+  [
+    "agent-hub",
+    {
+      "total": 24,
+      "auth": 24,
+      "audit": 5,
+      "val": 18,
+      "tryc": 24,
+      "idemp": 24,
+      "pass": 4
+    }
+  ],
+  [
+    "auth",
+    {
+      "total": 9,
+      "auth": 8,
+      "audit": 4,
+      "val": 7,
+      "tryc": 8,
+      "idemp": 9,
+      "pass": 4
+    }
+  ],
+  [
+    "blueprints",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 1,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 1
+    }
+  ],
+  [
+    "builder",
+    {
+      "total": 11,
+      "auth": 11,
+      "audit": 11,
+      "val": 11,
+      "tryc": 11,
+      "idemp": 11,
+      "pass": 11
+    }
+  ],
+  [
+    "builder-portal",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "builders",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 0,
+      "val": 2,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 0
+    }
+  ],
+  [
+    "bulk-order",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "catalog",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "client-errors",
+    {
+      "total": 1,
+      "auth": 0,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "crew",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 0,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "cron",
+    {
+      "total": 18,
+      "auth": 18,
+      "audit": 1,
+      "val": 15,
+      "tryc": 18,
+      "idemp": 2,
+      "pass": 1
+    }
+  ],
+  [
+    "dashboard",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "deliveries",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "door",
+    {
+      "total": 1,
+      "auth": 0,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "homeowner",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 0,
+      "val": 2,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 0
+    }
+  ],
+  [
+    "hyphen",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 0,
+      "val": 1,
+      "tryc": 3,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "integrations",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "internal",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 0,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "invoices",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "messages",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "notifications",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/accounting-ai",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/accounts",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 3,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/activity-log",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/admin",
+    {
+      "total": 7,
+      "auth": 7,
+      "audit": 6,
+      "val": 1,
+      "tryc": 6,
+      "idemp": 7,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/agent",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 2,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/ai",
+    {
+      "total": 8,
+      "auth": 8,
+      "audit": 8,
+      "val": 4,
+      "tryc": 8,
+      "idemp": 8,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/ai-orders",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/auth",
+    {
+      "total": 10,
+      "auth": 8,
+      "audit": 10,
+      "val": 8,
+      "tryc": 10,
+      "idemp": 10,
+      "pass": 8
+    }
+  ],
+  [
+    "ops/auto-po",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/automations",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/blueprints",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/brain",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 2,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/brain-seed",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/builder-chat",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/builder-messages",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/builders",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 4,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/cash-flow-optimizer",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 3,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/change-orders",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/cleanup",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/collections",
+    {
+      "total": 5,
+      "auth": 5,
+      "audit": 5,
+      "val": 4,
+      "tryc": 5,
+      "idemp": 5,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/communication-logs",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 2,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/communities",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/contacts",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/contracts",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/crews",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/data-fix",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/delegations",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/deliveries",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/delivery",
+    {
+      "total": 10,
+      "auth": 10,
+      "audit": 10,
+      "val": 9,
+      "tryc": 10,
+      "idemp": 10,
+      "pass": 9
+    }
+  ],
+  [
+    "ops/delivery-notify",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/divisions",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/documents",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/email",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/finance",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 2,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/fleet",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/floor-plans",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/gchat",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/gold-stock",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 0,
+      "val": 2,
+      "tryc": 0,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/growth",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/homeowner-access",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/hyphen",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/import-bolt",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/import-box",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/import-bpw",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 3,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/import-hyphen",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/import-inflow",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/inbox",
+    {
+      "total": 5,
+      "auth": 5,
+      "audit": 5,
+      "val": 4,
+      "tryc": 5,
+      "idemp": 5,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/inspections",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 3,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/integrations",
+    {
+      "total": 9,
+      "auth": 9,
+      "audit": 9,
+      "val": 8,
+      "tryc": 9,
+      "idemp": 9,
+      "pass": 8
+    }
+  ],
+  [
+    "ops/inventory",
+    {
+      "total": 7,
+      "auth": 7,
+      "audit": 7,
+      "val": 5,
+      "tryc": 7,
+      "idemp": 7,
+      "pass": 5
+    }
+  ],
+  [
+    "ops/invoice-reminder",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/invoices",
+    {
+      "total": 6,
+      "auth": 6,
+      "audit": 6,
+      "val": 6,
+      "tryc": 6,
+      "idemp": 6,
+      "pass": 6
+    }
+  ],
+  [
+    "ops/jobs",
+    {
+      "total": 12,
+      "auth": 12,
+      "audit": 12,
+      "val": 11,
+      "tryc": 12,
+      "idemp": 12,
+      "pass": 11
+    }
+  ],
+  [
+    "ops/lien-releases",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/locations",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/manufacturing",
+    {
+      "total": 10,
+      "auth": 10,
+      "audit": 10,
+      "val": 9,
+      "tryc": 10,
+      "idemp": 10,
+      "pass": 9
+    }
+  ],
+  [
+    "ops/manufacturing-ai",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/manufacturing-command",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/margin-rules",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/marketing",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/material-watch",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/messages",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/migrate",
+    {
+      "total": 13,
+      "auth": 13,
+      "audit": 13,
+      "val": 1,
+      "tryc": 13,
+      "idemp": 13,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-agent-hub",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-all",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-cascades",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-change-orders",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-documents",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-features",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-indexes",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-manufacturing",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-nfc",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-outreach",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-phase2",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-phase3",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-phase4",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-phase5",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/migrate-punch-items",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/migrate-temporal",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/mrp",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 4,
+      "val": 2,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/notifications",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 1,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/orders",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 3,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/organizations",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/outreach",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/payments",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/phase-templates",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 0,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/portal",
+    {
+      "total": 6,
+      "auth": 6,
+      "audit": 4,
+      "val": 6,
+      "tryc": 6,
+      "idemp": 6,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/preferences",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/presence",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 0,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/pricing",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/procurement",
+    {
+      "total": 9,
+      "auth": 9,
+      "audit": 9,
+      "val": 7,
+      "tryc": 9,
+      "idemp": 9,
+      "pass": 7
+    }
+  ],
+  [
+    "ops/procurement-intelligence",
+    {
+      "total": 5,
+      "auth": 5,
+      "audit": 5,
+      "val": 4,
+      "tryc": 5,
+      "idemp": 5,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/product-categories",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/products",
+    {
+      "total": 6,
+      "auth": 6,
+      "audit": 5,
+      "val": 4,
+      "tryc": 6,
+      "idemp": 6,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/punch-items",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/purchasing",
+    {
+      "total": 5,
+      "auth": 5,
+      "audit": 5,
+      "val": 5,
+      "tryc": 5,
+      "idemp": 5,
+      "pass": 5
+    }
+  ],
+  [
+    "ops/quote-requests",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/quotes",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/readiness-check",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/receiving",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/reports",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/returns",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/revenue-intelligence",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 3,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/sales",
+    {
+      "total": 11,
+      "auth": 11,
+      "audit": 11,
+      "val": 3,
+      "tryc": 11,
+      "idemp": 11,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/scan-sheet",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/schedule",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 3,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 3
+    }
+  ],
+  [
+    "ops/seed",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/seed-demo-data",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/seed-employees",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/seed-workflow",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/settings",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/smartpo",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/staff",
+    {
+      "total": 8,
+      "auth": 8,
+      "audit": 7,
+      "val": 7,
+      "tryc": 8,
+      "idemp": 8,
+      "pass": 6
+    }
+  ],
+  [
+    "ops/substitutions",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 0,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/suppliers",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/sync-health",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/takeoff-inquiries",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/takeoffs",
+    {
+      "total": 5,
+      "auth": 5,
+      "audit": 5,
+      "val": 5,
+      "tryc": 5,
+      "idemp": 5,
+      "pass": 5
+    }
+  ],
+  [
+    "ops/trades",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 0,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/tts",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "ops/vendors",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 2,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 2
+    }
+  ],
+  [
+    "ops/video-rooms",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "ops/warehouse",
+    {
+      "total": 7,
+      "auth": 7,
+      "audit": 7,
+      "val": 7,
+      "tryc": 7,
+      "idemp": 7,
+      "pass": 7
+    }
+  ],
+  [
+    "ops/warranty",
+    {
+      "total": 5,
+      "auth": 5,
+      "audit": 5,
+      "val": 4,
+      "tryc": 5,
+      "idemp": 5,
+      "pass": 4
+    }
+  ],
+  [
+    "ops/workflows",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "orders",
+    {
+      "total": 2,
+      "auth": 2,
+      "audit": 2,
+      "val": 2,
+      "tryc": 2,
+      "idemp": 2,
+      "pass": 2
+    }
+  ],
+  [
+    "payments",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 1,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 1
+    }
+  ],
+  [
+    "presence",
+    {
+      "total": 1,
+      "auth": 0,
+      "audit": 0,
+      "val": 1,
+      "tryc": 0,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "projects",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 2,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 2
+    }
+  ],
+  [
+    "quote-request",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "quotes",
+    {
+      "total": 3,
+      "auth": 3,
+      "audit": 3,
+      "val": 3,
+      "tryc": 3,
+      "idemp": 3,
+      "pass": 3
+    }
+  ],
+  [
+    "takeoff",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 1,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "upload",
+    {
+      "total": 1,
+      "auth": 1,
+      "audit": 0,
+      "val": 0,
+      "tryc": 1,
+      "idemp": 1,
+      "pass": 0
+    }
+  ],
+  [
+    "v1",
+    {
+      "total": 9,
+      "auth": 9,
+      "audit": 4,
+      "val": 2,
+      "tryc": 6,
+      "idemp": 9,
+      "pass": 0
+    }
+  ],
+  [
+    "webhooks",
+    {
+      "total": 4,
+      "auth": 4,
+      "audit": 2,
+      "val": 4,
+      "tryc": 4,
+      "idemp": 4,
+      "pass": 2
+    }
+  ]
+]

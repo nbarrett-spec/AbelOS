@@ -1,0 +1,39 @@
+Hi Dawn,
+
+Quick one — we're connecting QuickBooks Desktop to Aegis so AR/AP, invoices, and
+bills flow into the dashboard automatically. You don't have to change how you
+work; this just listens.
+
+Setup is one-time, ~10 minutes. Free Intuit tools.
+
+WHAT YOU'LL DO:
+
+1. Install QuickBooks Web Connector (free) from
+   https://developer.intuit.com/app/developer/qbo/docs/develop/web-connector
+
+2. Open QuickBooks with the Abel Doors and Trim company file.
+
+3. Open the Web Connector from your Start menu.
+
+4. Click "Add an application" and browse to the attached abel-aegis.qwc file.
+
+5. When QuickBooks pops a permission box, choose:
+   "Yes, whenever this QuickBooks company file is open" → Continue.
+
+6. Paste this password into Web Connector and click Save:
+
+   2ulPK_7z_uA5uG10iBjXME2ZOmD6qDIP
+
+7. Check the "Abel Aegis Sync" row, click Update Selected.
+   First sync = 5-15 min. Let it finish.
+
+8. Done. After this it runs automatically every 60 min when QB is open.
+
+IF SOMETHING GOES SIDEWAYS:
+- "Cannot connect" → make sure QB is open
+- "Single-user mode required" → File > Switch to Single-user Mode
+- Password rejected → copy/paste, don't type
+- Anything else weird → text Nate
+
+Thanks!
+- Nate (via Aegis sync setup)

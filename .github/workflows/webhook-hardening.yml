@@ -1,0 +1,66 @@
+name: Webhook hardening gate
+
+# Fails any PR that drops a webhook receiver below A+ (6/6 on the
+# hardening scorecard). Runs only when webhook-shaped files change so
+# normal PRs stay fast.
+#
+# Add a webhook? Copy docs/WEBHOOK-RECEIVER-CONTRACT.md.
+# Verify locally: `npx tsx scripts/webhook-hardening-sweep.ts`
+
+on:
+  pull_request:
+    paths:
+      - 'src/app/api/webhooks/**'
+      - 'src/app/api/agent/email/route.ts'
+      - 'src/app/api/agent/sms/route.ts'
+      - 'src/app/api/hyphen/orders/route.ts'
+      - 'src/app/api/ops/integrations/buildertrend/webhook/route.ts'
+      - 'src/app/api/ops/brain/webhook/route.ts'
+      - 'src/lib/webhook.ts'
+      - 'src/lib/audit.ts'
+      - 'scripts/webhook-hardening-sweep.ts'
+
+jobs:
+  scorecard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run hardening sweep
+        id: sweep
+        run: |
+          npx tsx scripts/webhook-hardening-sweep.ts > /tmp/sweep.md
+          echo '----- SWEEP OUTPUT -----'
+          cat /tmp/sweep.md
+
+          # Coverage must be 100%
+          coverage=$(grep -oE 'Total dimension coverage \*\* \*\*([0-9.]+)%\*\*' /tmp/sweep.md | grep -oE '[0-9.]+' | head -1)
+          echo "Coverage: $coverage%"
+
+          # Routes scoring less than A+ must be 0 (stubs don't count)
+          below_aplus=$(grep -oE 'Routes scoring < A\+ \*\* \*\*([0-9]+)\*\*' /tmp/sweep.md | grep -oE '[0-9]+' | head -1)
+          echo "Below A+: $below_aplus"
+
+          if [ "$below_aplus" != "0" ]; then
+            echo "❌ One or more webhook receivers scored below A+. See sweep output above and docs/WEBHOOK-RECEIVER-CONTRACT.md."
+            exit 1
+          fi
+
+          if [ "$coverage" != "100.0" ]; then
+            echo "❌ Webhook hardening dimension coverage is $coverage%, expected 100.0%."
+            exit 1
+          fi
+
+          echo "✅ All webhook receivers at A+ (6/6)."
+
+      - name: Upload sweep report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webhook-hardening-report
+          path: /tmp/sweep.md
+          retention-days: 30
