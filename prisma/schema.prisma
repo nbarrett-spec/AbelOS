@@ -624,6 +624,7 @@ model Order {
   @@index([status])
   @@index([orderDate])
   @@index([isForecast])
+  @@index([status, createdAt], map: "idx_order_status_created")
 }
 
 enum OrderStatus {
@@ -1139,6 +1140,7 @@ model Job {
   @@index([community])
   @@index([communityId])
   @@index([orderId])
+  @@index([status, scheduledDate], map: "idx_job_status_scheduled")
 }
 
 enum JobStatus {
@@ -1493,6 +1495,7 @@ model Delivery {
   @@index([status])
   @@index([crewId])
   @@index([deliveryNumber])
+  @@index([status, createdAt], map: "idx_delivery_status_created")
 }
 
 enum DeliveryStatus {
@@ -1928,6 +1931,7 @@ model Invoice {
   @@index([createdById])
   @@index([orderId])
   @@index([issuedAt])
+  @@index([status, dueDate], map: "idx_invoice_status_due")
 }
 
 enum InvoiceStatus {
