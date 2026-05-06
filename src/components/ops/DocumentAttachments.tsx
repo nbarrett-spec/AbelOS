@@ -45,8 +45,12 @@ type EntityType =
   | 'purchaseOrder'
   | 'deal'
   | 'journalEntry'
+  | 'contract'
 
-const ENTITY_FIELD: Record<EntityType, string> = {
+// Each mapping is either a dedicated FK column on DocumentVault, or — for
+// entities without a column — `null`, which falls back to the generic
+// (entityType, entityId) string-pair columns the vault also supports.
+const ENTITY_FIELD: Record<EntityType, string | null> = {
   order: 'orderId',
   job: 'jobId',
   quote: 'quoteId',
@@ -56,6 +60,8 @@ const ENTITY_FIELD: Record<EntityType, string> = {
   purchaseOrder: 'purchaseOrderId',
   deal: 'dealId',
   journalEntry: 'journalEntryId',
+  // No FK column for Contract — use the generic entityType/entityId pair.
+  contract: null,
 }
 
 // All categories the API accepts. Pages typically pass a narrower
@@ -184,8 +190,15 @@ export default function DocumentAttachments({
     setLoading(true)
     setError(null)
     try {
+      // Two query shapes:
+      //   1. dedicated FK column (e.g. invoiceId=…)
+      //   2. generic entity pair (entityType=contract&entityId=…) for entities
+      //      that don't have a dedicated column on DocumentVault
+      const queryString = entityField
+        ? `${entityField}=${encodeURIComponent(entityId)}`
+        : `entityType=${encodeURIComponent(entityType)}&entityId=${encodeURIComponent(entityId)}`
       const res = await fetch(
-        `/api/ops/documents/vault?${entityField}=${encodeURIComponent(entityId)}&limit=100`,
+        `/api/ops/documents/vault?${queryString}&limit=100`,
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
@@ -195,7 +208,7 @@ export default function DocumentAttachments({
     } finally {
       setLoading(false)
     }
-  }, [entityField, entityId])
+  }, [entityField, entityType, entityId])
 
   useEffect(() => {
     if (entityId) reload()
@@ -250,7 +263,13 @@ export default function DocumentAttachments({
           const fd = new FormData()
           fd.append('files', f)
           fd.append('category', queued[i].category)
-          fd.append(entityField, entityId)
+          if (entityField) {
+            fd.append(entityField, entityId)
+          } else {
+            // Generic entityType/entityId pair (e.g. contract)
+            fd.append('entityType', entityType)
+            fd.append('entityId', entityId)
+          }
 
           const res = await fetch('/api/ops/documents/vault', { method: 'POST', body: fd })
           if (!res.ok) {
@@ -288,7 +307,7 @@ export default function DocumentAttachments({
         setUploads((prev) => prev.filter((u) => u.status !== 'success'))
       }, 3000)
     },
-    [defaultCategory, entityField, entityId, maxBytes, maxFiles, maxSizeMB, onChange, reload],
+    [defaultCategory, entityField, entityType, entityId, maxBytes, maxFiles, maxSizeMB, onChange, reload],
   )
 
   // Per-pending-upload category override (set BEFORE the upload starts —
