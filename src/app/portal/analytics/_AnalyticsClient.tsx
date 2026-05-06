@@ -18,11 +18,20 @@
  */
 
 import { useMemo, useState } from 'react'
-import { Download, FileSpreadsheet, Sparkles, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Package,
+  Receipt,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react'
 import { PortalCard } from '@/components/portal/PortalCard'
 import { PortalKpiCard } from '@/components/portal/PortalKpiCard'
 import { usePortal } from '@/components/portal/PortalContext'
-import type { AnalyticsResponse } from '@/types/portal'
+import type { AnalyticsResponse, PortalActivityItem } from '@/types/portal'
 
 export interface VolumeSavingsResponse {
   currentTier: string
@@ -249,7 +258,7 @@ export function AnalyticsClient({
         </div>
       </div>
 
-      {/* KPI strip */}
+      {/* KPI strip — primary row (period-narrowed spend) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <PortalKpiCard
           label="Total Spend"
@@ -277,6 +286,39 @@ export function AnalyticsClient({
           suffix="%"
           decimals={0}
           accentColor="var(--portal-text-subtle)"
+        />
+      </div>
+
+      {/* KPI strip — secondary row (pipeline + AR) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <PortalKpiCard
+          label="Active Orders"
+          value={analytics?.pipeline?.activeOrders ?? 0}
+          accentColor="var(--c2)"
+        />
+        <PortalKpiCard
+          label="Open Quotes"
+          value={analytics?.pipeline?.openQuotes ?? 0}
+          accentColor="var(--c3)"
+        />
+        <PortalKpiCard
+          label="AR Balance"
+          value={Math.round((analytics?.ar?.balance ?? 0) / 1000)}
+          prefix="$"
+          suffix="K"
+          accentColor="var(--portal-warning, #C9822B)"
+        />
+        <PortalKpiCard
+          label="Avg Days to Pay"
+          value={
+            analytics?.ar?.avgDaysToPay !== null &&
+            analytics?.ar?.avgDaysToPay !== undefined
+              ? Math.round(analytics.ar.avgDaysToPay)
+              : 0
+          }
+          suffix="d"
+          decimals={0}
+          accentColor="var(--portal-success, #1A4B21)"
         />
       </div>
 
@@ -326,6 +368,45 @@ export function AnalyticsClient({
           <TopProductsBars data={analytics?.topProducts.slice(0, 8) ?? []} />
         </PortalCard>
       </div>
+
+      {/* Delivery + Payment history row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <PortalCard
+          title="Delivery Performance"
+          subtitle={
+            (analytics?.deliveryPerformance?.total ?? 0) > 0
+              ? `Last ${analytics?.deliveryPerformance?.windowDays ?? 90} days · ${analytics?.deliveryPerformance?.total} deliveries`
+              : 'No deliveries in last 90 days'
+          }
+        >
+          <DeliveryPerformance
+            stats={analytics?.deliveryPerformance}
+          />
+        </PortalCard>
+
+        <PortalCard
+          title="Payment History"
+          subtitle={
+            (analytics?.paymentHistory?.length ?? 0) > 0
+              ? `${analytics?.paymentHistory?.length} months`
+              : 'No payments recorded'
+          }
+        >
+          <PaymentHistoryBars data={analytics?.paymentHistory ?? []} />
+        </PortalCard>
+      </div>
+
+      {/* Recent activity feed */}
+      <PortalCard
+        title="Recent Activity"
+        subtitle={
+          (analytics?.activity?.length ?? 0) > 0
+            ? `Last 30 days · ${analytics?.activity?.length} items`
+            : 'No activity in last 30 days'
+        }
+      >
+        <ActivityFeed items={analytics?.activity ?? []} />
+      </PortalCard>
 
       {/* EXEC: Volume tier */}
       {showExec && volume && (
@@ -886,6 +967,336 @@ function Stat({
 // ──────────────────────────────────────────────────────────────────────
 // Category pricing table (exec)
 // ──────────────────────────────────────────────────────────────────────
+
+// ──────────────────────────────────────────────────────────────────────
+// Delivery performance — donut + headline %
+// ──────────────────────────────────────────────────────────────────────
+
+function DeliveryPerformance({
+  stats,
+}: {
+  stats?: AnalyticsResponse['deliveryPerformance']
+}) {
+  const total = stats?.total ?? 0
+  if (total === 0) {
+    return (
+      <div
+        className="text-center py-12 text-sm"
+        style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+      >
+        No deliveries in the last 90 days.
+      </div>
+    )
+  }
+  const onTime = stats?.onTime ?? 0
+  const late = stats?.late ?? 0
+  const pending = stats?.pending ?? 0
+  const completed = onTime + late
+  const pct = stats?.onTimePercent ?? 0
+  const segments = [
+    { value: onTime, label: 'On time', color: PALETTE.success },
+    { value: late, label: 'Late', color: PALETTE.oxblood },
+    { value: pending, label: 'Pending', color: PALETTE.dust },
+  ].filter((s) => s.value > 0)
+
+  const W = 200
+  const cx = W / 2
+  const cy = W / 2
+  const r = 70
+  const strokeW = 24
+  const c = 2 * Math.PI * r
+  let acc = 0
+  return (
+    <div className="flex flex-col md:flex-row items-center gap-4">
+      <svg
+        viewBox={`0 0 ${W} ${W}`}
+        className="w-40 h-40 shrink-0"
+        role="img"
+        aria-label="Delivery on-time percentage"
+      >
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={PALETTE.borderLight}
+          strokeWidth={strokeW}
+        />
+        {segments.map((s, i) => {
+          const length = (s.value / total) * c
+          const rotation = (acc / total) * 360 - 90
+          acc += s.value
+          return (
+            <circle
+              key={i}
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={strokeW}
+              strokeDasharray={`${length} ${c}`}
+              strokeDashoffset={0}
+              transform={`rotate(${rotation} ${cx} ${cy})`}
+            >
+              <title>
+                {s.label}: {s.value}
+              </title>
+            </circle>
+          )
+        })}
+        <text
+          x={cx}
+          y={cy - 2}
+          textAnchor="middle"
+          fontSize="20"
+          fontWeight="700"
+          fill={PALETTE.walnut}
+        >
+          {Math.round(pct)}%
+        </text>
+        <text
+          x={cx}
+          y={cy + 14}
+          textAnchor="middle"
+          fontSize="9"
+          fill={PALETTE.kilnOak}
+        >
+          on time
+        </text>
+      </svg>
+      <ul className="space-y-1.5 text-xs flex-1">
+        {segments.map((s) => (
+          <li key={s.label} className="flex items-center gap-2">
+            <span
+              className="inline-block w-3 h-3 rounded-sm"
+              style={{ background: s.color }}
+            />
+            <span style={{ color: 'var(--portal-text-strong, #3E2A1E)' }}>
+              {s.label}
+            </span>
+            <span
+              className="font-mono tabular-nums"
+              style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+            >
+              {s.value}
+              {completed > 0 && s.label !== 'Pending'
+                ? ` (${Math.round((s.value / completed) * 100)}%)`
+                : ''}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Payment history — bar chart per month
+// ──────────────────────────────────────────────────────────────────────
+
+function PaymentHistoryBars({
+  data,
+}: {
+  data: NonNullable<AnalyticsResponse['paymentHistory']>
+}) {
+  if (data.length === 0) {
+    return (
+      <div
+        className="text-center py-12 text-sm"
+        style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+      >
+        No payment activity yet.
+      </div>
+    )
+  }
+  const max = Math.max(...data.map((d) => d.total), 1)
+  const W = 320
+  const H = 160
+  const pad = { top: 14, right: 8, bottom: 22, left: 36 }
+  const cw = W - pad.left - pad.right
+  const ch = H - pad.top - pad.bottom
+  const barW = (cw / data.length) * 0.7
+  const step = cw / data.length
+
+  const yTicks = [0, 0.5, 1].map((t) => ({
+    y: pad.top + ch - t * ch,
+    label: fmtUsdShort(max * t),
+  }))
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-44"
+      role="img"
+      aria-label="Monthly payment history"
+    >
+      {yTicks.map((t) => (
+        <g key={t.y}>
+          <line
+            x1={pad.left}
+            x2={W - pad.right}
+            y1={t.y}
+            y2={t.y}
+            stroke={PALETTE.borderLight}
+            strokeDasharray="3 3"
+          />
+          <text
+            x={pad.left - 4}
+            y={t.y + 3}
+            fontSize="9"
+            textAnchor="end"
+            fill={PALETTE.kilnOak}
+          >
+            {t.label}
+          </text>
+        </g>
+      ))}
+      {data.map((m, i) => {
+        const x = pad.left + i * step + (step - barW) / 2
+        const h = (m.total / max) * ch
+        const y = pad.top + ch - h
+        return (
+          <g key={m.month}>
+            <rect
+              x={x}
+              y={y}
+              width={barW}
+              height={h}
+              rx={2}
+              fill={PALETTE.success}
+            >
+              <title>
+                {m.month}: {fmtUsdShort(m.total)} ({m.count} payments)
+              </title>
+            </rect>
+          </g>
+        )
+      })}
+      {/* X labels (first / mid / last) */}
+      {[0, Math.floor(data.length / 2), data.length - 1].map((i) =>
+        data[i] ? (
+          <text
+            key={i}
+            x={pad.left + i * step + step / 2}
+            y={H - 6}
+            fontSize="9"
+            textAnchor="middle"
+            fill={PALETTE.kilnOak}
+          >
+            {data[i].month.slice(2)}
+          </text>
+        ) : null,
+      )}
+    </svg>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Activity feed — orders / quotes / invoices in last 30 days
+// ──────────────────────────────────────────────────────────────────────
+
+function ActivityFeed({ items }: { items: PortalActivityItem[] }) {
+  if (items.length === 0) {
+    return (
+      <div
+        className="text-center py-10 text-sm"
+        style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+      >
+        No activity in the last 30 days.
+      </div>
+    )
+  }
+  return (
+    <ul className="divide-y" style={{ borderColor: PALETTE.borderLight }}>
+      {items.map((it) => {
+        const meta = activityMeta(it)
+        const Icon = meta.icon
+        return (
+          <li key={`${it.kind}-${it.id}`}>
+            <Link
+              href={meta.href}
+              className="flex items-center gap-3 py-2.5 px-1 -mx-1 rounded-md transition-colors hover:bg-[var(--portal-bg-elevated,#FAF5E8)]"
+            >
+              <span
+                className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: meta.bg, color: meta.fg }}
+              >
+                <Icon className="w-4 h-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div
+                  className="text-sm font-medium truncate"
+                  style={{ color: 'var(--portal-text-strong, #3E2A1E)' }}
+                >
+                  {meta.label} {it.number}
+                </div>
+                <div
+                  className="text-[11px] truncate"
+                  style={{ color: 'var(--portal-text-muted, #6B6056)' }}
+                >
+                  {prettyStatus(it.status)} · {relTime(it.timestamp)}
+                </div>
+              </div>
+              {it.amount !== null && (
+                <div
+                  className="text-xs font-mono tabular-nums shrink-0"
+                  style={{ color: 'var(--portal-text-strong, #3E2A1E)' }}
+                >
+                  {fmtUsdShort(it.amount)}
+                </div>
+              )}
+            </Link>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function activityMeta(it: PortalActivityItem) {
+  if (it.kind === 'order') {
+    return {
+      icon: Package,
+      label: 'Order',
+      bg: 'rgba(201,130,43,0.12)',
+      fg: PALETTE.amber,
+      href: `/portal/orders/${it.id}`,
+    }
+  }
+  if (it.kind === 'quote') {
+    return {
+      icon: FileText,
+      label: 'Quote',
+      bg: 'rgba(140,168,184,0.16)',
+      fg: PALETTE.sky,
+      href: `/portal/quotes/${it.id}`,
+    }
+  }
+  return {
+    icon: Receipt,
+    label: 'Invoice',
+    bg: 'rgba(110,42,36,0.10)',
+    fg: PALETTE.oxblood,
+    href: '/portal/orders',
+  }
+}
+
+function prettyStatus(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function relTime(iso: string): string {
+  const t = new Date(iso).getTime()
+  const diff = Date.now() - t
+  if (diff < 60_000) return 'just now'
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`
+  return `${Math.floor(diff / 86_400_000)}d ago`
+}
 
 function CategoryPricingTable({
   items,

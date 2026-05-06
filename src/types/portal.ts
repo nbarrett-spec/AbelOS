@@ -33,6 +33,32 @@ export interface AnalyticsResponse {
   }
   quoteStats: { total: number; approved: number; avgDaysToApprove: number }
   paymentStats: { totalInvoices: number; paid: number; overdue: number }
+  /** AR (open invoice balance) and avg days from issued → paid. */
+  ar?: { balance: number; avgDaysToPay: number | null }
+  /** In-flight pipeline counts (active orders / open quotes). */
+  pipeline?: { activeOrders: number; openQuotes: number }
+  /** Monthly payment history (Payment.amount summed by month, last 12 mo). */
+  paymentHistory?: { month: string; count: number; total: number }[]
+  /** Last-90d delivery scorecard. on-time = completed on/before scheduled. */
+  deliveryPerformance?: {
+    windowDays: number
+    total: number
+    onTime: number
+    late: number
+    pending: number
+    onTimePercent: number
+  }
+  /** Last-30d activity feed (orders, quotes, invoices) ordered desc by ts. */
+  activity?: PortalActivityItem[]
+}
+
+export interface PortalActivityItem {
+  kind: 'order' | 'quote' | 'invoice'
+  id: string
+  number: string
+  amount: number | null
+  status: string
+  timestamp: string
 }
 
 export interface OrderSearchResponse {
