@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
+import NotesSection from '@/components/ops/NotesSection'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -1079,6 +1080,11 @@ export default function PurchaseOrderDetailPage() {
           defaultCategory="PURCHASE_ORDER"
           allowedCategories={['PURCHASE_ORDER', 'INVOICE', 'CONTRACT', 'CORRESPONDENCE', 'GENERAL']}
         />
+      </div>
+
+      {/* Notes — B-UX-7 */}
+      <div className="bg-white rounded-lg shadow-sm border p-5 mt-6">
+        <NotesSection entityType="purchaseOrder" entityId={po.id} />
       </div>
     </div>
   )

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import AssignScheduleDialog from './AssignScheduleDialog'
 import { RecordPaymentModal } from '@/app/ops/components/RecordPaymentModal'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
+import NotesSection from '@/components/ops/NotesSection'
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 
 // Feature flag — default ON unless explicitly 'off'. Evaluated at bundle time.
@@ -515,6 +516,11 @@ export default function InvoiceDetailPage() {
           defaultCategory="INVOICE"
           allowedCategories={['INVOICE', 'CONTRACT', 'CORRESPONDENCE', 'REPORT', 'GENERAL']}
         />
+      </div>
+
+      {/* Notes — B-UX-7 (timestamped activity log, distinct from Invoice.notes summary) */}
+      <div className="bg-white rounded-lg shadow-sm border p-5 mb-6">
+        <NotesSection entityType="invoice" entityId={invoice.id} />
       </div>
 
       {/* Assign dialog */}

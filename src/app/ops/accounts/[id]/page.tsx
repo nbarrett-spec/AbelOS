@@ -66,6 +66,7 @@ import {
 import { useStaffAuth } from '@/hooks/useStaffAuth'
 import { cn } from '@/lib/utils'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
+import NotesSection from '@/components/ops/NotesSection'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -2499,6 +2500,11 @@ export default function AccountDetailPage() {
           defaultCategory="CONTRACT"
           allowedCategories={['CONTRACT', 'CORRESPONDENCE', 'INVOICE', 'WARRANTY', 'REPORT', 'GENERAL']}
         />
+      </div>
+
+      {/* Notes — B-UX-7 */}
+      <div className="bg-white rounded-lg shadow-sm border p-5 mt-6">
+        <NotesSection entityType="builder" entityId={builder.id} title="Account Notes" />
       </div>
     </div>
   )

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const claims = await prisma.$queryRawUnsafe(
       `SELECT "id", "claimNumber", "type", "status", "priority", "subject", "description",
               "productName", "resolutionType", "resolutionNotes", "creditAmount",
-              "orderId", "photoUrls",
+              "orderId", "jobId", "photoUrls",
               "createdAt", "updatedAt", "resolvedAt"
        FROM "WarrantyClaim"
        WHERE "builderId" = $1
@@ -117,21 +117,21 @@ export async function POST(request: NextRequest) {
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO "WarrantyClaim" (
-        "id", "claimNumber", "policyId", "builderId", "orderId",
+        "id", "claimNumber", "policyId", "builderId", "orderId", "jobId",
         "type", "status", "priority", "subject", "description",
         "productName", "productSku", "installDate", "issueDate",
         "contactName", "contactEmail", "contactPhone",
         "siteAddress", "siteCity", "siteState", "siteZip",
         "createdAt", "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5,
-        $6, 'SUBMITTED', 'MEDIUM', $7, $8,
-        $9, $10, $11, $12,
-        $13, $14, $15,
-        $16, $17, $18, $19,
+        $1, $2, $3, $4, $5, $6,
+        $7, 'SUBMITTED', 'MEDIUM', $8, $9,
+        $10, $11, $12, $13,
+        $14, $15, $16,
+        $17, $18, $19, $20,
         NOW(), NOW()
       )`,
-      id, claimNumber, policyId || null, builderId, orderId || null,
+      id, claimNumber, policyId || null, builderId, orderId || null, jobId || null,
       type, subject, description,
       productName || null, productSku || null,
       installDate ? new Date(installDate) : null,

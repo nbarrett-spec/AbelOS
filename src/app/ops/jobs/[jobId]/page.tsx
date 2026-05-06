@@ -13,6 +13,7 @@ import MaterialDrawer from './MaterialDrawer'
 import CoPreviewSheet from './CoPreviewSheet'
 import ChangeOrderInbox from './ChangeOrderInbox'
 import DeliverySignOff from './DeliverySignOff'
+import NotesSection from '@/components/ops/NotesSection'
 
 // Feature flags — default ON unless explicitly 'off'. Evaluated at bundle time.
 const HYPHEN_PANEL_ENABLED =
@@ -1249,6 +1250,11 @@ export default function JobDetailPage() {
 
           {/* Documents */}
           <DocumentPanel jobId={job.id} orderId={job.order?.id || undefined} />
+
+          {/* Notes — B-UX-7 */}
+          <div className="bg-surface rounded-lg border p-5">
+            <NotesSection entityType="job" entityId={job.id} title="Job Notes" />
+          </div>
         </div>
       </div>
       )}
