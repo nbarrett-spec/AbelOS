@@ -30,7 +30,9 @@ export default async function SalesLayout({
   }
 
   // Check if user has appropriate role for sales portal (multi-role aware)
-  const allowedRoles = ['SALES_REP', 'MANAGER', 'ADMIN']
+  // PROJECT_MANAGER added 2026-05-05 — PMs need access to /sales/documents to
+  // pull contracts/spec sheets while running their builders' jobs.
+  const allowedRoles = ['SALES_REP', 'MANAGER', 'ADMIN', 'PROJECT_MANAGER']
   const userRoles = parseRoles(session.roles || session.role)
   const hasAccessRole = userRoles.some(role => allowedRoles.includes(role))
 
