@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -168,16 +169,13 @@ export default function ProductDetailPage() {
         {/* Image */}
         <div className="bg-white rounded-2xl border p-8 flex items-center justify-center min-h-[320px]">
           {product.imageUrl ? (
-            // External product image (InFlow / S3) — next/image would require
-            // adding remotePatterns for every supplier CDN. Use <img> with
-            // explicit dimensions + async decoding for CLS and perf.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.imageAlt || product.name}
               width={320}
               height={320}
-              decoding="async"
+              priority
+              sizes="(max-width: 1024px) 100vw, 50vw"
               className="max-w-full max-h-80 object-contain"
             />
           ) : (

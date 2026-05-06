@@ -78,6 +78,8 @@ function statusBadge(status: string | null): JSX.Element {
   return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">NEVER RUN</span>
 }
 
+type StatusFilter = 'all' | 'failed' | 'success' | 'never' | 'running'
+
 export default function CronsPage() {
   const [crons, setCrons] = useState<CronSummary[]>([])
   const [drift, setDrift] = useState<CronDrift | null>(null)
@@ -86,6 +88,10 @@ export default function CronsPage() {
   const [loading, setLoading] = useState(true)
   const [runsLoading, setRunsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [nameQuery, setNameQuery] = useState('')
+  const [triggering, setTriggering] = useState<string | null>(null)
+  const [triggerMsg, setTriggerMsg] = useState<{ name: string; ok: boolean; text: string } | null>(null)
 
   const loadSummary = useCallback(async () => {
     try {
@@ -130,6 +136,56 @@ export default function CronsPage() {
   const totalFailures24h = crons.reduce((s, c) => s + (c.failureCount24h || 0), 0)
   const totalSuccess24h = crons.reduce((s, c) => s + (c.successCount24h || 0), 0)
   const neverRan = crons.filter(c => !c.lastStatus).length
+
+  // Derived: filtered list. Status filter narrows by lastStatus; nameQuery
+  // is a case-insensitive substring on name + schedule. Both compose; "all"
+  // status + empty query = full list.
+  const filteredCrons = crons.filter((c) => {
+    if (statusFilter === 'failed' && c.lastStatus !== 'FAILURE') return false
+    if (statusFilter === 'success' && c.lastStatus !== 'SUCCESS') return false
+    if (statusFilter === 'running' && c.lastStatus !== 'RUNNING') return false
+    if (statusFilter === 'never' && c.lastStatus) return false
+    if (nameQuery.trim()) {
+      const q = nameQuery.trim().toLowerCase()
+      if (!c.name.toLowerCase().includes(q) && !c.schedule.toLowerCase().includes(q)) {
+        return false
+      }
+    }
+    return true
+  })
+
+  const triggerCron = useCallback(async (name: string) => {
+    if (triggering) return // single-flight per click
+    if (!confirm(`Run "${name}" now? This executes the same handler as the scheduler — money-touching crons (collections, auto-reorder, financial-snapshot) will write real rows.`)) {
+      return
+    }
+    setTriggering(name)
+    setTriggerMsg(null)
+    try {
+      const res = await fetch('/api/ops/admin/crons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.ok) {
+        setTriggerMsg({ name, ok: true, text: `Triggered "${name}" — upstream ${data.status}` })
+        // Refresh both summary and (if open) the run drawer for this cron.
+        loadSummary()
+        if (selected === name) loadRuns(name)
+      } else {
+        setTriggerMsg({
+          name,
+          ok: false,
+          text: data?.error || data?.result?.error || `Trigger failed (HTTP ${res.status})`,
+        })
+      }
+    } catch (e: any) {
+      setTriggerMsg({ name, ok: false, text: e?.message || 'Trigger request failed' })
+    } finally {
+      setTriggering(null)
+    }
+  }, [triggering, selected, loadSummary, loadRuns])
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -247,6 +303,59 @@ export default function CronsPage() {
         </div>
       </div>
 
+      {/* Filter row */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          type="text"
+          placeholder="Search by name or schedule..."
+          value={nameQuery}
+          onChange={(e) => setNameQuery(e.target.value)}
+          className="px-3 py-2 text-sm border border-border rounded bg-surface text-fg w-64 focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+        <div className="flex items-center gap-1 text-sm">
+          <span className="text-fg-muted mr-1">Status:</span>
+          {(['all', 'failed', 'success', 'running', 'never'] as StatusFilter[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                statusFilter === f
+                  ? 'bg-brand text-fg-on-accent'
+                  : 'bg-surface-muted text-fg-muted hover:bg-row-hover'
+              }`}
+            >
+              {f === 'all' ? `All (${crons.length})`
+               : f === 'failed' ? `Failed (${crons.filter(c => c.lastStatus === 'FAILURE').length})`
+               : f === 'success' ? `Success (${crons.filter(c => c.lastStatus === 'SUCCESS').length})`
+               : f === 'running' ? `Running (${crons.filter(c => c.lastStatus === 'RUNNING').length})`
+               : `Never (${neverRan})`}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto text-xs text-fg-muted">
+          Showing {filteredCrons.length} of {crons.length}
+        </div>
+      </div>
+
+      {/* Trigger result toast */}
+      {triggerMsg && (
+        <div
+          className={`mb-4 p-3 rounded text-sm border ${
+            triggerMsg.ok
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+        >
+          <span className="font-medium">{triggerMsg.name}:</span> {triggerMsg.text}
+          <button
+            onClick={() => setTriggerMsg(null)}
+            className="ml-3 underline hover:no-underline text-xs"
+          >
+            dismiss
+          </button>
+        </div>
+      )}
+
       {/* Main table */}
       <div className="bg-surface border border-border rounded-lg overflow-hidden">
         {!loading && crons.length === 0 ? (
@@ -266,18 +375,26 @@ export default function CronsPage() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Duration</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">24h S/F</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Error</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading && crons.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-fg-muted">Loading...</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-fg-muted">Loading...</td>
               </tr>
             )}
-            {crons.map((c) => (
+            {!loading && filteredCrons.length === 0 && crons.length > 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-fg-muted text-sm">
+                  No crons match the current filter.
+                </td>
+              </tr>
+            )}
+            {filteredCrons.map((c) => (
               <tr
                 key={c.name}
-                className={`cursor-pointer hover:bg-row-hover ${selected === c.name ? 'bg-signal-subtle' : ''}`}
+                className={`cursor-pointer hover:bg-row-hover ${selected === c.name ? 'bg-signal-subtle' : ''} ${c.lastStatus === 'FAILURE' ? 'bg-red-50/40' : ''}`}
                 onClick={() => setSelected(c.name)}
               >
                 <td className="px-4 py-3 text-sm font-medium text-fg">{c.name}</td>
@@ -294,6 +411,19 @@ export default function CronsPage() {
                 </td>
                 <td className="px-4 py-3 text-xs text-red-700 max-w-xs truncate" title={c.lastError || ''}>
                   {c.lastError || ''}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      triggerCron(c.name)
+                    }}
+                    disabled={triggering === c.name}
+                    className="px-2.5 py-1 text-xs font-medium rounded bg-brand text-fg-on-accent hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={`Manually trigger ${c.name} (ADMIN only)`}
+                  >
+                    {triggering === c.name ? 'Running...' : 'Run now'}
+                  </button>
                 </td>
               </tr>
             ))}

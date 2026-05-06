@@ -15,6 +15,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -180,12 +181,14 @@ export function ProductDetailClient({ detail }: ProductDetailClientProps) {
             border: '1px solid var(--portal-border-light, #F0E8DA)',
           }}
         >
-          {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+          {hasImage && imgSrc ? (
+            <Image
               src={imgSrc}
               alt={product.imageAlt || product.name}
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
             />
           ) : (
             <div

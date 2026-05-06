@@ -8,6 +8,7 @@
  * site address, contact info), submit → POST /api/builders/warranty.
  */
 
+import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -1100,14 +1101,15 @@ export function WarrantyClient({
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="block"
+                                  className="block relative h-20"
                                   title={`Photo ${idx + 1}`}
                                 >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
+                                  <NextImage
                                     src={url}
                                     alt={`Claim ${c.claimNumber} photo ${idx + 1}`}
-                                    className="w-full h-20 object-cover hover:opacity-90 transition-opacity"
+                                    fill
+                                    sizes="(max-width: 640px) 33vw, 25vw"
+                                    className="object-cover hover:opacity-90 transition-opacity"
                                   />
                                 </a>
                               </li>

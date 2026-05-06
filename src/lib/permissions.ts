@@ -146,6 +146,16 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/ops/admin/api-keys': ['ADMIN'],
   '/api/ops/admin/api-keys': ['ADMIN'],
 
+  // Webhook delivery dashboard — admin only (read-only stats over WebhookEvent)
+  '/ops/admin/webhooks': ['ADMIN'],
+  '/api/ops/admin/webhooks': ['ADMIN'],
+
+  // Cron observability dashboard — admin only. The "Run now" trigger
+  // executes scheduled jobs out-of-band; restricted so MANAGER can't
+  // accidentally re-fire money-touching crons (collections-email,
+  // financial-snapshot, auto-reorder, etc.).
+  '/ops/admin/crons': ['ADMIN'],
+
   // Accounting — journal entries, chart of accounts, GL
   '/ops/accounting/journal-entries': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/ops/accounting/chart-of-accounts': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
@@ -563,6 +573,12 @@ const API_ACCESS: Record<string, StaffRole[]> = {
 
   // System Health metrics — ADMIN only.
   '/api/ops/admin/health-metrics': ['ADMIN'],
+
+  // Cron observability dashboard — ADMIN only. POST endpoint manually
+  // triggers crons; ADMIN-only so MANAGER can't re-fire money-touching
+  // jobs (collections-email, financial-snapshot, auto-reorder, etc.).
+  '/api/ops/admin/crons': ['ADMIN'],
+  '/api/admin/crons': ['ADMIN'],
 
   // ──────────────────────────────────────────────────────────────────────
   // Portal-affected route prefixes added per docs/AUDIT-API-REPORT.md

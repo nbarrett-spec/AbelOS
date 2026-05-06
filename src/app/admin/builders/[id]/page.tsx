@@ -48,6 +48,7 @@ import AROverview, {
 import OpenJobsSection, { type OpenJobRow } from './sections/OpenJobsSection'
 import ContactCard, { type PrimaryContact } from './sections/ContactCard'
 import BuilderDetailClient from './sections/BuilderDetailClient'
+import BuilderEditButton from './sections/BuilderEditButton'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -63,6 +64,14 @@ interface BuilderRow {
   contactName: string
   email: string
   phone: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
+  licenseNumber: string | null
+  paymentTerm: string
+  creditLimit: number | null
+  taxExempt: boolean
   accountBalance: number | null
   status: string
 }
@@ -168,6 +177,9 @@ export default async function BuilderDetailPage({
   // co-locate with the other raw aggregates below for consistency.
   const builderRows = await prisma.$queryRawUnsafe<BuilderRow[]>(
     `SELECT id, "companyName", "contactName", email, phone,
+            address, city, state, zip, "licenseNumber",
+            "paymentTerm"::text AS "paymentTerm",
+            "creditLimit", "taxExempt",
             "accountBalance", status::text AS status
        FROM "Builder"
       WHERE id = $1
@@ -384,6 +396,26 @@ export default async function BuilderDetailPage({
           { label: 'Builders', href: '/admin/builders' },
           { label: builder.companyName },
         ]}
+        actions={
+          <BuilderEditButton
+            builder={{
+              id: builder.id,
+              companyName: builder.companyName,
+              contactName: builder.contactName,
+              email: builder.email,
+              phone: builder.phone,
+              address: builder.address,
+              city: builder.city,
+              state: builder.state,
+              zip: builder.zip,
+              licenseNumber: builder.licenseNumber,
+              paymentTerm: builder.paymentTerm,
+              creditLimit: builder.creditLimit !== null ? Number(builder.creditLimit) : null,
+              taxExempt: builder.taxExempt,
+              status: builder.status,
+            }}
+          />
+        }
       />
 
       {/* Tab strip — server-rendered, uses ?tab= query param */}

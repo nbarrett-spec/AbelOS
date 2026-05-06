@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Search,
@@ -603,12 +604,12 @@ function ProductCard({
       <Link href={detailHref} className="block focus:outline-none">
         <div className="aspect-[4/3] bg-surface-muted relative overflow-hidden">
           {img ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={img}
               alt={product.imageAlt || name}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-fg-subtle">

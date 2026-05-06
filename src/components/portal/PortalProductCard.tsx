@@ -9,6 +9,7 @@
  * a single interaction surface.
  */
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { MagicCard } from '@/components/magicui/magic-card'
 import type { CatalogProduct } from '@/types/portal'
@@ -81,13 +82,13 @@ export function PortalProductCard({
                 'linear-gradient(135deg, rgba(79,70,229,0.05), rgba(6,182,212,0.05))',
             }}
           >
-            {hasImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+            {hasImage && imgSrc ? (
+              <Image
                 src={imgSrc}
                 alt={product.imageAlt || name}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center portal-meta-label">

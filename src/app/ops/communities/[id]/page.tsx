@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { Edit2 } from 'lucide-react'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
+import EditSlideOver, { type FieldDef } from '@/components/ops/EditSlideOver'
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -166,6 +168,37 @@ function fmtDate(d: string | null): string {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+// ─── Edit field defs ─────────────────────────────────────────────────────
+// Mirrors `allowedFields` in PATCH /api/ops/communities/[id] so client-side
+// surface == server-side accept-list. `status` matches the CommunityStatus
+// enum; `division` is free text in the schema (no enum) — leaving it as text.
+const COMMUNITY_EDIT_FIELDS: FieldDef[] = [
+  { key: 'name', label: 'Community Name', type: 'text', required: true, colSpan: 2 },
+  { key: 'code', label: 'Code', type: 'text', nullableString: true, placeholder: 'e.g. MOBB-FRMS' },
+  {
+    key: 'status',
+    label: 'Status',
+    type: 'select',
+    required: true,
+    options: [
+      { value: 'PLANNING', label: 'Planning' },
+      { value: 'ACTIVE', label: 'Active' },
+      { value: 'WINDING_DOWN', label: 'Winding Down' },
+      { value: 'CLOSED', label: 'Closed' },
+    ],
+  },
+  { key: 'address', label: 'Address', type: 'text', nullableString: true, colSpan: 2 },
+  { key: 'city', label: 'City', type: 'text', nullableString: true },
+  { key: 'state', label: 'State', type: 'text', nullableString: true, placeholder: 'TX' },
+  { key: 'zip', label: 'ZIP', type: 'text', nullableString: true },
+  { key: 'county', label: 'County', type: 'text', nullableString: true },
+  { key: 'phase', label: 'Phase', type: 'text', nullableString: true, placeholder: 'e.g. Phase 2' },
+  { key: 'division', label: 'Division', type: 'text', nullableString: true },
+  { key: 'totalLots', label: 'Total Lots', type: 'number' },
+  { key: 'activeLots', label: 'Active Lots', type: 'number' },
+  { key: 'notes', label: 'Notes', type: 'textarea', nullableString: true, colSpan: 2 },
+]
+
 // ─── Tabs ───────────────────────────────────────────────────────────────
 
 type Tab = 'overview' | 'contacts' | 'jobs' | 'tasks' | 'comms' | 'floorplans' | 'notes'
@@ -196,6 +229,7 @@ export default function CommunityDetailPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [commLogs, setCommLogs] = useState<CommLog[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -271,26 +305,70 @@ export default function CommunityDetailPage() {
           </p>
         </div>
 
-        {/* KPI cards */}
-        <div className="flex gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">{community.totalLots}</div>
-            <div className="text-xs text-gray-500">Total Lots</div>
+        {/* KPI cards + edit */}
+        <div className="flex items-start gap-6">
+          <div className="flex gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{community.totalLots}</div>
+              <div className="text-xs text-gray-500">Total Lots</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{community.activeLots}</div>
+              <div className="text-xs text-gray-500">Active Lots</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{stats?.totalOrders || 0}</div>
+              <div className="text-xs text-gray-500">Orders</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-600">{fmt$(stats?.totalRevenue || 0)}</div>
+              <div className="text-xs text-gray-500">Revenue</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{community.activeLots}</div>
-            <div className="text-xs text-gray-500">Active Lots</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{stats?.totalOrders || 0}</div>
-            <div className="text-xs text-gray-500">Orders</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-emerald-600">{fmt$(stats?.totalRevenue || 0)}</div>
-            <div className="text-xs text-gray-500">Revenue</div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border rounded text-sm font-medium text-fg hover:bg-row-hover"
+          >
+            <Edit2 className="w-3.5 h-3.5" /> Edit
+          </button>
         </div>
       </div>
+
+      {/* ── Edit slide-over ───────────────────────────────────── */}
+      <EditSlideOver
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Community"
+        subtitle={community.name}
+        fields={COMMUNITY_EDIT_FIELDS}
+        initialValues={{
+          name: community.name,
+          code: community.code ?? '',
+          status: community.status,
+          address: community.address ?? '',
+          city: community.city ?? '',
+          state: community.state ?? '',
+          zip: community.zip ?? '',
+          county: community.county ?? '',
+          phase: community.phase ?? '',
+          division: community.division ?? '',
+          totalLots: community.totalLots,
+          activeLots: community.activeLots,
+          notes: community.notes ?? '',
+        }}
+        endpoint={`/api/ops/communities/${community.id}`}
+        method="PATCH"
+        onSuccess={(body) => {
+          // PATCH returns { community: row } — merge persisted fields into
+          // local state so the header KPIs / status pill update immediately
+          // without a full page refresh.
+          if (body?.community) {
+            setCommunity((prev) => (prev ? { ...prev, ...body.community } : prev))
+          }
+          setEditOpen(false)
+        }}
+      />
 
       {/* ── Quick Actions ────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 mb-4">
