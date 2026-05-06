@@ -7,10 +7,15 @@
 
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-import type { InflowProduct, InflowPurchaseOrder, SyncResult } from './types'
+import type { InflowProduct, InflowPurchaseOrder, InflowVendor, SyncResult } from './types'
 
 const INFLOW_BASE = 'https://cloudapi.inflowinventory.com'
-const RATE_LIMIT_DELAY = 400 // Inter-page sleep. InFlow quota is 60 req/min; 400ms = ~2.5 req/sec, safe headroom.
+// Inter-page sleep. InFlow quota is 60 req/min (1 req/sec). Was 400ms (=2.5
+// req/sec, 150 req/min) — way over cap. Sliding-window 429s tripped consistently
+// around page 30–92 of /products, killing every inventory sync mid-run on
+// 2026-05-06. Bumped to 1200ms = 50 req/min, ~17% under cap with margin for
+// retry bursts. Affects every paginated phase (products, inventory, POs, SOs).
+const RATE_LIMIT_DELAY = 1200
 
 interface InflowConfig {
   apiKey: string
@@ -464,7 +469,10 @@ export async function syncInventory(): Promise<SyncResult> {
     const MAX_PAGES = 300
 
     while (page <= MAX_PAGES) {
-      const data = await inflowFetch(`/products?page=${page}&pageSize=200&includeInactive=false`, config)
+      // pageSize matched to syncProducts (was 200). 200 + 400ms delay was 150
+      // req/min, 2.5x InFlow's 60 req/min cap, which tripped 429s mid-stream.
+      // 100 + 1200ms delay = 50 req/min — sustainable.
+      const data = await inflowFetch(`/products?page=${page}&pageSize=100&includeInactive=false`, config)
       const products: InflowProduct[] = data.data || data
 
       if (!products.length) break
@@ -1380,6 +1388,203 @@ export async function pushOrderToInflow(orderId: string): Promise<{ success: boo
     }
   } catch (error: any) {
     return { success: false, message: error.message }
+  }
+}
+
+// ─── Vendor Sync ────────────────────────────────────────────────────
+// Pulls /vendors and upserts into the Vendor model.
+//
+// Why this exists: prior to 2026-05-06, vendors only got created REACTIVELY
+// during PO sync (`findOrCreateVendor` on each PO). That left 73 of 80 (91%)
+// vendors with no `inflowVendorId` because they pre-existed in Aegis from
+// CSV imports / manual entry. New vendors added in InFlow without an
+// associated PO were invisible to Aegis entirely. This phase fixes that.
+//
+// Conservative on writes: never overwrites existing Vendor rows that already
+// have richer Aegis-side data (creditLimit, paymentTermDays, accountNumber,
+// etc.). Only fills in NULL fields and links `inflowVendorId`.
+
+export async function syncVendors(): Promise<SyncResult> {
+  const startedAt = new Date()
+  const config = await getConfig()
+  if (!config) {
+    return {
+      provider: 'INFLOW', syncType: 'vendors', direction: 'PULL',
+      status: 'FAILED', recordsProcessed: 0, recordsCreated: 0,
+      recordsUpdated: 0, recordsSkipped: 0, recordsFailed: 0,
+      errorMessage: 'InFlow not configured',
+      startedAt, completedAt: new Date(),
+      durationMs: Date.now() - startedAt.getTime(),
+    }
+  }
+
+  let created = 0, updated = 0, skipped = 0, failed = 0
+  const errors: string[] = []
+
+  try {
+    let page = 1
+    // ~80 vendors observed in production. 50 pages × 100 = 5,000 cap is generous.
+    const MAX_PAGES = 50
+
+    while (page <= MAX_PAGES) {
+      let vendorList: any
+      try {
+        vendorList = await inflowFetch(`/vendors?page=${page}&pageSize=100`, config)
+      } catch (apiErr: any) {
+        // Try alternate endpoint paths if the canonical one 404s
+        if (apiErr.message?.includes('404') || apiErr.message?.includes('Not Found')) {
+          try {
+            vendorList = await inflowFetch(`/suppliers?page=${page}&pageSize=100`, config)
+          } catch {
+            throw new Error(`InFlow vendor endpoint not found — tried /vendors, /suppliers. Last error: ${apiErr.message}`)
+          }
+        } else {
+          throw apiErr
+        }
+      }
+
+      const vendors: InflowVendor[] = Array.isArray(vendorList) ? vendorList : (vendorList.data || [])
+      if (vendors.length === 0) break
+
+      // Log first-page shape for debugging field-name discovery
+      if (page === 1 && vendors.length > 0) {
+        logger.info('inflow_vendor_sync_shape', { keys: Object.keys(vendors[0]), sample: JSON.stringify(vendors[0]).substring(0, 500) })
+      }
+
+      for (const ifVendor of vendors) {
+        try {
+          const inflowVendorId = String(ifVendor.vendorId || ifVendor.companyId || ifVendor.id || '')
+          if (!inflowVendorId) { skipped++; continue }
+
+          // Resolve a sensible name. InFlow can use companyName, name, or contactName.
+          const vendorName = (ifVendor.companyName || ifVendor.name || ifVendor.contactName || '').trim()
+          if (!vendorName) {
+            skipped++
+            continue
+          }
+
+          // Flatten the address — InFlow may nest under .address or .defaultAddress
+          const addrObj = (typeof ifVendor.address === 'object' && ifVendor.address !== null)
+            ? ifVendor.address
+            : ((ifVendor as any).defaultAddress || {})
+          const addrStr = (typeof ifVendor.address === 'string' ? ifVendor.address : null) ||
+            [
+              addrObj.address1 || addrObj.address || (ifVendor as any).street,
+              addrObj.city || ifVendor.city,
+              addrObj.state || addrObj.stateCode || ifVendor.state,
+              addrObj.zip || addrObj.postalCode || ifVendor.zip,
+            ].filter(Boolean).join(', ') || null
+
+          // Look up by inflowVendorId first (preferred linkage), then by name fallback
+          const existing: any[] = await prisma.$queryRawUnsafe(
+            `SELECT id, "inflowVendorId" FROM "Vendor"
+             WHERE "inflowVendorId" = $1 OR LOWER("name") = LOWER($2)
+             LIMIT 1`,
+            inflowVendorId, vendorName
+          )
+
+          if (existing.length > 0) {
+            // Update — but ONLY fill in NULLs to avoid stomping richer Aegis data.
+            // Always link inflowVendorId if not already set.
+            await prisma.$executeRawUnsafe(
+              `UPDATE "Vendor" SET
+                "inflowVendorId" = COALESCE("inflowVendorId", $1),
+                "contactName"    = COALESCE(NULLIF("contactName", ''), $2),
+                "email"          = COALESCE(NULLIF("email", ''), $3),
+                "phone"          = COALESCE(NULLIF("phone", ''), $4),
+                "address"        = COALESCE(NULLIF("address", ''), $5),
+                "website"        = COALESCE(NULLIF("website", ''), $6),
+                "taxId"          = COALESCE(NULLIF("taxId", ''), $7),
+                "paymentTerms"   = COALESCE(NULLIF("paymentTerms", ''), $8),
+                "active"         = $9,
+                "updatedAt"      = CURRENT_TIMESTAMP
+              WHERE id = $10`,
+              inflowVendorId,
+              ifVendor.contactName || null,
+              ifVendor.email || null,
+              ifVendor.phone || null,
+              addrStr,
+              ifVendor.website || null,
+              ifVendor.taxId || null,
+              ifVendor.paymentTerms || null,
+              ifVendor.isActive !== false,
+              existing[0].id
+            )
+            updated++
+          } else {
+            // New vendor. Generate a stable code from the name.
+            const baseCode = vendorName.substring(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'IF' + inflowVendorId.substring(0, 6).toUpperCase()
+            // Ensure uniqueness by suffixing the InFlow id if collision
+            const codeExists: any[] = await prisma.$queryRawUnsafe(
+              `SELECT id FROM "Vendor" WHERE "code" = $1 LIMIT 1`, baseCode
+            )
+            const finalCode = codeExists.length > 0
+              ? `${baseCode}${inflowVendorId.substring(0, 4).toUpperCase()}`
+              : baseCode
+
+            await prisma.$executeRawUnsafe(
+              `INSERT INTO "Vendor" (
+                "id", "name", "code", "contactName", "email", "phone",
+                "address", "website", "taxId", "paymentTerms",
+                "active", "inflowVendorId",
+                "createdAt", "updatedAt"
+              ) VALUES (
+                gen_random_uuid()::text, $1, $2, $3, $4, $5,
+                $6, $7, $8, $9,
+                $10, $11,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              )`,
+              vendorName, finalCode,
+              ifVendor.contactName || null,
+              ifVendor.email || null,
+              ifVendor.phone || null,
+              addrStr,
+              ifVendor.website || null,
+              ifVendor.taxId || null,
+              ifVendor.paymentTerms || null,
+              ifVendor.isActive !== false,
+              inflowVendorId
+            )
+            created++
+          }
+        } catch (err: any) {
+          failed++
+          const ref = ifVendor.companyName || ifVendor.name || ifVendor.vendorId || 'unknown'
+          errors.push(`Vendor ${ref}: ${err.message}`)
+          logger.error('inflow_vendor_sync_failed', err, { ref })
+        }
+      }
+
+      page++
+      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+    }
+
+    const completedAt = new Date()
+    const totalProcessed = created + updated + skipped + failed
+    const result: SyncResult = {
+      provider: 'INFLOW', syncType: 'vendors', direction: 'PULL',
+      status: failed > 0 ? (created > 0 || updated > 0 ? 'PARTIAL' : 'FAILED') : 'SUCCESS',
+      recordsProcessed: totalProcessed, recordsCreated: created,
+      recordsUpdated: updated, recordsSkipped: skipped, recordsFailed: failed,
+      errorMessage: errors.length > 0 ? errors.slice(0, 10).join('; ') : undefined,
+      startedAt, completedAt,
+      durationMs: completedAt.getTime() - startedAt.getTime(),
+    }
+    await writeSyncLog(result)
+    return result
+  } catch (error: any) {
+    const completedAt = new Date()
+    logger.error('inflow_vendor_sync_fatal', error)
+    const result: SyncResult = {
+      provider: 'INFLOW', syncType: 'vendors', direction: 'PULL',
+      status: 'FAILED', recordsProcessed: created + updated + skipped + failed,
+      recordsCreated: created, recordsUpdated: updated,
+      recordsSkipped: skipped, recordsFailed: failed,
+      errorMessage: error.message, startedAt, completedAt,
+      durationMs: completedAt.getTime() - startedAt.getTime(),
+    }
+    await writeSyncLog(result).catch(() => {})
+    return result
   }
 }
 

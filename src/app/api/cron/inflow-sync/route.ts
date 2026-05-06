@@ -37,6 +37,7 @@ import {
   syncInventory as syncInflowInventory,
   syncPurchaseOrders as syncInflowPurchaseOrders,
   syncSalesOrders as syncInflowSalesOrders,
+  syncVendors as syncInflowVendors,
   degradedEndpoint,
   resetDegradedTracker,
 } from '@/lib/integrations/inflow'
@@ -56,20 +57,35 @@ const TIME_BUDGET_MS = 180_000
 
 // Rough pre-flight estimate per phase (ms). Used by budgetOkay() to decide
 // whether to attempt a phase. Must stay conservative — overshooting the
-// budget costs us the post-phase cursor write. Values calibrated from
-// April 2026 production observations (see commit history).
+// budget costs us the post-phase cursor write.
+//
+// 2026-05-06 recalibration: products + inventory both pull /products with
+// pageSize=100 and 1200ms inter-page sleep (was 200/400ms — see inflow.ts).
+// Per-page cost ≈ 1.5s (1200ms sleep + ~300ms API+upsert). With ~3,500 SKUs:
+// 35 pages × 1.5s ≈ 53s. Round up to 80s for safety + DB upsert variability.
+// Inventory is the same shape; same budget.
 const PHASE_MIN_MS = {
-  products: 150_000, // big; usually the only phase that fits in a 3-min run
-  inventory: 120_000,
-  purchaseOrders: 20_000,
-  salesOrders: 20_000,
+  products: 80_000,
+  inventory: 80_000,
+  purchaseOrders: 30_000,
+  salesOrders: 30_000,
+  vendors: 10_000, // ~80-150 vendors, fast
 } as const
 
-// Phase order — cursor advances through this list. After salesOrders we
-// wrap back to products. Sticking to a fixed rotation means no phase goes
-// longer than 4 * 15min = 60 min between attempts even in the worst case.
-const PHASE_ORDER = ['products', 'inventory', 'purchaseOrders', 'salesOrders'] as const
+// Phase order — cursor advances through this list. After the last phase we
+// wrap back to the first. Sticking to a fixed rotation means no phase goes
+// longer than N * 15min = 75 min between attempts even in the worst case.
+//
+// 2026-05-06: added 'vendors' phase. Vendor sync only ran reactively before,
+// leaving 91% of vendors with no inflowVendorId. Cheap (~10s) so always fits.
+const PHASE_ORDER = ['products', 'inventory', 'purchaseOrders', 'salesOrders', 'vendors'] as const
 type PhaseName = (typeof PHASE_ORDER)[number]
+
+// Starvation threshold: if any phase has been skipped this many runs in a
+// row, force-promote it to first slot regardless of budget order. Without
+// this, products got starved for 11 days on prod (2026-04-25 → 2026-05-06)
+// because PO+SO+inventory always burned budget before products' turn.
+const STARVATION_RUNS = 3
 
 const CURSOR_NAME = 'inflow-sync'
 
@@ -151,18 +167,42 @@ async function writeCursor(params: {
   }
 }
 
+type SkipMap = Partial<Record<PhaseName, number>>
+
 /**
  * Given the `lastCursor` from the previous run, return the phase order to
  * attempt this run. We start at the NEXT phase after the last one that
  * completed (rotation). If the cursor is empty or unknown, start at 'products'.
+ *
+ * Starvation guard (added 2026-05-06): if `skipCounts[phase] >= STARVATION_RUNS`
+ * for any phase, we promote the most-starved phase to slot 0 of the rotation.
+ * Without this, expensive phases (products, inventory) at the back of the
+ * rotation got skipped indefinitely because PO+SO+inventory burned the budget
+ * first. Production observation: products went 11 days unsynced.
  */
-function planPhases(lastCursor: string | null): PhaseName[] {
+function planPhases(lastCursor: string | null, skipCounts: SkipMap = {}): PhaseName[] {
   const rotated: PhaseName[] = []
   const startIdx = lastCursor
     ? (PHASE_ORDER.indexOf(lastCursor as PhaseName) + 1) % PHASE_ORDER.length
     : 0
   for (let i = 0; i < PHASE_ORDER.length; i++) {
     rotated.push(PHASE_ORDER[(startIdx + i) % PHASE_ORDER.length])
+  }
+
+  // Find the most-starved phase (highest skip count above threshold).
+  // Tie-break by PHASE_ORDER position for stability.
+  let mostStarved: PhaseName | null = null
+  let mostStarvedCount = 0
+  for (const phase of PHASE_ORDER) {
+    const count = skipCounts[phase] ?? 0
+    if (count >= STARVATION_RUNS && count > mostStarvedCount) {
+      mostStarved = phase
+      mostStarvedCount = count
+    }
+  }
+  if (mostStarved && rotated[0] !== mostStarved) {
+    // Move starved phase to front.
+    return [mostStarved, ...rotated.filter((p) => p !== mostStarved)]
   }
   return rotated
 }
@@ -222,7 +262,11 @@ export async function GET(request: NextRequest) {
 
   await ensureCursorTable()
   const priorCursor = await readCursor()
-  const phasePlan = planPhases(priorCursor?.lastCursor ?? null)
+  // Read prior skip counts from cursor meta. Map: phase name → consecutive
+  // runs that phase has been skipped. Cleared per-phase whenever it runs.
+  const priorSkipCounts: SkipMap =
+    (priorCursor?.meta && typeof priorCursor.meta === 'object' && (priorCursor.meta as any).skipCounts) || {}
+  const phasePlan = planPhases(priorCursor?.lastCursor ?? null, priorSkipCounts)
 
   try {
     const startTime = Date.now()
@@ -255,7 +299,13 @@ export async function GET(request: NextRequest) {
       inventory: syncInflowInventory,
       purchaseOrders: syncInflowPurchaseOrders,
       salesOrders: syncInflowSalesOrders,
+      vendors: syncInflowVendors,
     }
+
+    // Compute next-run skipCounts. Increment for every phase we don't run
+    // this tick; reset to 0 for any phase we do run. Persisted via writeCursor
+    // below so the next invocation can starvation-promote.
+    const nextSkipCounts: SkipMap = { ...priorSkipCounts }
 
     // Walk the planned phase order. Stop early on degraded endpoint or when
     // the budget is exhausted. Whichever phase completes last wins the
@@ -263,10 +313,12 @@ export async function GET(request: NextRequest) {
     for (const phase of phasePlan) {
       if (degraded) {
         skipped.push(phase)
+        nextSkipCounts[phase] = (nextSkipCounts[phase] ?? 0) + 1
         continue
       }
       if (!budgetOkay(PHASE_MIN_MS[phase])) {
         skipped.push(phase)
+        nextSkipCounts[phase] = (nextSkipCounts[phase] ?? 0) + 1
         continue
       }
 
@@ -275,10 +327,12 @@ export async function GET(request: NextRequest) {
         results.push(result)
         ran.push(phase)
         lastCompletedPhase = phase
+        nextSkipCounts[phase] = 0
       } catch (phaseErr) {
         // A phase threw — treat like a sync failure but don't abort the
         // whole run; subsequent phases might still succeed and progress
         // the cursor. The outer CronRun status picks up the failure below.
+        // Reset skip counter — the phase did get its turn even if it errored.
         results.push({
           syncType: phase,
           status: 'FAILED',
@@ -290,6 +344,7 @@ export async function GET(request: NextRequest) {
         })
         ran.push(phase)
         lastCompletedPhase = phase
+        nextSkipCounts[phase] = 0
       }
 
       checkDegraded()
@@ -311,6 +366,7 @@ export async function GET(request: NextRequest) {
       anyFailures: results.some((r) => r?.status === 'FAILED'),
       ranPhases: ran,
       skippedPhases: skipped,
+      skipCounts: nextSkipCounts,
       degradedEndpoint: degraded,
       partial,
     }
@@ -328,11 +384,28 @@ export async function GET(request: NextRequest) {
           skipped,
           degraded,
           durationMs: duration,
+          skipCounts: nextSkipCounts,
           lastResults: results.map((r) => ({
             syncType: r?.syncType,
             status: r?.status,
             recordsProcessed: r?.recordsProcessed ?? 0,
           })),
+        },
+      })
+    } else if (skipped.length > 0) {
+      // Edge case: every phase got skipped (no run completed, no cursor
+      // advance). Still persist updated skip counts so starvation can
+      // catch up next tick. Pass null lastCursor to leave it unchanged.
+      await writeCursor({
+        lastCursor: priorCursor?.lastCursor ?? null,
+        itemsDelta: 0,
+        meta: {
+          ran,
+          skipped,
+          degraded,
+          durationMs: duration,
+          skipCounts: nextSkipCounts,
+          note: 'all_phases_skipped',
         },
       })
     }

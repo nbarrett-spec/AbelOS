@@ -69,6 +69,40 @@ export interface InflowProduct {
   salesUom?: { name: string; conversionRatio?: any }
 }
 
+export interface InflowVendor {
+  // InFlow Cloud API: vendors are stored under /vendors. Companies use
+  // 'companyId' field for the UUID. `name` is the legal company name;
+  // `contactName` is the human at the supplier.
+  vendorId?: string
+  companyId?: string
+  id?: string
+  name?: string
+  companyName?: string
+  contactName?: string
+  email?: string
+  phone?: string
+  fax?: string
+  website?: string
+  taxId?: string
+  paymentTerms?: string
+  remarks?: string
+  isActive?: boolean
+  // Address fields — InFlow may flatten or nest under `address` / `defaultAddress`
+  address?: string | {
+    address1?: string
+    address2?: string
+    city?: string
+    state?: string
+    stateCode?: string
+    zip?: string
+    postalCode?: string
+    country?: string
+  }
+  city?: string
+  state?: string
+  zip?: string
+}
+
 export interface InflowPurchaseOrder {
   id: number
   poNumber: string
