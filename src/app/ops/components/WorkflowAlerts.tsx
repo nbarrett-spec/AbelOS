@@ -62,9 +62,10 @@ export function WorkflowAlerts() {
       {alerts.map((alert) => {
         const config = severityConfig[alert.severity]
         return (
-          <div
+          <Link
             key={alert.id}
-            className={`${config.bgColor} border-l-4 ${config.borderColor} p-3 rounded-lg`}
+            href={alert.actionHref}
+            className={`block ${config.bgColor} border-l-4 ${config.borderColor} p-3 rounded-lg cursor-pointer hover:shadow-sm hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
@@ -84,14 +85,13 @@ export function WorkflowAlerts() {
                   <p className="text-xs text-gray-400 mt-1">{alert.timeframe}</p>
                 )}
               </div>
-              <Link
-                href={alert.actionHref}
-                className={`flex-shrink-0 px-2.5 py-1 text-xs font-medium rounded ${config.textColor} bg-white hover:bg-gray-100 transition-colors whitespace-nowrap`}
+              <span
+                className={`flex-shrink-0 px-2.5 py-1 text-xs font-medium rounded ${config.textColor} bg-white whitespace-nowrap`}
               >
-                {alert.actionLabel}
-              </Link>
+                {alert.actionLabel} →
+              </span>
             </div>
-          </div>
+          </Link>
         )
       })}
     </div>

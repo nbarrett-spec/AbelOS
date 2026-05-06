@@ -183,7 +183,7 @@ export default function MessagesPage() {
           const response = await fetch('/api/ops/staff')
           if (response.ok) {
             const data = await response.json()
-            const staffArr = data.staff || data || []
+            const staffArr = Array.isArray(data) ? data : (data.data || data.staff || [])
             setStaffList(
               staffArr
                 .filter((s: StaffMember) => s.id !== currentUserId)

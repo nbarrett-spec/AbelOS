@@ -30,7 +30,20 @@
  *     upload.
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Upload, FileText, Trash2, Download, Paperclip, AlertTriangle, Loader2 } from 'lucide-react'
+import {
+  Upload,
+  FileText,
+  Trash2,
+  Download,
+  Paperclip,
+  AlertTriangle,
+  Loader2,
+  Eye,
+  Image as ImageIcon,
+  FileSpreadsheet,
+  File as FileIcon,
+  X,
+} from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────────────
 // Type model — mirror the DocumentVault row shape we actually need
@@ -142,6 +155,66 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+// Relative timestamp like "2h ago" — keeps the row dense.
+function formatRelative(iso: string): string {
+  const d = new Date(iso)
+  const diffMs = Date.now() - d.getTime()
+  const diffMin = Math.round(diffMs / 60_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.round(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDay = Math.round(diffHr / 24)
+  if (diffDay < 7) return `${diffDay}d ago`
+  return formatDate(iso)
+}
+
+// What the row icon should be.
+function fileKind(
+  mimeType: string,
+  fileType: string,
+): 'image' | 'pdf' | 'word' | 'excel' | 'other' {
+  const m = (mimeType || '').toLowerCase()
+  const ext = (fileType || '').toLowerCase().replace(/^\./, '')
+  if (m.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) {
+    return 'image'
+  }
+  if (m === 'application/pdf' || ext === 'pdf') return 'pdf'
+  if (
+    m.includes('word') ||
+    m.includes('officedocument.wordprocessingml') ||
+    ext === 'doc' ||
+    ext === 'docx'
+  ) {
+    return 'word'
+  }
+  if (
+    m.includes('sheet') ||
+    m.includes('excel') ||
+    m.includes('officedocument.spreadsheetml') ||
+    ext === 'xls' ||
+    ext === 'xlsx' ||
+    ext === 'csv'
+  ) {
+    return 'excel'
+  }
+  return 'other'
+}
+
+function fileIcon(kind: ReturnType<typeof fileKind>) {
+  switch (kind) {
+    case 'image':
+      return ImageIcon
+    case 'excel':
+      return FileSpreadsheet
+    case 'pdf':
+    case 'word':
+      return FileText
+    default:
+      return FileIcon
+  }
+}
+
 function categoryColor(cat: string): string {
   switch (cat) {
     case 'INVOICE':
@@ -183,6 +256,10 @@ export default function DocumentAttachments({
   const [error, setError] = useState<string | null>(null)
   const [uploads, setUploads] = useState<UploadProgress[]>([])
   const [dragOver, setDragOver] = useState(false)
+  // Preview modal — set to a doc to open the inline lightbox / iframe.
+  const [previewDoc, setPreviewDoc] = useState<VaultDocument | null>(null)
+  // Per-doc category override (drives the row dropdown for in-place edits).
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
 
   const entityField = ENTITY_FIELD[entityType]
   const categories = allowedCategories ?? ALL_CATEGORIES
@@ -356,6 +433,41 @@ export default function DocumentAttachments({
     }
   }
 
+  // ── Update category (in-place edit) ────────────────────────────────
+  const handleUpdateCategory = async (doc: VaultDocument, category: string) => {
+    if (category === doc.category) {
+      setEditingCategoryId(null)
+      return
+    }
+    try {
+      const res = await fetch('/api/ops/documents/vault', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: doc.id, category }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `HTTP ${res.status}`)
+      }
+      await reload()
+      onChange?.()
+    } catch (e: any) {
+      setError(e?.message || 'Update failed')
+    } finally {
+      setEditingCategoryId(null)
+    }
+  }
+
+  // ── Close preview modal on Escape ──────────────────────────────────
+  useEffect(() => {
+    if (!previewDoc) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPreviewDoc(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [previewDoc])
+
   // ─────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────
@@ -466,54 +578,199 @@ export default function DocumentAttachments({
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {docs.map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center gap-2 py-2 px-2 group hover:bg-surface-muted/40 rounded transition-colors"
-              >
-                <FileText className="w-4 h-4 text-fg-muted shrink-0" />
-                <a
-                  href={`/api/ops/documents/vault/${d.id}?mode=download`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 min-w-0 text-sm text-fg hover:text-brand truncate"
-                  title={d.fileName}
+            {docs.map((d) => {
+              const kind = fileKind(d.mimeType, d.fileType)
+              const Icon = fileIcon(kind)
+              const previewable = kind === 'image' || kind === 'pdf'
+              const isImage = kind === 'image'
+              const downloadHref = `/api/ops/documents/vault/${d.id}?mode=download`
+              return (
+                <div
+                  key={d.id}
+                  className="flex items-center gap-2 py-2 px-2 group hover:bg-surface-muted/40 rounded transition-colors"
                 >
-                  {d.fileName}
-                </a>
-                <span
-                  className={`text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded ${categoryColor(d.category)}`}
-                >
-                  {d.category.replace(/_/g, ' ')}
-                </span>
-                <span className="text-[11px] text-fg-subtle tabular-nums">
-                  {formatBytes(d.fileSize)}
-                </span>
-                <span className="text-[11px] text-fg-subtle hidden sm:inline">
-                  {formatDate(d.createdAt)}
-                </span>
-                <a
-                  href={`/api/ops/documents/vault/${d.id}?mode=download`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-fg-subtle hover:text-fg p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Download"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(d)}
-                  className="text-fg-subtle hover:text-data-negative p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+                  {/* Thumbnail (images) or icon */}
+                  {isImage ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc(d)}
+                      className="shrink-0 w-10 h-10 rounded border border-border overflow-hidden bg-surface-muted hover:ring-2 hover:ring-brand transition-all"
+                      title="Preview"
+                    >
+                      <img
+                        src={downloadHref}
+                        alt={d.fileName}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </button>
+                  ) : (
+                    <Icon className="w-4 h-4 text-fg-muted shrink-0" />
+                  )}
+
+                  {/* Filename — clicking previews if previewable, otherwise downloads */}
+                  {previewable ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc(d)}
+                      className="flex-1 min-w-0 text-sm text-fg hover:text-brand truncate text-left"
+                      title={`Preview ${d.fileName}`}
+                    >
+                      {d.fileName}
+                    </button>
+                  ) : (
+                    <a
+                      href={downloadHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 min-w-0 text-sm text-fg hover:text-brand truncate"
+                      title={d.fileName}
+                    >
+                      {d.fileName}
+                    </a>
+                  )}
+
+                  {/* Category — click to edit */}
+                  {editingCategoryId === d.id ? (
+                    <select
+                      autoFocus
+                      defaultValue={d.category}
+                      onBlur={(e) => handleUpdateCategory(d, e.target.value)}
+                      onChange={(e) => handleUpdateCategory(d, e.target.value)}
+                      className="input input-sm text-[11px] py-0.5"
+                    >
+                      {categories.map((c) => (
+                        <option key={c} value={c}>
+                          {c.replace(/_/g, ' ')}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingCategoryId(d.id)}
+                      className={`text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded hover:ring-1 hover:ring-border-strong ${categoryColor(d.category)}`}
+                      title="Click to change category"
+                    >
+                      {d.category.replace(/_/g, ' ')}
+                    </button>
+                  )}
+
+                  {/* Metadata: size · uploadedBy · relative time */}
+                  <span className="text-[11px] text-fg-subtle tabular-nums hidden md:inline">
+                    {formatBytes(d.fileSize)}
+                  </span>
+                  {d.uploadedByName && (
+                    <span
+                      className="text-[11px] text-fg-subtle hidden lg:inline truncate max-w-[120px]"
+                      title={`Uploaded by ${d.uploadedByName}`}
+                    >
+                      {d.uploadedByName}
+                    </span>
+                  )}
+                  <span
+                    className="text-[11px] text-fg-subtle hidden sm:inline"
+                    title={formatDate(d.createdAt)}
+                  >
+                    {formatRelative(d.createdAt)}
+                  </span>
+
+                  {/* Quick view (preview) */}
+                  {previewable && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc(d)}
+                      className="text-fg-subtle hover:text-fg p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Quick view"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <a
+                    href={downloadHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-fg-subtle hover:text-fg p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Download"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(d)}
+                    className="text-fg-subtle hover:text-data-negative p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
+
+      {/* Preview modal — image lightbox or PDF iframe. Backdrop click + Esc close. */}
+      {previewDoc && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview: ${previewDoc.fileName}`}
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setPreviewDoc(null)}
+        >
+          <div
+            className="bg-surface-elevated rounded-lg border border-border max-w-5xl w-full max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-fg truncate" title={previewDoc.fileName}>
+                  {previewDoc.fileName}
+                </p>
+                <p className="text-[11px] text-fg-subtle mt-0.5">
+                  {formatBytes(previewDoc.fileSize)}
+                  {previewDoc.uploadedByName ? ` · ${previewDoc.uploadedByName}` : ''}
+                  {' · '}
+                  {formatRelative(previewDoc.createdAt)}
+                </p>
+              </div>
+              <a
+                href={`/api/ops/documents/vault/${previewDoc.id}?mode=download`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-fg-muted hover:text-brand px-3 py-1.5 mr-2"
+                title="Download"
+              >
+                <Download className="w-4 h-4 inline" /> Download
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="text-fg-subtle hover:text-fg p-1.5"
+                aria-label="Close preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto bg-surface-muted">
+              {fileKind(previewDoc.mimeType, previewDoc.fileType) === 'image' ? (
+                <img
+                  src={`/api/ops/documents/vault/${previewDoc.id}?mode=download`}
+                  alt={previewDoc.fileName}
+                  className="block mx-auto max-w-full max-h-[80vh] object-contain"
+                />
+              ) : (
+                <iframe
+                  src={`/api/ops/documents/vault/${previewDoc.id}?mode=download`}
+                  title={previewDoc.fileName}
+                  className="w-full h-[80vh] border-0"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

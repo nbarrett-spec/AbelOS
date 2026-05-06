@@ -167,44 +167,67 @@ export function AIRecommendations() {
       {visibleRecs.slice(0, 5).map(rec => {
         const colors = PRIORITY_COLORS[rec.priority]
         const isApproving = approving === rec.id
-        return (
-          <div key={rec.id} className={`${colors.bg} ${colors.border} border rounded-lg p-4 transition-all hover:shadow-sm`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{TYPE_ICONS[rec.type] || '💡'}</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${colors.badge}`}>{rec.priority}</span>
-                  <span className="text-sm font-semibold text-gray-900 truncate">{rec.title}</span>
-                </div>
-                <p className="text-xs text-gray-600 mb-1">{rec.description}</p>
-                <p className="text-xs font-medium text-gray-500">{rec.impact}</p>
+
+        // Inner content shared by both clickable and static variants
+        const cardContent = (
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{TYPE_ICONS[rec.type] || '💡'}</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${colors.badge}`}>{rec.priority}</span>
+                <span className="text-sm font-semibold text-gray-900 truncate">{rec.title}</span>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                {rec.actionUrl ? (
-                  <Link
-                    href={rec.actionUrl}
-                    className="px-3 py-1.5 text-xs font-semibold bg-[#0f2a3e] text-white rounded-lg hover:bg-[#0a1a28] transition-colors whitespace-nowrap"
-                  >
-                    {rec.actionLabel} →
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => handleApprove(rec)}
-                    disabled={isApproving}
-                    className="px-3 py-1.5 text-xs font-semibold bg-[#27AE60] text-white rounded-lg hover:bg-[#1E8449] transition-colors disabled:opacity-50 whitespace-nowrap"
-                  >
-                    {isApproving ? '...' : `✓ ${rec.actionLabel}`}
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDismiss(rec.id)}
-                  className="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Dismiss"
-                >
-                  ✕
-                </button>
-              </div>
+              <p className="text-xs text-gray-600 mb-1">{rec.description}</p>
+              <p className="text-xs font-medium text-gray-500">{rec.impact}</p>
             </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {rec.actionUrl ? (
+                <span className="px-3 py-1.5 text-xs font-semibold bg-[#0f2a3e] text-white rounded-lg whitespace-nowrap">
+                  {rec.actionLabel} →
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleApprove(rec)
+                  }}
+                  disabled={isApproving}
+                  className="px-3 py-1.5 text-xs font-semibold bg-[#27AE60] text-white rounded-lg hover:bg-[#1E8449] transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {isApproving ? '...' : `✓ ${rec.actionLabel}`}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleDismiss(rec.id)
+                }}
+                className="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )
+
+        const cardClasses = `${colors.bg} ${colors.border} border rounded-lg p-4 transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand block`
+
+        return rec.actionUrl ? (
+          <Link
+            key={rec.id}
+            href={rec.actionUrl}
+            className={`${cardClasses} cursor-pointer`}
+          >
+            {cardContent}
+          </Link>
+        ) : (
+          <div key={rec.id} className={cardClasses}>
+            {cardContent}
           </div>
         )
       })}
