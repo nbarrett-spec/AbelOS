@@ -22,7 +22,12 @@
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-import { mapSpConnectOrderPayload, NormalizedOrder, NormalizedItem } from './mapper'
+import {
+  mapSpConnectOrderPayload,
+  NormalizedOrder,
+  NormalizedItem,
+  NormalizedBuilder,
+} from './mapper'
 
 let aliasTablesEnsured = false
 
@@ -242,6 +247,58 @@ export async function listProductAliases(): Promise<any[]> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Builder enrichment from Hyphen primaryContacts
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fill in role-based email columns (hyphenPurchasingEmail, etc.) on the
+ * resolved Builder row from the v13 header.builder.primaryContacts payload.
+ *
+ * COALESCE pattern: only writes when the existing column is NULL. Hyphen
+ * sends null for any role the builder hasn't configured, and we never want
+ * a fresh envelope to wipe a value that an Abel admin set manually.
+ *
+ * No-op if every incoming field is null. Safe to call on every order —
+ * the WHERE clause filters out the null-only case so we don't issue an
+ * unnecessary UPDATE.
+ */
+async function upsertBuilderHyphenEmails(
+  builderId: string,
+  builder: NormalizedBuilder
+): Promise<void> {
+  const incoming = {
+    purchasingEmail: builder.purchasingEmail,
+    accountingEmail: builder.accountingEmail,
+    warrantyEmail: builder.warrantyEmail,
+    eDestinationEmail: builder.eDestinationEmail,
+    bidConnectEmail: builder.bidConnectEmail,
+    purchasingCcEmail: builder.purchasingCcEmail,
+  }
+
+  // Skip if Hyphen sent nothing — avoids a no-op UPDATE on every order.
+  if (Object.values(incoming).every((v) => v === null)) return
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE "Builder"
+        SET "hyphenPurchasingEmail"   = COALESCE("hyphenPurchasingEmail", $1),
+            "hyphenAccountingEmail"   = COALESCE("hyphenAccountingEmail", $2),
+            "hyphenWarrantyEmail"     = COALESCE("hyphenWarrantyEmail", $3),
+            "hyphenEDestinationEmail" = COALESCE("hyphenEDestinationEmail", $4),
+            "hyphenBidConnectEmail"   = COALESCE("hyphenBidConnectEmail", $5),
+            "hyphenPurchasingCcEmail" = COALESCE("hyphenPurchasingCcEmail", $6),
+            "updatedAt"               = NOW()
+      WHERE "id" = $7`,
+    incoming.purchasingEmail,
+    incoming.accountingEmail,
+    incoming.warrantyEmail,
+    incoming.eDestinationEmail,
+    incoming.bidConnectEmail,
+    incoming.purchasingCcEmail,
+    builderId
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Event loader + processor
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -387,6 +444,15 @@ export async function processHyphenOrderEvent(eventId: string): Promise<ProcessR
       },
       warnings,
     }
+  }
+
+  // 2b. Enrich Builder with role-based emails from header.builder.primaryContacts.
+  //     COALESCE-style: only fill blanks, never overwrite an Abel-side value
+  //     with a null from Hyphen. Non-fatal — log and move on if it fails.
+  try {
+    await upsertBuilderHyphenEmails(builderId, normalized.builder)
+  } catch (e: any) {
+    logger.error('hyphen_builder_email_enrich_failed', e, { eventId, builderId })
   }
 
   // 3. Resolve all products up-front. Fail the whole order if any miss —
