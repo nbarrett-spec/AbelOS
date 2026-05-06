@@ -3,6 +3,21 @@
 // REST (JSON) + SOAP (xCBL 4.0) + FTP (CSV)
 // Bidirectional: schedules, POs, change orders, payments from builders
 // Used by: Pulte, Toll Brothers, Brookfield, and other national builders
+//
+// ⚠️  DEPRECATED — legacy REST/scraper path.
+// The v13 SPConnect path is the system-of-record for inbound orders +
+// change orders going forward. Live code lives at:
+//   - src/lib/hyphen/processor.ts  — order/CO processor (event replay)
+//   - src/lib/hyphen/mapper.ts     — payload → Order / OrderItem mapping
+//   - src/app/api/hyphen/orders/route.ts        — v13 ingress
+//   - src/app/api/hyphen/changeOrders/route.ts  — v13 CO ingress
+//
+// `syncOrders` below is the legacy REST poll path still wired to the
+// hyphen-sync cron (vercel.json). It does NOT use SPConnect and writes
+// against fields that no longer exist on Order/OrderItem (see fix on
+// 2026-05-06 — hyphenPoId references rerouted to inflowOrderId; the
+// bogus sku column write was removed). When the cron flips to the v13
+// processor, this function can be deleted entirely.
 // ──────────────────────────────────────────────────────────────────────────
 
 import { prisma } from '@/lib/prisma'
@@ -654,9 +669,15 @@ export async function syncOrders(tenantOverride?: HyphenConfig): Promise<SyncRes
 
     for (const hyphenPO of orders) {
       try {
-        // Check if order already exists
+        // 2026-05-06: hyphenPoId field never existed on Order. Rerouted to
+        // inflowOrderId (the canonical external-id @unique column). When the
+        // cron flips to the v13 SPConnect processor this whole branch goes.
+        // Note: Order has no jobId column either (Job has orderId on the
+        // *other* side of the 1:N), so the create path doesn't try to set
+        // it — it stamps inflowOrderId for idempotency and lets the
+        // matching Job fall to the v13 processor.
         const existing: any[] = await prisma.$queryRawUnsafe(
-          `SELECT "id", "hyphenPoId" FROM "Order" WHERE "hyphenPoId" = $1 LIMIT 1`,
+          `SELECT "id", "inflowOrderId" FROM "Order" WHERE "inflowOrderId" = $1 LIMIT 1`,
           hyphenPO.poId
         )
 
@@ -676,10 +697,11 @@ export async function syncOrders(tenantOverride?: HyphenConfig): Promise<SyncRes
           )
 
           if (job.length > 0) {
-            const jobId = job[0].id
             const builderId = job[0].builderId
 
-            // Create new order
+            // Create new order — uses inflowOrderId as the external-id
+            // idempotency key. orderNumber must be unique; prefix with HY-
+            // so it doesn't collide with InFlow-sourced PO numbers.
             const orderId = `order_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
             let subtotal = 0
 
@@ -689,30 +711,36 @@ export async function syncOrders(tenantOverride?: HyphenConfig): Promise<SyncRes
 
             await prisma.$executeRawUnsafe(`
               INSERT INTO "Order" (
-                "id", "builderId", "jobId", "orderNumber", "poNumber", "hyphenPoId",
+                "id", "builderId", "orderNumber", "poNumber", "inflowOrderId",
                 "subtotal", "taxAmount", "total", "status", "paymentTerm",
                 "createdAt", "updatedAt"
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
             `,
-              orderId, builderId, jobId, `PO-${hyphenPO.poNumber}`,
+              orderId, builderId, `HY-${hyphenPO.poNumber}`,
               hyphenPO.poNumber, hyphenPO.poId,
               subtotal, 0, subtotal,
               mapHyphenPOStatus(hyphenPO.status),
               'NET_30'
             )
 
-            // Create order items
+            // Create order items — OrderItem has no sku column (sku lives on
+            // Product, surfaced via productId; legacy code wrote a non-
+            // existent column). Drop the inbound sku into description as a
+            // fallback so the line still carries human context.
             for (const item of hyphenPO.items) {
               const itemId = `orderitem_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
               const lineTotal = item.quantity * item.unitPrice
+              const desc = item.sku
+                ? `[${item.sku}] ${item.description ?? ''}`.trim()
+                : (item.description ?? '')
 
               await prisma.$executeRawUnsafe(`
                 INSERT INTO "OrderItem" (
-                  "id", "orderId", "sku", "description", "quantity",
-                  "unitPrice", "lineTotal", "createdAt", "updatedAt"
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                  "id", "orderId", "description", "quantity",
+                  "unitPrice", "lineTotal"
+                ) VALUES ($1, $2, $3, $4, $5, $6)
               `,
-                itemId, orderId, item.sku, item.description,
+                itemId, orderId, desc,
                 item.quantity, item.unitPrice, lineTotal
               )
             }

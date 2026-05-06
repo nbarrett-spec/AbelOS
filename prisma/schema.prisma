@@ -72,6 +72,20 @@ model Builder {
   // manually.
   autoInvoiceOnDelivery Boolean @default(true)
 
+  // ── Hyphen SPConnect v13 — extended primaryContacts (2026-05-06) ──
+  // v13 header.primaryContacts can carry purchasing / accounting / warranty /
+  // eDestination / bidConnect / purchasingCC emails. These are addressed-to
+  // role accounts on the builder side, not individual contacts (which live
+  // in BuilderContact). The mapper (src/lib/hyphen/mapper.ts) writes these
+  // when an inbound order/CO carries header.primaryContacts. All nullable —
+  // additive on prod table.
+  hyphenPurchasingEmail   String?
+  hyphenAccountingEmail   String?
+  hyphenWarrantyEmail     String?
+  hyphenEDestinationEmail String?
+  hyphenBidConnectEmail   String?
+  hyphenPurchasingCcEmail String?
+
   // Relationships
   projects          Project[]
   orders            Order[]
@@ -730,10 +744,36 @@ model OrderItem {
   expectedDate    DateTime? // ETA when stock will arrive (from incoming PO)
   fulfillingPoId  String? // PO that will fulfill this backorder
 
+  // ── Hyphen SPConnect v13 — door spec persistence (2026-05-06) ──
+  // Brookfield (and other v13 builders) ship per-line door specs in
+  // optionColor1-3 + extText1-6 + itemOptions.preferences[]. The mapper
+  // (src/lib/hyphen/mapper.ts) populates these from the inbound payload
+  // so production crew + reporting can query door spec without parsing
+  // a free-text description blob. All nullable — additive on prod table.
+  optionColor1     String?
+  optionColor2     String?
+  optionColor3     String?
+  extText1         String?
+  extText2         String?
+  extText3         String?
+  extText4         String?
+  extText5         String?
+  extText6         String?
+  // Mapper-derived fields parsed from the spec inputs above.
+  doorSwing        String? // LH / RH / Active / Inactive
+  doorHand         String? // Inswing / Outswing
+  jambDepth        String? // "4-9/16", "6-9/16"
+  throatDepth      String? // throat depth
+  // Hyphen's int line ID — used for change-order targeting. BigInt because
+  // Hyphen sends values like 43179622 that approach Int32 (2^31 = 2.1B);
+  // BigInt is safer for future-proofing.
+  builderLineItemNum BigInt?
+
   @@index([orderId])
   @@index([productId])
   @@index([backorderedAt], map: "idx_orderitem_backordered")
   @@index([fulfillingPoId], map: "idx_orderitem_fulfilling_po")
+  @@index([builderLineItemNum])
 }
 
 // ─── ORDER TEMPLATES ─────────────────────────────────────────────────
@@ -4851,10 +4891,18 @@ model HyphenOrderEvent {
   receivedAt         DateTime  @default(now()) @db.Timestamptz(6)
   processedAt        DateTime? @db.Timestamptz(6)
 
+  // ── Hyphen SPConnect v13 — change-order replay lookup (2026-05-06) ──
+  // Change orders carry a header.changeOrderNumber that targets the original
+  // PO. Persisting it here lets the processor (a) find the original event
+  // for replay, (b) chain CO → CO → CO history, and (c) be idempotent if
+  // the same CO arrives twice. Nullable — only populated for CO kinds.
+  changeOrderNumber  String?
+
   @@index([externalId], map: "idx_hyphenevent_external")
   @@index([kind], map: "idx_hyphenevent_kind")
   @@index([receivedAt(sort: Desc)], map: "idx_hyphenevent_received")
   @@index([status], map: "idx_hyphenevent_status")
+  @@index([changeOrderNumber])
 }
 
 model HyphenPayment {
