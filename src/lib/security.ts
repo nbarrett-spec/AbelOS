@@ -3,6 +3,7 @@
 // ──────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server'
+import { logAudit } from '@/lib/audit'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Input Sanitization
@@ -128,22 +129,40 @@ export interface AuditLogEntry {
   entityId?: string
   staffId: string
   staffEmail?: string
-  details?: string
+  /** Free-form description, or a JSON-serializable object. Objects are stringified into the AuditLog.details JSON column. */
+  details?: string | Record<string, any>
   ipAddress?: string
+  userAgent?: string
+  severity?: 'INFO' | 'WARN' | 'CRITICAL'
 }
 
-/** Log a security-relevant action (writes to console in dev, should go to DB in prod) */
+/**
+ * Log a security-relevant action. Fire-and-forget: kicks off an async write
+ * to the AuditLog table via logAudit() and returns immediately. Errors during
+ * the write are logged inside logAudit() and never propagated to the caller,
+ * so this can be safely invoked from any request path without try/catch.
+ */
 export function logAuditEvent(entry: AuditLogEntry): void {
-  const timestamp = new Date().toISOString()
-  const log = {
-    ...entry,
-    timestamp,
-    environment: process.env.NODE_ENV,
-  }
+  // Normalize details: callers historically passed a string; the AuditLog
+  // table stores JSON. Coerce strings into { message: string } so the row
+  // remains queryable, leave objects as-is.
+  const detailsObj: Record<string, any> =
+    typeof entry.details === 'string'
+      ? { message: entry.details }
+      : entry.details || {}
 
-  // In development, log to console
-  // console.log(`[AUDIT] ${timestamp} | ${entry.action} | ${entry.entityType} | staff:${entry.staffId} | ${entry.details || ''}`)
+  if (entry.staffEmail) detailsObj.staffEmail = entry.staffEmail
 
-  // In production, this would write to an audit log table
-  // TODO: Write to AuditLog table when in production
+  // Fire-and-forget. logAudit already swallows its own errors (see audit.ts),
+  // but add a defensive .catch() in case the import itself fails at runtime.
+  logAudit({
+    staffId: entry.staffId,
+    action: entry.action,
+    entity: entry.entityType,
+    entityId: entry.entityId,
+    details: detailsObj,
+    ipAddress: entry.ipAddress,
+    userAgent: entry.userAgent,
+    severity: entry.severity || 'INFO',
+  }).catch(() => {})
 }
