@@ -9,63 +9,49 @@
 // Resolution of Hyphen builder GUIDs → Abel builderId and Hyphen supplier
 // SKUs → Abel productId happens in processor.ts.
 //
+// Header-level shared types live in ./types — only NormalizedItem is kept
+// here, co-located with mapItem(), because item-level shaping is its own
+// concern (alias lookup + line-by-line resolution).
+//
 // References:
-//   Hyphen SPConnect API Specifications v13 §2 (Orders), pages 5-10
+//   Hyphen SPConnect API Specifications v13 §2 (Orders), pages 5-13
 //   docs/HYPHEN_SPCONNECT_SETUP.md
 // ──────────────────────────────────────────────────────────────────────────
 
-export interface NormalizedAddress {
-  name: string | null
-  street: string | null
-  streetSupplement: string | null
-  city: string | null
-  stateCode: string | null
-  postalCode: string | null
-}
+import type {
+  NormalizedAddress,
+  NormalizedContact,
+  NormalizedBuilder,
+  NormalizedShipping,
+  NormalizedBilling,
+  NormalizedJob,
+  NormalizedTask,
+  NormalizedHeaderOption,
+  NormalizedHeaderOptionValue,
+  NormalizedSummary,
+  NormalizedOrder,
+  MapperWarning,
+  MapperError,
+  MapperResult,
+} from './types'
 
-export interface NormalizedContact {
-  name: string | null
-  phone: string | null
-  email: string | null
-}
-
-export interface NormalizedBuilder {
-  hyphenBuilderId: string | null // header.builder.id (GUID)
-  accountCode: string | null // header.accountCode
-  accountNumber: string | null // header.accountNumber
-  address: NormalizedAddress
-  primaryContact: NormalizedContact
-}
-
-export interface NormalizedShipping {
-  address: NormalizedAddress
-  primaryContact: NormalizedContact
-}
-
-export interface NormalizedBilling {
-  address: NormalizedAddress
-  primaryContact: NormalizedContact
-}
-
-export interface NormalizedJob {
-  jobNum: string | null
-  name: string | null
-  street: string | null
-  streetSupplement: string | null
-  city: string | null
-  stateCode: string | null
-  postalCode: string | null
-  subdivision: string | null
-  phase: string | null
-  lot: string | null
-  block: string | null
-  plan: string | null
-  elevation: string | null
-  swing: string | null
-  permitNumber: string | null
-  startDate: string | null
-  endDate: string | null
-  communityCode: string | null
+// Re-export so existing callers (`import { NormalizedOrder } from './mapper'`)
+// keep working without needing to know about the types-file split.
+export type {
+  NormalizedAddress,
+  NormalizedContact,
+  NormalizedBuilder,
+  NormalizedShipping,
+  NormalizedBilling,
+  NormalizedJob,
+  NormalizedTask,
+  NormalizedHeaderOption,
+  NormalizedHeaderOptionValue,
+  NormalizedSummary,
+  NormalizedOrder,
+  MapperWarning,
+  MapperError,
+  MapperResult,
 }
 
 export interface NormalizedItem {
@@ -103,60 +89,8 @@ export interface NormalizedItem {
   homeSelectionInd: boolean
 }
 
-export interface NormalizedSummary {
-  numberOfLines: number | null
-  taxAmount: number
-  orderSubTotal: number
-  orderTotal: number
-}
-
-export interface NormalizedOrder {
-  // Idempotency key: Hyphen's system ID for this PO
-  hyphenOrderId: string // stringified header.id
-  supplierOrderNumber: string | null
-  issueDate: string | null
-  purpose: string // Original / Change / Cancellation / Confirmation / Other / Pending / Unspecified
-  orderType: string // PurchaseOrder / WorkOrder / etc.
-  orderCurrency: string | null
-  orderHeaderNote: string | null
-  additionalReferenceNumber: string | null
-  supplierReferenceNumber: string | null
-  deliveryType: string | null
-  startDate: string | null
-  endDate: string | null
-
-  builderOrderNumber: string | null // header.builderOrderNumber — becomes Abel Order.poNumber
-
-  builder: NormalizedBuilder
-  shipping: NormalizedShipping
-  billing: NormalizedBilling
-  job: NormalizedJob | null
-
-  taskNum: string | null
-  taskName: string | null
-
-  items: NormalizedItem[]
-  summary: NormalizedSummary
-}
-
-export type MapperWarning = {
-  code: string
-  message: string
-  path?: string
-}
-
-export type MapperError = {
-  code: string
-  message: string
-  path?: string
-}
-
-export interface MapperResult {
-  ok: boolean
-  order?: NormalizedOrder
-  warnings: MapperWarning[]
-  errors: MapperError[]
-}
+// NormalizedSummary, NormalizedOrder, MapperWarning, MapperError, and
+// MapperResult are defined in ./types and re-exported above.
 
 // ──────────────────────────────────────────────────────────────────────────
 // Public entry point
@@ -222,6 +156,8 @@ export function mapSpConnectOrderPayload(payload: any): MapperResult {
     return { ok: false, warnings, errors }
   }
 
+  const task = mapTask(header.task)
+
   const order: NormalizedOrder = {
     hyphenOrderId,
     supplierOrderNumber: trimOrNull(header.supplierOrderNumber),
@@ -236,12 +172,18 @@ export function mapSpConnectOrderPayload(payload: any): MapperResult {
     startDate: trimOrNull(header.startDate),
     endDate: trimOrNull(header.endDate),
     builderOrderNumber,
+    accountCode2: trimOrNull(header.accountCode2),
+    accountCode3: trimOrNull(header.accountCode3),
     builder: mapBuilder(header),
     shipping: mapShipping(header.shippingInformation),
     billing: mapBilling(header.billingInformation),
     job: mapJob(header.job),
-    taskNum: trimOrNull(header?.task?.taskNum),
-    taskName: trimOrNull(header?.task?.name),
+    task,
+    options: mapOptions(header.options),
+    // Mirror task fields onto the legacy flat slots so downstream callers
+    // that read `taskNum`/`taskName` directly off the order keep working.
+    taskNum: task?.taskNum ?? null,
+    taskName: task?.name ?? null,
     items,
     summary,
   }
@@ -254,17 +196,29 @@ export function mapSpConnectOrderPayload(payload: any): MapperResult {
 // ──────────────────────────────────────────────────────────────────────────
 
 function mapBuilder(header: any): NormalizedBuilder {
+  // Role-based emails live on the same primaryContacts payload as the
+  // individual contact, but they are organization-wide inboxes (not the
+  // personal name/phone/email triple). Some envelopes ship them as an array
+  // of one — readPrimaryContacts handles both shapes.
+  const pc = readPrimaryContacts(header?.builder?.primaryContacts)
   return {
     hyphenBuilderId: trimOrNull(header?.builder?.id),
     accountCode: trimOrNull(header?.accountCode),
     accountNumber: trimOrNull(header?.accountNumber),
     address: mapAddress(header?.builder?.address),
     primaryContact: mapContact(header?.builder?.primaryContacts),
+    purchasingEmail: trimOrNull(pc?.purchasingEmailAddress),
+    accountingEmail: trimOrNull(pc?.accountingEmailAddress),
+    warrantyEmail: trimOrNull(pc?.warrantyEmailAddress),
+    eDestinationEmail: trimOrNull(pc?.eDestinationEmailAddress),
+    bidConnectEmail: trimOrNull(pc?.bidConnectEmailAddress),
+    purchasingCcEmail: trimOrNull(pc?.purchasingCcEmailAddress),
   }
 }
 
 function mapShipping(shipping: any): NormalizedShipping {
   return {
+    participantType: trimOrNull(shipping?.participantType),
     address: mapAddress(shipping?.address),
     primaryContact: mapContact(shipping?.primaryContacts),
   }
@@ -298,7 +252,47 @@ function mapJob(job: any): NormalizedJob | null {
     startDate: trimOrNull(job.startDate),
     endDate: trimOrNull(job.endDate),
     communityCode: trimOrNull(job.communityCode),
+    // v13 additions — direct passthroughs, no validation. Hyphen sometimes
+    // sends jioId / communityId as numbers; coerce to string to keep the
+    // type stable across tenants.
+    communityCode2: trimOrNull(job.communityCode2),
+    communityCode3: trimOrNull(job.communityCode3),
+    communityId: stringifyOrNull(job.communityId),
+    colorPackage: trimOrNull(job.colorPackage),
+    jioId: stringifyOrNull(job.jioId),
+    primaryFirstName: trimOrNull(job.primaryFirstName),
+    primaryLastName: trimOrNull(job.primaryLastName),
+    primaryPhoneNumber: trimOrNull(job.primaryPhoneNumber),
+    primaryFaxNumber: trimOrNull(job.primaryFaxNumber),
+    primaryEmailAddress: trimOrNull(job.primaryEmailAddress),
   }
+}
+
+function mapTask(task: any): NormalizedTask | null {
+  if (!task || typeof task !== 'object') return null
+  return {
+    taskNum: trimOrNull(task.taskNum),
+    name: trimOrNull(task.name),
+    description: trimOrNull(task.description),
+  }
+}
+
+function mapOptions(options: any): NormalizedHeaderOption[] {
+  if (!Array.isArray(options)) return []
+  return options.map((opt: any) => {
+    const rawValues: any[] = Array.isArray(opt?.values) ? opt.values : []
+    const values: NormalizedHeaderOptionValue[] = rawValues.map((v) => ({
+      name: trimOrNull(v?.name),
+      description: trimOrNull(v?.description),
+    }))
+    return {
+      id: trimOrNull(opt?.id),
+      name: trimOrNull(opt?.name),
+      type: trimOrNull(opt?.type),
+      note: trimOrNull(opt?.note),
+      values,
+    }
+  })
 }
 
 function mapAddress(addr: any): NormalizedAddress {
@@ -323,17 +317,27 @@ function mapAddress(addr: any): NormalizedAddress {
 }
 
 function mapContact(contact: any): NormalizedContact {
-  // SPConnect sometimes sends primaryContacts as an object, sometimes as an
-  // array of one. Handle both.
-  const c = Array.isArray(contact) ? contact[0] : contact
-  if (!c || typeof c !== 'object') {
-    return { name: null, phone: null, email: null }
-  }
+  const c = readPrimaryContacts(contact)
+  if (!c) return { name: null, phone: null, email: null }
   return {
     name: trimOrNull(c.name),
     phone: trimOrNull(c.phone),
     email: trimOrNull(c.email),
   }
+}
+
+/**
+ * Resolve the primaryContacts payload to a plain object.
+ *
+ * SPConnect sometimes sends primaryContacts as an object, sometimes as an
+ * array of one. v13 extends the same payload with role-based addresses
+ * (purchasingEmailAddress, accountingEmailAddress, etc.), which mapBuilder
+ * pulls off the resolved object.
+ */
+function readPrimaryContacts(contact: any): any | null {
+  const c = Array.isArray(contact) ? contact[0] : contact
+  if (!c || typeof c !== 'object') return null
+  return c
 }
 
 function mapItem(
