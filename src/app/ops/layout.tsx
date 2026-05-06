@@ -78,18 +78,18 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 
 // ── Navigation Sections ────────────────────────────────────────────────────
 
+// Workflow-based grouping (audit B-UX-5). Items map to the user's mental model
+// rather than entity type. Some hrefs intentionally appear in two groups
+// (e.g. /ops/finance both as Executive snapshot and Finance hub) — preserved
+// to keep parity with the prior structure.
 const NAV_SECTIONS: NavSection[] = [
+  // 1. DASHBOARD — combines OVERVIEW + EXECUTIVE
   {
-    label: 'OVERVIEW', id: 'overview',
+    label: 'DASHBOARD', id: 'dashboard',
     items: [
       { href: '/ops', label: 'Dashboard', icon: '📊' },
       { href: '/ops/my-day', label: 'My Day', icon: '☀️' },
       { href: '/ops/inbox', label: 'Inbox', icon: '📨', badgeKey: 'inbox' },
-    ],
-  },
-  {
-    label: 'EXECUTIVE', id: 'executive',
-    items: [
       { href: '/ops/executive', label: 'CEO Dashboard', icon: '👔' },
       { href: '/ops/kpis', label: 'KPIs', icon: '📊' },
       { href: '/ops/reports', label: 'Reports & Analytics', icon: '📊' },
@@ -100,9 +100,66 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/admin/trends', label: 'Trend Tracker', icon: '📉' },
     ],
   },
+  // 2. SALES — Deals, Quotes, Orders, Builders, Communities, Pipeline,
+  //           Growth Engine, Marketing/Outreach, Customer Value
   {
-    label: 'JOBS & PROJECTS', id: 'jobs',
+    label: 'SALES', id: 'sales',
     items: [
+      // Sales Pipeline
+      { href: '/ops/sales', label: 'Sales Dashboard', icon: '🎯' },
+      { href: '/ops/sales/command-center', label: 'Sales Command Center', icon: '🎯' },
+      { href: '/ops/sales/intelligence', label: 'Sales Intelligence', icon: '🧠' },
+      { href: '/ops/sales/reports', label: 'Sales Reports', icon: '📊' },
+      { href: '/ops/sales/analytics', label: 'Sales Analytics', icon: '📈' },
+      // Quotes / Orders / Contracts
+      { href: '/ops/quote-requests', label: 'Quote Requests', icon: '📋' },
+      { href: '/ops/quotes', label: 'Quotes', icon: '💲' },
+      { href: '/ops/quotes/conversion', label: 'Quote Conversion', icon: '🔄' },
+      { href: '/ops/orders', label: 'Orders', icon: '📄' },
+      { href: '/ops/orders/ai-processing', label: 'AI Order Center', icon: '🤖' },
+      { href: '/ops/sales/contracts', label: 'Contracts', icon: '📝' },
+      { href: '/ops/sales/documents', label: 'Document Requests', icon: '📄' },
+      { href: '/ops/takeoff-inquiries', label: 'Takeoff Inquiries', icon: '📨' },
+      { href: '/ops/takeoff-review', label: 'Takeoff Review', icon: '🔍' },
+      { href: '/ops/floor-plans', label: 'Floor Plans', icon: '📐' },
+      // Pricing
+      { href: '/ops/pricing', label: 'Pricing Engine', icon: '💰' },
+      { href: '/ops/margin-rules', label: 'Margin Protection', icon: '🛡️' },
+      // Builders / Accounts / Communities
+      { href: '/ops/accounts', label: 'Builder Accounts', icon: '🏗️' },
+      { href: '/ops/accounts/applications', label: 'Builder Applications', icon: '📨' },
+      { href: '/ops/accounts/proactive', label: 'Proactive Accounts', icon: '🤝' },
+      { href: '/ops/customers/health', label: 'Builder Health Scores', icon: '📊' },
+      { href: '/ops/portal/builder-intel', label: 'Builder Intelligence', icon: '🔍' },
+      { href: '/ops/organizations', label: 'Organizations', icon: '🏢' },
+      { href: '/ops/communities', label: 'Communities', icon: '🏘️' },
+      { href: '/ops/trades', label: 'Trade Finder', icon: '🤝' },
+      { href: '/dashboard/onboarding', label: 'Builder Onboarding', icon: '🎓' },
+      // Growth Engine / Marketing / Outreach
+      { href: '/ops/growth', label: 'Growth Opportunities', icon: '🚀' },
+      { href: '/ops/growth/leads', label: 'Lead Scoring & CLV', icon: '🎯' },
+      { href: '/ops/growth/permits', label: 'Permit Pipeline', icon: '🗺️' },
+      { href: '/ops/marketing/campaigns', label: 'Marketing Automation', icon: '📣' },
+      { href: '/ops/sales/outreach', label: 'Outreach Sequences', icon: '📧' },
+      { href: '/ops/outreach/tracker', label: 'Cold Outreach', icon: '📞' },
+      { href: '/ops/revenue-intelligence', label: 'AI Revenue Machine', icon: '💰' },
+      { href: '/ops/customer-catalog', label: 'Customer Catalog', icon: '🛒' },
+      // Communication (customer-facing belongs in Sales workflow)
+      { href: '/ops/messages', label: 'Messages', icon: '💬' },
+      { href: '/ops/builder-messages', label: 'Builder Inbox', icon: '📩' },
+      { href: '/ops/communication-log', label: 'Communication Log', icon: '📧' },
+      { href: '/ops/notifications', label: 'Notifications', icon: '🔔' },
+      { href: '/ops/gchat', label: 'Google Chat', icon: '💬' },
+      { href: '/ops/video-rooms', label: 'Video Rooms', icon: '📹' },
+      { href: '/ops/agent', label: 'AI Agent Dashboard', icon: '🤖' },
+    ],
+  },
+  // 3. OPS — Jobs, Manufacturing, Deliveries, QC, Calendar, Schedule, Crews,
+  //          Warehouse/NFC, Warranty, Fleet
+  {
+    label: 'OPS', id: 'ops',
+    items: [
+      // Jobs & Projects
       { href: '/ops/projects', label: 'PM Command Center', icon: '🎛️' },
       { href: '/ops/jobs', label: 'Job Pipeline', icon: '🔧' },
       { href: '/ops/job-readiness', label: 'Job Readiness', icon: '✅' },
@@ -111,66 +168,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/crews', label: 'Crews', icon: '👷' },
       { href: '/ops/inspections', label: 'Inspections', icon: '✅' },
       { href: '/ops/lien-releases', label: 'Lien Releases', icon: '📜' },
-    ],
-  },
-  {
-    label: 'SALES PIPELINE', id: 'sales',
-    items: [
-      { href: '/ops/sales', label: 'Sales Dashboard', icon: '🎯' },
-      { href: '/ops/sales/reports', label: 'Sales Reports', icon: '📊' },
-      { href: '/ops/sales/analytics', label: 'Sales Analytics', icon: '📈' },
-      { href: '/ops/sales/contracts', label: 'Contracts', icon: '📝' },
-      { href: '/ops/sales/documents', label: 'Document Requests', icon: '📄' },
-      { href: '/ops/quote-requests', label: 'Quote Requests', icon: '📋' },
-      { href: '/ops/pricing', label: 'Pricing Engine', icon: '💰' },
-      { href: '/ops/margin-rules', label: 'Margin Protection', icon: '🛡️' },
-      { href: '/ops/sales/intelligence', label: 'Sales Intelligence', icon: '🧠' },
-      { href: '/ops/sales/command-center', label: 'Sales Command Center', icon: '🎯' },
-      { href: '/ops/sales/outreach', label: 'Outreach Sequences', icon: '📧' },
-    ],
-  },
-  {
-    label: 'GROWTH ENGINE', id: 'growth',
-    items: [
-      { href: '/ops/growth/leads', label: 'Lead Scoring & CLV', icon: '🎯' },
-      { href: '/ops/growth/permits', label: 'Permit Pipeline', icon: '🗺️' },
-      { href: '/ops/marketing/campaigns', label: 'Marketing Automation', icon: '📣' },
-      { href: '/ops/outreach/tracker', label: 'Cold Outreach', icon: '📞' },
-      { href: '/ops/revenue-intelligence', label: 'AI Revenue Machine', icon: '💰' },
-      { href: '/ops/customer-catalog', label: 'Customer Catalog', icon: '🛒' },
-      { href: '/ops/growth', label: 'Growth Opportunities', icon: '🚀' },
-    ],
-  },
-  {
-    label: 'ACCOUNTS & ORDERS', id: 'accounts',
-    items: [
-      { href: '/ops/accounts', label: 'Builder Accounts', icon: '🏗️' },
-      { href: '/ops/accounts/applications', label: 'Builder Applications', icon: '📨' },
-      { href: '/ops/organizations', label: 'Organizations', icon: '🏢' },
-      { href: '/ops/communities', label: 'Communities', icon: '🏘️' },
-      { href: '/ops/quotes', label: 'Quotes', icon: '💲' },
-      { href: '/ops/orders', label: 'Orders', icon: '📄' },
-      { href: '/ops/orders/ai-processing', label: 'AI Order Center', icon: '🤖' },
-      { href: '/ops/quotes/conversion', label: 'Quote Conversion', icon: '🔄' },
-      { href: '/ops/takeoff-inquiries', label: 'Takeoff Inquiries', icon: '📨' },
-      { href: '/ops/takeoff-review', label: 'Takeoff Review', icon: '🔍' },
-      { href: '/ops/floor-plans', label: 'Floor Plans', icon: '📐' },
-      { href: '/ops/products', label: 'Product Catalog', icon: '📦' },
-      { href: '/ops/products/profitability', label: 'Product Profitability', icon: '💹' },
-      { href: '/ops/catalog', label: 'Categories & Suppliers', icon: '🏷️' },
-      { href: '/dashboard/onboarding', label: 'Builder Onboarding', icon: '🎓' },
-    ],
-  },
-  {
-    label: 'WARRANTY', id: 'warranty',
-    items: [
-      { href: '/ops/warranty', label: 'Warranty Claims', icon: '🛡️' },
-      { href: '/ops/warranty/policies', label: 'Warranty Policies', icon: '📜' },
-    ],
-  },
-  {
-    label: 'MANUFACTURING', id: 'manufacturing',
-    items: [
+      { href: '/ops/jobs/map', label: 'Live Jobsite Map', icon: '🗺️' },
+      // Manufacturing
       { href: '/ops/manufacturing', label: 'Manufacturing Dashboard', icon: '🏭' },
       { href: '/ops/manufacturing/build-sheet', label: 'Build Sheet', icon: '📝' },
       { href: '/ops/manufacturing/bom', label: 'Bill of Materials', icon: '🔩' },
@@ -179,32 +178,11 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/manufacturing/staging', label: 'Staging', icon: '📦' },
       { href: '/ops/manufacturing/labor-costs', label: 'Labor & Overhead', icon: '💵' },
       { href: '/ops/manufacturing/job-packet', label: 'Print Job Packet', icon: '🖨️' },
+      // Warehouse & NFC
       { href: '/ops/warehouse/pick-scanner', label: 'Pick Scanner', icon: '📱' },
-    ],
-  },
-  {
-    label: 'WAREHOUSE & NFC', id: 'warehouse-nfc',
-    items: [
       { href: '/ops/warehouse/bays', label: 'Bay Map', icon: '🏭' },
       { href: '/ops/warehouse/doors', label: 'Door Registry', icon: '📱' },
-    ],
-  },
-  {
-    label: 'SUPPLY CHAIN', id: 'supply-chain',
-    items: [
-      { href: '/ops/inventory', label: 'Inventory', icon: '📦' },
-      { href: '/ops/inventory/intelligence', label: 'Inventory Intelligence', icon: '🧠' },
-      { href: '/ops/inventory/allocations', label: 'Allocations', icon: '📍' },
-      { href: '/ops/material-calendar', label: 'Material Calendar', icon: '📅' },
-      { href: '/ops/purchasing', label: 'Purchase Orders', icon: '🛒' },
-      { href: '/ops/purchasing/smart-po', label: 'SmartPO Queue', icon: '⚡' },
-      { href: '/ops/purchasing/optimize', label: 'Purchasing Optimizer', icon: '⚖️' },
-      { href: '/ops/procurement-intelligence', label: 'AI Procurement Brain', icon: '🤖' },
-      { href: '/ops/mrp', label: 'MRP — Forward Demand', icon: '🎯' },
-      { href: '/ops/vendors', label: 'Vendors', icon: '🏢' },
-      { href: '/ops/vendors/scorecard', label: 'Vendor Scorecard', icon: '🏆' },
-      { href: '/ops/receiving', label: 'Receiving', icon: '📥' },
-      { href: '/ops/returns', label: 'Returns', icon: '🔄' },
+      // Delivery / Fleet
       { href: '/ops/delivery', label: 'Delivery Center', icon: '🚚' },
       { href: '/ops/delivery/today', label: 'Today\'s Routes', icon: '🛻' },
       { href: '/ops/delivery/manifest', label: 'Print Manifest', icon: '🖨️' },
@@ -212,11 +190,43 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/delivery/optimize', label: 'Delivery Analytics', icon: '📊' },
       { href: '/ops/delivery/curri', label: 'Curri (3rd Party)', icon: '🤝' },
       { href: '/ops/fleet', label: 'Fleet & Logistics Hub', icon: '🚛' },
-      { href: '/ops/jobs/map', label: 'Live Jobsite Map', icon: '🗺️' },
-      { href: '/ops/supply-chain', label: 'Supply Chain Overview', icon: '🔗' },
-      { href: '/ops/auto-po', label: 'Auto-PO Generation', icon: '⚡' },
+      // Warranty
+      { href: '/ops/warranty', label: 'Warranty Claims', icon: '🛡️' },
+      { href: '/ops/warranty/policies', label: 'Warranty Policies', icon: '📜' },
+      { href: '/ops/warranty/automation', label: 'Warranty Automation', icon: '🛡️' },
     ],
   },
+  // 4. INVENTORY — Products, Stock Levels, Purchasing, Vendors, Receiving,
+  //                Returns, Substitutions, MRP, Supply Chain
+  {
+    label: 'INVENTORY', id: 'inventory',
+    items: [
+      // Products / Catalog
+      { href: '/ops/products', label: 'Product Catalog', icon: '📦' },
+      { href: '/ops/products/profitability', label: 'Product Profitability', icon: '💹' },
+      { href: '/ops/catalog', label: 'Categories & Suppliers', icon: '🏷️' },
+      // Stock Levels
+      { href: '/ops/inventory', label: 'Inventory', icon: '📦' },
+      { href: '/ops/inventory/intelligence', label: 'Inventory Intelligence', icon: '🧠' },
+      { href: '/ops/inventory/allocations', label: 'Allocations', icon: '📍' },
+      // Purchasing
+      { href: '/ops/purchasing', label: 'Purchase Orders', icon: '🛒' },
+      { href: '/ops/purchasing/smart-po', label: 'SmartPO Queue', icon: '⚡' },
+      { href: '/ops/purchasing/optimize', label: 'Purchasing Optimizer', icon: '⚖️' },
+      { href: '/ops/auto-po', label: 'Auto-PO Generation', icon: '⚡' },
+      { href: '/ops/procurement-intelligence', label: 'AI Procurement Brain', icon: '🤖' },
+      { href: '/ops/mrp', label: 'MRP — Forward Demand', icon: '🎯' },
+      // Vendors
+      { href: '/ops/vendors', label: 'Vendors', icon: '🏢' },
+      { href: '/ops/vendors/scorecard', label: 'Vendor Scorecard', icon: '🏆' },
+      // Receiving / Returns
+      { href: '/ops/receiving', label: 'Receiving', icon: '📥' },
+      { href: '/ops/returns', label: 'Returns', icon: '🔄' },
+      // Supply Chain Overview
+      { href: '/ops/supply-chain', label: 'Supply Chain Overview', icon: '🔗' },
+    ],
+  },
+  // 5. FINANCE — Invoices, Payments, Collections, Reports, Accounting
   {
     label: 'FINANCE', id: 'finance',
     items: [
@@ -235,20 +245,9 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/accounting/chart-of-accounts', label: 'Chart of Accounts', icon: '📚' },
     ],
   },
+  // 6. AI / BRAIN — Brain Insights, AI Insights, Predictive
   {
-    label: 'COMMUNICATION', id: 'communication',
-    items: [
-      { href: '/ops/agent', label: 'AI Agent Dashboard', icon: '🤖' },
-      { href: '/ops/messages', label: 'Messages', icon: '💬' },
-      { href: '/ops/builder-messages', label: 'Builder Inbox', icon: '📩' },
-      { href: '/ops/communication-log', label: 'Communication Log', icon: '📧' },
-      { href: '/ops/notifications', label: 'Notifications', icon: '🔔' },
-      { href: '/ops/gchat', label: 'Google Chat', icon: '💬' },
-      { href: '/ops/video-rooms', label: 'Video Rooms', icon: '📹' },
-    ],
-  },
-  {
-    label: 'AI OPERATIONS BRAIN', id: 'ai-brain',
+    label: 'AI / BRAIN', id: 'ai-brain',
     items: [
       { href: '/ops/brain-insights', label: 'Brain Insights', icon: '🧠' },
       { href: '/ops/ai/insights', label: 'AI Insights', icon: '💡' },
@@ -260,27 +259,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/automations', label: 'Automations & Tasks', icon: '⚡' },
     ],
   },
-  {
-    label: 'CUSTOMER VALUE', id: 'customer-value',
-    items: [
-      { href: '/ops/portal/builder-intel', label: 'Builder Intelligence', icon: '🔍' },
-      { href: '/ops/warranty/automation', label: 'Warranty Automation', icon: '🛡️' },
-      { href: '/ops/accounts/proactive', label: 'Proactive Accounts', icon: '🤝' },
-      { href: '/ops/trades', label: 'Trade Finder', icon: '🤝' },
-      { href: '/ops/customers/health', label: 'Builder Health Scores', icon: '📊' },
-    ],
-  },
-  {
-    label: 'INTEGRATIONS', id: 'integrations',
-    items: [
-      { href: '/ops/integrations', label: 'Integration Hub', icon: '🔗' },
-      { href: '/ops/sync-health', label: 'Sync Health', icon: '🩺' },
-      { href: '/ops/integrations/buildertrend', label: 'BuilderTrend', icon: '🏗️' },
-      { href: '/ops/integrations/supplier-pricing', label: 'Supplier Pricing', icon: '🌲' },
-      { href: '/ops/integrations/routing-audit', label: 'Routing Audit', icon: '🔍' },
-      { href: '/ops/imports', label: 'Data Imports', icon: '📥' },
-    ],
-  },
+  // 7. DEPARTMENT PORTALS — kept intact
   {
     label: 'DEPARTMENT PORTALS', id: 'portals',
     items: [
@@ -316,15 +295,10 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/portal/qc/rework', label: 'Rework Queue', icon: '🔧' },
     ],
   },
+  // 8. SETTINGS / ADMIN — Staff, Settings, Audit, API Keys, Imports,
+  //                       Integrations, Automations, System Health, Resources
   {
-    label: 'RESOURCES', id: 'resources',
-    items: [
-      { href: '/ops/documents/vault', label: 'Document Vault', icon: '🗄️' },
-      { href: '/ops/documents', label: 'Document Library', icon: '📁' },
-    ],
-  },
-  {
-    label: 'ADMIN', id: 'admin',
+    label: 'SETTINGS / ADMIN', id: 'admin',
     items: [
       { href: '/ops/admin/system-health', label: 'System Health', icon: '❤️' },
       { href: '/ops/staff', label: 'Staff Management', icon: '👥' },
@@ -332,7 +306,18 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/ops/locations', label: 'Locations', icon: '🏢' },
       { href: '/ops/delegations', label: 'Workload Delegation', icon: '🔄' },
       { href: '/ops/automations', label: 'Automations', icon: '⚡' },
+      // Integrations
+      { href: '/ops/integrations', label: 'Integration Hub', icon: '🔗' },
+      { href: '/ops/sync-health', label: 'Sync Health', icon: '🩺' },
+      { href: '/ops/integrations/buildertrend', label: 'BuilderTrend', icon: '🏗️' },
+      { href: '/ops/integrations/supplier-pricing', label: 'Supplier Pricing', icon: '🌲' },
+      { href: '/ops/integrations/routing-audit', label: 'Routing Audit', icon: '🔍' },
+      { href: '/ops/imports', label: 'Data Imports', icon: '📥' },
       { href: '/ops/integrations', label: 'Integrations', icon: '🔗' },
+      // Resources
+      { href: '/ops/documents/vault', label: 'Document Vault', icon: '🗄️' },
+      { href: '/ops/documents', label: 'Document Library', icon: '📁' },
+      // Audit / Settings / Profile
       { href: '/ops/audit', label: 'Audit Log', icon: '📝' },
       { href: '/ops/settings', label: 'Settings', icon: '⚙️' },
       { href: '/ops/profile', label: 'My Profile', icon: '👤' },

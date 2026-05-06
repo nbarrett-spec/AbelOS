@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { PageHeader, KPICard, StatusBadge, Badge } from '@/components/ui'
 import EmptyState from '@/components/ui/EmptyState'
+import { DrillLink } from '@/components/ui/DrillLink'
 import { cn } from '@/lib/utils'
 
 type DoorMaterial = 'WOOD' | 'FIBERGLASS' | 'METAL'
@@ -24,6 +25,13 @@ interface OrderItem {
   // production cuts a wood-bore or fiberglass/metal strike. Captured at
   // order entry; required for those categories at the form layer.
   doorMaterial?: DoorMaterial | null
+  // A-BIZ-6: backorder state stamped at order create time when
+  // reserveForOrder finds insufficient stock for this line.
+  backorderedQty?: number | null
+  backorderedAt?: string | null
+  expectedDate?: string | null
+  fulfillingPoId?: string | null
+  fulfillingPoNumber?: string | null
   product?: { id?: string; name: string; sku: string; category?: string; subcategory?: string } | null
 }
 
@@ -527,10 +535,22 @@ export default function OpsOrdersPage() {
                   <input type="checkbox" checked={selectedIds.has(order.id)}
                     onChange={() => toggleSelect(order.id)}
                     className="w-3.5 h-3.5 rounded-sm border-border-strong accent-accent flex-shrink-0" />
-                  <div className="w-32 min-w-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
-                    <span className="text-[13px] font-mono font-semibold text-fg block truncate">{order.orderNumber}</span>
+                  <div className="w-32 min-w-0">
+                    <DrillLink
+                      entity="order"
+                      id={order.orderNumber}
+                      className="text-[13px] font-mono font-semibold block truncate"
+                    >
+                      {order.orderNumber}
+                    </DrillLink>
                     {order.quote && (
-                      <span className="text-[10px] text-fg-subtle font-mono">← {order.quote.quoteNumber}</span>
+                      <DrillLink
+                        entity="quote"
+                        id={order.quote.quoteNumber}
+                        className="text-[10px] font-mono"
+                      >
+                        ← {order.quote.quoteNumber}
+                      </DrillLink>
                     )}
                   </div>
                   <div className="w-32 shrink-0 flex items-center gap-1.5">
@@ -546,8 +566,14 @@ export default function OpsOrdersPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
-                    <p className="text-sm text-fg truncate font-medium">
-                      {order.builder?.companyName || 'Unknown'}
+                    <p className="text-sm truncate font-medium" onClick={(e) => e.stopPropagation()}>
+                      {order.builder?.id ? (
+                        <DrillLink entity="builder" id={order.builder.id}>
+                          {order.builder.companyName}
+                        </DrillLink>
+                      ) : (
+                        <span className="text-fg">{order.builder?.companyName || 'Unknown'}</span>
+                      )}
                     </p>
                     <p className="text-[11px] text-fg-muted truncate">
                       {project?.name && <span>{project.name}</span>}
@@ -670,6 +696,12 @@ export default function OpsOrdersPage() {
                             const skuLabel = item.product?.sku
                             const showMaterial = needsDoorMaterial(item)
                             const missing = showMaterial && !item.doorMaterial
+                            // A-BIZ-6: backorder badge / ETA when this line is short on stock
+                            const boQty = Number(item.backorderedQty || 0)
+                            const isBackordered = boQty > 0
+                            const etaLabel = item.expectedDate
+                              ? new Date(item.expectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                              : null
                             return (
                               <tr key={item.id}>
                                 <td className="text-fg">
@@ -694,6 +726,19 @@ export default function OpsOrdersPage() {
                                     ) : (
                                       <span className="text-fg-subtle ml-2 text-xs font-mono">{skuLabel}</span>
                                     )
+                                  )}
+                                  {isBackordered && (
+                                    <div className="mt-1">
+                                      <Badge variant="warning" size="sm" dot>
+                                        <span>Backorder · {boQty} short</span>
+                                        {etaLabel && (
+                                          <span className="ml-1 text-fg-muted">· ETA {etaLabel}</span>
+                                        )}
+                                        {item.fulfillingPoNumber && (
+                                          <span className="ml-1 text-fg-muted font-mono">· {item.fulfillingPoNumber}</span>
+                                        )}
+                                      </Badge>
+                                    </div>
                                   )}
                                 </td>
                                 <td>

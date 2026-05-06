@@ -9,6 +9,7 @@ import {
   DataTable, Badge, StatusBadge, EmptyState, AnimatedNumber, LiveDataIndicator,
   InfoTip,
 } from '@/components/ui'
+import { DrillLink } from '@/components/ui/DrillLink'
 import { cn } from '@/lib/utils'
 
 interface BuilderAccount {
@@ -335,9 +336,9 @@ export default function BuilderAccountsPage() {
             header: 'Company',
             sortable: true,
             cell: (b) => (
-              <Link href={`/ops/accounts/${b.id}`} className="font-medium text-fg hover:text-accent">
+              <DrillLink entity="builder" id={b.id} className="font-medium">
                 {b.companyName}
-              </Link>
+              </DrillLink>
             ),
           },
           {

@@ -294,6 +294,36 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────────────
   // CSRF PROTECTION — all API mutations
   // (Skip for agent-hub routes with Bearer auth — server-to-server)
+  //
+  // STRATEGY: Defense-in-depth via two browser-enforced controls.
+  // We deliberately do NOT use a synchronizer-token / double-submit-
+  // cookie pattern. Rationale (A-SEC-4, audited 2026-05-05):
+  //
+  //   1. Auth cookies (`abel_session`, `abel_staff_session`) are set
+  //      with `SameSite=Strict` in production (see src/lib/auth.ts L63
+  //      and src/lib/staff-auth.ts L69). Modern browsers refuse to
+  //      attach Strict cookies on any cross-site navigation or
+  //      sub-request — including form POSTs from attacker pages.
+  //      That alone defeats classic CSRF for every browser shipped
+  //      since ~2020.
+  //
+  //   2. The Origin-vs-Host check below catches the residual cases:
+  //      misconfigured proxies, ancient clients without SameSite
+  //      enforcement, and any request where the browser DID send the
+  //      cookie but the originating page is off-origin. A 403 fires
+  //      before the route handler runs.
+  //
+  // Aegis has zero cross-origin form posts and no embedded third-party
+  // iframes that need to authenticate against /api/*. Webhook ingress
+  // (/api/webhooks, /api/ops/hyphen/ingest, gmail-sync, MCP, agent-hub)
+  // uses signature/Bearer/API-key auth, not cookies — those routes
+  // are explicitly exempted above. There is no exploitable surface
+  // left for a token-CSRF system to cover.
+  //
+  // Reference: OWASP CSRF Prevention Cheat Sheet — "Verifying Origin
+  // With Standard Headers" + "SameSite Cookie Attribute" sections.
+  // Both controls are listed as primary defenses; layering them is
+  // the documented best practice.
   // ────────────────────────────────────────────────────────────────
   if (pathname.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
     // Skip CSRF for internal logging endpoints (middleware → itself, secret-authed)

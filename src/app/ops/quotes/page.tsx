@@ -5,6 +5,7 @@ import { FileText, FileQuestion } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
+import { DrillLink } from '@/components/ui/DrillLink'
 
 interface QuoteItem {
   id: string
@@ -660,13 +661,21 @@ export default function OpsQuotesPage() {
                     onClick={() => setExpandedQuote(isExpanded ? null : quote.id)}
                     className="px-5 py-4 cursor-pointer flex justify-between items-center hover:bg-row-hover transition-colors"
                   >
-                    <div className="flex-1">
-                      <span className="text-sm font-semibold text-fg font-mono">{quote.quoteNumber}</span>
+                    <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                      <DrillLink entity="quote" id={quote.quoteNumber} className="text-sm font-semibold font-mono">
+                        {quote.quoteNumber}
+                      </DrillLink>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-fg-muted">
-                        {quote.project?.builder?.companyName || 'Unknown Builder'}
-                        {quote.project?.name ? ` — ${quote.project.name}` : ''}
+                    <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                      <p className="text-sm">
+                        {quote.project?.builder?.id ? (
+                          <DrillLink entity="builder" id={quote.project.builder.id}>
+                            {quote.project.builder.companyName}
+                          </DrillLink>
+                        ) : (
+                          <span className="text-fg-muted">{quote.project?.builder?.companyName || 'Unknown Builder'}</span>
+                        )}
+                        {quote.project?.name ? <span className="text-fg-muted"> — {quote.project.name}</span> : ''}
                       </p>
                     </div>
                     <div className="flex-1 text-right">

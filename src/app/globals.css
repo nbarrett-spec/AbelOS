@@ -277,9 +277,12 @@ html.dark {
   --border-strong:      rgba(99,102,241,0.16);
   --border-focus:       var(--c1);
 
-  --fg:                 #E2E8F0;
-  --fg-muted:           #A6B5C7;
-  --fg-subtle:          #7A8699;
+  /* B-UX-6: floors — body ≥ slate-200 (#E2E8F0), secondary ≥ slate-400
+     (#94A3B8). Headroom added for glass surfaces where alpha backgrounds
+     drop effective contrast. */
+  --fg:                 #E2E8F0;  /* slate-200 — body */
+  --fg-muted:           #CBD5E1;  /* slate-300 — secondary (was #A6B5C7) */
+  --fg-subtle:          #94A3B8;  /* slate-400 floor (was #7A8699, sub-floor over glass) */
   --fg-inverse:         #080D1A;
   --fg-on-accent:       #FFFFFF;
 
@@ -363,7 +366,8 @@ html.dark[data-design="drafting-room"] {
   --canvas: var(--navy-deep);  --surface: var(--navy);  --surface-muted: #0d2233;
   --surface-elevated: var(--navy-mid);  --surface-floating: #1f4868;  --surface-inverse: var(--cream);
   --border: rgba(198,162,78,0.12);  --border-strong: rgba(198,162,78,0.18);
-  --fg: #f5f1e8;  --fg-muted: #96a8b8;  --fg-subtle: #6b7d8e;
+  /* B-UX-6: drafting-room dark — body ≥ slate-200, secondary ≥ slate-400. */
+  --fg: #f5f1e8;  --fg-muted: #CBD5E1;  --fg-subtle: #94A3B8;
   --signal: var(--gold);  --signal-hover: var(--gold-light);
   --signal-subtle: rgba(198,162,78,0.12);  --signal-glow: rgba(198,162,78,0.25);
   --accent: var(--signal);  --accent-hover: var(--signal-hover);

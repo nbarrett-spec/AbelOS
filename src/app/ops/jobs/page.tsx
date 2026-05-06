@@ -6,6 +6,7 @@ import { Briefcase } from 'lucide-react'
 import { CreateJobModal } from '../components/CreateJobModal'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
+import { DrillLink } from '@/components/ui/DrillLink'
 
 const JOB_STATUSES = [
   { key: 'CREATED', label: 'New', color: '#95A5A6' },
@@ -566,6 +567,9 @@ export default function JobPipelinePage() {
                 <thead className="bg-surface-muted border-b">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
+                      Job #
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
                       Builder
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-fg">
@@ -599,12 +603,14 @@ export default function JobPipelinePage() {
                         className="hover:bg-row-hover transition-colors"
                       >
                         <td className="px-4 py-3">
-                          <Link
-                            href={`/ops/jobs/${job.id}`}
-                            className="text-sm font-medium text-signal hover:underline"
-                          >
+                          <DrillLink entity="job" id={job.id} className="text-sm font-mono font-medium">
+                            {job.jobNumber}
+                          </DrillLink>
+                        </td>
+                        <td className="px-4 py-3">
+                          <DrillLink entity="job" id={job.id} className="text-sm font-medium">
                             {job.builderName}
-                          </Link>
+                          </DrillLink>
                         </td>
                         <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.community || '—'}
@@ -612,8 +618,10 @@ export default function JobPipelinePage() {
                         <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.lotBlock || '—'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-fg-muted max-w-xs truncate">
-                          {job.jobAddress || '—'}
+                        <td className="px-4 py-3 text-sm text-fg-muted max-w-xs">
+                          <DrillLink entity="job" id={job.id} className="truncate block">
+                            {job.jobAddress || '—'}
+                          </DrillLink>
                         </td>
                         <td className="px-4 py-3 text-sm text-fg-muted">
                           {job.assignedPM ? `${job.assignedPM.firstName} ${job.assignedPM.lastName}` : '—'}

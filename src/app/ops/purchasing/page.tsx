@@ -13,6 +13,7 @@ import {
   InfoTip, Tabs,
 } from '@/components/ui'
 import { getStatusBadgeVariant } from '@/components/ui/Badge'
+import { DrillLink } from '@/components/ui/DrillLink'
 import { useLiveTick } from '@/hooks/useLiveTopic'
 import { cn } from '@/lib/utils'
 
@@ -807,7 +808,9 @@ export default function PurchaseOrdersPage() {
               sortable: true,
               cell: (o) => (
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-semibold text-fg">{o.poNumber}</span>
+                  <DrillLink entity="po" id={o.id} className="font-mono font-semibold">
+                    {o.poNumber}
+                  </DrillLink>
                   {o.aiGenerated && <Badge variant="brand" size="xs">AI</Badge>}
                   {o.priority === 'URGENT' && <Badge variant="danger" size="xs">URGENT</Badge>}
                 </div>
@@ -818,7 +821,13 @@ export default function PurchaseOrdersPage() {
               header: 'Vendor',
               cell: (o) => (
                 <div>
-                  <div className="text-sm text-fg">{o.supplierName || o.vendorName || '—'}</div>
+                  {o.vendorId ? (
+                    <DrillLink entity="vendor" id={o.vendorId} className="text-sm">
+                      {o.supplierName || o.vendorName || '—'}
+                    </DrillLink>
+                  ) : (
+                    <div className="text-sm text-fg">{o.supplierName || o.vendorName || '—'}</div>
+                  )}
                   {o.vendorCode && <div className="text-[11px] text-fg-subtle font-mono">{o.vendorCode}</div>}
                 </div>
               ),
@@ -827,7 +836,13 @@ export default function PurchaseOrdersPage() {
               key: 'builder',
               header: 'Builder',
               cell: (o) => (
-                <span className="text-sm text-fg-muted">{o.builderName || <span className="text-fg-subtle">—</span>}</span>
+                o.builderId && o.builderName ? (
+                  <DrillLink entity="builder" id={o.builderId} className="text-sm">
+                    {o.builderName}
+                  </DrillLink>
+                ) : (
+                  <span className="text-sm text-fg-muted">{o.builderName || <span className="text-fg-subtle">—</span>}</span>
+                )
               ),
             },
             {

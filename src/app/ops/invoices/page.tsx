@@ -6,6 +6,7 @@ import { Receipt } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge'
+import { DrillLink } from '@/components/ui/DrillLink'
 import { CreateInvoiceModal } from '../components/CreateInvoiceModal'
 import { RecordPaymentModal } from '../components/RecordPaymentModal'
 import { BatchPaymentModal, type BatchInvoice } from '../components/BatchPaymentModal'
@@ -581,17 +582,25 @@ export default function InvoicesPage() {
                         <span className="inline-block w-4 h-4" aria-hidden />
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-fg">
-                      <Link href={`/ops/invoices/${invoice.id}`} className="hover:underline">
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <DrillLink entity="invoice" id={invoice.id} className="font-medium">
                         {invoice.invoiceNumber}
-                      </Link>
+                      </DrillLink>
                     </td>
-                    <td className="px-6 py-4 text-sm text-fg">{invoice.builderName || 'Unknown'}</td>
-                    <td className="px-6 py-4 text-sm text-fg">
+                    <td className="px-6 py-4 text-sm">
+                      {invoice.builderId ? (
+                        <DrillLink entity="builder" id={invoice.builderId}>
+                          {invoice.builderName || 'Unknown'}
+                        </DrillLink>
+                      ) : (
+                        <span className="text-fg">{invoice.builderName || 'Unknown'}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
                       {invoice.jobId && invoice.jobNumber ? (
-                        <Link href={`/ops/jobs/${invoice.jobId}`} className="text-signal hover:underline">
+                        <DrillLink entity="job" id={invoice.jobId} className="font-mono">
                           {invoice.jobNumber}
-                        </Link>
+                        </DrillLink>
                       ) : (
                         <span className="text-fg-muted">—</span>
                       )}
