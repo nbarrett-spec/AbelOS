@@ -1,30 +1,55 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import Link from 'next/link'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
-import { Settings } from 'lucide-react'
+import { Settings, ExternalLink } from 'lucide-react'
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+type CronStatus = 'RUNNING' | 'SUCCESS' | 'FAILURE' | 'PARTIAL' | null
+type CronHealth = 'HEALTHY' | 'DEGRADED' | 'DEAD' | 'STUCK' | 'NEVER_RAN'
 
 interface CronSummary {
   name: string
   schedule: string
   lastRunAt: string | null
-  lastStatus: 'RUNNING' | 'SUCCESS' | 'FAILURE' | null
+  lastStatus: Exclude<CronStatus, null> | null
   lastDurationMs: number | null
   lastError: string | null
   successCount24h: number
   failureCount24h: number
+  // Enriched fields from /lib/cron-health
+  health: CronHealth
+  itemsProcessed24h: number | null
+  itemsProcessedSource: 'sync_log' | 'cron_result' | null
+  integrationProvider: string | null
 }
 
 interface CronRun {
   id: string
   name: string
-  status: 'RUNNING' | 'SUCCESS' | 'FAILURE'
+  status: 'RUNNING' | 'SUCCESS' | 'FAILURE' | 'PARTIAL'
   startedAt: string
   finishedAt: string | null
   durationMs: number | null
   error: string | null
   triggeredBy: string | null
+}
+
+interface SyncLog {
+  id: string
+  startedAt: string
+  completedAt: string | null
+  status: string
+  syncType: string
+  recordsProcessed: number
+  recordsCreated: number
+  recordsUpdated: number
+  recordsSkipped: number
+  recordsFailed: number
+  errorMessage: string | null
+  durationMs: number | null
 }
 
 interface CronDrift {
@@ -39,6 +64,7 @@ interface CronDrift {
   }>
 }
 
+// ─── Formatting helpers ────────────────────────────────────────────────────
 function fmtMinutes(mins: number): string {
   if (mins < 60) return `${mins}m`
   if (mins < 1440) return `${Math.round(mins / 60)}h`
@@ -68,27 +94,66 @@ function fmtDuration(ms: number | null): string {
   return `${(ms / 60_000).toFixed(1)}m`
 }
 
+function fmtCount(n: number | null): string {
+  if (n == null) return '—'
+  if (n === 0) return '0'
+  if (n < 1000) return String(n)
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`
+  return `${(n / 1_000_000).toFixed(1)}M`
+}
+
+// ─── Badges ────────────────────────────────────────────────────────────────
 function statusBadge(status: string | null): JSX.Element {
   if (status === 'SUCCESS')
     return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">SUCCESS</span>
   if (status === 'FAILURE')
     return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800">FAILURE</span>
+  if (status === 'PARTIAL')
+    return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">PARTIAL</span>
   if (status === 'RUNNING')
     return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">RUNNING</span>
   return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">NEVER RUN</span>
 }
 
+function healthBadge(health: CronHealth): JSX.Element {
+  switch (health) {
+    case 'HEALTHY':
+      return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">HEALTHY</span>
+    case 'DEGRADED':
+      return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">DEGRADED</span>
+    case 'DEAD':
+      return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800">DEAD</span>
+    case 'STUCK':
+      return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">STUCK</span>
+    case 'NEVER_RAN':
+      return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">NEVER RAN</span>
+  }
+}
+
+function syncStatusBadge(status: string): JSX.Element {
+  const s = status.toUpperCase()
+  if (s === 'SUCCESS')
+    return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">{s}</span>
+  if (s === 'PARTIAL')
+    return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">{s}</span>
+  return <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800">{s}</span>
+}
+
 type StatusFilter = 'all' | 'failed' | 'success' | 'never' | 'running'
+type HealthFilter = 'all' | 'HEALTHY' | 'DEGRADED' | 'DEAD' | 'STUCK' | 'NEVER_RAN'
 
 export default function CronsPage() {
   const [crons, setCrons] = useState<CronSummary[]>([])
   const [drift, setDrift] = useState<CronDrift | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [runs, setRuns] = useState<CronRun[]>([])
+  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([])
+  const [detailIntegrationProvider, setDetailIntegrationProvider] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [runsLoading, setRunsLoading] = useState(false)
   const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>('all')
   const [nameQuery, setNameQuery] = useState('')
   const [triggering, setTriggering] = useState<string | null>(null)
   const [triggerMsg, setTriggerMsg] = useState<{ name: string; ok: boolean; text: string } | null>(null)
@@ -112,12 +177,16 @@ export default function CronsPage() {
   const loadRuns = useCallback(async (name: string) => {
     try {
       setRunsLoading(true)
-      const res = await fetch(`/api/ops/admin/crons?name=${encodeURIComponent(name)}&limit=25`, { cache: 'no-store' })
+      const res = await fetch(`/api/ops/admin/crons?name=${encodeURIComponent(name)}&limit=50`, { cache: 'no-store' })
       if (!res.ok) throw new Error(`Failed: ${res.status}`)
       const data = await res.json()
       setRuns(data.runs || [])
+      setSyncLogs(data.syncLogs || [])
+      setDetailIntegrationProvider(data.integrationProvider || null)
     } catch (e: any) {
       setRuns([])
+      setSyncLogs([])
+      setDetailIntegrationProvider(null)
     } finally {
       setRunsLoading(false)
     }
@@ -133,18 +202,31 @@ export default function CronsPage() {
     if (selected) loadRuns(selected)
   }, [selected, loadRuns])
 
+  // Aggregate counters for the summary cards.
   const totalFailures24h = crons.reduce((s, c) => s + (c.failureCount24h || 0), 0)
   const totalSuccess24h = crons.reduce((s, c) => s + (c.successCount24h || 0), 0)
   const neverRan = crons.filter(c => !c.lastStatus).length
+  const healthCounts = useMemo(() => {
+    const out: Record<CronHealth, number> = { HEALTHY: 0, DEGRADED: 0, DEAD: 0, STUCK: 0, NEVER_RAN: 0 }
+    for (const c of crons) out[c.health] = (out[c.health] || 0) + 1
+    return out
+  }, [crons])
 
-  // Derived: filtered list. Status filter narrows by lastStatus; nameQuery
-  // is a case-insensitive substring on name + schedule. Both compose; "all"
-  // status + empty query = full list.
+  // Avg duration over the last 50 runs in the drawer — useful to spot drift.
+  const avgRunDurationMs = useMemo(() => {
+    const finished = runs.filter((r) => r.durationMs != null && r.durationMs > 0)
+    if (finished.length === 0) return null
+    return finished.reduce((s, r) => s + (r.durationMs || 0), 0) / finished.length
+  }, [runs])
+
+  // Compose status + health filters with the substring name query. Each
+  // filter is applied independently; "all/all" + empty query = full list.
   const filteredCrons = crons.filter((c) => {
     if (statusFilter === 'failed' && c.lastStatus !== 'FAILURE') return false
     if (statusFilter === 'success' && c.lastStatus !== 'SUCCESS') return false
     if (statusFilter === 'running' && c.lastStatus !== 'RUNNING') return false
     if (statusFilter === 'never' && c.lastStatus) return false
+    if (healthFilter !== 'all' && c.health !== healthFilter) return false
     if (nameQuery.trim()) {
       const q = nameQuery.trim().toLowerCase()
       if (!c.name.toLowerCase().includes(q) && !c.schedule.toLowerCase().includes(q)) {
@@ -162,15 +244,16 @@ export default function CronsPage() {
     setTriggering(name)
     setTriggerMsg(null)
     try {
-      const res = await fetch('/api/ops/admin/crons', {
+      // Use the dedicated path-based trigger route. Falls back to the body-
+      // based POST on the index route if the path-based one is missing
+      // (e.g. mid-deploy with stale routing manifest).
+      const res = await fetch(`/api/ops/admin/crons/${encodeURIComponent(name)}/trigger`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok && data.ok) {
         setTriggerMsg({ name, ok: true, text: `Triggered "${name}" — upstream ${data.status}` })
-        // Refresh both summary and (if open) the run drawer for this cron.
         loadSummary()
         if (selected === name) loadRuns(name)
       } else {
@@ -191,7 +274,7 @@ export default function CronsPage() {
     <div className="max-w-7xl mx-auto">
       <PageHeader
         title="Cron Jobs"
-        description="Scheduled jobs observability. Auto-refreshes every 30s."
+        description="Scheduled job health surface. Catches silent-failure crons (e.g. ran SUCCESS but moved zero rows). Auto-refreshes every 30s."
         crumbs={[
           { label: 'Ops', href: '/ops' },
           { label: 'Admin', href: '/ops/admin' },
@@ -216,7 +299,7 @@ export default function CronsPage() {
       {/* Drift banner — only shows when REGISTERED_CRONS disagrees with reality */}
       {drift && (drift.orphaned.length > 0 || drift.neverRun.length > 0 || drift.stale.length > 0) && (
         <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-sm">
-          <div className="font-semibold mb-2">⚠️ Cron registration drift detected</div>
+          <div className="font-semibold mb-2">Cron registration drift detected</div>
           {drift.stale.length > 0 && (
             <div className="mb-2">
               <div className="font-medium text-red-800">
@@ -280,60 +363,107 @@ export default function CronsPage() {
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-surface border border-border rounded-lg p-4">
-          <div className="text-xs uppercase text-fg-muted font-semibold">Registered</div>
-          <div className="text-3xl font-semibold text-fg mt-1">{crons.length}</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="bg-surface border border-border rounded-lg p-3">
+          <div className="text-[10px] uppercase text-fg-muted font-semibold">Registered</div>
+          <div className="text-2xl font-semibold text-fg mt-1">{crons.length}</div>
         </div>
-        <div className="bg-surface border border-border rounded-lg p-4">
-          <div className="text-xs uppercase text-fg-muted font-semibold">Success 24h</div>
-          <div className="text-3xl font-semibold text-green-700 mt-1">{totalSuccess24h}</div>
+        <div className="bg-surface border border-border rounded-lg p-3">
+          <div className="text-[10px] uppercase text-fg-muted font-semibold">Healthy</div>
+          <div className="text-2xl font-semibold text-green-700 mt-1">{healthCounts.HEALTHY}</div>
         </div>
-        <div className="bg-surface border border-border rounded-lg p-4">
-          <div className="text-xs uppercase text-fg-muted font-semibold">Failures 24h</div>
-          <div className={`text-3xl font-semibold mt-1 ${totalFailures24h > 0 ? 'text-red-700' : 'text-fg-subtle'}`}>
-            {totalFailures24h}
+        <div className="bg-surface border border-border rounded-lg p-3">
+          <div className="text-[10px] uppercase text-fg-muted font-semibold">Degraded</div>
+          <div className={`text-2xl font-semibold mt-1 ${healthCounts.DEGRADED > 0 ? 'text-amber-700' : 'text-fg-subtle'}`}>
+            {healthCounts.DEGRADED}
           </div>
         </div>
-        <div className="bg-surface border border-border rounded-lg p-4">
-          <div className="text-xs uppercase text-fg-muted font-semibold">Never Run</div>
-          <div className={`text-3xl font-semibold mt-1 ${neverRan > 0 ? 'text-signal' : 'text-fg-subtle'}`}>
-            {neverRan}
+        <div className="bg-surface border border-border rounded-lg p-3">
+          <div className="text-[10px] uppercase text-fg-muted font-semibold">Dead</div>
+          <div className={`text-2xl font-semibold mt-1 ${healthCounts.DEAD > 0 ? 'text-red-700' : 'text-fg-subtle'}`}>
+            {healthCounts.DEAD}
+          </div>
+        </div>
+        <div className="bg-surface border border-border rounded-lg p-3">
+          <div className="text-[10px] uppercase text-fg-muted font-semibold">Stuck</div>
+          <div className={`text-2xl font-semibold mt-1 ${healthCounts.STUCK > 0 ? 'text-purple-700' : 'text-fg-subtle'}`}>
+            {healthCounts.STUCK}
+          </div>
+        </div>
+        <div className="bg-surface border border-border rounded-lg p-3">
+          <div className="text-[10px] uppercase text-fg-muted font-semibold">Never ran</div>
+          <div className={`text-2xl font-semibold mt-1 ${healthCounts.NEVER_RAN > 0 ? 'text-fg' : 'text-fg-subtle'}`}>
+            {healthCounts.NEVER_RAN}
           </div>
         </div>
       </div>
 
-      {/* Filter row */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <input
-          type="text"
-          placeholder="Search by name or schedule..."
-          value={nameQuery}
-          onChange={(e) => setNameQuery(e.target.value)}
-          className="px-3 py-2 text-sm border border-border rounded bg-surface text-fg w-64 focus:outline-none focus:ring-2 focus:ring-brand"
-        />
-        <div className="flex items-center gap-1 text-sm">
-          <span className="text-fg-muted mr-1">Status:</span>
-          {(['all', 'failed', 'success', 'running', 'never'] as StatusFilter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-                statusFilter === f
-                  ? 'bg-brand text-fg-on-accent'
-                  : 'bg-surface-muted text-fg-muted hover:bg-row-hover'
-              }`}
-            >
-              {f === 'all' ? `All (${crons.length})`
-               : f === 'failed' ? `Failed (${crons.filter(c => c.lastStatus === 'FAILURE').length})`
-               : f === 'success' ? `Success (${crons.filter(c => c.lastStatus === 'SUCCESS').length})`
-               : f === 'running' ? `Running (${crons.filter(c => c.lastStatus === 'RUNNING').length})`
-               : `Never (${neverRan})`}
-            </button>
-          ))}
+      {/* 24h success / failure totals — keep these so the prior dashboard's
+          mental model (volume) still works alongside the health bucket. */}
+      <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+        <div className="bg-surface border border-border rounded p-2 flex items-center gap-3">
+          <span className="text-fg-muted text-xs uppercase font-semibold">Success 24h</span>
+          <span className="text-green-700 font-semibold">{totalSuccess24h}</span>
         </div>
-        <div className="ml-auto text-xs text-fg-muted">
-          Showing {filteredCrons.length} of {crons.length}
+        <div className="bg-surface border border-border rounded p-2 flex items-center gap-3">
+          <span className="text-fg-muted text-xs uppercase font-semibold">Failures 24h</span>
+          <span className={totalFailures24h > 0 ? 'text-red-700 font-semibold' : 'text-fg-subtle font-semibold'}>{totalFailures24h}</span>
+        </div>
+      </div>
+
+      {/* Filter row */}
+      <div className="mb-4 space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="text"
+            placeholder="Search by name or schedule..."
+            value={nameQuery}
+            onChange={(e) => setNameQuery(e.target.value)}
+            className="px-3 py-2 text-sm border border-border rounded bg-surface text-fg w-64 focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+          <div className="flex items-center gap-1 text-sm">
+            <span className="text-fg-muted mr-1">Status:</span>
+            {(['all', 'failed', 'success', 'running', 'never'] as StatusFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                  statusFilter === f
+                    ? 'bg-brand text-fg-on-accent'
+                    : 'bg-surface-muted text-fg-muted hover:bg-row-hover'
+                }`}
+              >
+                {f === 'all' ? `All (${crons.length})`
+                 : f === 'failed' ? `Failed (${crons.filter(c => c.lastStatus === 'FAILURE').length})`
+                 : f === 'success' ? `Success (${crons.filter(c => c.lastStatus === 'SUCCESS').length})`
+                 : f === 'running' ? `Running (${crons.filter(c => c.lastStatus === 'RUNNING').length})`
+                 : `Never (${neverRan})`}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1 text-sm">
+            <span className="text-fg-muted mr-1">Health:</span>
+            {(['all', 'HEALTHY', 'DEGRADED', 'DEAD', 'STUCK', 'NEVER_RAN'] as HealthFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setHealthFilter(f)}
+                className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                  healthFilter === f
+                    ? 'bg-brand text-fg-on-accent'
+                    : 'bg-surface-muted text-fg-muted hover:bg-row-hover'
+                }`}
+              >
+                {f === 'all'
+                  ? `All (${crons.length})`
+                  : `${f.replace('_', ' ')} (${healthCounts[f]})`}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto text-xs text-fg-muted">
+            Showing {filteredCrons.length} of {crons.length}
+          </div>
         </div>
       </div>
 
@@ -357,7 +487,7 @@ export default function CronsPage() {
       )}
 
       {/* Main table */}
-      <div className="bg-surface border border-border rounded-lg overflow-hidden">
+      <div className="bg-surface border border-border rounded-lg overflow-hidden overflow-x-auto">
         {!loading && crons.length === 0 ? (
           <EmptyState
             icon={<Settings className="w-8 h-8 text-fg-subtle" />}
@@ -368,25 +498,26 @@ export default function CronsPage() {
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-surface-muted">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Schedule</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Last Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Last Run</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Duration</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">24h S/F</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Error</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Actions</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Name</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Schedule</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Health</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Last Status</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Last Run</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">Duration</th>
+              <th className="px-3 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Items 24h</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-fg-muted uppercase">24h S/F</th>
+              <th className="px-3 py-3 text-right text-xs font-semibold text-fg-muted uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading && crons.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-fg-muted">Loading...</td>
+                <td colSpan={9} className="px-4 py-8 text-center text-fg-muted">Loading...</td>
               </tr>
             )}
             {!loading && filteredCrons.length === 0 && crons.length > 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-fg-muted text-sm">
+                <td colSpan={9} className="px-4 py-8 text-center text-fg-muted text-sm">
                   No crons match the current filter.
                 </td>
               </tr>
@@ -394,25 +525,40 @@ export default function CronsPage() {
             {filteredCrons.map((c) => (
               <tr
                 key={c.name}
-                className={`cursor-pointer hover:bg-row-hover ${selected === c.name ? 'bg-signal-subtle' : ''} ${c.lastStatus === 'FAILURE' ? 'bg-red-50/40' : ''}`}
+                className={`cursor-pointer hover:bg-row-hover ${selected === c.name ? 'bg-signal-subtle' : ''} ${
+                  c.health === 'DEAD' ? 'bg-red-50/40' :
+                  c.health === 'STUCK' ? 'bg-purple-50/40' :
+                  c.health === 'DEGRADED' ? 'bg-amber-50/30' :
+                  ''
+                }`}
                 onClick={() => setSelected(c.name)}
               >
-                <td className="px-4 py-3 text-sm font-medium text-fg">{c.name}</td>
-                <td className="px-4 py-3 text-sm text-fg-muted font-mono">{c.schedule}</td>
-                <td className="px-4 py-3">{statusBadge(c.lastStatus)}</td>
-                <td className="px-4 py-3 text-sm text-fg-muted">{fmtDate(c.lastRunAt)}</td>
-                <td className="px-4 py-3 text-sm text-fg-muted">{fmtDuration(c.lastDurationMs)}</td>
-                <td className="px-4 py-3 text-sm">
+                <td className="px-3 py-3 text-sm font-medium text-fg">{c.name}</td>
+                <td className="px-3 py-3 text-xs text-fg-muted font-mono">{c.schedule}</td>
+                <td className="px-3 py-3">{healthBadge(c.health)}</td>
+                <td className="px-3 py-3">{statusBadge(c.lastStatus)}</td>
+                <td className="px-3 py-3 text-sm text-fg-muted">{fmtDate(c.lastRunAt)}</td>
+                <td className="px-3 py-3 text-sm text-fg-muted">{fmtDuration(c.lastDurationMs)}</td>
+                <td
+                  className="px-3 py-3 text-sm text-right tabular-nums"
+                  title={c.itemsProcessedSource === 'sync_log' ? 'Sum of SyncLog.recordsProcessed (last 24h)' : c.itemsProcessed24h == null ? 'No item count available' : ''}
+                >
+                  {c.itemsProcessed24h == null ? (
+                    <span className="text-fg-subtle">—</span>
+                  ) : c.itemsProcessed24h === 0 ? (
+                    <span className="text-amber-700 font-semibold" title="Ran but moved zero rows — silent-failure risk">0</span>
+                  ) : (
+                    <span className="text-fg">{fmtCount(c.itemsProcessed24h)}</span>
+                  )}
+                </td>
+                <td className="px-3 py-3 text-sm">
                   <span className="text-green-700">{c.successCount24h}</span>
                   {' / '}
                   <span className={c.failureCount24h > 0 ? 'text-red-700 font-semibold' : 'text-fg-muted'}>
                     {c.failureCount24h}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-xs text-red-700 max-w-xs truncate" title={c.lastError || ''}>
-                  {c.lastError || ''}
-                </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-3 py-3 text-right">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
@@ -435,10 +581,26 @@ export default function CronsPage() {
       {/* Run history drawer */}
       {selected && (
         <div className="mt-6 bg-surface border border-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 bg-surface-muted border-b border-border flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-fg">
-              Recent runs: <span className="font-mono">{selected}</span>
-            </h2>
+          <div className="px-4 py-3 bg-surface-muted border-b border-border flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-sm font-semibold text-fg">
+                Recent runs: <span className="font-mono">{selected}</span>
+              </h2>
+              {avgRunDurationMs != null && (
+                <span className="text-xs text-fg-muted">
+                  avg duration: <span className="font-mono text-fg">{fmtDuration(avgRunDurationMs)}</span>
+                </span>
+              )}
+              {detailIntegrationProvider && (
+                <Link
+                  href="/ops/admin/integrations-freshness"
+                  className="inline-flex items-center gap-1 text-xs text-signal hover:underline"
+                  title={`This cron drives the ${detailIntegrationProvider} integration`}
+                >
+                  Integration freshness <ExternalLink className="w-3 h-3" />
+                </Link>
+              )}
+            </div>
             <button
               onClick={() => setSelected(null)}
               className="text-fg-subtle hover:text-fg-muted text-sm"
@@ -476,6 +638,67 @@ export default function CronsPage() {
               ))}
             </tbody>
           </table>
+
+          {/* SyncLog rows — only present for crons with a mapped provider
+              (inflow-sync, hyphen-sync, buildertrend-sync, gmail-sync,
+              boise-*). For those, the SyncLog row counts are the canonical
+              "did the work move rows?" signal — exactly the surface the silent-
+              failure crons hid behind. */}
+          {syncLogs.length > 0 && (
+            <div className="border-t border-border">
+              <div className="px-4 py-3 bg-surface-muted border-b border-border">
+                <h3 className="text-sm font-semibold text-fg">
+                  Sync log <span className="text-fg-muted text-xs font-normal">(last {syncLogs.length} runs)</span>
+                </h3>
+                <p className="text-xs text-fg-muted mt-0.5">
+                  Row-count signal from <span className="font-mono">SyncLog</span>. Zero processed = silent-failure suspect.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-surface-muted">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Started</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Type</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Status</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-fg-muted uppercase">Processed</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-fg-muted uppercase">Created</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-fg-muted uppercase">Updated</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-fg-muted uppercase">Skipped</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-fg-muted uppercase">Failed</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-fg-muted uppercase">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {syncLogs.map((s) => (
+                      <tr key={s.id} className={`hover:bg-row-hover ${s.recordsProcessed === 0 && s.status.toUpperCase() === 'SUCCESS' ? 'bg-amber-50/30' : ''}`}>
+                        <td className="px-4 py-2 text-sm text-fg-muted">{fmtDate(s.startedAt)}</td>
+                        <td className="px-4 py-2 text-xs text-fg-muted font-mono">{s.syncType}</td>
+                        <td className="px-4 py-2">{syncStatusBadge(s.status)}</td>
+                        <td
+                          className="px-4 py-2 text-sm text-right tabular-nums"
+                          title={s.recordsProcessed === 0 && s.status.toUpperCase() === 'SUCCESS' ? 'SUCCESS but zero processed — silent-failure suspect' : ''}
+                        >
+                          {s.recordsProcessed === 0 && s.status.toUpperCase() === 'SUCCESS' ? (
+                            <span className="text-amber-700 font-semibold">0</span>
+                          ) : (
+                            s.recordsProcessed
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-right tabular-nums text-fg-muted">{s.recordsCreated}</td>
+                        <td className="px-4 py-2 text-sm text-right tabular-nums text-fg-muted">{s.recordsUpdated}</td>
+                        <td className="px-4 py-2 text-sm text-right tabular-nums text-fg-muted">{s.recordsSkipped}</td>
+                        <td className={`px-4 py-2 text-sm text-right tabular-nums ${s.recordsFailed > 0 ? 'text-red-700 font-semibold' : 'text-fg-muted'}`}>{s.recordsFailed}</td>
+                        <td className="px-4 py-2 text-xs text-red-700 max-w-md truncate" title={s.errorMessage || ''}>
+                          {s.errorMessage || ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
