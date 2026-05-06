@@ -17,6 +17,7 @@ import { computeDemandForecast, ensureDemandForecastTable } from '@/lib/mrp/fore
  * persisting (read-only API).
  */
 export async function GET(request: NextRequest) {
+  try {
   const authError = checkStaffAuth(request)
   if (authError) return authError
 
@@ -160,4 +161,11 @@ export async function GET(request: NextRequest) {
     })),
     persistedCount: forecastRows.length,
   })
+  } catch (err: any) {
+    console.error('GET /api/ops/mrp/forecast error:', err)
+    return NextResponse.json(
+      { error: err?.message || 'Internal error' },
+      { status: 500 }
+    )
+  }
 }

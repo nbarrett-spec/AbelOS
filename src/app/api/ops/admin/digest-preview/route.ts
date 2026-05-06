@@ -25,77 +25,93 @@ import { composeDigestForStaff } from '@/lib/digest-composer'
 import { sendDigest } from '@/lib/digest-email'
 
 export async function GET(request: NextRequest) {
-  const authError = await checkStaffAuthWithFallback(request)
-  if (authError) return authError
+  try {
+    const authError = await checkStaffAuthWithFallback(request)
+    if (authError) return authError
 
-  const { searchParams } = new URL(request.url)
-  const action = searchParams.get('action')
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get('action')
 
-  if (action === 'staff') {
-    const staff = await prisma.staff.findMany({
-      where: { active: true },
-      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        roles: true,
-      },
-    })
+    if (action === 'staff') {
+      const staff = await prisma.staff.findMany({
+        where: { active: true },
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          roles: true,
+        },
+      })
+      return NextResponse.json({
+        staff: staff.map((s) => ({
+          id: s.id,
+          name: `${s.firstName} ${s.lastName}`.trim(),
+          email: s.email,
+          role: s.role,
+          roles: s.roles,
+        })),
+      })
+    }
+
+    const staffId = searchParams.get('staffId')
+    if (!staffId) {
+      return NextResponse.json({ error: 'staffId is required' }, { status: 400 })
+    }
+
+    const digest = await composeDigestForStaff(staffId)
+    if (!digest) {
+      return NextResponse.json(
+        { error: 'No digest (staff inactive, missing, or no email)' },
+        { status: 404 },
+      )
+    }
+
     return NextResponse.json({
-      staff: staff.map((s) => ({
-        id: s.id,
-        name: `${s.firstName} ${s.lastName}`.trim(),
-        email: s.email,
-        role: s.role,
-        roles: s.roles,
+      subject: digest.subject,
+      htmlBody: digest.htmlBody,
+      textBody: digest.textBody,
+      sections: digest.sections.map((s) => ({
+        key: s.key,
+        title: s.title,
+        count: s.count,
+        summary: s.summary,
+        href: s.href,
       })),
+      totalItems: digest.totalItems,
+      digestDate: digest.digestDate,
+      staffEmail: digest.staffEmail,
+      staffFirstName: digest.staffFirstName,
     })
-  }
-
-  const staffId = searchParams.get('staffId')
-  if (!staffId) {
-    return NextResponse.json({ error: 'staffId is required' }, { status: 400 })
-  }
-
-  const digest = await composeDigestForStaff(staffId)
-  if (!digest) {
+  } catch (err: any) {
+    console.error('GET /api/ops/admin/digest-preview error:', err)
     return NextResponse.json(
-      { error: 'No digest (staff inactive, missing, or no email)' },
-      { status: 404 },
+      { error: err?.message || 'Internal error' },
+      { status: 500 }
     )
   }
-
-  return NextResponse.json({
-    subject: digest.subject,
-    htmlBody: digest.htmlBody,
-    textBody: digest.textBody,
-    sections: digest.sections.map((s) => ({
-      key: s.key,
-      title: s.title,
-      count: s.count,
-      summary: s.summary,
-      href: s.href,
-    })),
-    totalItems: digest.totalItems,
-    digestDate: digest.digestDate,
-    staffEmail: digest.staffEmail,
-    staffFirstName: digest.staffFirstName,
-  })
 }
 
 export async function POST(request: NextRequest) {
-  const authError = await checkStaffAuthWithFallback(request)
-  if (authError) return authError
+  try {
+    const authError = await checkStaffAuthWithFallback(request)
+    if (authError) return authError
 
-  const body = await request.json().catch(() => null)
-  if (!body || typeof body.staffId !== 'string') {
-    return NextResponse.json({ error: 'staffId is required' }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body.staffId !== 'string') {
+      return NextResponse.json({ error: 'staffId is required' }, { status: 400 })
+    }
+
+    // allowDuplicate=true so an admin can test-send multiple times in one day.
+    const result = await sendDigest(body.staffId, { allowDuplicate: true })
+    return NextResponse.json(result)
+  } catch (err: any) {
+    console.error('POST /api/ops/admin/digest-preview error:', err)
+    return NextResponse.json(
+      { error: err?.message || 'Internal error' },
+      { status: 500 }
+    )
   }
-
-  // allowDuplicate=true so an admin can test-send multiple times in one day.
-  const result = await sendDigest(body.staffId, { allowDuplicate: true })
-  return NextResponse.json(result)
 }

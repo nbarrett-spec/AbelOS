@@ -20,31 +20,39 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const authError = checkStaffAuth(request)
-  if (authError) return authError
+  try {
+    const authError = checkStaffAuth(request)
+    if (authError) return authError
 
-  const { id } = params
-  if (!id) {
-    return NextResponse.json({ error: 'bad_request', message: 'id required' }, { status: 400 })
-  }
+    const { id } = params
+    if (!id) {
+      return NextResponse.json({ error: 'bad_request', message: 'id required' }, { status: 400 })
+    }
 
-  const docs = await (prisma as any).hyphenDocument.findMany({
-    where: {
+    const docs = await (prisma as any).hyphenDocument.findMany({
+      where: {
+        jobId: id,
+        OR: [
+          { eventType: 'change_order_detail' },
+          { docCategory: 'Change Orders' },
+        ],
+      },
+      orderBy: { scrapedAt: 'desc' },
+    })
+
+    const lastSyncedAt = (docs as any[])[0]?.scrapedAt ?? null
+
+    return NextResponse.json({
       jobId: id,
-      OR: [
-        { eventType: 'change_order_detail' },
-        { docCategory: 'Change Orders' },
-      ],
-    },
-    orderBy: { scrapedAt: 'desc' },
-  })
-
-  const lastSyncedAt = (docs as any[])[0]?.scrapedAt ?? null
-
-  return NextResponse.json({
-    jobId: id,
-    total: docs.length,
-    lastSyncedAt,
-    changeOrders: docs,
-  })
+      total: docs.length,
+      lastSyncedAt,
+      changeOrders: docs,
+    })
+  } catch (err: any) {
+    console.error('GET /api/ops/jobs/[id]/co-list error:', err)
+    return NextResponse.json(
+      { error: err?.message || 'Internal error' },
+      { status: 500 }
+    )
+  }
 }

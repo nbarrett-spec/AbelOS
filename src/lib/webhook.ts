@@ -55,12 +55,23 @@ async function ensureTable() {
 
 // Exponential backoff schedule — retryCount (0-based) → ms delay until next
 // attempt. After exhausting the schedule we flip status to DEAD_LETTER.
+//
+// Indices map to attempts as: incrementWebhookRetry runs first (so retryCount
+// is post-attempt N), then markWebhookFailed reads retryCount and looks up
+// BACKOFF_SCHEDULE_MS[retryCount] to schedule attempt N+1. So:
+//   after attempt 1 fails (retryCount=1) → schedule attempt 2 in 5 min
+//   after attempt 2 fails (retryCount=2) → schedule attempt 3 in 30 min
+//   after attempt 3 fails (retryCount=3) → schedule attempt 4 in 2 hours
+//   after attempt 4 fails (retryCount=4) → schedule attempt 5 in 24 hours
+//   after attempt 5 fails (retryCount=5) → no slot, flip to DEAD_LETTER
+// Index 0 (1 min) covers the legacy path where a webhook is first persisted
+// with retryCount=0 and we want it picked up promptly on the very next cron.
 const BACKOFF_SCHEDULE_MS = [
-  1 * 60 * 1000,       // 1 min
-  5 * 60 * 1000,       // 5 min
-  15 * 60 * 1000,      // 15 min
-  60 * 60 * 1000,      // 1 hour
-  4 * 60 * 60 * 1000,  // 4 hours
+  1 * 60 * 1000,         // 1 min
+  5 * 60 * 1000,         // 5 min
+  30 * 60 * 1000,        // 30 min
+  2 * 60 * 60 * 1000,    // 2 hours
+  24 * 60 * 60 * 1000,   // 24 hours
 ]
 
 export const WEBHOOK_MAX_RETRIES = BACKOFF_SCHEDULE_MS.length

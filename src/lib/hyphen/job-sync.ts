@@ -2,17 +2,26 @@
 // Hyphen per-Job sync orchestrator
 //
 // Given a jobId, calls the scraper for:
-//   - schedule           → (TODO) persist to Job / HyphenDocument when live
-//   - closing date       → (TODO) persist when live; Job currently has no
-//                          closingDate column so we stash it in HyphenJobDocument
-//                          metadata until schema catches up
+//   - schedule           → persists scalar audit row in HyphenJobDocument AND
+//                          updates Job.scheduledDate / .hyphenScheduleSyncedAt
+//   - closing date       → persists scalar audit row in HyphenJobDocument AND
+//                          updates Job.closingDate (column added in
+//                          add_job_hyphen_scrape_fields.sql)
 //   - red-line PDFs      → persist rows into "HyphenJobDocument"
 //   - plan set group 1/2 → persist rows into "HyphenJobDocument"
 //   - change-order PDFs  → persist rows into "HyphenJobDocument"
 //
+// Upstream dependency: fetchJobSchedule / fetchJobClosingDate in scraper.ts
+// are still NotImplementedError stubs (Playwright is not installed). They
+// always return { ok:false, reason:'SCRAPE_ERROR' } today, so the Job-table
+// updates below are wired but unreachable until Playwright ships. When the
+// fetchers return real ScheduleResult / ClosingDateResult objects, Job rows
+// will start updating automatically — no further code changes needed here.
+//
 // Failure policy: partial-failure is OK. Every scraper call is wrapped
 // in try/catch. A step that returns `ok:false` is recorded and we move
-// on — the orchestrator never throws.
+// on — the orchestrator never throws. Job-table writes are also try/catched
+// so a Prisma error on the Job update doesn't lose the audit row.
 //
 // Output: { ok:true, jobId, wrote, skipped, errors[] } always.
 // ──────────────────────────────────────────────────────────────────────────
@@ -211,6 +220,30 @@ export async function syncJob(jobId: string): Promise<SyncJobResult> {
         actualEnd: sched.actualEnd,
         notes: sched.notes,
       })
+      // Mirror the most authoritative date onto Job.scheduledDate so the
+      // ops dashboard and downstream views can read it without joining
+      // HyphenJobDocument. Preference order: actualStart > acknowledgedStart
+      // > requestedStart. Failures here are non-fatal — the audit row above
+      // already captured the raw scrape.
+      const bestDate =
+        sched.actualStart || sched.acknowledgedStart || sched.requestedStart
+      if (bestDate) {
+        try {
+          await prisma.job.update({
+            where: { id: jobId },
+            data: {
+              scheduledDate: new Date(bestDate),
+              hyphenScheduleSyncedAt: new Date(),
+            },
+          })
+        } catch (e: any) {
+          logger.error('hyphen_job_schedule_update_failed', e, { jobId })
+          result.errors.push({
+            step: 'schedule',
+            message: `job_update_failed: ${e?.message || 'unknown'}`,
+          })
+        }
+      }
     }
   } catch (e: any) {
     result.errors.push({ step: 'schedule', message: e?.message || 'schedule fetch threw' })
@@ -226,6 +259,20 @@ export async function syncJob(jobId: string): Promise<SyncJobResult> {
         closingDate: cd.closingDate,
         source: cd.source,
       })
+      // Persist closing date on Job. Column was added in
+      // add_job_hyphen_scrape_fields.sql. Non-fatal on failure.
+      try {
+        await prisma.job.update({
+          where: { id: jobId },
+          data: { closingDate: new Date(cd.closingDate) },
+        })
+      } catch (e: any) {
+        logger.error('hyphen_job_closing_update_failed', e, { jobId })
+        result.errors.push({
+          step: 'closingDate',
+          message: `job_update_failed: ${e?.message || 'unknown'}`,
+        })
+      }
     }
   } catch (e: any) {
     result.errors.push({ step: 'closingDate', message: e?.message || 'closingDate fetch threw' })

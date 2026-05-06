@@ -19,36 +19,44 @@ import { listRecentIncidents, listAlertRollups } from '@/lib/alert-history'
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const authError = await checkStaffAuthWithFallback(request)
-  if (authError) return authError
+  try {
+    const authError = await checkStaffAuthWithFallback(request)
+    if (authError) return authError
 
-  const { searchParams } = new URL(request.url)
-  const sinceHours = Math.min(
-    Math.max(parseInt(searchParams.get('since') || '24'), 1),
-    720
-  )
-  const rollupHours = Math.min(
-    Math.max(parseInt(searchParams.get('rollup') || '168'), 1),
-    720
-  )
-  const limit = Math.min(
-    Math.max(parseInt(searchParams.get('limit') || '200'), 1),
-    1000
-  )
+    const { searchParams } = new URL(request.url)
+    const sinceHours = Math.min(
+      Math.max(parseInt(searchParams.get('since') || '24'), 1),
+      720
+    )
+    const rollupHours = Math.min(
+      Math.max(parseInt(searchParams.get('rollup') || '168'), 1),
+      720
+    )
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || '200'), 1),
+      1000
+    )
 
-  const [incidents, rollups] = await Promise.all([
-    listRecentIncidents(sinceHours, limit),
-    listAlertRollups(rollupHours),
-  ])
+    const [incidents, rollups] = await Promise.all([
+      listRecentIncidents(sinceHours, limit),
+      listAlertRollups(rollupHours),
+    ])
 
-  const openCount = incidents.filter((i) => i.endedAt === null).length
+    const openCount = incidents.filter((i) => i.endedAt === null).length
 
-  return NextResponse.json({
-    sinceHours,
-    rollupHours,
-    limit,
-    openCount,
-    incidents,
-    rollups,
-  })
+    return NextResponse.json({
+      sinceHours,
+      rollupHours,
+      limit,
+      openCount,
+      incidents,
+      rollups,
+    })
+  } catch (err: any) {
+    console.error('GET /api/admin/alert-history error:', err)
+    return NextResponse.json(
+      { error: err?.message || 'Internal error' },
+      { status: 500 }
+    )
+  }
 }

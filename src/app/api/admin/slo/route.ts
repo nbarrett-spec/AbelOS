@@ -21,19 +21,27 @@ import { computeAllSlos } from '@/lib/slo'
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const authError = await checkStaffAuthWithFallback(request)
-  if (authError) return authError
+  try {
+    const authError = await checkStaffAuthWithFallback(request)
+    if (authError) return authError
 
-  const slos = await computeAllSlos()
+    const slos = await computeAllSlos()
 
-  const meta = {
-    computedAt: new Date().toISOString(),
-    total: slos.length,
-    healthy: slos.filter((s) => s.status === 'healthy').length,
-    warning: slos.filter((s) => s.status === 'warning').length,
-    critical: slos.filter((s) => s.status === 'critical').length,
-    noData: slos.filter((s) => s.status === 'no_data').length,
+    const meta = {
+      computedAt: new Date().toISOString(),
+      total: slos.length,
+      healthy: slos.filter((s) => s.status === 'healthy').length,
+      warning: slos.filter((s) => s.status === 'warning').length,
+      critical: slos.filter((s) => s.status === 'critical').length,
+      noData: slos.filter((s) => s.status === 'no_data').length,
+    }
+
+    return NextResponse.json({ slos, meta })
+  } catch (err: any) {
+    console.error('GET /api/admin/slo error:', err)
+    return NextResponse.json(
+      { error: err?.message || 'Internal error' },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json({ slos, meta })
 }
