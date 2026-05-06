@@ -38,6 +38,7 @@
 
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { prisma } from '@/lib/prisma'
 import { getRedis } from '@/lib/redis'
 
 const DEFAULT_RECIPIENTS = [
@@ -170,6 +171,58 @@ async function tryCaptureSentry(cronName: string, error: string, runId: string):
 }
 
 /**
+ * Best-effort InboxItem write so the failure also surfaces in /ops/inbox
+ * and the admin dashboard, not just an email. Type=SYSTEM matches the
+ * existing convention used by data-quality, cron-history-audit, and
+ * workflows.ts. Severity HIGH because a daily-cash-position cron going
+ * silent is the exact "looked healthy yesterday, silently stopped today"
+ * shape from the cron.ts module header.
+ *
+ * Not rate-limited at this layer because the email-side rate limit has
+ * already gated us. If we got here, this is the first failure of the hour.
+ */
+async function writeInboxItem(params: {
+  cronName: string
+  error: string
+  durationMs: number
+  runId: string
+}): Promise<void> {
+  try {
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://app.abellumber.com'
+        : 'http://localhost:3000')
+    await prisma.inboxItem.create({
+      data: {
+        type: 'SYSTEM',
+        source: 'cron-alerting',
+        title: `[Cron Failed] ${params.cronName}`,
+        description:
+          `${params.cronName} failed after ${Math.round(params.durationMs / 1000)}s.\n\n` +
+          `Error: ${params.error.slice(0, 1000)}\n\n` +
+          `Run ID: ${params.runId}\n` +
+          `Logs: ${appUrl}/admin/crons`,
+        priority: 'HIGH',
+        entityType: 'CronRun',
+        entityId: params.runId,
+        actionData: {
+          cronName: params.cronName,
+          runId: params.runId,
+          durationMs: params.durationMs,
+          error: params.error.slice(0, 2000),
+        } as any,
+      },
+    })
+  } catch (e: any) {
+    logger.error('cron_alert_inbox_failed', e, {
+      cronName: params.cronName,
+      runId: params.runId,
+    })
+  }
+}
+
+/**
  * Fire alerts for a failed cron run. Called from finishCronRun() when
  * status transitions to FAILURE. Never throws.
  */
@@ -191,6 +244,12 @@ export async function notifyCronFailure(params: {
       logger.info('cron_alert_rate_limited', { cronName, runId })
       return
     }
+
+    // InboxItem write also gated by rate limit so a failing-in-a-loop cron
+    // doesn't fill /ops/inbox with hundreds of duplicates. One inbox row +
+    // one email per (cron, hour) is the right shape — matches operator
+    // expectation that the inbox is a curated worklist, not a firehose.
+    writeInboxItem({ cronName, error, durationMs, runId }).catch(() => {})
 
     const recipients = parseRecipients()
     if (recipients.length === 0) {

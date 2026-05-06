@@ -29,15 +29,29 @@ import { prisma } from '@/lib/prisma'
 export interface ReserveResult {
   orderId: string
   reserved: Array<{ productId: string; quantity: number; allocationId: string }>
-  backordered: Array<{ productId: string; quantity: number; allocationId: string }>
+  backordered: Array<{
+    productId: string
+    quantity: number
+    allocationId: string
+    /** OrderItems that absorbed the shortfall, with the per-line backorder split. */
+    orderItems: Array<{ orderItemId: string; backorderedQty: number; fulfillingPoId: string | null; expectedDate: Date | null }>
+  }>
   shortfall: Array<{ productId: string; shortBy: number }>
   touchedProductIds: string[]
 }
 
+/**
+ * Optional `id` on each item. When supplied, reserveForOrder will stamp
+ * the OrderItem row with backorderedQty / backorderedAt / fulfillingPoId /
+ * expectedDate so the line carries its own backorder state (A-BIZ-6) — no
+ * need for callers to read InventoryAllocation just to render a backorder
+ * badge or ETA. When `id` is omitted (legacy callers) the function still
+ * works, just without the per-line stamping.
+ */
 export async function reserveForOrder(
   tx: any,
   orderId: string,
-  items: Array<{ productId: string | null; quantity: number }>,
+  items: Array<{ id?: string; productId: string | null; quantity: number }>,
 ): Promise<ReserveResult> {
   const result: ReserveResult = {
     orderId,
@@ -48,13 +62,19 @@ export async function reserveForOrder(
   }
 
   // Aggregate by productId — multiple OrderItems for the same product collapse
-  // into one ledger row.
+  // into one ledger row. We keep the per-OrderItem split (productLines) so we
+  // can spread a productId's shortage back across the contributing rows when
+  // we stamp backorderedQty.
   const demand = new Map<string, number>()
+  const productLines = new Map<string, Array<{ id?: string; quantity: number }>>()
   for (const it of items) {
     if (!it.productId) continue
     const q = Number(it.quantity || 0)
     if (q <= 0) continue
     demand.set(it.productId, (demand.get(it.productId) || 0) + q)
+    const arr = productLines.get(it.productId) || []
+    arr.push({ id: it.id, quantity: q })
+    productLines.set(it.productId, arr)
   }
   if (demand.size === 0) return result
 
@@ -125,7 +145,78 @@ export async function reserveForOrder(
       )
       if (ins.length > 0) {
         touched.add(productId)
-        result.backordered.push({ productId, quantity: short, allocationId: ins[0].id })
+
+        // ── A-BIZ-6: stamp the OrderItem(s) with backorder state ──
+        // Find the next incoming PO that can fulfill this product so the
+        // line carries an ETA. Statuses APPROVED → SENT_TO_VENDOR →
+        // PARTIALLY_RECEIVED are all "in flight" — still expected to land.
+        // We pick the soonest non-null expectedDate; ties broken by PO
+        // createdAt for stability. NULL expectedDate (vendor hasn't ack'd)
+        // ranks last so a confirmed PO always wins over a pending one.
+        let fulfillingPoId: string | null = null
+        let expectedDate: Date | null = null
+        try {
+          const poRows: any[] = await tx.$queryRawUnsafe(
+            `SELECT po."id", po."expectedDate"
+               FROM "PurchaseOrderItem" poi
+               JOIN "PurchaseOrder" po ON po."id" = poi."purchaseOrderId"
+              WHERE poi."productId" = $1
+                AND po."status"::text IN ('APPROVED', 'SENT_TO_VENDOR', 'PARTIALLY_RECEIVED')
+                AND COALESCE(poi."quantity", 0) - COALESCE(poi."receivedQty", 0) > 0
+              ORDER BY (po."expectedDate" IS NULL) ASC, po."expectedDate" ASC, po."createdAt" ASC
+              LIMIT 1`,
+            productId,
+          )
+          if (poRows.length > 0) {
+            fulfillingPoId = poRows[0].id || null
+            expectedDate = poRows[0].expectedDate ? new Date(poRows[0].expectedDate) : null
+          }
+        } catch {
+          // PO lookup is best-effort; backorder still gets created without ETA
+        }
+
+        // Spread `short` units across the contributing OrderItem rows.
+        // Multiple OrderItems for the same productId on one order are rare
+        // but possible (separate locations, separate notes). We assign
+        // stamped backorder qty in input order until `short` is exhausted.
+        const lineSplits: Array<{ orderItemId: string; backorderedQty: number; fulfillingPoId: string | null; expectedDate: Date | null }> = []
+        let remaining = short
+        const lines = productLines.get(productId) || []
+        for (const line of lines) {
+          if (remaining <= 0) break
+          if (!line.id) continue
+          const take = Math.min(remaining, line.quantity)
+          if (take <= 0) continue
+          try {
+            await tx.$executeRawUnsafe(
+              `UPDATE "OrderItem"
+                  SET "backorderedQty" = $2,
+                      "backorderedAt"  = NOW(),
+                      "fulfillingPoId" = $3,
+                      "expectedDate"   = $4
+                WHERE "id" = $1`,
+              line.id, take, fulfillingPoId, expectedDate,
+            )
+            lineSplits.push({
+              orderItemId: line.id,
+              backorderedQty: take,
+              fulfillingPoId,
+              expectedDate,
+            })
+          } catch {
+            // OrderItem stamping is best-effort — schema cols may not exist
+            // in a dev branch that hasn't run the migration yet. Allocation
+            // ledger row above is the source of truth either way.
+          }
+          remaining -= take
+        }
+
+        result.backordered.push({
+          productId,
+          quantity: short,
+          allocationId: ins[0].id,
+          orderItems: lineSplits,
+        })
       }
     }
   }

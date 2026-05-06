@@ -11,7 +11,8 @@ import { toCsv } from '@/lib/csv'
 import { fireAutomationEvent } from '@/lib/automation-executor'
 import { fireStaffNotifications } from '@/lib/order-staff-notifications'
 import { orderIdsWithBomItems } from '@/lib/orders'
-import { reserveForOrder } from '@/lib/allocation'
+import { reserveForOrder, type ReserveResult } from '@/lib/allocation'
+import { notifyBackorder } from '@/lib/allocation/backorder-notify'
 
 export async function GET(request: NextRequest) {
   const authError = checkStaffAuth(request)
@@ -143,16 +144,22 @@ export async function GET(request: NextRequest) {
       // "STOCK ONLY" badge so PMs know at a glance.
       bomOrderIdSet = await orderIdsWithBomItems(orderIds);
 
-      // Fetch order items with products
+      // Fetch order items with products. A-BIZ-6: pull the new backorder
+      // columns + the fulfilling PO number so the UI can render the badge
+      // without a second query.
       const itemsQuery = `
         SELECT
           oi."id", oi."orderId", oi."productId", oi."description",
           oi."quantity", oi."unitPrice", oi."lineTotal",
           oi."doorMaterial"::text as "doorMaterial",
+          oi."backorderedQty", oi."backorderedAt", oi."expectedDate",
+          oi."fulfillingPoId",
+          po."poNumber" as "fulfillingPoNumber",
           p."id" as "product_id", p."name", p."sku", p."category",
           p."subcategory", p."basePrice"
         FROM "OrderItem" oi
         LEFT JOIN "Product" p ON oi."productId" = p."id"
+        LEFT JOIN "PurchaseOrder" po ON po."id" = oi."fulfillingPoId"
         WHERE oi."orderId" = ANY($1::text[])
         ORDER BY oi."orderId", oi."id"
       `;
@@ -209,6 +216,12 @@ export async function GET(request: NextRequest) {
           unitPrice: item.unitPrice,
           lineTotal: item.lineTotal,
           doorMaterial: item.doorMaterial || null,
+          // A-BIZ-6: backorder state stamped at reserveForOrder time
+          backorderedQty: Number(item.backorderedQty || 0),
+          backorderedAt: item.backorderedAt || null,
+          expectedDate: item.expectedDate || null,
+          fulfillingPoId: item.fulfillingPoId || null,
+          fulfillingPoNumber: item.fulfillingPoNumber || null,
           product: item.product_id ? {
             id: item.product_id,
             name: item.name,
@@ -488,6 +501,11 @@ export async function POST(request: NextRequest) {
     // double-claimed inventory. Wrapping the insert + reserveForOrder in a
     // single tx with row-level locking on InventoryItem (inside reserveForOrder)
     // forces them to serialize.
+    // Held outside the tx so post-commit code (inbox + builder email) can
+    // see whether anything went on backorder (A-BIZ-6). Single-element
+    // array because TS strict-null-check doesn't see the reassignment of a
+    // `let null` from inside the async callback as a type-narrow.
+    const reserveBox: ReserveResult[] = [];
     await prisma.$transaction(async (tx) => {
       const insertOrderQuery = `
         INSERT INTO "Order" (
@@ -520,9 +538,12 @@ export async function POST(request: NextRequest) {
         new Date().toISOString()
       );
 
-      // Insert order items
+      // Insert order items — collect generated ids so reserveForOrder can
+      // stamp backorder state per-line (A-BIZ-6).
+      const orderItemIdByIndex: string[] = [];
       for (const item of quoteItems as any[]) {
         const itemId = `oi_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        orderItemIdByIndex.push(itemId);
         const insertItemQuery = `
           INSERT INTO "OrderItem" ("id", "orderId", "productId", "description", "quantity", "unitPrice", "lineTotal", "createdAt", "updatedAt")
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8::timestamp, $9::timestamp)
@@ -545,14 +566,18 @@ export async function POST(request: NextRequest) {
       // ledger rows (not a hard reject) — production already accepts orders
       // with backordered material; the fix here is preventing the same
       // physical units from being claimed twice by concurrent calls.
-      await reserveForOrder(
+      // A-BIZ-6: passing `id` lets reserveForOrder stamp backorderedQty,
+      // backorderedAt, fulfillingPoId, expectedDate on the OrderItem row
+      // for shortfall lines so the UI can render an ETA badge directly.
+      reserveBox.push(await reserveForOrder(
         tx,
         orderId,
-        (quoteItems as any[]).map((qi) => ({
+        (quoteItems as any[]).map((qi, idx) => ({
+          id: orderItemIdByIndex[idx],
           productId: qi.productId,
           quantity: Number(qi.quantity || 0),
         })),
-      );
+      ));
     }, {
       // Conservative timeout — InventoryAllocation insert + recompute is fast
       // but the row-lock contention under concurrent orders can stretch it.
@@ -580,6 +605,22 @@ export async function POST(request: NextRequest) {
     // Event: new order lands at RECEIVED — create a PM task to confirm it.
     // Fire-and-forget; task failure must never roll back the order.
     createTaskForOrderReceived(orderId).catch(() => {})
+
+    // ── A-BIZ-6: backorder fan-out ────────────────────────────────
+    // Fire-and-forget: InboxItem for the assigned PM + optional builder
+    // email gated by BACKORDER_BUILDER_EMAIL_ENABLED. No-op when nothing
+    // went on backorder.
+    const rr = reserveBox[0]
+    if (rr && rr.backordered.length > 0) {
+      notifyBackorder({
+        orderId,
+        orderNumber,
+        builderId: finalBuilderId,
+        builderEmail: builder?.email || null,
+        builderName: builder?.companyName || null,
+        reserveResult: rr,
+      }).catch(() => {})
+    }
 
     // Fire user-defined automation rules (AutomationRule table) for ORDER_CREATED.
     // Fire-and-forget; automation failures must never block order creation.

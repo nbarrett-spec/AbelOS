@@ -763,6 +763,192 @@ function extractEmail(str: string): string {
   return match ? match[1].toLowerCase() : str.toLowerCase().trim()
 }
 
+// ─── Automated-sender filter ──────────────────────────────────────────
+// A-INT-4: skip noreply/donotreply/automated senders. We still log them
+// to CommunicationLog for the audit trail, but we don't fan out to the
+// PM inbox queue.
+const AUTOMATED_LOCAL_PARTS = [
+  'noreply',
+  'no-reply',
+  'no_reply',
+  'donotreply',
+  'do-not-reply',
+  'do_not_reply',
+  'mailer-daemon',
+  'postmaster',
+  'notifications',
+  'notification',
+  'auto-reply',
+  'automated',
+  'bounce',
+  'bounces',
+  'updates',
+  'support+',
+]
+
+const AUTOMATED_SUBJECT_PATTERNS = [
+  /^\s*\[?(?:auto[- ]?reply|out of office)\b/i,
+  /^\s*automatic reply\b/i,
+  /^\s*undelivered\b/i,
+  /^\s*delivery (?:status )?notification\b/i,
+]
+
+export function isAutomatedSender(fromAddress: string | null | undefined, subject?: string | null): boolean {
+  if (!fromAddress) return false
+  const local = fromAddress.toLowerCase().split('@')[0] ?? ''
+  if (AUTOMATED_LOCAL_PARTS.some(p => local.includes(p))) return true
+  if (subject && AUTOMATED_SUBJECT_PATTERNS.some(rx => rx.test(subject))) return true
+  return false
+}
+
+// ─── Post-ingest processing ───────────────────────────────────────────
+// A-INT-4: after CommunicationLog rows land, we need to (a) mark them
+// processedAt so we don't re-handle on the next cron run, and (b) raise
+// an InboxItem for unfiltered inbound messages from known builders so
+// the PM/sales rep sees them in the staff queue.
+//
+// Idempotent: any row already stamped with `processedAt` is skipped.
+//
+// Suppression rules (no InboxItem raised, but processedAt still stamped):
+//   • Outbound email (we sent it).
+//   • Automated sender (noreply, mailer-daemon, etc.).
+//   • No builder match (unknown sender).
+//   • Existing InboxItem already linked (re-run safety).
+//
+// Reply tracking: when the message is part of a thread we've already
+// raised an inbox item for, we attach to the existing thread item rather
+// than spawning a new one — keeps the queue tidy.
+async function findOpenInboxItemForThread(threadId: string | null): Promise<string | null> {
+  if (!threadId) return null
+  const existing = await (prisma as any).inboxItem.findFirst({
+    where: {
+      type: 'EMAIL_FROM_BUILDER',
+      status: { in: ['PENDING', 'SNOOZED'] },
+      actionData: { path: ['threadId'], equals: threadId },
+    },
+    select: { id: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  return existing?.id ?? null
+}
+
+interface ProcessOpts {
+  /** Process up to this many rows in one pass (cron budget). */
+  limit?: number
+  /** Optional deadline timestamp; bail if exceeded mid-loop. */
+  deadlineAt?: number
+}
+
+interface ProcessResult {
+  considered: number
+  inboxRaised: number
+  threadsAttached: number
+  suppressed: number
+  failed: number
+}
+
+export async function processIncomingMessages(opts: ProcessOpts = {}): Promise<ProcessResult> {
+  const limit = opts.limit ?? 200
+  const deadlineAt = opts.deadlineAt
+  const outOfTime = () => deadlineAt !== undefined && Date.now() > deadlineAt
+
+  const rows: Array<{
+    id: string
+    direction: string
+    builderId: string | null
+    fromAddress: string | null
+    subject: string | null
+    sentAt: Date | null
+    gmailThreadId: string | null
+  }> = await prisma.$queryRawUnsafe(
+    `SELECT "id", "direction", "builderId", "fromAddress", "subject", "sentAt", "gmailThreadId"
+     FROM "CommunicationLog"
+     WHERE "channel" = 'EMAIL'
+       AND "processedAt" IS NULL
+     ORDER BY "createdAt" ASC
+     LIMIT $1`,
+    limit
+  )
+
+  let inboxRaised = 0
+  let threadsAttached = 0
+  let suppressed = 0
+  let failed = 0
+
+  for (const row of rows) {
+    if (outOfTime()) break
+
+    try {
+      // Suppression branch — stamp processedAt and move on. No InboxItem.
+      if (
+        row.direction !== 'INBOUND' ||
+        !row.builderId ||
+        isAutomatedSender(row.fromAddress, row.subject)
+      ) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "CommunicationLog" SET "processedAt" = NOW() WHERE "id" = $1`,
+          row.id
+        )
+        suppressed++
+        continue
+      }
+
+      // Reply tracking — attach to existing thread inbox item if open.
+      const existingItemId = await findOpenInboxItemForThread(row.gmailThreadId)
+      if (existingItemId) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "CommunicationLog"
+           SET "processedAt" = NOW(), "inboxItemId" = $2
+           WHERE "id" = $1`,
+          row.id,
+          existingItemId
+        )
+        threadsAttached++
+        continue
+      }
+
+      // Fan out — raise a fresh InboxItem for the assigned PM/sales rep.
+      // Builder doesn't carry a salesRepId, so we leave assignedTo null
+      // and let the unassigned-queue view pick it up.
+      const item = await (prisma as any).inboxItem.create({
+        data: {
+          type: 'EMAIL_FROM_BUILDER',
+          source: 'gmail-sync',
+          title: `Email: ${row.subject?.slice(0, 120) || '(no subject)'}`,
+          description: `From ${row.fromAddress || 'unknown'}`,
+          priority: 'MEDIUM',
+          status: 'PENDING',
+          entityType: 'CommunicationLog',
+          entityId: row.id,
+          actionData: {
+            communicationLogId: row.id,
+            builderId: row.builderId,
+            fromAddress: row.fromAddress,
+            subject: row.subject,
+            threadId: row.gmailThreadId,
+            sentAt: row.sentAt?.toISOString() ?? null,
+          } as any,
+        },
+        select: { id: true },
+      })
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "CommunicationLog"
+         SET "processedAt" = NOW(), "inboxItemId" = $2
+         WHERE "id" = $1`,
+        row.id,
+        item.id
+      )
+      inboxRaised++
+    } catch (err) {
+      failed++
+      logger.error('[Gmail Sync] post-ingest processing failed', err, { commLogId: row.id })
+    }
+  }
+
+  return { considered: rows.length, inboxRaised, threadsAttached, suppressed, failed }
+}
+
 async function matchEmailToContact(from: string, to: string[]): Promise<{
   builderId: string | null
   organizationId: string | null
@@ -791,6 +977,18 @@ async function matchEmailToContact(from: string, to: string[]): Promise<{
     if (builder) {
       builderId = builder.id
       organizationId = builder.organizationId
+      break
+    }
+
+    // A-INT-4: also match to BuilderContact (PMs, supers, purchasing managers
+    // who email from a personal address rather than the org's main inbox).
+    const contact = await (prisma as any).builderContact.findFirst({
+      where: { email: addr, active: true },
+      select: { builderId: true, builder: { select: { organizationId: true } } },
+    })
+    if (contact) {
+      builderId = contact.builderId
+      organizationId = contact.builder?.organizationId ?? null
       break
     }
 

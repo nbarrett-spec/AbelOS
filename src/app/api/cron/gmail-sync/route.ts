@@ -24,7 +24,7 @@ export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { syncAllAccounts } from '@/lib/integrations/gmail'
+import { syncAllAccounts, processIncomingMessages } from '@/lib/integrations/gmail'
 import { startCronRun, finishCronRun } from '@/lib/cron'
 
 // Leave ~60s of headroom below Vercel's 300s maxDuration so finishCronRun
@@ -102,12 +102,36 @@ export async function GET(request: NextRequest) {
 
     const { result } = raced as { timedOut: false; result: Awaited<typeof syncPromise> }
 
+    // A-INT-4: post-ingest pass — raise InboxItems for unfiltered inbound
+    // messages from known builders, attach replies to open thread items,
+    // and stamp processedAt so we don't reprocess on the next run. Bounded
+    // by what's left of the soft budget so finishCronRun still lands.
+    let processed: Awaited<ReturnType<typeof processIncomingMessages>> | null = null
+    try {
+      const processingDeadline = started + SOFT_BUDGET_MS - 10_000 // leave 10s for finishCronRun
+      processed = await processIncomingMessages({
+        limit: 500,
+        deadlineAt: processingDeadline,
+      })
+    } catch (procErr: any) {
+      // Non-fatal — sync itself succeeded; surface as a soft warning.
+      processed = {
+        considered: 0,
+        inboxRaised: 0,
+        threadsAttached: 0,
+        suppressed: 0,
+        failed: 0,
+      }
+      console.warn('[gmail-sync] processIncomingMessages threw:', procErr?.message)
+    }
+
     await finishCronRun(runId, result.status === 'FAILED' ? 'FAILURE' : 'SUCCESS', Date.now() - started, {
       result: {
         created: result.recordsCreated,
         skipped: result.recordsSkipped,
         failed: result.recordsFailed,
         durationMs: result.durationMs,
+        processed,
       },
       // Surface errorMessage from syncAllAccounts so CronRun.error is populated
       // (previously null for FAILED runs — hid the real root cause)
@@ -117,6 +141,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: result.status !== 'FAILED',
       ...result,
+      processed,
     })
   } catch (error: any) {
     await finishCronRun(runId, 'FAILURE', Date.now() - started, { error: error.message })

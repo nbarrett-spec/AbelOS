@@ -10,7 +10,8 @@ import { logger, getRequestId } from '@/lib/logger'
 import { audit } from '@/lib/audit'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { enforceCreditHold } from '@/lib/credit-hold'
-import { reserveForOrder } from '@/lib/allocation'
+import { reserveForOrder, type ReserveResult } from '@/lib/allocation'
+import { notifyBackorder } from '@/lib/allocation/backorder-notify'
 
 // GET /api/orders — List builder's orders
 export async function GET(request: NextRequest) {
@@ -119,6 +120,12 @@ export async function POST(request: NextRequest) {
     // Create Order + OrderItems + update Quote atomically
     const total = quoteRecord.total || 0
 
+    // Held outside the tx so post-commit code (inbox + builder email) can
+    // see whether anything went on backorder (A-BIZ-6). We collect into a
+    // single-element array because TS strict-null-check doesn't see the
+    // reassignment of a `let null` from inside the async callback as a
+    // type-narrow, even though it's correct at runtime.
+    const reserveBox: ReserveResult[] = []
     const quoteItems: any[] = await prisma.$transaction(async (tx) => {
       // Create Order
       await tx.$executeRawUnsafe(
@@ -138,9 +145,12 @@ export async function POST(request: NextRequest) {
         quoteId
       )
 
-      // Create OrderItems for each quote item
+      // Create OrderItems for each quote item — track ids so reserveForOrder
+      // can stamp per-line backorder state (A-BIZ-6).
+      const orderItemIdByIndex: string[] = []
       for (const item of items) {
         const orderItemId = `item${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+        orderItemIdByIndex.push(orderItemId)
 
         await tx.$executeRawUnsafe(
           `INSERT INTO "OrderItem" ("id", "orderId", "productId", "description", "quantity", "unitPrice", "total", "location", "createdAt", "updatedAt")
@@ -167,14 +177,18 @@ export async function POST(request: NextRequest) {
       // on the InventoryAllocation ledger inside the same tx so concurrent
       // orders can't double-claim the same physical stock. Shortfalls become
       // BACKORDERED rows.
-      await reserveForOrder(
+      // A-BIZ-6: passing `id` lets reserveForOrder stamp backorder fields
+      // on the OrderItem so the line carries its own ETA / fulfilling-PO
+      // link without callers walking the ledger.
+      reserveBox.push(await reserveForOrder(
         tx,
         orderId,
-        items.map((it: any) => ({
+        items.map((it: any, idx: number) => ({
+          id: orderItemIdByIndex[idx],
           productId: it.productId,
           quantity: Number(it.quantity || 0),
         })),
-      )
+      ))
 
       return items
     }, {
@@ -226,6 +240,22 @@ export async function POST(request: NextRequest) {
       projectName: 'Order ' + orderNumber,
       total,
     }).catch(() => {})
+
+    // ── A-BIZ-6: backorder fan-out ────────────────────────────────
+    // Fire-and-forget: InboxItem for the assigned PM + optional builder
+    // email gated by BACKORDER_BUILDER_EMAIL_ENABLED. No-op when nothing
+    // went on backorder.
+    const rr = reserveBox[0]
+    if (rr && rr.backordered.length > 0) {
+      notifyBackorder({
+        orderId,
+        orderNumber,
+        builderId: session.builderId,
+        builderEmail: session.email,
+        builderName: session.companyName,
+        reserveResult: rr,
+      }).catch((err) => logger.warn('backorder_notify_failed', { msg: err?.message, orderId }))
+    }
 
     // Fetch project name if available for notification
     const projectName = quoteRecord.projectId
