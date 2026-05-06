@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -341,6 +342,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('GET /api/ops/orders error:', error);
+    Sentry.captureException(error, { tags: { route: '/api/ops/orders', method: 'GET' } });
     return NextResponse.json(
       { error: 'Failed to fetch orders' },
       { status: 500 }
@@ -760,6 +762,10 @@ export async function POST(request: NextRequest) {
       meta: err?.meta,
       stack: err?.stack?.split('\n').slice(0, 10).join('\n'),
     }, null, 2))
+    Sentry.captureException(err, {
+      tags: { route: '/api/ops/orders', method: 'POST', code: err?.code },
+      extra: { meta: err?.meta },
+    });
     return NextResponse.json(
       { error: 'Failed to create order', detail: err?.message?.slice(0, 500), code: err?.code },
       { status: 500 }

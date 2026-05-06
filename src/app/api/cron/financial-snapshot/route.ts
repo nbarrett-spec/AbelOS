@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withCronRun } from '@/lib/cron'
@@ -144,6 +145,7 @@ async function calculateFinancialSnapshot() {
     }
   } catch (e: any) {
     logger.error('financial_snapshot_calc_failed', e)
+    Sentry.captureException(e, { tags: { route: '/api/cron/financial-snapshot', cron: 'financial-snapshot' } })
     throw e
   }
 }

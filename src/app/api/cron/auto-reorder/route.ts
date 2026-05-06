@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -298,12 +299,17 @@ async function runAutoReorder(): Promise<NextResponse<AutoReorderResult>> {
         const msg = `vendor ${vendorId}: ${e?.message || String(e)}`
         result.errors.push(msg)
         logger.error('auto_reorder_po_create_failed', e, { vendorId, lineCount: lines.length })
+        Sentry.captureException(e, {
+          tags: { route: '/api/cron/auto-reorder', cron: 'auto-reorder', stage: 'po-create' },
+          extra: { vendorId, lineCount: lines.length },
+        })
       }
     }
 
     return NextResponse.json(result)
   } catch (e: any) {
     logger.error('auto_reorder_run_failed', e)
+    Sentry.captureException(e, { tags: { route: '/api/cron/auto-reorder', cron: 'auto-reorder' } })
     result.errors.push(e?.message || String(e))
     return NextResponse.json(result, { status: 500 })
   }

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -204,6 +205,7 @@ export async function GET(
     })
   } catch (error: any) {
     console.error('Inventory detail GET error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/inventory/[id]', method: 'GET' } })
     return NextResponse.json({ error: 'Internal server error', detail: String(error?.message || error) }, { status: 500 })
   }
 }
@@ -319,6 +321,7 @@ export async function PATCH(
     return safeJson({ ok: true, product: rows[0] || null })
   } catch (error: any) {
     console.error('Inventory PATCH [id] error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/inventory/[id]', method: 'PATCH' } })
     return NextResponse.json({ error: 'Internal server error', detail: String(error?.message || error) }, { status: 500 })
   }
 }

@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { processMessage } from '@/lib/agent'
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Email webhook error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/agent/email', method: 'POST' } })
     await markWebhookFailed(idem?.id, error?.message || String(error))
     return NextResponse.json({ error: 'Failed to process email' }, { status: 500 })
   }

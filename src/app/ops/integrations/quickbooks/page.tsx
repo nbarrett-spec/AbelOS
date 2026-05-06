@@ -6,11 +6,12 @@ import Link from 'next/link'
 // ──────────────────────────────────────────────────────────────────────────
 // QuickBooks Online — Connect page (phase 2 stub)
 // ──────────────────────────────────────────────────────────────────────────
-// Decision (2026-04-22): We went with QBO over QB Desktop Web Connector.
-// Rationale lives in memory/projects/quickbooks-decision.md. This page
-// intentionally renders a disabled "Connect QuickBooks" button so the
-// expectation is clear — the scaffold is in place, the OAuth handshake
-// comes in phase 2.
+// CURRENT REALITY (2026-05-05):
+//   - QBWC (QB Desktop Web Connector) was REVIVED 2026-04-30 and is LIVE
+//     at /api/v1/qb/qbwc, populating Qb* mirror tables. The qb-aggregate
+//     cron reads those tables daily.
+//   - QBO (OAuth2) is the long-term plan but still a phase-2 stub. This
+//     page reflects the QBO connect flow only; it does not control QBWC.
 // ──────────────────────────────────────────────────────────────────────────
 
 interface QboStatus {
@@ -80,13 +81,14 @@ export default function QuickBooksIntegrationPage() {
         {/* Decision banner */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <h3 className="font-semibold text-amber-900 mb-1">
-            Decision: QuickBooks Online, not Desktop
+            QBWC is live; QBO Online is phase 2
           </h3>
           <p className="text-sm text-amber-800">
-            We retired the QuickBooks Web Connector (QBWC) path on 2026-04-22
-            in favor of QuickBooks Online via OAuth2. No data migration — QB
-            sync was never live in Aegis. The scaffold below goes live in
-            phase 2.
+            QuickBooks Desktop Web Connector (QBWC) was revived 2026-04-30 and
+            is mirroring customers, vendors, accounts, items, invoices, and
+            bills into the Qb* tables today; the daily qb-aggregate cron reads
+            from them. This page covers the QuickBooks Online (OAuth2) path,
+            which remains a phase-2 stub.
           </p>
         </div>
 

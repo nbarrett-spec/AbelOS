@@ -307,7 +307,11 @@ export function registerAnalyticsTools(server: McpServer) {
       const start = new Date(dateFrom)
       const end = new Date(dateTo)
       const truncFn = groupBy === 'day' ? 'day' : groupBy === 'week' ? 'week' : 'month'
-      const builderFilter = builderId ? `AND "builderId" = '${builderId.replace(/'/g, "''")}'` : ''
+      // truncFn is from a closed enum (day/week/month) so direct interpolation
+      // is safe. builderId is user input — bind as $3.
+      const builderFilter = builderId ? `AND "builderId" = $3` : ''
+      const params: any[] = [start, end]
+      if (builderId) params.push(String(builderId))
       const rows = await prisma.$queryRawUnsafe<Array<{ bucket: Date; orders: bigint; total: number; avg: number }>>(`
         SELECT
           date_trunc('${truncFn}', "createdAt") AS bucket,
@@ -318,7 +322,7 @@ export function registerAnalyticsTools(server: McpServer) {
         WHERE "createdAt" >= $1 AND "createdAt" <= $2 AND status != 'CANCELLED' ${builderFilter}
         GROUP BY 1
         ORDER BY 1 ASC
-      `, start, end)
+      `, ...params)
       const trends = rows.map((r) => ({
         bucket: r.bucket,
         orders: Number(r.orders),

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -153,11 +154,20 @@ async function runJob(triggeredBy: 'schedule' | 'manual') {
           // Don't fail the whole cron if inbox writes blow up — the status
           // flip is the load-bearing part.
           console.warn('[quote-expiration] InboxItem insert failed:', e?.message)
+          Sentry.captureException(e, {
+            tags: { route: '/api/cron/quote-expiration', cron: 'quote-expiration', stage: 'inbox-insert' },
+            extra: { builderId },
+          })
         }
       }
 
       return { expired, alertsCreated, triggeredBy }
     },
     { triggeredBy }
-  ).then((result) => NextResponse.json(result))
+  )
+    .then((result) => NextResponse.json(result))
+    .catch((err) => {
+      Sentry.captureException(err, { tags: { route: '/api/cron/quote-expiration', cron: 'quote-expiration' } })
+      throw err
+    })
 }

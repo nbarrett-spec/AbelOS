@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Quote conversion error:', error);
+    Sentry.captureException(error, { tags: { route: '/api/ops/quotes/conversion', method: 'GET' } });
     return safeJson({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -184,6 +185,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('GET /api/ops/purchasing error:', error);
+    Sentry.captureException(error, { tags: { route: '/api/ops/purchasing', method: 'GET' } });
     return NextResponse.json(
       { error: 'Failed to fetch purchase orders' },
       { status: 500 }
@@ -303,6 +305,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('POST /api/ops/purchasing error:', error);
+    Sentry.captureException(error, { tags: { route: '/api/ops/purchasing', method: 'POST' } });
     return NextResponse.json(
       { error: 'Failed to create purchase order' },
       { status: 500 }
@@ -427,6 +430,7 @@ export async function PATCH(request: NextRequest) {
     );
   } catch (error) {
     console.error('PATCH /api/ops/purchasing error:', error);
+    Sentry.captureException(error, { tags: { route: '/api/ops/purchasing', method: 'PATCH' } });
     return NextResponse.json(
       { error: 'Failed to update purchase order' },
       { status: 500 }

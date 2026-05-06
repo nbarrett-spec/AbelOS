@@ -8,15 +8,12 @@
 import { prisma } from '@/lib/prisma'
 import type { ClaudeTool } from '@/lib/claude'
 
-/**
- * Sanitize a string for safe interpolation in SQL queries.
- * Escapes single quotes to prevent SQL injection.
- * For new code, prefer parameterized queries ($1, $2).
- */
-function sqlSafe(input: unknown): string {
-  if (input == null || typeof input !== 'string') return ''
-  return input.replace(/'/g, "''").replace(/\\/g, '\\\\').replace(/;/g, '')
-}
+// NOTE: sqlSafe() helper removed — all call sites in this file now use
+// parameterized $queryRawUnsafe(sql, ...params) with $1/$2 placeholders.
+// If you're tempted to add a new ILIKE filter here, do NOT bring back the
+// helper. Append a $N placeholder + push the value to params, just like the
+// existing tools below. Parameterized queries are robust against PG dollar-
+// quoting and Unicode-escape edge cases that string-replace can't catch.
 
 // ──────────────────────────────────────────────────────────────────────────
 // Response-size caps (BUGFIX 2.6 + F5-AI-DEEPER) — keep tool replies bounded
@@ -550,9 +547,15 @@ async function toolSearchOrders(input: Record<string, any>, canViewFinancials: b
   const { query, status } = input
   // Default 25, hard cap 50 (BUGFIX 2.6) — keeps response payloads bounded.
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE 1=1'
-  if (status) where += ` AND o."status"::text = '${sqlSafe(status)}'`
-  if (query) where += ` AND (o."orderNumber" ILIKE '%${sqlSafe(query)}%' OR b."companyName" ILIKE '%${sqlSafe(query)}%' OR b."contactName" ILIKE '%${sqlSafe(query)}%')`
+  const conditions: string[] = ['1=1']
+  const params: any[] = []
+  let idx = 1
+  if (status) { conditions.push(`o."status"::text = $${idx}`); params.push(String(status)); idx++ }
+  if (query) {
+    conditions.push(`(o."orderNumber" ILIKE '%' || $${idx} || '%' OR b."companyName" ILIKE '%' || $${idx} || '%' OR b."contactName" ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   // Summary-only columns — no nested line items / large fields.
   const rows = await prisma.$queryRawUnsafe(`
@@ -564,7 +567,7 @@ async function toolSearchOrders(input: Record<string, any>, canViewFinancials: b
     ${where}
     ORDER BY o."createdAt" DESC
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   // F5-AI-DEEPER: drop internal id (CUID — not useful to the LLM) and trim
   // ISO timestamps to date-only to cut bytes per row.
@@ -588,9 +591,15 @@ async function toolSearchOrders(input: Record<string, any>, canViewFinancials: b
 async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
   const { query, status } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE 1=1'
-  if (status) where += ` AND b."status"::text = '${sqlSafe(status)}'`
-  if (query) where += ` AND (b."companyName" ILIKE '%${sqlSafe(query)}%' OR b."contactName" ILIKE '%${sqlSafe(query)}%' OR b.email ILIKE '%${sqlSafe(query)}%')`
+  const conditions: string[] = ['1=1']
+  const params: any[] = []
+  let idx = 1
+  if (status) { conditions.push(`b."status"::text = $${idx}`); params.push(String(status)); idx++ }
+  if (query) {
+    conditions.push(`(b."companyName" ILIKE '%' || $${idx} || '%' OR b."contactName" ILIKE '%' || $${idx} || '%' OR b.email ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT b.id, b."companyName", b."contactName", b.email, b.phone,
@@ -601,7 +610,7 @@ async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
     ${where}
     ORDER BY b."companyName"
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return capResponse(JSON.stringify({
     count: rows.length,
@@ -621,10 +630,16 @@ async function toolSearchBuilders(input: Record<string, any>): Promise<string> {
 async function toolSearchInvoices(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
   const { query, status, overdue_only } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE 1=1'
-  if (status) where += ` AND i."status"::text = '${sqlSafe(status)}'`
-  if (overdue_only) where += ` AND i."status"::text = 'OVERDUE'`
-  if (query) where += ` AND (i."invoiceNumber" ILIKE '%${sqlSafe(query)}%' OR b."companyName" ILIKE '%${sqlSafe(query)}%')`
+  const conditions: string[] = ['1=1']
+  const params: any[] = []
+  let idx = 1
+  if (status) { conditions.push(`i."status"::text = $${idx}`); params.push(String(status)); idx++ }
+  if (overdue_only) conditions.push(`i."status"::text = 'OVERDUE'`)
+  if (query) {
+    conditions.push(`(i."invoiceNumber" ILIKE '%' || $${idx} || '%' OR b."companyName" ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT i.id, i."invoiceNumber", i.status, i.total, i."balanceDue",
@@ -635,7 +650,7 @@ async function toolSearchInvoices(input: Record<string, any>, canViewFinancials:
     ${where}
     ORDER BY i."dueDate" ASC
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return capResponse(JSON.stringify({
     count: rows.length,
@@ -654,9 +669,15 @@ async function toolSearchInvoices(input: Record<string, any>, canViewFinancials:
 async function toolSearchProducts(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
   const { query, category } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE p.active = true'
-  if (category) where += ` AND p.category ILIKE '%${sqlSafe(category)}%'`
-  if (query) where += ` AND (p.name ILIKE '%${sqlSafe(query)}%' OR p.sku ILIKE '%${sqlSafe(query)}%' OR p.category ILIKE '%${sqlSafe(query)}%')`
+  const conditions: string[] = ['p.active = true']
+  const params: any[] = []
+  let idx = 1
+  if (category) { conditions.push(`p.category ILIKE '%' || $${idx} || '%'`); params.push(String(category)); idx++ }
+  if (query) {
+    conditions.push(`(p.name ILIKE '%' || $${idx} || '%' OR p.sku ILIKE '%' || $${idx} || '%' OR p.category ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT p.id, p.sku, p.name, p.category, p.subcategory,
@@ -665,7 +686,7 @@ async function toolSearchProducts(input: Record<string, any>, canViewFinancials:
     ${where}
     ORDER BY p.name
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return JSON.stringify({
     count: rows.length,
@@ -684,9 +705,15 @@ async function toolSearchProducts(input: Record<string, any>, canViewFinancials:
 async function toolSearchPOs(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
   const { query, status } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE 1=1'
-  if (status) where += ` AND po."status"::text = '${sqlSafe(status)}'`
-  if (query) where += ` AND (po."poNumber" ILIKE '%${sqlSafe(query)}%' OR v.name ILIKE '%${sqlSafe(query)}%')`
+  const conditions: string[] = ['1=1']
+  const params: any[] = []
+  let idx = 1
+  if (status) { conditions.push(`po."status"::text = $${idx}`); params.push(String(status)); idx++ }
+  if (query) {
+    conditions.push(`(po."poNumber" ILIKE '%' || $${idx} || '%' OR v.name ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT po.id, po."poNumber", po.status, po.total,
@@ -697,7 +724,7 @@ async function toolSearchPOs(input: Record<string, any>, canViewFinancials: bool
     ${where}
     ORDER BY po."createdAt" DESC
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return JSON.stringify({
     count: rows.length,
@@ -831,8 +858,12 @@ async function toolGetSchedule(input: Record<string, any>): Promise<string> {
   const futureDate = new Date()
   futureDate.setDate(futureDate.getDate() + days)
 
+  const params: any[] = [futureDate.toISOString()]
   let typeFilter = ''
-  if (input.type) typeFilter = `AND se."entryType"::text = '${sqlSafe(input.type)}'`
+  if (input.type) {
+    typeFilter = `AND se."entryType"::text = $2`
+    params.push(String(input.type))
+  }
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT se.id, se.title, se."entryType", se."scheduledDate", se.status,
@@ -842,11 +873,11 @@ async function toolGetSchedule(input: Record<string, any>): Promise<string> {
     LEFT JOIN "Job" j ON se."jobId" = j.id
     LEFT JOIN "Crew" c ON se."crewId" = c.id
     WHERE se."scheduledDate" >= NOW()
-      AND se."scheduledDate" <= '${futureDate.toISOString()}'
+      AND se."scheduledDate" <= $1
       ${typeFilter}
     ORDER BY se."scheduledDate" ASC
     LIMIT 20
-  `) as any[]
+  `, ...params) as any[]
 
   return JSON.stringify({
     count: rows.length,
@@ -909,11 +940,13 @@ function toolCreatePO(input: Record<string, any>): string {
 async function toolInventoryStatus(input: Record<string, any>): Promise<string> {
   const { product_query } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE p.active = true'
+  const conditions: string[] = ['p.active = true']
+  const params: any[] = []
   if (product_query) {
-    const q = sqlSafe(product_query)
-    where += ` AND (p.name ILIKE '%${q}%' OR p.sku ILIKE '%${q}%' OR p.category ILIKE '%${q}%')`
+    conditions.push(`(p.name ILIKE '%' || $1 || '%' OR p.sku ILIKE '%' || $1 || '%' OR p.category ILIKE '%' || $1 || '%')`)
+    params.push(String(product_query))
   }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT p.sku, p.name, p.category, p."inStock"
@@ -921,7 +954,7 @@ async function toolInventoryStatus(input: Record<string, any>): Promise<string> 
     ${where}
     ORDER BY p.name
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return JSON.stringify({
     count: rows.length,
@@ -937,11 +970,13 @@ async function toolInventoryStatus(input: Record<string, any>): Promise<string> 
 async function toolSearchVendors(input: Record<string, any>): Promise<string> {
   const { query } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE v.active = true'
+  const conditions: string[] = ['v.active = true']
+  const params: any[] = []
   if (query) {
-    const q = sqlSafe(query)
-    where += ` AND (v.name ILIKE '%${q}%' OR v."contactName" ILIKE '%${q}%')`
+    conditions.push(`(v.name ILIKE '%' || $1 || '%' OR v."contactName" ILIKE '%' || $1 || '%')`)
+    params.push(String(query))
   }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT v.id, v.name, v."contactName", v.email, v.phone,
@@ -951,7 +986,7 @@ async function toolSearchVendors(input: Record<string, any>): Promise<string> {
     ${where}
     ORDER BY v.name
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return JSON.stringify({
     count: rows.length,
@@ -969,12 +1004,15 @@ async function toolSearchVendors(input: Record<string, any>): Promise<string> {
 
 async function toolStaffDirectory(input: Record<string, any>): Promise<string> {
   const { query, department } = input
-  let where = 'WHERE s.active = true'
-  if (department) where += ` AND s.department::text = '${sqlSafe(department)}'`
+  const conditions: string[] = ['s.active = true']
+  const params: any[] = []
+  let idx = 1
+  if (department) { conditions.push(`s.department::text = $${idx}`); params.push(String(department)); idx++ }
   if (query) {
-    const q = sqlSafe(query)
-    where += ` AND (s."firstName" ILIKE '%${q}%' OR s."lastName" ILIKE '%${q}%' OR s.role::text ILIKE '%${q}%' OR s.department::text ILIKE '%${q}%')`
+    conditions.push(`(s."firstName" ILIKE '%' || $${idx} || '%' OR s."lastName" ILIKE '%' || $${idx} || '%' OR s.role::text ILIKE '%' || $${idx} || '%' OR s.department::text ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
   }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT s.id, s."firstName", s."lastName", s.email, s.phone,
@@ -983,7 +1021,7 @@ async function toolStaffDirectory(input: Record<string, any>): Promise<string> {
     ${where}
     ORDER BY s."lastName", s."firstName"
     LIMIT 20
-  `) as any[]
+  `, ...params) as any[]
 
   // NOTE: We never expose salary or compensation data
   return JSON.stringify({
@@ -1002,9 +1040,15 @@ async function toolStaffDirectory(input: Record<string, any>): Promise<string> {
 async function toolGetQuotes(input: Record<string, any>, canViewFinancials: boolean): Promise<string> {
   const { query, status } = input
   const limit = clampLimit(input.limit, 25)
-  let where = 'WHERE 1=1'
-  if (status) where += ` AND q."status"::text = '${sqlSafe(status)}'`
-  if (query) where += ` AND (q."quoteNumber" ILIKE '%${sqlSafe(query)}%')`
+  const conditions: string[] = ['1=1']
+  const params: any[] = []
+  let idx = 1
+  if (status) { conditions.push(`q."status"::text = $${idx}`); params.push(String(status)); idx++ }
+  if (query) {
+    conditions.push(`(q."quoteNumber" ILIKE '%' || $${idx} || '%')`)
+    params.push(String(query)); idx++
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`
 
   const rows = await prisma.$queryRawUnsafe(`
     SELECT q.id, q."quoteNumber", q.status, q.total,
@@ -1013,7 +1057,7 @@ async function toolGetQuotes(input: Record<string, any>, canViewFinancials: bool
     ${where}
     ORDER BY q."createdAt" DESC
     LIMIT ${limit}
-  `) as any[]
+  `, ...params) as any[]
 
   return JSON.stringify({
     count: rows.length,

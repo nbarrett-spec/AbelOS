@@ -1,16 +1,38 @@
 // ──────────────────────────────────────────────────────────────────────────
 // QuickBooks Online (QBO) — Integration Wrapper
 // ──────────────────────────────────────────────────────────────────────────
-// Decision (2026-04-22): KILL QuickBooks Desktop Web Connector (QBWC) path.
-// QBWC would have required a multi-week build (SOAP/QBXML scaffolding, a
-// Desktop-pinned polling agent, always-on local machine). QBO gives us a
-// clean REST + OAuth2 path with no data migration since QB sync has never
-// been live in Aegis. See memory/projects/quickbooks-decision.md.
+// CURRENT STATE OF QB INTEGRATION (2026-05-05):
 //
-// Phase 2: wire real OAuth2 + sync bodies. The sync* methods are stubs
-// today that return { skipped: true, reason: 'not implemented yet' } in
-// the SyncResult shape so UI + cron plumbing can be wired now without
-// hitting a real QBO company.
+// There are TWO QB code paths in this repo. Don't confuse them.
+//
+//   1. QBWC (QuickBooks Desktop Web Connector) — LIVE.
+//      - SOAP endpoint: src/app/api/v1/qb/qbwc/route.ts
+//      - Parser/upserts: src/lib/qbwc/{soap,qbxml,sequence,upserts,brain}.ts
+//      - Mirror tables (defined in prisma/schema.prisma ~L6415):
+//        QbCustomer, QbVendor, QbAccount, QbItem, QbInvoice, QbInvoiceLine,
+//        QbBill, QbBillExpenseLine.
+//      - Daily aggregator: src/app/api/cron/qb-aggregate/route.ts (vercel.json
+//        cron @ 12:00 UTC) reads those tables via $queryRawUnsafe and pushes
+//        a 'finance_daily_snapshot' to Brain. THIS IS LIVE.
+//      - Decision note in qbwc/route.ts: revived 2026-04-30 per Nate's call
+//        as a pragmatic bridge until QBO OAuth ships.
+//
+//   2. QBO (QuickBooks Online, OAuth2) — DEPRECATED / phase-2 stub.
+//      - This file is the QBO wrapper. The four sync* functions below are
+//        DEPRECATED stubs that return {skipped:true,reason:'not implemented'}
+//        and have NO callers in the repo today. Kept compiling-clean so the
+//        UI + monthly-close plumbing compile. Do not add new callers.
+//      - Live external callers:
+//          syncMonthEndToQuickBooks → /api/ops/finance/monthly-close (qb_sync
+//            action) — returns the legacy {ok,recordsSynced,...} envelope
+//            with ok:false until QBO OAuth is wired.
+//          pushInvoiceToQuickBooks  → currently unused, kept for symmetry.
+//          getQuickBooksStatus / getQboStatus → /api/ops/sync-health/v2 and
+//            /api/ops/integrations/quickbooks/status (UI status card).
+//
+// If you are adding QB functionality TODAY, route through QBWC + the Qb*
+// tables. If/when Phase 2 lands, replace the deprecated stubs in this file
+// with real Intuit OAuth2 sync bodies.
 //
 // Auth model (QBO):
 //   QBO_CLIENT_ID        Intuit app client ID
@@ -140,7 +162,17 @@ export const getQuickBooksStatus = async (
   lastSync?: { lastSyncAt?: Date | null; lastSyncStatus?: string | null; realmId?: string | null }
 ) => getQboStatus(lastSync)
 
-// ─── Sync Stubs ───────────────────────────────────────────────────────────
+// ─── Sync Stubs (DEPRECATED) ──────────────────────────────────────────────
+//
+// DEPRECATED 2026-05-05. The four functions below — syncInvoices,
+// syncPayments, syncJournals, and (further down) the legacy
+// pushInvoiceToQuickBooks — return "not implemented yet" and have NO
+// callers in the repo. They are retained ONLY so phase-2 work has a
+// landing pad with the right signature. The LIVE QB path is QBWC; see
+// the file header comment.
+//
+// Do not call these. Do not add new callers. If you need to integrate
+// with QB today, write against the Qb* mirror tables that QBWC populates.
 
 function buildSkippedResult(
   syncType: string,
@@ -167,6 +199,7 @@ function buildSkippedResult(
   }
 }
 
+/** @deprecated 2026-05-05. Unused stub. Use the QBWC pipeline (Qb* tables) instead. */
 export async function syncInvoices(): Promise<QboSyncResult> {
   return {
     ...buildSkippedResult('invoices', 'PUSH'),
@@ -175,6 +208,7 @@ export async function syncInvoices(): Promise<QboSyncResult> {
   }
 }
 
+/** @deprecated 2026-05-05. Unused stub. Use the QBWC pipeline (Qb* tables) instead. */
 export async function syncPayments(): Promise<QboSyncResult> {
   return {
     ...buildSkippedResult('payments', 'PUSH'),
@@ -183,6 +217,7 @@ export async function syncPayments(): Promise<QboSyncResult> {
   }
 }
 
+/** @deprecated 2026-05-05. Unused stub. Use the QBWC pipeline (Qb* tables) instead. */
 export async function syncJournals(): Promise<QboSyncResult> {
   return {
     ...buildSkippedResult('journals', 'PUSH'),
@@ -218,8 +253,8 @@ export async function syncMonthEndToQuickBooks(args: {
 }
 
 /**
- * Stub invoice push in the legacy flat-envelope shape. Real impl in
- * Phase 2 will use syncInvoices() underneath with an optional filter.
+ * @deprecated 2026-05-05. Unused stub — no callers in repo. Use the QBWC
+ * pipeline (Qb* mirror tables) instead.
  */
 export async function pushInvoiceToQuickBooks(invoiceId: string): Promise<QBSyncResult> {
   if (!isQuickBooksConfigured()) {

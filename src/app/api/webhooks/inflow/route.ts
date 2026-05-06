@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { handleInflowWebhook } from '@/lib/integrations/inflow'
 import {
@@ -60,11 +62,20 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Idempotency ──────────────────────────────────────────────────
+    // Fallback synth ID is a sha256 of the raw body (32 hex chars). This is
+    // stable across retries — duplicate deliveries hit the same key. Only
+    // collides if upstream sends two distinct events with byte-identical
+    // bodies (extremely unlikely; InFlow events embed timestamps).
+    const stableId = crypto
+      .createHash('sha256')
+      .update(rawBody)
+      .digest('hex')
+      .slice(0, 32)
     const eventId =
       body.eventId ||
       body.id ||
       request.headers.get('x-event-id') ||
-      `${eventType}:${JSON.stringify(body.data || body).length}:${Date.now()}`
+      `${eventType}:${stableId}`
     const idem = await ensureIdempotent('inflow', eventId, eventType, body)
     if (idem.status === 'duplicate') {
       return NextResponse.json({ received: true, duplicate: true })
@@ -102,6 +113,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   } catch (error: any) {
     console.error('InFlow webhook error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/webhooks/inflow', method: 'POST' } })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

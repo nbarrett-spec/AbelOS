@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -142,6 +143,10 @@ export async function POST(
     })
   } catch (error: any) {
     console.error('[link-order] failed:', error)
+    Sentry.captureException(error, {
+      tags: { route: '/api/ops/jobs/[id]/link-order', method: 'POST' },
+      extra: { jobId: params.id },
+    })
     return NextResponse.json(
       { error: 'Failed to link order to job', detail: error?.message },
       { status: 500 }

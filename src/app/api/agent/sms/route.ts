@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
@@ -176,6 +177,10 @@ export async function POST(request: NextRequest) {
       return twimlResponse()
     }
     logger.error('twilio_sms_persist_failed', { err: err?.message, messageSid })
+    Sentry.captureException(err, {
+      tags: { route: '/api/agent/sms', method: 'POST', stage: 'persist' },
+      extra: { messageSid },
+    })
     return errorResponse(500, 'Persist failed')
   }
 

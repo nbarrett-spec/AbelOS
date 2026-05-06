@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { checkStaffAuthWithFallback } from '@/lib/api-auth'
@@ -112,6 +113,7 @@ export async function GET(
     })
   } catch (error) {
     console.error('Failed to fetch builder:', error)
+    Sentry.captureException(error, { tags: { route: '/api/admin/builders/[id]', method: 'GET' } })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -387,6 +389,7 @@ export async function PATCH(
     })
   } catch (error: any) {
     console.error('Failed to update builder:', error)
+    Sentry.captureException(error, { tags: { route: '/api/admin/builders/[id]', method: 'PATCH' } })
 
     return NextResponse.json(
       { error: 'Internal server error' },

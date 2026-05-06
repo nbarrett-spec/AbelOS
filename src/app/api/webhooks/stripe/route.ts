@@ -3,6 +3,7 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhookSignature } from '@/lib/stripe'
 import { ensureIdempotent, markWebhookProcessed, markWebhookFailed } from '@/lib/webhook'
@@ -127,6 +128,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     const errMsg = error?.message || String(error)
     console.error('Webhook processing error:', error)
+    Sentry.captureException(error, {
+      tags: { route: '/api/webhooks/stripe', method: 'POST', eventType: event?.type },
+      extra: { eventId: event?.id, idemId: idem.id },
+    })
 
     // Flip the WebhookEvent row to FAILED/DEAD_LETTER with backoff metadata
     // so the retry cron picks it up. This is the primary retry surface.

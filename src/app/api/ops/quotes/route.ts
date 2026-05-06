@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendQuoteReadyEmail } from '@/lib/email'
@@ -7,6 +8,7 @@ import { audit } from '@/lib/audit'
 import { recordQuoteActivity } from '@/lib/events/activity'
 import { requireValidTransition, transitionErrorResponse } from '@/lib/status-guard'
 import { toCsv } from '@/lib/csv'
+import { writeQuoteRevision } from '@/lib/quote-revisions'
 
 // GET /api/ops/quotes — List all quotes (ops-side, no builder auth required)
 export async function GET(request: NextRequest) {
@@ -26,6 +28,24 @@ export async function GET(request: NextRequest) {
       // Clean up any PLACEHOLDER products — reassign their quote items to NULL first
       `UPDATE "QuoteItem" SET "productId" = NULL WHERE "productId" IN (SELECT id FROM "Product" WHERE sku = 'PLACEHOLDER')`,
       `DELETE FROM "Product" WHERE sku = 'PLACEHOLDER'`,
+      // A-BIZ-12 — QuoteRevision append-only revision log. Mirror of
+      // scripts/migrate-aegis-quote-revisions-2026-05-05.sql so the route
+      // self-bootstraps in prod without a separate migration run.
+      `CREATE TABLE IF NOT EXISTS "QuoteRevision" (
+        "id"            TEXT PRIMARY KEY,
+        "quoteId"       TEXT NOT NULL,
+        "revision"      INTEGER NOT NULL,
+        "snapshot"      JSONB NOT NULL,
+        "changes"       JSONB,
+        "authorStaffId" TEXT,
+        "createdAt"     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `DO $$ BEGIN
+         IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'QuoteRevision_quoteId_revision_key') THEN
+           ALTER TABLE "QuoteRevision" ADD CONSTRAINT "QuoteRevision_quoteId_revision_key" UNIQUE ("quoteId", "revision");
+         END IF;
+       END $$`,
+      `CREATE INDEX IF NOT EXISTS "QuoteRevision_quoteId_createdAt_idx" ON "QuoteRevision" ("quoteId", "createdAt" DESC)`,
     ]
     for (const sql of schemaMigrations) {
       try { await prisma.$executeRawUnsafe(sql) }
@@ -277,6 +297,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('GET /api/ops/quotes error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/quotes', method: 'GET' } })
     return NextResponse.json({ error: 'Internal server error', details: error?.message || String(error) }, { status: 500 })
   }
 }
@@ -398,6 +419,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 })
   } catch (error: any) {
     console.error('POST /api/ops/quotes error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/quotes', method: 'POST' } })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -543,6 +565,16 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    // A-BIZ-12 — Record a revision snapshot of the post-update state. This
+    // runs only if the request actually wrote something (header changes or
+    // an items replace). The helper swallows its own errors so revision
+    // tracking can never block the user's edit.
+    const wroteHeader = updateParts.length > 0
+    const wroteItems = !!(items && Array.isArray(items))
+    if (wroteHeader || wroteItems) {
+      await writeQuoteRevision(id, request.headers.get('x-staff-id'))
+    }
+
     // Fetch updated quote with items
     const updatedQuoteResult = await prisma.$queryRawUnsafe<any[]>(
       `SELECT q."id", q."quoteNumber", q."projectId", q."takeoffId", q."subtotal", q."taxRate",
@@ -624,6 +656,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(response)
   } catch (error: any) {
     console.error('PATCH /api/ops/quotes error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/quotes', method: 'PATCH' } })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -690,6 +723,7 @@ export async function DELETE(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('DELETE /api/ops/quotes error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/quotes', method: 'DELETE' } })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

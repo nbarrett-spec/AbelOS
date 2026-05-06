@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ claims, policies })
   } catch (error: any) {
     console.error('GET /api/builders/warranty error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/builders/warranty', method: 'GET' } })
     return NextResponse.json({ error: 'Failed to fetch warranty claims' }, { status: 500 })
   }
 }
@@ -184,6 +186,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error: any) {
     console.error('POST /api/builders/warranty error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/builders/warranty', method: 'POST' } })
     return NextResponse.json({ error: 'Failed to submit warranty claim' }, { status: 500 })
   }
 }

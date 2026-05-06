@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStaffAuth } from '@/lib/api-auth'
@@ -262,6 +263,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('GET /api/ops/invoices error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/invoices', method: 'GET' } })
     return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 })
   }
 }
@@ -364,6 +366,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('POST /api/ops/invoices error:', error)
+    Sentry.captureException(error, { tags: { route: '/api/ops/invoices', method: 'POST' } })
     return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 })
   }
 }
