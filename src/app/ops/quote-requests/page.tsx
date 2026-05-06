@@ -69,7 +69,9 @@ export default function OpsQuoteRequestsPage() {
     fetch('/api/ops/staff')
       .then(r => r.json())
       .then(data => {
-        const list = (data.staff || data || []).map((s: any) => ({
+        // /api/ops/staff returns {success, data: [...]} envelope (BUG-11 fix)
+        const arr = Array.isArray(data) ? data : (data.data || data.staff || [])
+        const list = arr.map((s: any) => ({
           id: s.id,
           name: `${s.firstName} ${s.lastName}`,
         }))

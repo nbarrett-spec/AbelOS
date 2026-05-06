@@ -68,6 +68,7 @@ import { cn } from '@/lib/utils'
 import { fullName } from '@/lib/formatting'
 import DocumentAttachments from '@/components/ops/DocumentAttachments'
 import NotesSection from '@/components/ops/NotesSection'
+import CommunicationLogRow from '@/components/ops/CommunicationLogRow'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -1654,29 +1655,7 @@ export default function AccountDetailPage() {
             ) : (
               <ul className="space-y-2">
                 {commLogs.map((log) => (
-                  <li key={log.id} className="panel p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[13px] font-medium text-fg truncate">
-                            {log.subject}
-                          </span>
-                          <Badge size="xs" variant="neutral">
-                            {log.channel}
-                          </Badge>
-                          <span className="text-[11px] text-fg-subtle">
-                            {log.direction === 'INBOUND' ? '← Inbound' : '→ Outbound'}
-                          </span>
-                        </div>
-                        {log.body && (
-                          <p className="text-[12px] text-fg-muted line-clamp-2">{log.body}</p>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-fg-subtle whitespace-nowrap">
-                        {fmtDate(log.sentAt || log.createdAt)}
-                      </span>
-                    </div>
-                  </li>
+                  <CommunicationLogRow key={log.id} log={log as any} formatDate={fmtDate} />
                 ))}
               </ul>
             )}

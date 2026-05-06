@@ -74,7 +74,9 @@ export default function TakeoffInquiriesPage() {
     try {
       const res = await fetch('/api/ops/staff')
       const data = await res.json()
-      setStaff(data.staff || [])
+      // /api/ops/staff returns {success, data: [...]} envelope (BUG-11 fix)
+      const arr = Array.isArray(data) ? data : (data.data || data.staff || [])
+      setStaff(arr)
     } catch {}
   }
 

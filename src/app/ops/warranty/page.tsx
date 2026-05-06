@@ -110,7 +110,11 @@ export default function WarrantyDashboard() {
 
   useEffect(() => {
     fetch('/api/ops/staff').then(r => r.json()).then(data => {
-      const list = (data.staff || data || []).map((s: any) => ({
+      // /api/ops/staff returns {success, data: [...]} envelope. Match the
+      // pattern in src/app/ops/messages/page.tsx (BUG-11 fix) so this stays
+      // consistent across every staff-list consumer.
+      const arr = Array.isArray(data) ? data : (data.data || data.staff || [])
+      const list = arr.map((s: any) => ({
         id: s.id,
         name: `${s.firstName} ${s.lastName}`,
       }))
