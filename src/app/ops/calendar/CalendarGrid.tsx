@@ -44,12 +44,41 @@ interface CalendarEvent extends JobChipEvent {
   assignedPMId: string | null
 }
 
-type ViewMode = 'month' | 'week'
+type ViewMode = 'month' | 'week' | 'day'
 
 interface CalendarResponse {
   month: string
   range: { start: string; end: string }
   events: CalendarEvent[]
+}
+
+// ── Non-job overlay events (deliveries, installs, QC walks) ──────────────
+type OpsEventType = 'DELIVERY' | 'INSTALL' | 'QC'
+
+interface OpsCalendarEvent {
+  id: string
+  eventType: OpsEventType
+  date: string
+  title: string
+  jobId: string | null
+  jobNumber: string | null
+  builderName: string | null
+  community: string | null
+  status: string | null
+  href: string
+}
+
+// Color code by event type — task spec: delivery=blue, install=green, QC=amber.
+const EVENT_TYPE_COLOR: Record<OpsEventType, string> = {
+  DELIVERY: '#3B82F6', // blue
+  INSTALL: '#10B981',  // green
+  QC: '#F59E0B',       // amber
+}
+
+const EVENT_TYPE_LABEL: Record<OpsEventType, string> = {
+  DELIVERY: 'Delivery',
+  INSTALL: 'Install',
+  QC: 'QC Walk',
 }
 
 // ── Date helpers (UTC day arithmetic) ─────────────────────────────────────
@@ -122,9 +151,17 @@ export default function CalendarGrid({
 
   // ── Data ────────────────────────────────────────────────────────────────
   const [data, setData] = useState<CalendarResponse | null>(null)
+  const [opsEvents, setOpsEvents] = useState<OpsCalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastFetched, setLastFetched] = useState<Date | null>(null)
+
+  // Show/hide overlay event types (delivery / install / QC).
+  const [overlayEnabled, setOverlayEnabled] = useState<Record<OpsEventType, boolean>>({
+    DELIVERY: true,
+    INSTALL: true,
+    QC: true,
+  })
 
   const fetchAbortRef = useRef<AbortController | null>(null)
 
@@ -135,21 +172,44 @@ export default function CalendarGrid({
     const abort = new AbortController()
     fetchAbortRef.current = abort
     try {
+      // Job-side feed (start/close chips)
       const qs = new URLSearchParams()
       qs.set('month', monthKey(anchor.year, anchor.month))
       for (const id of pmFilter) qs.append('pm[]', id)
       for (const id of builderFilter) qs.append('builder[]', id)
       if (hideClosed) qs.set('hideClosed', '1')
-      const res = await fetch(`/api/ops/calendar/jobs?${qs.toString()}`, {
-        cache: 'no-store',
-        signal: abort.signal,
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || `HTTP ${res.status}`)
+
+      // Non-job overlay feed (deliveries, installs, QC walks)
+      const monthStart = new Date(Date.UTC(anchor.year, anchor.month - 1, 1))
+      const monthEnd = new Date(Date.UTC(anchor.year, anchor.month, 0))
+      const fromYmd = toYmd(startOfMondayWeek(monthStart))
+      const toYmdStr = toYmd(addDaysUTC(startOfMondayWeek(monthEnd), 6))
+      const eventsQs = new URLSearchParams({ from: fromYmd, to: toYmdStr })
+
+      const [jobsRes, eventsRes] = await Promise.all([
+        fetch(`/api/ops/calendar/jobs?${qs.toString()}`, {
+          cache: 'no-store',
+          signal: abort.signal,
+        }),
+        fetch(`/api/ops/calendar/events?${eventsQs.toString()}`, {
+          cache: 'no-store',
+          signal: abort.signal,
+        }),
+      ])
+
+      if (!jobsRes.ok) {
+        const body = await jobsRes.json().catch(() => ({}))
+        throw new Error(body.error || `HTTP ${jobsRes.status}`)
       }
-      const json: CalendarResponse = await res.json()
+      const json: CalendarResponse = await jobsRes.json()
       setData(json)
+
+      if (eventsRes.ok) {
+        const ej = await eventsRes.json()
+        setOpsEvents(Array.isArray(ej.events) ? ej.events : [])
+      } else {
+        setOpsEvents([])
+      }
       setLastFetched(new Date())
     } catch (err: any) {
       if (err?.name === 'AbortError') return
@@ -234,8 +294,32 @@ export default function CalendarGrid({
     return map
   }, [filteredEvents])
 
+  // Bucket overlay (delivery/install/QC) events by day.
+  const opsEventsByDay = useMemo(() => {
+    const map = new Map<string, OpsCalendarEvent[]>()
+    for (const e of opsEvents) {
+      if (!overlayEnabled[e.eventType]) continue
+      let arr = map.get(e.date)
+      if (!arr) {
+        arr = []
+        map.set(e.date, arr)
+      }
+      arr.push(e)
+    }
+    return map
+  }, [opsEvents, overlayEnabled])
+
   // ── Compute grid days ──────────────────────────────────────────────────
   const gridDays = useMemo(() => {
+    if (viewMode === 'day') {
+      // Day view: just the focal day. Anchor month + today's day if same month,
+      // otherwise the 1st of the anchored month.
+      const sameMonth = anchor.year === now.getUTCFullYear() && anchor.month === now.getUTCMonth() + 1
+      const ref = sameMonth
+        ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+        : new Date(Date.UTC(anchor.year, anchor.month - 1, 1))
+      return [ref]
+    }
     if (viewMode === 'week') {
       // Week view: show the week containing the 1st of the month (or today if same month)
       const refDate = (anchor.year === now.getUTCFullYear() && anchor.month === now.getUTCMonth() + 1)
@@ -341,7 +425,7 @@ export default function CalendarGrid({
 
           {/* View mode toggle */}
           <div className="ml-3 inline-flex items-center rounded-md border border-border bg-surface-muted/30 p-0.5">
-            {(['month', 'week'] as ViewMode[]).map((mode) => (
+            {(['month', 'week', 'day'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
@@ -381,6 +465,32 @@ export default function CalendarGrid({
             selected={jobTypeFilter}
             onChange={setJobTypeFilter}
           />
+          {/* Overlay event types (delivery / install / QC) */}
+          <div className="inline-flex items-center rounded-md border border-border bg-surface-muted/30 p-0.5">
+            {(Object.keys(EVENT_TYPE_LABEL) as OpsEventType[]).map((t) => {
+              const active = overlayEnabled[t]
+              return (
+                <button
+                  key={t}
+                  onClick={() =>
+                    setOverlayEnabled((prev) => ({ ...prev, [t]: !prev[t] }))
+                  }
+                  className={`px-2 h-6 rounded text-[10.5px] font-medium transition-colors inline-flex items-center gap-1 ${
+                    active
+                      ? 'bg-surface-elevated text-fg shadow-sm'
+                      : 'text-fg-muted hover:text-fg'
+                  }`}
+                  title={`${active ? 'Hide' : 'Show'} ${EVENT_TYPE_LABEL[t]} events`}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: EVENT_TYPE_COLOR[t] }}
+                  />
+                  {EVENT_TYPE_LABEL[t]}
+                </button>
+              )
+            })}
+          </div>
           <label className="flex items-center gap-1.5 text-[11.5px] text-fg-muted select-none cursor-pointer px-2 h-7 rounded-md border border-border bg-surface-muted/30 hover:text-fg">
             <input
               type="checkbox"
@@ -415,49 +525,58 @@ export default function CalendarGrid({
         <Card className="p-8">
           <div className="text-[13px] text-fg-muted">Loading calendar…</div>
         </Card>
-      ) : filteredEvents.length === 0 && !loading ? (
+      ) : filteredEvents.length === 0 && opsEvents.length === 0 && !loading ? (
         <Card className="p-0 overflow-hidden">
           <EmptyState
-            title="No jobs in this month"
+            title="No events in this period"
             description={
               data?.events.length
                 ? 'All events filtered out — adjust filters.'
-                : 'Nothing scheduled for this month.'
+                : 'Nothing scheduled for this period.'
             }
           />
         </Card>
       ) : (
         <div>
-          {/* Weekday header — Mon-start */}
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-              <div
-                key={d}
-                className="text-center text-[10.5px] font-medium text-fg-subtle uppercase tracking-wide bp-label"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
+          {/* Weekday header — Mon-start (hidden in Day view) */}
+          {viewMode !== 'day' && (
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <div
+                  key={d}
+                  className="text-center text-[10.5px] font-medium text-fg-subtle uppercase tracking-wide bp-label"
+                >
+                  {d}
+                </div>
+              ))}
+            </div>
+          )}
           {/* Day cells */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className={`grid gap-1 ${viewMode === 'day' ? 'grid-cols-1' : 'grid-cols-7'}`}>
             {gridDays.map((d) => {
               const key = toYmd(d)
               const events = eventsByDay.get(key) ?? []
+              const ops = opsEventsByDay.get(key) ?? []
+              const combinedCount = events.length + ops.length
               const inMonth = d.getUTCMonth() + 1 === anchor.month
               const isToday = sameDayUTC(d, today)
-              const maxVisible = viewMode === 'week' ? 8 : 3
+              const maxVisible = viewMode === 'day' ? 50 : viewMode === 'week' ? 8 : 3
               const visible = events.slice(0, maxVisible)
               const overflow = events.length - visible.length
 
               const todayGrad =
                 'linear-gradient(135deg, color-mix(in srgb, var(--c1) 7%, transparent), color-mix(in srgb, var(--c4) 5%, transparent))'
 
+              const cellMinH =
+                viewMode === 'day' ? 'min-h-[420px]' :
+                viewMode === 'week' ? 'min-h-[280px]' :
+                'min-h-[110px]'
+
               return (
                 <div
                   key={key}
-                  className={`relative rounded-md border ${viewMode === 'week' ? 'min-h-[280px]' : 'min-h-[110px]'} flex flex-col transition-colors ${
-                    inMonth
+                  className={`relative rounded-md border ${cellMinH} flex flex-col transition-colors ${
+                    inMonth || viewMode === 'day'
                       ? 'border-border bg-surface-muted/20'
                       : 'border-border/40 bg-transparent opacity-55'
                   } ${isToday ? 'ring-1 ring-[var(--c1)]' : ''}`}
@@ -467,7 +586,7 @@ export default function CalendarGrid({
                   <div className="px-1.5 py-1 flex items-center justify-between border-b border-border/60">
                     <div className="flex items-center gap-1 min-w-0">
                       <span
-                        className={`font-mono tabular-nums text-[11px] ${
+                        className={`font-mono tabular-nums ${viewMode === 'day' ? 'text-[14px]' : 'text-[11px]'} ${
                           isToday
                             ? 'text-[var(--c1)] font-semibold'
                             : inMonth
@@ -475,22 +594,26 @@ export default function CalendarGrid({
                               : 'text-fg-subtle'
                         }`}
                       >
-                        {d.getUTCDate()}
+                        {viewMode === 'day'
+                          ? d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+                          : d.getUTCDate()}
                       </span>
-                      <span
-                        className={`text-[9px] font-medium uppercase tracking-wide ${
-                          inMonth ? 'text-fg-subtle' : 'text-fg-subtle/70'
-                        }`}
-                      >
-                        {d.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' })}
-                      </span>
+                      {viewMode !== 'day' && (
+                        <span
+                          className={`text-[9px] font-medium uppercase tracking-wide ${
+                            inMonth ? 'text-fg-subtle' : 'text-fg-subtle/70'
+                          }`}
+                        >
+                          {d.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' })}
+                        </span>
+                      )}
                     </div>
-                    {events.length > 0 && (
+                    {combinedCount > 0 && (
                       <span
                         className="font-mono tabular-nums text-[10px] text-fg-muted"
-                        title={`${events.length} events`}
+                        title={`${combinedCount} events (${events.length} jobs · ${ops.length} ops)`}
                       >
-                        {events.length}
+                        {combinedCount}
                       </span>
                     )}
                   </div>
@@ -501,19 +624,29 @@ export default function CalendarGrid({
                       <JobChip
                         key={`${e.jobId}-${e.dateKind}-${idx}`}
                         event={e}
-                        compact
+                        compact={viewMode === 'day' ? false : true}
                         onClick={() => openJob(e.jobId)}
                       />
                     ))}
-                    {overflow > 0 && (
+                    {ops.slice(0, viewMode === 'day' ? 50 : viewMode === 'week' ? 6 : 2).map((oe) => (
+                      <OpsEventChip
+                        key={oe.id}
+                        event={oe}
+                        compact={viewMode === 'day' ? false : true}
+                        onClick={() => {
+                          if (typeof window !== 'undefined') window.location.href = oe.href
+                        }}
+                      />
+                    ))}
+                    {(overflow > 0 || (viewMode === 'month' && ops.length > 2) || (viewMode === 'week' && ops.length > 6)) && (
                       <button
                         onClick={() => setExpandedDay(key)}
                         className="w-full text-[10px] text-fg-muted hover:text-fg text-center py-0.5 rounded hover:bg-surface-muted/40"
                       >
-                        +{overflow} more
+                        +{combinedCount - (visible.length + Math.min(ops.length, viewMode === 'day' ? 50 : viewMode === 'week' ? 6 : 2))} more
                       </button>
                     )}
-                    {events.length === 0 && inMonth && (
+                    {combinedCount === 0 && inMonth && (
                       <div className="h-full" />
                     )}
                   </div>
@@ -529,11 +662,64 @@ export default function CalendarGrid({
         <DayExpansion
           dateKey={expandedDay}
           events={eventsByDay.get(expandedDay) ?? []}
+          opsEvents={opsEventsByDay.get(expandedDay) ?? []}
           onClose={() => setExpandedDay(null)}
           onOpenJob={openJob}
         />
       )}
     </div>
+  )
+}
+
+// ── OpsEventChip — non-job overlay (delivery / install / QC) ─────────────
+function OpsEventChip({
+  event,
+  compact = true,
+  onClick,
+}: {
+  event: OpsCalendarEvent
+  compact?: boolean
+  onClick?: () => void
+}) {
+  const color = EVENT_TYPE_COLOR[event.eventType]
+  const typeLabel = EVENT_TYPE_LABEL[event.eventType]
+  const subtitle = [event.jobNumber, event.builderName, event.community]
+    .filter(Boolean)
+    .join(' · ')
+  const title = `${typeLabel} — ${event.title}${subtitle ? '\n' + subtitle : ''}${event.status ? '\nStatus: ' + event.status : ''}`
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="w-full text-left rounded-[4px] border border-border bg-surface-elevated hover:border-border-strong hover:shadow-sm transition-all overflow-hidden flex items-stretch group"
+      style={{ borderLeft: `3px solid ${color}` }}
+    >
+      <div className={compact ? 'flex-1 min-w-0 px-1.5 py-1' : 'flex-1 min-w-0 px-2 py-1.5'}>
+        <div className="flex items-center gap-1 min-w-0">
+          <span
+            className="shrink-0 font-mono tracking-wide uppercase px-1 rounded text-[8px]"
+            style={{ color, background: `${color}22` }}
+          >
+            {event.eventType === 'DELIVERY' ? 'DEL' : event.eventType === 'INSTALL' ? 'INS' : 'QC'}
+          </span>
+          <span
+            className={`text-fg truncate ${compact ? 'text-[10px]' : 'text-[11px]'}`}
+          >
+            {event.jobNumber || event.title}
+          </span>
+        </div>
+        {!compact ? (
+          <div className="text-[10.5px] text-fg-muted truncate mt-0.5">
+            {event.title}
+            {subtitle ? <span> <span className="text-fg-subtle">·</span> {subtitle}</span> : null}
+          </div>
+        ) : (
+          <div className="text-[9.5px] text-fg-muted truncate">{subtitle || event.title}</div>
+        )}
+      </div>
+    </button>
   )
 }
 
@@ -794,6 +980,18 @@ function Legend() {
           </span>
         ))}
       </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-fg-muted">
+        <span className="eyebrow bp-label">Ops Events:</span>
+        {(Object.keys(EVENT_TYPE_LABEL) as OpsEventType[]).map((t) => (
+          <span key={t} className="inline-flex items-center gap-1">
+            <span
+              className="w-2 h-2 rounded-sm"
+              style={{ background: EVENT_TYPE_COLOR[t] }}
+            />
+            {EVENT_TYPE_LABEL[t]}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -803,11 +1001,13 @@ function Legend() {
 function DayExpansion({
   dateKey,
   events,
+  opsEvents,
   onClose,
   onOpenJob,
 }: {
   dateKey: string
   events: CalendarEvent[]
+  opsEvents: OpsCalendarEvent[]
   onClose: () => void
   onOpenJob: (jobId: string) => void
 }) {
@@ -831,6 +1031,7 @@ function DayExpansion({
 
   const startCount = events.filter((e) => e.dateKind === 'start').length
   const closeCount = events.filter((e) => e.dateKind === 'close').length
+  const totalCount = events.length + opsEvents.length
 
   return (
     <div
@@ -846,10 +1047,13 @@ function DayExpansion({
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
           <div>
             <div className="text-[13px] font-semibold text-fg">{label}</div>
-            <div className="text-[11px] text-fg-muted mt-0.5 flex items-center gap-2">
-              <Badge variant="neutral" size="xs">{events.length} events</Badge>
+            <div className="text-[11px] text-fg-muted mt-0.5 flex items-center gap-2 flex-wrap">
+              <Badge variant="neutral" size="xs">{totalCount} events</Badge>
               {startCount > 0 && <span>{startCount} start{startCount === 1 ? '' : 's'}</span>}
               {closeCount > 0 && <span>{closeCount} closing</span>}
+              {opsEvents.length > 0 && (
+                <span>{opsEvents.length} ops</span>
+              )}
             </div>
           </div>
           <button
@@ -861,17 +1065,29 @@ function DayExpansion({
           </button>
         </div>
         <div className="overflow-auto p-3 space-y-1.5">
-          {events.length === 0 ? (
+          {totalCount === 0 ? (
             <div className="text-[12px] text-fg-muted italic">No events this day.</div>
           ) : (
-            events.map((e, i) => (
-              <JobChip
-                key={`${e.jobId}-${e.dateKind}-${i}`}
-                event={e}
-                compact={false}
-                onClick={() => onOpenJob(e.jobId)}
-              />
-            ))
+            <>
+              {events.map((e, i) => (
+                <JobChip
+                  key={`${e.jobId}-${e.dateKind}-${i}`}
+                  event={e}
+                  compact={false}
+                  onClick={() => onOpenJob(e.jobId)}
+                />
+              ))}
+              {opsEvents.map((oe) => (
+                <OpsEventChip
+                  key={oe.id}
+                  event={oe}
+                  compact={false}
+                  onClick={() => {
+                    if (typeof window !== 'undefined') window.location.href = oe.href
+                  }}
+                />
+              ))}
+            </>
           )}
         </div>
       </div>
