@@ -28,6 +28,7 @@ import { buildQbxmlRequest, parseQbxmlResponse, type QbRequestKind } from '@/lib
 import {
   getNextRequest,
   advanceSequence,
+  recordIteratorState,
   clearSession,
   estimateRemaining,
 } from '@/lib/qbwc/sequence'
@@ -123,9 +124,13 @@ async function handleReceiveResponseXML(args: Record<string, string>): Promise<N
 
   let upsertCounts: Record<string, number> = {}
   let parsedKind: QbRequestKind | 'Unknown' = 'Unknown'
+  let iteratorRemaining: number | undefined
+  let iteratorID: string | undefined
   try {
     const parsed = parseQbxmlResponse(responseXml)
     parsedKind = parsed.kind
+    iteratorRemaining = parsed.header.iteratorRemainingCount
+    iteratorID = parsed.header.iteratorID
     if (parsed.header.statusCode !== 0 && parsed.header.statusSeverity === 'Error') {
       logger.error('qbwc.receiveResponseXML.qbxml_error', {
         kind: parsedKind,
@@ -148,6 +153,15 @@ async function handleReceiveResponseXML(args: Record<string, string>): Promise<N
       })
     }
 
+    // Persist iterator state BEFORE deciding whether to advance the sequence.
+    // QBWC iterator semantics: if the response carries iteratorRemainingCount > 0
+    // we MUST send another iterator="Continue" with the saved iteratorID before
+    // advancing to the next entity type. Skipping continuations silently drops
+    // every record past MaxReturned (500 customers, 200 invoices, etc.).
+    if (parsedKind !== 'Unknown') {
+      await recordIteratorState(ticket, parsedKind, iteratorID, iteratorRemaining)
+    }
+
     // Push a Brain event summarising this batch.
     await pushBrainEvents([
       {
@@ -155,7 +169,12 @@ async function handleReceiveResponseXML(args: Record<string, string>): Promise<N
         event_type: 'qbwc_batch_received',
         source_id: parsed.header.requestID || `${ticket}:${Date.now()}`,
         occurred_at: new Date().toISOString(),
-        content: { kind: parsedKind, counts: upsertCounts, ticket },
+        content: {
+          kind: parsedKind,
+          counts: upsertCounts,
+          ticket,
+          iteratorRemaining: iteratorRemaining ?? null,
+        },
       },
     ])
   } catch (err: any) {
@@ -163,7 +182,13 @@ async function handleReceiveResponseXML(args: Record<string, string>): Promise<N
     return soap('receiveResponseXML', '-1')
   }
 
-  await advanceSequence(ticket)
+  // Only advance to the next entity type when the current iterator has
+  // drained. Non-paginated queries (e.g. AccountQuery) return no iterator
+  // state, in which case we treat the step as complete and advance.
+  const stillPaginating = typeof iteratorRemaining === 'number' && iteratorRemaining > 0
+  if (!stillPaginating) {
+    await advanceSequence(ticket)
+  }
 
   // Return a percent-complete integer in 0–100. Higher == more done.
   const remaining = await estimateRemaining(ticket)
