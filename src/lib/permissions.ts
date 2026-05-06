@@ -152,6 +152,12 @@ const ROUTE_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/accounting/journal-entries': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
   '/api/ops/accounting/chart-of-accounts': ['ADMIN', 'MANAGER', 'ACCOUNTING'],
 
+  // Wave-1 ops pages — explicit gating to prevent over-permissive fallback
+  // to /ops (ALL_ROLES). Without these, DRIVER/INSTALLER/QC could view
+  // builder-specific pricing, calendars, etc.
+  '/ops/customer-catalog': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING'],
+  '/ops/calendar': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'WAREHOUSE_LEAD', 'DRIVER'],
+
   // Email queue — admin, managers, sales, PMs
   '/ops/email': ['ADMIN', 'MANAGER', 'SALES_REP', 'PROJECT_MANAGER'],
 
@@ -629,6 +635,9 @@ const API_ACCESS: Record<string, StaffRole[]> = {
   '/api/ops/contacts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'ACCOUNTING'],
   '/api/ops/contracts': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP', 'ESTIMATOR'],
   '/api/ops/calendar/jobs': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'WAREHOUSE_LEAD', 'DRIVER'],
+  // Wave-1 additions — see docs commit b09b2e1 / 25980e8 / f37d939
+  '/api/ops/calendar/events': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'WAREHOUSE_LEAD', 'DRIVER'],
+  '/api/ops/customer-catalog': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'ESTIMATOR', 'SALES_REP', 'PURCHASING'],
 
   // Builder-facing surfaces (mirrors page-level rules already in ROUTE_ACCESS).
   '/api/ops/builder-messages': ['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SALES_REP'],

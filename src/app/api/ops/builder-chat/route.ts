@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
     const mineOnly = searchParams.get('mine') === 'true'
 
     // Build WHERE conditions
-    const conditions: string[] = ['c."type" = $1']
+    // Cast to ConversationType — Postgres won't implicitly compare enum to text
+    const conditions: string[] = ['c."type" = $1::"ConversationType"']
     const params: any[] = ['BUILDER_SUPPORT']
     let paramIdx = 2
 
