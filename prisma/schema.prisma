@@ -1130,6 +1130,8 @@ model Job {
   scheduledDate         DateTime? // Target delivery/install date
   actualDate            DateTime?
   completedAt           DateTime?
+  closingDate           DateTime? // Builder closing date scraped from Hyphen (A-INT-2)
+  hyphenScheduleSyncedAt DateTime? // Last time Hyphen schedule scrape persisted
 
   // Relationships
   decisionNotes     DecisionNote[]
@@ -3608,6 +3610,15 @@ model BayMovement {
   @@index([toBayId], map: "idx_bay_movement_toBayId")
 }
 
+// ============================================================================
+// DEPRECATED 2026-05-05 — ECI Bolt (legacy ERP) sync killed; do not write to
+// these tables. Read-only historical mirror only. The bolt-sync cron route
+// still exists at /api/cron/bolt-sync but is NOT scheduled in vercel.json.
+// Remaining references are raw-SQL historical reads (data-fix, dashboard,
+// integrations-freshness, communities fallback) and the legacy import-bolt
+// route. Plan a destructive migration in a future cycle (requires Nate
+// approval per CLAUDE.md). Until then, retain rows for forensics.
+// ============================================================================
 model BoltCommunity {
   id         String    @id
   boltId     String    @unique
@@ -3620,6 +3631,7 @@ model BoltCommunity {
   createdAt  DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
 model BoltCrew {
   id        String    @id
   boltId    String    @unique
@@ -3631,6 +3643,7 @@ model BoltCrew {
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
 model BoltCustomer {
   id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   boltId    String?   @unique
@@ -3641,6 +3654,7 @@ model BoltCustomer {
   updatedAt DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
 model BoltEmployee {
   id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   boltId    String?   @unique
@@ -3652,6 +3666,7 @@ model BoltEmployee {
   updatedAt DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
 model BoltFloorplan {
   id         String    @id
   boltId     String    @unique
@@ -3665,6 +3680,7 @@ model BoltFloorplan {
   createdAt  DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
 model BoltJob {
   id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   boltId    String?   @unique
@@ -3685,12 +3701,16 @@ model BoltJob {
   @@index([community], map: "idx_boltjob_comm")
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
 model BoltWOType {
   id        String    @id
   name      String    @unique
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — ECI Bolt sync killed; do not write to this table.
+/// Note: scripts/backfill-scheduled-dates.mjs uses prisma.boltWorkOrder.findFirst
+/// for historical scheduledDate reads. data-fix route also reads via raw SQL.
 model BoltWorkOrder {
   id            String    @id
   boltId        String    @unique
@@ -3707,6 +3727,17 @@ model BoltWorkOrder {
   @@index([stage], map: "idx_boltwo_stage")
 }
 
+// ============================================================================
+// DEPRECATED 2026-05-05 — Pulte BPW import killed (Pulte account lost
+// 2026-04-20 — Treeline → 84 Lumber, Mobberly Farms moved March). Do not
+// write to these tables. Read-only historical mirror for forensics on the
+// 21 open POs (~$32.5K) in cancel/reduce. The bpw-sync cron route exists at
+// /api/cron/bpw-sync but is NOT scheduled in vercel.json. import-bpw and
+// import-bpw/process routes still create-table-if-not-exists and insert via
+// raw SQL — they're effectively no-ops since no new BPW data flows in.
+// finance/health and finance/dashboard read BpwInvoice for legacy AR totals.
+// Plan a destructive migration in a future cycle (requires Nate approval).
+// ============================================================================
 model BpwCheck {
   id          String    @id
   bpwCheckId  String    @unique
@@ -3720,6 +3751,7 @@ model BpwCheck {
   @@index([checkDate], map: "idx_bpw_check_date")
 }
 
+/// DEPRECATED 2026-05-05 — Pulte account lost; BPW import killed. Read-only.
 model BpwCommunity {
   id        String    @id
   bpwId     String    @unique
@@ -3727,6 +3759,7 @@ model BpwCommunity {
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+/// DEPRECATED 2026-05-05 — Pulte account lost; BPW import killed. Read-only.
 model BpwFieldPO {
   id            String    @id
   poNumber      String    @unique
@@ -3744,6 +3777,8 @@ model BpwFieldPO {
   @@index([community], map: "idx_bpw_fpo_community")
 }
 
+/// DEPRECATED 2026-05-05 — Pulte account lost; BPW import killed. Read-only.
+/// Note: finance/health and finance/dashboard routes sum legacy amounts here.
 model BpwInvoice {
   id            String    @id
   bpwInvoiceId  String    @unique
@@ -3760,6 +3795,7 @@ model BpwInvoice {
   @@index([invoiceDate], map: "idx_bpw_invoice_date")
 }
 
+/// DEPRECATED 2026-05-05 — Pulte account lost; BPW import killed. Read-only.
 model BpwJobDetail {
   id                String    @id
   jobId             String
