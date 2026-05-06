@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -55,6 +54,17 @@ export function Dialog({
   const [visible, setVisible] = useState(open)
   const [entering, setEntering] = useState(false)
 
+  // Hold the latest onClose in a ref so the keyboard listener doesn't have
+  // to be re-registered every time the parent re-renders. (BUG-18 — when
+  // the parent owns form state, every keystroke produced a fresh onClose
+  // closure; the previous effect had handleKey in its deps and re-ran the
+  // requestAnimationFrame focus block, which yanked focus back to the first
+  // focusable element after a single character. Fixed 2026-05-06.)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   // Mount/unmount with exit transition
   useEffect(() => {
     if (open) {
@@ -69,10 +79,32 @@ export function Dialog({
     return
   }, [open, visible])
 
-  const handleKey = useCallback(
-    (e: KeyboardEvent) => {
+  // Lock body scroll + auto-focus on open (only). Splitting this from the
+  // keyboard listener below means the auto-focus block doesn't fire on
+  // every parent re-render — only on actual open/close transitions.
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const raf = requestAnimationFrame(() => {
+      const first = panelRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      first?.focus()
+    })
+    return () => {
+      cancelAnimationFrame(raf)
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
+  // Keyboard handler (Esc + tab-trap). Re-uses onCloseRef so it's stable
+  // across parent re-renders.
+  useEffect(() => {
+    if (!open) return
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
       if (e.key === 'Tab' && panelRef.current) {
@@ -90,26 +122,12 @@ export function Dialog({
           first.focus()
         }
       }
-    },
-    [onClose],
-  )
-
-  useEffect(() => {
-    if (!open) return
+    }
     document.addEventListener('keydown', handleKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    requestAnimationFrame(() => {
-      const first = panelRef.current?.querySelector<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      )
-      first?.focus()
-    })
     return () => {
       document.removeEventListener('keydown', handleKey)
-      document.body.style.overflow = prev
     }
-  }, [open, handleKey])
+  }, [open])
 
   if (!visible) return null
 
